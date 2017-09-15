@@ -23,7 +23,7 @@ module Bosh::Director
       context 'when removing all releases' do
         it 'picks unused releases' do
           expect(releases_to_delete_picker.pick(0)).to match_array([
-                {'name' => 'release-2', 'version' => '5'}
+                {'name' => 'release-2', 'versions' => ['5']}
               ])
         end
       end
@@ -38,7 +38,21 @@ module Bosh::Director
 
         it 'leaves out the latest two versions of each release' do
           expect(releases_to_delete_picker.pick(2)).to match_array([
-                {'name' => 'release-2', 'version' => '5'}
+                {'name' => 'release-2', 'versions' => ['5']}
+              ])
+        end
+      end
+
+      context 'when removing multiple versions' do
+        before do
+          Models::ReleaseVersion.make(version: 10, release: release_1)
+          Models::ReleaseVersion.make(version: 9, release: release_1)
+          Models::ReleaseVersion.make(version: 8, release: release_1)
+        end
+
+        it 'leaves out the latest two versions of each release' do
+          expect(releases_to_delete_picker.pick(1)).to match_array([
+                {'name' => 'release-1', 'versions' => ['8', '9']}
               ])
         end
       end

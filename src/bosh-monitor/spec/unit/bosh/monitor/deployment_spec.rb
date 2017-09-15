@@ -51,10 +51,6 @@ describe Bhm::Deployment do
       expect(deployment.instances.size).to eq(1)
     end
 
-    it "refuse to add instance with 'expects_vm=false'" do
-      expect(deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => false}))).to be(false)
-    end
-
     it 'overrides existing instance' do
       deployment.add_instance(Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'auuid', 'cid' => 'cid', 'expects_vm' => true}))
       updated_instance = Bhm::Instance.create({'id' => 'iuuid', 'agent_id' => 'another-auuid', 'cid' => 'another-cid', 'expects_vm' => true})
@@ -118,9 +114,28 @@ describe Bhm::Deployment do
     end
 
     context 'Instance has no agent id' do
-      let(:instance) { Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true}) }
-      it 'refuses to add agent' do
-        expect(deployment.upsert_agent(instance)).to be_falsey
+      context 'when instance expects vm' do
+        let(:instance) {Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true})}
+        it 'refuses to add active agent' do
+          expect(deployment.upsert_agent(instance)).to be_falsey
+        end
+
+        it 'count specific type of agent' do
+          deployment.upsert_agent(instance)
+          expect(deployment.instance_id_to_agent.count).to eq(1)
+        end
+      end
+
+      context 'when instance does not expect vm' do
+        let(:instance) {Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => false})}
+        it 'refuses to add active agent' do
+          expect(deployment.upsert_agent(instance)).to be_falsey
+        end
+
+        it 'does not count specific type of agent' do
+          deployment.upsert_agent(instance)
+          expect(deployment.instance_id_to_agent.count).to eq(0)
+        end
       end
     end
   end

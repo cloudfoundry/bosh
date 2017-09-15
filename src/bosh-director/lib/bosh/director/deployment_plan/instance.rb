@@ -22,6 +22,10 @@ module Bosh::Director
       # @return [Bosh::Director::Core::Templates::RenderedTemplatesArchive]
       attr_accessor :rendered_templates_archive
 
+      # @return [Bosh::Director::Models::VariableSet]
+      attr_accessor :desired_variable_set
+      attr_reader :previous_variable_set
+
       # @return [String] job state
       attr_reader :virtual_state
 
@@ -72,6 +76,9 @@ module Bosh::Director
         @template_hashes = nil
         @vm = nil
 
+        @desired_variable_set = nil
+        @previous_variable_set = nil
+
         # This state is coming from the agent, we
         # only need networks and job_state from it.
         @current_state = instance_state || {}
@@ -98,7 +105,7 @@ module Bosh::Director
         if @uuid.nil?
           "#{@job_name}/#{@index}"
         else
-          "#{@job_name}/#{@index} (#{@uuid})"
+          "#{@job_name}/#{@uuid} (#{@index})"
         end
       end
 
@@ -119,6 +126,8 @@ module Bosh::Director
             variable_set_id: @deployment_model.current_variable_set.id
           })
         @uuid = @model.uuid
+        @desired_variable_set = @model.variable_set
+        @previous_variable_set = @model.variable_set
       end
 
       def stemcell
@@ -142,6 +151,8 @@ module Bosh::Director
         @uuid = existing_instance_model.uuid
         check_model_not_bound
         @model = existing_instance_model
+        @desired_variable_set = existing_instance_model.variable_set
+        @previous_variable_set = existing_instance_model.variable_set
       end
 
       def bind_existing_reservations(reservations)
@@ -183,7 +194,7 @@ module Bosh::Director
         end
 
         agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
+        @model.active_vm.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!
@@ -191,13 +202,20 @@ module Bosh::Director
       end
 
       def agent_client
-        AgentClient.with_vm_credentials_and_agent_id(@model.credentials, @model.agent_id)
+        AgentClient.with_agent_id(@model.agent_id)
       end
 
       def cloud_properties_changed?
-        changed = cloud_properties != @model.cloud_properties_hash
-        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
-        changed
+        config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
+        config_server_client = config_server_client_factory.create_client
+
+        proposed = config_server_client.interpolate_with_versioning(cloud_properties, @desired_variable_set)
+        existing = config_server_client.interpolate_with_versioning(@model.cloud_properties_hash, @previous_variable_set)
+
+        @cloud_properties_changed = existing != proposed
+        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if @cloud_properties_changed
+
+        @cloud_properties_changed
       end
 
       def current_job_spec
@@ -243,7 +261,7 @@ module Bosh::Director
       end
 
       def update_variable_set
-        @model.update(variable_set: @deployment_model.current_variable_set)
+        @model.update(variable_set: @desired_variable_set)
       end
 
       def state
@@ -271,7 +289,7 @@ module Bosh::Director
       end
 
       def vm_created?
-        !@model.vm_cid.nil?
+        !@model.active_vm.nil?
       end
 
       def cloud_properties

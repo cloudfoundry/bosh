@@ -24,6 +24,7 @@ describe 'create-release', type: :integration do
       actual = list_tar_files(release_file.path)
       expected = [
         'LICENSE',
+        'jobs/emoji-errand.tgz',
         'jobs/errand1.tgz',
         'jobs/errand_without_package.tgz',
         'jobs/fails_with_too_much_output.tgz',
@@ -40,6 +41,7 @@ describe 'create-release', type: :integration do
         'jobs/job_2_with_post_deploy_script.tgz',
         'jobs/job_1_with_many_properties.tgz',
         'jobs/job_2_with_many_properties.tgz',
+        'jobs/job_3_with_many_properties.tgz',
         'jobs/job_with_property_types.tgz',
         'jobs/job_with_post_start_script.tgz',
         'jobs/job_3_with_broken_post_deploy_script.tgz',
@@ -47,6 +49,7 @@ describe 'create-release', type: :integration do
         'jobs/transitive_deps.tgz',
         'jobs/id_job.tgz',
         'jobs/job_with_bad_template.tgz',
+        'jobs/local_dns_records_json.tgz',
         'packages/a.tgz',
         'packages/b.tgz',
         'packages/bar.tgz',
@@ -113,6 +116,7 @@ describe 'create-release', type: :integration do
           'job_1_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_1_ctl'],
           'job_2_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_2_ctl'],
           'job_3_with_broken_post_deploy_script' => ['./monit', './job.MF', './templates/broken-post-deploy.erb', './templates/job_3_ctl'],
+          'local_dns_records_json' => ['./monit', './job.MF', './templates/pre-start.erb'],
         }
 
         job_files.each do |job_name, files|
@@ -153,6 +157,7 @@ describe 'create-release', type: :integration do
         ))
 
         expect(release_manifest['jobs']).to match(a_collection_containing_exactly(
+          job_desc('emoji-errand'),
           job_desc('errand1'),
           job_desc('errand_without_package'),
           job_desc('fails_with_too_much_output'),
@@ -171,11 +176,13 @@ describe 'create-release', type: :integration do
           job_desc('job_that_modifies_properties'),
           job_desc('job_1_with_many_properties'),
           job_desc('job_2_with_many_properties'),
+          job_desc('job_3_with_many_properties'),
           job_desc('job_with_property_types'),
           job_desc('job_with_post_start_script'),
           job_desc('transitive_deps'),
           job_desc('id_job'),
-          job_desc('job_with_bad_template')
+          job_desc('job_with_bad_template'),
+          job_desc('local_dns_records_json')
         ))
 
         expect(release_manifest['uncommitted_changes']).to eq(false)

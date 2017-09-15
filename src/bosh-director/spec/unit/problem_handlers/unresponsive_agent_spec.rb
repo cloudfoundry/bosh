@@ -7,8 +7,8 @@ module Bosh::Director
     def make_handler(instance, cloud, _, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(instance.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, @instance.agent_id, anything).and_return(@agent)
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance.credentials, @instance.agent_id).and_return(@agent)
+      allow(AgentClient).to receive(:with_agent_id).with(@instance.agent_id, anything).and_return(@agent)
+      allow(AgentClient).to receive(:with_agent_id).with(@instance.agent_id).and_return(@agent)
       handler
     end
 
@@ -16,24 +16,37 @@ module Bosh::Director
       @cloud = Config.cloud
       @agent = double(Bosh::Director::AgentClient)
 
+      allow(@agent).to receive(:sync_dns) do |_,_,_,&blk|
+        blk.call({'value' => 'synced'})
+      end.and_return(0)
+
       deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
+
 
       @instance = Models::Instance.make(
         job: 'mysql_node',
         index: 0,
         uuid: 'uuid-1',
-        vm_cid: 'vm-cid',
         deployment: deployment_model,
-        cloud_properties_hash: { 'foo' => 'bar' },
+        cloud_properties_hash: {'foo' => 'bar'},
         spec: {'networks' => networks},
-        agent_id: 'agent-007'
       )
+
+      @vm = Models::Vm.make(
+        cid: 'vm-cid',
+        agent_id: 'agent-007',
+        instance_id: @instance.id
+      )
+
+      @instance.active_vm = @vm
+      @instance.save
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
     end
 
-    let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
-    let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager)}
+    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
+    let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager) }
 
     let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
 
@@ -52,7 +65,7 @@ module Bosh::Director
 
     describe 'reboot_vm resolution' do
       it 'skips reboot if CID is not present' do
-        @instance.update(vm_cid: nil)
+        @instance.active_vm = nil
         expect {
           handler.apply_resolution(:reboot_vm)
         }.to raise_error(ProblemHandlerError, /is no longer in the database/)
@@ -88,7 +101,7 @@ module Bosh::Director
 
     describe 'recreate_vm resolution' do
       it 'skips recreate if CID is not present' do
-        @instance.update(vm_cid: nil)
+        @instance.active_vm = nil
 
         expect {
           handler.apply_resolution(:recreate_vm)
@@ -111,7 +124,7 @@ module Bosh::Director
             'index' => 0,
             'vm_type' => {
               'name' => 'fake-vm-type',
-              'cloud_properties' => { 'foo' => 'bar' },
+              'cloud_properties' => {'foo' => 'bar'},
             },
             'stemcell' => {
               'name' => 'stemcell-name',
@@ -121,7 +134,7 @@ module Bosh::Director
             'template_hashes' => {},
             'configuration_hash' => {'configuration' => 'hash'},
             'rendered_templates_archive' => {'some' => 'template'},
-            'env' => { 'key1' => 'value1' }
+            'env' => {'key1' => 'value1'}
           }
         end
         let(:agent_spec) do
@@ -140,11 +153,15 @@ module Bosh::Director
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @instance.update(spec: spec)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222', anything).and_return(fake_new_agent)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(@instance.credentials, 'agent-222').and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_agent_id).with('agent-222', anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_agent_id).with('agent-222').and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
           fake_app
           allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
+
+          allow(fake_new_agent).to receive(:sync_dns) do |_,_,_,&blk|
+            blk.call({'value' => 'synced'})
+          end.and_return(0)
         end
 
         def expect_vm_to_be_created
@@ -163,8 +180,8 @@ module Bosh::Director
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
           expect(fake_new_agent).to receive(:start).ordered
 
-          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).not_to be_nil
-          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).not_to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).to be_nil
         end
 
         context 'when update is specified' do
@@ -207,8 +224,8 @@ module Bosh::Director
               expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
               handler.apply_resolution(:recreate_vm_skip_post_start)
 
-              expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-              expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
             end
           end
 
@@ -225,8 +242,8 @@ module Bosh::Director
               expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
               handler.apply_resolution(:recreate_vm)
 
-              expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-              expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+              expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
             end
           end
         end
@@ -235,8 +252,8 @@ module Bosh::Director
           expect_vm_to_be_created
           handler.apply_resolution(:recreate_vm)
 
-          expect(Models::Instance.find(agent_id: 'agent-007', vm_cid: 'vm-cid')).to be_nil
-          expect(Models::Instance.find(agent_id: 'agent-222', vm_cid: 'new-vm-cid')).not_to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
+          expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
         end
       end
     end
@@ -254,9 +271,11 @@ module Bosh::Director
       it 'deletes VM from Cloud' do
         expect(@cloud).to receive(:delete_vm).with('vm-cid')
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
-        expect{
+        expect {
           handler.apply_resolution(:delete_vm)
-        }.to change {Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
+        }.to change {
+          Models::Vm.where(cid: 'vm-cid').count
+        }.from(1).to(0)
       end
     end
 
@@ -272,9 +291,11 @@ module Bosh::Director
 
       it 'deletes VM reference' do
         expect(@agent).to receive(:ping).and_raise(RpcTimeout)
-        expect{
+        expect {
           handler.apply_resolution(:delete_vm_reference)
-        }.to change {Models::Instance.where(vm_cid: 'vm-cid').count}.from(1).to(0)
+        }.to change {
+          Models::Vm.where(cid: 'vm-cid').count
+        }.from(1).to(0)
       end
     end
   end

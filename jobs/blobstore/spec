@@ -8,6 +8,8 @@ templates:
   mime.types:         config/mime.types
   read_users.erb:     config/read_users
   write_users.erb:    config/write_users
+  bbr_backup:         bin/bbr/backup
+  bbr_restore:        bin/bbr/restore
 
 packages:
 - nginx
@@ -16,6 +18,9 @@ properties:
   blobstore.port:
     description: TCP port blobstore server (ngnix) listens on
     default: 25250
+  blobstore.ipv6_listen:
+    description: Enable binding to IPv6 addresses
+    default: false
   blobstore.backend_port:
     description: TCP port backend blobstore server (simple blobstore) listens on
     default: 25251

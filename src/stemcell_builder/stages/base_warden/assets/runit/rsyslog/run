@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e
-
-PATH=/usr/local/bin:/usr/local/sbin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/X11R6/bin
-
-exec rsyslogd -n

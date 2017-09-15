@@ -6,8 +6,8 @@ module Bosh::Director
         raise NotImplementedError.new('Subclasses must return a symbol representing type')
       end
 
-      def self.perform(task_id, *args)
-        Bosh::Director::JobRunner.new(self, task_id).run(*args)
+      def self.perform(task_id, worker_name, *args)
+        Bosh::Director::JobRunner.new(self, task_id, worker_name).run(*args)
       end
 
       def self.schedule_message
@@ -20,12 +20,12 @@ module Bosh::Director
         @logger ||= Config.logger
       end
 
-      def result_file
-        @result_file ||= Config.result
+      def task_result
+        @task_result ||= Config.result
       end
 
-      def dns_manager
-        @dns_manager ||= DnsManagerProvider.create
+      def powerdns_manager
+        @powerdns_manager ||= PowerDnsManagerProvider.create
       end
 
       def dry_run?

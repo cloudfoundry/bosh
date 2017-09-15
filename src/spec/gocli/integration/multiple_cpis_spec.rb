@@ -20,6 +20,86 @@ describe 'Using multiple CPIs', type: :integration do
     bosh_runner.run("upload-stemcell #{stemcell_filename}")
   end
 
+  context 'when a cpi is renamed and cloud-config azs are updated' do
+    context 'a deployment is updated' do
+      it 'can successfully delete the vm resource' do
+        # deploy with initial cpi config, and 2 azs
+        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+        expect(output).to include("Using deployment 'simple'")
+        expect(output).to include('Succeeded')
+
+        output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
+        expect(output).to contain_exactly(
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z1',
+            'ips' => /.*/
+          },
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z1',
+            'ips' => /.*/
+          },
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z2',
+            'ips' => /.*/
+          }
+        )
+
+        # start the transition of using new cpi names
+        cpi_config['cpis'] = cpi_config['cpis'].concat(cpi_config['cpis'].map { |cpi| cpi2=cpi.dup; cpi2['name'] += '-new'; cpi2 })
+        puts "debug: #{cpi_config['cpis']}"
+        cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
+        bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+
+        # tell our cloud-config to start using the new cpi names
+        cloud_config['azs'] = cloud_config['azs'].map { |az| az['cpi'] += '-new'; az }
+        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
+        bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+
+        # reduce instance count, just to verify we can delete a vm during a live cpi transition
+        deployment['jobs'][0]['instances'] = 2
+        deployment_manifest = yaml_file('deployment_manifest', deployment)
+
+        # deploy so we get onto the latest cloud-config/cpi names
+        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+        expect(output).to include("Using deployment 'simple'")
+        expect(output).to include('Succeeded')
+
+        output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
+        expect(output).to contain_exactly(
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z1',
+            'ips' => /.*/
+          },
+          {
+            'instance' => /foobar\/.*/,
+            'process_state' => 'running',
+            'az' => 'z2',
+            'ips' => /.*/
+          }
+        )
+
+        # now that our deployment is on the latest cloud-config, it no longer has a dependence on the old cpi names
+        # so, remove the old cpi names
+        cpi_config['cpis'] = cpi_config['cpis'].select { |cpi| cpi['name'] =~ /-new$/ }
+        cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
+        bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+
+        # delete the deployment, just to verify we can delete vms even though the original cpi names are gone
+        output = bosh_runner.run('delete-deployment', deployment_name: 'simple')
+        expect(output).to include("Using deployment 'simple'")
+        expect(output).to include('Succeeded')
+      end
+    end
+  end
+
   context 'when an az references a CPI that was deleted' do
     it 'fails to redeploy and orphans the VM associated with the deleted CPI' do
       # deploy with initial cpi config, and 2 azs
@@ -30,22 +110,22 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z2',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z2',
+                                'ips' => /.*/
                             }
                         )
 
@@ -55,41 +135,41 @@ describe 'Using multiple CPIs', type: :integration do
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
 
       output = bosh_runner.run("deploy --recreate #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
-      error_message = 'CPI was defined for AZ z2 but not found in cpi-config'
+      error_message = "Failed to load CPI for AZ 'z2': CPI 'cpi-name2' not found in cpi-config"
       expect(output).to match /#{error_message}/
 
       # Bosh can't delete VM since its CPI no longer exists
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'stopped',
-                                'AZ' => 'z2',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'stopped',
+                                'az' => 'z2',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             }
                         )
     end
   end
 
-  context 'when VM is deployed to AZ that has been removed from cloud config' do
+  context 'when VM is deployed to az that has been removed from cloud config' do
     it 'falls back to existing CPIs and succeeds in deleting' do
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
       expect(output).to include("Using deployment 'simple'")
@@ -98,22 +178,22 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z2',
-                                'IPs' => /.*/
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z2',
+                                'ips' => /.*/
                             }
                         )
 
@@ -134,28 +214,28 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             },
                             {
-                                'Instance' => /foobar\/.*/,
-                                'Process State' => 'running',
-                                'AZ' => 'z1',
-                                'IPs' => /.*/,
-                                'VM CID' => /\d+/,
-                                'VM Type' => 'a',
+                                'instance' => /foobar\/.*/,
+                                'process_state' => 'running',
+                                'az' => 'z1',
+                                'ips' => /.*/,
+                                'vm_cid' => /\d+/,
+                                'vm_type' => 'a',
                             }
                         )
     end

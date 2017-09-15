@@ -8,12 +8,12 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
    manifest_hash['networks'].first['subnets'].first['static'] = static_ips
    manifest_hash
   end
-  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, nil, nil, nil) }
+  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, nil, nil, nil, nil) }
   let(:network_range) { '192.168.1.0/24' }
   let(:static_ips) { [] }
   let(:network_spec) { manifest_hash['networks'].first }
   let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger) }
-  let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, nil, {}) }
+  let(:deployment_plan) { planner_factory.create_from_manifest(manifest, nil, [], {}) }
   let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan, [], logger) }
   let(:instance_model) { BD::Models::Instance.make }
 
@@ -29,7 +29,15 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     )
   end
 
+  let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+  let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+  let(:interpolated_tags) { {} }
+
   before do
+    allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+    allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+    allow(mock_client).to receive(:interpolate_with_versioning).and_return(interpolated_tags)
+
     release = Bosh::Director::Models::Release.make(name: 'bosh-release')
     template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
     release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)
@@ -51,7 +59,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         manifest['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
             'range' => '192.168.1.0/28',
           })
-        Bosh::Director::Manifest.new(manifest, manifest, nil, nil, nil)
+        Bosh::Director::Manifest.new(manifest, manifest, nil, nil, nil, nil)
       end
 
       it 'should raise an error' do
@@ -67,6 +75,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation, [])).to eq({
+            'type' => 'manual',
             'ip' => '192.168.1.2',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},
@@ -80,6 +89,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
 
       expect(manual_network.network_settings(reservation)).to eq({
+            'type' => 'manual',
             'ip' => '192.168.1.2',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},

@@ -3,6 +3,7 @@ module Bosh::Monitor
 
     attr_reader :name
     attr_reader :agent_id_to_agent
+    attr_reader :instance_id_to_agent
     attr_reader :teams
 
     def initialize(deployment_data)
@@ -11,6 +12,7 @@ module Bosh::Monitor
       @teams = deployment_data['teams']
       @instance_id_to_instance = {}
       @agent_id_to_agent = {}
+      @instance_id_to_agent = {}
     end
 
     def self.create(deployment_data)
@@ -27,14 +29,8 @@ module Bosh::Monitor
       Deployment.new(deployment_data)
     end
 
-
     def add_instance(instance)
       unless instance
-        return false
-      end
-
-      unless instance.expects_vm
-        @logger.debug("Instance with no VM expected found: #{instance.id}")
         return false
       end
 
@@ -45,6 +41,7 @@ module Bosh::Monitor
     end
 
     def remove_instance(instance_id)
+      @instance_id_to_agent.delete(instance_id)
       @instance_id_to_instance.delete(instance_id)
     end
 
@@ -64,13 +61,18 @@ module Bosh::Monitor
     # extracts relevant agent data, wraps it into Agent object
     # and adds it to a list of managed agents.
     def upsert_agent(instance)
-
       @logger.info("Adding agent #{instance.agent_id} (#{instance.job}/#{instance.id}) to #{name}...")
 
       agent_id = instance.agent_id
 
       if agent_id.nil?
         @logger.warn("No agent id for Instance: #{instance.inspect}")
+        #count agents for instances with deleted vm, which expect to have vm
+        if instance.expects_vm? && !instance.has_vm?
+          agent = Agent.new("agent_with_no_vm", deployment: name)
+          @instance_id_to_agent[instance.id] = agent
+          agent.update_instance(instance)
+        end
         return false
       end
 
@@ -85,6 +87,7 @@ module Bosh::Monitor
         @logger.debug("Discovered agent #{agent_id}")
         agent = Agent.new(agent_id, deployment: name)
         @agent_id_to_agent[agent_id] = agent
+        @instance_id_to_agent.delete(instance.id) if @instance_id_to_agent[instance.id]
       end
 
       agent.update_instance(instance)

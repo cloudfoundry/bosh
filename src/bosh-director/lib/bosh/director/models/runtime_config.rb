@@ -14,15 +14,12 @@ module Bosh
           YAML.load(properties)
         end
 
-        def interpolated_manifest_for_deployment(deployment_name)
-          manifest_hash = YAML.load(properties)
-          variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
-          variables_interpolator.interpolate_runtime_manifest(manifest_hash, deployment_name)
+        def self.latest_set
+          self.dataset.where(:id => self.dataset.select{max(:id)}.group_by(:name)).all
         end
 
-        def tags(deployment_name)
-          interpolated_manifest = interpolated_manifest_for_deployment(deployment_name)
-          interpolated_manifest['tags'] ? interpolated_manifest['tags']: {}
+        def self.find_by_ids(ids)
+          self.dataset.where(:id => ids).all
         end
       end
     end

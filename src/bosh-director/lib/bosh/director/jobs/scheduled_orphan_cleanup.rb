@@ -33,12 +33,22 @@ module Bosh::Director
         old_orphans = Models::OrphanDisk.where('created_at < ?', time)
         old_orphans_count = old_orphans.count
         stage = Config.event_log.begin_stage('Deleting orphan disks', old_orphans_count)
+        failed_orphan_disk_count = 0
         old_orphans.each do |old_orphan|
           stage.advance_and_track("#{old_orphan.disk_cid}") do
-            @orphan_disk_manager.delete_orphan_disk(old_orphan)
+            begin
+              @orphan_disk_manager.delete_orphan_disk(old_orphan)
+            rescue Exception => e
+              failed_orphan_disk_count += 1
+              logger.warn(e.backtrace.join("\n"))
+              logger.info("Failed to delete orphan disk with cid #{old_orphan.disk_cid}. Failed with #{e.message}")
+            end
           end
         end
-        "Deleted #{old_orphans_count} orphaned disk(s) older than #{time}"
+
+        output = "Deleted #{old_orphans_count - failed_orphan_disk_count} orphaned disk(s) older than #{time}. Failed to delete #{failed_orphan_disk_count} disk(s)."
+        raise Bosh::Clouds::CloudError.new(output) if failed_orphan_disk_count > 0
+        output
       end
     end
   end

@@ -28,20 +28,20 @@ describe 'orphaned disks', type: :integration do
 
     expect(result).to contain_exactly(
       {
-        'Disk CID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        'Size' => '123 MiB',
-        'Deployment' => 'second-deployment',
-        'Instance' => 'second-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        'AZ' => '',
-        'Orphaned At' => 'xxx xxx xx xx:xx:xx UTC xxxx',
+        'disk_cid' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'size' => '123 MiB',
+        'deployment' => 'second-deployment',
+        'instance' => 'second-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'az' => '',
+        'orphaned_at' => 'xxx xxx xx xx:xx:xx UTC xxxx',
       },
       {
-        'Disk CID' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        'Size' => '123 MiB',
-        'Deployment' => 'first-deployment',
-        'Instance' => 'first-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        'AZ' => '',
-        'Orphaned At' => 'xxx xxx xx xx:xx:xx UTC xxxx',
+        'disk_cid' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'size' => '123 MiB',
+        'deployment' => 'first-deployment',
+        'instance' => 'first-job/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'az' => '',
+        'orphaned_at' => 'xxx xxx xx xx:xx:xx UTC xxxx',
       },
     )
   end
@@ -94,11 +94,29 @@ describe 'orphaned disks', type: :integration do
     expect(director.instances.first.disk_cids).to eq([])
 
     orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
-    expect(orphaned_output[0]['Disk CID']).to eq(disk_cids.first)
+    expect(orphaned_output[0]['disk_cid']).to eq(disk_cids.first)
 
     cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
 
     # does not attach disk again, delete_vm
     expect(cpi_invocations.map(&:method_name)).to eq(['snapshot_disk', 'delete_vm', 'create_vm', 'set_vm_metadata', 'detach_disk'])
+  end
+
+  it 'should orhpan disk' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['persistent_disk'] = 3000
+    manifest_hash['jobs'].first['instances'] = 1
+    deploy_from_scratch(manifest_hash: manifest_hash)
+    disk_cid = director.instances.first.disk_cids.first
+
+    result = bosh_runner.run('disks --orphaned')
+    expect(result).to include '0 disks'
+
+    result = bosh_runner.run("orphan-disk #{disk_cid}")
+    expect(result).to include("Succeeded")
+    expect(director.instances.first.disk_cids).to eq([])
+
+    orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
+    expect(orphaned_output[0]['disk_cid']).to eq(disk_cid)
   end
 end

@@ -1,0 +1,394 @@
+---
+groups:
+- name: plain
+  jobs:
+  - deploy-plain-env
+  - check-plain-uptime
+- name: dns
+  jobs:
+  - deploy-dns-env
+  - check-dns-uptime
+
+resource_types:
+  - name: gcs
+    type: docker-image
+    source:
+      repository: frodenas/gcs-resource
+
+resources:
+
+- name: daily
+  type: time
+  source:
+    interval: 24h
+
+- name: plain-env
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: plain/bbl-state.json
+    json_key: '((gcp-key-json))'
+
+- name: plain-vars-store
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: plain/deployment-vars.yml
+    json_key: '((gcp-key-json))'
+
+- name: plain-ops-file
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: plain/deployment-ops-file.yml
+    json_key: '((gcp-key-json))'
+
+- name: dns-env
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: dns/bbl-state.json
+    json_key: '((gcp-key-json))'
+
+- name: dns-vars-store
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: dns/deployment-vars.yml
+    json_key: '((gcp-key-json))'
+
+- name: dns-ops-file
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: dns/deployment-ops-file.yml
+    json_key: '((gcp-key-json))'
+
+- name: dns-runtime-config
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: dns/runtime-config.yml
+    json_key: '((gcp-key-json))'
+
+- name: uptimer-config
+  type: gcs
+  source:
+    bucket: uptimer-envs
+    versioned_file: uptimer-config.json
+    json_key: '((gcp-key-json))'
+
+- name: relint-tasks
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks
+
+- name: cf-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cf-deployment
+
+- name: bosh-deployment
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh-deployment
+
+- name: bosh-dns-release
+  type: bosh-io-release
+  source:
+    repository: cloudfoundry/dns-release
+
+jobs:
+- name: deploy-plain-env
+  plan:
+  - aggregate:
+    - get: plain-ops-file
+    - get: relint-tasks
+    - get: cf-deployment
+    - get: bosh-deployment
+    - get: plain-env
+    - get: plain-vars-store
+  - task: bbl-up
+    file: relint-tasks/bbl-up/task.yml
+    input_mapping:
+      ops-files: bosh-deployment
+      cf-deployment-concourse-tasks: relint-tasks
+      bbl-state: plain-env
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: '((gcp-key-json))'
+      BBL_GCP_PROJECT_ID: ((bbl-gcp-project-id))
+      BBL_GCP_ZONE: ((bbl-gcp-zone))
+      BBL_GCP_REGION: ((bbl-gcp-region))
+      BBL_IAAS: gcp
+      BBL_LB_CERT: ((bbl-lb-cert-plain))
+      BBL_LB_KEY: ((bbl-lb-key-plain))
+      LB_DOMAIN: ((bbl-lb-domain-plain))
+      BBL_ENV_NAME: plain-uptimer
+      OPS_FILES: ""
+    tags:
+    - "uptimer"
+    ensure:
+      put: plain-env
+      params:
+        file: updated-bbl-state/bbl-state.json
+  - task: upload-stemcell
+    file: relint-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    input_mapping:
+      cf-deployment-concourse-tasks: relint-tasks
+      bbl-state: plain-env
+    tags:
+    - "uptimer"
+  - task: generate-vars-file
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "relintdockerhubpushbot/cf-deployment-concourse-tasks"
+          tag: "v3.7.0"
+      outputs:
+        - name: vars-files
+      run:
+        path: bash
+        args:
+        - -ec
+        - |
+          #!/bin/bash
+          cat <<EOF > vars-files/generated-vars-file.yml
+          ---
+          blobstore_access_key_id: ((gcp_storage_interop_key))
+          blobstore_secret_access_key: ((gcp_storage_interop_secret))
+          aws_region: us
+          EOF
+    tags:
+    - "uptimer"
+  - task: deploy-cf
+    file: relint-tasks/bosh-deploy/task.yml
+    input_mapping:
+      ops-files: plain-ops-file
+      cf-deployment-concourse-tasks: relint-tasks
+      bbl-state: plain-env
+      vars-store: plain-vars-store
+    params:
+      SYSTEM_DOMAIN: ((system-domain-plain))
+      OPS_FILES: "deployment-ops-file.yml"
+      VARS_FILES: "generated-vars-file.yml"
+    tags:
+    - "uptimer"
+    ensure:
+      put: plain-vars-store
+      params:
+        file: updated-vars-store/deployment-vars.yml
+
+- name: check-plain-uptime
+  serial: true
+  plan:
+  - aggregate:
+    - get: daily
+      trigger: true
+    - get: plain-env
+      passed: [deploy-plain-env]
+    - get: plain-vars-store
+      passed: [deploy-plain-env]
+    - get: relint-tasks
+    - get: uptimer-config
+  - task: run-uptime
+    input_mapping:
+      bbl-state: plain-env
+      vars-store: plain-vars-store
+    tags:
+    - "uptimer"
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "relintdockerhubpushbot/cf-deployment-concourse-tasks"
+          tag: "v3.7.0"
+      inputs:
+        - name: bbl-state
+        - name: vars-store
+        - name: relint-tasks
+        - name: uptimer-config
+      run:
+        path: sh
+        args:
+        - -ec
+        - |
+          #!/bin/bash
+          set +ux
+            eval "$(bbl --state-dir=bbl-state print-env)"
+          set -ux
+          set +x
+          echo '{}' | jq --arg cf_api api.((system-domain-plain)) \
+            --arg admin_password $(bosh int --path=/cf_admin_password vars-store/deployment-vars.yml) \
+            --arg app_domain ((system-domain-plain)) \
+            -f uptimer-config/uptimer-config.json > config.json
+          set -x
+          uptimer -configFile config.json
+
+- name: deploy-dns-env
+  plan:
+  - aggregate:
+    - get: dns-ops-file
+    - get: relint-tasks
+    - get: cf-deployment
+    - get: bosh-deployment
+    - get: dns-env
+    - get: dns-vars-store
+    - get: dns-runtime-config
+    - get: bosh-dns-release
+  - task: bbl-up
+    file: relint-tasks/bbl-up/task.yml
+    input_mapping:
+      ops-files: bosh-deployment
+      cf-deployment-concourse-tasks: relint-tasks
+      bbl-state: dns-env
+    params:
+      BBL_GCP_SERVICE_ACCOUNT_KEY: '((gcp-key-json))'
+      BBL_GCP_PROJECT_ID: ((bbl-gcp-project-id))
+      BBL_GCP_ZONE: ((bbl-gcp-zone))
+      BBL_GCP_REGION: ((bbl-gcp-region))
+      BBL_IAAS: gcp
+      BBL_LB_CERT: ((bbl-lb-cert-dns))
+      BBL_LB_KEY: ((bbl-lb-key-dns))
+      LB_DOMAIN: ((bbl-lb-domain-dns))
+      BBL_ENV_NAME: dns-uptimer
+      OPS_FILES: "local-dns.yml"
+    tags:
+    - "uptimer"
+    ensure:
+      put: dns-env
+      params:
+        file: updated-bbl-state/bbl-state.json
+  - task: upload-stemcell
+    file: relint-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
+    input_mapping:
+      cf-deployment-concourse-tasks: relint-tasks
+      bbl-state: dns-env
+    tags:
+    - "uptimer"
+  - task: setup-runtime-config
+    input_mapping:
+      bbl-state: dns-env
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "relintdockerhubpushbot/cf-deployment-concourse-tasks"
+          tag: "v3.7.0"
+      inputs:
+        - name: bosh-dns-release
+        - name: bbl-state
+        - name: dns-vars-store
+        - name: relint-tasks
+        - name: dns-runtime-config
+      outputs:
+        - name: updated-vars-store
+      run:
+        path: sh
+        args:
+        - -ec
+        - |
+          set +ux
+            eval "$(bbl --state-dir=bbl-state print-env)"
+          set -ux
+          bosh upload-release bosh-dns-release/release.tgz
+          set +x
+          bosh -n update-runtime-config dns-runtime-config/runtime-config.yml --vars-store dns-vars-store/deployment-vars.yml -v bosh-dns-release-version=$(cat bosh-dns-release/version)
+          set -x
+          cp dns-vars-store/deployment-vars.yml updated-vars-store/
+    tags:
+    - "uptimer"
+    ensure:
+      put: dns-vars-store
+      params:
+        file: updated-vars-store/deployment-vars.yml
+  - task: generate-vars-file
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "relintdockerhubpushbot/cf-deployment-concourse-tasks"
+          tag: "v3.7.0"
+      outputs:
+        - name: vars-files
+      run:
+        path: sh
+        args:
+        - -ec
+        - |
+          #!/bin/bash
+          cat <<EOF > vars-files/generated-vars-file.yml
+          ---
+          blobstore_access_key_id: ((gcp_storage_interop_key))
+          blobstore_secret_access_key: ((gcp_storage_interop_secret))
+          aws_region: us
+          EOF
+    tags:
+    - "uptimer"
+  - task: deploy-cf
+    file: relint-tasks/bosh-deploy/task.yml
+    input_mapping:
+      ops-files: dns-ops-file
+      cf-deployment-concourse-tasks: relint-tasks
+      bbl-state: dns-env
+      vars-store: dns-vars-store
+    params:
+      SYSTEM_DOMAIN: ((system-domain-dns))
+      OPS_FILES: "deployment-ops-file.yml"
+      VARS_FILES: "generated-vars-file.yml"
+    tags:
+    - "uptimer"
+    ensure:
+      put: dns-vars-store
+      params:
+        file: updated-vars-store/deployment-vars.yml
+
+- name: check-dns-uptime
+  serial: true
+  plan:
+  - aggregate:
+    - get: daily
+      trigger: true
+    - get: dns-env
+      passed: [deploy-dns-env]
+    - get: dns-vars-store
+      passed: [deploy-dns-env]
+    - get: relint-tasks
+    - get: uptimer-config
+  - task: run-uptime
+    input_mapping:
+      bbl-state: dns-env
+      vars-store: dns-vars-store
+    tags:
+    - "uptimer"
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: "relintdockerhubpushbot/cf-deployment-concourse-tasks"
+          tag: "v3.7.0"
+      inputs:
+        - name: bbl-state
+        - name: vars-store
+        - name: relint-tasks
+        - name: uptimer-config
+      run:
+        path: sh
+        args:
+        - -ec
+        - |
+          set +ux
+            eval "$(bbl --state-dir=bbl-state print-env)"
+          set -ux
+          set +x
+          echo '{}' | jq --arg cf_api api.((system-domain-dns)) \
+            --arg admin_password $(bosh int --path=/cf_admin_password vars-store/deployment-vars.yml) \
+            --arg app_domain ((system-domain-dns)) \
+            -f uptimer-config/uptimer-config.json > config.json
+          set -x
+          uptimer -configFile config.json

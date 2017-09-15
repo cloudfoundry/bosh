@@ -546,7 +546,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#needed_instance_plans_for_variable_resolution' do
+  describe '#unignored_instance_plans' do
 
     let(:spec) do
       {
@@ -579,8 +579,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
       instance_group.add_instance_plans([instance_plan1, instance_plan2])
 
-      needed_instance_plans_for_variable_resolution = [instance_plan1]
-      expect(instance_group.needed_instance_plans_for_variable_resolution).to eq(needed_instance_plans_for_variable_resolution)
+      unignored_instance_plans = [instance_plan1]
+      expect(instance_group.unignored_instance_plans).to eq(unignored_instance_plans)
     end
   end
 
@@ -618,8 +618,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'deployment_name' => 'my_dep_name_1',
         'networks' => ['default_1'],
         'properties' => {
-          'listen_port' => 'Kittens'
-         },
+          'listen_port' => 'Kittens',
+          'disorder_property' => 'foo'
+        },
         'instances' => [{
                           'name'=> 'provider_1',
                           'index'=> 0,
@@ -637,7 +638,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'deployment_name' => 'my_dep_name_2',
         'networks'=> ['default_2'],
         'properties'=> {
-          'listen_port'=> 'Dogs'
+          'listen_port'=> 'Dogs',
+          'disorder_property' => 'foo'
         },
         'instances'=> [{
                          'name'=> 'provider_2',
@@ -653,47 +655,167 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     let(:expected_resolved_links) do
       {
-        'my_link_name_1' => {
-          'deployment_name' => 'my_dep_name_1',
-          'networks'=> ['default_1'],
-          'properties'=> {
-            'listen_port'=> 'Kittens'
-          },
-          'instances'=> [{
-                           'name'=> 'provider_1',
-                           'index'=> 0,
-                           'bootstrap'=> true,
-                           'id'=> 'vroom',
-                           'az'=> 'z1',
-                           'address'=> '10.244.0.4'
-                         }
-          ]
+        'some-job-1' => {
+          'my_link_name_1' => {
+            'deployment_name' => 'my_dep_name_1',
+            'instances'=> [{
+              'name' => 'provider_1',
+              'index' => 0,
+              'bootstrap' => true,
+              'id' => 'vroom',
+              'az' => 'z1',
+              'address' => '10.244.0.4'
+            }],
+            'networks'=> ['default_1'],
+            'properties'=> {
+              'disorder_property' => 'foo',
+              'listen_port'=> 'Kittens',
+            },
+
+          }
         },
-        'my_link_name_2' => {
-          'deployment_name' => 'my_dep_name_2',
-          'networks'=> ['default_2'],
-          'properties'=> {
-            'listen_port'=> 'Dogs'
-          },
-          'instances'=> [{
-                           'name'=> 'provider_2',
-                           'index'=> 0,
-                           'bootstrap'=> false,
-                           'id'=> 'hello',
-                           'az'=> 'z2',
-                           'address'=> '10.244.0.5'
-                         }
-          ]
+        'some-job-2' => {
+          'my_link_name_2' => {
+            'deployment_name' => 'my_dep_name_2',
+            'instances' => [{
+              'name' => 'provider_2',
+              'index' => 0,
+              'bootstrap' => false,
+              'id' => 'hello',
+              'az' => 'z2',
+              'address' => '10.244.0.5'
+            }],
+            'networks'=> ['default_2'],
+            'properties'=> {
+              'disorder_property' => 'foo',
+              'listen_port'=> 'Dogs',
+            },
+          }
         }
       }
     end
 
     it 'stores resolved links correctly' do
-      subject.add_resolved_link('my_link_name_1', link_spec_1)
-      subject.add_resolved_link('my_link_name_2', link_spec_2)
+      subject.add_resolved_link('some-job-1','my_link_name_1', link_spec_1)
+      subject.add_resolved_link('some-job-2','my_link_name_2', link_spec_2)
 
-      expect(subject.resolved_links).to eq(expected_resolved_links)
+      expect(subject.resolved_links.to_json).to eq(expected_resolved_links.to_json)
     end
 
+  end
+
+  describe '#referenced_variable_sets' do
+    let(:spec) do
+      {
+          'name' => 'foobar',
+          'release' => 'appcloud',
+          'instances' => 1,
+          'vm_type' => 'dea',
+          'stemcell' => 'dea',
+          'networks'  => [{'name' => 'fake-network-name'}],
+          'properties' => {},
+          'template' => %w(foo bar),
+      }
+    end
+    let(:variable_set1){ instance_double(Bosh::Director::Models::VariableSet) }
+    let(:variable_set2){ instance_double(Bosh::Director::Models::VariableSet) }
+    let(:instance1){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance2){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance_plan1) { instance_double(BD::DeploymentPlan::InstancePlan) }
+    let(:instance_plan2 ) { instance_double(BD::DeploymentPlan::InstancePlan) }
+
+    before do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+
+      allow(instance1).to receive(:desired_variable_set).and_return(variable_set1)
+      allow(instance2).to receive(:desired_variable_set).and_return(variable_set2)
+
+      allow(instance_plan1).to receive(:instance).and_return(instance1)
+      allow(instance_plan2).to receive(:instance).and_return(instance2)
+    end
+
+    it 'returns a list of variable sets referenced by the needed_instance_plans' do
+      expect(instance_group).to receive(:needed_instance_plans).and_return([instance_plan1,instance_plan2])
+      expect(instance_group.referenced_variable_sets).to contain_exactly(variable_set1, variable_set2)
+    end
+  end
+
+  describe '#bind_new_variable_set' do
+    let(:spec) do
+      {
+        'name' => 'foobar',
+        'release' => 'appcloud',
+        'instances' => 1,
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'networks'  => [{'name' => 'fake-network-name'}],
+        'properties' => {},
+        'template' => %w(foo bar),
+      }
+    end
+    let(:current_variable_set){ instance_double(Bosh::Director::Models::VariableSet) }
+    let(:variable_set_model_1) { instance_double(Bosh::Director::Models::VariableSet) }
+    let(:variable_set_model_2) { instance_double(Bosh::Director::Models::VariableSet) }
+    let(:variable_set_model_3) { instance_double(Bosh::Director::Models::VariableSet) }
+    let(:variable_set_model_4) { instance_double(Bosh::Director::Models::VariableSet) }
+    let(:instance_model_1) { instance_double(Bosh::Director::Models::Instance) }
+    let(:instance_model_2) { instance_double(Bosh::Director::Models::Instance) }
+    let(:instance_model_3) { instance_double(Bosh::Director::Models::Instance) }
+    let(:instance_model_4) { instance_double(Bosh::Director::Models::Instance) }
+    let(:instance_1){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance_2){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance_3){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance_4){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance_plan_1) { instance_double(BD::DeploymentPlan::InstancePlan) }
+    let(:instance_plan_2 ) { instance_double(BD::DeploymentPlan::InstancePlan) }
+    let(:instance_plan_3 ) { instance_double(BD::DeploymentPlan::InstancePlan) }
+    let(:instance_plan_4 ) { instance_double(BD::DeploymentPlan::InstancePlan) }
+
+    before do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+
+      allow(instance_model_1).to receive(:variable_set).and_return(variable_set_model_1)
+      allow(instance_model_2).to receive(:variable_set).and_return(variable_set_model_2)
+      allow(instance_model_3).to receive(:variable_set).and_return(variable_set_model_3)
+      allow(instance_model_4).to receive(:variable_set).and_return(variable_set_model_4)
+
+      allow(instance_1).to receive(:model).and_return(instance_model_1)
+      allow(instance_2).to receive(:model).and_return(instance_model_2)
+      allow(instance_3).to receive(:model).and_return(instance_model_3)
+      allow(instance_4).to receive(:model).and_return(instance_model_4)
+
+      allow(instance_plan_1).to receive(:instance).and_return(instance_1)
+      allow(instance_plan_2).to receive(:instance).and_return(instance_2)
+      allow(instance_plan_3).to receive(:instance).and_return(instance_3)
+      allow(instance_plan_4).to receive(:instance).and_return(instance_4)
+
+      allow(instance_group).to receive(:obsolete_instance_plans).and_return([instance_plan_3])
+    end
+
+    it 'sets the instance object desired_variable_set to the new variable set for all unignored_instance_plans' do
+      expect(instance_group).to receive(:unignored_instance_plans).and_return([instance_plan_1,instance_plan_2])
+
+      expect(instance_1).to receive(:desired_variable_set=).with(current_variable_set)
+      expect(instance_2).to receive(:desired_variable_set=).with(current_variable_set)
+      expect(instance_3).to_not receive(:desired_variable_set=).with(current_variable_set)
+      expect(instance_4).to_not receive(:desired_variable_set=).with(current_variable_set)
+
+      instance_group.bind_new_variable_set(current_variable_set)
+    end
+  end
+
+  describe '#default_network_name' do
+    subject { described_class.new(logger) }
+
+    before do
+      subject.default_network['gateway'] = 'gateway-default-network'
+      subject.default_network['dns'] = 'dns-default-network'
+    end
+
+    it 'returns the gateway network name' do
+      expect(subject.default_network_name).to eq('gateway-default-network')
+    end
   end
 end

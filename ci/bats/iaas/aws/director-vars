@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+exec jq '{
+  "internal_cidr": .PublicCIDR,
+  "internal_gw": .PublicGateway,
+  "reserved_range": [.ReservedRange],
+  "az": .AvailabilityZone,
+  "subnet_id": .PublicSubnetID,
+  "default_security_groups": [.SecurityGroupID],
+  "default_key_name": .KeyPairName,
+  "internal_ip": .DirectorStaticIP,
+  "external_ip": .DirectorEIP,
+  "private_key": env.AWS_SSH_PRIVATE_KEY,
+  "access_key_id": env.AWS_ACCESS_KEY_ID,
+  "secret_access_key": env.AWS_SECRET_ACCESS_KEY,
+  "region": env.AWS_DEFAULT_REGION,
+}' \
+  < environment/metadata

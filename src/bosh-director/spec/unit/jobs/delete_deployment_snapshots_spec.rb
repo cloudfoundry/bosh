@@ -1,26 +1,35 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DeleteDeploymentSnapshots do
     let(:deployment_manager) { instance_double('Bosh::Director::Api::DeploymentManager') }
     let(:deployment_name) { 'deployment' }
-    let!(:deployment) { Models::Deployment.make(name: deployment_name) }
+    let(:deployment) { Models::Deployment.make(name: deployment_name) }
+    let!(:vm1) { Models::Vm.make(instance_id: instance1.id) }
     let!(:instance1) { Models::Instance.make(deployment: deployment) }
     let!(:disk1) { Models::PersistentDisk.make(:instance_id => instance1.id) }
     let!(:snap1a) { Models::Snapshot.make(snapshot_cid: "snap1a", persistent_disk_id: disk1.id) }
     let!(:snap1b) { Models::Snapshot.make(snapshot_cid: "snap1b", persistent_disk_id: disk1.id) }
+    let!(:vm2) { Models::Vm.make(instance_id: instance2.id) }
     let!(:instance2) { Models::Instance.make(deployment: deployment) }
     let!(:disk2) { Models::PersistentDisk.make(:instance_id => instance2.id) }
     let!(:snap2a) { Models::Snapshot.make(snapshot_cid: "snap2a", persistent_disk_id: disk2.id) }
+    let!(:vm3) { Models::Vm.make(instance_id: instance3.id) }
     let!(:instance3) { Models::Instance.make(deployment: deployment) }
     let!(:disk3) { Models::PersistentDisk.make(:instance_id => instance3.id) }
+    let!(:vm4) { Models::Vm.make(instance_id: instance4.id) }
     let!(:instance4) { Models::Instance.make }
     let!(:disk4) { Models::PersistentDisk.make(:instance_id => instance4.id) }
     let!(:snap4a) { Models::Snapshot.make(snapshot_cid: "snap4a", persistent_disk_id: disk4.id) }
 
     subject { described_class.new(deployment_name) }
+
+    before do
+      instance1.active_vm = vm1
+      instance2.active_vm = vm2
+      instance3.active_vm = vm3
+      instance4.active_vm = vm4
+    end
 
     describe 'DJ job class expectations' do
       let(:job_type) { :delete_deployment_snapshots }

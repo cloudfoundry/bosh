@@ -68,6 +68,13 @@ module Bosh::Director
         log_bundles_cleaner.clean
         expect(Models::LogBundle.filter(blobstore_id: 'fake-very-old-blob-id').count).to eq(0)
       end
+
+      it 'does not raise an error if the log bundle was already deleted from the database' do
+        expect(blobstore).to receive(:delete).
+          with('fake-very-old-blob-id') { Models::LogBundle.where(blobstore_id: 'fake-very-old-blob-id').delete }
+
+        expect { log_bundles_cleaner.clean }.not_to raise_error
+      end
     end
   end
 end

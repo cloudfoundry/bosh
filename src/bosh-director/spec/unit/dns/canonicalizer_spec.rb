@@ -14,8 +14,8 @@ module Bosh::Director
       end
 
       it 'should strip any non alpha numeric characters' do
-        expect(Canonicalizer.canonicalize('hello^world')).to eq('helloworld')
-        expect(Canonicalizer.canonicalize('hello^world', :allow_dots => true)).to eq('helloworld')
+        expect(Canonicalizer.canonicalize('hello$world')).to eq('helloworld')
+        expect(Canonicalizer.canonicalize('hello$world', :allow_dots => true)).to eq('helloworld')
       end
 
       it 'should strip dots based on  allow_dots option' do

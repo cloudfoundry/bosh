@@ -6,14 +6,12 @@ module Bosh::Monitor
     class Resurrector < Base
       include Bosh::Monitor::Plugins::HttpRequestHelper
 
-      attr_reader :url
-
       def initialize(options={})
         super(options)
         director = @options['director']
         raise ArgumentError 'director options not set' unless director
 
-        @url              = URI(director['endpoint'])
+        @uri              = URI(director['endpoint'])
         @director_options = director
         @processor        = Bhm.event_processor
         @alert_tracker    = ResurrectorHelper::AlertTracker.new(@options)
@@ -37,7 +35,7 @@ module Bosh::Monitor
         # on the alert so this won't trigger a recreate for other types of alerts
         if deployment && job && id
           agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
-          @alert_tracker.record(agent_key, alert.created_at)
+          @alert_tracker.record(agent_key, alert)
 
           payload = {'jobs' => {job => [id]}}
 
@@ -51,30 +49,37 @@ module Bosh::Monitor
                   'Content-Type' => 'application/json',
                   'authorization' => auth_provider(director_info).auth_header
               },
-              body: Yajl::Encoder.encode(payload)
+              body: JSON.dump(payload)
           }
 
-          @url.path = "/deployments/#{deployment}/scan_and_fix"
+          url = @uri.dup
+          url.path = "/deployments/#{deployment}/scan_and_fix"
+          state = @alert_tracker.state_for(deployment)
 
-          if @alert_tracker.melting_down?(deployment)
-            # freak out
-            ts = Time.now.to_i
+          if state.meltdown?
+            summary = "Skipping resurrection for instance: '#{job}/#{id}'; #{state.summary}"
             @processor.process(:alert,
                                severity: 1,
+                               title: "We are in meltdown",
+                               summary: summary,
                                source: "HM plugin resurrector",
-                               title: "We are in meltdown.",
-                               created_at: ts)
+                               deployment: deployment,
+                               created_at: Time.now.to_i)
 
-            logger.error("(Resurrector) we are in meltdown.")
-          else
-            # queue instead, and only queue if it isn't already in the queue
-            # what if we can't keep up with the failure rate?
-            # - maybe not, maybe the meltdown detection takes care of the rate issue
-            logger.warn("(Resurrector) notifying director to recreate unresponsive VM: #{deployment} #{job}/#{id}")
-
+          elsif state.managed?
+            summary = "Notifying Director to recreate instance: '#{job}/#{id}'; #{state.summary}"
+            @processor.process(:alert,
+                               severity: 4,
+                               title: "Recreating unresponsive VM",
+                               summary: summary,
+                               source: "HM plugin resurrector",
+                               deployment: deployment,
+                               created_at: Time.now.to_i)
             send_http_put_request(url.to_s, request)
-          end
 
+          else
+            logger.info("(Resurrector) state is normal")
+          end
         else
           logger.warn("(Resurrector) event did not have deployment, job and id: #{alert}")
         end
@@ -89,14 +94,13 @@ module Bosh::Monitor
       def director_info
         return @director_info if @director_info
 
-        director_info_url = @url.dup
-        director_info_url.path = '/info'
-        response = send_http_get_request(director_info_url.to_s)
+        url = @uri.dup
+        url.path = '/info'
+        response = send_http_get_request(url.to_s)
         return nil if response.status_code != 200
 
-        @director_info = Yajl::Parser.parse(response.body)
+        @director_info = JSON.parse(response.body)
       end
     end
   end
 end
-

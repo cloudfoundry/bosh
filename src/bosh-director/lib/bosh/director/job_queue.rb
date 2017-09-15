@@ -28,14 +28,16 @@ module Bosh::Director
         :timestamp => Time.now,
         :teams => deployment ? deployment.teams : nil,
         :checkpoint_time => Time.now,
-        :context_id => context_id)
+        :context_id => context_id,
+        :result_output => "",
+        :event_output => "")
       log_dir = File.join(Config.base_dir, 'tasks', task.id.to_s)
       FileUtils.rm_rf(log_dir)
       task_status_file = File.join(log_dir, 'debug')
       FileUtils.mkdir_p(log_dir)
 
       File.open(task_status_file, 'a') do |f|
-        f << format_log_message("Director Version: #{Bosh::Director::VERSION}")
+        f << format_log_message("Director Version: #{Config.version}")
         f << format_log_message("Enqueuing task: #{task.id}")
       end
 

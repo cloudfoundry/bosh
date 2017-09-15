@@ -13,7 +13,7 @@ describe 'Links', type: :integration do
     my_api_instance = director.instance(job, '0', deployment_name: 'simple')
     template = YAML.load(my_api_instance.read_job_template(template, 'config.yml'))
 
-    template['databases'].each do |_, database|
+    template['databases'].select{|key| key == 'main' || key == 'backup_db'}.each do |_, database|
       database.each do |instance|
           expect(instance['address']).to match(pattern)
       end
@@ -129,7 +129,7 @@ describe 'Links', type: :integration do
             instances: 1
         )
         job_spec['azs'] = ['z1']
-        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, "name_space" => {"prop_a" => "job_value", "fibonacci" => 1}}
+        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, 'name_space' => {'prop_a' => 'job_value', 'fibonacci' => 1}}
         job_spec
       end
 
@@ -171,11 +171,11 @@ describe 'Links', type: :integration do
         instances = director.instances
         link_instance = director.find_instance(instances, 'other2', '0')
         template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(["address", "192.168.1.2"], ["properties", {"listen_port"=>8082, "name_space"=>{"prop_a"=>"job_value"}, "fibonacci"=>1}])
+        expect(template['links']).to contain_exactly(['address', '192.168.1.2'], ['properties', {'listen_port' =>8082, 'name_space' =>{'prop_a' => 'job_value'}, 'fibonacci' =>1}])
 
         link_instance = director.find_instance(instances, 'new_job', '0')
         template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(["address", "192.168.1.4"], ["properties", {"listen_port"=>9999, "name_space"=>{"prop_a"=>"default"}}])
+        expect(template['links']).to contain_exactly(['address', '192.168.1.4'], ['properties', {'listen_port' =>9999, 'name_space' =>{'prop_a' => 'default'}}])
       end
     end
 
@@ -303,7 +303,7 @@ describe 'Links', type: :integration do
         it 'should not throw an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
           expect(exit_code).to eq(0)
-          expect(out).to include("Succeeded")
+          expect(out).to include('Succeeded')
         end
       end
 
@@ -481,66 +481,69 @@ Error: Unable to process links for deployment. Errors are:
 
       it 'should successfully compile a release without complaining about missing links in sha2 mode', sha2: true do
         deploy_simple_manifest(manifest_hash: manifest)
-        out = bosh_runner.run("export-release bosh-release/0+dev.1 toronto-os/1", deployment_name: 'simple')
+        out = bosh_runner.run('export-release bosh-release/0+dev.1 toronto-os/1', deployment_name: 'simple')
 
         expect(out).to include('Preparing package compilation: Finding packages to compile')
-        expect(out).to include('Compiling packages: pkg_2/8320802768871474e5630206aa606e3a22ae14096b5c7a836224c8480018cb8b')
-        expect(out).to include('Compiling packages: pkg_3_depends_on_2/b34bd09030e9d6eff29b4cce9948ccbd7d8833bf757e64e4905b1d574bb7b849')
-        expect(out).to include('copying packages: pkg_1/bb9cd0b267e39192bb6728192834f694a6199347b9b9528219c68e8bd1785cbe')
-        expect(out).to include('copying packages: pkg_2/8320802768871474e5630206aa606e3a22ae14096b5c7a836224c8480018cb8b')
-        expect(out).to include('copying packages: pkg_3_depends_on_2/b34bd09030e9d6eff29b4cce9948ccbd7d8833bf757e64e4905b1d574bb7b849')
-        expect(out).to include('copying jobs: addon/33e54f840bf107e3ed940fda30336d89a654ef6903ebd64ab4731998e47f1a06')
-        expect(out).to include('copying jobs: api_server/87508488cc2295169483f58302f001e7dbc97529f3b12809845259154faa521a')
-        expect(out).to include('copying jobs: api_server_with_bad_link_types/d86da5e1b821668455a5bda4f3d6ef1d03995f3bb685236dbefecac59e79372c')
-        expect(out).to include('copying jobs: api_server_with_bad_optional_links/a8a20ada9008ada7720bd74061de0a44c59cf81e0a2827c2b93873afee7b47fd')
-        expect(out).to include('copying jobs: api_server_with_optional_db_link/2ba41548a719665e679f834243916fcdb8c03eaebb69a0d3f806d9c157c372f7')
-        expect(out).to include('copying jobs: api_server_with_optional_links_1/2c64d33e3b4a941e2dba4f86e7568f6c9a954c7b313b6a6d69552bd7741325a7')
-        expect(out).to include('copying jobs: api_server_with_optional_links_2/d67d7780b76c04a01403048c2565ef6fe871e0268596678d9bff355aecc314da')
-        expect(out).to include('copying jobs: backup_database/d04ace47dcaa65e69fac6a3688b866845352a163d0dcfde0f2a0d02dd0293d8f')
-        expect(out).to include('copying jobs: consumer/494eab835be50838c15f0ff6952fd1b10c79a99f3c593391679b5f0f2a2d305d')
-        expect(out).to include('copying jobs: database/f6acdd0dc09c90a9a9d06032d176d479839ed52484ea31dbea72b9450e994136')
-        expect(out).to include('copying jobs: database_with_two_provided_link_of_same_type/9e200cea9e07f1a92da7c5fd4735281b9d14817e220d97c909301f1895e5373b')
-        expect(out).to include('copying jobs: http_endpoint_provider_with_property_types/11abffb51dc49ee44a1825f8911629c4cb7c02dd17057247826c8601cd234118')
-        expect(out).to include('copying jobs: http_proxy_with_requires/fb01af8736f1ff43db6e507cc0f11cbba4ca75408a6f4ea614637f01ce2f93a4')
-        expect(out).to include('copying jobs: http_server_with_provides/46f5cd44ad799db2be2624266c9a9487200ffa18a23bc83df64a19e1413f1e37')
-        expect(out).to include('copying jobs: kv_http_server/11c28a822aa698ee9aa9af81ccf6dc67232e2ab25338aca252bac3e90d4e1d95')
-        expect(out).to include('copying jobs: mongo_db/740fcbd346be1d9895d727608c66c2e73e2e850e888aa24f78830eb94d53de7a')
-        expect(out).to include('copying jobs: node/2b6b3ec34ad9738007a6b861d776b2916e8868986cbe166d6225c508e320e4ad')
-        expect(out).to include('copying jobs: provider/b9f01ed6fc017ab7f3bf4fc098828176685a40bc2cd1e786e04a978465c949d7')
-        expect(out).to include('copying jobs: provider_fail/43ab3579d49542b999641880cb3f357f605758924a8ad1cefb52d10d03e49916')
+        expect(out).to match(/Compiling packages: pkg_2\/[a-f0-9]+/)
+        expect(out).to match(/Compiling packages: pkg_3_depends_on_2\/[a-f0-9]+/)
+        expect(out).to match(/copying packages: pkg_1\/[a-f0-9]+/)
+        expect(out).to match(/copying packages: pkg_3_depends_on_2\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: addon\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_bad_link_types\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_bad_optional_links\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_optional_db_link\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_optional_links_1\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_optional_links_2\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: backup_database\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: consumer\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: database\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: database_with_two_provided_link_of_same_type\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: http_endpoint_provider_with_property_types\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: http_proxy_with_requires\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: http_server_with_provides\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: kv_http_server\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: mongo_db\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: node\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: provider\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: provider_fail\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: tcp_proxy_with_requires\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: tcp_server_with_provides\/[a-f0-9]+/)
 
         expect(out).to include('Succeeded')
       end
 
       it 'should successfully compile a release without complaining about missing links in sha1 mode', sha1: true do
         deploy_simple_manifest(manifest_hash: manifest)
-        out = bosh_runner.run("export-release bosh-release/0+dev.1 toronto-os/1", deployment_name: 'simple')
+        out = bosh_runner.run('export-release bosh-release/0+dev.1 toronto-os/1', deployment_name: 'simple')
 
         expect(out).to include('Preparing package compilation: Finding packages to compile')
-        expect(out).to include('Compiling packages: pkg_2/fa48497a19f12e925b32fcb8f5ca2b42144e4444')
-        expect(out).to include('Compiling packages: pkg_3_depends_on_2/2dfa256bc0b0750ae9952118c428b0dcd1010305')
-        expect(out).to include('copying packages: pkg_1/7a4094dc99aa72d2d156d99e022d3baa37fb7c4b')
-        expect(out).to include('copying packages: pkg_2/fa48497a19f12e925b32fcb8f5ca2b42144e4444')
-        expect(out).to include('copying packages: pkg_3_depends_on_2/2dfa256bc0b0750ae9952118c428b0dcd1010305')
-        expect(out).to include('copying jobs: addon/1c5442ca2a20c46a3404e89d16b47c4757b1f0ca')
-        expect(out).to include('copying jobs: api_server/76ff26229b603294a6f540e53faf68a2424cdf59')
-        expect(out).to include('copying jobs: api_server_with_bad_link_types/058b26819bd6561a75c2fed45ec49e671c9fbc6a')
-        expect(out).to include('copying jobs: api_server_with_bad_optional_links/8a2485f1de3d99657e101fd269202c39cf3b5d73')
-        expect(out).to include('copying jobs: api_server_with_optional_db_link/00831c288b4a42454543ff69f71360634bd06b7b')
-        expect(out).to include('copying jobs: api_server_with_optional_links_1/0efc908dd04d84858e3cf8b75c326f35af5a5a98')
-        expect(out).to include('copying jobs: api_server_with_optional_links_2/15f815868a057180e21dbac61629f73ad3558fec')
-        expect(out).to include('copying jobs: backup_database/29322b71c9a475beae1249873d8f6e136335448b')
-        expect(out).to include('copying jobs: consumer/142c10d6cd586cd9b092b2618922194b608160f7')
-        expect(out).to include('copying jobs: database/f2929b306c9d89bede1b37cc27f8fa71bb1fd8e8')
-        expect(out).to include('copying jobs: database_with_two_provided_link_of_same_type/7f4c5700b68fe4f59588c5ca09c3d4a9f8a93dda')
-        expect(out).to include('copying jobs: http_endpoint_provider_with_property_types/30978e9fd0d29e52fe0369262e11fbcea1283889')
-        expect(out).to include('copying jobs: http_proxy_with_requires/4592ccbff484de43750068a1b7eab120bcf80b50')
-        expect(out).to include('copying jobs: http_server_with_provides/64244f12f2db2e7d93ccfbc13be744df87013389')
-        expect(out).to include('copying jobs: kv_http_server/044ec02730e6d068ecf88a0d37fe48937687bdba')
-        expect(out).to include('copying jobs: mongo_db/6a6e241c0bd5c203397f0213bee9d3d28a4ff35f')
-        expect(out).to include('copying jobs: node/c12835da15038bedad6c49d20a2dda00375a0dc0')
-        expect(out).to include('copying jobs: provider/e1ff4ff9a6304e1222484570a400788c55154b1c')
-        expect(out).to include('copying jobs: provider_fail/314c385e96711cb5d56dd909a086563dae61bc37')
+        expect(out).to match(/Compiling packages: pkg_2\/[a-f0-9]+/)
+        expect(out).to match(/Compiling packages: pkg_3_depends_on_2\/[a-f0-9]+/)
+        expect(out).to match(/copying packages: pkg_1\/[a-f0-9]+/)
+        expect(out).to match(/copying packages: pkg_2\/[a-f0-9]+/)
+        expect(out).to match(/copying packages: pkg_3_depends_on_2\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: addon\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_bad_link_types\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_bad_optional_links\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_optional_db_link\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_optional_links_1\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: api_server_with_optional_links_2\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: backup_database\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: consumer\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: database\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: database_with_two_provided_link_of_same_type\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: http_endpoint_provider_with_property_types\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: http_proxy_with_requires\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: http_server_with_provides\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: kv_http_server\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: mongo_db\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: node\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: provider\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: provider_fail\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: tcp_proxy_with_requires\/[a-f0-9]+/)
+        expect(out).to match(/copying jobs: tcp_server_with_provides\/[a-f0-9]+/)
 
         expect(out).to include('Succeeded')
       end
@@ -762,6 +765,214 @@ Error: Unable to process links for deployment. Errors are:
            }
         )
       end
+
+      context 'when two co-located jobs consume two links with the same name, where each is provided by a different job on the same instance group' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+          manifest
+        end
+
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider_instance_group',
+            templates: [{
+                          'name' => 'http_server_with_provides',
+                          'properties' => {
+                            'listen_port' => 11111,
+                            'name_space' => {
+                              'prop_a' => 'http_provider_some_prop_a'
+                            }
+                          },
+                          'provides' => {'http_endpoint' => {'as' => 'link_http_alias'}}
+                        },
+                        {
+                          'name' => 'tcp_server_with_provides',
+                          'properties' => {
+                            'listen_port' => 77777,
+                            'name_space' => {
+                              'prop_a' => 'tcp_provider_some_prop_a'
+                            }
+                          },
+                          'provides' => {'http_endpoint' => {'as' => 'link_tcp_alias'}}
+                        }
+
+            ],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:consumer_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'consumer_instance_group',
+            templates: [
+              {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_alias'}}},
+              {'name' => 'tcp_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_tcp_alias'}}},
+            ],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        it 'each job should get the correct link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          consumer_instance_group = director.instance('consumer_instance_group', '0')
+
+          http_template = YAML.load(consumer_instance_group.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          tcp_template = YAML.load(consumer_instance_group.read_job_template('tcp_proxy_with_requires', 'config/config.yml'))
+
+          expect(http_template['links']['properties']['listen_port']).to eq(11111)
+          expect(http_template['links']['properties']['name_space']['prop_a']).to eq('http_provider_some_prop_a')
+
+          expect(tcp_template['links']['properties']['listen_port']).to eq(77777)
+          expect(tcp_template['links']['properties']['name_space']['prop_a']).to eq('tcp_provider_some_prop_a')
+
+        end
+      end
+
+      context 'when two co-located jobs consume two links with the same name, where each is provided by the same job on different instance groups' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider1_http, provider2_http, consumer_instance_group]
+          manifest
+        end
+
+        let(:provider1_http) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider1_http_instance_group',
+            templates: [{
+                          'name' => 'http_server_with_provides',
+                          'properties' => {
+                            'listen_port' => 11111,
+                            'name_space' => {
+                              'prop_a' => '1_some_prop_a'
+                            }
+                          },
+                          'provides' => {'http_endpoint' => {'as' => 'link_http_1'}}
+                        }],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:provider2_http) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider2_http_instance_group',
+            templates: [{
+                          'name' => 'http_server_with_provides',
+                          'properties' => {
+                            'listen_port' => 1234,
+                            'name_space' => {
+                              'prop_a' => '2_some_prop_a'
+                            }
+                          },
+                          'provides' => {'http_endpoint' => {'as' => 'link_http_2'}}
+                        }],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:consumer_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'consumer_instance_group',
+            templates: [
+              {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_1'}}},
+              {'name' => 'tcp_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_2'}}},
+            ],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        it 'each job should get the correct link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          consumer_instance_group = director.instance('consumer_instance_group', '0')
+
+          http_template = YAML.load(consumer_instance_group.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+          tcp_template = YAML.load(consumer_instance_group.read_job_template('tcp_proxy_with_requires', 'config/config.yml'))
+
+          expect(http_template['links']['properties']['listen_port']).to eq(11111)
+          expect(http_template['links']['properties']['name_space']['prop_a']).to eq('1_some_prop_a')
+
+          expect(tcp_template['links']['properties']['listen_port']).to eq(1234)
+          expect(tcp_template['links']['properties']['name_space']['prop_a']).to eq('2_some_prop_a')
+
+        end
+      end
+
+      context 'when one job consumes two links of the same type, where each is provided by the same job on different instance groups' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_1_db, provider_2_db, consumer_instance_group]
+          manifest
+        end
+
+        let(:provider_1_db) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider_1_db',
+            templates: [{
+                          'name' => 'backup_database',
+                          'properties' => {
+                            'foo' => 'wow',
+                          },
+                          'provides' => {'backup_db' => {'as' => 'db_1'}}
+                        }],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:provider_2_db) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider_2_db',
+            templates: [{
+                          'name' => 'backup_database',
+                          'properties' => {
+                            'foo' => 'omg_no_keyboard',
+                          },
+                          'provides' => {'backup_db' => {'as' => 'db_2'}}
+                        }],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:consumer_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'consumer_instance_group',
+            templates: [
+              {'name' => 'api_server', 'consumes' => {'db' => {'from' => 'db_1'}, 'backup_db' => {'from' => 'db_2'}}},
+            ],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        it 'each job should get the correct link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          consumer_instance_group = director.instance('consumer_instance_group', '0')
+
+          api_template = YAML.load(consumer_instance_group.read_job_template('api_server', 'config.yml'))
+
+          expect(api_template['databases']['main_properties']).to eq('wow')
+          expect(api_template['databases']['backup_properties']).to eq('omg_no_keyboard')
+
+        end
+      end
+
     end
 
     context 'when provide link is aliased using "as", and the consume link references the old name' do
@@ -856,7 +1067,7 @@ Error: Unable to process links for deployment. Errors are:
           templates: [{'name' => 'node', 'consumes' => first_node_links,'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
-          azs: ["z1"]
+          azs: ['z1']
         )
       end
 
@@ -873,7 +1084,7 @@ Error: Unable to process links for deployment. Errors are:
           templates: [{'name' => 'node', 'consumes' => second_node_links, 'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.11'],
-          azs: ["z1"]
+          azs: ['z1']
         )
       end
 
@@ -1008,26 +1219,32 @@ Error: Unable to process links for deployment. Errors are:
            }
 
            first_deployment_job_spec['networks'] << {
-               'name' => 'test'
-           }
-
-           first_deployment_job_spec['networks'] << {
                'name' => 'dynamic-network',
                'default' => ['dns', 'gateway']
            }
 
+           first_deployment_job_spec['networks'] << {
+               'name' => 'test'
+           }
+
            upload_cloud_config(cloud_config_hash: cloud_config)
+           deploy_simple_manifest(manifest_hash: first_manifest)
+           deploy_simple_manifest(manifest_hash: second_manifest)
          end
 
          it 'should use user specified network from provider job' do
-           deploy_simple_manifest(manifest_hash: first_manifest)
-           deploy_simple_manifest(manifest_hash: second_manifest)
-
            second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
            second_deployment_template = YAML.load(second_deployment_instance.read_job_template('node', 'config.yml'))
 
            expect(second_deployment_template['instances']['node1_ips'].first).to match(/.test./)
            expect(second_deployment_template['instances']['node2_ips'].first).to eq('192.168.1.11')
+         end
+
+         it 'uses the user specified network for link address FQDN' do
+           second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+           second_deployment_template = YAML.load(second_deployment_instance.read_job_template('node', 'config.yml'))
+
+           expect(second_deployment_template['node1_dns']).to eq('q-s0.first-deployment-node.test.first.bosh')
          end
        end
 
@@ -1173,7 +1390,7 @@ Error: Unable to process links for deployment. Errors are:
             }
           end
 
-          it "should choose link from correct network" do
+          it 'should choose link from correct network' do
             upload_cloud_config(cloud_config_hash: cloud_config)
             deploy_simple_manifest(manifest_hash: manifest)
           end
@@ -1343,9 +1560,9 @@ Error: Unable to process links for deployment. Errors are:
         expect(output_2).to match(/Updating instance mysql: mysql\/[a-z0-9\-]+ \(1\)/)
         expect(output_2).to match(/Updating instance postgres: postgres\/[a-z0-9\-]+ \(0\)/)
 
-        current_deployments = bosh_runner.run("deployments", json: true)
+        current_deployments = bosh_runner.run('deployments', json: true)
         #THERE IS WHITESPACE AT THE END OF THE TABLE. DO NOT REMOVE IT
-        expect(table(current_deployments)).to eq([{"Name"=>"simple", "Release(s)"=>"release_with_minimal_links/0+dev.2", "Stemcell(s)"=>"ubuntu-stemcell/1", "Team(s)" => "", "Cloud Config"=>"latest"}])
+        expect(table(current_deployments)).to eq([{'name' => 'simple', 'release_s' => 'release_with_minimal_links/0+dev.2', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
 
 
         # ####################################################################
@@ -1452,6 +1669,155 @@ Error: Unable to process links for deployment. Errors are:
       end
     end
 
+    context 'when the job consumes only links provided in job specs' do
+
+      context 'when the co-located job has implicit links' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  { 'name' => 'provider' },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located job' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+
+      context 'when the co-located job has explicit links' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  {
+                      'name' => 'provider',
+                      'provides' => {'provider' => {'as' => 'link_provider'} }
+                  },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located job' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+
+      context 'when the co-located job uses links from adjacent jobs' do
+        let(:provider_instance_group) do
+          job_spec = Bosh::Spec::Deployments.simple_job(
+              name: 'provider_instance_group',
+              templates: [
+                  { 'name' => 'provider' },
+                  { 'name' => 'consumer' },
+                  { 'name' => 'app_server' }
+              ],
+              instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [provider_instance_group]
+          manifest
+        end
+        it 'should NOT be able to reach the links from the co-located jobs' do
+          out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).to eq(1)
+          expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
+          expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
+          expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
+          expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        end
+      end
+    end
+
+    context 'when the job consumes multiple links of the same type' do
+      let(:provider_instance_group) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'provider_instance_group',
+            templates: [{
+                            'name' => 'database',
+                            'provides' => {'db' => {'as' => 'link_db_alias'}},
+                            'properties' => {
+                                'foo' => 'props_db_bar'
+                            }
+                        },
+                        {
+                            'name' => 'backup_database',
+                            'provides' => {'backup_db' => {'as' => 'link_backup_db_alias'}},
+                            'properties' => {
+                                'foo' => 'props_backup_db_bar'
+                            }
+                        }
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:consumer_instance_group) do
+        job_spec = Bosh::Spec::Deployments.simple_job(
+            name: 'consumer_instance_group',
+            templates: [
+                {
+                    'name' => 'api_server',
+                    'consumes' => {
+                        'db' => {'from' => 'link_db_alias'},
+                        'backup_db' => {'from' => 'link_backup_db_alias'}
+                    }
+                },
+            ],
+            instances: 1
+        )
+        job_spec['azs'] = ['z1']
+        job_spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+        manifest
+      end
+
+      it 'should have different content for each link if consumed from different sources' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        consumer_instance = director.instance('consumer_instance_group', '0')
+        template = YAML.load(consumer_instance.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main_properties']).to eq('props_db_bar')
+        expect(template['databases']['backup_properties']).to eq('props_backup_db_bar')
+      end
+    end
   end
 
   context 'when addon job requires link' do
@@ -1483,8 +1849,8 @@ Error: Unable to process links for deployment. Errors are:
 
       deploy_simple_manifest(manifest_hash: manifest)
 
-      my_sql_instance = director.instance("mysql", '0', deployment_name: 'simple')
-      template = YAML.load(my_sql_instance.read_job_template("addon", 'config.yml'))
+      my_sql_instance = director.instance('mysql', '0', deployment_name: 'simple')
+      template = YAML.load(my_sql_instance.read_job_template('addon', 'config.yml'))
 
       template['databases'].each do |_, database|
         database.each do |instance|
@@ -1548,7 +1914,7 @@ Error: Unable to process links for deployment. Errors are:
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_nil_properties]
 
-      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
 
       expect(exit_code).to eq(0)
     end
@@ -1558,7 +1924,7 @@ Error: Unable to process links for deployment. Errors are:
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['jobs'] = [job_with_link_properties_not_defined_in_release_properties]
 
-      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest,  return_exit_code: true)
 
       expect(exit_code).to eq(0)
     end
@@ -1567,7 +1933,7 @@ Error: Unable to process links for deployment. Errors are:
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['jobs'] = [job_with_manual_consumes_link]
 
-      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
       expect(exit_code).to eq(0)
 
       link_instance = director.instance('property_job', '0')
@@ -1604,7 +1970,7 @@ Error: Unable to process links for deployment. Errors are:
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Error: Unable to process links for deployment. Errors are:")
+      expect(out).to include('Error: Unable to process links for deployment. Errors are:')
       expect(out).to include("- Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'")
       expect(out).to include("- Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'")
       expect(out).to include("- Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'")

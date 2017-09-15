@@ -19,7 +19,6 @@ module Bosh::Director
           @snapshot_manager = SnapshotManager.new
           @stemcell_manager = StemcellManager.new
           @task_manager = TaskManager.new
-          @dns_manager = DnsManagerProvider.create
           @event_manager = EventManager.new(config.record_events)
         end
 

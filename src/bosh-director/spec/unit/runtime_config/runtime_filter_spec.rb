@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe RuntimeConfig::AddonFilter do
+  describe Addon::Filter do
 
-    subject(:addon_filter) { RuntimeConfig::AddonFilter.parse(filter_spec, filter_type) }
+    subject(:addon_filter) { Addon::Filter.parse(filter_spec, filter_type) }
     let(:deployment_name) { 'dep1' }
     let(:deployment_model) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_plan) do
@@ -47,7 +47,7 @@ module Bosh::Director
           let(:deployments) { ['dep1'] }
 
           it 'should return true' do
-            expect(subject.applies?('dep1', instance_group1)).to eq(true)
+            expect(subject.applies?('dep1', [], instance_group1)).to eq(true)
           end
         end
 
@@ -55,7 +55,7 @@ module Bosh::Director
           let(:deployments) { ['dep42'] }
 
           it 'should return false' do
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(false)
           end
         end
       end
@@ -70,14 +70,14 @@ module Bosh::Director
 
         context 'when instance groups contains corresponding job and release' do
           it 'should return true' do
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(true)
           end
         end
 
         context 'when no instance groups contains corresponding job and release' do
           it 'returns false' do
             filter_spec['jobs'] = [{'name' => 'job1', 'release' => '2'}]
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(false)
           end
         end
       end
@@ -92,7 +92,7 @@ module Bosh::Director
 
         context 'when deployment name and job/releases corresponds to filter spec' do
           it 'should return instance groups that contain corresponding job and are in the corresponding deployments' do
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(true)
           end
         end
       end
@@ -106,7 +106,7 @@ module Bosh::Director
           let(:filter_spec) { nil }
 
           it 'should return true' do
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(true)
           end
         end
 
@@ -114,7 +114,7 @@ module Bosh::Director
           let(:filter_spec) { {'jobs' => [], 'deployments' => []} }
 
           it 'returns true' do
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(true)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(true)
           end
         end
 
@@ -128,7 +128,7 @@ module Bosh::Director
           let(:filter_spec) { nil }
 
           it 'should return true' do
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(false)
           end
         end
 
@@ -136,7 +136,7 @@ module Bosh::Director
           let(:filter_spec) { {'jobs' => [], 'deployments' => []} }
 
           it 'returns true' do
-            expect(subject.applies?(deployment_name, instance_group1)).to eq(false)
+            expect(subject.applies?(deployment_name, [], instance_group1)).to eq(false)
           end
         end
 

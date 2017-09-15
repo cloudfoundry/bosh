@@ -36,13 +36,13 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      %w(size).each do |key|
-        context "when #{key} is missing" do
-          before { valid_spec.delete(key) }
+      context 'when cloud_properties is NOT a hash' do
+        before { valid_spec['cloud_properties'] = 'not_hash' }
 
-          it 'does not raise an error' do
-            expect { VmType.new(valid_spec) }.to_not raise_error
-          end
+        it 'raises an error' do
+          expect{
+            subject
+          }.to raise_error(Bosh::Director::ValidationInvalidType)
         end
       end
     end

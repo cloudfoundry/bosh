@@ -19,16 +19,25 @@ describe 'cli: stemcell', type: :integration do
     out = table(bosh_runner.run('stemcells', json: true))
     expect(out).to eq([
       {
-        'Name' => 'ubuntu-stemcell',
-        'Version' => '1',
-        'OS' => 'toronto-os',
-        'CPI' => '',
-        'CID' => "#{expected_id}"
+        'name' => 'ubuntu-stemcell',
+        'version' => '1',
+        'os' => 'toronto-os',
+        'cpi' => '',
+        'cid' => "#{expected_id}"
       }
     ])
 
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
     expect(File).to be_exists(stemcell_path)
+  end
+
+  context 'when cpi does not have corresponding stemcell_formats value' do
+    it 'fails' do
+      stemcell_filename_not_dummy = spec_asset('valid_stemcell_not_dummy_stemcell_format.tgz')
+
+      out = bosh_runner.run("upload-stemcell #{stemcell_filename_not_dummy}", failure_expected: true)
+      expect(out).to match /stemcell_formats of this stemcell are not supported by available cpis/
+    end
   end
 
   context 'if cpi config is used' do
@@ -45,20 +54,19 @@ describe 'cli: stemcell', type: :integration do
 
       expect_table('stemcells', [
           {
-              'Name' => 'ubuntu-stemcell',
-              'OS' => 'toronto-os',
-              'Version' => '1',
-              'CPI' => 'cpi-name1',
-              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1',
+              'cpi' => 'cpi-name1',
+              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
           },
           {
-              'Name' => 'ubuntu-stemcell',
-              'OS' => 'toronto-os',
-              'Version' => '1',
-              'CPI' => 'cpi-name2',
-              'CID' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1',
+              'cpi' => 'cpi-name2',
+              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
           },
-
       ])
     end
   end
@@ -118,11 +126,11 @@ describe 'cli: stemcell', type: :integration do
           out = table(bosh_runner.run('stemcells', json: true))
           expect(out).to eq([
             {
-              'Name' => 'ubuntu-stemcell',
-              'Version' => '1',
-              'OS' => 'toronto-os',
-              'CPI' => '',
-              'CID' => "#{expected_id}"
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => "#{expected_id}"
             }
           ])
 
@@ -140,11 +148,11 @@ describe 'cli: stemcell', type: :integration do
           out = table(bosh_runner.run('stemcells', json: true))
           expect(out).to eq([
             {
-              'Name' => 'ubuntu-stemcell',
-              'Version' => '1',
-              'OS' => 'toronto-os',
-              'CPI' => '',
-              'CID' => "#{new_id}"
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => "#{new_id}"
             }
           ])
 
@@ -175,11 +183,11 @@ describe 'cli: stemcell', type: :integration do
         out = table(bosh_runner.run('stemcells', json: true))
         expect(out).to eq([
           {
-            'Name' => 'ubuntu-stemcell',
-            'Version' => '1',
-            'OS' => 'toronto-os',
-            'CPI' => '',
-            'CID' => "#{expected_id}"
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'os' => 'toronto-os',
+            'cpi' => '',
+            'cid' => "#{expected_id}"
           }
         ])
 
@@ -214,11 +222,11 @@ describe 'cli: stemcell', type: :integration do
             out = table(bosh_runner.run('stemcells', json: true))
             expect(out).to eq([
               {
-                'Name' => 'ubuntu-stemcell',
-                'Version' => '1',
-                'OS' => 'toronto-os',
-                'CPI' => '',
-                'CID' => "#{expected_id}"
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+                'os' => 'toronto-os',
+                'cpi' => '',
+                'cid' => "#{expected_id}"
               }
             ])
 
@@ -237,11 +245,11 @@ describe 'cli: stemcell', type: :integration do
             out = table(bosh_runner.run('stemcells', json: true))
             expect(out).to eq([
             {
-                'Name' => 'ubuntu-stemcell',
-                'Version' => '1',
-                'OS' => 'toronto-os',
-                'CPI' => '',
-                'CID' => "#{new_id}"
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+                'os' => 'toronto-os',
+                'cpi' => '',
+                'cid' => "#{new_id}"
               }
             ])
 
@@ -257,7 +265,7 @@ describe 'cli: stemcell', type: :integration do
 
       context 'when a sha1 is provided' do
         it 'accepts shas' do
-          output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 73b51e1285240898f34b0fac22aba7ad4cc6ac65")
+          output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 bd0c5cc17b6753870f0e6b0155a2122e32649c22")
           expect(output).to match /Save stemcell/
           expect(output).to match /Succeeded/
         end
@@ -267,7 +275,7 @@ describe 'cli: stemcell', type: :integration do
             failure_expected: true,
             return_exit_code: true,
           })
-          expect(output).to match(/Expected stream to have digest 'shawone' but was '73b51e1285240898f34b0fac22aba7ad4cc6ac65'/)
+          expect(output).to match(/Expected stream to have digest 'shawone' but was 'bd0c5cc17b6753870f0e6b0155a2122e32649c22'/)
           expect(exit_code).to eq(1)
         end
 
@@ -279,7 +287,7 @@ describe 'cli: stemcell', type: :integration do
 
         context 'when multiple digests are provided' do
           context 'when the digest is valid' do
-            let(:multidigest_string) { 'sha256:5ca766c62c8eb49d698810096f091ad5b19167d6c2fcd592eb0a99a553b70526;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
+            let(:multidigest_string) { 'sha256:9179cb9d588cd62c8adbdea1f1b7623ab42b5c653232fed335a1343c7109df1d;sha1:bd0c5cc17b6753870f0e6b0155a2122e32649c22' }
 
             it 'accepts and verifies the multiple digests' do
               output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 '#{multidigest_string}'")
@@ -289,7 +297,7 @@ describe 'cli: stemcell', type: :integration do
           end
 
           context 'when the digest is valid' do
-            let(:multidigest_string) { 'sha256:bad256;sha1:73b51e1285240898f34b0fac22aba7ad4cc6ac65' }
+            let(:multidigest_string) { 'sha256:bad256;sha1:bd0c5cc17b6753870f0e6b0155a2122e32649c22' }
 
             it 'accepts and verifies the multiple digests' do
               expect {

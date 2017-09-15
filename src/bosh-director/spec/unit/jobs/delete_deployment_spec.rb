@@ -8,11 +8,14 @@ module Bosh::Director
     subject(:job) { described_class.new('test_deployment', job_options) }
     let(:job_options) { {} }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     before do
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(job).to receive(:task_id).and_return(task.id)
       allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40+00:00'))
+      allow(Config).to receive(:event_log).and_return(event_log)
     end
 
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }

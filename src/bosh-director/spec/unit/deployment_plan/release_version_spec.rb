@@ -177,7 +177,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
         :blobstore_id => 'deadbeef',
         :version => '522',
         :sha1 => 'deadcafe',
-        :logs_json => JSON.generate(%w(a b c))
+        :spec_json => JSON.generate({'logs' => %w(a b c)})
       }
 
       t_dea = BD::Models::Template.make(t_attrs)

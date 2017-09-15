@@ -1,8 +1,11 @@
 <%=
 params = {
   'name' => p('director.name'),
+  'runtime' => {
+    'ip' => spec.ip,
+    'instance' => "#{spec.job.name}/#{spec.id}",
+  },
   'port' => p('director.backend_port'),
-  'encryption' => p('director.encryption'),
   'max_tasks' => p('director.max_tasks'),
   'max_threads' => p('director.max_threads'),
   'logging' => {
@@ -26,6 +29,7 @@ params = {
   'max_vm_create_tries' => p('director.max_vm_create_tries'),
   'enable_post_deploy' => p('director.enable_post_deploy'),
   'enable_nats_delivered_templates' => p('director.enable_nats_delivered_templates'),
+  'enable_cpi_resize_disk' => p('director.enable_cpi_resize_disk'),
   'generate_vm_passwords' => p('director.generate_vm_passwords'),
   'remove_dev_tools' => p('director.remove_dev_tools'),
   'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
@@ -33,6 +37,7 @@ params = {
   'local_dns' => {
       'enabled' => p('director.local_dns.enabled'),
       'include_index' => p('director.local_dns.include_index'),
+      'use_dns_addresses' => p('director.local_dns.use_dns_addresses'),
   },
 }
 
@@ -79,6 +84,12 @@ params['scheduled_jobs'] << {
   'command' => 'ScheduledOrphanCleanup',
   'schedule' => p('director.disks.cleanup_schedule'),
   'params' => [{'max_orphaned_age_in_days' => p('director.disks.max_orphaned_age_in_days')}]
+}
+
+params['scheduled_jobs'] << {
+  'command' => 'ScheduledDnsBlobsCleanup',
+  'schedule' => '0,30 * * * * * UTC',
+  'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
 }
 
 params['record_events'] = p('director.events.record_events')
@@ -160,6 +171,20 @@ if p('blobstore.provider') == 's3'
   if_p('blobstore.sse_kms_key_id') do |sse_kms_key_id|
      blobstore_options['sse_kms_key_id'] = sse_kms_key_id
   end
+elsif p('blobstore.provider') == 'gcs'
+    blobstore_options = {
+    'bucket_name' => p('blobstore.bucket_name'),
+    'credentials_source' => p('blobstore.credentials_source', 'static'),
+    'json_key' => p('blobstore.json_key', nil),
+  }
+
+  if_p('blobstore.storage_class') do |storage_class|
+     blobstore_options['storage_class'] = storage_class
+  end
+
+  if_p('blobstore.encryption_key') do |encryption_key|
+     blobstore_options['encryption_key'] = encryption_key
+  end
 else
   blobstore_options = {
     'endpoint' => "http://#{p('blobstore.address')}:#{p('blobstore.port')}",
@@ -175,10 +200,18 @@ params['blobstore'] = {
 
 params['verify_multidigest_path'] = '/var/vcap/packages/verify_multidigest/bin/verify-multidigest'
 
+params['version'] = '0.0.0'
+
 if p('blobstore.provider') == "s3"
    params['blobstore']['provider'] = "s3cli"
    params['blobstore']['options']['s3cli_config_path'] = "/var/vcap/data/tmp/director"
    params['blobstore']['options']['s3cli_path'] = "/var/vcap/packages/s3cli/bin/s3cli"
+end
+
+if p('blobstore.provider') == "gcs"
+   params['blobstore']['provider'] = "gcscli"
+   params['blobstore']['options']['gcscli_config_path'] = "/var/vcap/data/tmp/director"
+   params['blobstore']['options']['gcscli_path'] = "/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli"
 end
 
 if p('blobstore.provider') == "dav"
@@ -230,47 +263,72 @@ params['user_management'] = user_management
 params['trusted_certs'] = p('director.trusted_certs')
 
 if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
-  params['compiled_package_cache'] = {
-    'provider' => 's3cli',
-    'options' => {
-      'bucket_name' => bucket_name,
-      'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
-      'access_key_id' => p('compiled_package_cache.options.access_key_id', nil),
-      'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil),
-      'region' => p('blobstore.s3_region', nil),
-      's3cli_config_path' => "/var/vcap/data/tmp/director",
-      's3cli_path' => "/var/vcap/packages/s3cli/bin/s3cli",
+  if p('compiled_package_cache.provider') == 's3'
+    params['compiled_package_cache'] = {
+      'provider' => 's3cli',
+      'options' => {
+        'bucket_name' => bucket_name,
+        'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
+        'access_key_id' => p('compiled_package_cache.options.access_key_id', nil),
+        'secret_access_key' => p('compiled_package_cache.options.secret_access_key', nil),
+        'region' => p('blobstore.s3_region', nil),
+        's3cli_config_path' => "/var/vcap/data/tmp/director",
+        's3cli_path' => "/var/vcap/packages/s3cli/bin/s3cli",
+      }
     }
-  }
 
-  options = params['compiled_package_cache']['options']
+    options = params['compiled_package_cache']['options']
 
-  if_p('compiled_package_cache.options.s3_port') do |port|
-     options['port'] = port
+    if_p('compiled_package_cache.options.s3_port') do |port|
+      options['port'] = port
+    end
+
+    if_p('compiled_package_cache.options.host') do |host|
+      options['host'] = host
+    end
+
+    if_p('compiled_package_cache.options.use_ssl') do |use_ssl|
+        options['use_ssl'] = use_ssl
+    end
+
+    if_p('compiled_package_cache.options.ssl_verify_peer') do |ssl_verify_peer|
+        options['ssl_verify_peer'] = ssl_verify_peer
+    end
+
+    if_p('compiled_package_cache.options.s3_signature_version') do |s3_signature_version|
+      options['s3_signature_version'] = s3_signature_version
+    end
+
+    if_p('compiled_package_cache.options.server_side_encryption') do |server_side_encryption|
+      options['server_side_encryption'] = server_side_encryption
+    end
+
+    if_p('compiled_package_cache.options.sse_kms_key_id') do |sse_kms_key_id|
+      options['sse_kms_key_id'] = sse_kms_key_id
+    end
   end
 
-  if_p('compiled_package_cache.options.host') do |host|
-     options['host'] = host
-  end
+  if p('compiled_package_cache.provider') == 'gcs'
+    params['compiled_package_cache'] = {
+      'provider' => 'gcscli',
+      'options' => {
+        'bucket_name' => bucket_name,
+        'credentials_source' => p('compiled_package_cache.options.credentials_source', 'static'),
+        'json_key' => p('compiled_package_cache.options.json_key', nil),
+        'gcscli_config_path' => "/var/vcap/data/tmp/director",
+        'gcscli_path' => "/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli",
+      }
+    }
 
-  if_p('compiled_package_cache.options.use_ssl') do |use_ssl|
-      options['use_ssl'] = use_ssl
-  end
+    options = params['compiled_package_cache']['options']
 
-  if_p('compiled_package_cache.options.ssl_verify_peer') do |ssl_verify_peer|
-      options['ssl_verify_peer'] = ssl_verify_peer
-  end
+    if_p('compiled_package_cache.options.storage_class') do |storage_class|
+      options['storage_class'] = storage_class
+    end
 
-  if_p('compiled_package_cache.options.s3_signature_version') do |s3_signature_version|
-     options['s3_signature_version'] = s3_signature_version
-  end
-
-  if_p('compiled_package_cache.options.server_side_encryption') do |server_side_encryption|
-     options['server_side_encryption'] = server_side_encryption
-  end
-
-  if_p('compiled_package_cache.options.sse_kms_key_id') do |sse_kms_key_id|
-     options['sse_kms_key_id'] = sse_kms_key_id
+    if_p('compiled_package_cache.options.encryption_key') do |encryption_key|
+      options['encryption_key'] = encryption_key
+    end
   end
 end
 
@@ -291,6 +349,14 @@ if_p('director.backup_destination') do |backup_destination|
      params['backup_destination']['options'] = params['backup_destination'].fetch('options', {}).merge!({
        's3cli_config_path' => "/var/vcap/data/tmp/director",
        's3cli_path' => "/var/vcap/packages/s3cli/bin/s3cli"
+     })
+  end
+
+  if backup_destination['provider'] == "gcs"
+     params['backup_destination']['provider'] = 'gcscli'
+     params['backup_destination']['options'] = params['backup_destination'].fetch('options', {}).merge!({
+       'gcscli_config_path' => "/var/vcap/data/tmp/director",
+       'gcscli_path' => "/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli"
      })
   end
 
@@ -368,6 +434,20 @@ if p('blobstore.provider') == "s3"
   sse_kms_key_id = p(['agent.blobstore.sse_kms_key_id', 'blobstore.sse_kms_key_id'], nil)
   unless sse_kms_key_id.nil?
     agent_blobstore_options['sse_kms_key_id'] = sse_kms_key_id
+  end
+elsif p('blobstore.provider') == 'gcs'
+  agent_blobstore_options['bucket_name'] = p('blobstore.bucket_name')
+  agent_blobstore_options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
+  agent_blobstore_options['json_key'] = p(['agent.blobstore.json_key', 'blobstore.json_key'], nil)
+
+  storage_class = p(['agent.blobstore.storage_class', 'blobstore.storage_class'], nil)
+  unless storage_class.nil?
+    agent_blobstore_options['storage_class'] = storage_class
+  end
+
+  encryption_key = p(['agent.blobstore.encryption_key', 'blobstore.encryption_key'], nil)
+  unless encryption_key.nil?
+    agent_blobstore_options['encryption_key'] = encryption_key
   end
 else
   agent_blobstore_options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"

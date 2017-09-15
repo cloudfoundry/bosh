@@ -12,7 +12,7 @@ module Bosh
 
       attr_reader :commands
 
-      def initialize(options)
+      def initialize(options, context)
         @options = options
 
         @base_dir = options['dir']
@@ -32,7 +32,7 @@ module Bosh
           ))
 
         @commands = CommandTransport.new(@base_dir, @logger)
-        @inputs_recorder = InputsRecorder.new(@base_dir, @logger)
+        @inputs_recorder = InputsRecorder.new(@base_dir, @logger, context)
 
         prepare
       rescue Errno::EACCES
@@ -133,6 +133,7 @@ module Bosh
 
           # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
+        raise Bosh::Clouds::VMNotFound if commands.raise_vmnotfound
         # rubocop:enable HandleExceptions
       ensure
         free_ips(vm_cid)
@@ -149,6 +150,11 @@ module Bosh
       def has_vm(vm_cid)
         validate_and_record_inputs(HAS_VM_SCHEMA, __method__, vm_cid)
         @vm_repo.exists?(vm_cid)
+      end
+
+      def info
+        record_inputs(__method__, nil)
+        {stemcell_formats: ["dummy"]}
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
@@ -181,7 +187,7 @@ module Bosh
         unless disk_attached_to_vm?(vm_cid, disk_id)
           raise Bosh::Clouds::DiskNotAttached, "#{disk_id} is not attached to instance #{vm_cid}"
         end
-        FileUtils.rm(attachment_file(vm_cid, disk_id))
+        FileUtils.rm_rf(attachment_path(disk_id))
 
         agent_id = agent_id_for_vm_id(vm_cid)
         settings = read_agent_settings(agent_id)
@@ -222,9 +228,26 @@ module Bosh
         FileUtils.rm(snapshot_file(snapshot_id))
       end
 
+      RESIZE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, new_size: Integer } }
+      def resize_disk(disk_id, new_size)
+        validate_and_record_inputs(RESIZE_DISK_SCHEMA, __method__, disk_id, new_size)
+
+        raise Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotImplemented' if commands.raise_resize_disk_not_implemented
+
+        disk_info_file = disk_file(disk_id)
+        disk_info = JSON.parse(File.read(disk_info_file))
+        disk_info['size'] = new_size
+        File.write(disk_info_file, JSON.generate(disk_info))
+      end
+
       SET_VM_METADATA_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, metadata: Hash} }
       def set_vm_metadata(vm_cid, metadata)
         validate_and_record_inputs(SET_VM_METADATA_SCHEMA, __method__, vm_cid, metadata)
+      end
+
+      SET_DISK_METADATA_SCHEMA = Membrane::SchemaParser.parse { {disk_cid: String, metadata: Hash} }
+      def set_disk_metadata(disk_cid, metadata)
+        validate_and_record_inputs(SET_DISK_METADATA_SCHEMA, __method__, disk_cid, metadata)
       end
 
       # Additional Dummy test helpers
@@ -355,6 +378,13 @@ module Bosh
             err: agent_log,
           }
         )
+
+        begin
+          sleep 0.1
+          Process.getpgid(agent_pid)
+        rescue => e
+          raise RuntimeError, "Expected agent to be running: #{e}"
+        end
 
         Process.detach(agent_pid)
 
@@ -567,6 +597,28 @@ module Bosh
           CreateVmCommand.new(ip_address, azs_to_ip, failed)
         end
 
+        def make_delete_vm_to_raise_vmnotfound
+          @logger.info('Making delete_vm method to raise VMNotFound exception')
+          FileUtils.mkdir_p(File.dirname(raise_vmnotfound_path))
+          File.write(raise_vmnotfound_path, '')
+        end
+
+        def raise_vmnotfound
+          @logger.info('Reading delete_vm configuration')
+          File.exists?(raise_vmnotfound_path)
+        end
+
+        def make_resize_disk_to_raise_not_implemented
+          @logger.info('Making resize_disk method to raise NotImplemented exception')
+          FileUtils.mkdir_p(File.dirname(raise_resize_disk_not_implemented_path))
+          FileUtils.touch(raise_resize_disk_not_implemented_path)
+        end
+
+        def raise_resize_disk_not_implemented
+          @logger.info('Reading resize_disk_not_implemented')
+          File.exists?(raise_resize_disk_not_implemented_path)
+        end
+
         private
 
         def azs_path
@@ -580,6 +632,15 @@ module Bosh
         def failed_path
           File.join(@cpi_commands, 'create_vm', 'fail')
         end
+
+        def raise_vmnotfound_path
+          File.join(@cpi_commands, 'delete_vm', 'fail')
+        end
+
+        def raise_resize_disk_not_implemented_path
+          File.join(@cpi_commands, 'resize_disk', 'not_implemented')
+        end
+
       end
 
       class ConfigureNetworksCommand < Struct.new(:not_supported); end
@@ -602,14 +663,15 @@ module Bosh
       end
 
       class InputsRecorder
-        def initialize(base_dir, logger)
+        def initialize(base_dir, logger, context)
           @cpi_inputs_dir = File.join(base_dir, 'cpi_inputs')
           @logger = logger
+          @context = context
         end
 
         def record(method, args)
           FileUtils.mkdir_p(@cpi_inputs_dir)
-          data = {method_name: method, inputs: args}
+          data = {method_name: method, inputs: args, context: @context}
           @logger.debug("Saving input for #{method} <redacted> #{ordered_file_path}")
           File.open(ordered_file_path, 'a') { |f| f.puts(JSON.dump(data)) }
         end
@@ -626,7 +688,7 @@ module Bosh
           result = []
           File.read(ordered_file_path).split("\n").each do |request|
             data = JSON.parse(request)
-            result << CpiInvocation.new(data['method_name'], data['inputs'])
+            result << CpiInvocation.new(data['method_name'], data['inputs'], data['context'])
           end
           result
         end
@@ -671,7 +733,7 @@ module Bosh
         end
       end
 
-      class CpiInvocation < Struct.new(:method_name, :inputs); end
+      class CpiInvocation < Struct.new(:method_name, :inputs, :context); end
     end
   end
 end

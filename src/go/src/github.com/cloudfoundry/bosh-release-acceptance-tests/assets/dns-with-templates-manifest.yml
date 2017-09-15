@@ -1,0 +1,50 @@
+---
+name: dns-with-templates
+
+update:
+  canaries: 1
+  max_in_flight: 10
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000
+
+instance_groups:
+- name: test-agent
+  instances: 1
+  azs: [z1]
+  jobs:
+  - name: bosh-dns
+    release: bosh-dns
+  - name: query-with-az-filter
+    release: linked-template-release
+  - name: query-all
+    release: linked-template-release
+  vm_type: default
+  stemcell: default
+  networks:
+  - name: default
+
+- name: provider
+  jobs:
+  - name: bosh-dns
+    release: bosh-dns
+  - name: link-provider
+    release: linked-template-release
+  instances: 3
+  azs: [z1,z2]
+  vm_type: default
+  stemcell: default
+  networks:
+  - name: default
+
+releases:
+- name: bosh-dns
+  version: latest
+  url: file://((dns-release-path))
+- name: linked-template-release
+  version: create
+  url: file://((linked-template-release-path))
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest

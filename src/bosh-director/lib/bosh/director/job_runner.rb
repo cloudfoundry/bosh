@@ -1,24 +1,25 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require 'common/logging/filters'
 
 module Bosh::Director
   class JobRunner
 
     # @param [Class] job_class Job class to instantiate and run
     # @param [Integer] task_id Existing task id
-    def initialize(job_class, task_id)
+    def initialize(job_class, task_id, worker_name)
       unless job_class.kind_of?(Class) &&
         job_class <= Jobs::BaseJob
         raise DirectorError, "Invalid director job class '#{job_class}'"
       end
 
       @task_id = task_id
-      setup_task_logging
-
+      @worker_name = worker_name
+      setup_task_logging_for_files
       task_manager = Bosh::Director::Api::TaskManager.new
 
       @job_class = job_class
       @task_logger.info("Looking for task with task id #{@task_id}")
       @task = task_manager.find_task(@task_id)
+      setup_task_logging_for_db
       @task_logger.info("Found task #{@task.inspect}")
     end
 
@@ -26,6 +27,7 @@ module Bosh::Director
     def run(*args)
       Config.current_job = nil
 
+      @task_logger.info("Running from worker '#{@worker_name}' on #{Config.runtime['instance']} (#{Config.runtime['ip']})")
       @task_logger.info("Starting task: #{@task_id}")
       started_at = Time.now
 
@@ -39,25 +41,22 @@ module Bosh::Director
 
     # Sets up job logging.
     # @return [void]
-    def setup_task_logging
+    def setup_task_logging_for_files
       log_dir = File.join(Config.base_dir, 'tasks', @task_id.to_s)
       FileUtils.mkdir_p(log_dir)
 
       debug_log = File.join(log_dir, 'debug')
-      event_log = File.join(log_dir, 'event')
-      result_log = File.join(log_dir, 'result')
 
       @task_logger = Logging::Logger.new('DirectorJobRunner')
       shared_appender = Logging.appenders.file(
         'DirectorJobRunnerFile',
         filename: debug_log,
-        layout: ThreadFormatter.layout
+        layout: ThreadFormatter.layout,
+        filters: Bosh::Common::Logging.default_filters,
       )
       @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level
 
-      Config.event_log = EventLog::Log.new(event_log)
-      Config.result = TaskResultFile.new(result_log)
       Config.logger = @task_logger
 
       Config.db.logger = @task_logger
@@ -66,6 +65,13 @@ module Bosh::Director
       cpi_log = File.join(log_dir, 'cpi')
       Config.cloud_options['properties'] ||= {}
       Config.cloud_options['properties']['cpi_log'] = cpi_log
+    end
+
+    # Sets up job logging.
+    # @return [void]
+    def setup_task_logging_for_db
+      Config.event_log = EventLog::Log.new(TaskDBWriter.new(:event_output, @task.id))
+      Config.result = TaskDBWriter.new(:result_output, @task.id)
     end
 
     # Instantiates and performs director job.
@@ -85,27 +91,12 @@ module Bosh::Director
 
       @task_logger.info("Performing task: #{@task.inspect}")
 
-      @task.state = :processing
       @task.timestamp = Time.now
       @task.started_at = Time.now
       @task.checkpoint_time = Time.now
       @task.save
 
-      result = nil
-      if job.dry_run?
-        Bosh::Director::Config.db.transaction(:rollback => :always) do
-          if Bosh::Director::Config.dns_db
-            Bosh::Director::Config.dns_db.transaction(:rollback => :always) do
-              result = job.perform
-            end
-          else
-            result = job.perform
-          end
-        end
-      else
-        result = job.perform
-      end
-
+      result = job.perform
 
       @task_logger.info('Done')
       finish_task(:done, result)
@@ -156,6 +147,7 @@ module Bosh::Director
     # @param [Symbol] state Task completion state
     # @param [#to_s] result
     def finish_task(state, result)
+      @task.refresh
       @task.state = state
       @task.result = truncate(result.to_s)
       @task.timestamp = Time.now

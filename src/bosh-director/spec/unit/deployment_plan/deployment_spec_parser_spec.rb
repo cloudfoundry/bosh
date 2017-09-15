@@ -513,6 +513,79 @@ module Bosh::Director
           end
         end
       end
+
+      describe 'features key' do
+        context 'when features spec is valid' do
+          it 'parses provided features' do
+            features_spec = {'use_dns_addresses' => true}
+            manifest_hash.merge!('features' => features_spec)
+
+            features_obj = parsed_deployment.features
+            expect(features_obj.use_dns_addresses).to eq(true)
+          end
+        end
+
+        context 'when features spec is NOT valid' do
+          it 'throws an error' do
+            features_spec = {'use_dns_addresses' => 6}
+            manifest_hash.merge!('features' => features_spec)
+
+            expect{ parsed_deployment.features }.to raise_error Bosh::Director::FeaturesInvalidFormat
+          end
+        end
+
+        context 'when features spec is NOT specified' do
+          it 'defaults features object' do
+            features_obj = parsed_deployment.features
+            expect(features_obj.use_dns_addresses).to be_nil
+          end
+        end
+      end
+
+      describe 'addons' do
+        context 'when addon spec is valid' do
+          it 'parses provided addons' do
+            addon_spec = [
+                {
+                  'name' => 'addon1',
+                  'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}, {'name' => 'dummy_with_package', 'release' => 'dummy2'}],
+                  'properties' => {'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}}
+                }
+            ]
+            manifest_hash.merge!('releases' => [{'name' => 'dummy2', 'version' => '2'}]).merge!('addons' => addon_spec)
+
+            result_obj = parsed_deployment.addons
+
+            expect(result_obj.count).to eq(1)
+            expect(result_obj.first.name).to eq('addon1')
+            expect(result_obj.first.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil},
+              {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil}])
+            expect(result_obj.first.properties).to eq({'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
+          end
+
+          it 'allows to not include addons' do
+            result_obj = parsed_deployment.addons
+
+            expect(result_obj.count).to eq(0)
+          end
+        end
+
+        context 'when addon spec is NOT valid' do
+          it 'throws an error' do
+            addon_spec = [
+              {
+                'name' => 'addon1',
+                'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}, {'name' => 'dummy_with_package', 'release' => 'dummy2'}],
+                'properties' => {'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}},
+                'include' => {'deployments' => ['dep1']},
+              }
+            ]
+            manifest_hash.merge!('releases' => [{'name' => 'dummy2', 'version' => '2'}]).merge!('addons' => addon_spec)
+
+            expect{ parsed_deployment.addons }.to raise_error Bosh::Director::AddonDeploymentFilterNotAllowed
+          end
+        end
+      end
     end
   end
 end

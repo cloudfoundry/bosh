@@ -1,6 +1,7 @@
 name: nats
 dependencies:
-  - ruby
+  - ruby-2.4
+
 files:
   - nats/**/*
 

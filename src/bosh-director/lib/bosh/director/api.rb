@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module Api
   end
@@ -19,8 +17,6 @@ require 'bosh/director/api/snapshot_manager'
 require 'bosh/director/api/stemcell_manager'
 require 'bosh/director/api/task_manager'
 require 'bosh/director/api/user/config_user_manager'
-require 'bosh/director/api/user/database_user_manager'
-require 'bosh/director/api/user/user_manager_provider'
 require 'bosh/director/api/backup_manager'
 require 'bosh/director/api/resurrector_manager'
 require 'bosh/director/api/restore_manager'

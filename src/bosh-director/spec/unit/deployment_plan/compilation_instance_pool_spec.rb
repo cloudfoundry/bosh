@@ -2,9 +2,12 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 module Bosh::Director
   describe DeploymentPlan::CompilationInstancePool do
+    subject(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, instance_provider, logger, instance_deleter, max_instance_count) }
+
     let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { Config.cloud }
 
+    let(:instance_provider) { DeploymentPlan::InstanceProvider.new(deployment_plan, vm_creator, logger) }
     let(:stemcell) do
       model = Models::Stemcell.make(cid: 'stemcell-cid', name: 'stemcell-name')
       stemcell = DeploymentPlan::Stemcell.new('stemcell-name-alias', 'stemcell-name', nil, model.version)
@@ -28,8 +31,9 @@ module Bosh::Director
 
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
-    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster) }
-    let(:job_renderer) { instance_double(JobRenderer, render_job_instances: nil) }
+    let(:dns_encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index([]) }
+    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
     let(:compilation_config) do
       compilation_spec = {
@@ -49,7 +53,8 @@ module Bosh::Director
         model: deployment_model,
         name: 'mycloud',
         ip_provider: ip_provider,
-        recreate: false
+        recreate: false,
+        template_blob_cache: template_blob_cache,
       )
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}
@@ -83,7 +88,6 @@ module Bosh::Director
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
     let(:ip_provider) {instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil)}
     let(:max_instance_count) { 1 }
-    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, max_instance_count) }
     let(:expected_network_settings) do
       {
         'a' => {
@@ -99,7 +103,7 @@ module Bosh::Director
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:name).and_return('fake-director-name')
-      allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:get_state)
@@ -155,7 +159,7 @@ module Bosh::Director
         action
 
         compilation_instance = Models::Instance.find(uuid: 'instance-uuid-1')
-        expect(compilation_instance.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(trusted_certs))
+        expect(compilation_instance.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(trusted_certs))
       end
 
       it 'should record creation event' do
@@ -165,7 +169,7 @@ module Bosh::Director
         }.to change {
           Bosh::Director::Models::Event.count }.from(0).to(4)
 
-        event_1 = Bosh::Director::Models::Event.first
+        event_1 = Bosh::Director::Models::Event.order(:id).first
         expect(event_1.user).to eq('user')
         expect(event_1.action).to eq('create')
         expect(event_1.object_type).to eq('instance')
@@ -264,14 +268,19 @@ module Bosh::Director
           DeploymentPlan::CompilationConfig.new(compilation_spec, {'foo-az' => availability_zone }, [])
         end
 
-        let(:compilation_instance_pool) do
-          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, 4)
-        end
+        let(:max_instance_count) { 4 }
 
         let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
 
         let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
-        let(:cloud_config) { Models::CloudConfig.make(manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
+        let(:cloud_config) { Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
+        let(:dns_encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index([availability_zone]) }
+        let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
+
+        before do
+          allow(vm_creator).to receive(:create_for_instance_plan)
+          allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster).and_return(vm_creator)
+        end
 
         it 'spins up vm in the az' do
           vm_instance = nil
@@ -305,9 +314,7 @@ module Bosh::Director
           DeploymentPlan::CompilationConfig.new(compilation_spec, {}, [DeploymentPlan::VmType.new(vm_type_spec)])
         end
 
-        let(:compilation_instance_pool) do
-          DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, deployment_plan, logger, instance_deleter, 4)
-        end
+        let(:max_instance_count) { 4 }
 
         it 'spins up vm with the correct VM type' do
           expect(cloud).to receive(:create_vm).with(
@@ -390,6 +397,45 @@ module Bosh::Director
           allow(vm_creator).to receive(:create_for_instance_plan).and_raise(create_instance_error)
           compilation_instance_pool.with_single_use_vm(stemcell)
         end
+      end
+    end
+
+    describe '.create' do
+      let(:instance_reuser) { InstanceReuser.new }
+      let(:disk_manager) { DiskManager.new(logger) }
+      let(:agent_broadcaster) { AgentBroadcaster.new }
+      let(:powerdns_manager) { PowerDnsManagerProvider.create }
+      let(:vm_deleter) { instance_double('Bosh::Director::VmDeleter') }
+      let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
+      let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
+      let(:instance_provider) { instance_double('Bosh::Director::DeploymentPlan::InstanceProvider') }
+
+      before do
+        allow(InstanceReuser).to receive(:new).and_return(instance_reuser)
+        allow(DiskManager).to receive(:new).with(logger).and_return(disk_manager)
+        allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
+        allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
+        allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
+        allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
+        allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
+        allow(DeploymentPlan::InstanceProvider).to receive(:new).with(deployment_plan, vm_creator, logger).and_return(instance_provider)
+        allow(Config).to receive(:logger).and_return(logger)
+        allow(Config).to receive(:enable_virtual_delete_vms).and_return(false)
+        allow(deployment_plan).to receive(:availability_zones).and_return([])
+
+        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+      end
+
+      it 'creates the needed collaborators and news up a CompilationInstancePool' do
+        expect(DeploymentPlan::CompilationInstancePool).to receive(:new).with(
+          instance_reuser,
+          instance_provider,
+          logger,
+          instance_deleter,
+          n_workers,
+        ).and_call_original
+
+        DeploymentPlan::CompilationInstancePool.create(deployment_plan)
       end
     end
   end

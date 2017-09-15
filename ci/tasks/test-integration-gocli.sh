@@ -46,6 +46,10 @@ chmod +x /usr/local/bin/gobosh
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 
+agent_path=bosh-src/src/go/src/github.com/cloudfoundry/
+mkdir -p $agent_path
+cp -r bosh-agent $agent_path
+
 cd bosh-src/src
 
 print_git_state

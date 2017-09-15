@@ -4,11 +4,13 @@ require 'rspec'
 require 'rspec/its'
 require 'sequel'
 require 'logging'
+require 'securerandom'
+
 require_relative '../../bosh-director/lib/bosh/director/config'
 
 module DBSpecHelper
   class << self
-    attr_reader :db
+    attr_reader :db, :director_migrations_dir
 
     def init
       @temp_dir = Bosh::Director::Config.generate_temp_dir
@@ -21,13 +23,17 @@ module DBSpecHelper
       @db_name = SecureRandom.uuid.gsub('-', '')
       init_logger = Logging::Logger.new('TestLogger')
 
+      host = ENV['DB_HOST'] || '127.0.0.1'
+      user = ENV['DB_USER']
+      password = ENV['DB_PASSWORD']
+
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
-          @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, 5432)
+          @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, 5432, Bosh::Core::Shell.new, user || 'postgres', password || '', host)
         when 'mysql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", init_logger)
+          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", init_logger, Bosh::Core::Shell.new, user || 'root', password || 'password', host)
         when 'sqlite'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)
@@ -39,6 +45,7 @@ module DBSpecHelper
 
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
+      Sequel.default_timezone = :utc
       @db = Sequel.connect(@db_helper.connection_string, db_opts)
     end
 
@@ -80,6 +87,10 @@ module DBSpecHelper
 
     def get_latest_migration_script
       Dir.entries(@director_migrations_dir).select {|f| !File.directory? f}.sort.last
+    end
+
+    def get_migrations
+      Dir.glob(File.join(@director_migrations_dir, '..', '**', '[0-9]*_*.rb'))
     end
   end
 end

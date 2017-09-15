@@ -1,0 +1,8 @@
+---
+name: emoji-errand
+templates:
+  run: bin/run
+
+packages: []
+
+properties: {}

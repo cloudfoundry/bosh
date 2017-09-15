@@ -122,7 +122,7 @@ module Bhm
         context 'bad alert' do
           it 'does not increment alerts_processed' do
             expect(event_processor).to receive(:process).at_least(:once).and_raise(Bosh::Monitor::InvalidEvent)
-            alert = Yajl::Encoder.encode({'id' => '778', 'severity' => -2, 'title' => nil, 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
+            alert = JSON.dump({'id' => '778', 'severity' => -2, 'title' => nil, 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
             expect {
               manager.process_event(:alert, 'hm.agent.alert.007', alert)
@@ -133,7 +133,7 @@ module Bhm
 
         context 'good alert' do
           it 'increments alerts_processed' do
-            good_alert = Yajl::Encoder.encode({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
+            good_alert = JSON.dump({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
             expect {
               manager.process_event(:alert, 'hm.agent.alert.007', good_alert)
@@ -226,6 +226,29 @@ module Bhm
         end
       end
 
+      describe '#get_deleted_agents_for_deployment' do
+        it 'can provide agent information for a deployment' do
+          instance_1 = Bhm::Instance.create({'id' => 'iuuid1',  'index' => '0', 'job' => 'mutator', 'expects_vm' => true})
+          instance_2 = Bhm::Instance.create({'id' => 'iuuid2',  'index' => '0', 'job' => 'nats', 'expects_vm' => true})
+          instance_3 = Bhm::Instance.create({'id' => 'iuuid3',  'index' => '28', 'job' => 'mysql_node', 'expects_vm' => true})
+
+          manager.sync_deployments([{'name' => 'mycloud'}])
+          manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
+
+          agents = manager.get_deleted_agents_for_deployment('mycloud')
+          expect(agents.size).to eq(3)
+          agents['iuuid3'].deployment == 'mycloud'
+          agents['iuuid3'].job == 'mutator'
+          agents['iuuid3'].index == '28'
+        end
+
+        it 'can provide agent information for missing deployment' do
+          agents = manager.get_deleted_agents_for_deployment('mycloud')
+
+          expect(agents.size).to eq(0)
+        end
+      end
+
 
       describe '#get_instances_for_deployment' do
         before do
@@ -268,6 +291,7 @@ module Bhm
               :alert,
               {
                   severity: 2,
+                  category: 'vm_health',
                   source: 'mycloud: mutator(some-sort-of-uuid) [id=007, index=0, cid=]',
                   title: '007 has timed out',
                   created_at: anything,
@@ -291,7 +315,7 @@ module Bhm
           manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
           expect(manager.analyze_agents).to eq(3)
 
-          alert = Yajl::Encoder.encode({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
+          alert = JSON.dump({'id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i})
 
           # Alert for already managed agent
           manager.process_event(:alert, 'hm.agent.alert.007', alert)
@@ -331,6 +355,16 @@ module Bhm
         expect(event_processor).to_not receive(:process)
         expect(manager.analyze_instance(Bhm::Instance.create(instance))).to be(true)
       end
+
+      context 'when the instances expects a VM, and does not have one' do
+        it 'sends an alert' do
+          instance = {'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => nil, 'job' => 'mutator', 'expects_vm' => true}
+          manager.sync_instances('my_deployment', [instance])
+
+          expect(event_processor).to receive(:process)
+          expect(manager.analyze_instance(Bhm::Instance.create(instance))).to be(true)
+        end
+      end
     end
 
     describe '#analyze_instances' do
@@ -360,6 +394,7 @@ module Bhm
             :alert,
             {
                 severity: 2,
+                category: 'vm_health',
                 source: 'my_deployment: mutator(instance-uuid) [agent_id=007, index=0, cid=]',
                 title: 'instance-uuid has no VM',
                 created_at: anything,
@@ -383,11 +418,11 @@ module Bhm
         allow(EM).to receive(:schedule).and_yield
       end
 
-      it 'has the cloudwatch plugin' do
-        expect(Bhm::Plugins::CloudWatch).to receive(:new).with(
+      it 'has the tsdb plugin' do
+        expect(Bhm::Plugins::Tsdb).to receive(:new).with(
             {
-                'access_key_id' => 'access_key',
-                'secret_access_key' => 'secret_access_key'
+              'host' => 'localhost',
+              'port' => 4242,
             }
         ).and_call_original
 

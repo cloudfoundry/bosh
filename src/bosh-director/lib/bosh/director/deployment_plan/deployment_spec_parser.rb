@@ -32,6 +32,8 @@ module Bosh::Director
         parse_update(parse_options)
         parse_instance_groups(parse_options)
         parse_variables
+        parse_features
+        parse_addons
 
         @deployment
       end
@@ -53,6 +55,10 @@ module Bosh::Director
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
           :class => Hash, :default => {})
+      end
+
+      def parse_addons
+        @deployment.addons = Addon::Parser.new(@deployment.releases, @deployment_manifest, Addon::DEPLOYMENT_LEVEL).parse
       end
 
       def parse_releases
@@ -105,6 +111,11 @@ module Bosh::Director
       def parse_variables
         variables_spec = safe_property(@deployment_manifest, 'variables', :class => Array, :default => [])
         @deployment.set_variables(VariablesSpecParser.new(@logger).parse(variables_spec))
+      end
+
+      def parse_features
+        features_spec = safe_property(@deployment_manifest, 'features', :class => Hash, :default => {})
+        @deployment.set_features(DeploymentFeaturesParser.new(@logger).parse(features_spec))
       end
     end
   end

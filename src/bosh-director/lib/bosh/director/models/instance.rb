@@ -6,12 +6,14 @@ module Bosh::Director::Models
     one_to_many :persistent_disks
     one_to_many :rendered_templates_archives
     one_to_many :ip_addresses
+    one_to_many :vms
     many_to_many :templates
-    many_to_one :variable_set, :class => 'Bosh::Director::Models::VariableSet'
+    many_to_one :variable_set, class: 'Bosh::Director::Models::VariableSet'
 
     def validate
       validates_presence [:deployment_id, :job, :index, :state]
       validates_unique [:deployment_id, :job, :index]
+      validates_unique [:vms].sort.first
       validates_integer :index
       validates_includes %w(started stopped detached), :state
     end
@@ -131,12 +133,31 @@ module Bosh::Director::Models
       spec['env'] || {}
     end
 
-    def credentials
-      object_or_nil(credentials_json)
+    def active_vm
+      Vm.first(instance_id: id, active: true)
     end
 
-    def credentials=(spec)
-      self.credentials_json = json_encode(spec)
+    def active_vm=(new_active_vm)
+      old_active_vm = active_vm
+      Bosh::Director::Config.db.transaction do
+        old_active_vm.update(active: false) unless old_active_vm.nil?
+        new_active_vm.update(active: true) unless new_active_vm.nil?
+      end
+    end
+
+    def agent_id
+      instance_active_vm = active_vm
+      instance_active_vm.nil? ? nil : instance_active_vm.agent_id
+    end
+
+    def vm_cid
+      instance_active_vm = active_vm
+      instance_active_vm.nil? ? nil : instance_active_vm.cid
+    end
+
+    def vm_created_at
+      instance_active_vm = active_vm
+      instance_active_vm.nil? || instance_active_vm.created_at.nil? ? nil : instance_active_vm.created_at.utc.iso8601
     end
 
     def lifecycle
@@ -146,6 +167,15 @@ module Bosh::Director::Models
 
     def expects_vm?
       lifecycle == 'service' && ['started', 'stopped'].include?(self.state)
+    end
+
+    def has_important_vm?
+      active_vm != nil && state != 'stopped' && !ignore
+    end
+
+    def trusted_certs_sha1
+      instance_active_vm = active_vm
+      instance_active_vm.nil? ? ::Digest::SHA1.hexdigest('') : instance_active_vm.trusted_certs_sha1
     end
 
     private

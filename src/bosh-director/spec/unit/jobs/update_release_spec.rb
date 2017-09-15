@@ -9,6 +9,13 @@ module Bosh::Director
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:task) { Models::Task.make(id: 42) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+
+    before {
+      allow(Config).to receive(:event_log).and_return(event_log)
+    }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :update_release }
@@ -443,7 +450,7 @@ module Bosh::Director
                   'fingerprint' => 'fake-fingerprint-2',
                   'name' => 'fake-job-2',
                   'version' => 'fake-version-2',
-                  'templates' => {}
+                  'templates' => {},
               }
           ], release_dir)
           job.perform
@@ -513,14 +520,7 @@ module Bosh::Director
       end
     end
 
-    # mysql2 seems to have an issue when starting a thread inside a transaction
-    # after the thread exits, the connection isn't immediately reaped and when
-    # the example wrapper tries to disconnect from the database it sees
-    # "connection is still in use <Thread .... dead>". Additionally, when debugging
-    # we didn't see any of the transaction data inside of the thread suggesting the
-    # thread's connection was outside the scope of the transaction.
-    # so... we're ignoring these tests which rely on that behavior...
-    describe 'rebasing release', :if => ENV['DB'] != 'mysql' do
+    describe 'rebasing release' do
       let(:manifest) do
         {
           'name' => 'appcloud',
@@ -769,7 +769,11 @@ module Bosh::Director
         expect(rv.templates.map { |t| t.version }).to match_array(%w(0.2-dev 33 666))
       end
 
-      it 'performs the rebase if same release is being rebased twice' do
+      it 'performs the rebase if same release is being rebased twice', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
+        allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
+        task = Models::Task.make(state: 'processing')
+        allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
+
         Config.configure(SpecHelper.spec_get_director_config)
         @job.perform
 

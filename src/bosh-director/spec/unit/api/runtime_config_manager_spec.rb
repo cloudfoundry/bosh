@@ -5,7 +5,7 @@ describe Bosh::Director::Api::RuntimeConfigManager do
   let(:valid_runtime_manifest) { YAML.dump(Bosh::Spec::Deployments.simple_runtime_config) }
 
   describe '#update' do
-    it 'saves the runtime config' do
+    it 'saves default runtime config' do
       expect {
         manager.update(valid_runtime_manifest)
       }.to change(Bosh::Director::Models::RuntimeConfig, :count).from(0).to(1)
@@ -13,6 +13,18 @@ describe Bosh::Director::Api::RuntimeConfigManager do
       runtime_config = Bosh::Director::Models::RuntimeConfig.first
       expect(runtime_config.created_at).to_not be_nil
       expect(runtime_config.properties).to eq(valid_runtime_manifest)
+      expect(runtime_config.name).to eq('')
+    end
+
+    it 'saves named runtime config' do
+      expect {
+        manager.update(valid_runtime_manifest, 'foo-runtime')
+      }.to change(Bosh::Director::Models::RuntimeConfig, :count).from(0).to(1)
+
+      runtime_config = Bosh::Director::Models::RuntimeConfig.first
+      expect(runtime_config.created_at).to_not be_nil
+      expect(runtime_config.properties).to eq(valid_runtime_manifest)
+      expect(runtime_config.name).to eq('foo-runtime')
     end
 
     it 'throws an error if runtime config is not valid YAML' do
@@ -25,51 +37,29 @@ describe Bosh::Director::Api::RuntimeConfigManager do
 
   describe '#list' do
     it 'returns the specified number of runtime configs (most recent first)' do
-      days = 24*60*60
-
-      Bosh::Director::Models::RuntimeConfig.new(
-        properties: 'config_from_time_immortal',
-        created_at: Time.now - 3*days,
-      ).save
-      older_runtime_config = Bosh::Director::Models::RuntimeConfig.new(
-        properties: 'config_from_yesteryear',
-        created_at: Time.now - 2*days,
-      ).save
-      newer_runtime_config = Bosh::Director::Models::RuntimeConfig.new(
-        properties: "---\nsuper_shiny: new_config",
-        created_at: Time.now - 1*days,
-      ).save
+      Bosh::Director::Models::RuntimeConfig.new(properties: 'config_from_time_immortal').save
+      older_runtime_config = Bosh::Director::Models::RuntimeConfig.new(properties: 'config_from_yesteryear').save
+      Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config2', name: 'some-foo-name').save
+      newer_runtime_config = Bosh::Director::Models::RuntimeConfig.new(properties: "---\nsuper_shiny: new_config").save
 
       runtime_configs = manager.list(2)
 
-      expect(runtime_configs.count).to eq(2)
-      expect(runtime_configs[0]).to eq(newer_runtime_config)
-      expect(runtime_configs[1]).to eq(older_runtime_config)
-    end
-  end
-
-  describe '#latest' do
-    it 'returns the latest' do
-      days = 24*60*60
-
-      Bosh::Director::Models::RuntimeConfig.new(
-        properties: 'config_from_last_year',
-        created_at: Time.now - 2*days,
-      ).save
-      newer_runtime_config = Bosh::Director::Models::RuntimeConfig.new(
-        properties: "---\nsuper_shiny: new_config",
-        created_at: Time.now - 1*days,
-      ).save
-
-      runtime_config = manager.latest
-
-      expect(runtime_config).to eq(newer_runtime_config)
+      expect(runtime_configs).to eq([newer_runtime_config, older_runtime_config])
     end
 
-    it 'returns nil if there are no cloud configs' do
-      runtime_config = manager.latest
+    context 'when name is specified' do
+      let(:name){ 'some-foo-name'}
 
-      expect(runtime_config).to be_nil
+      it 'returns the specified number of runtime configs (most recent first)' do
+        named_config1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config', name: 'some-foo-name').save
+        Bosh::Director::Models::RuntimeConfig.new(properties: 'default_config').save
+        Bosh::Director::Models::RuntimeConfig.new(properties: 'default_config', name: 'some-other-foo-name').save
+        named_config2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config2', name: 'some-foo-name').save
+
+        runtime_configs = manager.list(2, name)
+
+        expect(runtime_configs).to eq([named_config2, named_config1])
+      end
     end
   end
 end

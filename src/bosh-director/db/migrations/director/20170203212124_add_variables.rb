@@ -19,7 +19,7 @@ Sequel.migration do
     end
 
     alter_table(:instances) do
-      add_foreign_key :variable_set_id, :variable_sets, :null => true
+      add_column :variable_set_id, Integer
     end
 
     self[:instances].each do |instance|
@@ -29,6 +29,7 @@ Sequel.migration do
 
     alter_table(:instances) do
       set_column_not_null :variable_set_id
+      add_foreign_key [:variable_set_id], :variable_sets, :name=>:instance_table_variable_set_fkey
     end
   end
 

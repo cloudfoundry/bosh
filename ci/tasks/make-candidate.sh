@@ -11,6 +11,6 @@ chmod +x $GO_CLI_PATH
 
 cd bosh-src
 
-sed -i -E "s/VERSION = .+/VERSION = '$version'/" $( find src -name version.rb )
+sed -i "s/\['version'\] = ..*/['version'] = '$version'/" jobs/director/templates/director.yml.erb.erb
 
 $GO_CLI_PATH create-release --tarball=../release/bosh-dev-release.tgz --timestamp-version --force

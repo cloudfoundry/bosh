@@ -15,26 +15,29 @@ module Bosh::Director
       allow(Config).to receive_messages(cloud: cloud)
 
       # instance 1: one disk with two snapshots
-      @instance = Models::Instance.make(vm_cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
+      @instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
+      @vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0', instance: @instance, active: true)
 
       @disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: @instance, active: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0a', created_at: time, clean: true)
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0b', created_at: time)
 
       # instance 2: 1 disk
-      instance = Models::Instance.make(vm_cid: 'vm-cid1', agent_id: 'agent1', deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
+      instance = Models::Instance.make(deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
+      vm = Models::Vm.make(cid: 'vm-cid1', agent_id: 'agent1', instance: instance, active: true)
 
       disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
       Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
 
       # instance 3: no disks
-      @instance2 = Models::Instance.make(vm_cid: 'vm-cid2', agent_id: 'agent2', deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
+      @instance2 = Models::Instance.make(deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
+      @vm2 = Models::Vm.make(cid: 'vm-cid2', agent_id: 'agent2', instance: @instance2, active: true)
 
       # snapshot from another deployment
       Models::Snapshot.make
 
       allow(JobQueue).to receive(:new).and_return(job_queue)
-      allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     end
 
     let(:task) { instance_double('Bosh::Director::Models::Task', id: 'task_id') }
@@ -95,7 +98,7 @@ module Bosh::Director
           { 'job' => 'job', 'index' => 0, 'uuid' => '12abdc456','snapshot_cid' => 'snap0b', 'created_at' => time, 'clean' => false },
           { 'job' => 'job', 'index' => 1, 'uuid' => '12xyz456','snapshot_cid' => 'snap1a', 'created_at' => time, 'clean' => false },
         ]
-        expect(subject.snapshots(deployment)).to eq response
+        expect(subject.snapshots(deployment)).to match_array response
       end
 
       describe 'when index is supplied' do
@@ -131,7 +134,7 @@ module Bosh::Director
         it 'deletes the snapshots' do
           expect(Config.cloud).to receive(:delete_snapshot).with('snap0a')
           expect(Config.cloud).to receive(:delete_snapshot).with('snap0b')
-          expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).twice.and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).twice.and_return(cloud)
 
           expect {
             described_class.delete_snapshots(@disk.snapshots)
@@ -150,41 +153,61 @@ module Bosh::Director
       end
 
       describe '#take_snapshot' do
-        let(:metadata) {
+        let(:expected_metadata) {
           {
-            agent_id: 'agent0',
-            director_name: 'Test Director',
-            director_uuid: Config.uuid,
             deployment: 'deployment',
             job: 'job',
-            index: 0
+            index: 0,
+            director_name: 'Test Director',
+            director_uuid: Config.uuid,
+            agent_id: 'agent0',
+            instance_id: '12abdc456',
           }
         }
+
+        before(:each) do
+          allow(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+        end
+
+        it 'takes the snapshot' do
+          expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
+
+          expect {
+            expect(described_class.take_snapshot(@instance)).to eq %w[snap0c]
+          }.to change { Models::Snapshot.count }.by 1
+        end
 
         context 'when there is no persistent disk' do
           it 'does not take a snapshot' do
             expect(Config.cloud).not_to receive(:snapshot_disk)
-            expect(cloud_factory).to receive(:for_availability_zone!).with(@instance2.availability_zone).and_return(cloud)
+            expect(cloud_factory).to receive(:get_for_az).with(@instance2.availability_zone).and_return(cloud)
 
             expect {
-              described_class.take_snapshot(@instance2, {})
+              described_class.take_snapshot(@instance2)
             }.to_not change { Models::Snapshot.count }
           end
         end
 
-        it 'takes the snapshot' do
-          expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
-          expect(cloud_factory).to receive(:for_availability_zone!).with(@instance.availability_zone).and_return(cloud)
+        context 'with custom tags' do
+          let(:custom_tags){
+            {
+              tag1: 'value1',
+              tag2: 'value2'
+            }
+          }
 
-          expect {
-            expect(described_class.take_snapshot(@instance, {})).to eq %w[snap0c]
-          }.to change { Models::Snapshot.count }.by 1
+          it 'adds the custom tags to the snapshot metadata' do
+            expect(@instance.deployment).to receive(:tags).and_return(custom_tags)
+
+            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata.merge({:custom_tags => custom_tags})).and_return('snap0c')
+
+            described_class.take_snapshot(@instance)
+          end
         end
 
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
-            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
-            expect(cloud_factory).to receive(:for_availability_zone!).with(@instance.availability_zone).and_return(cloud)
+            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
             expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
@@ -203,7 +226,6 @@ module Bosh::Director
         context 'with a CPI that does not support snapshots' do
           it 'does nothing' do
             allow(Config.cloud).to receive(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
-            expect(cloud_factory).to receive(:for_availability_zone!).with(@instance.availability_zone).and_return(cloud)
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end

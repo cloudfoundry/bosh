@@ -2,6 +2,7 @@ require 'fileutils'
 require 'logging'
 require 'socket'
 require 'uri'
+require 'common/logging/filters'
 
 module Bosh::Director
 
@@ -27,7 +28,6 @@ module Bosh::Director
         :trusted_certs,
         :uuid,
         :current_job,
-        :encryption,
         :fix_stateful_nodes,
         :enable_snapshots,
         :max_vm_create_tries,
@@ -40,7 +40,9 @@ module Bosh::Director
         :remove_dev_tools,
         :enable_virtual_delete_vms,
         :local_dns,
-        :verify_multidigest_path
+        :verify_multidigest_path,
+        :version,
+        :enable_cpi_resize_disk
       )
 
       attr_reader(
@@ -50,7 +52,8 @@ module Bosh::Director
         :director_ips,
         :config_server_enabled,
         :config_server,
-        :enable_nats_delivered_templates
+        :enable_nats_delivered_templates,
+        :runtime
       )
 
       def clear
@@ -61,8 +64,6 @@ module Bosh::Director
         Thread.list.each do |thr|
           thr[:bosh] = nil
         end
-
-        @blobstore = nil
 
         @compiled_package_cache = nil
         @compiled_package_blobstore = nil
@@ -99,6 +100,8 @@ module Bosh::Director
           )
         end
 
+        shared_appender.add_filters(Bosh::Common::Logging.default_filters)
+
         @logger = Logging::Logger.new('Director')
         @logger.add_appenders(shared_appender)
         @logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
@@ -113,8 +116,9 @@ module Bosh::Director
         @max_threads = config.fetch('max_threads', 32).to_i
 
         @revision = get_revision
+        @version = config['version']
 
-        @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
+        @logger.info("Starting BOSH Director: #{@version} (#{@revision})")
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
@@ -124,6 +128,10 @@ module Bosh::Director
         @cloud_options = config['cloud']
         @compiled_package_cache_options = config['compiled_package_cache']
         @name = config['name'] || ''
+
+        @runtime = config.fetch('runtime', {})
+        @runtime['ip'] ||= '127.0.0.1'
+        @runtime['instance'] ||= 'unknown'
 
         @compiled_package_cache = nil
 
@@ -150,12 +158,12 @@ module Bosh::Director
 
         @local_dns_enabled = config.fetch('local_dns', {}).fetch('enabled', false)
         @local_dns_include_index = config.fetch('local_dns', {}).fetch('include_index', false)
+        @local_dns_use_dns_addresses = config.fetch('local_dns', {}).fetch('use_dns_addresses', false)
 
         # UUID in config *must* only be used for tests
         @uuid = config['uuid'] || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
 
-        @encryption = config['encryption']
         @fix_stateful_nodes = config.fetch('scan_and_fix', {})
           .fetch('auto_fix_stateful_nodes', false)
         @enable_snapshots = config.fetch('snapshots', {}).fetch('enabled', false)
@@ -172,7 +180,7 @@ module Bosh::Director
 
         @enable_virtual_delete_vms = config.fetch('enable_virtual_delete_vms', false)
 
-        @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || !addr.ipv4? || addr.ipv4_loopback? || addr.ipv6_loopback? }.map { |addr| addr.ip_address }
+        @director_ips = Socket.ip_address_list.reject { |addr| !addr.ip? || addr.ipv4_loopback? || addr.ipv6_loopback? || addr.ipv6_linklocal? }.map { |addr| addr.ip_address }
 
         @config_server = config.fetch('config_server', {})
         @config_server_enabled = @config_server['enabled']
@@ -192,11 +200,28 @@ module Bosh::Director
           raise ArgumentError, 'Multiple Digest binary must be specified'
         end
         @verify_multidigest_path = config['verify_multidigest_path']
+        @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
       end
 
-      def canonized_dns_domain_name
+      def log_director_start
+        log_director_start_event('director', uuid, { version: @version })
+      end
+
+      def log_director_start_event(object_type, object_name, context = {})
+        event_manager = Api::EventManager.new(record_events)
+        event_manager.create_event(
+          {
+            user: '_director',
+            action: 'start',
+            object_type: object_type,
+            object_name: object_name,
+            context: context
+          })
+      end
+
+      def root_domain
         dns_config = Config.dns || {}
-        Canonicalizer.canonicalize(dns_config.fetch('domain_name', 'bosh'), :allow_dots => true)
+        dns_config.fetch('domain_name', 'bosh')
       end
 
       def log_dir
@@ -213,6 +238,10 @@ module Bosh::Director
 
       def local_dns_include_index?
         !!@local_dns_include_index
+      end
+
+      def local_dns_use_dns_addresses?
+        !!@local_dns_use_dns_addresses
       end
 
       def get_revision
@@ -309,10 +338,6 @@ module Bosh::Director
         @nats_rpc
       end
 
-      def encryption?
-        @encryption
-      end
-
       def threaded
         Thread.current[:bosh] ||= {}
       end
@@ -351,6 +376,10 @@ module Bosh::Director
 
     def port
       hash['port']
+    end
+
+    def version
+      hash['version']
     end
 
     def scheduled_jobs

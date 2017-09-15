@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main
+
+inputs:
+  - name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/test-unit-remote-db.sh
+
+params:
+  RUBY_VERSION: replace-me
+  DB:           replace-me
+  DB_HOST:      remote-db-host
+  DB_USER:      remote-db-user
+  DB_PASSWORD:  remote-db-password

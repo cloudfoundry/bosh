@@ -14,22 +14,19 @@ require 'parallel_tests/tasks'
 
 namespace :spec do
   namespace :integration do
-    desc 'Run BOSH integration tests against a local sandbox'
-    task :agent => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
-      run_integration_specs
-    end
-
     desc 'Run BOSH gocli integration tests against a local sandbox'
     task :gocli => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
       run_integration_specs(spec_path: 'spec/gocli/integration')
     end
 
     desc 'Run health monitor integration tests against a local sandbox'
     task :health_monitor => :install_dependencies do
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
-      run_integration_specs(tags: 'hm')
+      run_integration_specs(spec_path: 'spec/gocli/integration', tags: 'hm')
+    end
+
+    desc 'Run BOSH gocli upgrade tests against a local sandbox'
+    task :upgrade => :install_dependencies do
+      run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
     end
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
@@ -61,6 +58,18 @@ namespace :spec do
           Bosh::Dev::VerifyMultidigestManager.install
         end
       end
+
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
+    end
+
+    desc 'Download BOSH Agent. Use only for local dev environment'
+    task :download_bosh_agent do
+      trap('INT') { exit }
+      cmd = 'mkdir -p ./go/src/github.com/cloudfoundry && '
+      cmd += 'cd ./go/src/github.com/cloudfoundry && '
+      cmd += 'rm -rf bosh-agent && '
+      cmd += 'git clone https://github.com/cloudfoundry/bosh-agent.git'
+      sh(cmd)
     end
 
     def install_with_retries(to_install)
@@ -85,7 +94,7 @@ namespace :spec do
       options[:count] = num_processes if num_processes
       options[:group] = ENV['GROUP'] if ENV['GROUP']
 
-      spec_path = options.fetch(:spec_path, 'spec/integration')
+      spec_path = options.fetch(:spec_path)
 
       puts "Launching parallel execution of #{spec_path}"
       run_in_parallel(spec_path, options)
@@ -108,9 +117,9 @@ namespace :spec do
     end
   end
 
-  task :integration => %w(spec:integration:agent)
-
   task :integration_gocli => %w(spec:integration:gocli)
+
+  task :upgrade => %w(spec:integration:upgrade)
 
   def unit_exec(build, log_file = nil)
     command = unit_cmd(build, log_file)
@@ -151,7 +160,13 @@ namespace :spec do
   desc 'Run all release unit tests (ERB templates)'
   task :release_unit do
     puts "Release unit tests (ERB templates)"
-    system("cd .. && rspec --tty --backtrace -c -f p spec/")
+    sh("cd .. && rspec --tty --backtrace -c -f p spec/")
+  end
+
+  desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
+  task :template_test_unit do
+    puts "Template test unit tests (ERB templates)"
+    sh("rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb")
   end
 
   namespace :unit do
@@ -182,23 +197,17 @@ namespace :spec do
       end
     end
 
-    task(:agent) do
-      # Do not use exec because this task is part of other tasks
-      sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')
+    desc 'Run all migrations tests'
+    task :migrations do
+      trap('INT') { exit }
+      cmd = 'rspec --tty --backtrace -c -f p ./spec/unit/db/migrations/'
+      sh("cd bosh-director && #{cmd}")
     end
   end
 
   desc "Run all unit tests"
-  task :unit => %w(spec:release_unit spec:unit:ruby spec:unit:agent)
-
-  namespace :external do
-    desc 'AWS bootstrap CLI can provision and destroy resources'
-    RSpec::Core::RakeTask.new(:aws_bootstrap) do |t|
-      t.pattern = 'spec/external/aws_bootstrap_spec.rb'
-      t.rspec_opts = %w(--format documentation --color)
-    end
-  end
+  task :unit => %w(spec:release_unit spec:unit:ruby spec:template_test_unit)
 end
 
-desc 'Run unit and integration specs'
-task :spec => %w(spec:unit spec:integration)
+desc 'Run unit and gocli integration specs'
+task :spec => %w(spec:unit spec:integration:gocli)

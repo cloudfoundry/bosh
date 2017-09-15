@@ -4,7 +4,6 @@ RUN_DIR=/var/vcap/sys/run/director
 LOG_DIR=/var/vcap/sys/log/director
 JOB_DIR=/var/vcap/jobs/director
 PIDFILE=$RUN_DIR/nginx.pid
-STORE_DIR=/var/vcap/store/director/nginx
 SSL_DIR=/var/vcap/jobs/director/config/ssl
 TMP_DIR=/var/vcap/data/director/tmp
 RUNAS=vcap
@@ -12,28 +11,14 @@ RUNAS=vcap
 case $1 in
 
   start)
-    mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
+    mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR
 
     echo $$ > $PIDFILE
 
-    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $TMP_DIR
 
     # workaround. nginx upload module ignores the proxy_temp_path directive
     ln -fs $TMP_DIR/proxy /var/vcap/packages/nginx/proxy_temp
-
-    # if the properties contain director.ssl.key & director.ssl.cert
-    # the two files below will contain key & cert, then copy them to
-    # the persistent disk
-    if [ -s $SSL_DIR/director.key -a -s $SSL_DIR/director.pem ]; then
-      cp $SSL_DIR/* $STORE_DIR
-    # otherwise, if the key or cert doesn't exist in the persistent disk
-    # create new ones
-    elif [ ! -f $STORE_DIR/director.key -o ! -f $STORE_DIR/director.pem ]; then
-      openssl req -nodes -new -newkey rsa:2048 -out $STORE_DIR/director.csr \
-        -keyout $STORE_DIR/director.key -subj '/O=Bosh/CN=*'
-      openssl x509 -req -days 3650 -in $STORE_DIR/director.csr \
-        -signkey $STORE_DIR/director.key -out $STORE_DIR/director.pem
-    fi
 
     exec chpst -u $RUNAS:$RUNAS /var/vcap/packages/nginx/sbin/nginx -c $JOB_DIR/config/nginx.conf \
       >>$LOG_DIR/nginx.stdout.log 2>>$LOG_DIR/nginx.stderr.log

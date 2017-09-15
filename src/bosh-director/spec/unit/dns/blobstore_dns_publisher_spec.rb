@@ -1,193 +1,218 @@
 require 'spec_helper'
-require 'bosh/blobstore_client/null_blobstore_client'
 
 module Bosh::Director
   describe BlobstoreDnsPublisher do
-    let(:blobstore) { Bosh::Blobstore::NullBlobstoreClient.new }
+    include IpUtil
+
+    let(:dns_encoder) { DnsEncoder.new({ 'az1' => 1, 'az2' => 2 }) }
+    let(:blobstore) {  instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
-    subject(:dns) { BlobstoreDnsPublisher.new(blobstore, domain_name) }
-    let(:dns_records) { DnsRecords.new([['fake-ip0', 'fake-name0'], ['fake-ip1', 'fake-name1']], 2)}
+    let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
+    subject(:dns) { BlobstoreDnsPublisher.new(lambda { blobstore }, domain_name, agent_broadcaster, dns_encoder, logger) }
 
-    describe '#publish' do
-      context 'when blobstore publication succeeds' do
-        context 'when some dns records are passed' do
-          before {
-            expect(blobstore).to receive(:create).with(dns_records.to_json).and_return('fake-blob-id')
-          }
+    let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
 
-          it 'uploads' do
-            blobstore_id = dns.publish(dns_records)
-            expect(blobstore_id).to_not be_nil
+    let(:include_index_records) { false }
+    let(:instance1) { Models::Instance.make(uuid: 'uuid1', index: 1) }
 
-            expect(blobstore.exists?(blobstore_id)).to_not be_nil
-          end
-
-          it 'adds new entry to LocalDnsBlob table' do
-            blobstore_id = dns.publish(dns_records)
-            local_dns_blob = Bosh::Director::Models::LocalDnsBlob.find(:blobstore_id => blobstore_id)
-            expect(local_dns_blob.sha1).to eq(::Digest::SHA1.hexdigest(dns_records.to_json))
-            expect(local_dns_blob.version).to eq(2)
-          end
-        end
-
-        context 'when no dns records are passed' do
-          it 'uploads empty records' do
-            expect(blobstore).to receive(:create).with({:records => [], :version => 0}.to_json).and_return('fake-blob-id')
-
-            blobstore_id = dns.publish(DnsRecords.new)
-            expect(blobstore_id).to_not be_nil
-
-            expect(blobstore.exists?(blobstore_id)).to_not be_nil
-          end
-        end
-      end
-
-      describe '#broadcast' do
-        context 'when LocalDnsBlob has records' do
-            before {
-              Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id0',
-                                          sha1: 'fakesha0',
-                                          version: 1,
-                                          :created_at => Time.new)
-              Models::LocalDnsBlob.create(blobstore_id: 'fake-blob-id1',
-                                          sha1: 'fakesha1',
-                                          version: 2,
-                                          :created_at => Time.new)
-            }
-
-            let(:broadcaster) { double(AgentBroadcaster) }
-
-            it 'retrieves the last blob' do
-              expect(AgentBroadcaster).to receive(:new).and_return(broadcaster)
-              expect(broadcaster).to receive(:sync_dns).with('fake-blob-id1', 'fakesha1', 2)
-              dns.broadcast
-            end
-          end
-
-          context 'when LocalDnsBlob is empty' do
-            it 'does nothing' do
-              expect(AgentBroadcaster).to_not receive(:broadcast)
-              dns.broadcast
-            end
-          end
-        end
-
-      context 'when blobstore publication fails' do
-        it 'fails uploading records' do
-          expect(blobstore).to receive(:create).and_raise(Bosh::Blobstore::BlobstoreError)
-
-          expect {
-            dns.publish(dns_records)
-          }.to raise_error(Bosh::Blobstore::BlobstoreError)
-        end
-      end
+    before do
+      allow(Config).to receive(:root_domain).and_return(domain_name)
+      allow(Config).to receive(:local_dns_include_index?).and_return(false)
+      allow(agent_broadcaster).to receive(:sync_dns)
+      allow(agent_broadcaster).to receive(:filter_instances)
     end
 
-    describe '#export_dns_records' do
-      context 'when local store has no DNS records' do
-        it 'exports empty records' do
-          expect(dns.export_dns_records.records).to eq([])
-          expect(dns.export_dns_records.version).to eq(0)
+    describe 'publish and broadcast' do
+      let!(:original_local_dns_blob) { Models::LocalDnsBlob.make() }
+
+      before do
+        Bosh::Director::Models::LocalDnsRecord.make(
+            instance_id: instance1.id,
+            ip: '192.0.2.101',
+            deployment: 'test-deployment',
+            az: 'az1',
+            instance_group: 'instance1',
+            network: 'net-name1',
+            agent_id: 'fake-agent-uuid1',
+            domain: 'fake-domain-name'
+        )
+
+        Bosh::Director::Models::LocalDnsRecord.make(
+            instance_id: instance1.id,
+            ip: '192.0.3.101',
+            deployment: 'test-deployment',
+            az: 'az1',
+            instance_group: 'instance1',
+            network: 'net-name3',
+            agent_id: 'fake-agent-uuid1',
+            domain: 'fake-domain-name'
+        )
+
+        instance2 = Models::Instance.make(
+            uuid: 'uuid2',
+            index: 2,
+        )
+        Bosh::Director::Models::LocalDnsRecord.make(
+            instance_id: instance2.id,
+            ip: '192.0.2.102',
+            deployment: 'test-deployment',
+            az: 'az2',
+            instance_group: 'instance2',
+            network: 'net-name2',
+            agent_id: 'fake-agent-uuid2',
+            domain: 'fake-domain-name'
+        )
+
+        Bosh::Director::Models::LocalDnsRecord.make(instance_id: nil, ip: 'tombstone')
+      end
+
+      context 'when local_dns is not enabled' do
+        before do
+          allow(Config).to receive(:local_dns_enabled?).and_return(false)
+        end
+
+        it 'does nothing' do
+          expect(agent_broadcaster).to_not receive(:sync_dns)
+          dns.publish_and_broadcast
+          expect(Models::LocalDnsBlob.last).to eq(original_local_dns_blob)
         end
       end
 
-      context 'when there exist some DNS records' do
-        before {
-          instance2 = Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment',
-                                                                       'index' => 0,
-                                                                       'job' => { 'name' => 'instance2' },
-                                                                       'id' => 'uuid2',
-                                                                       'networks' => { 'net-name2' => { 'ip' => '192.0.2.102' } }})
-
-
-          Bosh::Director::Models::LocalDnsRecord.make(:instance_id => instance2.id,
-                                                      :name => "uuid2.instance2.net-name2.test-deployment.#{domain_name}",
-                                                      :ip => '192.0.2.102')
-        }
-
-        context 'when local store has many DNS records' do
-          before {
-            instance1 = Bosh::Director::Models::Instance.make(:spec => { 'deployment' => 'test-deployment',
-                                                                         'index' => 0,
-                                                                         'job' => { 'name' => 'instance1' },
-                                                                         'id' => 'uuid1',
-                                                                         'networks' => { 'net-name1' => { 'ip' => '192.0.2.101' },
-                                                                                         'net-name3' => { 'ip' => '192.0.3.101' } }})
-
-            Bosh::Director::Models::LocalDnsRecord.make(:instance_id => instance1.id,
-                                                        :name => "uuid1.instance1.net-name1.test-deployment.#{domain_name}",
-                                                        :ip => '192.0.2.101')
-
-            Bosh::Director::Models::LocalDnsRecord.make(:instance_id => instance1.id,
-                                                        :name => "uuid1.instance1.net-name3.test-deployment.#{domain_name}",
-                                                        :ip => '192.0.3.101')
-          }
-
-          it 'exports the records' do
-            expect(dns.export_dns_records.records).to eq([['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"],
-                                                          ['192.0.2.101', "uuid1.instance1.net-name1.test-deployment.#{domain_name}"],
-                                                          ['192.0.3.101', "uuid1.instance1.net-name3.test-deployment.#{domain_name}"]])
-            expect(dns.export_dns_records.version).to eq(3)
-          end
+      context 'when local_dns is enabled' do
+        before do
+          allow(Config).to receive(:local_dns_enabled?).and_return(true)
+          allow(blobstore).to receive(:create).and_return('blob_id_1')
         end
 
-        context 'when local store has one DNS records' do
-          it 'exports the record' do
-            expect(dns.export_dns_records.records).to eq([['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
-            expect(dns.export_dns_records.version).to eq(1)
-          end
+        it 'puts a blob containing the records into the blobstore' do
+          expected_records = JSON.dump({
+              'records' => [
+                  ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                  ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                  ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name']],
+              'version' => 4,
+              'record_keys' =>
+                  ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'],
+              'record_infos' => [
+                  ['uuid1', 'instance1', 'az1', 1, 'net-name1', 'test-deployment', '192.0.2.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
+                  ['uuid1', 'instance1', 'az1', 1, 'net-name3', 'test-deployment', '192.0.3.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
+                  ['uuid2', 'instance2', 'az2', 2, 'net-name2', 'test-deployment', '192.0.2.102', 'fake-domain-name', 'fake-agent-uuid2', 2]],
+          })
+          expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+          dns.publish_and_broadcast
         end
 
-        context 'when there are tombstone records' do
+        it 'creates a model representing the blob' do
+          dns.publish_and_broadcast
+          local_dns_blob = Bosh::Director::Models::LocalDnsBlob.last
+          expect(local_dns_blob.blob.blobstore_id).to eq('blob_id_1')
+          expect(local_dns_blob.version).to eq(4)
+        end
+
+        it 'broadcasts the blob to the agents' do
+          expect(agent_broadcaster).to receive(:filter_instances).with(nil).and_return([])
+          expect(agent_broadcaster).to receive(:sync_dns).with([], 'blob_id_1', '3613511d6fe99b4c27138df7ba207e47fc1c08bd', 4)
+          dns.publish_and_broadcast
+        end
+
+        context 'when the root_domain is empty' do
           before do
+            instance3 = Models::Instance.make(
+              uuid: 'uuid3',
+              index: 3,
+            )
             Bosh::Director::Models::LocalDnsRecord.make(
-              instance_id: nil,
-              name: 'foo',
-              ip: '192.0.2.102')
+              instance_id: instance3.id,
+              ip: '192.0.2.104',
+              deployment: 'test-deployment',
+              az: 'az2',
+              instance_group: 'instance4',
+              network: 'net-name2',
+              agent_id: 'fake-agent-uuid4'
+            )
+
           end
 
-          it 'does not include the tombstone records' do
-            expect(dns.export_dns_records.records).to eq([['192.0.2.102', "uuid2.instance2.net-name2.test-deployment.#{domain_name}"]])
-            expect(dns.export_dns_records.version).to eq(2)
+          it 'backfills the current root_domain' do
+              expected_records = JSON.dump({
+                'records' => [
+                  ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                  ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                  ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
+                  ['192.0.2.104', 'uuid3.instance4.net-name2.test-deployment.fake-domain-name']],
+                'version' => 5,
+                'record_keys' =>
+                  ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'],
+                'record_infos' => [
+                  ['uuid1', 'instance1', 'az1', 1, 'net-name1', 'test-deployment', '192.0.2.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
+                  ['uuid1', 'instance1', 'az1', 1, 'net-name3', 'test-deployment', '192.0.3.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
+                  ['uuid2', 'instance2', 'az2', 2, 'net-name2', 'test-deployment', '192.0.2.102', 'fake-domain-name', 'fake-agent-uuid2', 2],
+                  ['uuid3', 'instance4', 'az2', 2, 'net-name2', 'test-deployment', '192.0.2.104', 'fake-domain-name', 'fake-agent-uuid4', 3]]
+              })
+              expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+              dns.publish_and_broadcast
           end
         end
-      end
-    end
 
-    describe '#cleanup_blobs' do
-      context 'when there are no entries' do
-        it 'does not do anything' do
-          expect(Bosh::Director::Models::LocalDnsBlob.count).to eq 0
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq 0
-          expect{ dns.cleanup_blobs }.to_not change{ Bosh::Director::Models::LocalDnsBlob.count }
-          expect(Bosh::Director::Models::LocalDnsBlob.count).to eq 0
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq 0
+        context 'when putting to the blobstore fails' do
+          it 'fails uploading records' do
+            expect(blobstore).to receive(:create).and_raise(Bosh::Blobstore::BlobstoreError)
+
+            expect {
+              dns.publish_and_broadcast
+            }.to raise_error(Bosh::Blobstore::BlobstoreError)
+          end
         end
-      end
 
-      context 'when there is one entry' do
-        before {
-          Bosh::Director::Models::LocalDnsBlob.make
-        }
-
-        it 'leaves the only and newest blob' do
-          ephemeral_count = Bosh::Director::Models::EphemeralBlob.count
-          expect{ dns.cleanup_blobs }.to_not change{ Bosh::Director::Models::LocalDnsBlob.count }
-          expect(Bosh::Director::Models::LocalDnsBlob.all[0].id).to eq(1)
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq(ephemeral_count)
+        it 'does not publish tombstone records' do
+          expect(blobstore).to receive(:create) do |records_json|
+            expect(records_json).to_not include('tombstone')
+          end
+          dns.publish_and_broadcast
         end
-      end
 
-      context 'when there are some entries' do
-        before {
-          3.times{Bosh::Director::Models::LocalDnsBlob.make}
-        }
+        context 'when index based records are enabled' do
+          before do
+            allow(Config).to receive(:local_dns_include_index?).and_return(true)
+          end
 
-        it 'leaves the newest blob' do
-          ephemeral_count = Bosh::Director::Models::EphemeralBlob.count
-          expect{ dns.cleanup_blobs }.to change{ Bosh::Director::Models::LocalDnsBlob.count }.from(3).to(1)
-          expect(Bosh::Director::Models::LocalDnsBlob.all[0].id).to eq(3)
-          expect(Bosh::Director::Models::EphemeralBlob.count).to eq(ephemeral_count + 2)
+          it 'should include index records too' do
+            expected_records = JSON.dump({
+                 'records' => [
+                     ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                     ['192.0.2.101', '1.instance1.net-name1.test-deployment.fake-domain-name'],
+                     ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                     ['192.0.3.101', '1.instance1.net-name3.test-deployment.fake-domain-name'],
+                     ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
+                     ['192.0.2.102', '2.instance2.net-name2.test-deployment.fake-domain-name']],
+                 'version' => 4,
+                 'record_keys' =>
+                     ['id', 'instance_group', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'],
+                 'record_infos' => [
+                     ['uuid1', 'instance1', 'az1', 1, 'net-name1', 'test-deployment', '192.0.2.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
+                     ['uuid1', 'instance1', 'az1', 1, 'net-name3', 'test-deployment', '192.0.3.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
+                     ['uuid2', 'instance2', 'az2', 2, 'net-name2', 'test-deployment', '192.0.2.102', 'fake-domain-name', 'fake-agent-uuid2', 2]]
+             })
+
+            expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+            dns.publish_and_broadcast
+          end
+        end
+
+        context 'when the dns blobs are up to date' do
+          it 'does not generate a new blob' do
+            dns.publish_and_broadcast
+
+            expect(blobstore).to_not receive(:create)
+            dns.publish_and_broadcast
+          end
+
+          it 'does not broadcast' do
+            dns.publish_and_broadcast
+
+            expect(agent_broadcaster).to receive(:sync_dns)
+            dns.publish_and_broadcast
+          end
         end
       end
     end

@@ -8,12 +8,21 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
   let(:cloud) { Bosh::Director::Config.cloud }
   let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+  let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}
 
   before(:each) do
     @agent = double('agent')
 
+    deployment = Bosh::Director::Models::Deployment.make(name: 'my-deployment', manifest: YAML.dump(manifest))
+    Bosh::Director::Models::VariableSet.make(deployment_id: deployment.id)
+
     @instance = Bosh::Director::Models::Instance.
       make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')
+    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id, cpi: 'cpi1')
+
+    @instance.active_vm = @vm
+    @instance.save
+    deployment.add_instance(@instance)
 
     @disk = Bosh::Director::Models::PersistentDisk.
       make(:disk_cid => 'disk-cid', :instance_id => @instance.id,
@@ -21,8 +30,10 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
     @handler = make_handler(@disk.id, 'owner_vms' => []) # Not mounted
     allow(@handler).to receive(:cloud).and_return(@cloud)
-    allow(@handler).to receive(:agent_client).with(@instance.credentials, @instance.agent_id).and_return(@agent)
-    allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+    allow(@handler).to receive(:agent_client).with(@instance.agent_id).and_return(@agent)
+    allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+    allow(Bosh::Director::CloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
+    allow(cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud)
   end
 
   it 'registers under inactive_disk type' do
@@ -44,7 +55,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     end
 
     it 'is invalid if disk no longer has associated instance' do
-      @instance.update(vm_cid: nil)
+      @instance.active_vm = nil
       expect {
         make_handler(@disk.id)
       }.to raise_error("Can't find corresponding vm-cid for disk 'disk-cid'")
@@ -54,18 +65,32 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
       it 'attaches disk' do
         expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
         expect(cloud).not_to receive(:reboot_vm)
-        expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).and_return(cloud)
         expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
       end
 
-      it 'attaches disk and reboots the vm' do
-        expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
-        expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
-        expect(cloud_factory).to receive(:for_availability_zone).with(@instance.availability_zone).twice.and_return(cloud)
-        expect(@agent).to receive(:wait_until_ready)
-        expect(@agent).not_to receive(:mount_disk)
-        @handler.apply_resolution(:reattach_disk_and_reboot)
+      context 'rebooting the vm' do
+        before do
+          allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+        end
+
+        it 'attaches disk and reboots the vm' do
+          expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+          expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+          expect(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+          expect(@agent).to receive(:wait_until_ready)
+          expect(@agent).not_to receive(:mount_disk)
+          @handler.apply_resolution(:reattach_disk_and_reboot)
+        end
+
+        it 'sets disk metadata with deployment information' do
+          expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+          expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+          expect(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+          expect(@agent).to receive(:wait_until_ready)
+          expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud, @disk, hash_including(manifest['tags']))
+          @handler.apply_resolution(:reattach_disk_and_reboot)
+        end
       end
     end
   end

@@ -3,15 +3,21 @@ require 'spec_helper'
 module Bosh::Director
   describe Manifest do
     subject(:manifest_object) do
-      described_class.new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
+      described_class.new(hybrid_manifest_hash, raw_manifest_hash, hybrid_cloud_config_hash, raw_cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
     end
+
     let(:hybrid_manifest_hash) { {} }
     let(:raw_manifest_hash) { {} }
-    let(:cloud_config_hash) { {} }
+
+    let(:hybrid_cloud_config_hash) { {} }
+    let(:raw_cloud_config_hash) { {} }
+
     let(:hybrid_runtime_config_hash) { {} }
     let(:raw_runtime_config_hash) { {} }
+
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator)}
 
+    let(:consolidated_runtime_config) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
 
     before do
       release_1 = Models::Release.make(name: 'simple')
@@ -33,152 +39,164 @@ module Bosh::Director
 
     describe '.load_from_model' do
       let(:deployment_model) {instance_double(Bosh::Director::Models::Deployment)}
-      let(:cloud_config) { Models::CloudConfig.make(manifest: {'name-2'=>'my-name-2'}) }
-      let(:runtime_config) { Models::RuntimeConfig.make(raw_manifest: {'name-3'=>'my-name-3'}) }
+      let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {'name-2'=>'my-name-2'}) }
+      let(:runtime_configs) { [ Models::RuntimeConfig.make(), Models::RuntimeConfig.make() ] }
       let(:manifest_hash) { {"name"=>"a_deployment", "name-1"=>"my-name-1"} }
 
       before do
         allow(deployment_model).to receive(:manifest).and_return(manifest_hash.to_json)
         allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
-        allow(deployment_model).to receive(:runtime_config).and_return(runtime_config)
+        allow(deployment_model).to receive(:runtime_configs).and_return(runtime_configs)
         allow(variables_interpolator).to receive(:interpolate_deployment_manifest).and_return(manifest_hash)
-        allow(variables_interpolator).to receive(:interpolate_runtime_manifest).and_return({'name-3'=>'my-name-3'})
+        allow(variables_interpolator).to receive(:interpolate_cloud_manifest).and_return({'name-2'=>'my-name-2'})
+        allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with(runtime_configs).and_return(consolidated_runtime_config)
+        allow(consolidated_runtime_config).to receive(:raw_manifest).and_return({'raw_runtime' => '((foo))'})
+        allow(consolidated_runtime_config).to receive(:interpolate_manifest_for_deployment).and_return({'my_runtime' => 'foo_value'})
       end
 
-      it 'creates a manifest object from a manifest, a cloud config, and a runtime config' do
+      it 'creates a manifest object from a manifest, a cloud config, and an aggregation of the runtime configs' do
         result =  Manifest.load_from_model(deployment_model)
         expect(result.hybrid_manifest_hash).to eq({"name"=>"a_deployment", "name-1"=>"my-name-1"})
         expect(result.raw_manifest_hash).to eq({"name"=>"a_deployment", "name-1"=>"my-name-1"})
-        expect(result.cloud_config_hash).to eq({'name-2' =>'my-name-2'})
-        expect(result.hybrid_runtime_config_hash).to eq({'name-3' =>'my-name-3'})
+        expect(result.hybrid_cloud_config_hash).to eq({'name-2' =>'my-name-2'})
+        expect(result.hybrid_runtime_config_hash).to eq({'my_runtime' => 'foo_value'})
       end
 
       it 'ignores cloud config when ignore_cloud_config is true' do
         result = Manifest.load_from_model(deployment_model, {:ignore_cloud_config => true})
         expect(result.hybrid_manifest_hash).to eq({"name"=>"a_deployment", "name-1"=>"my-name-1"})
         expect(result.raw_manifest_hash).to eq({"name"=>"a_deployment", "name-1"=>"my-name-1"})
-        expect(result.cloud_config_hash).to eq(nil)
-        expect(result.hybrid_runtime_config_hash).to eq({'name-3' =>'my-name-3'})
+        expect(result.hybrid_cloud_config_hash).to eq(nil)
+        expect(result.hybrid_runtime_config_hash).to eq({'my_runtime' => 'foo_value'})
       end
 
       context 'when empty manifests exist' do
-        let(:cloud_config) { Models::CloudConfig.make(manifest: nil) }
-        let(:runtime_config) { Models::RuntimeConfig.make(raw_manifest: nil) }
+        let(:cloud_config) { Models::CloudConfig.make(raw_manifest: nil) }
 
         before do
           allow(deployment_model).to receive(:manifest).and_return(nil)
+          allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
+          allow(deployment_model).to receive(:runtime_configs).and_return([])
+          allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with([]).and_return(consolidated_runtime_config)
+          allow(consolidated_runtime_config).to receive(:raw_manifest).with([]).and_return({})
+          allow(consolidated_runtime_config).to receive(:interpolate_manifest_for_deployment).and_return({})
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest).and_return({})
+          allow(variables_interpolator).to receive(:interpolate_cloud_manifest).and_return({})
         end
 
         it 'creates a manifest object from a manifest, a cloud config, and a runtime config correctly' do
-          result =  Manifest.load_from_model(deployment_model)
+          result =  Manifest.load_from_model(deployment_model, {:ignore_cloud_config => false})
           expect(result.hybrid_manifest_hash).to eq({})
           expect(result.raw_manifest_hash).to eq({})
-          expect(result.cloud_config_hash).to eq(nil)
+          expect(result.hybrid_cloud_config_hash).to eq({})
           expect(result.hybrid_runtime_config_hash).to eq({})
         end
       end
 
       context 'when resolving manifest' do
         let(:cloud_config) { instance_double(Models::CloudConfig)}
-        let(:runtime_config) { instance_double(Models::RuntimeConfig)}
 
         before do
-          allow(cloud_config).to receive(:manifest).and_return({})
-          allow(runtime_config).to receive(:interpolated_manifest_for_deployment).and_return({})
-          allow(runtime_config).to receive(:raw_manifest).and_return({})
+          allow(cloud_config).to receive(:raw_manifest).and_return({})
+          allow(cloud_config).to receive(:interpolated_manifest).and_return({})
           allow(deployment_model).to receive(:manifest).and_return("{'name': 'surfing_deployment', 'smurf': '((smurf_placeholder))'}")
           allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
-          allow(deployment_model).to receive(:runtime_config).and_return(runtime_config)
         end
 
         it 'calls the manifest resolver with correct values' do
           expect(variables_interpolator).to receive(:interpolate_deployment_manifest).with({'name' => 'surfing_deployment', 'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
           manifest_object_result = Manifest.load_from_model(deployment_model)
+
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'name' => 'surfing_deployment', 'smurf' => '((smurf_placeholder))'})
-          expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.hybrid_runtime_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_cloud_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_runtime_config_hash).to eq({'my_runtime' => 'foo_value'})
         end
 
         it 'respects resolve_interpolation flag when calling the manifest resolver' do
           manifest_object_result = Manifest.load_from_model(deployment_model, {:resolve_interpolation => false})
           expect(variables_interpolator).to_not receive(:interpolate_deployment_manifest)
+          expect(consolidated_runtime_config).to_not receive(:interpolate_manifest_for_deployment)
+
           expect(manifest_object_result.hybrid_manifest_hash).to eq({"name"=>"surfing_deployment", "smurf"=>"((smurf_placeholder))"})
           expect(manifest_object_result.raw_manifest_hash).to eq({"name"=>"surfing_deployment", "smurf"=>"((smurf_placeholder))"})
-          expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.hybrid_runtime_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_cloud_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_runtime_config_hash).to eq({'raw_runtime' => '((foo))'})
         end
       end
     end
 
     describe '.load_from_hash' do
-      let(:cloud_config) { Models::CloudConfig.make(manifest: {}) }
-      let(:runtime_config) { Models::RuntimeConfig.make(raw_manifest: {}) }
+      let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {}) }
+      let(:runtime_configs) { [ Models::RuntimeConfig.make(), Models::RuntimeConfig.make() ] }
+
+      let(:raw_runtime_config_hash) { {'raw_runtime' => '((foo))'} }
+      let(:hybrid_runtime_config_hash) { {'my_runtime' => 'foo_value'} }
 
       before do
         allow(variables_interpolator).to receive(:interpolate_deployment_manifest).with({}).and_return({})
+        allow(variables_interpolator).to receive(:interpolate_cloud_manifest).with({}, nil).and_return({})
+        allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with(runtime_configs).and_return(consolidated_runtime_config)
+        allow(consolidated_runtime_config).to receive(:raw_manifest).and_return(raw_runtime_config_hash)
+        allow(consolidated_runtime_config).to receive(:interpolate_manifest_for_deployment).and_return(hybrid_runtime_config_hash)
       end
 
       it 'creates a manifest object from a cloud config, a manifest text, and a runtime config' do
         expect(
-          Manifest.load_from_hash(hybrid_manifest_hash, cloud_config, runtime_config).to_yaml
+          Manifest.load_from_hash(hybrid_manifest_hash, cloud_config, runtime_configs).to_yaml
         ).to eq(manifest_object.to_yaml)
       end
 
       it 'ignores cloud config when ignore_cloud_config is true' do
-        result = Manifest.load_from_hash(hybrid_manifest_hash, cloud_config, runtime_config, {:ignore_cloud_config => true})
+        result = Manifest.load_from_hash(hybrid_manifest_hash, cloud_config, runtime_configs, {:ignore_cloud_config => true})
         expect(result.hybrid_manifest_hash).to eq({})
         expect(result.raw_manifest_hash).to eq({})
-        expect(result.cloud_config_hash).to eq(nil)
-        expect(result.hybrid_runtime_config_hash).to eq({})
+        expect(result.hybrid_cloud_config_hash).to eq(nil)
+        expect(result.hybrid_runtime_config_hash).to eq(hybrid_runtime_config_hash)
       end
 
       context 'when resolving manifest' do
         let(:passed_in_manifest_hash) { {'smurf' => '((smurf_placeholder))'} }
         let(:cloud_config) { instance_double(Models::CloudConfig)}
-        let(:runtime_config) { instance_double(Models::RuntimeConfig)}
 
         before do
-          allow(cloud_config).to receive(:manifest).and_return({})
-          allow(runtime_config).to receive(:interpolated_manifest_for_deployment).and_return({})
-          allow(runtime_config).to receive(:raw_manifest).and_return({})
+          allow(cloud_config).to receive(:raw_manifest).and_return({})
+          allow(cloud_config).to receive(:interpolated_manifest).and_return({})
         end
 
         it 'calls the manifest resolver with correct values' do
           expect(variables_interpolator).to receive(:interpolate_deployment_manifest).with({'smurf' => '((smurf_placeholder))'}).and_return({'smurf' => 'blue'})
-          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config)
+          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_configs)
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => 'blue'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-          expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.hybrid_runtime_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_cloud_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_runtime_config_hash).to eq(hybrid_runtime_config_hash)
         end
 
         it 'respects resolve_interpolation flag when calling the manifest resolver' do
           expect(variables_interpolator).to_not receive(:interpolate_deployment_manifest)
 
-          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_config, {:resolve_interpolation => false})
+          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, cloud_config, runtime_configs, {:resolve_interpolation => false})
           expect(manifest_object_result.hybrid_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
           expect(manifest_object_result.raw_manifest_hash).to eq({'smurf' => '((smurf_placeholder))'})
-          expect(manifest_object_result.cloud_config_hash).to eq({})
-          expect(manifest_object_result.hybrid_runtime_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_cloud_config_hash).to eq({})
+          expect(manifest_object_result.hybrid_runtime_config_hash).to eq(raw_runtime_config_hash)
         end
       end
     end
 
     describe '.generate_empty_manifest' do
+      before do
+        allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with([]).and_return(consolidated_runtime_config)
+        allow(consolidated_runtime_config).to receive(:raw_manifest).and_return({})
+      end
+
       it 'generates empty manifests' do
         result_manifest  = Manifest.generate_empty_manifest
         expect(result_manifest.hybrid_manifest_hash).to eq({})
         expect(result_manifest.raw_manifest_hash).to eq({})
-        expect(result_manifest.cloud_config_hash).to eq(nil)
-        expect(result_manifest.hybrid_runtime_config_hash).to eq(nil)
-      end
-
-      it 'does not call config server client even if config server is enabled' do
-        allow(Bosh::Director::Config).to receive(:config_server_enabled).and_return(true)
-        expect(Bosh::Director::ConfigServer::EnabledClient).to_not receive(:interpolate)
-        Manifest.generate_empty_manifest
+        expect(result_manifest.hybrid_cloud_config_hash).to eq(nil)
+        expect(result_manifest.hybrid_runtime_config_hash).to eq({})
       end
     end
 
@@ -322,7 +340,7 @@ module Bosh::Director
         end
 
         context 'when cloud config has stemcells with version latest' do
-          let(:cloud_config_hash) do
+          let(:hybrid_cloud_config_hash) do
             {
               'resource_pools' => [
                 {
@@ -342,7 +360,7 @@ module Bosh::Director
         end
 
         context 'when cloud config has stemcells with version prefix' do
-          let(:cloud_config_hash) do
+          let(:hybrid_cloud_config_hash) do
             {
               'resource_pools' => [
                 {
@@ -368,7 +386,8 @@ module Bosh::Director
         described_class.new(
           new_hybrid_manifest_hash,
           new_raw_manifest_hash,
-          new_cloud_config_hash,
+          new_hybrid_cloud_config_hash,
+          new_raw_cloud_config_hash,
           new_hybrid_runtime_config_hash,
           new_raw_runtime_config_hash
         )
@@ -391,7 +410,8 @@ module Bosh::Director
       end
 
       let(:new_hybrid_manifest_hash) { hybrid_manifest_hash }
-      let(:new_cloud_config_hash) { cloud_config_hash }
+      let(:new_hybrid_cloud_config_hash) { hybrid_cloud_config_hash }
+      let(:new_raw_cloud_config_hash) { raw_cloud_config_hash }
       let(:new_hybrid_runtime_config_hash) { hybrid_runtime_config_hash }
       let(:new_raw_runtime_config_hash) { raw_runtime_config_hash }
       let(:diff) do
@@ -526,12 +546,16 @@ module Bosh::Director
         })
       end
       
-      context 'when runtime config contains same release/version as deployment manifest' do
+      context 'when runtime config contains same release/version or variables as deployment manifest' do
         let(:hybrid_manifest_hash) do
           {
               'releases' => [
                   {'name' => 'simple', 'version' => '2'},
                   {'name' => 'hard', 'version' => 'latest'}
+              ],
+              'variables' => [
+                {'name' => 'variable', 'type' => 'password'},
+                {'name' => 'another_variable', 'type' => 'smurfs'}
               ]
           }
         end
@@ -540,6 +564,9 @@ module Bosh::Director
           {
               'releases' => [
                   {'name' => 'simple', 'version' => '2'}
+              ],
+              'variables' => [
+                  {'name' => 'variable', 'type' => 'password'}
               ]
           }
         end
@@ -549,6 +576,13 @@ module Bosh::Director
                {'name' => 'simple', 'version' => '2'},
                {'name' => 'hard', 'version' => 'latest'}
            ])
+        end
+
+        it 'includes only one copy of the variable in to_hash output' do
+          variablesHash = manifest_object.to_hash['variables']
+          expect(variablesHash.length).to eq(2)
+          expect(variablesHash).to include({'name' => 'variable', 'type' => 'password'})
+          expect(variablesHash).to include({'name' => 'another_variable', 'type' => 'smurfs'})
         end
       end
     end

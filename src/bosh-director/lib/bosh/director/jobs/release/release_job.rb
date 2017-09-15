@@ -4,51 +4,40 @@ module Bosh::Director
     attr_accessor :packages
 
     def initialize(job_meta, release_model, release_dir, logger)
-      @name = job_meta['name']
-      @version = job_meta['version']
-      @sha1 = job_meta['sha1']
-      @fingerprint = job_meta['fingerprint']
-
+      @job_meta = job_meta
       @release_model = release_model
       @release_dir = release_dir
       @logger = logger
     end
 
-    def update(template)
-      template.release = @release_model
-      template.name = @name
-      template.sha1 = @sha1
-      template.fingerprint = @fingerprint
-      template.version = @version
-
+    def update
       unpack
 
       job_manifest = load_manifest
+
       validate_templates(job_manifest)
       validate_monit
+      validate_logs(job_manifest)
+      validate_properties(job_manifest)
+      validate_links(job_manifest)
+
+      template = Models::Template.find_or_init_from_release_meta(
+        release: @release_model,
+        job_meta: @job_meta,
+        job_manifest: job_manifest,
+      )
 
       if template.blobstore_id
         begin
-          @logger.info("Deleting blob for template '#{@name}/#{@version}' with blobstore_id '#{template.blobstore_id}'")
+          @logger.info("Deleting blob for template '#{name}/#{@version}' with blobstore_id '#{template.blobstore_id}'")
           BlobUtil.delete_blob(template.blobstore_id)
           template.blobstore_id = nil
         rescue Bosh::Blobstore::BlobstoreError => e
-          @logger.info("Error deleting blob for template '#{@name}/#{@version}' with blobstore_id '#{template.blobstore_id}': #{e.inspect}")
+          @logger.info("Error deleting blob for template '#{name}/#{@version}' with blobstore_id '#{template.blobstore_id}': #{e.inspect}")
         end
       end
 
       template.blobstore_id = BlobUtil.create_blob(job_tgz)
-      template.package_names = parse_package_names(job_manifest)
-
-      validate_logs(job_manifest)
-      template.logs = job_manifest['logs']
-
-      validate_properties(job_manifest)
-      template.properties = job_manifest['properties']
-
-      validate_links(job_manifest)
-      template.provides = job_manifest['provides'] if job_manifest['provides']
-      template.consumes = job_manifest['consumes'] if job_manifest['consumes']
 
       template.save
     end
@@ -58,7 +47,7 @@ module Bosh::Director
     def unpack
       FileUtils.mkdir_p(job_dir)
 
-      desc = "job '#{@name}/#{@version}'"
+      desc = "job '#{name}/#{@version}'"
       result = Bosh::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
       if result.failed?
         @logger.error("Extracting #{desc} archive failed in dir #{job_dir}, " +
@@ -69,18 +58,18 @@ module Bosh::Director
     end
 
     def job_tgz
-      @job_tgz ||= File.join(@release_dir, 'jobs', "#{@name}.tgz")
+      @job_tgz ||= File.join(@release_dir, 'jobs', "#{name}.tgz")
     end
 
     def job_dir
-      @job_dir ||= File.join(@release_dir, 'jobs', @name)
+      @job_dir ||= File.join(@release_dir, 'jobs', name)
     end
 
     def load_manifest
       manifest_file = File.join(job_dir, 'job.MF')
       unless File.file?(manifest_file)
         raise JobMissingManifest,
-          "Missing job manifest for '#{@name}'"
+          "Missing job manifest for '#{name}'"
       end
 
       YAML.load_file(manifest_file)
@@ -92,7 +81,7 @@ module Bosh::Director
           path = File.join(job_dir, 'templates', relative_path)
           unless File.file?(path)
             raise JobMissingTemplateFile,
-              "Missing template file '#{relative_path}' for job '#{@name}'"
+              "Missing template file '#{relative_path}' for job '#{name}'"
           end
         end
       end
@@ -103,22 +92,15 @@ module Bosh::Director
       aux_monit_files = Dir.glob(File.join(job_dir, '*.monit'))
 
       unless File.exists?(main_monit_file) || aux_monit_files.size > 0
-        raise JobMissingMonit, "Job '#{@name}' is missing monit file"
+        raise JobMissingMonit, "Job '#{name}' is missing monit file"
       end
-    end
-
-    def parse_package_names(job_manifest)
-      if job_manifest['packages'] && !job_manifest['packages'].is_a?(Array)
-        raise JobInvalidPackageSpec, "Job '#{@name}' has invalid package spec format"
-      end
-      job_manifest['packages'] || []
     end
 
     def validate_logs(job_manifest)
       if job_manifest['logs']
         unless job_manifest['logs'].is_a?(Hash)
           raise JobInvalidLogSpec,
-            "Job '#{@name}' has invalid logs spec format"
+            "Job '#{name}' has invalid logs spec format"
         end
       end
     end
@@ -127,7 +109,7 @@ module Bosh::Director
       if job_manifest['properties']
         unless job_manifest['properties'].is_a?(Hash)
           raise JobInvalidPropertySpec,
-            "Job '#{@name}' has invalid properties spec format"
+            "Job '#{name}' has invalid properties spec format"
         end
       end
     end
@@ -140,7 +122,7 @@ module Bosh::Director
     def parse_links(links, kind)
       if !links.is_a?(Array)
         raise JobInvalidLinkSpec,
-          "Job '#{@name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
+          "Job '#{name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
       end
 
       parsed_links = {}
@@ -148,11 +130,15 @@ module Bosh::Director
         parsed_link = DeploymentPlan::TemplateLink.parse(kind, link_spec)
         if parsed_links[parsed_link.name]
           raise JobDuplicateLinkName,
-            "Job '#{@name}' '#{kind}' specifies links with duplicate name '#{parsed_link.name}'"
+            "Job '#{name}' '#{kind}' specifies links with duplicate name '#{parsed_link.name}'"
         end
 
         parsed_links[parsed_link.name] = true
       end
+    end
+
+    def name
+      @job_meta['name']
     end
   end
 end

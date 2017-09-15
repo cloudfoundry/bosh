@@ -20,12 +20,13 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
       expect(config).to be_serial
     end
 
+
     it 'should return Integer after calculation' do
       config = BD::DeploymentPlan::UpdateConfig.new(
-          'canaries' => 2,
-          'max_in_flight' => 4,
-          'canary_watch_time' => 60000,
-          'update_watch_time' => 30000,
+        'canaries' => 2,
+        'max_in_flight' => 4,
+        'canary_watch_time' => 60000,
+        'update_watch_time' => 30000,
       )
       expect(config.canaries(10)).to eq(2)
       expect(config.max_in_flight(10)).to eq(4)
@@ -94,12 +95,12 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
     end
 
     describe 'serial' do
-      let(:other_opts) {{
+      let(:other_opts) { {
         'canaries' => 2,
         'max_in_flight' => 4,
         'canary_watch_time' => 60000,
         'update_watch_time' => 30000,
-      }}
+      } }
 
       it 'raises an error if property is not TrueClass/FalseClass' do
         expect {
@@ -224,6 +225,85 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
         expect(config.max_update_watch_time).to eq(5000)
       end
     end
+
+    context 'strategy' do
+      it 'should return the strategy configuration from the spec' do
+        config = BD::DeploymentPlan::UpdateConfig.new(
+          'strategy' => 'hot-swap',
+          'canaries' => 2,
+          'max_in_flight' => 4,
+          'canary_watch_time' => 60000,
+          'update_watch_time' => 30000
+        )
+
+        expect(config.strategy).to eq('hot-swap')
+      end
+
+      context 'when strategy has a wrong format' do
+        it 'raises an error' do
+          expect {
+            BD::DeploymentPlan::UpdateConfig.new(
+              {
+                'strategy' => 'incorrect-strategy-value',
+                'canaries' => 2,
+                'max_in_flight' => 4,
+                'canary_watch_time' => 60000,
+                'update_watch_time' => 30000
+              }
+            )
+          }.to raise_error(Bosh::Director::ValidationInvalidValue, /Invalid strategy 'incorrect-strategy-value', valid strategies are: hot-swap, legacy/)
+        end
+      end
+
+      context 'when strategy is created from previously created strategy (such as happens in cck)' do
+        let(:old_config) {
+          BD::DeploymentPlan::UpdateConfig.new(
+            'canaries' => 2,
+            'max_in_flight' => 4,
+            'canary_watch_time' => 60000,
+            'update_watch_time' => 30000
+          )
+        }
+
+        it 'can make an update from the hash of the old config' do
+          expect { BD::DeploymentPlan::UpdateConfig.new(old_config.to_hash) }.to_not raise_error
+        end
+      end
+
+      context 'when default update_config is provided and strategy is not provided' do
+        let(:default_config) {
+          BD::DeploymentPlan::UpdateConfig.new(
+            'strategy' => 'hot-swap',
+            'canaries' => 2,
+            'max_in_flight' => 4,
+            'canary_watch_time' => 60000,
+            'update_watch_time' => 30000
+          )
+        }
+
+        it 'should use strategy value from default_update_config' do
+          config = BD::DeploymentPlan::UpdateConfig.new({}, default_config)
+
+          expect(config.strategy).to eq('hot-swap')
+        end
+
+        context 'when strategy has a wrong format' do
+          it 'raises an error' do
+            expect {
+              BD::DeploymentPlan::UpdateConfig.new(
+                {
+                  'strategy' => '',
+                  'canaries' => 2,
+                  'max_in_flight' => 4,
+                  'canary_watch_time' => 60000,
+                  'update_watch_time' => 30000
+                }, default_config
+              )
+            }.to raise_error(Bosh::Director::ValidationInvalidValue, /Invalid strategy '', valid strategies are: hot-swap, legacy/)
+          end
+        end
+      end
+    end
   end
 
   describe '#parse_watch_times' do
@@ -233,7 +313,7 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
         'max_in_flight' => 2,
         'canary_watch_time' => 10000,
         'update_watch_time' => 5000,
-       )
+      )
     end
 
     it('should parse literals') { expect(basic_config.parse_watch_times(1000)).to eq([1000, 1000]) }
@@ -252,15 +332,58 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
     end
   end
 
+  describe '#to_hash' do
+    it 'should create a valid hash' do
+      config = BD::DeploymentPlan::UpdateConfig.new(
+        'strategy' => 'hot-swap',
+        'canaries' => 2,
+        'max_in_flight' => 4,
+        'canary_watch_time' => 60000,
+        'update_watch_time' => 30000
+      )
+
+      config_hash = config.to_hash
+      expect(config_hash).to eq({
+        'strategy' => 'hot-swap',
+        'canaries' => '2',
+        'max_in_flight' => '4',
+        'canary_watch_time' => '60000-60000',
+        'update_watch_time' => '30000-30000',
+        'serial' => true,
+      })
+    end
+
+    context 'when strategy is nil' do
+      it 'should set strategy to legacy strategy' do
+        config = BD::DeploymentPlan::UpdateConfig.new(
+          'canaries' => 2,
+          'max_in_flight' => 4,
+          'canary_watch_time' => 60000,
+          'update_watch_time' => 30000
+        )
+
+        config_hash = config.to_hash
+        expect(config_hash).to eq({
+          'strategy' => 'legacy',
+          'canaries' => '2',
+          'max_in_flight' => '4',
+          'canary_watch_time' => '60000-60000',
+          'update_watch_time' => '30000-30000',
+          'serial' => true,
+        })
+      end
+    end
+  end
+
   context 'when max_in_flight or canaries have wrong format' do
     it 'raises an error' do
       config = BD::DeploymentPlan::UpdateConfig.new(
-          {
-              'canaries' => 'blala',
-              'max_in_flight' => 'blabla',
-              'canary_watch_time' => 60000,
-              'update_watch_time' => 30000,
-          }
+        {
+          'canaries' => 'blala',
+          'max_in_flight' => 'blabla',
+          'canary_watch_time' => 60000,
+          'update_watch_time' => 30000,
+        }
       )
       expect {
         config.canaries(10)
@@ -274,15 +397,15 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
   context 'when max_in_flight or canaries are percents' do
     let(:default_config) {
       BD::DeploymentPlan::UpdateConfig.new(
-          'canaries' => canaries_before_calculation,
-          'max_in_flight' => max_in_flight_before_calculation,
-          'canary_watch_time' => 60000,
-          'update_watch_time' => 30000,
+        'canaries' => canaries_before_calculation,
+        'max_in_flight' => max_in_flight_before_calculation,
+        'canary_watch_time' => 60000,
+        'update_watch_time' => 30000,
       )
     }
-    let(:canaries_before_calculation) {'20%'}
-    let(:max_in_flight_before_calculation) {'40%'}
-    let(:size) {10}
+    let(:canaries_before_calculation) { '20%' }
+    let(:max_in_flight_before_calculation) { '40%' }
+    let(:size) { 10 }
 
     it 'should work with percents ' do
       expect(default_config.canaries(size)).to eq(2)
@@ -301,23 +424,23 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
 
     it 'should let you override all defaults' do
       config = BD::DeploymentPlan::UpdateConfig.new(
-          {
-              'canaries' => 1,
-              'max_in_flight' => 2,
-              'canary_watch_time' => 60000,
-              'update_watch_time' => 30000,
-          }, default_config)
+        {
+          'canaries' => 1,
+          'max_in_flight' => 2,
+          'canary_watch_time' => 60000,
+          'update_watch_time' => 30000,
+        }, default_config)
 
       expect(config.canaries_before_calculation).to eq('1')
       expect(config.max_in_flight_before_calculation).to eq('2')
 
       config = BD::DeploymentPlan::UpdateConfig.new(
-          {
-              'canaries' => '30%',
-              'max_in_flight' => '50%',
-              'canary_watch_time' => 60000,
-              'update_watch_time' => 30000,
-          }, default_config)
+        {
+          'canaries' => '30%',
+          'max_in_flight' => '50%',
+          'canary_watch_time' => 60000,
+          'update_watch_time' => 30000,
+        }, default_config)
       expect(config.canaries_before_calculation).to eq('30%')
       expect(config.max_in_flight_before_calculation).to eq('50%')
     end

@@ -39,7 +39,7 @@ module Bosh::Director
       attr_reader :tags
 
       # Job instances from the old manifest that are not in the new manifest
-      attr_reader :unneeded_instance_plans
+      attr_reader :instance_plans_for_obsolete_instance_groups
 
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
@@ -54,16 +54,27 @@ module Bosh::Director
       # @return [DeploymentPlan::Variables] Returns the variables object of deployment
       attr_reader :variables
 
-      attr_reader :job_renderer
+      # @return [DeploymentPlan::DeploymentFeatures] Returns the features object of deployment
+      attr_reader :features
 
-      def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_config, deployment_model, options = {})
+      attr_reader :template_blob_cache
+
+      attr_accessor :addons
+
+      # @return [Hash] Returns the shared links
+      attr_reader :link_spec
+
+      attr_reader :cloud_config
+      attr_reader :runtime_configs
+
+      def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_configs, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}
 
         @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
         @cloud_config = cloud_config
-        @runtime_config = runtime_config
+        @runtime_configs = runtime_configs
         @model = deployment_model
 
         @stemcells = {}
@@ -73,7 +84,7 @@ module Bosh::Director
         @tags = options.fetch('tags', {})
 
         @unneeded_vms = []
-        @unneeded_instance_plans = []
+        @instance_plans_for_obsolete_instance_groups = []
 
         @recreate = !!options['recreate']
         @fix = !!options['fix']
@@ -82,9 +93,12 @@ module Bosh::Director
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @variables = Variables.new([])
+        @features = DeploymentFeatures.new
+
+        @addons = []
 
         @logger = Config.logger
-        @job_renderer = JobRenderer.create
+        @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
       end
 
       def_delegators :@cloud_planner,
@@ -109,45 +123,11 @@ module Bosh::Director
         Canonicalizer.canonicalize(@name)
       end
 
-      def bind_models(options = {})
-        stemcell_manager = Api::StemcellManager.new
-        dns_manager = DnsManagerProvider.create
-        assembler = DeploymentPlan::Assembler.new(
-          self,
-          stemcell_manager,
-          dns_manager,
-          @logger
-        )
-
-        options[:fix] = @fix
-        options[:tags] = @tags
-        assembler.bind_models(options)
-      end
-
-      def compile_packages
-        validate_packages
-
-        disk_manager = DiskManager.new(@logger)
-        agent_broadcaster = AgentBroadcaster.new
-        dns_manager = DnsManagerProvider.create
-        vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-        vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, @job_renderer, agent_broadcaster)
-        instance_deleter = Bosh::Director::InstanceDeleter.new(ip_provider, dns_manager, disk_manager)
-        compilation_instance_pool = CompilationInstancePool.new(
-          InstanceReuser.new,
-          vm_creator,
-          self,
-          @logger,
-          instance_deleter,
-          compilation.workers)
-        package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
-          instance_groups,
-          compilation,
-          compilation_instance_pool,
-          @logger,
-          nil
-        )
-        package_compile_step.perform
+      def deployment_wide_options
+        {
+          fix: @fix,
+          tags: @tags,
+        }
       end
 
       # Returns a list of Instances in the deployment (according to DB)
@@ -192,6 +172,18 @@ module Bosh::Director
         @releases[release.name] = release
       end
 
+      # Adds variables and gives error if there is a duplicate variable already.
+      # @param [Bosh::Director::DeploymentPlan::Variables] variables
+      def add_variables(variables)
+        variables.spec.each do |variable|
+          if @variables.contains_variable?(variable['name'])
+            raise DeploymentDuplicateVariableName,
+                  "Duplicate variable name '#{variable['name']}'"
+          end
+        end
+        @variables.add(variables)
+      end
+
       # Returns all releases in a deployment plan
       # @return [Array<Bosh::Director::DeploymentPlan::ReleaseVersion>]
       def releases
@@ -210,12 +202,21 @@ module Bosh::Director
         end
       end
 
-      def mark_instance_plans_for_deletion(instance_plans)
-        @unneeded_instance_plans = instance_plans
+      def instance_plans_with_hot_swap_and_needs_shutdown
+        instance_groups_starting_on_deploy.collect_concat do |instance_group|
+          if instance_group.update.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+            return []
+          end
+
+          instance_group.sorted_instance_plans
+            .select(&:needs_shutting_down?)
+            .reject(&:new?)
+            .reject { |plan| plan.instance.state == 'detached' }
+        end
       end
 
-      def unneeded_instances
-        @unneeded_instance_plans.map(&:existing_instance)
+      def mark_instance_plans_for_deletion(instance_plans)
+        @instance_plans_for_obsolete_instance_groups = instance_plans
       end
 
       # Adds a instance_group by name
@@ -245,7 +246,7 @@ module Bosh::Director
           if instance_group.is_service?
             instance_groups << instance_group
           elsif instance_group.is_errand?
-            if instance_group.instances.any? { |i| nil != i.model && !i.model.vm_cid.to_s.empty? }
+            if instance_group.instances.any? { |i| nil != i.model && !i.model.active_vm.nil? }
               instance_groups << instance_group
             end
           end
@@ -257,34 +258,6 @@ module Bosh::Director
       # @return [Array<Bosh::Director::DeploymentPlan::InstanceGroup>] InstanceGroups with errand lifecycle
       def errand_instance_groups
         @instance_groups.select(&:is_errand?)
-      end
-
-      def persist_updates!
-        #prior updates may have had release versions that we no longer use.
-        #remove the references to these stale releases.
-        stale_release_versions = (model.release_versions - releases.map(&:model))
-        stale_release_names = stale_release_versions.map {|version_model| version_model.release.name}.uniq
-        with_release_locks(stale_release_names) do
-          stale_release_versions.each do |release_version|
-            model.remove_release_version(release_version)
-          end
-        end
-
-        model.manifest = YAML.dump(@uninterpolated_manifest_text)
-        model.cloud_config = @cloud_config
-        model.runtime_config = @runtime_config
-        model.link_spec = @link_spec
-        model.save
-      end
-
-      def update_stemcell_references!
-        current_stemcell_models = resource_pools.map { |pool| pool.stemcell.models }.flatten
-        @stemcells.values.map(&:models).flatten.each do |stemcell|
-          current_stemcell_models << stemcell
-        end
-        model.stemcells.each do |deployment_stemcell|
-          deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
-        end
       end
 
       def using_global_networking?
@@ -303,20 +276,20 @@ module Bosh::Director
         @variables = variables_obj
       end
 
-      private
+      def set_features(features_obj)
+        @features = features_obj
+      end
 
-      def validate_packages
-        release_manager = Bosh::Director::Api::ReleaseManager.new
-        validator = DeploymentPlan::PackageValidator.new(@logger)
-        instance_groups.each do |instance_group|
-          instance_group.jobs.each do |job|
-            release_model = release_manager.find_by_name(job.release.name)
-            release_version_model = release_manager.find_version(release_model, job.release.version)
+      def use_dns_addresses?
+        @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
+      end
 
-            validator.validate(release_version_model, instance_group.stemcell)
-          end
-        end
-        validator.handle_faults
+      def availability_zone_names
+        @cloud_planner.availability_zone_names
+      end
+
+      def team_names
+        @model.teams.map(&:name)
       end
     end
   end

@@ -200,7 +200,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   describe '#cid_for_az' do
     let(:cloud_factory) { instance_double(BD::CloudFactory) }
     before {
-      allow(BD::CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     }
 
     it 'raises an error if no stemcell model was bound' do
@@ -250,7 +250,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell = make({'name' => 'foo', 'version' => '42-dev'})
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return(nil)
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return(nil)
         expect(stemcell.cid_for_az('az-example')).to eq('cid1')
       end
     end
@@ -265,7 +265,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell = make({'name' => 'foo', 'version' => '42-dev'})
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return('cpi2')
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi2')
         expect(stemcell.cid_for_az('az-example')).to eq('cid2')
       end
 
@@ -277,7 +277,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell = make({'name' => 'foo', 'version' => '42-dev'})
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return('cpi-notexisting')
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi-notexisting')
         expect {  stemcell.cid_for_az('az-example')  }.to raise_error BD::StemcellNotFound
       end
     end
@@ -293,7 +293,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell = make({'name' => 'foo', 'version' => '42-dev'})
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:lookup_cpi_for_az).with('az-example').and_return('cpi2')
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi2')
         expect(stemcell.cid_for_az('az-example')).to eq('cid3')
       end
     end

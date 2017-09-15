@@ -6,11 +6,15 @@ module Bosh::Director
     include IpUtil
     include LegacyDeploymentHelper
 
-    def initialize(deployment_plan, stemcell_manager, dns_manager, logger)
+    def self.create(deployment_plan)
+      new(deployment_plan, Api::StemcellManager.new, PowerDnsManagerProvider.create)
+    end
+
+    def initialize(deployment_plan, stemcell_manager, powerdns_manager)
       @deployment_plan = deployment_plan
-      @logger = logger
+      @logger = Config.logger
       @stemcell_manager = stemcell_manager
-      @dns_manager = dns_manager
+      @powerdns_manager = powerdns_manager
     end
 
     def bind_models(options = {})
@@ -18,8 +22,10 @@ module Bosh::Director
 
       should_bind_links = options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
-      fix = options.fetch(:fix, false)
-      tags = options.fetch(:tags, {})
+      should_bind_new_variable_set = options.fetch(:should_bind_new_variable_set, false)
+      deployment_options = @deployment_plan.deployment_wide_options
+      fix = deployment_options.fetch(:fix, false)
+      tags = deployment_options.fetch(:tags, {})
 
       bind_releases
 
@@ -32,7 +38,14 @@ module Bosh::Director
 
       instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
-      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(instance_repo, states_by_existing_instance, @deployment_plan.skip_drain, index_assigner, network_reservation_repository, {'recreate' => @deployment_plan.recreate, 'tags' => tags})
+      instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(
+        instance_repo,
+        states_by_existing_instance,
+        @deployment_plan.skip_drain,
+         index_assigner,
+        network_reservation_repository,
+        {'recreate' => @deployment_plan.recreate, 'use_dns_addresses' => @deployment_plan.use_dns_addresses? ,'tags' => tags}
+      )
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
       desired_instance_groups = @deployment_plan.instance_groups
 
@@ -54,9 +67,18 @@ module Bosh::Director
       bind_instance_networks
       bind_dns
       bind_links if should_bind_links
+      bind_new_variable_set if should_bind_new_variable_set
     end
 
     private
+
+    def bind_new_variable_set
+      current_variable_set = @deployment_plan.model.current_variable_set
+
+      @deployment_plan.instance_groups.each do |instance_group|
+        instance_group.bind_new_variable_set(current_variable_set)
+      end
+    end
 
     # Binds release DB record(s) to a plan
     # @return [void]
@@ -81,7 +103,7 @@ module Bosh::Director
               with_thread_name("binding agent state for (#{existing_instance}") do
                 # getting current state to obtain IP of dynamic networks
                 begin
-                  state = DeploymentPlan::AgentStateMigrator.new(@deployment_plan, @logger).get_state(existing_instance)
+                  state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(existing_instance)
                 rescue Bosh::Director::RpcTimeout => e
                   if fix
                     state = {'job_state' => 'unresponsive'}
@@ -159,12 +181,12 @@ module Bosh::Director
     end
 
     def bind_dns
-      @dns_manager.configure_nameserver
+      @powerdns_manager.configure_nameserver
     end
 
     def migrate_legacy_dns_records
       @deployment_plan.instance_models.each do |instance_model|
-        @dns_manager.migrate_legacy_records(instance_model)
+        @powerdns_manager.migrate_legacy_records(instance_model)
       end
     end
 

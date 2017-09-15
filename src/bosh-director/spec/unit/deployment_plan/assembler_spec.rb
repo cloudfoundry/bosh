@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, dns_manager, logger) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
       name: 'simple',
       using_global_networking?: false,
@@ -12,7 +12,7 @@ module Bosh::Director
 
     ) }
     let(:stemcell_manager) { nil }
-    let(:dns_manager) { DnsManagerProvider.create }
+    let(:powerdns_manager) { PowerDnsManagerProvider.create }
     let(:event_log) { Config.event_log }
 
     describe '#bind_models' do
@@ -30,6 +30,8 @@ module Bosh::Director
         allow(deployment_plan).to receive(:releases).and_return([])
         allow(deployment_plan).to receive(:uninterpolated_manifest_text).and_return({})
         allow(deployment_plan).to receive(:mark_instance_plans_for_deletion)
+        allow(deployment_plan).to receive(:deployment_wide_options).and_return({})
+        allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)
       end
 
       it 'should bind releases and their templates' do
@@ -50,7 +52,7 @@ module Bosh::Director
 
       describe 'migrate_legacy_dns_records' do
         it 'migrates legacy dns records' do
-          expect(dns_manager).to receive(:migrate_legacy_records).with(instance_model)
+          expect(powerdns_manager).to receive(:migrate_legacy_records).with(instance_model)
           assembler.bind_models
         end
       end
@@ -59,7 +61,7 @@ module Bosh::Director
         sc1 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
         sc2 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
 
-        expect(deployment_plan).to receive(:stemcells).and_return({ 'sc1' => sc1, 'sc2' => sc2})
+        expect(deployment_plan).to receive(:stemcells).and_return({'sc1' => sc1, 'sc2' => sc2})
 
         expect(sc1).to receive(:bind_model)
         expect(sc2).to receive(:bind_model)
@@ -67,10 +69,44 @@ module Bosh::Director
         assembler.bind_models
       end
 
-      it 'passes tags to instance plan factory' do
-        expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}}
-        expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
-        assembler.bind_models({tags: {'key1' => 'value1'}})
+      context 'contains deployment plan tags' do
+        before do
+          allow(deployment_plan).to receive(:deployment_wide_options).and_return({
+            tags: {'key1' => 'value1'}
+          })
+        end
+
+        it 'passes tags to instance plan factory' do
+          expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}, 'use_dns_addresses' => false}
+          expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+          assembler.bind_models({tags: {'key1' => 'value1'}})
+        end
+      end
+
+      context 'contains deployment use_dns_addresses feature' do
+        context 'when TRUE' do
+          before do
+            allow(deployment_plan).to receive(:use_dns_addresses?).and_return(true)
+          end
+
+          it 'passes use_dns_addresses to instance plan factory' do
+            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true}
+            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+            assembler.bind_models
+          end
+        end
+
+        context 'when FALSE' do
+          before do
+            allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)
+          end
+
+          it 'passes use_dns_addresses to instance plan factory' do
+            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => false}
+            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+            assembler.bind_models
+          end
+        end
       end
 
       context 'when there are desired instance_groups' do
@@ -112,7 +148,7 @@ module Bosh::Director
         end
 
         context 'links binding' do
-          let(:links_resolver) { double(DeploymentPlan::LinksResolver)}
+          let(:links_resolver) { double(DeploymentPlan::LinksResolver) }
 
           before do
             allow(DeploymentPlan::LinksResolver).to receive(:new).with(deployment_plan, logger).and_return(links_resolver)
@@ -148,6 +184,49 @@ module Bosh::Director
           end
         end
 
+        context 'variable sets binding' do
+          before do
+            deployment_plan.model.add_variable_set(:created_at => Time.now, :writable => true)
+          end
+
+          context 'when should_bind_new_variable_set flag is false' do
+            let(:should_bind_new_variable_set) { false }
+
+            it 'should not bind the instance plans variable sets' do
+              current_deployment_variable_set = deployment_plan.model.current_variable_set
+
+              expect(instance_group_1).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+              expect(instance_group_2).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+
+              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+            end
+          end
+
+          context 'when bind_new_variable_set flag is true' do
+            let(:should_bind_new_variable_set) { true }
+
+            it 'binds the instance plans variable sets correctly' do
+              current_deployment_variable_set = deployment_plan.model.current_variable_set
+
+              expect(instance_group_1).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
+              expect(instance_group_2).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
+
+              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+            end
+          end
+
+          context 'when bind_new_variable_set flag is not passed' do
+            it 'defaults value to false' do
+              current_deployment_variable_set = deployment_plan.model.current_variable_set
+
+              expect(instance_group_1).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+              expect(instance_group_2).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
+
+              assembler.bind_models
+            end
+          end
+        end
+
         context 'when the instance_group validation fails' do
           it 'propagates the exception' do
             expect(instance_group_1).to receive(:validate_package_names_do_not_collide!).once
@@ -159,8 +238,20 @@ module Bosh::Director
       end
 
       it 'configures dns' do
-        expect(dns_manager).to receive(:configure_nameserver)
+        expect(powerdns_manager).to receive(:configure_nameserver)
         assembler.bind_models
+      end
+    end
+
+    describe '.create' do
+      it 'initializes a DeploymentPlan::Assembler with the correct deployment_plan and makes stemcell and dns managers' do
+        expect(DeploymentPlan::Assembler).to receive(:new).with(
+          deployment_plan,
+          an_instance_of(Api::StemcellManager),
+          an_instance_of(PowerDnsManager),
+        ).and_call_original
+
+        DeploymentPlan::Assembler.create(deployment_plan)
       end
     end
   end

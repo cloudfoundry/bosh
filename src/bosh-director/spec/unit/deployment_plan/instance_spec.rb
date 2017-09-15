@@ -38,7 +38,11 @@ module Bosh::Director::DeploymentPlan
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
 
-    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
+    let(:instance_model) do
+      instance = Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1')
+      Bosh::Director::Models::Vm.make(instance: instance, active: true)
+      instance
+    end
 
     let(:current_state) { {'current' => 'state'} }
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
@@ -64,6 +68,15 @@ module Bosh::Director::DeploymentPlan
         instance.bind_existing_instance_model(instance_model)
         expect(instance.model).to eq(instance_model)
       end
+
+      it 'sets the instance desired and previous variable_set' do
+        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+        instance_model.variable_set = variable_set_model
+        instance.bind_existing_instance_model(instance_model)
+
+        expect(instance.desired_variable_set).to eq(variable_set_model)
+        expect(instance.previous_variable_set).to eq(variable_set_model)
+      end
     end
 
     describe '#bind_new_instance_model' do
@@ -78,6 +91,14 @@ module Bosh::Director::DeploymentPlan
         expect(instance.model.variable_set).to eq(variable_set_model)
         expect(instance.uuid).not_to be_nil
       end
+
+      it 'sets the previous and desired variable set to current deployment variable set' do
+        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+
+        instance.bind_new_instance_model
+        expect(instance.desired_variable_set).to eq(variable_set_model)
+        expect(instance.previous_variable_set).to eq(variable_set_model)
+      end
     end
 
     context 'applying state' do
@@ -86,7 +107,7 @@ module Bosh::Director::DeploymentPlan
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       before do
-        allow(BD::AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client)
         instance.bind_existing_instance_model(instance_model)
       end
 
@@ -210,13 +231,41 @@ module Bosh::Director::DeploymentPlan
       describe 'when the cloud properties change' do
 
         describe 'logging' do
-          let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => 'bang'}})}
-          let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => 'b'}})]}
-          let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => 'wera'})}
+          context 'cloud properties does NOT have variables' do
+            let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => 'bang'}})}
+            let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => 'b'}})]}
+            let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => 'wera'})}
 
-          it 'should log the change' do
-            expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
-            instance.cloud_properties_changed?
+            it 'should log the change' do
+              expect(logger).to receive(:debug).with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
+              instance.cloud_properties_changed?
+            end
+          end
+
+          context 'cloud properties has variables' do
+            let(:vm_type) { VmType.new({'name' => '', 'cloud_properties' => {'baz' => '((/placeholder1))'}})}
+            let(:vm_extensions) { [VmExtension.new({'name' => '', 'cloud_properties' => {'a' => '((/placeholder2))'}})]}
+            let(:availability_zone) { AvailabilityZone.new('az', {'abcd' => '((/placeholder3))'})}
+            let(:merged_cloud_properties) { {'abcd'=>'((/placeholder3))', 'baz'=>'((/placeholder1))', 'a'=>'((/placeholder2))'} }
+            let(:interpolated_merged_cloud_properties) { {'abcd'=>'p1', 'baz'=>'p2', 'a'=>'p3'} }
+
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+            let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+            let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+            before do
+              instance.desired_variable_set = desired_variable_set
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, desired_variable_set).and_return(interpolated_merged_cloud_properties)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, instance.model.variable_set).and_return(instance_model.cloud_properties_hash)
+            end
+
+            it 'should NOT log the interpolated values' do
+              expect(logger).to receive(:debug).with("cloud_properties_changed? changed FROM: #{instance_model.cloud_properties_hash} TO: #{merged_cloud_properties}")
+              instance.cloud_properties_changed?
+            end
           end
         end
 
@@ -259,6 +308,63 @@ module Bosh::Director::DeploymentPlan
           end
         end
       end
+
+      describe 'variables interpolation' do
+        let(:vm_type) do
+          VmType.new(
+            {
+              'name' => 'a',
+              'cloud_properties' => {'vm_cloud_prop' => '((/placeholder1))'}
+            }
+          )
+        end
+        let(:vm_extensions) do
+          [VmExtension.new(
+            {
+              'name' => 'b',
+              'cloud_properties' => {'vm_ext_cloud_prop' => '((/placeholder2))'}
+            }
+          )]
+        end
+        let(:availability_zone) do
+          AvailabilityZone.new(
+            'az',
+            {'az_cloud_prop' => '((/placeholder3))'}
+          )
+        end
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
+        let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+        let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+        let(:merged_cloud_properties) { {'az_cloud_prop'=>'((/placeholder3))', 'vm_cloud_prop'=>'((/placeholder1))', 'vm_ext_cloud_prop'=>'((/placeholder2))'} }
+        let(:interpolated_merged_cloud_properties) { {'vm_cloud_prop'=>'p1', 'vm_ext_cloud_prop'=>'p2', 'az_cloud_prop'=>'p3'} }
+        let(:interpolated_existing_cloud_properties) { {'vm_ext_cloud_prop'=>'p2', 'az_cloud_prop'=>'p3', 'vm_cloud_prop'=>'p1'} }
+
+        before do
+          instance.desired_variable_set = desired_variable_set
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+        end
+
+        it 'interpolates previous and desired cloud properties with the correct variable set' do
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, desired_variable_set).and_return(interpolated_merged_cloud_properties)
+          expect(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, instance.model.variable_set).and_return(interpolated_existing_cloud_properties)
+
+          expect(instance.cloud_properties_changed?).to be_falsey
+        end
+
+        context 'when interpolated values are different' do
+          let(:interpolated_merged_cloud_properties) { {'vm_cloud_prop'=>'p1-new', 'vm_ext_cloud_prop'=>'p2', 'az_cloud_prop'=>'p3'} }
+          let(:interpolated_existing_cloud_properties) { {'vm_ext_cloud_prop'=>'p2-old', 'az_cloud_prop'=>'p3', 'vm_cloud_prop'=>'p1'} }
+
+          it 'return true' do
+            expect(config_server_client).to receive(:interpolate_with_versioning).with(merged_cloud_properties, desired_variable_set).and_return(interpolated_merged_cloud_properties)
+            expect(config_server_client).to receive(:interpolate_with_versioning).with(instance_model.cloud_properties_hash, instance.model.variable_set).and_return(interpolated_existing_cloud_properties)
+
+            expect(instance.cloud_properties_changed?).to be_truthy
+          end
+        end
+      end
     end
 
     describe '#update_instance_settings' do
@@ -270,7 +376,7 @@ module Bosh::Director::DeploymentPlan
 
       before do
         allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
-        allow(Bosh::Director::AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client)
         allow(Bosh::Director::Config).to receive(:trusted_certs).and_return(fake_cert)
         instance.bind_existing_instance_model(instance_model)
       end
@@ -283,7 +389,7 @@ module Bosh::Director::DeploymentPlan
         it 'tells the agent to update instance settings and updates the instance model' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [{'name' => 'some-disk', 'cid' => 'some-cid'}])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
 
@@ -295,7 +401,7 @@ module Bosh::Director::DeploymentPlan
         it 'does not send any disk associations to update' do
           expect(agent_client).to receive(:update_settings).with(fake_cert, [])
           instance.update_instance_settings
-          expect(instance.model.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
         end
       end
     end
@@ -328,18 +434,20 @@ module Bosh::Director::DeploymentPlan
     describe '#update_variable_set' do
       let(:fixed_time) { Time.now }
 
-      it 'updates the instance model with latest deployment variable_set' do
-        latest_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
-        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
+      it 'updates the instance model variable set to the desired_variable_set on the instance object' do
+        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
+        selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
         Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
 
         instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)
 
+        instance.desired_variable_set = selected_variable_set
+
         instance.update_variable_set
 
         instance_model = Bosh::Director::Models::Instance.all.first
-        expect(instance_model.variable_set).to eq(latest_variable_set)
+        expect(instance_model.variable_set).to eq(selected_variable_set)
       end
     end
   end

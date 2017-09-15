@@ -45,7 +45,7 @@ module Bosh::Blobstore
           let(:process_status) { instance_double('Process::Status', exitstatus: 0) }
 
           before do
-            allow(Open3).to receive(:capture3).with("#{multidigest_path} verify-multi-digest fake-file-path 'expectedsha1'").
+            allow(Open3).to receive(:capture3).with(multidigest_path, 'verify-multi-digest', 'fake-file-path', 'expectedsha1').
                 and_return(['foo', 'bar', process_status])
           end
 
@@ -70,7 +70,7 @@ module Bosh::Blobstore
           let(:process_status) { instance_double('Process::Status', exitstatus: 1) }
 
           before do
-            allow(Open3).to receive(:capture3).with("#{multidigest_path} verify-multi-digest fake-file-path 'expectedsha1'").
+            allow(Open3).to receive(:capture3).with(multidigest_path, 'verify-multi-digest', 'fake-file-path', 'expectedsha1').
                 and_return(['foo', 'bar', process_status])
           end
 

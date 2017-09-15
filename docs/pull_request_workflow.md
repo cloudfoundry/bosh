@@ -23,7 +23,7 @@ Follow these steps to make a contribution to any of CF open source repositories:
 
   See [running tests](running_tests.md) to determine which test suite to run.
 
-1. Push to your fork (`git push origin better_bosh`) and submit a pull request selecting `develop` as the target branch
+1. Push to your fork (`git push origin better_bosh`) and submit a pull request selecting `master` as the target branch
 
 We favor pull requests with very small, single commits with a single purpose.
 

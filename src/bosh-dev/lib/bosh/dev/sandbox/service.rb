@@ -70,14 +70,23 @@ module Bosh::Dev::Sandbox
     end
 
     def stdout_contents
-      stdout ? File.read(stdout) : ''
+      safe_file_read(stdout)
     end
 
     def stderr_contents
-      stderr ? File.read(stderr) : ''
+      safe_file_read(stderr)
     end
 
     private
+
+    def safe_file_read(filename)
+      begin
+        File.read(filename)
+      rescue => e
+        @logger.info("Cannot read file #{filename}: #{e}")
+        ''
+      end
+    end
 
     def running?(pid)
       pid && Process.kill(0, pid)
@@ -89,16 +98,21 @@ module Bosh::Dev::Sandbox
       false
     end
 
-    def wait_for_process_to_exit_or_be_killed(pid, kill_on_timeout = true)
+    def unless_process_exits_in_20(pid)
       Timeout::timeout(20) do
         Process.wait(pid)
       end
-    rescue Timeout::Error => e
-      if kill_on_timeout
+    rescue Timeout::Error
+      yield
+    rescue Errno::ECHILD
+    end
+
+    def wait_for_process_to_exit_or_be_killed(pid)
+      unless_process_exits_in_20(pid) do
         kill_process('KILL', pid)
-        wait_for_process_to_exit_or_be_killed(pid, false)
-      else
-        raise "KILL signal ignored by #{@description} with PID=#{pid}"
+        unless_process_exits_in_20(pid) do
+          raise "KILL signal ignored by #{@description} with PID=#{pid}"
+        end
       end
     end
 

@@ -3,6 +3,13 @@ require_relative '../spec_helper'
 describe 'cli cloud config', type: :integration do
   with_reset_sandbox_before_each
 
+  context 'when cloud config uses placeholders' do
+    it 'does not error' do
+      cloud_config = yaml_file('cloud_config.yml', Bosh::Spec::Deployments.cloud_config_with_placeholders)
+      expect(bosh_runner.run("update-cloud-config #{cloud_config.path}")).to include('Succeeded')
+    end
+  end
+
   it 'can upload a cloud config' do
     cloud_config = yaml_file('cloud_config.yml', Bosh::Spec::Deployments.simple_cloud_config)
     expect(bosh_runner.run("update-cloud-config #{cloud_config.path}")).to include('Succeeded')

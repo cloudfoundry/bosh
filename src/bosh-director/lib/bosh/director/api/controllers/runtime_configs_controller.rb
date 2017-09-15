@@ -4,23 +4,41 @@ module Bosh::Director
   module Api::Controllers
     class RuntimeConfigsController < BaseController
       post '/', :consumes => :yaml do
+        config_name = params['name'].nil? ? '' : params['name']
         manifest_text = request.body.read
         begin
           validate_manifest_yml(manifest_text, nil)
-          Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text)
-          create_event
+          Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text, config_name)
+          create_event(config_name)
         rescue => e
-          create_event e
+          create_event(config_name, e)
           raise e
         end
 
         status(201)
       end
 
+      post '/diff', :consumes => :yaml do
+        old_runtime_config = runtime_config_or_empty(runtime_config_by_name(params['name']))
+        new_runtime_config = validate_manifest_yml(request.body.read, nil) || {}
+
+        result = {}
+        redact = params['redact'] != 'false'
+        begin
+          diff = Changeset.new(old_runtime_config, new_runtime_config).diff(redact).order
+          result['diff'] = diff.map { |l| [l.to_s, l.status] }
+        rescue => error
+          result['diff'] = []
+          result['error'] = "Unable to diff manifest: #{error.inspect}\n#{error.backtrace.join("\n")}"
+        end
+
+        json_encode(result)
+      end
+
       get '/', scope: :read do
         if params['limit'].nil? || params['limit'].empty?
           status(400)
-          body("limit is required")
+          body('limit is required')
           return
         end
 
@@ -32,23 +50,40 @@ module Bosh::Director
           return
         end
 
-        runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(limit)
+        config_name = params['name'].nil? ? '' : params['name']
+
+        runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(limit, config_name)
+
         json_encode(
             runtime_configs.map do |runtime_config|
             {
-              "properties" => runtime_config.properties,
-              "created_at" => runtime_config.created_at,
+              'properties' => runtime_config.properties,
+              'created_at' => runtime_config.created_at,
             }
         end
         )
       end
 
       private
-      def create_event(error = nil)
+
+      def runtime_config_by_name(name)
+        config_name = name.nil? ? '' : name
+        Bosh::Director::Models::RuntimeConfig.latest_set.find do |runtime_config|
+          runtime_config.name == config_name
+        end
+      end
+
+      def runtime_config_or_empty(runtime_config_model)
+        return {} if runtime_config_model.nil? || runtime_config_model.raw_manifest.nil?
+        runtime_config_model.raw_manifest
+      end
+
+      def create_event(config_name, error = nil)
         @event_manager.create_event({
             user:        current_user,
-            action:      "update",
-            object_type: "runtime-config",
+            action:      'update',
+            object_type: 'runtime-config',
+            object_name: config_name,
             error:       error
         })
       end

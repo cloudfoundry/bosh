@@ -3,8 +3,9 @@ require 'spec_helper'
 describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:handler) { described_class.new(disk.id, {}) }
   before do
-    allow(handler).to receive(:agent_client).with(instance.credentials, instance.agent_id).and_return(agent_client)
-    allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+    allow(handler).to receive(:agent_client).with(instance.agent_id).and_return(agent_client)
+    allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+    allow(cloud_factory).to receive(:get_name_for_az).with('az1').and_return('cpi1')
   end
 
   let(:cloud) { Bosh::Director::Config.cloud }
@@ -13,8 +14,11 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:agent_client) { instance_double('Bosh::Director::AgentClient', unmount_disk: nil) }
 
   let(:instance) do
-    Bosh::Director::Models::Instance.
-      make(job: 'mysql_node', index: 3, vm_cid: 'vm-cid', credentials: {'secret' => 'things'}, uuid: "uuid-42", availability_zone: 'az1')
+    instance = Bosh::Director::Models::Instance.
+      make(job: 'mysql_node', index: 3, uuid: "uuid-42", availability_zone: 'az1')
+    vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid', instance_id: instance.id)
+    instance.active_vm = vm
+    instance.save
   end
 
   let!(:disk) do
@@ -34,7 +38,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
   describe 'resolutions' do
     before do
-      expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+      expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
     end
 
     describe 'delete_disk_reference' do
@@ -197,7 +201,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
       context 'when vm is destroyed' do
         before do
-          instance.update(vm_cid: nil)
+          instance.active_vm = nil
         end
 
         it 'deletes disk related info from database directly' do

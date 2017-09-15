@@ -13,12 +13,8 @@ module Bosh::Blobstore
           end
         end
 
-        it 'returns simple client' do
-          expect(Client.create('simple', {})).to be_instance_of(SimpleBlobstoreClient)
-        end
-
         it 'returns s3cli client' do
-          allow(Kernel).to receive(:system).with("/path --v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          allow(Kernel).to receive(:system).with("/path", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
           expect(Client.create('s3cli', {
               access_key_id: 'foo',
               secret_access_key: 'bar',
@@ -26,8 +22,15 @@ module Bosh::Blobstore
           })).to be_instance_of(S3cliBlobstoreClient)
         end
 
+        it 'returns gcscli client' do
+          allow(Kernel).to receive(:system).with("/path", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          expect(Client.create('gcscli', {
+              gcscli_path: '/path'
+          })).to be_instance_of(GcscliBlobstoreClient)
+        end
+
         it 'returns davcli client' do
-          allow(Kernel).to receive(:system).with("/path -v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+          allow(Kernel).to receive(:system).with("/path", "-v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
           expect(Client.create('davcli', {
             user: 'foo',
             password: 'bar',
@@ -35,7 +38,6 @@ module Bosh::Blobstore
             davcli_path: '/path'
           })).to be_instance_of(DavcliBlobstoreClient)
         end
-
       end
 
       context 'with unknown client provider' do
@@ -50,13 +52,17 @@ module Bosh::Blobstore
     describe '.safe_create' do
       context 'with known provider' do
         it 'returns retryable client' do
-          client = described_class.safe_create('simple')
+          client = described_class.safe_create('s3cli',{
+            access_key_id: 'foo',
+            secret_access_key: 'bar',
+            s3cli_path: true,
+          })
           expect(client).to be_an_instance_of(RetryableBlobstoreClient)
         end
 
-        it 'makes retryable client with simple client' do
-          wrapped_client = instance_double('Bosh::Blobstore::SimpleBlobstoreClient')
-          expect(SimpleBlobstoreClient)
+        it 'makes retryable client with s3 client' do
+          wrapped_client = instance_double('Bosh::Blobstore::S3cliBlobstoreClient')
+          expect(S3cliBlobstoreClient)
             .to receive(:new)
             .and_return(wrapped_client)
 
@@ -77,13 +83,41 @@ module Bosh::Blobstore
             .with(sha1_verifiable_client, retryable)
             .and_return(retryable_client)
 
-          expect(described_class.safe_create('simple')).to eq(retryable_client)
+          expect(described_class.safe_create('s3cli', {
+            access_key_id: 'foo',
+            secret_access_key: 'bar',
+            s3cli_path: true,
+          })).to eq(retryable_client)
         end
 
-        it 'makes retryable client with simple client' do
-          options = {'fake-key' => 'fake-value'}
-          expect(SimpleBlobstoreClient).to receive(:new).with(options).and_call_original
-          described_class.safe_create('simple', options)
+        it 'makes retryable client with gcs client' do
+          wrapped_client = instance_double('Bosh::Blobstore::GcscliBlobstoreClient')
+          expect(GcscliBlobstoreClient)
+            .to receive(:new)
+            .and_return(wrapped_client)
+
+          sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
+          expect(Sha1VerifiableBlobstoreClient)
+            .to receive(:new)
+            .with(wrapped_client, logger)
+            .and_return(sha1_verifiable_client)
+
+          retryable = instance_double('Bosh::Retryable')
+          expect(Bosh::Retryable)
+            .to receive(:new)
+            .and_return(retryable)
+
+          retryable_client = instance_double('Bosh::Blobstore::RetryableBlobstoreClient')
+          expect(RetryableBlobstoreClient)
+            .to receive(:new)
+            .with(sha1_verifiable_client, retryable)
+            .and_return(retryable_client)
+
+          expect(described_class.safe_create('gcscli', {
+            access_key_id: 'foo',
+            secret_access_key: 'bar',
+            gcscli_path: true,
+          })).to eq(retryable_client)
         end
 
         it 'makes retryable object with default options' do
@@ -91,7 +125,11 @@ module Bosh::Blobstore
             .to receive(:new)
             .with(tries: 6, sleep: 2.0, on: [BlobstoreError])
             .and_call_original
-          described_class.safe_create('simple', {})
+          described_class.safe_create('s3cli', {
+            access_key_id: 'foo',
+            secret_access_key: 'bar',
+            s3cli_path: true,
+          })
         end
       end
 

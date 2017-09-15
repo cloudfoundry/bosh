@@ -76,7 +76,7 @@ describe 'deleting deployment', type: :integration do
     expect(bosh_runner.run('deployments')).to include('1 deployments')
     expect(bosh_runner.run('vms', deployment_name: 'simple')).to include('0 vms')
     output = scrub_random_ids(table(bosh_runner.run('instances', deployment_name: 'simple', json: true)))
-    expect(output).to contain_exactly({'Instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'Process State' => '', 'AZ' => '', 'IPs' => '192.168.1.2' })
+    expect(output).to contain_exactly({'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => '', 'az' => '', 'ips' => '192.168.1.2' })
     expect(bosh_runner.run('releases')).to include('1 releases')
 
     expect(current_sandbox.cpi.all_stemcells.count).to eq 1

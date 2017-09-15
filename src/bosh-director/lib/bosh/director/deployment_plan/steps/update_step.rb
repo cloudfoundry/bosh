@@ -7,59 +7,46 @@ module Bosh::Director
           @logger = base_job.logger
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
-          @disk_manager = DiskManager.new(@logger)
-          @dns_manager = DnsManagerProvider.create
-          job_renderer = @deployment_plan.job_renderer
-          agent_broadcaster = AgentBroadcaster.new
-          @vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-          @vm_creator = Bosh::Director::VmCreator.new(@logger, @vm_deleter, @disk_manager, job_renderer, agent_broadcaster)
         end
 
         def perform
           begin
             @logger.info('Updating deployment')
-            assemble
-            update_jobs
+            PreCleanupStep.new(@logger, @deployment_plan).perform
+            UpdateActiveVmCpisStep.new(@logger, @deployment_plan).perform
+            setup_step.perform
+            UpdateJobsStep.new(@base_job, @deployment_plan, @multi_job_updater).perform
+            UpdateErrandsStep.new(@base_job, @deployment_plan).perform
             @logger.info('Committing updates')
-            @deployment_plan.persist_updates!
+            PersistDeploymentStep.new(@deployment_plan).perform
             @logger.info('Finished updating deployment')
           ensure
-            @deployment_plan.update_stemcell_references!
+            CleanupStemcellReferencesStep.new(@deployment_plan).perform
           end
         end
 
         private
 
-        def assemble
-          @logger.info('Deleting no longer needed instances')
-          delete_unneeded_instances
-
-          @logger.info('Creating missing VMs')
-          # TODO: something about instance_plans.select(&:new?) -- how does that compare to the isntance#has_vm check?
-          @vm_creator.create_for_instance_plans(@deployment_plan.instance_plans_with_missing_vms, @deployment_plan.ip_provider, @deployment_plan.tags)
-
-          @base_job.task_checkpoint
+        def vm_creator
+          return @vm_creator if @vm_creator
+          template_blob_cache = @deployment_plan.template_blob_cache
+          agent_broadcaster = AgentBroadcaster.new
+          disk_manager = DiskManager.new(@logger)
+          vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
+          dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(@deployment_plan.availability_zones.map(&:name))
+          @vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
         end
 
-        def update_jobs
-          @logger.info('Updating instances')
-          @multi_job_updater.run(
-            @base_job,
-            @deployment_plan.ip_provider,
-            @deployment_plan.instance_groups_starting_on_deploy,
+        def setup_step
+          local_dns_repo = LocalDnsRepo.new(@logger, Config.root_domain)
+          dns_publisher = BlobstoreDnsPublisher.new(
+            lambda { App.instance.blobstores.blobstore },
+            Config.root_domain,
+            AgentBroadcaster.new,
+            LocalDnsEncoderManager.create_dns_encoder,
+            @logger
           )
-        end
-
-        def delete_unneeded_instances
-          unneeded_instance_plans = @deployment_plan.unneeded_instance_plans
-          if unneeded_instance_plans.empty?
-            @logger.info('No unneeded instances to delete')
-            return
-          end
-          event_log_stage = Config.event_log.begin_stage('Deleting unneeded instances', unneeded_instance_plans.size)
-          instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, @dns_manager, @disk_manager)
-          instance_deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage)
-          @logger.info('Deleted no longer needed instances')
+          SetupStep.new(@base_job, @deployment_plan, vm_creator, local_dns_repo, dns_publisher)
         end
       end
     end

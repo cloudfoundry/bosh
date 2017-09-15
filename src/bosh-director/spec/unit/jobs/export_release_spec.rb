@@ -9,18 +9,28 @@ module Bosh::Director
     let(:multi_digest) { instance_double(Digest::MultiDigest) }
     let(:sha2) { nil }
 
+    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
+    let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
+
+    let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
+    let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
+
     before do
       fake_locks
       allow(Digest::MultiDigest).to receive(:new).and_return(multi_digest)
       Bosh::Director::Config.current_job = job
-      allow(Bosh::Director::Config).to receive(:dns_enabled?) { false }
-      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+      Bosh::Director::Config.current_job.task_id = task.id
       allow(job).to receive(:task_cancelled?) { false }
       blobstore = double(:blobstore)
       blobstores = instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
       app = instance_double(App, blobstores: blobstores)
       allow(App).to receive(:instance).and_return(app)
       allow(multi_digest).to receive(:create).and_return('expected-sha1')
+      allow(Config).to receive(:result).and_return(task_result)
+      allow(planner_model).to receive(:add_variable_set)
+
+      allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
     end
 
     subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2) }
@@ -46,14 +56,13 @@ module Bosh::Director
     end
 
     context 'with a valid deployment targeted' do
-
       let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
 
       let!(:deployment_model) do
         Models::Deployment.make(
           name: deployment_manifest['name'],
           manifest: YAML.dump(deployment_manifest),
-          cloud_config: Models::CloudConfig.make(manifest: cloud_config)
+          cloud_config: Models::CloudConfig.make(raw_manifest: cloud_config)
         )
       end
 
@@ -61,8 +70,6 @@ module Bosh::Director
         Models::VariableSet.create(deployment: deployment_model)
 
         allow(job).to receive(:with_deployment_lock).and_yield
-        allow(job).to receive(:with_release_lock).and_yield
-        allow(job).to receive(:with_stemcell_lock).and_yield
       end
 
       it 'raises an error when the requested release does not exist' do
@@ -120,31 +127,21 @@ module Bosh::Director
         end
 
         context 'and the requested stemcell is found' do
-          let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-
           before do
             create_stemcell
-            allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
+            allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
             allow(job).to receive(:create_tarball)
-            allow(job).to receive(:result_file).and_return(Tempfile.new('result'))
             allow(package_compile_step).to receive(:perform)
           end
 
           it 'locks the deployment, release, and selected stemcell' do
             lock_timeout = {:timeout=>900} # 15 minutes. 15 * 60
             expect(job).to receive(:with_deployment_lock).with(deployment_manifest['name'], lock_timeout).and_yield
-            expect(job).to receive(:with_release_lock).with(release_name, lock_timeout).and_yield
-            expect(job).to receive(:with_stemcell_lock).with('ubuntu-stemcell', '1', lock_timeout).and_yield
 
             job.perform
           end
 
           it 'succeeds' do
-            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
-              expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
-              expect(job.first.release.name).to eq(release_name)
-              expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
-            end.and_return(package_compile_step)
             expect(package_compile_step).to receive(:perform).with no_args
 
             job.perform
@@ -178,10 +175,6 @@ module Bosh::Director
             end
 
             it 'succeeds' do
-              expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new) do |job, config, _, _|
-                expect(job.first).to be_instance_of(DeploymentPlan::InstanceGroup)
-                expect(config).to be_instance_of(DeploymentPlan::CompilationConfig)
-              end.and_return(package_compile_step)
               expect(package_compile_step).to receive(:perform).with no_args
 
               job.perform
@@ -216,12 +209,11 @@ module Bosh::Director
                 allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
                 allow(planner).to receive(:release)
                 allow(planner).to receive(:add_instance_group)
-                allow(planner).to receive(:compile_packages)
-                allow(job).to receive(:create_job_with_all_the_templates_so_everything_compiles)
+                allow(job).to receive(:create_instance_group_with_all_the_jobs_so_everything_compiles)
               }
 
               it 'skips links binding' do
-                expect(planner).to receive(:bind_models).with({:should_bind_links => false, :should_bind_properties=>false})
+                expect(assembler).to receive(:bind_models).with({:should_bind_links => false, :should_bind_properties=>false})
                 job.perform
               end
             end
@@ -237,8 +229,8 @@ module Bosh::Director
       context 'when creating a tarball' do
         let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
-        let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
-        let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner)}
+        let(:planner_factory) { DeploymentPlan::PlannerFactory.create(logger) }
+        let(:planner) { planner_factory.create_from_model(deployment_model) }
         let(:task_dir) { Dir.mktmpdir }
 
         before {
@@ -293,16 +285,13 @@ module Bosh::Director
               stemcell_version: '1'
           )
 
-          result_file = double('result file')
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
-          allow(planner).to receive(:instance_groups) { ['fake-job'] }
-          allow(planner).to receive(:compilation) { 'fake-compilation-config' }
-          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
+          allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
+          allow(planner_factory).to receive(:create_from_model).and_return(planner)
+          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
-          allow(job).to receive(:result_file).and_return(result_file)
-          allow(result_file).to receive(:write)
         }
 
         it 'should order the files in the tarball' do
@@ -338,20 +327,9 @@ module Bosh::Director
 
         it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
-
-             manifest_file = File.open(File.join(download_dir, 'release.MF'), 'r')
-             manifest_file_content = manifest_file.read
-
-             File.write(output_path, 'Some glorious content')
-
-             expect(manifest_file_content).to eq(%q(---
+             manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
+             expected_manifest_hash = YAML.load(%q(---
 compiled_packages:
-- name: ruby
-  version: ruby_version
-  fingerprint: ruby_fingerprint
-  sha1: rubycompiledpackagesha1
-  stemcell: ubuntu/1
-  dependencies: []
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
@@ -359,6 +337,12 @@ compiled_packages:
   stemcell: ubuntu/1
   dependencies:
   - ruby
+- name: ruby
+  version: ruby_version
+  fingerprint: ruby_fingerprint
+  sha1: rubycompiledpackagesha1
+  stemcell: ubuntu/1
+  dependencies: []
 jobs:
 - name: foobar
   version: foo_version
@@ -368,7 +352,20 @@ commit_hash: unknown
 uncommitted_changes: false
 name: bosh-release
 version: 0.1-dev
-))}
+))
+
+             File.write(output_path, 'Some glorious content')
+
+             expect(manifest_hash['compiled_packages']).to match_array(expected_manifest_hash['compiled_packages'])
+             expect(manifest_hash['jobs']).to match_array(expected_manifest_hash['jobs'])
+
+             manifest_hash.delete('compiled_packages')
+             expected_manifest_hash.delete('compiled_packages')
+             manifest_hash.delete('jobs')
+             expected_manifest_hash.delete('jobs')
+
+             expect(manifest_hash).to eq(expected_manifest_hash)
+          }
 
           allow(blobstore_client).to receive(:get)
           allow(blobstore_client).to receive(:create).and_return('blobstore_id')
@@ -416,8 +413,7 @@ version: 0.1-dev
         end
 
         context 'that is successfully placed in the blobstore' do
-
-          it 'should record the blobstore id of the created tarball in the ephemeral_blobs table' do
+          it 'should record the blobstore id of the created tarball in the blobs table' do
             expected_blobstore_id = '77da2388-ecf7-4cf6-be52-b054a07ea307'
 
             allow(blobstore_client).to receive(:get)
@@ -428,11 +424,12 @@ version: 0.1-dev
 
             expect {
               job.perform
-            }.to change(Bosh::Director::Models::EphemeralBlob, :count).from(0).to(1)
+            }.to change(Bosh::Director::Models::Blob, :count).from(0).to(1)
 
-            ephemeral_blob = Bosh::Director::Models::EphemeralBlob.first
-            expect(ephemeral_blob.blobstore_id).to eq(expected_blobstore_id)
-            expect(ephemeral_blob.sha1).to eq('expected-sha1')
+            exported_release_blob = Bosh::Director::Models::Blob.first
+            expect(exported_release_blob.blobstore_id).to eq(expected_blobstore_id)
+            expect(exported_release_blob.sha1).to eq('expected-sha1')
+            expect(exported_release_blob.type).to eq('exported-release')
           end
         end
       end

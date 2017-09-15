@@ -1,20 +1,12 @@
 require 'rspec'
-require 'bosh/dev/ruby_version'
 
 namespace :fly do
   # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
     execute('test-unit', '-p', {
-        DB: (ENV['DB'] || 'postgresql')
-    })
-  end
-
-  # bundle exec rake fly:integration
-  desc 'Fly integration specs'
-  task :integration do
-    execute('test-integration', '-p', {
-        DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil)
+        DB: (ENV['DB'] || 'postgresql'),
+        DB_VERSION: (ENV['DB_VERSION'] || '9.4')
     })
   end
 
@@ -31,32 +23,6 @@ namespace :fly do
     execute('run', '-p', {
         COMMAND: %Q|\"#{args[:command]}\"|
     })
-  end
-
-  desc 'Fly integration parallel specs'
-  task :integration_parallel do
-
-    num_workers = 3
-    num_groups = 24
-
-    groups = (1..num_groups).group_by { |i| i%num_workers }.values
-        .map { |group_values| group_values.join(',') }
-
-    task_names = groups.each_with_index.map do |group, index|
-      name = "integration_#{index + 1}"
-      task name do
-        execute('test-integration', '-p', {
-            DB: (ENV['DB'] || 'postgresql'),
-            SPEC_PATH: (ENV['SPEC_PATH'] || nil),
-            GROUP: group,
-            NUM_GROUPS: num_groups
-        })
-      end
-      name
-    end
-
-    multitask _parallel_integration: task_names
-    Rake::MultiTask[:_parallel_integration].invoke
   end
 
   desc 'Fly integration gocli parallel specs'
@@ -98,7 +64,7 @@ namespace :fly do
 
   def prepare_env(additional_env = {})
     env = {
-        RUBY_VERSION: ENV['RUBY_VERSION'] || Bosh::Dev::RubyVersion.release_version
+        RUBY_VERSION: ENV['RUBY_VERSION'] || RUBY_VERSION
     }
     env.merge!(additional_env)
 

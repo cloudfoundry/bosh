@@ -1,22 +1,23 @@
 module Bosh::Director
   class OrphanDiskManager
-    include CloudFactoryHelper
-
     def initialize(logger)
       @logger = logger
       @transactor = Transactor.new
     end
 
     def orphan_disk(disk)
+      instance_name = "#{disk.instance.job}/#{disk.instance.uuid}"
+
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
         begin
-          parent_id = add_event('delete', disk.instance.deployment.name, "#{disk.instance.job}/#{disk.instance.uuid}", disk.disk_cid)
+          parent_id = add_event('orphan', disk.instance.deployment.name, instance_name, disk.disk_cid)
           orphan_disk = Models::OrphanDisk.create(
               disk_cid:          disk.disk_cid,
               size:              disk.size,
+              cpi:               disk.cpi,
               availability_zone: disk.instance.availability_zone,
               deployment_name:   disk.instance.deployment.name,
-              instance_name:     "#{disk.instance.job}/#{disk.instance.uuid}",
+              instance_name:     instance_name,
               cloud_properties:  disk.cloud_properties
           )
 
@@ -26,7 +27,7 @@ module Bosh::Director
         rescue Exception => e
           raise e
         ensure
-          add_event('delete', orphan_disk.deployment_name, orphan_disk.instance_name, orphan_disk.disk_cid, parent_id, e)
+          add_event('orphan', disk.instance.deployment.name, instance_name, orphan_disk.nil? ? nil : orphan_disk.disk_cid, parent_id, e)
         end
       end
     end
@@ -40,7 +41,9 @@ module Bosh::Director
             instance_id: instance_id,
             active: true,
             size: disk.size,
-            cloud_properties: disk.cloud_properties)
+            cloud_properties: disk.cloud_properties,
+            cpi: disk.cpi
+        )
 
         disk.orphan_snapshots.each do |snapshot|
           Models::Snapshot.create(persistent_disk: new_disk, snapshot_cid: snapshot.snapshot_cid, clean: snapshot.clean)
@@ -78,12 +81,11 @@ module Bosh::Director
     end
 
     def delete_orphan_disk(orphan_disk)
+      delete_orphan_disk_snapshots(orphan_disk)
+
       begin
-        orphan_disk.orphan_snapshots.each do |orphan_snapshot|
-          delete_orphan_snapshot(orphan_snapshot)
-        end
         @logger.info("Deleting orphan orphan disk: #{orphan_disk.disk_cid}")
-        cloud = cloud_factory.for_availability_zone(orphan_disk.availability_zone)
+        cloud = CloudFactory.create_with_latest_configs.get(orphan_disk.cpi)
         cloud.delete_disk(orphan_disk.disk_cid)
         orphan_disk.destroy
       rescue Bosh::Clouds::DiskNotFound
@@ -109,12 +111,26 @@ module Bosh::Director
           })
       event.id
     end
+    
+    def delete_orphan_disk_snapshots(orphan_disk)
+      failed_orphan_snapshot_count = 0
+      orphan_disk.orphan_snapshots.each do |orphan_snapshot|
+        begin
+          delete_orphan_snapshot(orphan_snapshot)
+        rescue Exception => e
+          failed_orphan_snapshot_count += 1
+          @logger.warn(e.backtrace.join("\n"))
+          @logger.info("Failed to deleted snapshot #{orphan_snapshot.snapshot_cid} disk of #{orphan_disk.disk_cid}. Failed with: #{e.message}")
+        end
+      end
+      raise Bosh::Clouds::CloudError.new("Failed to delete #{failed_orphan_snapshot_count} snapshot(s) of disk #{orphan_disk.disk_cid}") if failed_orphan_snapshot_count > 0
+    end
 
     def delete_orphan_snapshot(orphan_snapshot)
       begin
         snapshot_cid = orphan_snapshot.snapshot_cid
         @logger.info("Deleting orphan snapshot: #{snapshot_cid}")
-        cloud = cloud_factory.for_availability_zone(orphan_snapshot.orphan_disk.availability_zone)
+        cloud = CloudFactory.create_with_latest_configs.get(orphan_snapshot.orphan_disk.cpi)
         cloud.delete_snapshot(snapshot_cid)
         orphan_snapshot.destroy
       rescue Bosh::Clouds::DiskNotFound

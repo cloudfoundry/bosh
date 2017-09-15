@@ -4,28 +4,8 @@ require 'bosh/director/models/deployment'
 module Bosh::Director::Models
   describe Deployment do
     subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
-    let(:manifest) { <<-HERE }
----
-tags:
-  tag1: value1
-  tag2: value2
-HERE
 
     describe '#tags' do
-      it 'returns the tags in deployment manifest' do
-        expect(deployment.tags).to eq({
-          'tag1' => 'value1',
-          'tag2' => 'value2',
-        })
-      end
-
-      context 'when tags are not present' do
-        let(:manifest) { '---{}' }
-
-        it 'returns empty list' do
-          expect(deployment.tags).to eq({})
-        end
-      end
 
       context 'when manifest is nil' do
         let(:manifest) { nil }
@@ -35,40 +15,81 @@ HERE
         end
       end
 
-      context 'when tags use variables' do
-        let(:mock_client) { double(Bosh::Director::ConfigServer::EnabledClient) }
-        let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+      context 'when manifest is not nil' do
 
-        let(:manifest) { <<-HERE }
+        context 'when tags are present' do
+
+          let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+          let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+
+          before do
+            allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+            allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+            allow(mock_client).to receive(:interpolate_with_versioning).and_return(interpolated_tags)
+          end
+
+          context 'when tags do NOT use variables' do
+            let(:manifest) { <<-HERE }
+---
+tags:
+  tag1: value1
+  tag2: value2
+            HERE
+
+            let(:interpolated_tags) do
+              {
+                'tag1' => 'value1',
+                'tag2' => 'value2'
+              }
+            end
+
+            it 'returns the tags in deployment manifest' do
+              expect(deployment.tags).to eq({
+                'tag1' => 'value1',
+                'tag2' => 'value2',
+              })
+            end
+          end
+
+          context 'when tags use variables' do
+            let(:manifest) { <<-HERE }
 ---
 tags:
   tagA: ((tag-var1))
   tagO: ((/tag-var2))
-        HERE
+            HERE
 
-        let(:tags) do
-          {
-              'tagA' => '((tag-var1))',
-              'tagO'=> '((/tag-var2))'
-          }
+            let(:tags) do
+              {
+                'tagA' => '((tag-var1))',
+                'tagO'=> '((/tag-var2))'
+              }
+            end
+
+            let(:interpolated_tags) do
+              {
+                'tagA' => 'apples',
+                'tagO' => 'oranges'
+              }
+            end
+
+            before do
+              VariableSet.make(id: 1, deployment: deployment)
+            end
+
+            it 'substitutes the variables in the tags section' do
+              expect(mock_client).to receive(:interpolate_with_versioning).with(tags, deployment.current_variable_set).and_return(interpolated_tags)
+              expect(deployment.tags).to eq(interpolated_tags)
+            end
+          end
         end
 
-        let(:interpolated_tags) do
-          {
-            'tagA' => 'apples',
-            'tagO' => 'oranges'
-          }
-        end
+        context 'when tags are NOT present' do
+          let(:manifest) { '---{}' }
 
-        before do
-          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
-          allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
-          allow(mock_client).to receive(:interpolate).and_return(interpolated_tags)
-        end
-
-        it 'substitutes the variables in the tags section' do
-          expect(mock_client).to receive(:interpolate).with(tags, deployment.name)
-          expect(deployment.tags).to eq(interpolated_tags)
+          it 'returns empty list' do
+            expect(deployment.tags).to eq({})
+          end
         end
       end
     end
@@ -116,6 +137,114 @@ tags:
       it 'returns the deployment current variable set' do
         expect(deployment_1.current_variable_set.id).to eq(3)
         expect(deployment_2.current_variable_set).to be_nil
+      end
+    end
+
+    describe '#last_successful_variable_set' do
+      let(:deployment_1) { Deployment.make(manifest: 'test') }
+      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+
+      before do
+        time = Time.now
+        VariableSet.make(id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true)
+        VariableSet.make(id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true)
+        VariableSet.make(id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true)
+        VariableSet.make(id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true)
+        VariableSet.make(id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
+      end
+
+      it 'returns the deployment current variable set' do
+        expect(deployment_1.last_successful_variable_set.id).to eq(4)
+        expect(deployment_2.last_successful_variable_set).to be_nil
+      end
+    end
+
+    describe '#cleanup_variable_sets' do
+      let(:deployment_1) { Deployment.make(manifest: 'test') }
+      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:time) { Time.now }
+
+      it 'deletes variable sets not referenced in the list provided' do
+        time = Time.now
+
+        dep_1_variable_sets_to_keep = [
+          VariableSet.make(id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true),
+          VariableSet.make(id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true),
+          VariableSet.make(id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true),
+          VariableSet.make(id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true),
+          VariableSet.make(id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
+        ]
+
+        dep_1_variable_sets_to_be_deleted = [
+          VariableSet.make(id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: true),
+          VariableSet.make(id: 7, deployment: deployment_1, created_at: time + 7, deployed_successfully: true),
+          VariableSet.make(id: 8, deployment: deployment_1, created_at: time + 8, deployed_successfully: true),
+          VariableSet.make(id: 9, deployment: deployment_1, created_at: time + 9, deployed_successfully: false)
+        ]
+
+        dep_2_control_variable_sets = [
+          VariableSet.make(id: 10, deployment: deployment_2, created_at: time + 10, deployed_successfully: false),
+          VariableSet.make(id: 11, deployment: deployment_2, created_at: time + 11, deployed_successfully: true),
+          VariableSet.make(id: 12, deployment: deployment_2, created_at: time + 12, deployed_successfully: false)
+        ]
+
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep + dep_1_variable_sets_to_be_deleted + dep_2_control_variable_sets)
+
+        deployment_1.cleanup_variable_sets(dep_1_variable_sets_to_keep)
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep + dep_2_control_variable_sets)
+
+        deployment_2.cleanup_variable_sets(dep_2_control_variable_sets)
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep + dep_2_control_variable_sets)
+
+        deployment_2.cleanup_variable_sets([])
+        expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep)
+      end
+    end
+
+    describe '#runtime_configs=' do
+      let(:manifest) { '---{}' }
+
+      before do
+        rc1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc1-prop', name: 'rc1').save
+        rc2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc2-prop', name: 'rc2').save
+        rc3 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc3-prop', name: 'rc3').save
+
+        deployment.add_runtime_config(rc1)
+        deployment.add_runtime_config(rc2)
+        deployment.add_runtime_config(rc3)
+      end
+
+      it 'removes existing records & assigns the new runtime config records' do
+        rc4 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc4-prop', name: 'rc4').save
+        rc5 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc5-prop', name: 'rc5').save
+        rc6 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc6-prop', name: 'rc6').save
+
+        deployment.runtime_configs = [rc4, rc5]
+
+        expect(Bosh::Director::Models::Deployment[id: deployment.id].runtime_configs).to contain_exactly(rc4, rc5)
+      end
+    end
+
+    describe '#create_with_teams' do
+      it 'saves attributes including teams & runtime_configs' do
+        rc1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc1-prop', name: 'rc1').save
+        rc2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc2-prop', name: 'rc2').save
+
+        team1 = Bosh::Director::Models::Team.new( name: 'team1')
+        team2 = Bosh::Director::Models::Team.new( name: 'team2')
+
+        attr = {
+          :name => 'some-deploy',
+          :teams => [team1, team2],
+          :runtime_configs => [rc1, rc2]
+        }
+
+        deployment =  Bosh::Director::Models::Deployment.create_with_teams(attr)
+
+        saved_deployment = Bosh::Director::Models::Deployment[id: deployment.id ]
+        expect(saved_deployment).to eq(deployment)
+        expect(saved_deployment.teams).to contain_exactly(team1, team2)
+        expect(saved_deployment.runtime_configs).to contain_exactly(rc1, rc2)
       end
     end
   end

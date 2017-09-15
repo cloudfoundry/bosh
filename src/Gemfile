@@ -4,7 +4,6 @@ source 'https://rubygems.org'
 
 gem 'bosh_common', path: 'bosh_common'
 gem 'bosh-core', path: 'bosh-core'
-gem 'bosh_cli'
 gem 'bosh-registry', path: 'bosh-registry'
 gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-director-core', path: 'bosh-director-core'
@@ -15,11 +14,11 @@ gem 'rake', '~>10.0'
 
 # json version is hardcoded in release director, health_monitor and registry packages
 # when modified needs to be updated there as well
-gem 'json', '=1.8.3'
+gem 'json', '=2.1.0'
 
 gem 'talentbox-delayed_job_sequel', '~> 4.1'
 
-gem 'bundler', '~>1.11.0'
+gem 'bundler', '~>1.15.0'
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
@@ -36,8 +35,6 @@ end
 
 group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'
-  gem 'bosh-stemcell', path: 'bosh-stemcell'
-  gem 'serverspec', '0.15.4'
 
   gem 'rspec', '~> 3.0.0'
   gem 'rspec-its'
@@ -45,22 +42,13 @@ group :development, :test do
 
   gem 'parallel_tests', '~> 2.0'
   gem 'rack-test'
-  gem 'webmock'
+  gem 'webmock', '~>1.0'
   gem 'fakefs'
-  gem 'simplecov', '~> 0.9.0'
   gem 'sinatra'
   gem 'sinatra-contrib'
-  gem 'codeclimate-test-reporter', require: false
-  gem 'vcr'
-  gem 'pry'
 
   # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
   gem 'eventmachine', '1.0.4'
-
-  # Explicitly do not require serverspec dependency
-  # so that it could be monkey patched in a deterministic way
-  # in `bosh-stemcell/spec/support/serverspec_monkeypatch.rb`
-  gem 'specinfra', '1.15.0', require: nil
 
   # for director
   gem 'machinist', '~>1.0'
@@ -68,7 +56,6 @@ group :development, :test do
   # for root level specs
   gem 'rest-client'
   gem 'nats'
-  gem 'rugged'
 
   gem 'sqlite3'
   gem 'timecop', '~>0.7.1'

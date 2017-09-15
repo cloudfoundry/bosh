@@ -1,7 +1,5 @@
 module Bosh::Director::ProblemScanner
   class DiskScanStage
-    include Bosh::Director::CloudFactoryHelper
-
     def initialize(disk_owners, problem_register, deployment_id, event_logger, logger)
       @disk_owners = disk_owners
       @problem_register = problem_register
@@ -19,10 +17,15 @@ module Bosh::Director::ProblemScanner
 
       @event_logger.begin_stage("Scanning #{disks.size} persistent disks", 2)
 
+      lock = Mutex.new
       @event_logger.track_and_log('Looking for inactive disks') do
-        disks.each do |disk|
-          scan_result = scan_disk(disk)
-          results[scan_result] += 1
+        Bosh::Director::ThreadPool.new(max_threads: Bosh::Director::Config.max_threads).wrap do |pool|
+          disks.each do |disk|
+            pool.process do
+              scan_result = scan_disk(disk)
+              lock.synchronize { results[scan_result] += 1 }
+            end
+          end
         end
       end
 
@@ -36,7 +39,7 @@ module Bosh::Director::ProblemScanner
 
     def scan_disk(disk)
       begin
-        cloud = cloud_factory.for_availability_zone(disk.instance.availability_zone)
+        cloud = Bosh::Director::CloudFactory.create_with_latest_configs.get_for_az(disk.instance.availability_zone)
         unless cloud.has_disk(disk.disk_cid)
           @logger.info("Found missing disk: #{disk.id}")
           @problem_register.problem_found(:missing_disk, disk)

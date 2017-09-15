@@ -1,12 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module ProblemHandlers
-
     class Base
       include CloudcheckHelper
-      include CloudFactoryHelper
-
       attr_reader :data
       attr_accessor :job # so we can checkpoint task
 

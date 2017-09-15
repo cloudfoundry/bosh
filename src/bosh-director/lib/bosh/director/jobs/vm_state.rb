@@ -17,12 +17,12 @@ module Bosh::Director
 
       def perform
         instances = Models::Instance.filter(:deployment_id => @deployment_id)
-        instances = instances.exclude(vm_cid: nil) unless @state_for_missing_vms
+        instances = instances.reject { |i| i.active_vm.nil? } unless @state_for_missing_vms
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           instances.each do |instance|
             pool.process do
               vm_state = process_instance(instance)
-              result_file.write(vm_state.to_json + "\n")
+              task_result.write(vm_state.to_json + "\n")
             end
           end
         end
@@ -36,8 +36,8 @@ module Bosh::Director
 
         job_state, job_vitals, processes, _ = vm_details(instance)
 
-        if dns_manager.dns_enabled?
-          dns_records = dns_manager.find_dns_record_names_by_instance(instance)
+        if powerdns_manager.dns_enabled?
+          dns_records = powerdns_manager.find_dns_record_names_by_instance(instance)
           dns_records.sort_by! { |name| -(name.split('.').first.length) }
         end
 
@@ -45,6 +45,7 @@ module Bosh::Director
 
         {
           :vm_cid => instance.vm_cid,
+          :vm_created_at => instance.vm_created_at,
           :disk_cid => instance.managed_persistent_disk_cid,
           :disk_cids => instance.active_persistent_disks.collection.map{|d| d.model.disk_cid},
           :ips => ips(instance),
@@ -84,7 +85,7 @@ module Bosh::Director
 
         if instance.vm_cid
           begin
-            agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id, :timeout => TIMEOUT)
+            agent = AgentClient.with_agent_id(instance.agent_id, :timeout => TIMEOUT)
             agent_state = agent.get_state(@format)
             agent_state['networks'].each_value do |network|
               ips << network['ip']

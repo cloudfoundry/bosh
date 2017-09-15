@@ -25,13 +25,15 @@ describe Bhm::Events::Alert do
   it "has hash representation" do
     ts = Time.now
     expect(make_alert(:created_at => ts.to_i).to_hash).to eq({
-      :kind       => "alert",
-      :id         => 1,
-      :severity   => 2,
-      :title      => "Test Alert",
-      :summary    => "Everything is down",
-      :source     => "mysql_node/instance_id_abc",
-      :created_at => ts.to_i
+      :kind        => "alert",
+      :id          => 1,
+      :severity    => 2,
+      :category    => nil,
+      :title       => "Test Alert",
+      :summary     => "Everything is down",
+      :source      => "mysql_node/instance_id_abc",
+      :deployment  => "deployment",
+      :created_at  => ts.to_i
     })
   end
 
@@ -48,7 +50,7 @@ describe Bhm::Events::Alert do
 
   it "has json representation" do
     alert = make_alert
-    expect(alert.to_json).to eq(Yajl::Encoder.encode(alert.to_hash))
+    expect(alert.to_json).to eq(JSON.dump(alert.to_hash))
   end
 
   it "has string representation" do

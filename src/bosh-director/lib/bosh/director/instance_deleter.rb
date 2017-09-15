@@ -2,15 +2,16 @@ module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
 
-    def initialize(ip_provider, dns_manager, disk_manager, options={})
+    def initialize(ip_provider, powerdns_manager, disk_manager, options={})
       @ip_provider = ip_provider
-      @dns_manager = dns_manager
+      @powerdns_manager = powerdns_manager
       @disk_manager = disk_manager
       @logger = Config.logger
+      @local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
+
       @blobstore = App.instance.blobstores.blobstore
       @force = options.fetch(:force, false)
       @virtual_delete_vm = options.fetch(:virtual_delete_vm, false)
-
     end
 
     def delete_instance_plan(instance_plan, event_log_stage)
@@ -31,15 +32,11 @@ module Bosh::Director
           end
 
           error_ignorer.with_force_check do
-            @dns_manager.delete_dns_for_instance(instance_model)
+            @powerdns_manager.delete_dns_for_instance(instance_model)
           end
 
           error_ignorer.with_force_check do
-            @dns_manager.publish_dns_records
-          end
-
-          error_ignorer.with_force_check do
-            @dns_manager.cleanup_dns_records
+            @local_dns_manager.delete_dns_for_instance(instance_model)
           end
 
           error_ignorer.with_force_check do

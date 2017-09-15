@@ -18,12 +18,19 @@ http {
   uwsgi_temp_path /var/vcap/data/blobstore/tmp/uwsgi;
   scgi_temp_path /var/vcap/data/blobstore/tmp/scgi;
 
-  log_format timed_combined '$remote_addr - $remote_user [$time_local] '
-                            '"$request" $status $body_bytes_sent '
-                            '"$http_referer" "$http_user_agent" '
-                            '$request_time $upstream_response_time $pipe';
+  map $status $severity {
+    ~^[23]  1;
+    default 7;
+  }
 
-  access_log	  /var/vcap/sys/log/blobstore/access.log timed_combined;
+  log_format common_event_format 'CEF:0|CloudFoundry|BOSH|-|blobstore_api|$request_uri|$severity|'
+                                 'requestClientApplication=$remote_user '
+                                 'requestMethod=$request_method '
+                                 'src=$remote_addr spt=$remote_port '
+                                 'cs1=Basic cs1Label=authType '
+                                 'cs2=$status cs2Label=responseStatus';
+
+  access_log	  /var/vcap/sys/log/blobstore/access.log common_event_format;
   server_tokens off;
 
   sendfile    on;

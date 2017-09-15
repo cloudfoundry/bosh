@@ -150,10 +150,10 @@ module Bosh::Director::Models
 
       it 'should have stemcell' do
         expect(subject.spec_p('stemcell')).to eq({
-              'alias' => 'a',
-              'name' => 'ubuntu-stemcell',
-              'version' => '1'
-            })
+          'alias' => 'a',
+          'name' => 'ubuntu-stemcell',
+          'version' => '1'
+        })
       end
     end
 
@@ -222,17 +222,17 @@ module Bosh::Director::Models
             })
 
             expect(subject.spec['vm_type']).to eq(
-                {'name' => 'a',
-                 'cloud_properties' => {}
-                }
+              {'name' => 'a',
+                'cloud_properties' => {}
+              }
             )
 
             expect(subject.spec['stemcell']).to eq(
               {'name' => 'ubuntu-stemcell',
-               'version' => '1',
-               'alias' => 'a'
+                'version' => '1',
+                'alias' => 'a'
               }
-             )
+            )
           end
         end
 
@@ -341,6 +341,149 @@ module Bosh::Director::Models
             expect(subject.expects_vm?).to eq(false)
           end
         end
+      end
+    end
+
+    it 'has a one-to-many relationship to vms' do
+      vm1 = BD::Models::Vm.make(instance_id: subject.id)
+      vm2 = BD::Models::Vm.make(instance_id: subject.id)
+
+      expect(subject.vms).to contain_exactly(vm1, vm2)
+
+      new_instance = BD::Models::Instance.make
+
+      new_instance.add_vm vm1
+      subject.refresh
+      expect(subject.vms).to contain_exactly(vm2)
+      expect(new_instance.vms).to contain_exactly(vm1)
+    end
+
+    describe '#active_vm' do
+      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
+      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
+
+      it 'returns vm of #vms that is marked active' do
+        expect(subject.active_vm).to eq(vm2)
+      end
+    end
+
+    describe '#active_vm=' do
+      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
+      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
+
+      it 'changes what vm is returned for #active_vm' do
+        expect(subject.active_vm).to eq(vm2)
+
+        subject.active_vm = vm1
+
+        expect(subject.active_vm).to eq(vm1)
+      end
+
+      context 'when updating new vm to be active fails' do
+        before { allow(vm1).to receive(:update).and_raise }
+
+        it 'is transactional' do
+          expect(subject.active_vm).to eq(vm2)
+
+          expect { subject.active_vm = vm1 }.to raise_error
+
+          expect(subject.active_vm).to eq(vm2)
+        end
+      end
+
+      context 'when updating with a nil vm' do
+        it 'the instance should not have any active_vms' do
+          subject.active_vm = nil
+
+          expect(subject.active_vm).to eq(nil)
+        end
+      end
+
+      context 'when instance does not already have an active vm' do
+        before { vm2.update(active: false) }
+
+        it 'sets the given vm to be active' do
+          expect(subject.active_vm).to eq(nil)
+
+          subject.active_vm = vm2
+
+          expect(subject.active_vm).to eq(vm2)
+        end
+      end
+    end
+
+    context 'with active vm' do
+      before do
+        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha', instance_id: subject.id)
+        subject.active_vm = vm
+        subject.save
+      end
+
+      describe 'agent_id' do
+        it 'references agent_id from active vm' do
+          expect(subject.agent_id).to eq('my-agent-id')
+        end
+      end
+
+      describe 'vm_cid' do
+        it 'returns active vms cid' do
+          expect(subject.vm_cid).to eq('my-cid')
+        end
+      end
+
+      describe 'vm_created_at' do
+        it 'references created_at from active vm' do
+          expect(subject.vm_created_at).to eq(subject.active_vm.created_at.utc.iso8601)
+        end
+      end
+
+      describe 'trusted_certs_sha1' do
+        it 'returns active vms trusted_certs_sha1' do
+          expect(subject.trusted_certs_sha1).to eq('trusted-sha')
+        end
+      end
+    end
+
+    context 'without active vm' do
+      describe 'agent_id' do
+        it 'is nil' do
+          expect(subject.agent_id).to be_nil
+        end
+      end
+
+      describe 'vm_cid' do
+        it 'is nil' do
+          expect(subject.vm_cid).to be_nil
+        end
+      end
+
+      describe 'vm_created_at' do
+        it 'is nil' do
+          expect(subject.vm_created_at).to be_nil
+        end
+      end
+
+      describe 'trusted_certs_sha1' do
+        it 'returns sha1 digest of empty string' do
+          expect(subject.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(''))
+        end
+      end
+    end
+
+    describe '#has_important_vm?' do
+      let!(:vm) { BD::Models::Vm.make(instance_id: instance_with_important_vm.id, active: true) }
+      let!(:ignored_vm) { BD::Models::Vm.make(instance_id: ignored_instance.id, active: true) }
+      let!(:stopped_vm) { BD::Models::Vm.make(instance_id: stopped_instance.id, active: true) }
+      let(:instance_with_important_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
+      let(:ignored_instance) { BD::Models::Instance.make(state: 'started', ignore: true) }
+      let(:stopped_instance) { BD::Models::Instance.make(state: 'stopped', ignore: false) }
+      let(:instance_with_no_active_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
+
+      it 'only returns true when model has active vm and is not stopped and is not ignored' do
+        expect(instance_with_important_vm.has_important_vm?).to eq(true)
+        expect(ignored_instance.has_important_vm?).to eq(false)
+        expect(stopped_instance.has_important_vm?).to eq(false)
+        expect(instance_with_no_active_vm.has_important_vm?).to eq(false)
       end
     end
   end

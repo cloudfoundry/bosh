@@ -10,6 +10,8 @@ module Bosh
         ERB.new(erb).result(context.get_binding)
       end
 
+      let(:dns_encoder) { double('some dns encoder', encode_query: 'some.fqdn') }
+
       before do
         @spec = {
           'job' => {
@@ -22,8 +24,21 @@ module Bosh
             'vfalse' => false
           },
           'links' => {
-            'fake-link-1' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]},
-            'fake-link-2' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]}
+            'fake-link-1' => {
+              'deployment_name' => 'fake-deployment',
+              'instance_group' => 'fake-instance-group-1',
+              'default_network' => 'default',
+              'domain' => 'otherbosh',
+              'instances' => [{'address' => '123.456.789.101', 'properties' => {'prop1' => 'value'}}]
+            },
+            'fake-link-2' => {
+              'deployment_name' => 'fake-deployment',
+              'instance_group' => 'fake-instance-group-2',
+              'default_network' => 'default',
+              'domain' => 'otherbosh',
+              'address' => 'some-address',
+              'instances' => [{'address' => '123.456.789.102', 'properties' => {'prop2' => 'value'}}]
+            }
           },
           'networks' => {
             'network1' => {
@@ -39,10 +54,14 @@ module Bosh
           'id' => 'deadbeef',
           'bootstrap' => true,
           'az' => 'foo-az',
-          'resource_pool' => 'a'
+          'resource_pool' => 'a',
+          'release' => {
+            'name' => 'test',
+            'version' => '1.0'
+          }
         }
 
-        @context = EvaluationContext.new(@spec)
+        @context = EvaluationContext.new(@spec, dns_encoder)
       end
 
       it 'unrolls properties into OpenStruct' do
@@ -67,7 +86,7 @@ module Bosh
 
       it 'supports looking up template availability zone' do
         expect(eval_template('<%= spec.az %>', @context)).to eq(@context.spec.az)
-        end
+      end
 
       it 'exposes an resource pool' do
         expect(eval_template('<%= spec.resource_pool %>', @context)).to eq('a')
@@ -75,6 +94,14 @@ module Bosh
 
       it 'supports looking up whether template is bootstrap or not' do
         expect(eval_template('<%= spec.bootstrap %>', @context)).to eq('true')
+      end
+
+      it 'supports looking up template release name' do
+        expect(eval_template('<%= spec.release.name %>', @context)).to eq(@context.spec.release.name)
+      end
+
+      it 'supports looking up template release version' do
+        expect(eval_template('<%= spec.release.version %>', @context)).to eq(@context.spec.release.version)
       end
 
       it 'evaluates links' do
@@ -85,6 +112,14 @@ module Bosh
       it 'evaluates link properties' do
         expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value')
         expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value')
+      end
+
+      it 'evaluates link addresses using the given dns encoder' do
+        expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('some.fqdn')
+      end
+
+      it 'evaluates manual spec address ignoring the dns encoder' do
+        expect(eval_template("<%= link('fake-link-2').address %>", @context)).to eq('some-address')
       end
 
       it 'should throw a nice error when a link cannot be found' do

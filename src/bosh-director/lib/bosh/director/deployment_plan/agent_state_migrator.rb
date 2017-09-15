@@ -1,15 +1,14 @@
 module Bosh::Director
   module DeploymentPlan
     class AgentStateMigrator
-      def initialize(deployment_plan, logger)
-        @deployment_plan = deployment_plan
+      def initialize(logger)
         @logger = logger
       end
 
       def get_state(instance)
         @logger.debug("Requesting current VM state for: #{instance.agent_id}")
-        agent = AgentClient.with_vm_credentials_and_agent_id(instance.credentials, instance.agent_id)
-        state = agent.get_state
+        agent = AgentClient.with_agent_id(instance.agent_id)
+        state = agent.get_state { Config.job_cancelled? }
 
         @logger.debug("Received VM state: #{state.pretty_inspect}")
         verify_state(instance, state)

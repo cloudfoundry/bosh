@@ -87,6 +87,34 @@ module Bosh
 
       end
 
+      context '#sort_property' do
+        it 'should sort hash property based on keys' do
+          prop = {
+           'n5' => {
+             'm2' => "foo",
+             'm1' => "foo",
+           },
+           'n1' => 'foo',
+           'n3' => [3, 2, 1, 5, 4],
+          }
+          sorted_property = @helper.sort_property(prop)
+          expect(sorted_property.to_json).to eq(
+            {
+              'n1' => 'foo',
+              'n3' => [3, 2, 1, 5, 4],
+              'n5' => {
+                'm1' => "foo",
+                'm2' => "foo",
+              }
+            }.to_json
+          )
+        end
+
+        it 'does not sort non-hash values' do
+          expect{ @helper.sort_property("foo") }.not_to raise_error
+        end
+      end
+
       context '#validate_properties_format' do
         context 'when deployment manifest properties are valid' do
 

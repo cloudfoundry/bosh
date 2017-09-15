@@ -17,13 +17,13 @@ describe Bosh::Director::Api::CloudConfigManager do
       expect(cloud_config.properties).to eq(valid_cloud_manifest)
     end
 
-    context 'when cloud config is failing to parse' do
-      it 'returns an error' do
-        cloud_config_yaml = 'invalid cloud config'
+    context 'when cloud config uses placeholders' do
+      let(:cloud_config_with_placeholders) { YAML.dump(Bosh::Spec::Deployments.cloud_config_with_placeholders) }
+
+      it 'does not error on update' do
         expect {
-          manager.update(cloud_config_yaml)
-        }.to raise_error Bosh::Director::ValidationInvalidType
-        expect(Bosh::Director::Models::CloudConfig.count).to eq(0)
+          manager.update(cloud_config_with_placeholders)
+        }.to_not raise_error
       end
     end
   end

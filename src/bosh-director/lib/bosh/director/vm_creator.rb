@@ -4,15 +4,14 @@ require 'securerandom'
 module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
   class VmCreator
-    include EncryptionHelper
     include PasswordHelper
-    include CloudFactoryHelper
 
-    def initialize(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+    def initialize(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
       @logger = logger
       @vm_deleter = vm_deleter
       @disk_manager = disk_manager
-      @job_renderer = job_renderer
+      @template_blob_cache = template_blob_cache
+      @dns_encoder = dns_encoder
       @agent_broadcaster = agent_broadcaster
 
       @config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
@@ -32,13 +31,7 @@ module Bosh::Director
                 @logger.info('Creating missing VM')
                 disks = [instance.model.managed_persistent_disk_cid].compact
                 create_for_instance_plan(instance_plan, disks, tags)
-                instance_plan.network_plans
-                    .select(&:obsolete?)
-                    .each do |network_plan|
-                  reservation = network_plan.reservation
-                  ip_provider.release(reservation)
-                end
-                instance_plan.release_obsolete_network_plans
+                instance_plan.release_obsolete_network_plans(ip_provider)
               end
             end
           end
@@ -46,23 +39,27 @@ module Bosh::Director
       end
     end
 
-    def create_for_instance_plan(instance_plan, disks, tags)
+    def create_for_instance_plan(instance_plan, disks, tags, use_existing=false)
       instance = instance_plan.instance
+
+      factory, stemcell_cid = choose_factory_and_stemcell_cid(instance_plan, use_existing)
+
       instance_model = instance.model
       @logger.info('Creating VM')
 
       create(
-        instance_model,
-        instance.stemcell_cid,
+        instance,
+        stemcell_cid,
         instance.cloud_properties,
         instance_plan.network_settings_hash,
         disks,
         instance.env,
+        factory
       )
 
       begin
-        VmMetadataUpdater.build.update(instance_model, tags)
-        agent_client = AgentClient.with_vm_credentials_and_agent_id(instance_model.credentials, instance_model.agent_id)
+        MetadataUpdater.build.update_vm_metadata(instance_model, tags, factory)
+        agent_client = AgentClient.with_agent_id(instance_model.agent_id)
         agent_client.wait_until_ready
 
         if Config.flush_arp
@@ -96,17 +93,17 @@ module Bosh::Director
 
     def add_event(deployment_name, instance_name, action, object_name = nil, parent_id = nil, error = nil)
       event = Config.current_job.event_manager.create_event(
-          {
-              parent_id:   parent_id,
-              user:        Config.current_job.username,
-              action:      action,
-              object_type: 'vm',
-              object_name: object_name,
-              task:        Config.current_job.task_id,
-              deployment:  deployment_name,
-              instance:    instance_name,
-              error:       error
-          })
+        {
+          parent_id: parent_id,
+          user: Config.current_job.username,
+          action: action,
+          object_type: 'vm',
+          object_name: object_name,
+          task: Config.current_job.task_id,
+          deployment: deployment_name,
+          instance: instance_name,
+          error: error
+        })
       event.id
     end
 
@@ -116,26 +113,38 @@ module Bosh::Director
       unless instance_plan.instance.compilation?
         # re-render job templates with updated dynamic network settings
         @logger.debug("Re-rendering templates with updated dynamic networks: #{instance_plan.spec.as_template_spec['networks']}")
-        @job_renderer.render_job_instances([instance_plan])
+        JobRenderer.render_job_instances_with_cache([instance_plan], @template_blob_cache, @dns_encoder, @logger)
       end
     end
 
-    def create(instance_model, stemcell_cid, cloud_properties, network_settings, disks, env)
+    def choose_factory_and_stemcell_cid(instance_plan, use_existing)
+      if use_existing && !!instance_plan.existing_instance.availability_zone
+        factory = CloudFactory.create_from_deployment(instance_plan.existing_instance.deployment)
+
+        stemcell = instance_plan.instance.stemcell
+        cpi = factory.get_name_for_az(instance_plan.existing_instance.availability_zone)
+        stemcell_cid = stemcell.models.find { |model| model.cpi == cpi }.cid
+        return factory, stemcell_cid
+      else
+        return CloudFactory.create_with_latest_configs, instance_plan.instance.stemcell_cid
+      end
+    end
+
+    def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env, factory)
+      instance_model = instance.model
       deployment_name = instance_model.deployment.name
       parent_id = add_event(deployment_name, instance_model.name, 'create')
       agent_id = self.class.generate_agent_id
 
       config_server_client = @config_server_client_factory.create_client
-      env = config_server_client.interpolate(Bosh::Common::DeepCopy.copy(env), deployment_name)
+      env = config_server_client.interpolate_with_versioning(env, instance.desired_variable_set)
+      cloud_properties = config_server_client.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
+      network_settings = config_server_client.interpolate_with_versioning(network_settings, instance.desired_variable_set)
 
-      options = {:agent_id => agent_id}
+      cpi = factory.get_name_for_az(instance_model.availability_zone)
 
-      if Config.encryption?
-        credentials = generate_agent_credentials
-        env['bosh'] ||= {}
-        env['bosh']['credentials'] = credentials
-        options[:credentials] = credentials
-      end
+      vm_options = {instance: instance_model, agent_id: agent_id, cpi: cpi}
+      options = {}
 
       password = env.fetch('bosh', {}).fetch('password', "")
       if Config.generate_vm_passwords && password == ""
@@ -159,7 +168,7 @@ module Bosh::Director
 
       count = 0
       begin
-        cloud = cloud_factory.for_availability_zone!(instance_model.availability_zone)
+        cloud = factory.get(vm_options[:cpi])
         vm_cid = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
       rescue Bosh::Clouds::VMCreationFailed => e
         count += 1
@@ -168,14 +177,21 @@ module Bosh::Director
         raise e
       end
 
-      options[:vm_cid] = vm_cid
+      vm_options[:cid] = vm_cid
+      vm_options[:created_at] = Time.now
+      vm_model = Models::Vm.create(vm_options)
+      vm_model.save
+
+      unless instance.vm_created?
+        instance_model.active_vm = vm_model
+      end
+
       instance_model.update(options)
     rescue => e
       @logger.error("error creating vm: #{e.message}")
       if vm_cid
         parent_id = add_event(deployment_name, instance_model.name, 'delete', vm_cid)
-        instance_model.vm_cid = vm_cid
-        @vm_deleter.delete_vm(instance_model)
+        @vm_deleter.delete_vm_by_cid(vm_cid)
         add_event(deployment_name, instance_model.name, 'delete', vm_cid, parent_id)
       end
       raise e

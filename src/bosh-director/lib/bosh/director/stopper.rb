@@ -9,7 +9,7 @@ module Bosh::Director
     end
 
     def stop
-      return if @instance_model.compilation || @instance_model.vm_cid.nil? || @instance_plan.needs_to_fix?
+      return if @instance_model.compilation || @instance_model.active_vm.nil? || @instance_plan.needs_to_fix?
 
       if @instance_plan.skip_drain
         @logger.info("Skipping drain for '#{@instance_model}'")
@@ -23,7 +23,7 @@ module Bosh::Director
     private
 
     def agent_client
-      @agent_client ||= AgentClient.with_vm_credentials_and_agent_id(@instance_model.credentials, @instance_model.agent_id)
+      @agent_client ||= AgentClient.with_agent_id(@instance_model.agent_id)
     end
 
     def perform_drain
@@ -46,8 +46,7 @@ module Bosh::Director
       @target_state == 'stopped' ||
         @target_state == 'detached' ||
         @instance_plan.needs_shutting_down? ||
-        @instance_plan.persistent_disk_changed? ||
-        @instance_plan.networks_changed?
+        @instance_plan.persistent_disk_changed?
     end
 
     def wait_for_dynamic_drain(initial_drain_time)

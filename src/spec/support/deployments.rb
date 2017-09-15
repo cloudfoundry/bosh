@@ -5,9 +5,9 @@ module Bosh::Spec
     def self.minimal_cloud_config
       {
         'networks' => [{
-            'name' => 'a',
-            'subnets' => [],
-          }],
+          'name' => 'a',
+          'subnets' => [],
+        }],
 
         'compilation' => {
           'workers' => 1,
@@ -16,6 +16,115 @@ module Bosh::Spec
         },
 
         'resource_pools' => [],
+      }
+    end
+
+    def self.cloud_config_with_placeholders
+      {
+          'azs' => [
+              { 'name' => 'z1', 'cloud_properties' => '((/z1_cloud_properties))' },
+              { 'name' => 'z2', 'cloud_properties' => '((/z2_cloud_properties))' },
+          ],
+
+          'vm_types' => [{
+              'name' => 'small',
+              'cloud_properties' => {
+                  'instance_type' => 't2.micro',
+                  'ephemeral_disk' => '((/ephemeral_disk_placeholder))'
+              }
+          }, {
+              'name' => 'medium',
+              'cloud_properties' => {
+                  'instance_type' => 'm3.medium',
+                  'ephemeral_disk' => '((/ephemeral_disk_placeholder))'
+              }
+          }],
+
+          'disk_types' => '((/disk_types_placeholder))',
+
+          'networks' => [{
+              'name' => 'private',
+              'type' => 'manual',
+              'subnets' => '((/subnets_placeholder))'
+          }, {
+              'name' => 'vip',
+              'type' => 'vip'
+          }],
+
+          'compilation' => {
+              'workers' => '((/workers_placeholder))',
+              'reuse_compilation_vms' => true,
+              'az' => 'z1',
+              'vm_type' => 'medium',
+              'network' => 'private'
+          }
+      }
+    end
+
+    def self.cloud_config_with_cloud_properties_placeholders
+      {
+        'azs' => [
+          {
+            'name' => 'z1',
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'vm_types' => [
+          {
+            'name' => 'small',
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'disk_types' => [
+          {
+            'name' => 'small',
+            'disk_size' => 3000,
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'networks' => [
+          {
+            'name' => 'private',
+            'type' => 'manual',
+            'subnets' => [
+              {
+                'range' => '10.10.0.0/24',
+                'gateway' => '10.10.0.1',
+                'az' => 'z1',
+                'static' => [
+                  '10.10.0.62'
+                ],
+                'dns' => [
+                  '10.10.0.2'
+                ],
+                'cloud_properties' => {
+                  'secret' => '((/never-log-me))'
+                }
+              }
+            ]
+          }
+        ],
+        'vm_extensions' => [
+          {
+            'name' => 'pub-lbs',
+            'cloud_properties' => {
+              'secret' => '((/never-log-me))'
+            }
+          }
+        ],
+        'compilation' => {
+          'workers' => 5,
+          'reuse_compilation_vms' => true,
+          'az' => 'z1',
+          'vm_type' => 'small',
+          'network' => 'private'
+        }
       }
     end
 
@@ -52,6 +161,22 @@ module Bosh::Spec
       minimal_cloud_config.merge({
         'networks' => [network],
         'resource_pools' => resource_pools,
+      })
+    end
+
+    def self.simple_network_specific_cloud_config
+      minimal_cloud_config.merge({
+        'networks' => [
+          {
+            'name' => 'a',
+            'subnets' => [subnet],
+          },
+          {
+            'name' => 'b',
+            'subnets' => [subnet],
+          }
+        ],
+        'resource_pools' => [resource_pool]
       })
     end
 
@@ -184,6 +309,18 @@ module Bosh::Spec
       })
     end
 
+    def self.runtime_config_with_addon_includes_network
+      runtime_config_with_addon.merge({
+        'addons' => [
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'include' => {
+            'networks' => ["a"]
+          }
+        ]
+      })
+    end
+
     def self.runtime_config_with_addon_placeholders
       runtime_config_with_addon.merge({
         'addons' => [
@@ -247,6 +384,31 @@ module Bosh::Spec
                   'type' => 'cpi-type2',
                   'properties' => {
                       'somekey2' => 'someval2'
+                  }
+              }
+          ]
+      }
+      cpi_config['cpis'].each{|cpi|cpi['exec_path'] = exec_path} unless exec_path.nil?
+      cpi_config
+    end
+
+    def self.simple_cpi_config_with_variables(exec_path=nil)
+      cpi_config =  {
+          'cpis' => [
+              {
+                  'name' => 'cpi-name1',
+                  'type' => 'cpi-type1',
+                  'properties' => {
+                      'someKeyFoo1' => '((/cpi-someFooVal1-var))',
+                      'someKeyBar1' => '((/cpi-someBarVal1-var))'
+                  }
+              },
+              {
+                  'name' => 'cpi-name2',
+                  'type' => 'cpi-type2',
+                  'properties' => {
+                      'someKeyFoo2' => '((/cpi-someFooVal2-var))',
+                      'someKeyBar2' => '((/cpi-someBarVal2-var))'
                   }
               }
           ]
@@ -349,6 +511,15 @@ module Bosh::Spec
         'jobs' => [
           simple_job(resource_pool: 'a', name: "has-addon-vm", instances: 1),
           simple_job(resource_pool: 'b', name: "no-addon-vm", instances: 1)
+        ]
+      })
+    end
+
+    def self.network_specific_addon_manifest
+      test_release_manifest.merge({
+        'jobs' => [
+          simple_job(network_name: "a", name: "has-addon-vm", instances: 1),
+          simple_job(network_name: "b", name: "no-addon-vm", instances: 1)
         ]
       })
     end
@@ -483,6 +654,60 @@ module Bosh::Spec
             'networks' => [{'name' => 'a'}],
           }]
       }
+    end
+
+    def self.deployment_manifest_with_addon
+      minimal_manifest.merge(
+        'name' => DEFAULT_DEPLOYMENT_NAME,
+        'releases' => [
+          {
+            'name' => 'bosh-release',
+            'version' => '0.1-dev',
+          },
+          {'name' => 'dummy2',
+            'version' => '0.2-dev'}
+        ],
+        'jobs' => [{
+          'name' => 'foobar',
+          'templates' => [{'name' => 'foobar', 'release' => 'bosh-release'}],
+          'instances' => 1,
+          'resource_pool' => 'a',
+          'networks' => [{'name' => 'a'}]
+        }],
+        'addons' => [{
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
+          'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
+        }]
+      )
+    end
+
+    def self.complex_deployment_manifest_with_addon
+      minimal_manifest.merge(
+        'name' => DEFAULT_DEPLOYMENT_NAME,
+        'releases' => [
+          {
+            'name' => 'bosh-release',
+            'version' => '0.1-dev',
+          },
+          {'name' => 'dummy2',
+            'version' => '0.2-dev'}
+        ],
+        'jobs' => [
+          simple_job(resource_pool: 'b', name: 'has-rc-addon-vm', templates: [{"name" => "foobar", "release" => "bosh-release"}], instances: 1),
+          simple_job(resource_pool: 'a', name: 'has-depl-rc-addons-vm', templates: [{"name" => "foobar", "release" => 'bosh-release'}], instances: 1),
+          simple_job(resource_pool: 'a', name: 'has-depl-addon-vm', templates: [{"name" => "foobar_without_packages", "release" => 'bosh-release'}], instances: 1),
+        ],
+        'addons' => [
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'include' => {
+            'stemcell' => [
+              {'os' => 'toronto-os'}
+            ]
+          }
+        ]
+      )
     end
 
     def self.test_deployment_manifest
@@ -657,7 +882,7 @@ module Bosh::Spec
         'templates' => opts[:templates] || opts[:jobs] || ['name' => 'foobar'],
         'resource_pool' => opts.fetch(:resource_pool, 'a'),
         'instances' => opts.fetch(:instances, 3),
-        'networks' => [{ 'name' => 'a' }],
+        'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
         'properties' => {},
       }
 
@@ -698,6 +923,31 @@ module Bosh::Spec
       manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
       manifest['jobs'] << simple_errand_job
       manifest
+    end
+
+    def self.manifest_with_errand_job_on_service_instance
+      manifest = simple_manifest
+      manifest['jobs'] = [service_job_with_errand]
+      manifest
+    end
+
+    def self.service_job_with_errand
+      {
+        'name' => 'service_with_errand',
+        'templates' => [{'release' => 'bosh-release', 'name' => 'errand1'}],
+        'lifecycle' => 'service',
+        'resource_pool' => 'a',
+        'instances' => 1,
+        'networks' => [{'name' => 'a'}],
+        'properties' => {
+          'errand1' => {
+            'exit_code' => 0,
+            'stdout' => 'fake-errand-stdout-service',
+            'stderr' => 'fake-errand-stderr-service',
+            'run_package_file' => true,
+          },
+        },
+      }
     end
 
     def self.simple_errand_job

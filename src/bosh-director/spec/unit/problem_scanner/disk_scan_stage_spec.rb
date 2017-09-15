@@ -18,11 +18,23 @@ module Bosh::Director
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
+    let(:thread_pool) { double(ThreadPool) }
+    let(:thread_limit) { double(5) }
+    let(:disk_count) { 1 }
+
     before do
+      expect(thread_pool).to receive(:wrap)  do |&blk|
+        blk.call(thread_pool) if blk
+      end
+
+      expect(thread_pool).to receive(:process).exactly(disk_count).times.and_yield
+      allow(Config).to receive(:max_threads).and_return thread_limit
+      expect(ThreadPool).to receive(:new).with(max_threads: thread_limit).and_return(thread_pool)
+
       allow(event_logger).to receive(:track_and_log) do |_, &blk|
         blk.call if blk
       end
-      allow(Bosh::Director::CloudFactory).to receive(:new).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     end
 
     describe '#scan' do
@@ -31,15 +43,19 @@ module Bosh::Director
       let!(:disk) do
         Models::PersistentDisk.make(active: disk_state, instance_id: instance.id, disk_cid: 'fake-disk-cid')
       end
-      let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, vm_cid: 'fake-vm-cid', availability_zone: 'az1') }
+      let!(:vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id) }
+      let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }
       let(:disk_owners) { {'fake-disk-cid' => ['fake-vm-cid']} }
-      before { allow(cloud).to receive(:has_disk).and_return(true) }
+      before do
+        allow(cloud).to receive(:has_disk).and_return(true)
+        instance.active_vm = vm
+      end
 
       context 'when cloud does not have disk' do
         before { allow(cloud).to receive(:has_disk).and_return(false) }
 
         it 'registers missing disk problem' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to receive(:problem_found).with(:missing_disk, disk)
           expect(event_logger).to receive(:track_and_log).with('0 OK, 1 missing, 0 inactive, 0 mount-info mismatch')
           disk_scanner.scan
@@ -47,7 +63,8 @@ module Bosh::Director
       end
 
       context 'when instance is ignored' do
-        let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, vm_cid: 'fake-vm-cid', ignore: true) }
+        let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
+        let(:disk_count) { 0 }
 
         it 'does not register missing disk problem' do
           expect(problem_register).to_not receive(:problem_found).with(:missing_disk, disk)
@@ -62,7 +79,7 @@ module Bosh::Director
         end
 
         it 'does not register any problems' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to_not receive(:problem_found)
           disk_scanner.scan
         end
@@ -72,18 +89,21 @@ module Bosh::Director
         let(:disk_state) { false }
 
         it 'registers inactive disk problem' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to receive(:problem_found).with(:inactive_disk, disk)
           expect(event_logger).to receive(:track_and_log).with('0 OK, 0 missing, 1 inactive, 0 mount-info mismatch')
           disk_scanner.scan
         end
       end
 
-      context 'when disk is not associated with VM' do
-        let(:vm) { nil }
+      context 'when disk is associated with an instance with no VM' do
+        before do
+          instance.active_vm = nil
+          instance.save
+        end
 
         it 'reports no problems' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to_not receive(:problem_found)
           disk_scanner.scan
         end
@@ -94,7 +114,7 @@ module Bosh::Director
         let(:owner_vms) { ['different-vm-cid'] }
 
         it 'registers disk mount problem' do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance.availability_zone).and_return(cloud)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
           expect(problem_register).to receive(:problem_found).
             with(:mount_info_mismatch, disk, owner_vms: owner_vms)
           disk_scanner.scan

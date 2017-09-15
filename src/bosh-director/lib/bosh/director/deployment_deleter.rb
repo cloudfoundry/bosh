@@ -1,9 +1,9 @@
 module Bosh::Director
   class DeploymentDeleter
-    def initialize(event_log, logger, dns_manager, max_threads)
+    def initialize(event_log, logger, powerdns_manager, max_threads)
       @event_log = event_log
       @logger = logger
-      @dns_manager = dns_manager
+      @powerdns_manager = powerdns_manager
       @max_threads = max_threads
     end
 

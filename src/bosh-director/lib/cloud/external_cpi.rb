@@ -42,7 +42,7 @@ module Bosh::Clouds
     def initialize(cpi_path, director_uuid, properties_from_cpi_config = nil)
       @cpi_path = cpi_path
       @director_uuid = director_uuid
-      @logger = Config.logger
+      @logger = ::Bosh::Director::TaggedLogger.new(Config.logger, "external-cpi")
       @properties_from_cpi_config = properties_from_cpi_config
     end
 
@@ -54,6 +54,7 @@ module Bosh::Clouds
     def has_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def reboot_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def set_vm_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def set_disk_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def has_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
@@ -61,15 +62,18 @@ module Bosh::Clouds
     def detach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def snapshot_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_snapshot(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def resize_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def get_disks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def ping(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def info; invoke_cpi_method(__method__.to_s); end
 
     private
 
     def invoke_cpi_method(method_name, *arguments)
+      request_id = "cpi-#{Random.rand(100000..999999)}"
       context = {
         'director_uuid' => @director_uuid,
-        'request_id' => "#{Random.rand(100000..999999)}"
+        'request_id' => request_id
       }
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
@@ -79,9 +83,11 @@ module Bosh::Clouds
       env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
       cpi_exec_path = checked_cpi_exec_path
 
-      @logger.debug("External CPI sending request: #{redacted_request} with command: #{cpi_exec_path}")
+      logger = ::Bosh::Director::TaggedLogger.new(@logger, request_id)
+
+      logger.debug("request: #{redacted_request} with command: #{cpi_exec_path}")
       cpi_response, stderr, exit_status = Open3.capture3(env, cpi_exec_path, stdin_data: request, unsetenv_others: true)
-      @logger.debug("External CPI got response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
+      logger.debug("response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
 
       parsed_response = parsed_response(cpi_response)
       validate_response(parsed_response)
@@ -110,10 +116,40 @@ module Bosh::Clouds
 
     def redact_arguments(method_name, arguments)
       if method_name == 'create_vm'
-        redact_from_env_in_create_vm_arguments(arguments)
+        arguments = redact_from_env_in_create_vm_arguments(arguments)
+        arguments = redact_network_cloud_property_in_create_vm_arguments(arguments)
+        redact_cloud_property_values(arguments, 2)
+      elsif method_name == 'create_disk'
+        redact_cloud_property_values(arguments, 1)
       else
         arguments
       end
+    end
+
+    def redact_cloud_property_values(arguments, position)
+      redacted_arguments = arguments.clone
+      cloud_properties = redacted_arguments[position]
+      redacted_cloud_properties = redactAllBut([], cloud_properties)
+      redacted_arguments[position] = redacted_cloud_properties
+      redacted_arguments
+    end
+
+    def redact_network_cloud_property_in_create_vm_arguments(arguments)
+      redacted_arguments = arguments.clone
+      networks_hash = redacted_arguments[3]
+
+      if networks_hash && networks_hash.is_a?(Hash)
+        cloned_networks_hash = Bosh::Common::DeepCopy.copy(networks_hash)
+
+        cloned_networks_hash.each do |_, network_hash|
+          cloud_properties = network_hash['cloud_properties']
+          network_hash['cloud_properties'] = redactAllBut([], cloud_properties) if (cloud_properties && cloud_properties.is_a?(Hash))
+        end
+
+        redacted_arguments[3] = cloned_networks_hash
+      end
+
+      redacted_arguments
     end
 
     def redact_from_env_in_create_vm_arguments(arguments)
@@ -140,6 +176,10 @@ module Bosh::Clouds
     def handle_error(error_response, method_name)
       error_type = error_response['type']
       error_message = error_response['message']
+
+      # backwards compatibility for CPIs returning different errors than 'NotImplemented' for not implemented methods
+      handle_method_not_implemented(error_message, error_type, method_name)
+
       unless KNOWN_RPC_ERRORS.include?(error_type)
         raise UnknownError, "Unknown CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
       end
@@ -153,6 +193,13 @@ module Bosh::Clouds
       end
 
       raise error, "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+    end
+
+    def handle_method_not_implemented(error_message, error_type, method_name)
+      message = "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+
+      raise Bosh::Clouds::NotImplemented, message if error_type == "InvalidCall" && error_message.start_with?('Method is not known, got')
+      raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::CloudError' && error_message.start_with?('Invalid Method:')
     end
 
     def save_cpi_log(output)

@@ -64,8 +64,8 @@ describe 'using director with config server', type: :integration do
 
   context 'when config server certificates are trusted' do
 
-    context 'when deployment manifest has placeholders' do
-      context 'when some placeholders are not set in config server' do
+    context 'when deployment manifest has variables' do
+      context 'when some variables are not set in config server' do
 
         let(:job_properties) do
           {
@@ -95,19 +95,20 @@ Error: Unable to render instance groups for deployment. Errors are:
         end
       end
 
-      context 'when all placeholders are set in config server' do
+      context 'when all variables are set in config server' do
         it 'does not log interpolated properties in the task debug logs and deploy output' do
-          skip("#130127863")
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'he is colorless')
 
           deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
           expect(deploy_output).to_not include('he is colorless')
 
-          debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
+          task_id = deploy_output.match(/^Task (\d+)$/)[1]
+
+          debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
           expect(debug_output).to_not include('he is colorless')
         end
 
-        it 'replaces placeholders in the manifest when config server has value for placeholders' do
+        it 'replaces variables in the manifest when config server has value for placeholders' do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
@@ -134,7 +135,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             }
           end
 
-          it 'replaces the placeholders in the manifest' do
+          it 'replaces the variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'greenish')
             config_server_helper.put_value(prepend_namespace('smurf_age_placeholder'), 9)
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
@@ -183,9 +184,9 @@ Error: Unable to render instance groups for deployment. Errors are:
 Error: Unable to render instance groups for deployment. Errors are:
   - Unable to render jobs for instance group 'our_instance_group'. Errors are:
     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-      - Failed to substitute placeholder: Can not replace '((my_placeholder_1))' in 'my color is ((my_placeholder_1))'. The value should be a String or an Integer.
-      - Failed to substitute placeholder: Can not replace '((my_placeholder_2))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
-      - Failed to substitute placeholder: Can not replace '((my_placeholder_3))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
+      - Failed to substitute variable: Can not replace '((my_placeholder_1))' in 'my color is ((my_placeholder_1))'. The value should be a String or an Integer.
+      - Failed to substitute variable: Can not replace '((my_placeholder_2))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
+      - Failed to substitute variable: Can not replace '((my_placeholder_3))' in 'smurf ((my_placeholder_2)) yellow ((my_placeholder_3))'. The value should be a String or an Integer.
             EOF
             end
           end
@@ -215,7 +216,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             manifest_hash
           end
 
-          it 'replaces the placeholders in the manifest' do
+          it 'replaces the variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'text'=>'cats are angry'})
 
             manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.text))'}}
@@ -226,7 +227,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(template_hash['properties_list']['gargamel_color']).to eq('cats are angry')
           end
 
-          it 'replaces nested placeholders in the manifest' do
+          it 'replaces nested variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder_1'), { 'cat'=> {'color' => {'value' => 'orange'}}})
             config_server_helper.put_value(prepend_namespace('my_placeholder_2'), { 'cat'=> {'color' => {'value' => 'black'}}})
             config_server_helper.put_value(prepend_namespace('my_placeholder_3'), { 'cat'=> {'color' => {'value' => 'white'}}})
@@ -248,7 +249,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             expect(template_hash['properties_list']['gargamel_color']).to eq('orange')
           end
 
-          it 'errors if all parts of nested placeholder is not found' do
+          it 'errors if all parts of nested variable is not found' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
 
             manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.dog.color.value))'}}
@@ -288,7 +289,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
         end
 
-        context 'when a placeholder starts with an exclamation mark' do
+        context 'when a variable starts with an exclamation mark' do
           let(:job_properties) do
             {
               'gargamel' => {
@@ -331,7 +332,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         end
 
         describe 'env values in instance groups and resource pools' do
-          context 'when instance groups env is using placeholders' do
+          context 'when instance groups env is using variables' do
             let(:cloud_config_hash) do
               cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
               cloud_config_hash.delete('resource_pools')
@@ -394,22 +395,23 @@ Error: Unable to render instance groups for deployment. Errors are:
               create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
               expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
-              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1', 'Team(s)' => '', 'Cloud Config' => 'latest'}])
+              expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
             end
 
             it 'should not log interpolated env values in the debug logs and deploy output' do
-              skip("#130127863")
-              debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
-
+              deploy_output = deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
               expect(deploy_output).to_not include('lazy smurf')
               expect(deploy_output).to_not include('super_color')
 
+              task_id = deploy_output.match(/^Task (\d+)$/)[1]
+
+              debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
               expect(debug_output).to_not include('lazy smurf')
               expect(debug_output).to_not include('super_color')
             end
           end
 
-          context 'when resource pool env is using placeholders (legacy manifest)' do
+          context 'when resource pool env is using variables (legacy manifest)' do
             let(:env_hash) do
               {
                 'env1' => '((env1_placeholder))',
@@ -452,8 +454,8 @@ Error: Unable to render instance groups for deployment. Errors are:
               expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
 
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
-              expect(deployments).to eq([{'Name' => 'simple', 'Release(s)' => 'bosh-release/0+dev.1', 'Stemcell(s)' => 'ubuntu-stemcell/1',
-                                          'Team(s)' => '', 'Cloud Config' => 'none'}])
+              expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1',
+                                          'team_s' => '', 'cloud_config' => 'none'}])
             end
           end
 
@@ -650,201 +652,11 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
     end
 
-    context 'when runtime manifest has placeholders' do
-      context 'when config server does not have all names' do
-        let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
-
-        it 'will throw a valid error for the runtime config on deploy' do
-          upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
-
-          output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true, no_login: true, include_credentials: false,  env: client_env)
-
-          expect(exit_code).to_not eq(0)
-          expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
-        end
-
-        # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
-
-        context 'when property cannot be found at render time' do
-          let(:runtime_config) do
-            {
-              'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
-              'addons' => [
-                {
-                  'name' => 'addon1',
-                  'jobs' => [
-                    {
-                      'name' => 'job_2_with_many_properties',
-                      'release' => 'bosh-release',
-                      'properties' => {'gargamel' => {'color' => '((/placeholder_used_at_render_time))'}}
-                    }
-                  ]
-                }]
-            }
-          end
-
-          it 'will throw an error' do
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'I am here for deployment manifest')
-
-            upload_stemcell(include_credentials: false,  env: client_env)
-            create_and_upload_test_release(include_credentials: false,  env: client_env)
-            upload_cloud_config(include_credentials: false,  env: client_env)
-            upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
-
-            output, exit_code = deploy_simple_manifest(
-              no_login: true,
-              manifest_hash: manifest_hash,
-              cloud_config_hash: cloud_config,
-              failure_expected: true,
-              return_exit_code: true,
-              include_credentials: false,  env: client_env
-            )
-
-            expect(exit_code).to_not eq(0)
-            expect(output).to include("Failed to find variable '/placeholder_used_at_render_time' from config server: HTTP code '404'")
-          end
-        end
-      end
-
-      context 'when config server has all keys' do
-        let(:runtime_config) do
-          {
-            'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
-            'addons' => [
-              {
-                'name' => 'addon1',
-                'jobs' => [
-                  {
-                    'name' => 'job_2_with_many_properties',
-                    'release' => 'bosh-release',
-                    'properties' => {'gargamel' => {'color' => '((addon_placeholder))'}}
-                  }
-                ]
-              }]
-          }
-        end
-
-        before do
-          create_and_upload_test_release(include_credentials: false,  env: client_env)
-
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
-          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop first value')
-          config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
-
-          expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
-          manifest_hash['jobs'].first['instances'] = 3
-        end
-
-        context 'when tags are to be passed to a vm' do
-          before do
-            runtime_config['tags']= {
-                'tag_mode' => '((/tag-mode))',
-                'tag_value' => '((/tag-value))'
-            }
-            upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
-            create_and_upload_test_release(include_credentials: false,  env: client_env)
-
-            config_server_helper.put_value('/tag-mode', 'ha')
-            config_server_helper.put_value('/tag-value', 'deprecated')
-
-            manifest_hash['jobs'].first['instances'] = 1
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-          end
-
-          it 'does variable substitution on the initial creation' do
-            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.first
-            inputs = set_vm_metadata_invocation.inputs
-            expect(inputs['metadata']['tag_mode']).to eq('ha')
-            expect(inputs['metadata']['tag_value']).to eq('deprecated')
-          end
-
-          it 'retains the tags with variable substitution on recreate' do
-            skip("#139724667")
-
-            current_sandbox.cpi.kill_agents
-            current_sandbox.cpi.invocations.drop(current_sandbox.cpi.invocations.size)
-
-            recreate_vm_without_waiting_for_process = 3
-            bosh_run_cck_with_resolution(1, recreate_vm_without_waiting_for_process, client_env)
-
-            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last
-            inputs = set_vm_metadata_invocation.inputs
-            expect(inputs['metadata']['tag_mode']).to eq('ha')
-            expect(inputs['metadata']['tag_value']).to eq('deprecated')
-          end
-        end
-
-        it 'replaces placeholders in the addons and updates jobs on redeploy when config server values change' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop first value')
-
-          config_server_helper.put_value(prepend_namespace('addon_placeholder'), 'addon prop second value')
-
-          redeploy_output = parse_blocks(deploy_simple_manifest(manifest_hash: manifest_hash, deployment_name: 'simple', json: true, include_credentials: false,  env: client_env))
-          scrubbed_redeploy_output = scrub_random_ids(redeploy_output)
-
-          concatted_output = scrubbed_redeploy_output.join(' ')
-          expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
-          expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (1)')
-          expect(concatted_output).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (2)')
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('addon prop second value')
-        end
-
-        it 'throws errors when placeholders do not start with slash' do
-          runtime_config['releases'][0]['version'] = '((addon_release_version_placeholder))'
-          upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
-
-          expect {
-            deploy_from_scratch(no_login: true, include_credentials: false,  env: client_env)
-          }.to raise_error(RuntimeError, /Names must be absolute path: 'addon_release_version_placeholder'/)
-        end
-      end
-
-      context 'when placeholders use dot syntax' do
-        let(:runtime_config) do
-          {
-              'releases' => [{'name' => 'bosh-release', 'version' => '((/placeholder1.version))'}],
-              'addons' => [
-                  {
-                      'name' => 'addon1',
-                      'jobs' => [
-                          {
-                              'name' => 'job_2_with_many_properties',
-                              'release' => 'bosh-release',
-                              'properties' => {'gargamel' => {'color' => '((placeholder2.deeply.nested.color))'}}
-                          }
-                      ]
-                  }]
-          }
-        end
-
-        before do
-          create_and_upload_test_release(include_credentials: false,  env: client_env)
-
-          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'i am just here for regular manifest')
-          config_server_helper.put_value('/placeholder1', { 'version' => '0.1-dev' })
-          config_server_helper.put_value(prepend_namespace('placeholder2'), {'deeply' => {'nested' => {'color' => 'gold'}}})
-
-          expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
-        end
-
-        it 'replaces placeholders in the manifest' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-          instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
-          template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
-          expect(template_hash['properties_list']['gargamel_color']).to eq('gold')
-        end
-      end
-    end
-
+    # Q. Why is this context commented?
+    # A. variable generation based on release spec has been disabled since default CA was removed from config-server.
+    # Ref: Tracker stories #138578557 and #139470935
     xcontext 'when release job spec properties have types' do
+
       let(:manifest_hash) do
         Bosh::Spec::Deployments.test_release_manifest.merge(
           {
@@ -860,7 +672,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           })
       end
 
-      context 'when these properties are defined in deployment manifest as placeholders' do
+      context 'when these properties are defined in deployment manifest as variables' do
         context 'when these properties are NOT defined in the config server' do
           let(:job_properties) do
             {
@@ -891,7 +703,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               expect(hardcoded_cert).to eq('good luck hardcoding certs and private keys')
             end
 
-            context 'when it is NOT a full placeholder' do
+            context 'when it is NOT a full variable' do
               let(:job_properties) do
                 {
                   'smurfs' => {
@@ -960,7 +772,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               expect(subject_alt_name.to_s.scan(/\*.our-instance-group.a.simple.bosh/).count).to eq(1)
             end
 
-            context 'when placeholder is NOT a full placeholder' do
+            context 'when variable is NOT a full variable' do
               let(:job_properties) do
                 {
                   'smurfs' => {
@@ -1130,7 +942,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               end
             end
 
-            context 'when placeholders start with exclamation mark' do
+            context 'when variables start with exclamation mark' do
               let(:job_properties) do
                 {
                   'smurfs' => {
@@ -1144,7 +956,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                 }
               end
 
-              it 'removes the exclamation mark from placeholder and generates values for these properties with no issue' do
+              it 'removes the exclamation mark from variable and generates values for these properties with no issue' do
                 deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
                 instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
@@ -1283,301 +1095,6 @@ Error: Unable to render instance groups for deployment. Errors are:
                 expect(output).to include("Error filling in template 'root_ca.pem.erb' (line 1: Can't find property '[\"gargamel.cert.ca\"]')")
               end
             end
-      end
-    end
-
-    context 'when links exist' do
-
-      let(:cloud_config) do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-        cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
-        cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
-        cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
-        cloud_config_hash['compilation']['az'] = 'z1'
-        cloud_config_hash['networks'] << {
-          'name' => 'dynamic-network',
-          'type' => 'dynamic',
-          'subnets' => [{'az' => 'z1'}]
-        }
-
-        cloud_config_hash
-      end
-      let(:provider_job_name) { 'http_server_with_provides' }
-      let(:my_instance_group) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
-          name: 'my_instance_group',
-          templates: [
-            {'name' => provider_job_name},
-            {'name' => 'http_proxy_with_requires'},
-          ],
-          instances: 1
-        )
-        job_spec['azs'] = ['z1']
-        job_spec['properties'] = {'listen_port' => 9035, 'name_space' => {'fibonacci' => '((fibonacci_placeholder))'}}
-        job_spec
-      end
-      let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [my_instance_group]
-        manifest['properties'] = {'listen_port' => 9999}
-        manifest
-      end
-
-      before do
-        upload_links_release
-        upload_stemcell(include_credentials: false,  env: client_env)
-
-        upload_cloud_config(cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-      end
-
-      it 'replaces the placeholder values of properties consumed through links' do
-        config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value')
-        deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-
-        link_instance = director.instance('my_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
-      end
-
-      it 'does not log interpolated properties in deploy output and debug logs' do
-        skip("#130127863")
-
-        config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value')
-        deploy_output = deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-        debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false,  env: client_env)
-
-        expect(deploy_output).to_not include('fibonacci_value')
-        expect(debug_output).to_not include('fibonacci_value')
-      end
-
-      context 'when provider job has properties with type password and values are generated' do
-        let(:provider_job_name) { 'http_endpoint_provider_with_property_types' }
-
-        it 'replaces the placeholder values of properties consumed through links' do
-          deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-
-          link_instance = director.instance('my_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-          template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-          expect(template['links']['properties']['fibonacci']).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
-        end
-      end
-
-      context 'when manual links are involved' do
-        let (:job_with_manual_consumes_link) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
-            name: 'property_job',
-            templates: [{
-                          'name' => 'consumer',
-                          'consumes' => {
-                            'provider' => {
-                              'properties' => {'a' => '((a_placeholder))', 'b' => '((b_placeholder))', 'c' => '((c_placeholder))'},
-                              'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}],
-                              'networks' => {'network_1' => 2, 'network_2' => 3}
-                            }
-                          }
-                        }],
-            instances: 1,
-            static_ips: ['192.168.1.10'],
-            properties: {}
-          )
-          job_spec['azs'] = ['z1']
-          job_spec['networks'] << {
-            'name' => 'dynamic-network',
-            'default' => ['dns', 'gateway']
-          }
-          job_spec
-        end
-
-        let(:deployment_name) {manifest['name']}
-
-        before do
-          config_server_helper.put_value(prepend_namespace('a_placeholder'), 'a_value')
-          config_server_helper.put_value(prepend_namespace('b_placeholder'), 'b_value')
-          config_server_helper.put_value(prepend_namespace('c_placeholder'), 'c_value')
-
-          manifest['jobs'] = [job_with_manual_consumes_link]
-        end
-
-        it 'resolves the properties defined inside the links section of the deployment manifest' do
-          deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-
-          link_instance = director.instance('property_job', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-
-          template = YAML.load(link_instance.read_job_template('consumer', 'config.yml'))
-
-          expect(template['a']).to eq('a_value')
-          expect(template['b']).to eq('b_value')
-          expect(template['c']).to eq('c_value')
-        end
-
-        it 'does not log interpolated properties in deploy output and debug logs' do
-          skip("#130127863")
-
-          deploy_output = deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-          debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false,  env: client_env)
-
-          expect(deploy_output).to_not include('a_value')
-          expect(deploy_output).to_not include('b_value')
-          expect(deploy_output).to_not include('c_value')
-
-          expect(debug_output).to_not include('a_value')
-          expect(debug_output).to_not include('b_value')
-          expect(debug_output).to_not include('c_value')
-        end
-      end
-
-      context 'when having cross deployment links' do
-        let(:first_manifest) do
-          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['name'] = 'first'
-          manifest['jobs'] = [first_deployment_job_spec]
-          manifest
-        end
-
-        let(:first_deployment_job_spec) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
-            name: 'first_deployment_node',
-            templates: [
-              {
-                'name' => provider_job_name,
-                'properties' => {
-                  'listen_port' => 15672,
-                  'name_space' => {
-                    'fibonacci' => '((fibonacci_placeholder))'
-                  }
-                },
-                'provides' => {
-                  'http_endpoint' => {
-                    'as' => 'vroom',
-                    'shared' => true
-                  }
-                }
-              }
-            ],
-            instances: 1,
-            static_ips: ['192.168.1.10'],
-          )
-          job_spec['azs'] = ['z1']
-          job_spec
-        end
-
-        let(:second_manifest) do
-          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['name'] = 'second'
-          manifest['jobs'] = [second_deployment_job_spec]
-          manifest
-        end
-
-        let(:second_deployment_job_spec) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
-            name: 'second_deployment_node',
-            templates: [
-              {
-                'name' => 'http_proxy_with_requires',
-                'release' => 'bosh-release',
-                'consumes' => {
-                  'proxied_http_endpoint' => {
-                    'from' => 'vroom',
-                    'deployment' => 'first'
-                  }
-                }
-              }
-            ],
-            instances: 1,
-            static_ips: ['192.168.1.11']
-          )
-          job_spec['azs'] = ['z1']
-          job_spec
-        end
-
-        let(:deployment_name) {first_manifest['name']}
-
-        it 'should successfully use the shared link, where its properties are not stored in DB' do
-          config_server_helper.put_value(prepend_namespace("fibonacci_placeholder"), 'fibonacci_value')
-          deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, include_credentials: false,  env: client_env)
-
-          expect {
-            deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, include_credentials: false,  env: client_env)
-          }.to_not raise_error
-
-          link_instance = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
-          template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-          expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value')
-        end
-
-        context 'when provider job has properties with type password and values are generated' do
-          let(:provider_job_name) { 'http_endpoint_provider_with_property_types' }
-
-          it 'should successfully use the shared link, where its properties are not stored in DB' do
-            deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, include_credentials: false,  env: client_env)
-
-            expect {
-              deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, include_credentials: false,  env: client_env)
-            }.to_not raise_error
-
-            link_instance = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
-            template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-            expect(
-              template['links']['properties']['fibonacci']
-            ).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
-          end
-        end
-
-        context 'when using runtime config' do
-          let(:runtime_config) do
-            {
-              'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
-              'addons' => [
-                {
-                  'name' => 'addon_job',
-                  'jobs' => [
-                    'name' => 'http_proxy_with_requires',
-                    'release' => 'bosh-release',
-                    'consumes' => {
-                      'proxied_http_endpoint' => {
-                        'from' => 'vroom',
-                        'deployment' => 'first'
-                      }
-                    }
-                  ]
-
-                }
-              ]
-            }
-          end
-
-          let(:second_deployment_job_spec) do
-            job_spec = Bosh::Spec::Deployments.simple_job(
-              name: 'second_deployment_node',
-              templates: [
-                {
-                  'name' => 'provider',
-                  'release' => 'bosh-release'
-                }
-              ],
-              instances: 1,
-              static_ips: ['192.168.1.11']
-            )
-            job_spec['azs'] = ['z1']
-            job_spec
-          end
-
-          it 'should successfully use shared link from a previous deployment' do
-            config_server_helper.put_value(prepend_namespace("fibonacci_placeholder"), 'fibonacci_value')
-
-            deploy_simple_manifest(no_login: true, manifest_hash: first_manifest, include_credentials: false,  env: client_env)
-
-            expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
-            deploy_simple_manifest(no_login: true, manifest_hash: second_manifest, include_credentials: false,  env: client_env)
-
-            link_instance = director.instance('second_deployment_node', '0', {:deployment_name => 'second', :env => client_env, include_credentials: false})
-
-            template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-            expect(
-              template['links']['properties']['fibonacci']
-            ).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
-          end
-        end
       end
     end
   end

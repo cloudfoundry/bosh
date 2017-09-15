@@ -2,16 +2,15 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::AgentStateMigrator do
-    let(:agent_state_migrator) { described_class.new(deployment_plan, Config.logger) }
-    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'simple') }
+    let(:agent_state_migrator) { described_class.new(Config.logger) }
     let(:client) { instance_double(AgentClient) }
-    let(:credentials) { Bosh::Core::EncryptionHandler.generate_credentials }
 
-    let(:instance_model) { Models::Instance.make(credentials: credentials, agent_id: 'agent-1')}
+    let!(:vm_model) { Models::Vm.make(agent_id: 'agent-1', instance: instance_model, active: true) }
+    let(:instance_model) { Models::Instance.make }
 
     describe '#get_state' do
       before do
-        expect(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(credentials, 'agent-1').and_return(client)
+        expect(AgentClient).to receive(:with_agent_id).with('agent-1').and_return(client)
       end
 
       it 'should return the processed agent state' do
@@ -49,9 +48,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end
@@ -73,9 +70,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end
@@ -99,9 +94,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end
@@ -123,9 +116,7 @@ module Bosh::Director
               },
             }
             allow(client).to receive(:get_state).and_return(legacy_state)
-
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-            allow(agent_state_migrator).to receive(:migrate_legacy_state).with(instance_model, legacy_state)
 
             expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
           end
@@ -136,8 +127,6 @@ module Bosh::Director
     describe '#verify_state' do
       before do
         @deployment = Models::Deployment.make(:name => 'foo')
-        allow(deployment_plan).to receive(:name).and_return('foo')
-        allow(deployment_plan).to receive(:model).and_return(@deployment)
       end
 
       it 'should do nothing when VM is ok' do
@@ -145,8 +134,9 @@ module Bosh::Director
       end
 
       it 'should do nothing when instance is ok' do
-        Models::Instance.make(
-          :deployment => @deployment, :vm_cid => 'foo-vm', :job => 'bar', :index => 11)
+        instance = Models::Instance.make(:deployment => @deployment, :job => 'bar', :index => 11)
+        instance.add_vm(vm_model)
+        instance.active_vm = vm_model
         agent_state_migrator.verify_state(instance_model, {
             'deployment' => 'foo',
             'job' => {

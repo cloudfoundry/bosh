@@ -7,45 +7,49 @@ module Bosh::Director::Models
     let(:new_runtime_config) { {name: 'runtime manifest'} }
     let(:deployment_name) { 'some_deployment_name' }
 
-    describe "#interpolated_manifest_for_deployment" do
-      let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-
-      before do
-        allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
-        allow(variables_interpolator).to receive(:interpolate_runtime_manifest).with(mock_manifest, deployment_name).and_return(new_runtime_config)
-      end
-
-      it 'calls manifest resolver and returns its result' do
-        result = runtime_config_model.interpolated_manifest_for_deployment(deployment_name)
-        expect(result).to eq(new_runtime_config)
-      end
-    end
-
     describe "#raw_manifest" do
       it 'returns raw result' do
         expect(runtime_config_model.raw_manifest).to eq(mock_manifest)
       end
     end
 
-    describe '#tags' do
-      context 'when there are no tags' do
-        it 'returns an empty hash' do
-          expect(runtime_config_model.tags(deployment_name)).to eq({})
-        end
+    describe '#latest_set' do
+      it 'returns the latest default runtime config' do
+        Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: 1', name: '').save
+        Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: 2', name: '').save
+        most_recent = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: 3', name: '').save
+
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set).to contain_exactly(most_recent)
       end
 
-      context 'when there are tags' do
-        let(:mock_manifest) { {'tags' => {'my-tag' => 'best-value'}}}
-        let(:uninterpolated_mock_manifest) { {'tags' => {'my-tag' => '((a_value))'}} }
+      it 'returns the list of latest runtime configs grouped by name' do
+        moop1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: moop1', name: 'moop').save
+        default = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: default', name: '').save
+        moop2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: moop2', name: 'moop').save
+        smurf_1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: smurf_1', name: 'smurf').save
+        smurf_2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: smurf_2', name: 'smurf').save
 
-        it 'returns interpolated values from the manifest' do
-          allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).with(deployment_name).and_return({'tags' => {'my-tag' => 'something'}})
-          expect(runtime_config_model.tags(deployment_name)).to eq({'my-tag' => 'something'})
-        end
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set).to contain_exactly(moop2, default, smurf_2)
+      end
 
-        it 'returns the tags from the manifest' do
-          expect(runtime_config_model.tags(deployment_name)).to eq({'my-tag' => 'best-value'})
-        end
+      it 'returns empty list when there are no records' do
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set).to be_empty()
+      end
+    end
+
+    describe '#find_by_ids' do
+      it 'returns all records that match ids' do
+        runtime_configs = [
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: rc_1', name: 'rc_1').save,
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: rc_2', name: 'rc_2').save,
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: rc_3', name: 'rc_3').save
+        ]
+
+        expect(Bosh::Director::Models::RuntimeConfig.find_by_ids(runtime_configs.map(&:id))).to eq(runtime_configs)
+      end
+
+      it 'returns empty array when passed nil' do
+        expect(Bosh::Director::Models::RuntimeConfig.find_by_ids(nil)).to eq([])
       end
     end
   end

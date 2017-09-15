@@ -1,7 +1,7 @@
 require 'net/http'
 
 module Bosh::Director::ConfigServer
-  class ConfigServerHTTPClient
+  class ConfigServerEnabledHTTPClient
     def initialize(http_client)
       @http = http_client
 
@@ -22,13 +22,27 @@ module Bosh::Director::ConfigServer
 
     def post(body)
       uri = build_base_uri
-      @http.post(uri.path, Yajl::Encoder.encode(body), {'Content-Type' => 'application/json'})
+      @http.post(uri.path, JSON.dump(body), {'Content-Type' => 'application/json'})
     end
 
     private
 
     def build_base_uri
       URI.join(@config_server_uri, URI.escape('v1/data'))
+    end
+  end
+
+  class ConfigServerDisabledHTTPClient
+    def get_by_id(id)
+      raise Bosh::Director::ConfigServerDisabledError, 'Failed to fetch variable from config server: Director is not configured with a config server'
+    end
+
+    def get(name)
+      raise Bosh::Director::ConfigServerDisabledError, "Failed to fetch variable '#{name}' from config server: Director is not configured with a config server"
+    end
+
+    def post(body)
+      raise Bosh::Director::ConfigServerDisabledError, 'Failed to generate variable from config server: Director is not configured with a config server'
     end
   end
 end

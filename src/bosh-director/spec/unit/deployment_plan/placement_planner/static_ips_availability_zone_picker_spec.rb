@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, network_planner, job.networks, 'fake-job', availability_zones, logger) }
 
     let(:availability_zones) { job.availability_zones }
-    let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(manifest: cloud_config_hash) }
+    let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(raw_manifest: cloud_config_hash) }
     let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
     let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
     let(:deployment_repo) { DeploymentRepo.new }
@@ -20,10 +20,10 @@ module Bosh::Director::DeploymentPlan
     let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
-    let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, nil, {}) }
+    let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, [], {}) }
     let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, cloud_config_hash, nil, nil) }
+    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, cloud_config_hash, cloud_config_hash, nil, nil) }
     let(:job) { planner.instance_groups.first }
     let(:job_availability_zones) { ['zone1', 'zone2'] }
     let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
@@ -922,7 +922,7 @@ module Bosh::Director::DeploymentPlan
     def existing_instance_with_az_and_ips(az, ips, network_name = 'a')
       instance = Bosh::Director::Models::Instance.make(availability_zone: az, deployment: deployment_model, job: job.name)
       ips.each do |ip|
-        instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address: NetAddr::CIDR.create(ip).to_i, network_name: network_name))
+        instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address_str: NetAddr::CIDR.create(ip).to_i.to_s, network_name: network_name))
       end
       instance
     end

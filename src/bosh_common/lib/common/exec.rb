@@ -1,5 +1,3 @@
-# Copyright (c) 2012 VMware, Inc.
-
 module Bosh; end
 
 require "common/exec/result"

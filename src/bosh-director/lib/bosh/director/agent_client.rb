@@ -24,7 +24,7 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_vm_credentials_and_agent_id(vm_credentials, agent_id, options = {})
+    def self.with_agent_id(agent_id, options = {})
       defaults = {
         retry_methods: {
           get_state: GET_STATE_MAX_RETRIES,
@@ -32,8 +32,6 @@ module Bosh::Director
           upload_blob: UPLOAD_BLOB_MAX_RETRIES,
         }
       }
-
-      defaults.merge!(credentials: vm_credentials) if vm_credentials
 
       self.new('agent', agent_id, defaults.merge(options))
     end
@@ -45,12 +43,6 @@ module Bosh::Director
       @timeout = options[:timeout] || 45
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
-
-      if options[:credentials]
-        @encryption_handler =
-          Bosh::Core::EncryptionHandler.new(@client_id, options[:credentials])
-      end
-
       @resource_manager = Api::ResourceManager.new
     end
 
@@ -58,8 +50,8 @@ module Bosh::Director
       handle_message_with_retry(method_name, *args)
     end
 
-    def get_state(*args)
-      send_message(:get_state, *args)
+    def get_state(*args, &blk)
+      send_message(:get_state, *args, &blk)
     end
 
     def cancel_task(*args)
@@ -86,8 +78,8 @@ module Bosh::Director
       send_message(:apply, *args)
     end
 
-    def compile_package(*args)
-      send_message(:compile_package, *args)
+    def compile_package(*args, &blk)
+      send_message(:compile_package, *args, &blk)
     end
 
     def drain(*args)
@@ -110,12 +102,25 @@ module Bosh::Director
       send_message(:unmount_disk, *args)
     end
 
+    def info(*args)
+      begin
+        send_message(:info, *args)
+      rescue RpcRemoteException => e
+        if e.message =~ /unknown message/
+          @logger.warn("Ignoring info 'unknown message' error from the agent: #{e.inspect}")
+          { 'api_version' => 0 }
+        else
+          raise
+        end
+      end
+    end
+
     def delete_arp_entries(*args)
       fire_and_forget(:delete_arp_entries, *args)
     end
 
     def sync_dns(*args, &blk)
-      send_nats_request(:sync_dns, args, &blk)
+      send_nats_request_quietly(:sync_dns, args, &blk)
     end
 
     def cancel_sync_dns(request_id)
@@ -133,6 +138,9 @@ module Bosh::Director
         if e.message =~ /unknown message/
           @logger.warn("'upload_blob' 'unknown message' error from the agent: #{e.inspect}")
           raise Bosh::Director::AgentUnsupportedAction, 'Unsupported action: upload_blob'
+        elsif e.message =~ /Opening blob store file: open \\var\\vcap\\data\\blobs.*: The system cannot find the path specified/
+          @logger.warn("'upload_blob' error from the agent: #{e.inspect}")
+          raise Bosh::Director::AgentUploadBlobUnableToOpenFile, "'Upload blob' action: failed to open blob"
         else
           raise
         end
@@ -217,20 +225,21 @@ module Bosh::Director
       end
     end
 
-    def send_nats_request(method_name, args, &callback)
+    def send_nats_request_with_options(method_name, args, options, &callback)
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
-
-      if @encryption_handler
-        @logger.info("Request: #{request}")
-        request = {'encrypted_data' => @encryption_handler.encrypt(request) }
-        request['session_id'] = @encryption_handler.session_id
-      end
-
       recipient = "#{@service_name}.#{@client_id}"
-      @nats_rpc.send_request(recipient, request, &callback)
+      @nats_rpc.send_request(recipient, request, options, &callback)
     end
 
-    def handle_method(method_name, args)
+    def send_nats_request_quietly(method_name, args, &callback)
+      send_nats_request_with_options(method_name, args, { 'logging' => false }, &callback)
+    end
+
+    def send_nats_request(method_name, args, &callback)
+      send_nats_request_with_options(method_name, args, { 'logging' => true }, &callback)
+    end
+
+    def handle_method(method_name, args, &blk)
       result = {}
       result.extend(MonitorMixin)
 
@@ -238,15 +247,6 @@ module Bosh::Director
       timeout_time = Time.now.to_f + @timeout
 
       request_id = send_nats_request(method_name, args) do |response|
-        if @encryption_handler
-          begin
-            response = @encryption_handler.decrypt(response['encrypted_data'])
-          rescue Bosh::Core::EncryptionHandler::CryptError => e
-            response['exception'] = "CryptError: #{e.inspect} #{e.backtrace}"
-          end
-          @logger.info("Response: #{response}")
-        end
-
         result.synchronize do
           inject_compile_log(response)
           result.merge!(response)
@@ -257,6 +257,12 @@ module Bosh::Director
       result.synchronize do
         while result.empty?
           timeout = timeout_time - Time.now.to_f
+          begin
+            blk.call if block_given?
+          rescue TaskCancelled => e
+            @nats_rpc.cancel_request(request_id)
+            raise e
+          end
           if timeout <= 0
             @nats_rpc.cancel_request(request_id)
             raise RpcTimeout,
@@ -320,10 +326,10 @@ module Bosh::Director
       @resource_manager.delete_resource(blob_id)
     end
 
-    def handle_message_with_retry(message_name, *args)
+    def handle_message_with_retry(message_name, *args, &blk)
       retries = @retry_methods[message_name] || 0
       begin
-        handle_method(message_name, args)
+        handle_method(message_name, args, &blk)
       rescue RpcTimeout
         if retries > 0
           retries -= 1
@@ -334,13 +340,14 @@ module Bosh::Director
     end
 
     def fire_and_forget(message_name, *args)
-      send_nats_request(message_name, args)
+      request_id = send_nats_request_quietly(message_name, args)
+      @nats_rpc.cancel_request(request_id)
     rescue => e
       @logger.warn("Ignoring '#{e.message}' error from the agent: #{e.inspect}. Received while trying to run: #{message_name} on client: '#{@client_id}'")
     end
 
     def send_message(method_name, *args, &blk)
-      task = start_task(method_name, *args)
+      task = start_task(method_name, *args, &blk)
       if task['agent_task_id']
         wait_for_task(task['agent_task_id'], &blk)
       else
@@ -373,8 +380,8 @@ module Bosh::Director
     end
 
 
-    def start_task(method_name, *args)
-      AgentMessageConverter.convert_old_message_to_new(handle_message_with_retry(method_name, *args))
+    def start_task(method_name, *args, &blk)
+      AgentMessageConverter.convert_old_message_to_new(handle_message_with_retry(method_name, *args, &blk))
     end
 
     def get_task_status(agent_task_id)

@@ -82,7 +82,7 @@ describe Bhm::Events::Heartbeat do
 
   it 'has json representation' do
     hb = heartbeat
-    expect(hb.to_json).to eq(Yajl::Encoder.encode(hb.to_hash))
+    expect(hb.to_json).to eq(JSON.dump(hb.to_hash))
   end
 
   it 'has string representation' do

@@ -13,34 +13,34 @@ module Bosh::Director
     end
 
     describe '#create_deployment' do
-        it 'enqueues a DJ job' do
-          cloud_config = Models::CloudConfig.make
-          runtime_config = Models::RuntimeConfig.make
+      let(:runtime_configs) { [Models::RuntimeConfig.make, Models::RuntimeConfig.make] }
 
-          create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_config, deployment, options)
+      it 'enqueues a DJ job' do
+        cloud_config = Models::CloudConfig.make
 
-          expect(create_task.description).to eq('create deployment')
-          expect(create_task.deployment_name).to eq('DEPLOYMENT_NAME')
-          expect(create_task.context_id).to eq('')
+        create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_configs, deployment, options)
+
+        expect(create_task.description).to eq('create deployment')
+        expect(create_task.deployment_name).to eq('DEPLOYMENT_NAME')
+        expect(create_task.context_id).to eq('')
+      end
+
+      it 'passes a nil cloud config id and an empty runtime config id array if there is no cloud config or runtime configs' do
+        expect(JobQueue).to receive_message_chain(:new, :enqueue) do |_, job_class, _, params, _|
+          expect(job_class).to eq(Jobs::UpdateDeployment)
+          expect(params).to eq(['manifest', nil, [], options])
         end
 
-        it 'passes a nil cloud config id and runtime config id if there is no cloud config or runtime config' do
-          expect(JobQueue).to receive_message_chain(:new, :enqueue) do |_, job_class, _, params, _|
-            expect(job_class).to eq(Jobs::UpdateDeployment)
-            expect(params).to eq(['manifest', nil, nil, options])
-          end
+        subject.create_deployment(username, 'manifest', nil, [], deployment, options)
+      end
 
-          subject.create_deployment(username, 'manifest', nil, nil, deployment, options)
-        end
+      it 'passes context id' do
+        cloud_config = Models::CloudConfig.make
+        context_id = 'example-context-id'
+        create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_configs, deployment, options, context_id)
 
-        it 'passes context id' do
-          cloud_config = Models::CloudConfig.make
-          runtime_config = Models::RuntimeConfig.make
-          context_id = 'example-context-id'
-          create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_config, deployment, options, context_id)
-
-          expect(create_task.context_id).to eq context_id
-        end
+        expect(create_task.context_id).to eq context_id
+      end
     end
 
     describe '#delete_deployment' do

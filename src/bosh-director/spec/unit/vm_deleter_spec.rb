@@ -17,7 +17,7 @@ module Bosh
         stemcell
       end
       let(:env) { DeploymentPlan::Env.new({}) }
-      let(:job) do
+      let(:instance_group) do
         template_model = BD::Models::Template.make
         job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name', deployment.name)
         job.bind_existing_model(template_model)
@@ -30,16 +30,15 @@ module Bosh
         instance_group.jobs << job
         instance_group.default_network = {"gateway" => "name"}
         instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
-        allow(instance_group).to receive(:username).and_return('fake-username')
-        allow(instance_group).to receive(:task_id).and_return('fake-task-id')
-        allow(instance_group).to receive(:event_manager).and_return(event_manager)
         instance_group
       end
+      let(:job) { instance_double(BD::Jobs::BaseJob) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+      let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
       let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
       let(:instance) do
         instance = DeploymentPlan::Instance.create_from_job(
-            job,
+            instance_group,
             5,
             'started',
             deployment,
@@ -48,38 +47,34 @@ module Bosh
             logger
         )
         instance.bind_existing_instance_model(instance_model)
-        allow(instance).to receive(:apply_spec).and_return({})
-        allow(instance).to receive(:vm_cid).and_return('vm-cid')
-        allow(instance).to receive(:deployment).and_return(deployment)
-        allow(instance).to receive(:job).and_return(job)
-        allow(instance).to receive(:spec).and_return(JSON.parse('{"networks":[["name",{"ip":"1.2.3.4"}]],"job":{"name":"job_name"},"deployment":"bosh"}'))
-        allow(instance).to receive(:id).and_return(1)
         instance
       end
 
       before do
-        allow(CloudFactory).to receive(:new).and_return(cloud_factory)
-        allow(cloud_factory).to receive(:default_from_director_config).and_return(cloud)
+        instance_model.active_vm = vm_model
+
+        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(cloud_factory).to receive(:get).with(nil).and_return(cloud)
       end
 
       describe '#delete_for_instance' do
-        let!(:uuid_local_dns_record) { Models::LocalDnsRecord.create(name: "#{instance.uuid}.job_name.name.bosh.bosh",
-                                                                     ip: '1.2.3.4',
-                                                                     instance_id: instance.id) }
-
-        let!(:index_local_dns_record) { Models::LocalDnsRecord.create(name: "#{instance.index}.job_name.name.bosh.bosh",
-                                                                      ip: '1.2.3.4',
-                                                                      instance_id: instance.id) }
+        let!(:local_dns_record) { Models::LocalDnsRecord.create(ip: '1.2.3.4', instance_id: instance.model.id) }
 
         before do
-          expect(instance_model).to receive(:update).with(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
-          expect(subject).to receive(:delete_vm).with(instance_model)
+          expect(instance_model).to receive(:active_vm=).with(nil).and_call_original
+          allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
           allow(Config).to receive(:local_dns_enabled?).and_return(true)
         end
 
         it 'deletes the instance and stores an event' do
+          expect(job).to receive(:event_manager).twice.and_return(event_manager)
+          expect(job).to receive(:username).twice.and_return('fake-username')
+          expect(job).to receive(:task_id).twice.and_return('fake-task-id')
+
+          expect(logger).to receive(:info).with('Deleting VM')
           expect(Config).to receive(:current_job).and_return(job).exactly(6).times
-          expect(Models::LocalDnsRecord.all).to eq([uuid_local_dns_record, index_local_dns_record])
+          expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
+          expect(cloud).to receive(:delete_vm).with('vm-cid')
 
           expect {
             subject.delete_for_instance(instance_model)
@@ -88,31 +83,21 @@ module Bosh
 
         context 'when store_event is false' do
           it 'deletes the instance and does not store an event' do
+            expect(cloud).to receive(:delete_vm).with('vm-cid')
+
             expect {
               subject.delete_for_instance(instance_model, false)
             }.not_to change { Models::Event.count }
           end
         end
-      end
-
-      describe '#delete_vm' do
-        before do
-          expect(cloud_factory).to receive(:for_availability_zone).with(instance_model.availability_zone).and_return(cloud)
-        end
-
-        it 'calls delete_vm on the cloud' do
-          expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid)
-          subject.delete_vm(instance_model)
-        end
 
         context 'when vm has already been deleted from the IaaS' do
           it 'should log a warning' do
             expect(logger).to receive(:info).with('Deleting VM')
-            expect(logger).to receive(:warn).with("VM '#{instance_model.vm_cid}' might have already been deleted from the cloud")
-            expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid).and_raise Bosh::Clouds::VMNotFound
+            expect(logger).to receive(:warn).with("VM '#{vm_model.cid}' might have already been deleted from the cloud")
+            expect(cloud).to receive(:delete_vm).with(vm_model.cid).and_raise Bosh::Clouds::VMNotFound
 
-            subject.delete_vm(instance_model)
+            subject.delete_for_instance(instance_model, false)
           end
         end
 
@@ -122,7 +107,7 @@ module Bosh
           it 'skips calling delete_vm on the cloud' do
             expect(logger).to receive(:info).with('Deleting VM')
             expect(cloud).not_to receive(:delete_vm)
-            subject.delete_vm(instance_model)
+            subject.delete_for_instance(instance_model, false)
           end
         end
       end
@@ -132,16 +117,16 @@ module Bosh
           allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
 
           expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to receive(:delete_vm).with(instance_model.vm_cid)
-          subject.delete_vm_by_cid(instance_model.vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
+          subject.delete_vm_by_cid(vm_model.cid)
         end
 
         it 'does not call delete_vm if multiple clouds are configured' do
           allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
 
           expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to_not receive(:delete_vm).with(instance_model.vm_cid)
-          subject.delete_vm_by_cid(instance_model.vm_cid)
+          expect(cloud).to_not receive(:delete_vm).with(vm_model.cid)
+          subject.delete_vm_by_cid(vm_model.cid)
         end
 
         context 'when virtual delete is enabled' do
@@ -152,7 +137,7 @@ module Bosh
 
             expect(logger).to receive(:info).with('Deleting VM')
             expect(cloud).not_to receive(:delete_vm)
-            subject.delete_vm_by_cid(instance_model.vm_cid)
+            subject.delete_vm_by_cid(vm_model.cid)
           end
         end
       end

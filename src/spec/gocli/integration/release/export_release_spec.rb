@@ -11,7 +11,7 @@ describe 'export-release', type: :integration do
     }
 
     it 'compiles all packages of the release against the requested stemcell with classic manifest' do
-      out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal_legacy_manifest')
+      out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal_legacy_manifest')
       expect(out).to match /Compiling packages/
       expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
       expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
@@ -34,7 +34,7 @@ describe 'export-release', type: :integration do
 
       deploy_simple_manifest({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
 
-      out =  bosh_runner.run("export-release test_release/1 toronto-os/1", failure_expected: true, deployment_name: 'test_deployment')
+      out =  bosh_runner.run('export-release test_release/1 toronto-os/1', failure_expected: true, deployment_name: 'test_deployment')
       expect(out).to include(<<-EOF)
 Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
  - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
@@ -63,7 +63,7 @@ Can't use release 'test_release/1'. It references packages without source code a
       deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
       deployment_manifest['releases'][0]['version'] = '2'
       deploy_simple_manifest(manifest_hash: deployment_manifest)
-      out = bosh_runner.run("export-release test_release/2 centos-7/3001", deployment_name: 'test_deployment')
+      out = bosh_runner.run('export-release test_release/2 centos-7/3001', deployment_name: 'test_deployment')
       expect(out).to include('Compiling packages: pkg_2/e7f5b11c43476d74b2d12129b93cba584943e8d3')
       expect(out).to include('Compiling packages: pkg_1/16b4c8ef1574b3f98303307caad40227c208371f')
       expect(out).to include('Compiling packages: pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c')
@@ -74,7 +74,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     it 'compiles the packages of the older release when requested' do
       deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
       deploy_simple_manifest(manifest_hash: deployment_manifest)
-      out = bosh_runner.run("export-release test_release/1 centos-7/3001", deployment_name: 'test_deployment')
+      out = bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
       expect(out).to include('Compiling packages: pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154')
       expect(out).to include('Compiling packages: pkg_1/16b4c8ef1574b3f98303307caad40227c208371f')
       expect(out).to include('Compiling packages: pkg_3_depends_on_2/413e3e9177f0037b1882d19fb6b377b5b715be1c')
@@ -85,11 +85,11 @@ Can't use release 'test_release/1'. It references packages without source code a
     it 'does not recompile packages unless they changed since last export' do
       deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
       deploy_simple_manifest(manifest_hash: deployment_manifest)
-      bosh_runner.run("export-release test_release/1 centos-7/3001", deployment_name: 'test_deployment')
+      bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
 
       deployment_manifest['releases'][0]['version'] = '2'
       deploy_simple_manifest(manifest_hash: deployment_manifest)
-      out = bosh_runner.run("export-release test_release/2 centos-7/3001", deployment_name: 'test_deployment')
+      out = bosh_runner.run('export-release test_release/2 centos-7/3001', deployment_name: 'test_deployment')
 
       expect(out).to_not include('Compiling packages: pkg_1/')
       expect(out).to include('Compiling packages: pkg_2/e7f5b11c43476d74b2d12129b93cba584943e8d3')
@@ -101,12 +101,12 @@ Can't use release 'test_release/1'. It references packages without source code a
     it 'respects transitive dependencies when recompiling packages' do
       deployment_manifest = Bosh::Spec::Deployments.test_deployment_manifest
       deploy_simple_manifest(manifest_hash: deployment_manifest)
-      bosh_runner.run("export-release test_release/1 centos-7/3001", deployment_name: 'test_deployment')
+      bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
 
       bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
       deployment_manifest['releases'][0]['version'] = '3'
       deploy_simple_manifest(manifest_hash: deployment_manifest)
-      out = bosh_runner.run("export-release test_release/3 centos-7/3001", deployment_name: 'test_deployment')
+      out = bosh_runner.run('export-release test_release/3 centos-7/3001', deployment_name: 'test_deployment')
 
       expect(out).to include('Compiling packages: pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f')
       expect(out).to include('Compiling packages: pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
@@ -149,7 +149,7 @@ Can't use release 'test_release/1'. It references packages without source code a
       end
 
       it 'compiles all packages of the release against the requested stemcell' do
-        out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
+        out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
         expect(out).to match /Compiling packages/
         expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
         expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
@@ -158,7 +158,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'compiles all packages of the release against the requested stemcell with cloud config' do
-      out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
+      out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
       expect(out).to match /Compiling packages/
       expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
       expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
@@ -166,8 +166,8 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'does not compile packages that were already compiled' do
-      bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
-      out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
+      bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
+      out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
       expect(out).to_not match /Compiling packages/
       expect(out).to_not match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
       expect(out).to_not match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
@@ -175,7 +175,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'compiles any release that is in the targeted deployment' do
-      out = bosh_runner.run("export-release test_release_2/2 toronto-os/1", deployment_name: 'minimal')
+      out = bosh_runner.run('export-release test_release_2/2 toronto-os/1', deployment_name: 'minimal')
       expect(out).to match /Compiling packages/
       expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
       expect(out).to match /Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/
@@ -183,7 +183,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'compiles against a stemcell that is not in the resource pool of the targeted deployment' do
-      out = bosh_runner.run("export-release test_release/1 toronto-centos/2", deployment_name: 'minimal')
+      out = bosh_runner.run('export-release test_release/1 toronto-centos/2', deployment_name: 'minimal')
 
       expect(out).to match /Compiling packages/
       expect(out).to match /Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/
@@ -193,26 +193,26 @@ Can't use release 'test_release/1'. It references packages without source code a
 
     it 'returns an error when the release does not exist' do
       expect {
-        bosh_runner.run("export-release app/1 toronto-os/1", deployment_name: 'minimal')
+        bosh_runner.run('export-release app/1 toronto-os/1', deployment_name: 'minimal')
       }.to raise_error(RuntimeError, /Error: Release 'app' doesn't exist/)
     end
 
     it 'returns an error when the release version does not exist' do
       expect {
-        bosh_runner.run("export-release test_release/0.1 toronto-os/1", deployment_name: 'minimal')
+        bosh_runner.run('export-release test_release/0.1 toronto-os/1', deployment_name: 'minimal')
       }.to raise_error(RuntimeError, /Error: Release version 'test_release\/0.1' doesn't exist/)
     end
 
     it 'returns an error when the stemcell os and version does not exist' do
       expect {
-        bosh_runner.run("export-release test_release/1 nonexistos/1", deployment_name: 'minimal')
+        bosh_runner.run('export-release test_release/1 nonexistos/1', deployment_name: 'minimal')
       }.to raise_error(RuntimeError, /Error: Stemcell version '1' for OS 'nonexistos' doesn't exist/)
     end
 
     it 'raises an error when exporting a release version not matching the manifest release version' do
       bosh_runner.run("upload-release #{spec_asset('valid_release.tgz')}")
       expect {
-        bosh_runner.run("export-release appcloud/0.1 toronto-os/1", deployment_name: 'minimal')
+        bosh_runner.run('export-release appcloud/0.1 toronto-os/1', deployment_name: 'minimal')
       }.to raise_error(RuntimeError, /Error: Release version 'appcloud\/0.1' not found in deployment 'minimal' manifest/)
     end
 
@@ -231,9 +231,10 @@ Can't use release 'test_release/1'. It references packages without source code a
       out = bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal')
       task_id = bosh_runner.get_most_recent_task_id
 
-      result_file = File.open(current_sandbox.sandbox_path("boshdir/tasks/#{task_id}/result"), "r")
-      tarball_data = Yajl::Parser.parse(result_file.read)
+      result_data = bosh_runner.run("task #{task_id} --result")
 
+      regex = /^{"blobstore_id".*$/
+      tarball_data= JSON.parse(result_data.match(regex)[0])
       files = Dir.entries(current_sandbox.blobstore_storage_dir)
       expect(files).to include(tarball_data['blobstore_id'])
 
@@ -314,8 +315,8 @@ Can't use release 'test_release/1'. It references packages without source code a
 
       it 'allocates non-conflicting IPs for compilation VMs' do
         bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-        output = bosh_runner.run("export-release test_release/1 centos-7/3001", deployment_name: 'test_deployment')
-        expect(output).to include("Succeeded")
+        output = bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
+        expect(output).to include('Succeeded')
       end
     end
 
@@ -331,7 +332,7 @@ Can't use release 'test_release/1'. It references packages without source code a
 
       it 'allocates non-conflicting IPs for compilation VMs' do
         bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-        output = bosh_runner.run("export-release test_release/1 centos-7/3001", deployment_name: 'test_deployment')
+        output = bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
         expect(output).to include('Succeeded')
       end
     end

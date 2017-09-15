@@ -3,6 +3,8 @@ require 'bosh/template/evaluation_context'
 
 module Bosh::Director::Core::Templates
   class SourceErb
+    @@mutex = Mutex.new
+
     attr_reader :src_name, :dest_name, :erb
 
     def initialize(src_name, dest_name, erb_contents, template_name)
@@ -14,7 +16,9 @@ module Bosh::Director::Core::Templates
     end
 
     def render(context, logger)
-      erb.result(context.get_binding)
+      @@mutex.synchronize do
+        erb.result(context.get_binding)
+      end
       # rubocop:disable RescueException
     rescue Exception => e
       # rubocop:enable RescueException

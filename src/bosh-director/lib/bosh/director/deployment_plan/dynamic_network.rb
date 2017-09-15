@@ -8,7 +8,7 @@ module Bosh::Director
         name = safe_property(network_spec, 'name', :class => String)
         Canonicalizer.canonicalize(name)
         logger = TaggedLogger.new(logger, 'network-configuration')
-        dns_manager = DnsManagerProvider.create
+        name_server_parser = NetworkParser::NameServersParser.new
 
         validate_network_has_no_key('az', name, network_spec)
         validate_network_has_no_key('azs', name, network_spec)
@@ -18,17 +18,15 @@ module Bosh::Director
           validate_network_has_no_key_while_subnets_present('cloud_properties', name, network_spec)
 
           subnets = network_spec['subnets'].map do |subnet_properties|
-            dns_spec = safe_property(subnet_properties, 'dns', :class => Array, :optional => true)
-            dns = dns_manager.dns_servers(subnet_properties['name'], dns_spec)
+            name_servers = name_server_parser.parse(subnet_properties['name'], subnet_properties)
             cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
             subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
-            DynamicNetworkSubnet.new(dns, cloud_properties, subnet_availability_zones)
+            DynamicNetworkSubnet.new(name_servers, cloud_properties, subnet_availability_zones)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
-          dns_spec = safe_property(network_spec, 'dns', :class => Array, :optional => true)
-          dns = dns_manager.dns_servers(network_spec['name'], dns_spec)
-          subnets = [DynamicNetworkSubnet.new(dns, cloud_properties, nil)]
+          name_servers = name_server_parser.parse(network_spec['name'], network_spec)
+          subnets = [DynamicNetworkSubnet.new(name_servers, cloud_properties, nil)]
         end
 
         new(name, subnets, logger)

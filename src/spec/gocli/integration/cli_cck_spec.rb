@@ -90,7 +90,59 @@ describe 'cli: cloudcheck', type: :integration do
           expect(auto_output).to match(/Applying problem resolutions: VM for 'foobar\/[a-z0-9\-]+ \(2\)'/)
         end
       end
+
+      it 'deletes VM reference when delete_reference resolution flag is set' do
+        bosh_runner.run('cck --resolution non-matching-resolution1 --resolution delete_vm_reference --resolution non-matching-resolution2', deployment_name: 'simple')
+
+        output = scrub_randoms(runner.run('cloud-check --report', deployment_name: 'simple', failure_expected: true))
+        expect(output).to include("4  missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
+        expect(output).to include("5  missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
+        expect(output).to include("6  missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
+      end
     end
+
+    context 'when deployment uses an old cloud config' do
+      let(:initial_cloud_config) {
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
+        cloud_config['resource_pools'][0]['cloud_properties']['stage'] = 'before'
+        cloud_config
+      }
+
+      let(:new_cloud_config) do
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
+        cloud_config['azs'].pop
+        cloud_config['networks'][0]['subnets'].pop
+        cloud_config['resource_pools'][0]['cloud_properties']['stage'] = 'after'
+        cloud_config
+      end
+
+      let(:deployment_manifest) do
+        manifest = Bosh::Spec::Deployments::simple_manifest
+        manifest['jobs'][0]['azs'] = ['z1', 'z2']
+        manifest['jobs'][0]['instances'] = 2
+        manifest
+      end
+
+      it 'reuses the old config on update', hm: false do
+        upload_cloud_config(cloud_config_hash: initial_cloud_config)
+        create_and_upload_test_release
+        upload_stemcell
+
+        deploy_simple_manifest(manifest_hash: deployment_manifest)
+
+        upload_cloud_config(cloud_config_hash: new_cloud_config)
+
+        current_sandbox.cpi.vm_cids.each do |cid|
+          current_sandbox.cpi.delete_vm(cid)
+        end
+
+        bosh_runner.run('cloud-check --auto', deployment_name: 'simple')
+
+        expect_table('deployments', [{"cloud_config"=>"outdated", "name"=>"simple", "release_s"=>"bosh-release/0+dev.1", "stemcell_s"=>"ubuntu-stemcell/1", "team_s"=>""}])
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').last.inputs['cloud_properties']['stage']).to eq('before')
+      end
+    end
+
 
     context 'deployment has missing VMs' do
       before {
@@ -143,6 +195,14 @@ describe 'cli: cloudcheck', type: :integration do
         expect(cloudcheck_response).to match(regexp("Disk 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' (foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, 100M) is missing"))
         expect(cloudcheck_response).to match(regexp('1: Skip for now
 2: Delete disk reference (DANGEROUS!)'))
+      end
+
+      it 'deletes disk reference when delete_disk_reference is set' do
+        cloudcheck_response = scrub_randoms(bosh_runner.run('cck --resolution non-matching-resolution1 --resolution delete_disk_reference --resolution non-matching-resolution2', deployment_name: 'simple'))
+
+        expect(cloudcheck_response).to_not match(regexp('0 problems'))
+        expect(cloudcheck_response).to match(regexp('1 missing'))
+        expect(cloudcheck_response).to match(regexp("Disk 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' (foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, 100M) is missing"))
       end
     end
 

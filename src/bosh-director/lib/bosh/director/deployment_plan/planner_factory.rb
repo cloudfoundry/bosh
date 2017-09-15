@@ -36,19 +36,20 @@ module Bosh
 
         def create_from_model(deployment_model, options={})
           manifest = Manifest.load_from_model(deployment_model)
-          create_from_manifest(manifest, deployment_model.cloud_config, deployment_model.runtime_config, options)
+          create_from_manifest(manifest, deployment_model.cloud_config, deployment_model.runtime_configs, options)
         end
 
-        def create_from_manifest(manifest, cloud_config, runtime_config, options)
-          parse_from_manifest(manifest, cloud_config, runtime_config, options)
+        def create_from_manifest(manifest, cloud_config, runtime_configs, options)
+          consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
+          parse_from_manifest(manifest, cloud_config, consolidated_runtime_config, options)
         end
 
         private
 
-        def parse_from_manifest(manifest, cloud_config, runtime_config, options)
-          @manifest_validator.validate(manifest.hybrid_manifest_hash, manifest.cloud_config_hash)
+        def parse_from_manifest(manifest, cloud_config, runtime_config_consolidator, options)
+          @manifest_validator.validate(manifest.hybrid_manifest_hash, manifest.hybrid_cloud_config_hash)
 
-          migrated_manifest_object, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.cloud_config_hash)
+          migrated_manifest_object, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.hybrid_cloud_config_hash)
           manifest.resolve_aliases
           migrated_hybrid_manifest_hash = migrated_manifest_object.hybrid_manifest_hash
           @logger.debug("Migrated deployment manifest:\n#{migrated_manifest_object.raw_manifest_hash}")
@@ -69,21 +70,27 @@ module Bosh
             'job_states' => options['job_states'] || {},
             'max_in_flight' => validate_and_get_argument(options['max_in_flight'], 'max_in_flight'),
             'canaries' => validate_and_get_argument(options['canaries'], 'canaries'),
-            'tags' => parse_tags(migrated_hybrid_manifest_hash, runtime_config),
+            'tags' => parse_tags(migrated_hybrid_manifest_hash, runtime_config_consolidator),
           }
 
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment = Planner.new(attrs, migrated_manifest_object.raw_manifest_hash, cloud_config, runtime_config, deployment_model, plan_options)
+          deployment = Planner.new(attrs, migrated_manifest_object.raw_manifest_hash, cloud_config, runtime_config_consolidator.runtime_configs, deployment_model, plan_options)
           global_network_resolver = GlobalNetworkResolver.new(deployment, Config.director_ips, @logger)
           ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)
 
           DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(migrated_hybrid_manifest_hash, plan_options)
 
-          if runtime_config
-            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config.interpolated_manifest_for_deployment(name))
+          unless deployment.addons.empty?
+            deployment.addons.each do |addon|
+              addon.add_to_deployment(deployment)
+            end
+          end
+
+          if runtime_config_consolidator.have_runtime_configs?
+            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new(@logger).parse(runtime_config_consolidator.interpolate_manifest_for_deployment(name))
 
             #TODO: only add releases for runtime jobs that will be added.
             parsed_runtime_config.releases.each do |release|
@@ -92,6 +99,7 @@ module Bosh
             parsed_runtime_config.addons.each do |addon|
               addon.add_to_deployment(deployment)
             end
+            deployment.add_variables(parsed_runtime_config.variables)
           end
 
           process_links(deployment)
@@ -101,7 +109,7 @@ module Bosh
           deployment
         end
 
-        def parse_tags(manifest_hash, runtime_config)
+        def parse_tags(manifest_hash, runtime_config_consolidator)
           deployment_name = manifest_hash['name']
           tags = {}
 
@@ -111,7 +119,7 @@ module Bosh
             end
           end
 
-          runtime_config.nil? ? tags : runtime_config.tags(deployment_name).merge!(tags)
+          runtime_config_consolidator.tags(deployment_name).merge!(tags)
         end
 
         def process_links(deployment)

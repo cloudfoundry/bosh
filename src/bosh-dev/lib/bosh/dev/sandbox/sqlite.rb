@@ -3,7 +3,7 @@ require 'bosh/core/shell'
 
 module Bosh::Dev::Sandbox
   class Sqlite
-    attr_reader :db_name, :username, :password, :port, :adapter
+    attr_reader :db_name, :username, :password, :port, :adapter, :host
 
     def initialize(db_name, logger, runner = Bosh::Core::Shell.new)
       @db_name = db_name
@@ -11,6 +11,7 @@ module Bosh::Dev::Sandbox
       @runner = runner
       @username = nil
       @password = nil
+      @host = '127.0.0.1'
       @port = nil
       @adapter = 'sqlite'
     end
@@ -26,6 +27,14 @@ module Bosh::Dev::Sandbox
     def drop_db
       @logger.info("Dropping sqlite database #{db_name}")
       @runner.run("rm #{@db_name}")
+    end
+
+    def load_db_initial_state(initial_state_assets_dir)
+      raise '"#load_db_initial_state" not supported for sqlite'
+    end
+
+    def load_db(dump_file_path)
+      raise '"#load_db" not supported for sqlite'
     end
 
     def current_tasks

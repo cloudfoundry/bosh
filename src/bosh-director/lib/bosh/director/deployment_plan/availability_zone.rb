@@ -4,12 +4,9 @@ module Bosh::Director
       extend ValidationHelper
 
       def self.parse(availability_zone_spec)
-        name = safe_property(availability_zone_spec, "name", class: String)
-
-        cloud_properties =
-          safe_property(availability_zone_spec, "cloud_properties", class: Hash, default: {})
-
-        cpi = safe_property(availability_zone_spec, "cpi", class: String, optional: true)
+        name = safe_property(availability_zone_spec, 'name', class: String)
+        cloud_properties = safe_property(availability_zone_spec, 'cloud_properties', class: Hash, default: {})
+        cpi = safe_property(availability_zone_spec, 'cpi', class: String, optional: true)
 
         new(name, cloud_properties, cpi)
       end

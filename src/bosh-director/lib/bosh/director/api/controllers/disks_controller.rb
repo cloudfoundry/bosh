@@ -20,7 +20,12 @@ module Bosh::Director
 
       delete '/:orphan_disk_cid' do
         job_queue = JobQueue.new
-        task = Bosh::Director::Jobs::DeleteOrphanDisks.enqueue(current_user, [params[:orphan_disk_cid]], job_queue)
+        orphan_param = params['orphan']
+        if orphan_param.nil? || orphan_param == 'false'
+          task = Bosh::Director::Jobs::DeleteOrphanDisks.enqueue(current_user, [params[:orphan_disk_cid]], job_queue)
+        else
+          task = Bosh::Director::Jobs::OrphanDiskJob.enqueue(current_user, params[:orphan_disk_cid], job_queue)
+        end
 
         redirect "/tasks/#{task.id}"
       end

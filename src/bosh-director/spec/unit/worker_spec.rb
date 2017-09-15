@@ -10,9 +10,12 @@ describe 'worker' do
       },
       'verify_multidigest_path' => '/some/path',
       'blobstore' => {
-        'provider' => 'simple',
-        'options' => {}
+        'provider' => 's3cli',
+        'options' => {
+          's3cli_path' => true
+        }
       },
+      'record_events' => true,
       'config_server' => {
         'enabled' => false
       }
@@ -47,6 +50,26 @@ describe 'worker' do
       ENV['QUEUE']='urgent'
       worker.prep
       expect(worker.queues).to eq(['urgent'])
+    end
+  end
+
+  context 'bosh events' do
+    let(:djworker) { Delayed::Worker.new }
+    before { allow(Delayed::Worker).to receive(:new).and_return(djworker) }
+
+    it 'should record a start event' do
+      worker.prep
+
+      expect(djworker).to receive(:start)
+
+      worker.start
+
+      event = Bosh::Director::Models::Event.first
+      expect(event.user).to eq('_director')
+      expect(event.action).to eq('start')
+      expect(event.object_type).to eq('worker')
+      expect(event.object_name).to eq('worker_0')
+      expect(event.context).to eq({})
     end
   end
 end

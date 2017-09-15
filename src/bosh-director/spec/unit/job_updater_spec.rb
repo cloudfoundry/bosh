@@ -2,11 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobUpdater do
-    subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, job_renderer) }
-    let(:job_renderer) { JobRenderer.create }
+    subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
 
     let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
+    let(:dns_encoder) { instance_double(DnsEncoder) }
 
     let(:job) do
       instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
@@ -23,20 +24,24 @@ module Bosh::Director
 
     describe 'update' do
       let(:needed_instance_plans) { [] }
-      before {
+      before do
         allow(job).to receive(:needed_instance_plans).and_return(needed_instance_plans)
         allow(job).to receive(:did_change=)
-      }
+        allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter)
+        allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      end
 
       let(:update_error) { RuntimeError.new('update failed') }
-
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
-      before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
+      let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       context 'when job is up to date' do
+        let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
-            instance: instance_double(DeploymentPlan::Instance),
+            instance: needed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
             existing_instance: nil
           )
@@ -44,13 +49,15 @@ module Bosh::Director
           allow(instance_plan).to receive(:should_be_ignored?) { false }
           allow(instance_plan).to receive(:changes) { [] }
           allow(instance_plan).to receive(:persist_current_spec)
+          allow(instance_plan).to receive(:instance).and_return(needed_instance)
+          allow(needed_instance).to receive(:update_variable_set)
           [instance_plan]
         end
 
         it 'should not begin the updating job event stage' do
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             expect(events).to be_empty
           end
         end
@@ -62,9 +69,10 @@ module Bosh::Director
       end
 
       context 'when instance plans should be ignored' do
+        let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
-            instance: instance_double(DeploymentPlan::Instance),
+            instance: needed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
             existing_instance: nil
           )
@@ -78,7 +86,7 @@ module Bosh::Director
         it 'should apply the instance plan' do
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             expect(events).to be_empty
           end
         end
@@ -124,6 +132,8 @@ module Bosh::Director
           allow(plan).to receive(:should_be_ignored?) { false }
           allow(plan).to receive(:changes) { [] }
           allow(plan).to receive(:persist_current_spec)
+          allow(plan).to receive(:instance).and_return(unchanged_instance)
+          allow(unchanged_instance).to receive(:update_variable_set)
           plan
         end
 
@@ -135,7 +145,7 @@ module Bosh::Director
 
         before do
           allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-                                                      .with(ip_provider, job_renderer)
+                                                      .with(ip_provider, template_blob_cache, dns_encoder)
                                                       .and_return(canary_updater, changed_updater, unchanged_updater)
         end
 
@@ -146,7 +156,7 @@ module Bosh::Director
 
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -165,7 +175,7 @@ module Bosh::Director
 
           expect { job_updater.update }.to raise_error(update_error)
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'failed'),
@@ -182,7 +192,7 @@ module Bosh::Director
 
           expect { job_updater.update }.to raise_error(update_error)
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -289,7 +299,7 @@ module Bosh::Director
 
         before do
           allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-                                                      .with(ip_provider, job_renderer)
+                                                      .with(ip_provider, template_blob_cache, dns_encoder )
                                                       .and_return(canary_updater, changed_updater)
         end
 
@@ -301,7 +311,7 @@ module Bosh::Director
 
           job_updater.update
 
-          check_event_log do |events|
+          check_event_log(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -337,7 +347,7 @@ module Bosh::Director
 
             job_updater.update
 
-            check_event_log do |events|
+            check_event_log(task.id) do |events|
               [
                 updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
                 updating_stage_event(index: 1, total: 4, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),

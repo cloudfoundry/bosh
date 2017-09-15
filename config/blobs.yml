@@ -1,3 +1,7 @@
+bosh-gcscli/bosh-gcscli-0.0.2-linux-amd64:
+  size: 12777526
+  object_id: 32a1f288-c0ba-4d44-6a18-fc699afa4778
+  sha: a151d3829f53b68bd15edfd3e6a527d187591992
 davcli/davcli-0.0.6-linux-amd64:
   size: 8705864
   object_id: fbe6b42b-cd0e-47a6-a0b4-501be4b52426
@@ -38,18 +42,14 @@ nats/vendor/cache/thin-1.5.1.gem:
   size: 55296
   object_id: 5b19908f-9a4c-4b03-a377-29d7b9d00a9b
   sha: 4280f5a3db7c4d6470c15f6acec9a0dded057ab8
-nats/vendor/cache/yajl-ruby-1.1.0.gem:
-  size: 559616
-  object_id: 9d949fd3-d8d9-45f0-92ab-4a8f5a9abc56
-  sha: b22512fc1bd68f495f4538d3e29735da494bea04
 nginx/headers-more-nginx-module-0.30.tar.gz:
   size: 27793
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
   sha: a188a399f3e365a0831585a9d7aa0e6ed1a75f0d
-nginx/nginx-1.11.1.tar.gz:
-  size: 913417
-  object_id: 7bdb66cc-ef74-4e21-b114-23e87f8437c5
-  sha: 6b6172b26628b95c4ad0d6cb5b11eb4aa59c2a83
+nginx/nginx-1.12.1.tar.gz:
+  size: 981093
+  object_id: 740ca33e-2b75-4b22-5713-e5791471ec49
+  sha: 71000022267589f50e83b0d6743923c1b7e64238
 nginx/nginx-upload-module-2.2.tar.gz:
   size: 28505
   object_id: 118f94b0-2738-4019-9aa2-1832b948a5b1
@@ -62,34 +62,18 @@ postgres/postgresql-9.0.23.tar.gz:
   size: 19776342
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
-postgres/postgresql-9.4.10.tar.gz:
-  size: 23333040
-  object_id: 703026d4-1eff-47f6-5bfd-f4cdcb5d5370
-  sha: 69f810b063f9b1fb569e99d722fa74c29363efc9
+postgres/postgresql-9.4.12.tar.gz:
+  size: 23420452
+  object_id: 50a5bc6e-454a-4cb3-62de-78482ca4b03d
+  sha: 1405b6faf980c6a6ddd6869856a9859f6e13bcae
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-ruby/bundler-1.11.2.gem:
-  size: 263168
-  object_id: 83872b1a-048f-4337-8d6e-295d0fb9f99f
-  sha: 8eb956dec72da753d3d2a2126c78508b17af434e
-ruby/ruby-2.3.1.tar.gz:
-  size: 17797997
-  object_id: bcd99e02-ae75-4d74-beff-ab517520c75c
-  sha: c39b4001f7acb4e334cb60a0f4df72d434bef711
-ruby/rubygems-2.6.4.tgz:
-  size: 478582
-  object_id: 91c3d9ab-be40-4d2b-a3d0-0cdcccb48ebe
-  sha: 8ef39e536af2ecd20b0e7a95765fa6a485087ac8
-ruby/yaml-0.1.7.tar.gz:
-  size: 527518
-  object_id: 638fbb05-dabe-4ae1-4f1a-7ae43721d77d
-  sha: 3590cbf092ef4c71bc0a9b404c00a626b1e04dee
-s3cli/s3cli-0.0.53-linux-amd64:
+s3cli/s3cli-0.0.55-linux-amd64:
   size: 10330042
-  object_id: 30b2b4f3-a8d3-4a2d-7881-17cece91574a
-  sha: 4d6881fa390c6ecc1e5a0dd73af6951353857106
+  object_id: 7131652f-fdc7-4a84-4437-c22c908e0148
+  sha: 2b345d8476970bc9668af6d602e1c3fa65cff89a
 verify-multidigest/verify-multidigest-0.0.29-linux-amd64:
   size: 3277550
   object_id: e5925f0e-d420-4759-4c4e-9b964183efc1

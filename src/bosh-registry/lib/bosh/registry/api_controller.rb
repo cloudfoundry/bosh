@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 module Bosh::Registry
 
   class ApiController < Sinatra::Base
@@ -60,7 +58,7 @@ module Bosh::Registry
     end
 
     def json(payload)
-      Yajl::Encoder.encode(payload)
+      JSON.dump(payload)
     end
 
   end

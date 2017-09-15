@@ -118,4 +118,13 @@ describe Bhm::Plugins::Email do
     expect(@plugin.queue_size(:heartbeat)).to eq(0)
   end
 
+
+  it 'writes datetime headers compliant with rfc5322' do
+    headers = @plugin.create_headers("Some subject", Time.now)
+    date_key = 'Date'
+    expect(headers).to be_truthy
+    date_value = headers['Date']
+    expect(date_value).to be_truthy
+    expect(/[[:alpha:]]{3}, \d{1,2} [[:alpha:]]{3} \d{4} \d{2}:\d{2}:\d{2} [\+,\-].+/).to match(date_value)
+  end
 end

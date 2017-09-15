@@ -34,8 +34,12 @@ module Bosh::Director
           'fake-password',
           '/:memory:',
           'fake-dump.tgz',
-          { :out => '/dev/null' }
+        ).and_return(42)
+
+        expect(Process).to receive(:wait).with(
+          42
         )
+
         restore_manager.restore_db('fake-dump.tgz')
       end
     end

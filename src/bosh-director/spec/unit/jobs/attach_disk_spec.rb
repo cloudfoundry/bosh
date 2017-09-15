@@ -3,13 +3,19 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::AttachDisk do
 
-    let(:deployment) { Models::Deployment.make(name: deployment_name) }
+    let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}
+    let(:deployment) {
+      deployment = Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest))
+      Models::VariableSet.make(deployment_id: deployment.id)
+      deployment
+    }
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
     let(:job_name) { 'job_name' }
     let(:instance_id) { 'fake_instance_id' }
     let(:event_manager) {Api::EventManager.new(true)}
     let(:update_job) {instance_double(Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
+    let(:vm_cid) { 'test-cid' }
 
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
@@ -27,15 +33,16 @@ module Bosh::Director
     let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, disk_cid) }
 
     describe '#perform' do
-      let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, vm_cid: vm_cid, state: instance_state) }
+      let(:vm) { Models::Vm.make(cid: vm_cid, instance_id: instance_model.id) }
+      let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, state: instance_state) }
 
       before {
+        instance_model.active_vm = vm
         allow(Config).to receive(:current_job).and_return(update_job)
         deployment.add_instance(instance_model)
       }
 
       context 'when the instance is stopped hard' do
-        let(:vm_cid) { nil }
         let(:instance_state) {'detached'}
 
         let!(:original_disk) do
@@ -97,10 +104,11 @@ module Bosh::Director
           end
         end
 
-        context 'when the instance is not stopped --hard a.k.a. detached' do
+        context 'when the instance is in a started state' do
           before do
             instance_model.update(state: 'started')
           end
+
           it 'raises an error' do
             expect { attach_disk_job.perform }.to raise_error(AttachDiskInvalidInstanceState,
                                                               "Instance 'job_name/fake_instance_id' in deployment 'fake_deployment_name' must be in 'bosh stopped' state")
@@ -222,8 +230,6 @@ module Bosh::Director
       end
 
       context 'when the instance is stopped soft' do
-        let(:vm_cid) { nil }
-
         let(:instance_state) {'stopped'}
 
         let!(:original_disk) do
@@ -237,6 +243,7 @@ module Bosh::Director
         let(:agent_client) do
           instance_double(AgentClient,
             mount_disk: nil,
+            wait_until_ready: nil,
             list_disk: ['original-disk-cid'],
             stop: nil,
             unmount_disk: nil
@@ -244,11 +251,13 @@ module Bosh::Director
         end
         before do
           allow(Config.cloud).to receive(:attach_disk)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+          allow(Config.cloud).to receive(:set_disk_metadata)
+          allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         end
 
-        it 'attaches the new disk' do
+        it 'attaches the new disk and sets disk metadata' do
           expect(Config.cloud).to receive(:attach_disk)
+          expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           expect(Config.cloud).to receive(:detach_disk)
           attach_disk_job.perform
 
@@ -259,7 +268,7 @@ module Bosh::Director
 
         it 'orphans and unmounts the previous disk' do
           expect(Models::OrphanDisk.all).to be_empty
-          expect(Config.cloud).to receive(:detach_disk).with(instance_model.vm_cid, 'original-disk-cid')
+          expect(Config.cloud).to receive(:detach_disk).with(vm_cid, 'original-disk-cid')
           expect(agent_client).to receive(:unmount_disk)
 
           attach_disk_job.perform
@@ -269,20 +278,20 @@ module Bosh::Director
       end
 
       context 'when the job does not declare persistent disk' do
-        let(:vm_cid) { nil }
-
         let(:instance_state) {'stopped'}
 
         let(:original_disk) { nil }
 
-        let(:agent_client) { instance_double(AgentClient, mount_disk: nil) }
+        let(:agent_client) { instance_double(AgentClient, mount_disk: nil, wait_until_ready: nil) }
         before do
           allow(Config.cloud).to receive(:attach_disk)
-          allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).and_return(agent_client)
+          allow(Config.cloud).to receive(:set_disk_metadata)
+          allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         end
 
         it 'attaches the new disk' do
           expect(Config.cloud).to receive(:attach_disk)
+          expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
@@ -292,7 +301,7 @@ module Bosh::Director
 
         it 'performs no action for previous disk' do
           expect(Models::OrphanDisk.all).to be_empty
-          expect(Config.cloud).to_not receive(:detach_disk).with(instance_model, original_disk)
+          expect(Config.cloud).to_not receive(:detach_disk)
           expect(agent_client).to_not receive(:unmount_disk)
 
           attach_disk_job.perform

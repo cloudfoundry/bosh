@@ -66,6 +66,19 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         expect(network.subnets.first.availability_zone_names).to eq(nil)
       end
 
+      it 'raises error when cloud_properties is NOT a hash' do
+        expect {
+          BD::DeploymentPlan::DynamicNetwork.parse(
+              {
+                  'name' => 'foo',
+                  'cloud_properties' => 'not_hash',
+              },
+              [],
+              logger
+          )
+        }.to raise_error(Bosh::Director::ValidationInvalidType)
+      end
+
       it "raises error when 'az' is present on the network spec" do
         expect {
           BD::DeploymentPlan::DynamicNetwork.parse(
@@ -206,6 +219,27 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             [], logger
           )
         }.to raise_error(BD::ValidationInvalidType)
+      end
+
+      it 'raises error when cloud_properties is NOT a hash' do
+        expect {
+          BD::DeploymentPlan::DynamicNetwork.parse(
+              {
+                  'name' => 'foo',
+                  'subnets' => [
+                      {
+                          'dns' => %w[1.2.3.4 5.6.7.8],
+                          'cloud_properties' => 'not_hash',
+                          'az' => 'foz-zone'
+                      },
+                  ]
+              },
+              [
+                  BD::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
+              ],
+              logger
+          )
+        }.to raise_error(Bosh::Director::ValidationInvalidType)
       end
 
       it 'raises error when dns is present at the top level' do

@@ -2,37 +2,41 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
-    subject(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, logger: logger, tags: tags) }
+    subject(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, use_dns_addresses: use_dns_addresses, logger: logger, tags: tags) }
 
     let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
 
-    let(:variable_set_model) { BD::Models::VariableSet.make(deployment: deployment_model) }
+    let!(:variable_set_model) { BD::Models::VariableSet.make(deployment: deployment_model) }
     let(:instance_model) do
       instance_model = BD::Models::Instance.make(
         uuid: 'fake-uuid-1',
         bootstrap: true,
         deployment: deployment_model,
         spec: spec,
-        variable_set: variable_set_model
+        variable_set: variable_set_model,
+        job: 'instance-group-name'
       )
+      BD::Models::Vm.make(instance: instance_model, active: true, agent_id: 'active-vm-agent-id')
       instance_model
     end
     let(:spec) do
-      { 'vm_type' =>
-          { 'name' => 'original_vm_type_name',
-            'cloud_properties' => {'old' => 'value'}
-          },
+      {'vm_type' =>
+        {'name' => 'original_vm_type_name',
+          'cloud_properties' => {'old' => 'value'}
+        },
+        'env' => {'bosh' => {'password' => 'foobar'}},
         'networks' => network_settings,
         'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}
       }
     end
 
+    let(:use_dns_addresses) { false }
     let(:tags) do
       {'key1' => 'value1'}
     end
 
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment_plan, availability_zone) }
-    let(:current_state) { {'current' => 'state', 'job' => instance_group_spec, 'job_state' => job_state } }
+    let(:current_state) { {'current' => 'state', 'job' => instance_group_spec, 'job_state' => job_state} }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:instance) { Instance.create_from_job(instance_group, 1, instance_state, deployment_plan, current_state, availability_zone, logger) }
     let(:instance_state) { 'started' }
@@ -43,7 +47,10 @@ module Bosh::Director::DeploymentPlan
       reservation.resolve_ip('192.168.1.3')
       reservation
     }
-    let(:network_plans) { [] }
+    let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
+    let(:network_plans) { [
+      NetworkPlanner::Plan.new(reservation: reservation, existing: true),
+    ] }
     let(:job_state) { 'running' }
     let(:existing_instance) { instance_model }
 
@@ -52,7 +59,7 @@ module Bosh::Director::DeploymentPlan
     let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
     let(:deployment_model) do
-      cloud_config = BD::Models::CloudConfig.make(manifest: cloud_config_manifest)
+      cloud_config = BD::Models::CloudConfig.make(raw_manifest: cloud_config_manifest)
       BD::Models::Deployment.make(
         name: deployment_manifest['name'],
         manifest: YAML.dump(deployment_manifest),
@@ -63,13 +70,13 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_plan) do
       planner_factory = PlannerFactory.create(logger)
       plan = planner_factory.create_from_model(deployment_model)
-      plan.bind_models
+      Assembler.create(plan).bind_models
       plan
     end
 
-    let(:network_settings) { { 'obsolete' => 'network'} }
+    let(:network_settings) { {'a' => {'type' => 'dynamic', 'cloud_properties' => {}, 'dns' => '10.0.0.1', 'default' => ['dns', 'gateway']}} }
     before do
-      BD::Models::VariableSet.make(deployment: deployment_model)
+      fake_app
       fake_locks
       prepare_deploy(deployment_manifest, cloud_config_manifest)
       instance.bind_existing_instance_model(instance_model)
@@ -131,6 +138,7 @@ module Bosh::Director::DeploymentPlan
               'dns' => '10.0.0.1',
             },
             'a' =>{
+              'type' => 'manual',
               'ip' => '192.168.1.3',
               'netmask' => '255.255.255.0',
               'cloud_properties' =>{},
@@ -142,8 +150,8 @@ module Bosh::Director::DeploymentPlan
 
           allow(logger).to receive(:debug)
           expect(logger).to receive(:debug).with(
-              "networks_changed? network settings changed FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}"
-            )
+            "networks_changed? network settings changed FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}"
+          )
 
           instance_plan.networks_changed?
         end
@@ -162,6 +170,7 @@ module Bosh::Director::DeploymentPlan
                 'dns' => '10.0.0.1',
               },
               'a' => {
+                'type' => 'manual',
                 'ip' => '192.168.1.3',
                 'netmask' => '255.255.255.0',
                 'cloud_properties' => {},
@@ -197,8 +206,8 @@ module Bosh::Director::DeploymentPlan
           it 'logs' do
             allow(logger).to receive(:debug)
             expect(logger).to receive(:debug).with(
-                "networks_changed? obsolete reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]"
-              )
+              "networks_changed? obsolete reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]"
+            )
             instance_plan.networks_changed?
           end
         end
@@ -218,8 +227,8 @@ module Bosh::Director::DeploymentPlan
           it 'logs' do
             allow(logger).to receive(:debug)
             expect(logger).to receive(:debug).with(
-                "networks_changed? desired reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]"
-              )
+              "networks_changed? desired reservations: [{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]"
+            )
             instance_plan.networks_changed?
           end
         end
@@ -235,19 +244,79 @@ module Bosh::Director::DeploymentPlan
         context 'when network spec is changed during second deployment' do
           let(:network_settings) do
             {
-              'existing-network' =>{
+              'existing-network' => {
                 'type' => 'dynamic',
-                'cloud_properties' =>{},
+                'cloud_properties' => {},
                 'dns' => '10.0.0.1',
               }
             }
           end
-          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', {}, ['foo-az']) }
+          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', subnet_cloud_properties, ['foo-az']) }
           let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
+          let(:subnet_cloud_properties) { {} }
 
           context 'when dns is changed' do
             it 'should return true' do
               expect(instance_plan.networks_changed?).to be_truthy
+            end
+          end
+
+          context 'when variables exist in the spec' do
+            let(:current_networks_hash) { {'a' => {'b' => '((a_var))'}} }
+            let(:interpolated_current_networks_hash) { {'a' => {'b' => 'smurf'}} }
+
+            let(:desired_networks_hash) { {'a' => {'b' => '((a_var))'}} }
+            let(:interpolated_desired_networks_hash) { {'a' => {'b' => 'gargamel'}} }
+
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+
+            let(:mock_network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
+            let(:mock_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
+            let(:mock_desired_instance) { instance_double(Bosh::Director::DeploymentPlan::DesiredInstance) }
+            let(:mock_existing_instance) { instance_double(Bosh::Director::Models::Instance) }
+            let(:simple_instance_plan) { InstancePlan.new(existing_instance: mock_existing_instance, desired_instance: mock_desired_instance, instance: mock_instance) }
+
+            let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+            let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+            before do
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+
+              allow(mock_instance).to receive_message_chain(:model, :deployment, :name)
+              allow(mock_instance).to receive(:job_name)
+              allow(mock_instance).to receive(:current_networks)
+              allow(mock_instance).to receive(:availability_zone)
+              allow(mock_instance).to receive(:index)
+              allow(mock_instance).to receive(:uuid)
+              allow(mock_instance).to receive(:previous_variable_set).and_return(previous_variable_set)
+              allow(mock_instance).to receive(:desired_variable_set).and_return(desired_variable_set)
+
+              allow(mock_desired_instance).to receive_message_chain(:instance_group, :default_network)
+
+              allow(mock_existing_instance).to receive(:spec_p).and_return(current_networks_hash)
+
+              allow(Bosh::Director::DeploymentPlan::NetworkSettings).to receive(:new).and_return(mock_network_settings)
+              allow(mock_network_settings).to receive(:to_hash).and_return(desired_networks_hash)
+            end
+
+
+            it 'compares the interpolated cloud_properties' do
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+
+              expect(simple_instance_plan.networks_changed?).to be_truthy
+            end
+
+            it 'does not log the interpolated cloud property changes' do
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+
+              expect(logger).to receive(:debug).with(
+                "networks_changed? network settings changed FROM: #{current_networks_hash} TO: #{desired_networks_hash} on instance #{mock_existing_instance}"
+              )
+              expect(simple_instance_plan.networks_changed?).to be_truthy
             end
           end
         end
@@ -270,12 +339,15 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the vm type name has changed' do
+        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
+        let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
+        let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+
+        let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
         before do
-          instance_plan.existing_instance.update(spec: {
-              'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
-              'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-              'env' => {'bosh' => { 'password' => 'foobar' }}
-            })
+          instance_plan.existing_instance.update(spec: spec.merge({
+            'vm_type' => {'name' => 'old', 'cloud_properties' => {'a' => 'b'}}
+          }))
         end
 
         it 'returns false' do
@@ -287,9 +359,9 @@ module Bosh::Director::DeploymentPlan
       context 'when the stemcell version has changed' do
         before do
           instance_plan.existing_instance.update(spec: {
-              'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
-              'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '2'},
-            })
+            'vm_type' => {'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
+            'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '2'},
+          })
         end
 
         it 'returns true' do
@@ -298,21 +370,53 @@ module Bosh::Director::DeploymentPlan
 
         it 'logs the change reason' do
           expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
-                'version: 2 ' +
-                'TO: ' +
-                'version: 1' +
-                ' on instance ' + "#{instance_plan.existing_instance}"
-            )
+            'version: 2 ' +
+            'TO: ' +
+            'version: 1' +
+            ' on instance ' + "#{instance_plan.existing_instance}"
+          )
           instance_plan.needs_shutting_down?
         end
+      end
+
+      context 'when the network has changed' do
+        # everything else should be the same
+        let(:availability_zone) { AvailabilityZone.new('foo-az', {'old' => 'value'}) }
+        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
+        let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+
+        let(:network_plans) { [
+          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+          NetworkPlanner::Plan.new(reservation: reservation)
+        ] }
+        let(:network_settings) do
+          {
+            'existing-network' => {
+              'type' => 'dynamic',
+              'cloud_properties' => {},
+              'dns' => '10.0.0.1',
+            },
+            'obsolete-network' => {
+              'type' => 'dynamic',
+              'cloud_properties' => {},
+              'dns' => '10.0.0.1',
+            }
+          }
+        end
+
+        it 'should return true' do
+          expect(instance_plan.needs_shutting_down?).to be(true)
+        end
+
       end
 
       context 'when the stemcell name has changed' do
         before do
           instance_plan.existing_instance.update(spec: {
-              'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
-              'stemcell' => { 'name' => 'ubuntu-stemcell-old', 'version' => '1'},
-            })
+            'vm_type' => {'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
+            'stemcell' => {'name' => 'ubuntu-stemcell-old', 'version' => '1'},
+          })
         end
 
         it 'returns true' do
@@ -321,11 +425,11 @@ module Bosh::Director::DeploymentPlan
 
         it 'logs the change reason' do
           expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' +
-                'ubuntu-stemcell-old ' +
-                'TO: ' +
-                'ubuntu-stemcell' +
-                ' on instance ' + "#{instance_plan.existing_instance}"
-            )
+            'ubuntu-stemcell-old ' +
+            'TO: ' +
+            'ubuntu-stemcell' +
+            ' on instance ' + "#{instance_plan.existing_instance}"
+          )
           instance_plan.needs_shutting_down?
         end
       end
@@ -339,10 +443,10 @@ module Bosh::Director::DeploymentPlan
 
         before do
           instance_plan.existing_instance.update(spec: {
-                                                   'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
-                                                   'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1'},
-                                                   'env' => {'key' => 'previous-value'},
-                                                 })
+            'vm_type' => {'name' => 'old', 'cloud_properties' => {'a' => 'b'}},
+            'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'},
+            'env' => {'key' => 'previous-value'},
+          })
         end
 
         it 'returns true' do
@@ -352,7 +456,7 @@ module Bosh::Director::DeploymentPlan
         it 'log the change reason' do
           expect(logger).to receive(:debug).with(
             'env_changed? changed FROM: {"key"=>"previous-value"} TO: {"key"=>"changed-value"}' +
-            ' on instance ' + "#{instance_plan.existing_instance}")
+              ' on instance ' + "#{instance_plan.existing_instance}")
           instance_plan.needs_shutting_down?
         end
       end
@@ -367,24 +471,25 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#persist_current_spec' do
-      let(:subnet) { DynamicNetworkSubnet.new('192.168.1.1', {}, ['foo-az']) }
+      let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
       let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
       let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
-      let(:network_plans) {[
-          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-          NetworkPlanner::Plan.new(reservation: reservation)
-      ]}
+
+      let(:network_plans) { [
+        NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+        NetworkPlanner::Plan.new(reservation: reservation)
+      ] }
 
       before do
         instance_plan.existing_instance.update(spec: {
-            'vm_type' => { 'name' => 'old', 'cloud_properties' => {'a' => 'b'}}
-          })
+          'vm_type' => {'name' => 'old', 'cloud_properties' => {'a' => 'b'}}
+        })
       end
 
       it 'should write the current spec to the database' do
         instance_plan.persist_current_spec
         vm_type = instance_plan.existing_instance.reload.spec_p('vm_type')
-        expect(vm_type).to eq({'name' => 'a', 'cloud_properties' =>{}})
+        expect(vm_type).to eq({'name' => 'a', 'cloud_properties' => {}})
       end
     end
 
@@ -491,9 +596,28 @@ module Bosh::Director::DeploymentPlan
         it 'should log' do
           allow(logger).to receive(:debug)
 
-          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {:name=>"", :size=>42, :cloud_properties=>{"new"=>"properties"}} TO: {:name=>"", :size=>24, :cloud_properties=>{"new"=>"properties"}} on instance foobar/1 (fake-uuid-1)')
+          expect(logger).to receive(:debug).with('persistent_disk_changed? changed FROM: {:name=>"", :size=>42, :cloud_properties=>{"new"=>"properties"}} TO: {:name=>"", :size=>24, :cloud_properties=>{"new"=>"properties"}} on instance foobar/fake-uuid-1 (1)')
 
           instance_plan.persistent_disk_changed?
+        end
+
+        context 'variables interpolation' do
+          let(:desired_variable_set) { instance_double(BD::Models::VariableSet) }
+
+          before do
+            instance.desired_variable_set = desired_variable_set
+          end
+
+          it 'should create PersistentDiskCollection with the correct variable sets' do
+            expect(BD::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
+              anything,
+              instance.model.variable_set,
+              anything,
+              desired_variable_set
+            ).and_return([])
+
+            instance_plan.persistent_disk_changed?
+          end
         end
       end
 
@@ -520,16 +644,50 @@ module Bosh::Director::DeploymentPlan
 
       it 'generates network settings from the job and desired reservations' do
         expect(instance_plan.network_settings_hash).to eq({
-              'a' => {
-                'ip' => '192.168.1.3',
-                'netmask' => '255.255.255.0',
-                'cloud_properties' => {},
-                'dns' => ['192.168.1.1', '192.168.1.2'],
-                'default' => ['dns', 'gateway'],
-                'gateway' => '192.168.1.1',
-              }
-            }
-          )
+          'a' => {
+            'type' => 'manual',
+            'ip' => '192.168.1.3',
+            'netmask' => '255.255.255.0',
+            'cloud_properties' => {},
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'default' => ['dns', 'gateway'],
+            'gateway' => '192.168.1.1',
+          }
+        }
+        )
+      end
+    end
+
+    describe '#network_address' do
+      let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
+      let(:network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
+
+      before do
+        allow(instance_plan).to receive(:network_settings).and_return(network_settings)
+      end
+
+      context 'when use_dns_addresses is FALSE' do
+        let(:use_dns_addresses) { false }
+
+        it 'calls it with correct value' do
+          expect(network_settings).to receive(:network_address).with(use_dns_addresses)
+          instance_plan.network_address
+        end
+      end
+
+      context 'when use_dns_addresses is TRUE' do
+        let(:use_dns_addresses) { true }
+
+        it 'calls it with correct value' do
+          expect(network_settings).to receive(:network_address).with(use_dns_addresses)
+          instance_plan.network_address
+        end
+      end
+    end
+
+    describe '#root_domain' do
+      it 'fetches root domain' do
+        expect(instance_plan.root_domain).to eq('bosh')
       end
     end
 
@@ -537,7 +695,7 @@ module Bosh::Director::DeploymentPlan
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
       context 'when an instance exists (with the same job name & instance index)' do
-        let(:current_state) { { 'job' => instance_group.spec } }
+        let(:current_state) { {'job' => instance_group.spec} }
 
         context 'that fully matches the job spec' do
           before { allow(instance).to receive(:current_job_spec).and_return(instance_group.spec) }
@@ -554,13 +712,13 @@ module Bosh::Director::DeploymentPlan
           end
           let(:job) do
             instance_double('Bosh::Director::DeploymentPlan::Job', {
-                name: state['job']['name'],
-                version: state['job']['version'],
-                sha1: state['job']['sha1'],
-                blobstore_id: state['job']['blobstore_id'],
-                properties: {},
-                logs: nil,
-              })
+              name: state['job']['name'],
+              version: state['job']['version'],
+              sha1: state['job']['sha1'],
+              blobstore_id: state['job']['blobstore_id'],
+              properties: {},
+              logs: nil,
+            })
           end
           let(:state) do
             {
@@ -595,13 +753,14 @@ module Bosh::Director::DeploymentPlan
             bootstrap: true,
             deployment: deployment_model,
             uuid: 'uuid-1',
-            spec: { 'vm_type' => {
-                      'name' => 'original_vm_type_name',
-                      'cloud_properties' => {'old' => 'value'}
-                  },
-            'packages' => {"changed" => "value"},
-            'networks' => network_settings,
-            'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}}
+            variable_set: variable_set_model,
+            spec: {'vm_type' => {
+              'name' => 'original_vm_type_name',
+              'cloud_properties' => {'old' => 'value'}
+            },
+              'packages' => {'changed' => 'value'},
+              'networks' => network_settings,
+              'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}}
           )
           instance_model
         end
@@ -611,7 +770,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log changes' do
-          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/1 (uuid-1)')
+          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed"=>"value"} TO: {} on instance foobar/uuid-1 (1)')
           instance_plan.packages_changed?
         end
       end
@@ -630,7 +789,6 @@ module Bosh::Director::DeploymentPlan
         let(:spec) do
           {'configuration_hash' => {'old' => 'config'}}
         end
-        let(:uuid) { BD::Models::Instance.all.last.uuid }
 
         it 'should return true' do
           instance.configuration_hash = {'changed' => 'config'}
@@ -640,7 +798,7 @@ module Bosh::Director::DeploymentPlan
         it 'should log the configuration changed reason' do
           instance.configuration_hash = {'changed' => 'config'}
 
-          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/1 (#{uuid})")
+          expect(logger).to receive(:debug).with("configuration_changed? changed FROM: {\"old\"=>\"config\"} TO: {\"changed\"=>\"config\"} on instance foobar/#{instance.model.uuid} (1)")
           instance_plan.configuration_changed?
         end
       end
@@ -696,14 +854,14 @@ module Bosh::Director::DeploymentPlan
       describe '#dns_changed?' do
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
 
-        describe 'when the index dns record for the instance is not found and local_dns is not enabled' do
+        before do
+          new_spec = spec
+          new_spec['networks']['a'] = spec['networks']['a'].merge({'ip' => '192.168.1.3'})
+          existing_instance.spec = new_spec
+        end
 
-          before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
-
-            instance = BD::Models::Instance.all.last
-            BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.fake-dns", :type => 'A', :content => '192.168.1.3')
-          end
+        describe 'when the index dns record for the instance is not found' do
+          let(:changed_instance) { BD::Models::Instance.all.last }
 
           it '#dns_changed? should return true' do
             expect(instance_plan.dns_changed?).to be(true)
@@ -711,43 +869,36 @@ module Bosh::Director::DeploymentPlan
 
           it 'should log the dns changes' do
             expect(logger).to receive(:debug).with("dns_changed? The requested dns record with name '1.foobar.a.simple.bosh' and ip '192.168.1.3' was not found in the db.")
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/fake-uuid-1 (1)")
             instance_plan.dns_changed?
           end
         end
 
-        describe 'when the index dns record for the instance is not found and local_dns is enabled' do
-          let(:network_settings) { { 'default' => {'ip' => '1234'}} }
-          let(:spec) do
-            { 'name' => 'fake-name',
-              'deployment' => 'fake-deployment-name',
-              'vm_type' =>
-              { 'name' => 'original_vm_type_name',
-                'cloud_properties' => {'old' => 'value'}
-              },
-              'networks' => network_settings,
-              'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}
-            }
-          end
+        describe 'when the uuid and index dns record for the instance is found, but the local dns record has changed' do
           before do
-            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
-
-            BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
+            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: 'dummy-ip')
             BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
-
-            Bosh::Director::Models::LocalDnsRecord.make(name: "fake-uuid-1.fake-name.default.fake-deployment-name.bosh", ip: '4321', instance_id: instance_model.id)
+            BD::Models::Dns::Record.create(:name => 'fake-uuid-1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
+            allow(BD::Config).to receive(:local_dns_enabled?).and_return(true)
+            allow(logger).to receive(:debug)
           end
 
           it '#dns_changed? should return true' do
             expect(instance_plan.dns_changed?).to be(true)
           end
 
+          it 'should log the dns changes' do
+            expect(logger).to receive(:debug).with("local_dns_changed? changed FROM: [{:ip=>\"dummy-ip\", :az=>nil, :instance_group=>nil, :network=>nil, :deployment=>nil, :instance_id=>4, :agent_id=>nil, :domain=>nil}] TO: [{:ip=>\"192.168.1.3\", :instance_id=>4, :az=>nil, :network=>\"a\", :deployment=>\"simple\", :instance_group=>\"instance-group-name\", :agent_id=>\"active-vm-agent-id\", :domain=>\"bosh\"}] on instance foobar/fake-uuid-1 (1)")
+            instance_plan.dns_changed?
+          end
         end
 
         describe 'when the id dns record for the instance is not found' do
-          let(:uuid) { BD::Models::Instance.all.last }
+          let(:changed_instance) { BD::Models::Instance.all.last }
 
           before do
-            BD::Models::Dns::Record.create(:name => "#{uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
+            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: '192.168.1.3', deployment: 'simple', network: 'a', instance_group: 'instance-group-name', agent_id: 'active-vm-agent-id', domain: 'bosh')
+            BD::Models::Dns::Record.create(:name => "#{changed_instance}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
           end
 
           it '#dns_changed? should return true' do
@@ -762,6 +913,7 @@ module Bosh::Director::DeploymentPlan
 
         describe 'when the dns records for the instance are found' do
           before do
+            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: '192.168.1.3', deployment: 'simple', network: 'a', instance_group: 'instance-group-name', agent_id: 'active-vm-agent-id', domain: 'bosh')
             BD::Models::Dns::Record.create(:name => '1.foobar.a.simple.bosh', :type => 'A', :content => '192.168.1.3')
             BD::Models::Dns::Record.create(:name => "#{instance.uuid}.foobar.a.simple.bosh", :type => 'A', :content => '192.168.1.3')
           end

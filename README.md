@@ -1,5 +1,7 @@
 # BOSH
 
+Cloud Foundry BOSH is an open source tool for release engineering, deployment, lifecycle management, and monitoring of distributed systems.
+
 * Documentation:
 	- [bosh.io/docs](https://bosh.io/docs) for installation & usage guide
 	- [docs/ directory](docs/) for developer docs
@@ -10,26 +12,20 @@
     - [cf-bosh](https://lists.cloudfoundry.org/pipermail/cf-bosh) for asking BOSH usage and development questions
     - [cf-dev](https://lists.cloudfoundry.org/pipermail/cf-dev) for asking Cloud Foundry questions
 
-* CI: <https://main.bosh-ci.cf-app.com>
-
-* Roadmap: [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/956238)
+* Project mgmt: [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/956238)
 
 * Related repos:
-	- [bosh-init](https://github.com/cloudfoundry/bosh-init)
-	- [bosh-agent](https://github.com/cloudfoundry/bosh-agent)
-	- [bosh-utils](https://github.com/cloudfoundry/bosh-utils)
+	- [Documentation source (docs-bosh)](https://github.com/cloudfoundry/docs-bosh)
+	- [CLI v2 (bosh-cli)](https://github.com/cloudfoundry/bosh-cli)
+	- [Agent (bosh-agent)](https://github.com/cloudfoundry/bosh-agent)
+	- [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment)
 	- [bosh-lite](https://github.com/cloudfoundry/bosh-lite)
-	- [AWS CPI](https://github.com/cloudfoundry-incubator/bosh-aws-cpi-release)
-	- [Azure CPI](https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release)
-	- [Google CPI](https://github.com/cloudfoundry-incubator/bosh-google-cpi-release)
-	- [OpenStack CPI](https://github.com/cloudfoundry-incubator/bosh-openstack-cpi-release)
-	- [RackHD CPI](https://github.com/cloudfoundry-incubator/bosh-rackhd-cpi-release)
-	- [SoftLayer CPI](https://github.com/cloudfoundry-incubator/bosh-softlayer-cpi-release)
-	- [vSphere CPI](https://github.com/cloudfoundry-incubator/bosh-vsphere-cpi-release)
-	- [vCloud CPI](https://github.com/cloudfoundry-incubator/bosh-vcloud-cpi-release)
-	- [Warden CPI](https://github.com/cppforlife/bosh-warden-cpi-release)
-
-Cloud Foundry BOSH is an open source tool for release engineering, deployment, lifecycle management, and monitoring of distributed systems.
+	- Stemcells: [bosh-linux-stemcell-builder](https://github.com/cloudfoundry/bosh-linux-stemcell-builder), [bosh-windows-stemcell-builder](https://github.com/cloudfoundry-incubator/bosh-windows-stemcell-builder), [aws-light-stemcell-builder](https://github.com/cloudfoundry-incubator/aws-light-stemcell-builder)
+	- CPIs: [AWS](https://github.com/cloudfoundry-incubator/bosh-aws-cpi-release), [Azure](https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release), [Google](https://github.com/cloudfoundry-incubator/bosh-google-cpi-release), [OpenStack](https://github.com/cloudfoundry-incubator/bosh-openstack-cpi-release), [RackHD](https://github.com/cloudfoundry-incubator/bosh-rackhd-cpi-release), [SoftLayer](https://github.com/cloudfoundry-incubator/bosh-softlayer-cpi-release), [vSphere](https://github.com/cloudfoundry-incubator/bosh-vsphere-cpi-release), [vCloud](https://github.com/cloudfoundry-incubator/bosh-vcloud-cpi-release), [VirtualBox](https://github.com/cppforlife/bosh-virtualbox-cpi-release), [Warden](https://github.com/cppforlife/bosh-warden-cpi-release)
+	- Blobstores: [bosh-davcli](https://github.com/cloudfoundry/bosh-davcli), [bosh-s3cli](https://github.com/cloudfoundry/bosh-s3cli), [bosh-gcscli](https://github.com/cloudfoundry/bosh-gcscli)
+	- CPI libraries: [bosh-cpi-ruby](https://github.com/cloudfoundry/bosh-cpi-ruby), [bosh-cpi-go](https://github.com/cppforlife/bosh-cpi-go)
+	- [Go common packages (bosh-utils)](https://github.com/cloudfoundry/bosh-utils)
+	- [Dev notes (bosh-notes)](https://github.com/cloudfoundry/bosh-notes)
 
 ## Contributions
 

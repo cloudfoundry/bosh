@@ -18,6 +18,8 @@ RUN apt-get install -y \
 	libreadline-dev \
 	dnsutils \
 	xvfb \
+	jq \
+	realpath \
 	&& apt-get clean
 
 #global - ruby will need these

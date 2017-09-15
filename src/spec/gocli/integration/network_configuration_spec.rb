@@ -27,7 +27,7 @@ describe 'network configuration', type: :integration do
 
       # Available dynamic ips - 192.168.1.15 - 192.168.1.19
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
-      expect(output.map { |instance| instance['IPs'] }).to contain_exactly('192.168.1.15', '192.168.1.16', '192.168.1.17')
+      expect(output.map { |instance| instance['ips'] }).to contain_exactly('192.168.1.15', '192.168.1.16', '192.168.1.17')
       # expect(output).to include(/foobar.* 192\.168\.1\.15/)
       # expect(output).to match(/foobar.* 192\.168\.1\.16/)
       # expect(output).to match(/foobar.* 192\.168\.1\.17/)
@@ -47,7 +47,7 @@ describe 'network configuration', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
-      expect(output.first['IPs']).to eq('192.168.1.100')
+      expect(output.first['ips']).to eq('192.168.1.100')
     end
 
     context 'Network settings are changed' do
@@ -163,6 +163,24 @@ describe 'network configuration', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect(director.instances.map(&:agent_id)).to eq([agent_id])
     end
+
+    it 'does not recreate VMs when switching between networks with the exact same configuration' do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+
+      before_ips = director.instances.first.ips
+
+      cloud_config_hash['networks'] << cloud_config_hash['networks'][0].merge({'name' => 'b'})
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      manifest_hash['jobs'].first['networks'] = [{'name' => 'b'}]
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      after_ips = director.instances.first.ips
+
+      expect(after_ips).to eq(before_ips)
+    end
   end
 
   context 'when dns is disabled' do
@@ -190,10 +208,63 @@ describe 'network configuration', type: :integration do
       current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-      deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
       agent_id = director.instances.first.agent_id
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect(director.instances.map(&:agent_id)).to eq([agent_id])
+    end
+
+    context 'when the cloud config has overlapping networks' do
+      let(:cloud_config_hash) do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['networks'] << Bosh::Common::DeepCopy.copy(cloud_config_hash['networks'][0]).tap do |new_network|
+          new_network['name'] = 'b'
+        end
+        cloud_config_hash
+      end
+
+      let(:manifest_hash) do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash
+      end
+
+      context 'when the manifest requests NIC in both networks for instance' do
+        it 'does not recreate VM' do
+          manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
+          manifest_hash['jobs'].first['networks'] << {'name' => 'b'}
+          deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+          agent_id = director.instances.first.agent_id
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+          expect(director.instances.map(&:agent_id)).to eq([agent_id])
+
+          output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
+          expect(output.length).to eq 1
+
+          first_instance_ips = output[0]['ips'].split("\n")
+          expect(first_instance_ips.length).to eq 2
+        end
+      end
+
+      context 'when the manifest only refers to one of the networks' do
+        it 'does not recreate VM' do
+          deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+          agent_id = director.instances.first.agent_id
+          output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
+          expect(output.length).to eq 1
+          ips = output[0]['ips'].split("\n")
+          expect(ips.length).to eq 1
+
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+          expect(director.instances.map(&:agent_id)).to eq([agent_id])
+
+          output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
+          expect(output.length).to eq 1
+
+          new_ips = output[0]['ips'].split("\n")
+          expect(new_ips.length).to eq 1
+          expect(new_ips[0]).to eq ips[0]
+        end
+      end
     end
   end
 

@@ -13,10 +13,11 @@ module Bosh::Director
         blobstore_client = double('fake-blobstore-client')
         expect(Bosh::Blobstore::Client)
           .to receive(:safe_create)
-          .with('simple', {
+          .with('davcli', {
             'endpoint' => 'http://127.0.0.1',
-            'user'     => 'admin',
+            'user' => 'admin',
             'password' => nil,
+            'davcli_path' => true,
           })
           .and_return(blobstore_client)
         expect(blobstores.blobstore).to eq(blobstore_client)

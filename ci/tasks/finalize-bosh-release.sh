@@ -2,7 +2,7 @@
 
 set -eux
 
-VERSION=$( cat candidate-version/number | sed 's/\.0$//;s/\.0$//' )
+VERSION=$( sed 's/\.0$//;s/\.0$//' candidate-version/number )
 cp candidate-version/number bumped-candidate-version/number
 
 export ROOT_PATH=$PWD
@@ -14,7 +14,7 @@ chmod +x $GO_CLI_PATH
 
 export DEV_RELEASE_PATH=$ROOT_PATH/bosh-dev-release/bosh*.tgz
 
-git clone ./bosh-src-develop $PROMOTED_REPO
+git clone ./bosh-src-master $PROMOTED_REPO
 
 pushd $PROMOTED_REPO
   git status

@@ -10,7 +10,7 @@ packages:
   - registry
   - libpq
   - mysql
-  - ruby
+  - ruby-2.4
 
 properties:
   registry.port:

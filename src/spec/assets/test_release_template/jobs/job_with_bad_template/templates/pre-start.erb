@@ -1,0 +1,34 @@
+#!/bin/bash
+
+<% if p('fail_instance_index') == spec.index && p('fail_on_template_rendering') == true %>
+    <% raise "Failed for index #{spec.index} because fail_on_template_rendering was set" %>
+<% end %>
+
+if [ "true" == "<%= p('fail_on_job_start') %>" ] && [ "<%= spec.index %>" == "<%= p('fail_instance_index') %>" ]; then
+  echo "Failed for index <%= spec.index %> because fail_on_job_start was set"
+  exit 1
+fi
+
+PIDFILE=/var/vcap/sys/run/job_with_bad_template_new.pid
+
+case $1 in
+
+  start)
+    echo $$ > $PIDFILE
+
+    exec /bin/sh /var/vcap/packages/bar/run.sh
+    ;;
+
+  stop)
+    tail -1 $PIDFILE | xargs kill
+
+    rm -rf $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: job_with_bad_template_new {start|stop}" ;;
+esac
+
+exit 0
+
+

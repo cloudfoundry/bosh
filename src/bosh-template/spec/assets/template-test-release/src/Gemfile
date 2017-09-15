@@ -1,0 +1,15 @@
+# encoding: UTF-8
+
+source 'https://rubygems.org'
+
+gem 'rake', '~>10.0'
+gem 'bundler', '~>1.15.0'
+
+group :production do
+end
+
+group :development, :test do
+  gem 'bosh-template', path: '../../../..'
+  gem 'rspec'
+  gem 'rspec-its'
+end

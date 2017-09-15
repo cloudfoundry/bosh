@@ -1,4 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 require_relative '../../spec/support/deployments'
 
 Sham.define do
@@ -7,6 +6,7 @@ Sham.define do
   object_name      { |index| "deployment-#{index}" }
   password         { |index| "password-#{index}" }
   version          { |index| "version-#{index}" }
+  fingerprint      { |index| "fingerprint-#{index}" }
   manifest         { |index| "manifest-#{index}" }
   job              { |index| "job-#{index}"}
   vm_cid           { |index| "vm-cid-#{index}" }
@@ -68,6 +68,7 @@ module Bosh::Director::Models
     blobstore_id        { Sham.blobstore_id }
     sha1                { Sham.sha1 }
     package_names_json  { "[]" }
+    fingerprint         { Sham.fingerprint }
   end
 
   Stemcell.blueprint do
@@ -96,14 +97,12 @@ module Bosh::Director::Models
     job         { Sham.job }
     index       { Sham.index }
     state       { 'started' }
-    vm_cid      { Sham.vm_cid }
-    agent_id    { Sham.agent_id }
     uuid        { Sham.uuid }
     variable_set { VariableSet.make }
   end
 
   IpAddress.blueprint do
-    address { NetAddr::CIDR.create(Sham.ip) }
+    address_str { NetAddr::CIDR.create(Sham.ip).to_i.to_s }
     instance  { Instance.make }
     static { false }
     network_name { Sham.name }
@@ -118,17 +117,18 @@ module Bosh::Director::Models
     description { Sham.description }
     result      { nil }
     output      { nil }
-  end
-
-  User.blueprint do
-    username { Sham.username }
-    password { Sham.password }
+    result_output { nil }
+    event_output { nil }
   end
 
   PersistentDisk.blueprint do
     active      { true }
     disk_cid    { Sham.disk_cid }
-    instance    { Instance.make }
+    instance    do
+      is = Instance.make
+      vm = Vm.make(instance_id: is.id)
+      is.active_vm = vm
+    end
   end
 
   Snapshot.blueprint do
@@ -165,7 +165,7 @@ module Bosh::Director::Models
   end
 
   CloudConfig.blueprint do
-    manifest { Bosh::Spec::Deployments.simple_cloud_config }
+    raw_manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
   RuntimeConfig.blueprint do
@@ -178,8 +178,8 @@ module Bosh::Director::Models
 
   DeploymentProperty.blueprint do
     deployment { Deployment.make }
-    name { Sham.name }
-    value { "value" }
+    name       { Sham.name }
+    value      { "value" }
   end
 
   Lock.blueprint do
@@ -189,8 +189,8 @@ module Bosh::Director::Models
   end
 
   LogBundle.blueprint do
-    timestamp { Time.now }
-    blobstore_id { Sham.blobstore_id }
+    timestamp     { Time.now }
+    blobstore_id  { Sham.blobstore_id }
   end
 
   Event.blueprint do
@@ -205,19 +205,21 @@ module Bosh::Director::Models
     name      { Sham.name }
   end
 
-  ErrandRun.blueprint do
-    instance_id    { Instance.make.id }
-    successful  { false }
-  end
+  ErrandRun.blueprint {}
 
-  LocalDnsBlob.blueprint do
+  Blob.blueprint do
     blobstore_id { Sham.blobstore_id }
     sha1         { Sham.sha1 }
     created_at   { Time.new }
   end
 
+  LocalDnsBlob.blueprint do
+    created_at   { Time.new }
+    blob         { Blob.make(type: 'dns') }
+    version      { 1 }
+  end
+
   LocalDnsRecord.blueprint do
-    name        { Sham.name }
     ip          { Sham.ip }
     instance_id { Sham.instance_id }
   end
@@ -227,6 +229,12 @@ module Bosh::Director::Models
   }
 
   Variable.blueprint {}
+
+  Vm.blueprint do
+    cid      { Sham.vm_cid }
+    agent_id { Sham.agent_id }
+    created_at { Time.now }
+  end
 
   module Dns
     Domain.blueprint do

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   include Api::Http
 
@@ -85,6 +83,7 @@ module Bosh::Director
   ValidationViolatedMin = err(40002)
   ValidationViolatedMax = err(40003)
   ValidationExtraField = err(40004)
+  ValidationInvalidValue = err(40005)
 
   StemcellInvalidArchive = err(50000)
   StemcellImageNotFound = err(50001)
@@ -94,6 +93,7 @@ module Bosh::Director
   StemcellAliasAlreadyExists = err(50005)
   StemcellBothNameAndOS = err(50006)
   StemcellSha1DoesNotMatch = err(50007)
+  StemcellNotSupported = err(50008)
 
   PackageInvalidArchive = err(60000)
   PackageMissingSourceCode = err(60001)
@@ -112,6 +112,7 @@ module Bosh::Director
   SnapshotNotFound = err(70008)
   JobNotFound = err(70009, NOT_FOUND)
   ContextIdViolatedMax = err(70010)
+  VariableSetNotFound = err(70011)
 
   # Extracting job from a release
   JobInvalidArchive = err(80000)
@@ -234,6 +235,7 @@ module Bosh::Director
   DeploymentInvalidResourceSpecification = err(190019)
   DeploymentIgnoredInstancesModification = err(190020)
   DeploymentIgnoredInstancesDeletion = err(190021)
+  DeploymentDuplicateVariableName = err(190022)
 
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)
@@ -255,6 +257,7 @@ module Bosh::Director
   AgentDiskOutOfSync = err(400010)
   AgentInvalidTaskResult = err(400011)
   AgentUnsupportedAction = err(400012)
+  AgentUploadBlobUnableToOpenFile = err(400013)
 
   # Cloud check task errors
   CloudcheckTooManySimilarProblems = err(410001)
@@ -289,10 +292,12 @@ module Bosh::Director
   # Addons
   RuntimeAmbiguousReleaseSpec = err(530000)
   RuntimeInvalidReleaseVersion = err(530001)
-  RuntimeReleaseNotListedInReleases = err(530002)
+  AddonReleaseNotListedInReleases = err(530002)
   RuntimeInvalidDeploymentRelease = err(530003)
-  RuntimeIncompleteFilterJobSection = err(530004)
-  RuntimeIncompleteFilterStemcellSection = err(530005)
+  AddonIncompleteFilterJobSection = err(530004)
+  AddonIncompleteFilterStemcellSection = err(530005)
+  AddonDeploymentFilterNotAllowed = err(530006)
+  RuntimeConfigParseError = err(530006)
 
   # Config server errors
   ConfigServerFetchError = err(540001)
@@ -301,13 +306,16 @@ module Bosh::Director
   ConfigServerIncorrectNameSyntax = err(540004)
   ConfigServerGenerationError = err(540005)
   ConfigServerDeploymentNameMissing = err(540006)
-  ConfigServerIncorrectPlaceholderPlacement = err(540007)
+  ConfigServerIncorrectVariablePlacement = err(540007)
+  ConfigServerInconsistentVariableState = err(540008)
+  ConfigServerDisabledError = err(540009)
 
   # CPI config
   CpiDuplicateName = err(550000)
 
-  # Variables
+  # Spec Parser
   VariablesInvalidFormat = err(560000)
+  FeaturesInvalidFormat = err(560001)
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
@@ -317,4 +325,7 @@ module Bosh::Director
 
   # Invalid YAML
   InvalidYamlError = err(710000)
+
+  # Resolving Links
+  LinkLookupError = err(810000)
 end

@@ -9,7 +9,10 @@ module Bosh::Director
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
       let(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
       let(:logger) { Logging::Logger.new('/dev/null') }
-      let(:event_log) { Config.event_log }
+      let(:task) { Models::Task.make(id: 42) }
+      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+
       subject { described_class.new(release_deleter, package_deleter, template_deleter, logger, event_log) }
 
       describe '#delete' do

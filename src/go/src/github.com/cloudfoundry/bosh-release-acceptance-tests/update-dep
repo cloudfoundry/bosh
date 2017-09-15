@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e -x
+
+if [  $# -ne 1 ]; then 
+	echo "Must provide package name as argument." 
+	echo -e "\nUsage:\n$0 PACKAGE_NAME \n" 
+	exit 1
+fi
+
+package_name=$1
+
+go get -d ${package_name}
+
+package_path=$(echo ${package_name} | sed 's/\.\.\.$//')
+
+rm -rf vendor/${package_path}
+mkdir -p vendor/${package_path}
+
+cp -r $GOPATH/src/${package_path}/ vendor/${package_path}
+
+pushd $GOPATH/src/${package_path}
+set +e
+sha=$(git rev-parse --short HEAD)
+git_repo=$?
+set -e
+if [ $git_repo -ne 0 ]; then
+	sha=$(hg id -i)
+fi
+popd
+
+git_path=$(find vendor -name '.git')
+rm -rf $git_path
+hg_path=$(find vendor -name '.hg')
+rm -rf $hg_path
+
+if sed -h 2>&1 | grep -q GNU ; then
+  sed -i "s#${package_name}:.*#$package_name:$sha#g" deps.txt
+else
+  sed -i '' "s#${package_name}:.*#$package_name:$sha#g" deps.txt
+fi
+
+set +e
+grep "${package_name}:" deps.txt
+found=$?
+set -e
+
+if [ $found -ne 0 ]; then
+	echo $package_name:$sha >> deps.txt
+fi	
+
+# destroy sub-vendored dependencies because they could cause type mismatches
+# between our locally vendored types and the vendored vendored type
+find . -name vendor -type d -mindepth 2 | sort -r | xargs rm -rf {}

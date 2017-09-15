@@ -9,7 +9,19 @@ module Bosh::Director
 
         attr_reader :compilations_performed
 
-        def initialize(jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
+        def self.create(deployment_plan)
+          compilation_pool = CompilationInstancePool.create(deployment_plan)
+          new(
+            deployment_plan.name,
+            deployment_plan.instance_groups,
+            deployment_plan.compilation,
+            compilation_pool,
+            Config.logger,
+            nil,
+          )
+        end
+
+        def initialize(deployment_name, jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
           @event_log_stage = nil
           @logger = logger
           @director_job = director_job
@@ -23,9 +35,12 @@ module Bosh::Director
           @compilations_performed = 0
           @jobs_to_compile = jobs_to_compile
           @compilation_config = compilation_config
+          @deployment_name = deployment_name
         end
 
         def perform
+          validate_packages
+
           @logger.info('Generating a list of compile tasks')
           prepare_tasks
 
@@ -56,7 +71,7 @@ module Bosh::Director
           package = task.package
           stemcell = task.stemcell
 
-          with_compile_lock(package.id, "#{stemcell.os}/#{stemcell.version}") do
+          with_compile_lock(package.id, "#{stemcell.os}/#{stemcell.version}", @deployment_name) do
             # Check if the package was compiled in a parallel deployment
             compiled_package = task.find_compiled_package(@logger, @event_log_stage)
             if compiled_package.nil?
@@ -64,7 +79,7 @@ module Bosh::Director
               task_result = nil
 
               prepare_vm(stemcell) do |instance|
-                vm_metadata_updater.update(instance.model, :compiling => package.name)
+                metadata_updater.update_vm_metadata(instance.model, :compiling => package.name)
                 agent_task =
                   instance.agent_client.compile_package(
                     package.blobstore_id,
@@ -72,7 +87,7 @@ module Bosh::Director
                     package.name,
                     "#{package.version}.#{build}",
                     task.dependency_spec
-                  )
+                  ) { Config.job_cancelled? }
 
                 task_result = agent_task['result']
               end
@@ -119,6 +134,20 @@ module Bosh::Director
         end
 
         private
+
+        def validate_packages
+          release_manager = Bosh::Director::Api::ReleaseManager.new
+          validator = DeploymentPlan::PackageValidator.new(@logger)
+          @jobs_to_compile.each do |instance_group|
+            instance_group.jobs.each do |job|
+              release_model = release_manager.find_by_name(job.release.name)
+              release_version_model = release_manager.find_version(release_model, job.release.version)
+
+              validator.validate(release_version_model, instance_group.stemcell)
+            end
+          end
+          validator.handle_faults
+        end
 
         def prepare_tasks
           @event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
@@ -225,8 +254,8 @@ module Bosh::Director
           counter
         end
 
-        def vm_metadata_updater
-          @vm_metadata_updater ||= VmMetadataUpdater.build
+        def metadata_updater
+          @metadata_updater ||= MetadataUpdater.build
         end
       end
     end

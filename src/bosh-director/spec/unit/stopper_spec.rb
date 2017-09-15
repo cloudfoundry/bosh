@@ -4,10 +4,10 @@ require 'bosh/director/stopper'
 module Bosh::Director
   describe Stopper do
     subject(:stopper) { described_class.new(instance_plan, target_state, config, logger) }
-    let(:instance_model) { Models::Instance.make(vm_cid: 'vm-cid', spec: spec) }
+    let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id) }
+    let(:instance_model) { Models::Instance.make(spec: spec) }
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-    before { allow(AgentClient).to receive(:with_vm_credentials_and_agent_id).with(instance_model.credentials, instance_model.agent_id).and_return(agent_client) }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }
@@ -55,9 +55,13 @@ module Bosh::Director
     end
 
     before do
+      fake_app
       allow(instance).to receive(:current_networks)
       instance_spec = DeploymentPlan::InstanceSpec.new(spec, instance)
       allow(instance_plan).to receive(:spec).and_return(instance_spec)
+
+      instance_model.active_vm = vm_model
+      allow(AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client)
     end
 
     describe '#stop' do
@@ -95,7 +99,7 @@ module Bosh::Director
       end
 
       context 'when it instance does not have vm' do
-        before { instance_model.vm_cid = nil }
+        before { instance_model.active_vm = nil }
 
         it 'does not drain and stop' do
           expect(agent_client).to_not receive(:drain)
@@ -176,24 +180,6 @@ module Bosh::Director
           allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
           allow(instance_plan).to receive(:persistent_disk_changed?).and_return(true)
           instance_plan.existing_instance.add_persistent_disk(Models::PersistentDisk.make)
-        end
-
-        it 'drains with shutdown' do
-          expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
-          expect(agent_client).to receive(:stop).ordered
-          subject.stop
-        end
-      end
-
-      context 'when networks have changed' do
-        before do
-          allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
-          allow(instance_plan).to receive(:persistent_disk_changed?).and_return(false)
-
-          subnet = DeploymentPlan::DynamicNetworkSubnet.new('a.b.c.d', {}, ['az'])
-          network = DeploymentPlan::DynamicNetwork.new('dynamic', [subnet], logger)
-          reservation = DesiredNetworkReservation.new_dynamic(instance_model, network)
-          instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)]
         end
 
         it 'drains with shutdown' do

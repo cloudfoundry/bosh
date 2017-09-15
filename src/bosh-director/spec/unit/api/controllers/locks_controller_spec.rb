@@ -36,10 +36,10 @@ module Bosh::Director
         let(:lock_uid) { SecureRandom.uuid }
 
         before do
-          Models::Lock.make(name: 'lock:deployment:test-deployment', expired_at: lock_timeout)
-          Models::Lock.make(name: 'lock:stemcells:test-stemcell', expired_at: lock_timeout)
-          Models::Lock.make(name: 'lock:release:test-release', expired_at: lock_timeout)
-          Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: lock_timeout)
+          Models::Lock.make(name: 'lock:deployment:test-deployment', expired_at: lock_timeout, task_id: '1')
+          Models::Lock.make(name: 'lock:stemcells:test-stemcell', expired_at: lock_timeout, task_id: '2')
+          Models::Lock.make(name: 'lock:release:test-release', expired_at: lock_timeout, task_id: '3')
+          Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: lock_timeout, task_id: '4')
         end
 
         it 'should list the current locks' do
@@ -49,10 +49,10 @@ module Bosh::Director
           body = JSON.parse(last_response.body)
           timeout_str = lock_timeout.strftime('%s.000000')
           expect(body).to eq([
-            { 'type' => 'deployment', 'resource' => %w(test-deployment), 'timeout' => timeout_str },
-            { 'type' => 'stemcells', 'resource' => %w(test-stemcell), 'timeout' => timeout_str},
-            { 'type' => 'release', 'resource' => %w(test-release), 'timeout' => timeout_str },
-            { 'type' => 'compile', 'resource' => %w(test-package test-stemcell), 'timeout' => timeout_str },
+            { 'type' => 'deployment', 'resource' => %w(test-deployment), 'timeout' => timeout_str, 'task_id' => '1' },
+            { 'type' => 'stemcells', 'resource' => %w(test-stemcell), 'timeout' => timeout_str, 'task_id' => '2' },
+            { 'type' => 'release', 'resource' => %w(test-release), 'timeout' => timeout_str, 'task_id' => '3' },
+            { 'type' => 'compile', 'resource' => %w(test-package test-stemcell), 'timeout' => timeout_str, 'task_id' => '4' },
           ])
         end
       end
@@ -61,10 +61,10 @@ module Bosh::Director
         let(:lock_uid) { SecureRandom.uuid }
 
         before do
-          Models::Lock.make(name: 'lock:deployment:test-deployment', expired_at: Time.now - 1.day)
-          Models::Lock.make(name: 'lock:stemcells:test-stemcell', expired_at: Time.now - 1.second)
-          Models::Lock.make(name: 'lock:release:test-release', expired_at: Time.now - 1.minute)
-          Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: Time.now - 2.minutes)
+          Models::Lock.make(name: 'lock:deployment:test-deployment', expired_at: Time.now - 1.day, task_id: '1')
+          Models::Lock.make(name: 'lock:stemcells:test-stemcell', expired_at: Time.now - 1.second, task_id: '2')
+          Models::Lock.make(name: 'lock:release:test-release', expired_at: Time.now - 1.minute, task_id: '3')
+          Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: Time.now - 2.minutes, task_id: '4')
         end
 
         it 'should delete all locks that have expired more than a minute ago from the database' do

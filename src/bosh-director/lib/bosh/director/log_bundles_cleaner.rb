@@ -20,14 +20,16 @@ module Bosh::Director
       old_bundles.each do |bundle|
         begin
           @logger.info("Deleting log bundle #{bundle.id} with blobstore id #{bundle.blobstore_id}")
+
+          bundle.require_modification = false
           @blobstore.delete(bundle.blobstore_id)
           bundle.delete
         rescue Bosh::Blobstore::BlobstoreError => e
           @logger.warn("Could not delete #{bundle.blobstore_id}: #{e.inspect}")
 
-          # Assuming object has been deleted from blobstore by someone else,
-          # cleaning up DB record accordingly
-          bundle.delete if e.kind_of?(Bosh::Blobstore::NotFound)
+          if e.kind_of?(Bosh::Blobstore::NotFound)
+            bundle.delete
+          end
         end
       end
     end

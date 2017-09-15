@@ -7,12 +7,12 @@ templates:
 
 packages:
   - nats
-  - ruby
+  - ruby-2.4
 
 properties:
   nats.listen_address:
     description: IP address nats mbus listens on
-    default: 0.0.0.0
+    default: 0.0.0.0 # "::" listen all interfaces (IPv6)?
   nats.port:
     description: TCP port nats mbus listens on
     default: 4222

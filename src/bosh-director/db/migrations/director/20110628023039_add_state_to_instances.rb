@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 Sequel.migration do
   up do
     alter_table(:instances) do

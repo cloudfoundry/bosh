@@ -2,15 +2,18 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentDeleter do
-    subject(:deleter) { described_class.new(Config.event_log, logger, dns_manager, 3) }
+    subject(:deleter) { described_class.new(event_log, logger, powerdns_manager, 3) }
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:instance_deleter) { instance_double(InstanceDeleter) }
     let(:vm_deleter) { instance_double(VmDeleter) }
-    let(:dns_manager) { instance_double(DnsManager) }
+    let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:dns_enabled) { false }
+    let(:task) { Models::Task.make(id: 42) }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
     describe '#delete' do
       let!(:instance_1) { Models::Instance.make }

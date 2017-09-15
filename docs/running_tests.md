@@ -16,14 +16,14 @@ When working on a specific component, switch to that directory before running `r
 
 ```
 # first change into the component's directory
-bosh$ cd bosh-director
-bosh/bosh-director$ bundle exec rspec
+bosh$ cd src/bosh-director
+bosh/src/bosh-director$ bundle exec rspec
 ```
 
 To run unit tests for all components, use the `spec:unit` rake task from the project root:
 
 ```
-bosh$ bundle exec rake spec:unit
+bosh/src$ bundle exec rake spec:unit
 ```
 
 The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes make sure that the CLI tests pass when run with Ruby 1.9.3. All code needs to run on Ruby 2.x.x.
@@ -31,50 +31,59 @@ The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
 ```
-bosh$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
+bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
 ```
 
 
 ### Integration Tests
 
-Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `spec/integration` directory. Run the integration tests with the `spec:integration` rake task:
+Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](docs/workstation_setup.md). Run the integration tests with the `spec:integration` rake task:
 
 ```
-bosh$ bundle exec rake spec:integration
+bosh/src$ bundle exec rake spec:integration
 ```
 
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
 ```
-bosh$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
+bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
 ```
+
+You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` as described in the [workstation setup docs](docs/workstation_setup.md).
+
+```
+bosh/src$ bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+```
+
+Run tests against a specific database by setting the `DB` environment variable.
+
+```
+bosh/src$ DB=mysql bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+```
+
+The integration test are run in a sandbox, detailed logs can be found in folder like `src/tmp/integration-tests-workspace/pid-<pid>/sandbox/boshdir/tasks/<n>/debug`.
 
 ### Acceptance Tests (BATs)
 
 BATs describe BOSH behavior at the highest level. They often cover infrastructure-specific behavior that is not easily tested at lower levels. BATs verify integration between all BOSH components and infrastructures. They run against a deployed Director and use the CLI to perform tasks. They exercise different BOSH workflows (e.g. deploying for the first time, updating existing deployments, handling broken deployments). The assertions are made against CLI commands exit status, output and state of VMs after performing the command. Since BATs run on real infrastructures, they help verify that specific combinations of the Director and stemcell works.
 
-Some tests in BATs may not be applicable to a given IaaS and can be skipped using tags.
-BATs currently supports the following tags which are enabled by default (use `--tag ~vip_networking` to exclude them):
+The BATs live in a separate repository, [cloudfoundry/bosh-acceptance-tests](https://github.com/cloudfoundry/bosh-acceptance-tests). To learn how to run them, please see the README and docs in that repository.
 
-  - `core`: basic BOSH functionality which all CPIs should implement
-  - `persistent_disk`: persistent disk lifecycle tests
-  - `vip_networking`: static public address handling
-  - `dynamic_networking`: IaaS provided address handling
-  - `manual_networking`: BOSH Director specified address handling
-  - `root_partition`: BOSH agent repartitioning of unused storage on root volume
-  - `multiple_manual_networks`: support for creating machines with multiple network interfaces
-  - `raw_ephemeral_storage`: BOSH agent exposes all attached instance storage to deployed jobs
-  - `changing_static_ip`: `configure_networks` CPI method support [deprecated]
-  - `network_reconfiguration`: `configure_networks` CPI method support [deprecated]
+### Release Acceptance Tests (BRATs)
 
-Here is an example of running BATs on vSphere, skipping tests that are not applicable:
+BRATs describe the behavior of BOSH as a BOSH release. They consume a BOSH release and cover specific properties in release. At present, BRATs validate the blobstore access log format as it is CEF format.
 
+Here is an example of running BRATs against a local BOSH director:
 ```
-bundle exec rspec spec --tag ~vip_networking --tag ~dynamic_networking --tag ~root_partition --tag ~raw_ephemeral_storage
+export BOSH_BINARY_PATH=`which bosh`
+export BOSH_DIRECTOR_IP='192.168.50.6'
+export BOSH_SSH_PRIVATE_KEY_PATH=<(bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /jumpbox_ssh/private_key)
+export BOSH_CLIENT=admin
+export BOSH_CLIENT_SECRET=`bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /admin_password`
+export BOSH_CA_CERT=`bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /director_ssl/ca`
+export BOSH_ENVIRONMENT='vbox'
+ginkgo -r src/go/src/github.com/cloudfoundry/bosh-release-acceptance-tests
 ```
-
-There are two ways to run BATs - [using rake tasks](running_bats_using_rake_tasks.md) and [manually](running_bats_manually.md).
-
 
 ## Determining which tests suites to run
 

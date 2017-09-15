@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     class ResourcePool
@@ -24,10 +22,8 @@ module Bosh::Director
 
         @name = safe_property(spec, "name", class: String)
 
-        @cloud_properties =
-          safe_property(spec, "cloud_properties", class: Hash, default: {})
-
-        stemcell_spec = safe_property(spec, "stemcell", class: Hash)
+        @cloud_properties = safe_property(spec, 'cloud_properties', class: Hash, default: {})
+        stemcell_spec = safe_property(spec, 'stemcell', class: Hash)
         @stemcell = Stemcell.parse(stemcell_spec)
 
         @env = safe_property(spec, "env", class: Hash, default: {})

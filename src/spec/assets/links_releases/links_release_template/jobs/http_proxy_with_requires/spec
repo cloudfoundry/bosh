@@ -7,6 +7,7 @@ templates:
   ctl.sh: bin/ctl
   config.yml.erb: config/config.yml
   props.json: config/props.json
+  pre-start.erb: bin/pre-start
 
 consumes:
 - name: proxied_http_endpoint
@@ -26,3 +27,13 @@ properties:
 
   someProp:
      default:
+
+  http_proxy_with_requires.fail_instance_index:
+    description: 'Fail for instance #. Failure type must be set for failure'
+    default: -1
+  http_proxy_with_requires.fail_on_template_rendering:
+    description: "Fail for instance <fail_instance_index> during template rendering"
+    default: false
+  http_proxy_with_requires.fail_on_job_start:
+    description: "Fail for instance <fail_instance_index> on job start"
+    default: false

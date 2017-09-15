@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::ConfigServer
   describe DeepHashReplacement do
-    describe "#placeholders_paths" do
+    describe "#variables_paths" do
 
       let(:global_props) do
         {'a' => 'test', 'b' => '((bla))'}
@@ -61,23 +61,23 @@ module Bosh::Director::ConfigServer
       end
 
       let(:replacement_list) do
-        DeepHashReplacement.new.placeholders_paths(sample_hash)
+        DeepHashReplacement.new.variables_path(sample_hash)
       end
 
-      it 'creates replacement map for all necessary placeholders' do
+      it 'creates replacement map for all necessary variables' do
         expected_result = [
-          {'placeholders'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
-          {'placeholders'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-          {'placeholders'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-          {'placeholders'=>['((nuclear_launch_code))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
-          {'placeholders'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-          {'placeholders'=>['((bla))'], 'path'=>['properties', 'b']},
-          {'placeholders'=>['((secret_key))'], 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
-          {'placeholders'=>['((my_domain))'], 'path'=>['instance_groups', 0, 'properties', 'b']},
-          {'placeholders'=>['((my_domain))', '((port))'], 'path'=>['instance_groups', 0, 'properties', 'c']},
-          {'placeholders'=>['((my_index))', '((/smurf/hello))'], 'path'=>['instance_groups', 0, 'properties', 'd', 3]},
-          {'placeholders'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
-          {'placeholders'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
+          {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
+          {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+          {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+          {'variables'=>['((nuclear_launch_code))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
+          {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+          {'variables'=>['((bla))'], 'path'=>['properties', 'b']},
+          {'variables'=>['((secret_key))'], 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
+          {'variables'=>['((my_domain))'], 'path'=>['instance_groups', 0, 'properties', 'b']},
+          {'variables'=>['((my_domain))', '((port))'], 'path'=>['instance_groups', 0, 'properties', 'c']},
+          {'variables'=>['((my_index))', '((/smurf/hello))'], 'path'=>['instance_groups', 0, 'properties', 'd', 3]},
+          {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
+          {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
         ]
 
         expect(replacement_list).to match_array(expected_result)
@@ -95,8 +95,8 @@ module Bosh::Director::ConfigServer
 
         it 'handles it correctly and removes ! from key (for spiff)' do
           expected_result = [
-            {'placeholders'=>['((!blue))'], 'path'=>['smurf']},
-            {'placeholders'=>['((!what_is_my_color))'], 'path'=>['gargamel', 'color']}
+            {'variables'=>['((!blue))'], 'path'=>['smurf']},
+            {'variables'=>['((!what_is_my_color))'], 'path'=>['gargamel', 'color']}
           ]
 
           expect(replacement_list).to match_array(expected_result)
@@ -137,23 +137,23 @@ module Bosh::Director::ConfigServer
           ignored_subtrees << ['instance_groups', index, 'properties']
           ignored_subtrees << ['properties']
 
-          replacements = DeepHashReplacement.new.placeholders_paths(sample_hash, ignored_subtrees)
+          replacements = DeepHashReplacement.new.variables_path(sample_hash, ignored_subtrees)
 
           expected_replacements = [
-            {'placeholders'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-            {'placeholders'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-            {'placeholders'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-            {'placeholders'=>['((address_placeholder))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
-            {'placeholders'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
-            {'placeholders'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
-            {'placeholders'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
+            {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
+            {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
+            {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
+            {'variables'=>['((address_placeholder))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
+            {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
+            {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
+            {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
           ]
           expect(replacements).to match_array(expected_replacements)
         end
       end
     end
 
-    describe "#replace_placeholders" do
+    describe "#replace_variables" do
       let(:values) do
         {
           '((key_1))' => 'smurf_1',
@@ -169,7 +169,7 @@ module Bosh::Director::ConfigServer
         }
       end
 
-      it 'replaces placeholders in simple unnested objects' do
+      it 'replaces variables in simple unnested objects' do
         obj = {
           'bla' => '((key_1))',
           'test' => '((key_4))'
@@ -177,16 +177,16 @@ module Bosh::Director::ConfigServer
 
         paths = [
           {
-            'placeholders' => ['((key_1))'],
+            'variables' => ['((key_1))'],
             'path' => ['bla']
           },
           {
-            'placeholders' => ['((key_4))'],
+            'variables' => ['((key_4))'],
             'path' => ['test']
           }
         ]
 
-        result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
+        result = DeepHashReplacement.new.replace_variables(obj, paths, values)
         expect(result).to eq({
                                'bla' => 'smurf_1',
                                'test' => {
@@ -195,7 +195,7 @@ module Bosh::Director::ConfigServer
                              })
       end
 
-      it 'replaces placeholders in nested objects' do
+      it 'replaces variables in nested objects' do
         obj = {
           'bla' => '((key_1))',
           'a' => {
@@ -231,21 +231,21 @@ module Bosh::Director::ConfigServer
         }
 
         paths = [
-          {'placeholders' => ['((key_1))'], 'path' => ['bla']},
-          {'placeholders' => ['((key_1))'], 'path' => ['a', 'b', 1]},
-          {'placeholders' => ['((key_2))'], 'path' => ['a', 'b', 2]},
-          {'placeholders' => ['((key_3))'], 'path' => ['a', 'b', 3, 'c']},
-          {'placeholders' => ['((key_4))'], 'path' => ['deep', 'deeper', 'deepest', 'state']},
-          {'placeholders' => ['((key_5))'], 'path' => ['deep', 'deeper', 'deepest', 'number']}
+          {'variables' => ['((key_1))'], 'path' => ['bla']},
+          {'variables' => ['((key_1))'], 'path' => ['a', 'b', 1]},
+          {'variables' => ['((key_2))'], 'path' => ['a', 'b', 2]},
+          {'variables' => ['((key_3))'], 'path' => ['a', 'b', 3, 'c']},
+          {'variables' => ['((key_4))'], 'path' => ['deep', 'deeper', 'deepest', 'state']},
+          {'variables' => ['((key_5))'], 'path' => ['deep', 'deeper', 'deepest', 'number']}
         ]
 
-        result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
+        result = DeepHashReplacement.new.replace_variables(obj, paths, values)
 
         expect(result).to eq(expected)
       end
 
       context 'when having mid-string interpolation' do
-        it 'supports multiple placeholders in one value' do
+        it 'supports multiple variables in one value' do
           obj = {
             'bla' => 'delimiter1-((key_1))-delimiter2-((key_2))-delimiter3',
             'combinations' => '((key_1)) age is ((key_5))',
@@ -277,18 +277,18 @@ module Bosh::Director::ConfigServer
           }
 
           paths = [
-            {'placeholders' => ['((key_1))', '((key_2))'], 'path' => ['bla']},
-            {'placeholders' => ['((key_1))', '((key_5))'], 'path' => ['combinations']},
-            {'placeholders' => ['((key_2))', '((key_3))'], 'path' => ['a', 'b', 1]},
-            {'placeholders' => ['((key_2))'], 'path' => ['a', 'b', 2]},
-            {'placeholders' => ['((key_1))', '((key_2))', '((key_3))'], 'path' => ['a', 'b', 3, 'c']},
+            {'variables' => ['((key_1))', '((key_2))'], 'path' => ['bla']},
+            {'variables' => ['((key_1))', '((key_5))'], 'path' => ['combinations']},
+            {'variables' => ['((key_2))', '((key_3))'], 'path' => ['a', 'b', 1]},
+            {'variables' => ['((key_2))'], 'path' => ['a', 'b', 2]},
+            {'variables' => ['((key_1))', '((key_2))', '((key_3))'], 'path' => ['a', 'b', 3, 'c']},
           ]
 
-          result = DeepHashReplacement.new.replace_placeholders(obj, paths, values)
+          result = DeepHashReplacement.new.replace_variables(obj, paths, values)
           expect(result).to eq(expected)
         end
 
-        it 'replaces the placeholders only once' do
+        it 'replaces the variables only once' do
           input = {
             'smurf' => '((key_7)) meow ((key_8))'
           }
@@ -298,10 +298,10 @@ module Bosh::Director::ConfigServer
           }
 
           paths = [
-            {'placeholders' => ['((key_7))', '((key_8))'], 'path' => ['smurf']},
+            {'variables' => ['((key_7))', '((key_8))'], 'path' => ['smurf']},
           ]
 
-          result = DeepHashReplacement.new.replace_placeholders(input, paths, values)
+          result = DeepHashReplacement.new.replace_variables(input, paths, values)
           expect(result).to eq(expected_output)
         end
 
@@ -315,28 +315,28 @@ module Bosh::Director::ConfigServer
 
             paths = [
               {
-                'placeholders' => ['((key_1))'],
+                'variables' => ['((key_1))'],
                 'path' => ['name']
               },
               {
-                'placeholders' => ['((key_4))'],
+                'variables' => ['((key_4))'],
                 'path' => ['url']
               },
               {
-                'placeholders' => ['((key_6))'],
+                'variables' => ['((key_6))'],
                 'path' => ['link']
               }
             ]
 
             expected_error_msg = <<-EXPECTED.strip
-- Failed to substitute placeholder: Can not replace '((key_4))' in 'http://((key_4))'. The value should be a String or an Integer.
-- Failed to substitute placeholder: Can not replace '((key_6))' in 'visit us at http://((key_6))'. The value should be a String or an Integer.
+- Failed to substitute variable: Can not replace '((key_4))' in 'http://((key_4))'. The value should be a String or an Integer.
+- Failed to substitute variable: Can not replace '((key_6))' in 'visit us at http://((key_6))'. The value should be a String or an Integer.
             EXPECTED
 
             expect {
-              DeepHashReplacement.new.replace_placeholders(obj, paths, values)
+              DeepHashReplacement.new.replace_variables(obj, paths, values)
             }.to raise_error { |e|
-              expect(e.is_a?(Bosh::Director::ConfigServerIncorrectPlaceholderPlacement)).to be_truthy
+              expect(e.is_a?(Bosh::Director::ConfigServerIncorrectVariablePlacement)).to be_truthy
               expect(e.message).to eq(expected_error_msg)
             }
           end

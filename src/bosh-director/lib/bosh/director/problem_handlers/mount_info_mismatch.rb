@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module ProblemHandlers
     class MountInfoMismatch < Base
@@ -53,12 +51,13 @@ module Bosh::Director
       end
 
       def reattach_disk(reboot = false)
-        cloud = cloud_factory.for_availability_zone(@instance.availability_zone)
+        cloud = CloudFactory.create_with_latest_configs.get_for_az(@instance.availability_zone)
         cloud.attach_disk(@vm_cid, @disk_cid)
+        MetadataUpdater.build.update_disk_metadata(cloud, @disk, @disk.instance.deployment.tags)
         if reboot
           reboot_vm(@instance)
         else
-          agent_timeout_guard(@instance.vm_cid, @instance.credentials, @instance.agent_id) do |agent|
+          agent_timeout_guard(@instance.vm_cid, @instance.agent_id) do |agent|
             agent.mount_disk(@disk_cid)
           end
         end

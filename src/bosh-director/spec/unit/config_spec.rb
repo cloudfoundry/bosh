@@ -39,17 +39,18 @@ describe Bosh::Director::Config do
   describe 'director ips' do
     before do
       allow(Socket).to receive(:ip_address_list).and_return([
-        instance_double(Addrinfo, ip_address: '127.0.0.1', ip?: true, ipv4?: true, ipv6?: false, ipv4_loopback?: true, ipv6_loopback?: false),
-        instance_double(Addrinfo, ip_address: '10.10.0.6', ip?: true, ipv4?: true, ipv6?: false, ipv4_loopback?: false, ipv6_loopback?: false),
-        instance_double(Addrinfo, ip_address: '10.11.0.16', ip?: true, ipv4?: true, ipv6?: false, ipv4_loopback?: false, ipv6_loopback?: false),
-        instance_double(Addrinfo, ip_address: '::1', ip?: true, ipv4?: false, ipv6?: true, ipv4_loopback?: false, ipv6_loopback?: true),
-        instance_double(Addrinfo, ip_address: 'fe80::10bf:eff:fe2c:7405%eth0', ip?: true, ipv4?: false, ipv6?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+        instance_double(Addrinfo, ip_address: '127.0.0.1',   ip?: true, ipv4_loopback?: true,  ipv6_loopback?: false, ipv6_linklocal?: false),
+        instance_double(Addrinfo, ip_address: '10.10.0.6',   ip?: true, ipv4_loopback?: false, ipv6_loopback?: false, ipv6_linklocal?: false),
+        instance_double(Addrinfo, ip_address: '10.11.0.16',  ip?: true, ipv4_loopback?: false, ipv6_loopback?: false, ipv6_linklocal?: false),
+        instance_double(Addrinfo, ip_address: '::1',         ip?: true, ipv4_loopback?: false, ipv6_loopback?: true,  ipv6_linklocal?: false),
+        instance_double(Addrinfo, ip_address: 'fe80::%eth0', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false, ipv6_linklocal?: true),
+        instance_double(Addrinfo, ip_address: 'fd7a::',      ip?: true, ipv4_loopback?: false, ipv6_loopback?: false, ipv6_linklocal?: false),
       ])
     end
 
-    it 'should select the non-loopback, ipv4 ips off of the the Socket class' do
+    it 'should select the non-loopback ips off of the the Socket class' do
       described_class.configure(test_config)
-      expect(described_class.director_ips).to eq(['10.10.0.6','10.11.0.16'])
+      expect(described_class.director_ips).to eq(['10.10.0.6', '10.11.0.16', 'fd7a::'])
     end
   end
 
@@ -106,8 +107,12 @@ describe Bosh::Director::Config do
     context 'when hash has value set' do
       it 'returns the configuration value' do
         test_config['local_dns']['enabled'] = true
+        test_config['local_dns']['include_index'] = true
+        test_config['local_dns']['use_dns_addresses'] = true
         described_class.configure(test_config)
         expect(described_class.local_dns_enabled?).to eq(true)
+        expect(described_class.local_dns_include_index?).to eq(true)
+        expect(described_class.local_dns_use_dns_addresses?).to eq(true)
       end
     end
 
@@ -115,6 +120,8 @@ describe Bosh::Director::Config do
       it 'returns default value of false' do
         described_class.configure(test_config)
         expect(described_class.local_dns_enabled?).to eq(false)
+        expect(described_class.local_dns_include_index?).to eq(false)
+        expect(described_class.local_dns_use_dns_addresses?).to eq(false)
       end
     end
   end
@@ -149,16 +156,39 @@ describe Bosh::Director::Config do
   end
 
   describe '#configure' do
-    context 'when the config specifies a file logger' do
-      before { test_config['logging']['file'] = 'fake-file' }
+    context 'logger' do
+      let(:log_dir) { Dir.mktmpdir }
+      let(:log_file) { File.join(log_dir,'logfile') }
+      after { FileUtils.rm_rf(log_dir) }
 
-      it 'configures the logger with a file appender' do
-        appender = Logging::Appender.new('file')
-        expect(Logging.appenders).to receive(:file).with(
-          'DirectorLogFile',
-          hash_including(filename: 'fake-file')
-        ).and_return(appender)
+      context 'when the config specifies a file logger' do
+        before { test_config['logging']['file'] = 'fake-file' }
+
+        it 'configures the logger with a file appender' do
+          appender = Logging::Appender.new('file')
+          expect(Logging.appenders).to receive(:file).with(
+            'DirectorLogFile',
+            hash_including(filename: 'fake-file')
+          ).and_return(appender)
+          described_class.configure(test_config)
+        end
+      end
+
+      it 'filters out log message that matches blacklist' do
+        test_config['logging']['file'] = log_file
+        test_config['logging']['level'] = 'debug'
+
         described_class.configure(test_config)
+
+        described_class.logger.debug('before')
+        described_class.logger.debug('(10.01s) SELECT NULL')
+        described_class.logger.debug('after')
+
+        log_contents = File.read(log_file)
+
+        expect(log_contents).to include('before')
+        expect(log_contents).to include('after')
+        expect(log_contents).not_to include('SELECT NULL')
       end
     end
 
@@ -249,6 +279,14 @@ describe Bosh::Director::Config do
         end
       end
     end
+
+    describe 'director version' do
+      it 'sets the expected version/revision' do
+        described_class.configure(test_config)
+        expect(described_class.revision).to match /^[0-9a-f]{8}$/
+        expect(described_class.version).to eq('0.0.2')
+      end
+    end
   end
 
   describe '#identity_provider' do
@@ -304,21 +342,65 @@ describe Bosh::Director::Config do
     end
   end
 
-  describe '#canonized_dns_domain_name' do
+  describe '#root_domain' do
     context 'when no dns_domain is set in config' do
       let(:test_config) { base_config.merge({'dns' => {}}) }
-      it 'returns formatted DNS domain' do
+      it 'returns bosh' do
         described_class.configure(test_config)
-        expect(described_class.canonized_dns_domain_name).to eq('bosh')
+        expect(described_class.root_domain).to eq('bosh')
       end
     end
 
     context 'when dns_domain is set in config' do
       let(:test_config) { base_config.merge({'dns' => {'domain_name' => 'test-domain-name'}}) }
-      it 'returns formatted DNS domain' do
+      it 'returns the DNS domain' do
         described_class.configure(test_config)
-        expect(described_class.canonized_dns_domain_name).to eq('test-domain-name')
+        expect(described_class.root_domain).to eq('test-domain-name')
       end
+    end
+  end
+
+  describe '#name' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the name specified in the config' do
+      expect(config.name).to eq('Test Director')
+    end
+  end
+
+  describe '#port' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the port specified in the config' do
+      expect(config.port).to eq(8081)
+    end
+  end
+
+  describe '#version' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the version specified in the config' do
+      expect(config.version).to eq('0.0.2')
+    end
+  end
+
+  describe 'log_director_start_event' do
+    it 'stores an event' do
+      described_class.configure(test_config)
+
+      expect {
+        described_class.log_director_start_event('custom-type', 'custom-name', {'custom' => 'context'})
+      }.to change {
+        Bosh::Director::Models::Event.count
+      }.from(0).to(1)
+
+      expect(Bosh::Director::Models::Event.count).to eq(1)
+      event = Bosh::Director::Models::Event.first
+      expect(event.user).to eq('_director')
+      expect(event.action).to eq('start')
+      expect(event.object_type).to eq('custom-type')
+      expect(event.object_name).to eq('custom-name')
+      expect(event.context).to eq({'custom' => 'context'})
     end
   end
 
@@ -337,6 +419,51 @@ describe Bosh::Director::Config do
 
       it 'raises an error' do
         expect{ described_class.configure(base_config) }.to raise_error(ArgumentError)
+      end
+    end
+  end
+
+  context 'when director starts' do
+    it 'stores start event' do
+      allow(SecureRandom).to receive(:uuid).and_return('director-uuid')
+      described_class.configure(test_config)
+      expect {
+        described_class.log_director_start
+      }.to change {
+        Bosh::Director::Models::Event.count }.from(0).to(1)
+      expect(Bosh::Director::Models::Event.count).to eq(1)
+      event = Bosh::Director::Models::Event.first
+      expect(event.user).to eq('_director')
+      expect(event.action).to eq('start')
+      expect(event.object_type).to eq('director')
+      expect(event.object_name).to eq('director-uuid')
+      expect(event.context).to eq({'version' => '0.0.2'})
+    end
+  end
+
+  describe 'enable_cpi_resize_disk' do
+    it 'defaults to false' do
+      described_class.configure(test_config)
+      expect(described_class.enable_cpi_resize_disk).to be_falsey
+    end
+
+    context 'when explicitly set' do
+      context 'when set to true' do
+        before { test_config['enable_cpi_resize_disk'] = true }
+
+        it 'resolves to true' do
+          described_class.configure(test_config)
+          expect(described_class.enable_cpi_resize_disk).to be_truthy
+        end
+      end
+
+      context 'when set to false' do
+        before { test_config['enable_cpi_resize_disk'] = false }
+
+        it 'resolves to false' do
+          described_class.configure(test_config)
+          expect(described_class.enable_cpi_resize_disk).to be_falsey
+        end
       end
     end
   end

@@ -116,7 +116,6 @@ module Bosh::Director
         @persistent_disk_collection = nil
 
         @deployment_name = nil
-        @dns_manager = DnsManagerProvider.create
       end
 
       def self.is_legacy_spec?(instance_group_spec)
@@ -173,8 +172,8 @@ module Bosh::Director
         needed_instance_plans.map(&:instance)
       end
 
-      def needed_instance_plans_for_variable_resolution
-        needed_instance_plans.select{ |instance_plan| !instance_plan.should_be_ignored? && instance_plan.instance.state != 'detached'}
+      def unignored_instance_plans
+        needed_instance_plans.select { |instance_plan| !instance_plan.should_be_ignored? }
       end
 
       def needed_instance_plans
@@ -319,6 +318,12 @@ module Bosh::Director
         end
       end
 
+      def bind_new_variable_set(new_variable_set)
+        unignored_instance_plans.each do |instance_plan|
+          instance_plan.instance.desired_variable_set = new_variable_set
+        end
+      end
+
       def has_network?(network_name)
         networks.any? do |network|
           network.name == network_name
@@ -339,8 +344,9 @@ module Bosh::Director
         end
       end
 
-      def add_resolved_link(link_name, link_spec)
-        @resolved_links[link_name] = link_spec
+      def add_resolved_link(job_name, link_name, link_spec)
+        @resolved_links[job_name] ||= {}
+        @resolved_links[job_name][link_name] = sort_property(link_spec)
       end
 
       def link_path(job_name, link_name)
@@ -364,6 +370,17 @@ module Bosh::Director
         @stemcell.os == os
       end
 
+      # @return [Array<Models::VariableSet>] All variable sets of NON-obsolete instance_plan instances
+      def referenced_variable_sets
+        needed_instance_plans.map do |instance_plan|
+          instance_plan.instance.desired_variable_set
+        end
+      end
+
+      def default_network_name
+        @default_network['gateway']
+      end
+
       private
 
       def run_time_dependencies
@@ -373,7 +390,7 @@ module Bosh::Director
       def get_dns_record_names
         result = []
         networks.map(&:name).each do |network_name|
-          result << @dns_manager.dns_record_name('*', @name, network_name, @deployment_name)
+          result << DnsNameGenerator.dns_record_name('*', @name, network_name, @deployment_name, Config.root_domain)
         end
         result.sort
       end

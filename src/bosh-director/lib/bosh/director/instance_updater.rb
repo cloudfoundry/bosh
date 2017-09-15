@@ -4,13 +4,13 @@ module Bosh::Director
   class InstanceUpdater
     MAX_RECREATE_ATTEMPTS = 3
 
-    def self.new_instance_updater(ip_provider, job_renderer)
+    def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder)
       logger = Config.logger
       disk_manager = DiskManager.new(logger)
       agent_broadcaster = AgentBroadcaster.new
-      dns_manager = DnsManagerProvider.create
+      dns_state_updater = DirectorDnsStateUpdater.new
       vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-      vm_creator = VmCreator.new(logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster)
+      vm_creator = VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       blobstore_client = App.instance.blobstores.blobstore
       rendered_templates_persistor = RenderedTemplatesPersister.new(blobstore_client, logger)
@@ -18,21 +18,21 @@ module Bosh::Director
         logger,
         ip_provider,
         blobstore_client,
+        dns_state_updater,
         vm_deleter,
         vm_creator,
-        dns_manager,
         disk_manager,
         vm_recreator,
         rendered_templates_persistor
       )
     end
 
-    def initialize(logger, ip_provider, blobstore, vm_deleter, vm_creator, dns_manager, disk_manager, vm_recreator, rendered_templates_persistor)
+    def initialize(logger, ip_provider, blobstore, dns_state_updater, vm_deleter, vm_creator, disk_manager, vm_recreator, rendered_templates_persistor)
       @logger = logger
       @blobstore = blobstore
+      @dns_state_updater = dns_state_updater
       @vm_deleter = vm_deleter
       @vm_creator = vm_creator
-      @dns_manager = dns_manager
       @disk_manager = disk_manager
       @ip_provider = ip_provider
       @vm_recreator = vm_recreator
@@ -59,6 +59,7 @@ module Bosh::Director
           # It will update the rendered templates on the VM
           unless Config.enable_nats_delivered_templates && needs_recreate?(instance_plan)
             @rendered_templates_persistor.persist(instance_plan)
+            instance.update_variable_set
           end
 
           Preparer.new(instance_plan, agent(instance), @logger).prepare
@@ -85,8 +86,10 @@ module Bosh::Director
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
             @vm_deleter.delete_for_instance(instance_model)
           end
-          release_obsolete_ips(instance_plan)
+          instance_plan.release_obsolete_network_plans(@ip_provider)
           instance.update_state
+          instance.update_variable_set
+          update_dns(instance_plan)
           return
         end
 
@@ -99,7 +102,7 @@ module Bosh::Director
           recreated = true
         end
 
-        release_obsolete_ips(instance_plan)
+        instance_plan.release_obsolete_network_plans(@ip_provider)
 
         update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
@@ -129,19 +132,19 @@ module Bosh::Director
     private
 
     def add_event(deployment_name, action, instance_name = nil, context = nil, parent_id = nil, error = nil)
-      event  = Config.current_job.event_manager.create_event(
-          {
-              parent_id:   parent_id,
-              user:        Config.current_job.username,
-              action:      action,
-              object_type: 'instance',
-              object_name: instance_name,
-              task:        Config.current_job.task_id,
-              deployment:  deployment_name,
-              instance:    instance_name,
-              error:       error,
-              context:     context ? context: {}
-          })
+      event = Config.current_job.event_manager.create_event(
+        {
+          parent_id: parent_id,
+          user: Config.current_job.username,
+          action: action,
+          object_type: 'instance',
+          object_name: instance_name,
+          task: Config.current_job.task_id,
+          deployment: deployment_name,
+          instance: instance_name,
+          error: error,
+          context: context ? context : {}
+        })
       event.id
     end
 
@@ -150,15 +153,15 @@ module Bosh::Director
       context = {}
       if changes.size == 1 && [:state, :restart].include?(changes.first)
         action = case instance_plan.instance.virtual_state
-          when 'started'
-            'start'
-          when 'stopped'
-            'stop'
-          when 'detached'
-            'stop'
-          else
-            instance_plan.instance.virtual_state
-        end
+                   when 'started'
+                     'start'
+                   when 'stopped'
+                     'stop'
+                   when 'detached'
+                     'stop'
+                   else
+                     instance_plan.instance.virtual_state
+                 end
       else
         context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
         if instance_plan.new?
@@ -169,16 +172,6 @@ module Bosh::Director
         end
       end
       return action, context
-    end
-
-    def release_obsolete_ips(instance_plan)
-      instance_plan.network_plans
-        .select(&:obsolete?)
-        .each do |network_plan|
-        reservation = network_plan.reservation
-        @ip_provider.release(reservation)
-      end
-      instance_plan.release_obsolete_network_plans
     end
 
     def stop(instance_plan)
@@ -192,13 +185,9 @@ module Bosh::Director
     end
 
     def update_dns(instance_plan)
-      instance = instance_plan.instance
-
-      @dns_manager.publish_dns_records
       return unless instance_plan.dns_changed?
 
-      @dns_manager.update_dns_record_for_instance(instance.model, instance_plan.network_settings.dns_record_info)
-      @dns_manager.flush_dns_cache
+      @dns_state_updater.update_dns_for_instance(instance_plan.instance.model, instance_plan.network_settings.dns_record_info)
     end
 
     def dns_change_only?(instance_plan)
@@ -206,20 +195,8 @@ module Bosh::Director
     end
 
     def needs_recreate?(instance_plan)
-      instance = instance_plan.instance
-
       if instance_plan.needs_shutting_down?
         @logger.debug('VM needs to be shutdown before it can be updated.')
-        return true
-      end
-
-      if instance.cloud_properties_changed?
-        @logger.debug('Cloud Properties have changed. Recreating VM')
-        return true
-      end
-
-      if instance_plan.networks_changed?
-        @logger.debug('Networks have changed. Recreating VM')
         return true
       end
 
@@ -227,7 +204,7 @@ module Bosh::Director
     end
 
     def agent(instance)
-      AgentClient.with_vm_credentials_and_agent_id(instance.model.credentials, instance.model.agent_id)
+      AgentClient.with_agent_id(instance.model.agent_id)
     end
   end
 end

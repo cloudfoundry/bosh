@@ -1,7 +1,7 @@
 shared_examples_for 'raising an error when a task has timed out or been canceled' do
   before { allow(Bosh::Director::Api::TaskManager).to receive(:new).and_return(task_manager) }
   let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
-  let(:task) { instance_double('Bosh::Director::Models::Task') }
+  let(:task) { instance_double('Bosh::Director::Models::Task', id: 42) }
 
   before { job.task_id = 'some-task' }
 

@@ -18,10 +18,13 @@ module Bosh::Director
         desired_instance: DeploymentPlan::DesiredInstance.new(job),
         existing_instance: nil,
         instance: instance,
-        needs_recreate?: false
       )
     end
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+
+    before do
+      fake_app
+    end
 
     describe '#prepare' do
       def self.it_does_not_send_prepare

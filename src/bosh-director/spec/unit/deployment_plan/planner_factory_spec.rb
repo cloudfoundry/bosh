@@ -6,16 +6,18 @@ module Bosh
       describe PlannerFactory do
         subject { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
         let(:deployment_repo) { DeploymentRepo.new }
+        let(:deployment_name) { 'simple' }
         let(:hybrid_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:raw_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-        let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }
-        let(:runtime_config_model) { Models::RuntimeConfig.make(raw_manifest: runtime_config_hash) }
+        let(:cloud_config_model) { Models::CloudConfig.make(raw_manifest: cloud_config_hash) }
+        let(:runtime_config_models) { [instance_double(Bosh::Director::Models::RuntimeConfig)] }
+        let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator)}
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
-        let(:manifest) { Manifest.new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
+        let(:manifest) { Manifest.new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }
@@ -33,8 +35,12 @@ module Bosh
         end
 
         before do
-          allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).and_return(runtime_config_hash)
           allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
+          allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with(runtime_config_models).and_return(runtime_config_consolidator)
+          allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with('simple').and_return({})
+          allow(runtime_config_consolidator).to receive(:tags).and_return({})
+          allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(false)
+          allow(runtime_config_consolidator).to receive(:runtime_configs)
           upload_releases
           upload_stemcell
           configure_config
@@ -43,7 +49,7 @@ module Bosh
 
         describe '#create_from_manifest' do
           let(:planner) do
-            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
+            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
           end
 
           it 'returns a planner' do
@@ -107,8 +113,25 @@ LOGMESSAGE
           it 'raises error when manifest has cloud_config properties' do
             hybrid_manifest_hash['vm_types'] = 'foo'
             expect{
-              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
+              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
             }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
+          end
+
+          context 'Planner.new' do
+            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+            let(:expected_attrs) { {:name=>"simple", :properties=>{}} }
+            let(:expected_plan_options) { {"recreate"=>false, "fix"=>false, "skip_drain"=>nil, "job_states"=>{}, "max_in_flight"=>nil, "canaries"=>nil, "tags"=>{}} }
+
+            before do
+              allow(deployment_repo).to receive(:find_or_create_by_name).with(deployment_name, plan_options).and_return(deployment_model)
+              allow(deployment_model).to receive(:name).and_return(deployment_name)
+              allow(runtime_config_consolidator).to receive(:runtime_configs).and_return(runtime_config_models)
+            end
+
+            it 'calls planner new with appropriate arguments' do
+              expect(Planner).to receive(:new).with(expected_attrs, raw_manifest_hash,cloud_config_model, runtime_config_models, deployment_model, expected_plan_options).and_call_original
+              planner
+            end
           end
 
           describe 'attributes of the planner' do
@@ -117,13 +140,8 @@ LOGMESSAGE
             end
 
             describe 'tags' do
-              context 'when runtime config is not present' do
-                let(:runtime_config_model) { nil }
-                it 'only uses the tags from the deployment manifest' do
-                  hybrid_manifest_hash['tags'] = {'deployment_tag' => 'sears'}
-
-                  expect(planner.tags).to eq({'deployment_tag' => 'sears'})
-                end
+              before do
+                allow(runtime_config_consolidator).to receive(:tags).and_return({'runtime_tag' => 'dryer'})
               end
 
               it 'sets tag values from manifest and from runtime_config' do
@@ -136,14 +154,13 @@ LOGMESSAGE
               it 'passes deployment name to get interpolated runtime_config tags' do
                 runtime_config_hash['tags'] = {'runtime_tag' => '((some_variable))'}
 
-                allow(runtime_config_model).to receive(:tags).with('simple').and_return({'runtime_tag' => 'some_interpolated_value'})
-
+                expect(runtime_config_consolidator).to receive(:tags).with('simple').and_return({'runtime_tag' => 'some_interpolated_value'})
                 expect(planner.tags).to eq({'runtime_tag' => 'some_interpolated_value'})
               end
 
               it 'gives deployment manifest tags precedence over runtime_config tags' do
                 hybrid_manifest_hash['tags'] = {'tag_key' => 'sears'}
-                runtime_config_hash['tags'] = {'tag_key' => 'dryer'}
+                allow(runtime_config_consolidator).to receive(:tags).and_return({'tag_key' => 'dryer'})
 
                 expect(planner.tags).to eq({'tag_key' => 'sears'})
               end
@@ -178,6 +195,11 @@ LOGMESSAGE
                 hybrid_manifest_hash
               end
 
+              before do
+                allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(true)
+                allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with('simple').and_return(runtime_config_hash)
+              end
+
               it 'has the releases from the deployment manifest and the addon' do
                 expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
                   [
@@ -186,6 +208,32 @@ LOGMESSAGE
                     ["test_release_2", "2"]
                   ]
                 )
+              end
+
+              context 'with runtime variables' do
+                let(:runtime_config_hash) do
+                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                    'variables'=> [{
+                       'name' => '/dns_healthcheck_server_tlsX',
+                       'type' => 'certificate',
+                       'options' => {'is_ca' => true, 'common_name' => 'health.bosh-dns', 'extended_key_usage' => ['server_auth']}
+                     },
+                     {
+                       'name' => '/dns_healthcheck_tls',
+                       'type' => 'certificate',
+                       'options' => { 'ca' => '/dns_healthcheck_server_tlsX' }
+
+                     },
+                     {
+                       'name' => '/dns_healthcheck_password',
+                       'type' => 'password'
+                     }])
+                end
+                it 'has variables from runtime config' do
+                  expect(planner.variables.spec[0]).to eq(runtime_config_hash['variables'][0])
+                  expect(planner.variables.spec[1]).to eq(runtime_config_hash['variables'][1])
+                  expect(planner.variables.spec[2]).to eq(runtime_config_hash['variables'][2])
+                end
               end
             end
 
@@ -381,9 +429,9 @@ LOGMESSAGE
                     allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
                     allow(skipped_link_path).to receive(:parse)
 
-                    templateModel = Models::Template.where(name: 'provides_template').first
-                    templateModel.properties = {"a" => {}}
-                    templateModel.save
+                    template_model = Models::Template.where(name: 'provides_template').first
+                    template_model.spec = template_model.spec.merge({properties: {"a" => {}}})
+                    template_model.save
 
                     planner
                   end
@@ -392,9 +440,13 @@ LOGMESSAGE
           end
 
           context 'runtime config' do
+            before do
+              allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(true)
+            end
+
               it "throws an error if the version of a release is 'latest'" do
                 invalid_manifest = Bosh::Spec::Deployments.runtime_config_latest_release
-                allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).with(String).and_return(invalid_manifest)
+                allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with(String).and_return(invalid_manifest)
 
                 expect {
                   planner
@@ -405,13 +457,13 @@ LOGMESSAGE
 
               it "throws an error if the release used by an addon is not listed in the releases section" do
                 invalid_manifest = Bosh::Spec::Deployments.runtime_config_release_missing
-                allow(runtime_config_model).to receive(:interpolated_manifest_for_deployment).with(String).and_return(invalid_manifest)
+                allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with(String).and_return(invalid_manifest)
 
                 expect {
                   planner
-                }.to raise_error Bosh::Director::RuntimeReleaseNotListedInReleases,
-                                 "Runtime manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " +
-                                   "but 'release2' is not listed in the releases section."
+                }.to raise_error Bosh::Director::AddonReleaseNotListedInReleases,
+                                 "Manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " +
+                                   "but 'release2' is not listed in the runtime releases section."
               end
           end
         end
@@ -427,7 +479,7 @@ LOGMESSAGE
             job = hybrid_manifest_hash['jobs'].first
             release = Models::Release.make(name: release_entry['name'])
             template = Models::Template.make(name: job['templates'].first['name'], release: release)
-            template2 = Models::Template.make(name: 'provides_template', release: release, properties: {"a" => {default: "b"}})
+            template2 = Models::Template.make(name: 'provides_template', release: release, spec: {properties: {"a" => {default: "b"}}})
             release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
             release_version.add_template(template2)
@@ -440,7 +492,7 @@ LOGMESSAGE
         end
 
         def upload_stemcell
-          stemcell_entry = cloud_config_model.manifest['resource_pools'].first['stemcell']
+          stemcell_entry = cloud_config_model.raw_manifest['resource_pools'].first['stemcell']
           Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'])
         end
       end

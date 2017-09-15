@@ -92,13 +92,12 @@ describe 'Agent', type: :integration do
 
           hash_key1 = sent_messages.keys[0]
           hash_key2 = sent_messages.keys[1]
-          first_is_first = sent_messages[hash_key1].length == 2 ? true : false
+          first_is_first = sent_messages[hash_key1].length == 1 ? true : false
           agent1 = sent_messages[first_is_first ? hash_key1 : hash_key2]
           agent2 = sent_messages[first_is_first ? hash_key2 : hash_key1]
 
           expect(agent1[0]['method']).to eq('get_state')
-          expect(agent1[1]['method']).to eq('delete_arp_entries')
-          expect(agent1.length).to eq(2)
+          expect(agent1.length).to eq(1)
 
           expect(agent2[0]['method']).to eq('ping')
           agent2.shift
@@ -140,13 +139,12 @@ describe 'Agent', type: :integration do
 
             hash_key1 = sent_messages.keys[0]
             hash_key2 = sent_messages.keys[1]
-            first_is_first = sent_messages[hash_key1].length == 2 ? true : false
+            first_is_first = sent_messages[hash_key1].length == 1 ? true : false
             agent1 = sent_messages[first_is_first ? hash_key1 : hash_key2]
             agent2 = sent_messages[first_is_first ? hash_key2 : hash_key1]
 
             expect(agent1[0]['method']).to eq('get_state')
-            expect(agent1[1]['method']).to eq('delete_arp_entries')
-            expect(agent1.length).to eq(2)
+            expect(agent1.length).to eq(1)
 
             expect(agent2[0]['method']).to eq('ping')
             agent2.shift

@@ -88,7 +88,7 @@ module Bosh::Director
       it 'logs director version' do
         task = subject.enqueue('fake-user', job_class, description, [], deployment)
         director_version_line, enqueuing_task_line = File.read(File.join(tmpdir, 'tasks', task.id.to_s, 'debug')).split(/\n/)
-        expect(director_version_line).to match(/INFO .* Director Version: #{Bosh::Director::VERSION}/)
+        expect(director_version_line).to match(/INFO .* Director Version: 0.0.2/)
         expect(enqueuing_task_line).to match(/INFO .* Enqueuing task: #{task.id}/)
       end
 

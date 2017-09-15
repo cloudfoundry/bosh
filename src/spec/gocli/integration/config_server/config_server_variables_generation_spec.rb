@@ -68,12 +68,12 @@ describe 'variable generation with config server', type: :integration do
 
         events_output = bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env)
         scrubbed_events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(events_output))))
-        scrubbed_variables_events = scrubbed_events.select{ | event | event['Object Type'] == 'variable'}
+        scrubbed_variables_events = scrubbed_events.select{ | event | event['object_type'] == 'variable'}
 
         expect(scrubbed_variables_events.size).to eq(2)
         expect(scrubbed_variables_events).to include(
-           {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'create', 'Object Type' => 'variable', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => '/TestDirector/simple/var_a', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /id: \"[0-9]{1,3}\"\nname: \/TestDirector\/simple\/var_a/, 'Error' => ''},
-           {'ID' => /[0-9]{1,3}/, 'Time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'User' => 'test', 'Action' => 'create', 'Object Type' => 'variable', 'Task ID' => /[0-9]{1,3}/, 'Object ID' => '/var_b', 'Deployment' => 'simple', 'Instance' => '', 'Context' => /id: \"[0-9]{1,3}\"\nname: \/var_b/, 'Error' => ''},
+           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_name' => '/TestDirector/simple/var_a', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nname: \/TestDirector\/simple\/var_a/, 'error' => ''},
+           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_name' => '/var_b', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nname: \/var_b/, 'error' => ''},
          )
       end
 
@@ -208,6 +208,44 @@ describe 'variable generation with config server', type: :integration do
           template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq(var_a)
           expect(template_hash['properties_list']['smurfs_color']).to eq(var_b)
+        end
+
+        it 'should show changed variables in the diff lines under instance groups' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+          manifest_hash['jobs'][0]['instances'] = 2
+          manifest_hash['variables'][2] = {'name' => 'var_c', 'type' => 'password'}
+          manifest_hash['jobs'][0]['templates'][0]['properties']['gargamel']['color'] = "((var_c))"
+
+          deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: false, redact_diff: true, include_credentials: false, env: client_env)
+
+          expect(deploy_output).to match(/variables:/)
+          expect(deploy_output).to match(/gargamel:/)
+          expect(deploy_output).to match(/- name: var_c/)
+          expect(deploy_output).to match(/type: password/)
+        end
+
+        it 'should not regenerate values when calling restart/stop/start/recreate' do
+          max_variables_events_count = 2
+
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_events = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          expect(deploy_events.count{ | event | event['object_type'] == 'variable'}).to eq(max_variables_events_count)
+
+          var_a = config_server_helper.get_value(prepend_namespace('var_a'))
+          var_b = config_server_helper.get_value('/var_b')
+
+          ['stop', 'start', 'restart', 'recreate'].each do |command|
+            bosh_runner.run(command, deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            events = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+            expect(events.count{ | event | event['object_type'] == 'variable'}).to eq(max_variables_events_count)
+
+            instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+            template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+            expect(template_hash['properties_list']['gargamel_color']).to eq(var_a)
+            expect(template_hash['properties_list']['smurfs_color']).to eq(var_b)
+          end
         end
 
         xcontext 'when variable is referenced by a property that has a type in release spec' do
