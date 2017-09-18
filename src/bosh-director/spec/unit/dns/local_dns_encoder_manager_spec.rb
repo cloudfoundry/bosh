@@ -65,13 +65,18 @@ module Bosh::Director
     end
 
     describe '.new_encoder_with_updated_index' do
+      let(:plan) {instance_double Bosh::Director::DeploymentPlan::Planner}
+
       before do
-        Models::LocalDnsEncodedAz.create(name: 'az1')
+        Models::LocalDnsEncodedAz.create(name: 'old-az')
+        allow(plan).to receive(:availability_zones).and_return [
+          instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'new-az')
+        ]
       end
 
       it 'returns a dns encoder that includes the provided azs' do
-        encoder = subject.new_encoder_with_updated_index(['az2'])
-        expect(encoder.id_for_az('az2')).to eq('2')
+        encoder = subject.new_encoder_with_updated_index(plan)
+        expect(encoder.id_for_az('new-az')).to eq('2')
       end
     end
   end

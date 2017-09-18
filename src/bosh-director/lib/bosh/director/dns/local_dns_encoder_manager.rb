@@ -25,8 +25,8 @@ module Bosh::Director
       Bosh::Director::DnsEncoder.new(service_groups, az_hash, use_short_dns_names)
     end
 
-    def self.new_encoder_with_updated_index(azs)
-      self.persist_az_names(azs)
+    def self.new_encoder_with_updated_index(plan)
+      self.persist_az_names(plan.availability_zones.map(&:name))
       self.create_dns_encoder
     end
 

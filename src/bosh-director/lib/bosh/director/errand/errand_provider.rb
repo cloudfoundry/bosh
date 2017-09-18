@@ -14,7 +14,7 @@ module Bosh::Director
       result = nil
       event_log_stage.advance_and_track('Preparing deployment') do
         deployment_planner = @deployment_planner_provider.get_by_name(deployment_name)
-        dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_planner.availability_zones.map(&:name))
+        dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_planner)
         template_blob_cache = deployment_planner.template_blob_cache
 
         errand_is_job_name = true
