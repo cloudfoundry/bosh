@@ -2,10 +2,10 @@
 groups:
   - name: bosh
     jobs:
-    - unit-2.3
-    - unit-2.3-mysql
-    - unit-2.3-postgres
-    # - unit-2.3-rds
+    - unit-2.4
+    - unit-2.4-mysql
+    - unit-2.4-postgres
+    # - unit-2.4-rds
     - integration-postgres-gocli-sha2
     - integration-mysql-gocli-sha1
     - legacy-agent-integration-postgres-gocli-sha2
@@ -24,7 +24,7 @@ groups:
 
   - name: postgres
     jobs:
-    - unit-2.3-postgres
+    - unit-2.4-postgres
     - integration-postgres-gocli-sha2
     - load-tests-postgres
     - legacy-load-tests-postgres
@@ -33,7 +33,7 @@ groups:
 
   - name: mysql
     jobs:
-    - unit-2.3-mysql
+    - unit-2.4-mysql
     - integration-mysql-gocli-sha1
     - load-tests-mysql
     - legacy-load-tests-mysql
@@ -101,7 +101,7 @@ jobs:
 ############################
 # Unit Tests
 ############################
-- name: unit-2.3
+- name: unit-2.4
   public: true
   serial: true
   build_logs_to_retain: 250
@@ -110,12 +110,12 @@ jobs:
     - task: test
       file: bosh-src/ci/tasks/test-unit.yml
       params:
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         DB: sqlite
   on_failure:
     <<: *slack-alert
 
-- name: unit-2.3-mysql
+- name: unit-2.4-mysql
   public: true
   serial: true
   build_logs_to_retain: 250
@@ -135,7 +135,7 @@ jobs:
         run:
           path: bosh-src/ci/tasks/test-unit.sh
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.4.2
           DB: mysql
     - task: test-mysql-5.6
       privileged: true
@@ -150,7 +150,7 @@ jobs:
         run:
           path: bosh-src/ci/tasks/test-unit.sh
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.4.2
           DB: mysql
       on_failure:
         <<: *slack-alert
@@ -167,12 +167,12 @@ jobs:
         run:
           path: bosh-src/ci/tasks/test-unit.sh
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.4.2
           DB: mysql
   on_failure:
     <<: *slack-alert
 
-- name: unit-2.3-postgres
+- name: unit-2.4-postgres
   public: true
   serial: true
   build_logs_to_retain: 250
@@ -192,7 +192,7 @@ jobs:
         run:
           path: bosh-src/ci/tasks/test-unit.sh
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.4.2
           DB: postgresql
           DB_VERSION: 9.3
     - task: test-postgres-9.4
@@ -208,7 +208,7 @@ jobs:
         run:
           path: bosh-src/ci/tasks/test-unit.sh
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.4.2
           DB: postgresql
           DB_VERSION: 9.4
     - task: test-postgres-9.5
@@ -224,7 +224,7 @@ jobs:
         run:
           path: bosh-src/ci/tasks/test-unit.sh
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.4.2
           DB: postgresql
           DB_VERSION: 9.5
     - task: test-postgres-9.6
@@ -240,13 +240,13 @@ jobs:
         run:
           path: bosh-src/ci/tasks/test-unit.sh
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.4.2
           DB: postgresql
           DB_VERSION: 9.6
   on_failure:
     <<: *slack-alert
 
-# - name: unit-2.3-rds
+# - name: unit-2.4-rds
 #   public: true
 #   serial: true
 #   build_logs_to_retain: 250
@@ -257,7 +257,7 @@ jobs:
 #       privileged: true
 #       file: bosh-src/ci/tasks/test-unit-remote-db.yml
 #       params:
-#         RUBY_VERSION: 2.3.1
+#         RUBY_VERSION: 2.4.2
 #         DB: mysql
 #         DB_HOST: {{mysql-rds-host}}
 #         DB_USER: {{mysql-rds-user}}
@@ -270,7 +270,7 @@ jobs:
 #       privileged: true
 #       file: bosh-src/ci/tasks/test-unit-remote-db.yml
 #       params:
-#         RUBY_VERSION: 2.3.1
+#         RUBY_VERSION: 2.4.2
 #         DB: postgresql
 #         DB_HOST: {{postgresql-rds-host}}
 #         DB_USER: {{postgresql-rds-user}}
@@ -300,7 +300,7 @@ jobs:
       tags: ["bosh-integration-7"]
       params:
         DB:           postgresql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         NUM_GROUPS:   24
         GROUP:        1,4,7,10,13,16,19,22
         SHA2_MODE:    true
@@ -310,7 +310,7 @@ jobs:
       tags: ["bosh-integration-8"]
       params:
         DB:           postgresql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         NUM_GROUPS:   24
         GROUP:        2,5,8,11,14,17,20,23
         SHA2_MODE:    true
@@ -320,7 +320,7 @@ jobs:
       tags: ["bosh-integration-9"]
       params:
         DB:           postgresql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         NUM_GROUPS:   24
         GROUP:        3,6,9,12,15,18,21,24
         SHA2_MODE:    true
@@ -346,7 +346,7 @@ jobs:
       tags: ["bosh-integration-4"]
       params:
         DB:           mysql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         NUM_GROUPS: 24
         GROUP:      1,4,7,10,13,16,19,22
     - task: test-group-2
@@ -355,7 +355,7 @@ jobs:
       tags: ["bosh-integration-5"]
       params:
         DB:           mysql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         NUM_GROUPS: 24
         GROUP:      2,5,8,11,14,17,20,23
     - task: test-group-3
@@ -364,7 +364,7 @@ jobs:
       tags: ["bosh-integration-6"]
       params:
         DB:           mysql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         NUM_GROUPS: 24
         GROUP:      3,6,9,12,15,18,21,24
   on_failure:
@@ -413,14 +413,14 @@ jobs:
       tags: ["bosh-integration"]
       params:
         DB: postgresql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
     - task: upgrade-with-mysql
       privileged: true
       file: bosh-src/ci/tasks/test-upgrade.yml
       tags: ["bosh-integration"]
       params:
         DB: mysql
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
   on_failure:
     <<: *slack-alert
 
@@ -443,7 +443,7 @@ jobs:
         DB: postgresql
         GROUP: 1,4,7,10,13,16,19,22
         NUM_GROUPS: 24
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         SHA2_MODE: true
       input_mapping:
         bosh-agent: non-tls-bosh-agent
@@ -456,7 +456,7 @@ jobs:
         DB: postgresql
         GROUP: 2,5,8,11,14,17,20,23
         NUM_GROUPS: 24
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         SHA2_MODE: true
       input_mapping:
         bosh-agent: non-tls-bosh-agent
@@ -469,7 +469,7 @@ jobs:
         DB: postgresql
         GROUP: 3,6,9,12,15,18,21,24
         NUM_GROUPS: 24
-        RUBY_VERSION: 2.3.1
+        RUBY_VERSION: 2.4.2
         SHA2_MODE: true
       input_mapping:
         bosh-agent: non-tls-bosh-agent
@@ -700,7 +700,7 @@ jobs:
     tags: ["bosh-integration"]
     params:
       BOSH_SRC_PATH: bosh-src/src
-      RUBY_VERSION: 2.3.1
+      RUBY_VERSION: 2.4.2
   on_failure:
     <<: *slack-alert
 
@@ -709,9 +709,9 @@ jobs:
   - get: bosh-src
     trigger: true
     passed:
-    - unit-2.3
-    - unit-2.3-mysql
-    - unit-2.3-postgres
+    - unit-2.4
+    - unit-2.4-mysql
+    - unit-2.4-postgres
     - integration-mysql-gocli-sha1
     - integration-postgres-gocli-sha2
     - blobstore-client-integration
