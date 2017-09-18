@@ -7,13 +7,13 @@ LOG_DIR=/var/vcap/sys/log/director
 PIDFILE=$RUN_DIR/scheduler.pid
 RUNAS=vcap
 
-PATH=/var/vcap/packages/ruby/bin:$PATH
+source /var/vcap/packages/ruby-2.4/bosh/runtime.env
 PATH=$PATH:/var/vcap/jobs/director/bin
 export PATH
 export LANG=en_US.UTF-8
 
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
-export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 
 export TMPDIR=/var/vcap/data/tmp/director
 

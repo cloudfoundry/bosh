@@ -19,5 +19,9 @@ module Bosh::Director::DeploymentPlan
     def spec
       Bosh::Common::DeepCopy.copy(@spec)
     end
+
+    def add(variables)
+      @spec.concat(variables.spec)
+    end
   end
 end

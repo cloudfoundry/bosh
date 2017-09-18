@@ -1,15 +1,10 @@
 module Bosh::Director
   class Changeset
-    KEY_NAME = 'name'
-
-    REDACT_KEY_NAMES = %w(
-      properties
-      bosh
-    )
 
     def initialize(before, after, redacted_before = nil, redacted_after = nil)
-      @redacted_before = redacted_before.nil? ? Changeset.redact_properties!(Bosh::Common::DeepCopy.copy(before)) : redacted_before
-      @redacted_after = redacted_after.nil? ? Changeset.redact_properties!(Bosh::Common::DeepCopy.copy(after)) : redacted_after
+      redactor = Redactor.new
+      @redacted_before = redacted_before.nil? ? redactor.redact_properties!(Bosh::Common::DeepCopy.copy(before)) : redacted_before
+      @redacted_after = redacted_after.nil? ? redactor.redact_properties!(Bosh::Common::DeepCopy.copy(after)) : redacted_after
 
       @before = before
       @after = after
@@ -21,43 +16,6 @@ module Bosh::Director
       else
         @merged = @after
       end
-    end
-
-    # redacts properties from ruby object to avoid having to use a regex to redact properties from diff output
-    # please do not use regexes for diffing/redacting
-    def self.redact_properties!(obj, redact_key_is_ancestor = false)
-      if redact_key_is_ancestor
-        if obj.respond_to?(:key?)
-          obj.keys.each{ |key|
-            if obj[key].respond_to?(:each)
-              redact_properties!(obj[key], true)
-            else
-              obj[key] = '<redacted>'
-            end
-          }
-        elsif obj.respond_to?(:each_index)
-          obj.each_index { |i|
-            if obj[i].respond_to?(:each)
-              redact_properties!(obj[i], true)
-            else
-              obj[i] = '<redacted>'
-            end
-          }
-        end
-      else
-        if obj.respond_to?(:each)
-          obj.each{ |a|
-            if obj.respond_to?(:key?) && REDACT_KEY_NAMES.any? { |key| key == a.first } && a.last.respond_to?(:key?)
-              redact_properties!(a.last, true)
-            else
-              redact_properties!(a.respond_to?(:last) ? a.last : a)
-            end
-
-          }
-        end
-      end
-
-      obj
     end
 
     def diff(redact=true, indent = 0)

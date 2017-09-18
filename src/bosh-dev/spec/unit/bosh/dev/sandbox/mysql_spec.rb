@@ -11,7 +11,7 @@ module Bosh::Dev::Sandbox
         db = described_class.new('fake_db_name', logger, runner)
         expect(db.username).to eq('root')
         expect(db.password).to eq('password')
-        expect(db.host).to eq('localhost')
+        expect(db.host).to eq('127.0.0.1')
       end
     end
 

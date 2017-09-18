@@ -11,10 +11,6 @@ module Bosh::Director::DeploymentPlan
         existing_network_plans = []
         desired_reservations = @instance_plan.network_plans.map { |np| np.reservation }
 
-        desired_network_plans = desired_reservations.map do |reservation|
-          Plan.new(reservation: reservation)
-        end
-
         existing_reservations.each do |existing_reservation|
           unless az_is_desired(existing_reservation)
             @logger.debug("Can't reuse reservation #{existing_reservation}, existing reservation az does not match desired az '#{@instance_plan.desired_instance.availability_zone}'")
@@ -45,13 +41,17 @@ module Bosh::Director::DeploymentPlan
               end
 
               existing_network_plans << Plan.new(reservation: existing_reservation, existing: true)
-              desired_network_plans.delete_if { |plan| plan.reservation == desired_reservation }
+              desired_reservations.delete(desired_reservation)
             else
               @logger.debug("Can't reuse reservation #{existing_reservation} for #{desired_reservation}")
             end
           else
             @logger.debug("Unneeded reservation #{existing_reservation}")
           end
+        end
+
+        desired_network_plans = desired_reservations.map do |reservation|
+          Plan.new(reservation: reservation)
         end
 
         obsolete_network_plans = unplaced_existing_reservations.map do |reservation|

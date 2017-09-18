@@ -52,10 +52,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 10.0'
   spec.add_dependency 'rufus-scheduler',  '~>2.0.18'
-  spec.add_dependency 'sequel',           '~>4.32.0'
+  spec.add_dependency 'sequel',           '~>4.36.0'
   spec.add_dependency 'sinatra',          '~>1.4.2'
   spec.add_dependency 'sys-filesystem',   '~>1.1.0'
-  spec.add_dependency 'thin',             '~>1.5.0'
+  spec.add_dependency 'thin',             '~>1.7.0'
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'

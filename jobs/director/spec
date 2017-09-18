@@ -36,7 +36,7 @@ packages:
 - libpq
 - postgres-9.4
 - mysql
-- ruby
+- ruby-2.4
 - s3cli
 - davcli
 - bosh-gcscli

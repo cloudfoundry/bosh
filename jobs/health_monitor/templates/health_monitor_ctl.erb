@@ -7,8 +7,8 @@ RUNAS=vcap
 CONFIG_DIR=/var/vcap/jobs/health_monitor/config
 STORE_DIR=/var/vcap/store/health_monitor
 
-export PATH=/var/vcap/packages/ruby/bin:$PATH
-export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/2.3.0
+source /var/vcap/packages/ruby-2.4/bosh/runtime.env
+export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/2.4.0
 export BUNDLE_GEMFILE=/var/vcap/packages/health_monitor/Gemfile
 
 <% if_p('env.http_proxy') do |http_proxy| %>

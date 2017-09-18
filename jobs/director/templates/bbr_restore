@@ -2,7 +2,7 @@
 
 set -e
 
-PATH=/var/vcap/packages/ruby/bin:$PATH
+source /var/vcap/packages/ruby-2.4/bosh/runtime.env
 PATH=$PATH:/var/vcap/jobs/director/bin
 
 # Postgres
@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH
 export PATH
 
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
-export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 
 /var/vcap/packages/director/bin/bosh-restore
 

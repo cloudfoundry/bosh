@@ -40,7 +40,7 @@ module Bosh::Director::ConfigServer
 
           variable_list.each do |variable|
             variable_value = variable_values_copy[variable]
-            unless variable_value.is_a?(String) || variable_value.is_a?(Fixnum)
+            unless variable_value.is_a?(String) || variable_value.is_a?(Integer)
               current_errors <<  "- Failed to substitute variable: Can not replace '#{variable}' in '#{target_to_replace}'. The value should be a String or an Integer."
             end
           end

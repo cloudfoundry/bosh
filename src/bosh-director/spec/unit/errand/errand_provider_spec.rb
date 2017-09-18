@@ -73,6 +73,44 @@ module Bosh::Director
             allow(Errand::Runner).to receive(:new).and_return(runner)
           end
 
+          context 'when a matching instance group has 0 instances' do
+            let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [], is_errand?: true, needed_instance_plans: needed_instance_plans) }
+
+            context 'when using an instance filter' do
+              let(:instance_slugs) { [{'group' => 'service-group-name'}] }
+
+              it 'no-ops successfully on that instance group and continues' do
+                expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
+
+                expect(Errand::LifecycleServiceStep).to receive(:new).with(
+                  runner, instance1, logger
+                ).and_return(errand_step1)
+                expect(Errand::LifecycleServiceStep).to receive(:new).with(
+                  runner, instance2, logger
+                ).and_return(errand_step2)
+
+                returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
+                expect(returned_errands.steps).to contain_exactly(errand_step1, errand_step2)
+              end
+            end
+
+            context 'without any instance filter' do
+              it 'no-ops successfully on that instance group and continues' do
+                expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
+
+                expect(Errand::LifecycleServiceStep).to receive(:new).with(
+                  runner, instance1, logger
+                ).and_return(errand_step1)
+                expect(Errand::LifecycleServiceStep).to receive(:new).with(
+                  runner, instance2, logger
+                ).and_return(errand_step2)
+
+                returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
+                expect(returned_errands.steps).to contain_exactly(errand_step1, errand_step2)
+              end
+            end
+          end
+
           context 'when running an errand where instance group name and the release job name are the same' do
             let(:ambiguous_errand_name) { 'ambiguous-errand-name' }
             let(:job_name) { ambiguous_errand_name }

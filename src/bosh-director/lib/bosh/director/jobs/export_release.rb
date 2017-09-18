@@ -24,6 +24,7 @@ module Bosh::Director
         @stemcell_version = stemcell_version
         @sha2 = sha2
         @multi_digest = Digest::MultiDigest.new(logger)
+        @jobs = options.fetch('jobs', [])
       end
 
       # @return [void]
@@ -55,7 +56,7 @@ module Bosh::Director
 
         release = planner.release(@release_name)
 
-        export_release_job = create_instance_group_with_all_the_jobs_so_everything_compiles(release_version_model, release, deployment_plan_stemcell)
+        export_release_job = create_compilation_instance_group(release_version_model, release, deployment_plan_stemcell)
         planner.add_instance_group(export_release_job)
         assembler = DeploymentPlan::Assembler.create(planner)
         assembler.bind_models({:should_bind_links => false, :should_bind_properties => false})
@@ -87,11 +88,15 @@ module Bosh::Director
         false
       end
 
+      def is_template_to_be_exported?(template)
+        @jobs.empty? || @jobs.any? { |job| job['name'] == template.name }
+      end
+
       def create_tarball(release_version_model, stemcell)
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
         compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell)
-        templates = release_version_model.templates.map
+        templates = release_version_model.templates.select{|template| is_template_to_be_exported?(template)}
 
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
         download_dir = compiled_release_downloader.download
@@ -125,13 +130,15 @@ module Bosh::Director
         compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
       end
 
-      def create_instance_group_with_all_the_jobs_so_everything_compiles(release_version_model, release, deployment_plan_stemcell)
+      def create_compilation_instance_group(release_version_model, release, deployment_plan_stemcell)
         instance_group = DeploymentPlan::InstanceGroup.new(logger)
 
         instance_group.name = 'dummy-job-for-compilation'
         instance_group.stemcell = deployment_plan_stemcell
         release_version_model.templates.map do |template|
-          instance_group.jobs << release.get_or_create_template(template.name)
+          if is_template_to_be_exported?(template)
+            instance_group.jobs << release.get_or_create_template(template.name)
+          end
         end
 
         instance_group

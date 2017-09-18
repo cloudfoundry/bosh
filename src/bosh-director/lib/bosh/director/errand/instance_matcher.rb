@@ -11,21 +11,30 @@ module Bosh::Director
       end
     end
 
-    def matches?(instance, instances_in_group)
-      return true if @filters.empty?
-      found = false
+    def match(instance_groups)
+      return Hash[instance_groups.collect{|instance_group| [instance_group,instance_group.instances] }], [] if @filters.empty?
+      results = {}
+      applied_filters = Set.new
+
       @filters.each do |filter|
-        if filter.matches?(instance, instances_in_group)
-          @matched_requests.add(filter)
-          found = true
+        instance_groups.each do |instance_group|
+          matched_instances = instance_group.instances.select{|instance| filter.matches?(instance, instance_group.instances)}
+          if !matched_instances.empty?
+            if results.key?(instance_group)
+              results[instance_group] = results[instance_group].merge(matched_instances)
+            else
+              results[instance_group] = Set.new(matched_instances)
+            end
+          end
+
+          if filter.match_instance_group(instance_group) || !matched_instances.empty?
+            applied_filters.add(filter)
+          end
         end
       end
-      found
+      return results.update(results){|key,value| results[key]=value.to_a}, (@filters-applied_filters.to_a).compact.map(&:original)
     end
 
-    def unmatched_criteria
-      (@filters - @matched_requests.to_a).compact.map(&:original)
-    end
   end
 
   class Errand::InstanceFilter
@@ -35,6 +44,10 @@ module Bosh::Director
       @group_name = group_name
       @index_or_id = index_or_id
       @original = original
+    end
+
+    def match_instance_group(instance_group)
+      @group_name == instance_group.name  && @index_or_id.nil?
     end
 
     def matches?(instance, instances_in_group)

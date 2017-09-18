@@ -1,8 +1,5 @@
-
 module Bosh::Registry
-
   class InstanceManager
-
     class Aws < InstanceManager
 
       AWS_MAX_RETRIES = 2
@@ -14,10 +11,15 @@ module Bosh::Registry
 
         @aws_properties = cloud_config["aws"]
         @aws_options = {
-          :max_retries => @aws_properties["max_retries"] || AWS_MAX_RETRIES,
-          :ec2_endpoint => @aws_properties['ec2_endpoint'] || "ec2.#{@aws_properties['region']}.amazonaws.com",
-          :logger => @logger
+          retry_limit: @aws_properties["max_retries"] || AWS_MAX_RETRIES,
+          endpoint: @aws_properties['ec2_endpoint'] || "ec2.#{@aws_properties['region']}.amazonaws.com",
+          logger: @logger,
+          region: @aws_properties['region']
         }
+        if URI(@aws_options[:endpoint]).scheme.nil?
+          @aws_options[:endpoint].prepend("https://")
+        end
+
         # configure optional parameters
         %w(
           access_key_id
@@ -32,17 +34,15 @@ module Bosh::Registry
         # credentials_source could be static (default) or env_or_profile
         # - if "static", credentials must be provided
         # - if "env_or_profile", credentials are read from instance metadata
-        credentials_source = cloud_config['aws']['credentials_source'] || 'static'
-        static_credentials = {}
+        credentials_source = @aws_properties['credentials_source'] || 'static'
 
         if credentials_source == 'static'
-          static_credentials[:access_key_id] = cloud_config['aws']['access_key_id']
-          static_credentials[:secret_access_key] = cloud_config['aws']['secret_access_key']
+          @aws_options[:credentials] = ::Aws::Credentials.new(@aws_properties['access_key_id'], @aws_properties['secret_access_key'])
+        else
+          @aws_options[:credentials] = ::Aws::InstanceProfileCredentials.new({retries: 10})
         end
 
-        @aws_options[:credential_provider] = Bosh::Registry::AWSCredentialsProvider.new(static_credentials)
-
-        @ec2 = AWS::EC2.new(@aws_options)
+        @ec2 = ::Aws::EC2::Resource.new(@aws_options)
       end
 
       def validate_options(cloud_config)
@@ -69,8 +69,6 @@ module Bosh::Registry
               raise ConfigError, "Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
           end
         end
-
-
       end
 
       # Get the list of IPs belonging to this instance
@@ -84,9 +82,6 @@ module Bosh::Registry
       rescue AWS::Errors::Base => e
         raise Bosh::Registry::AwsError, "AWS error: #{e}"
       end
-
     end
-
   end
-
 end

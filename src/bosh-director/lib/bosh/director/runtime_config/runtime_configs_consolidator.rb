@@ -40,12 +40,14 @@ module Bosh::Director
         result_hash = {
           'releases' => [],
           'addons' => [],
+          'variables' => [],
         }
 
         @runtime_configs.each do |runtime_config|
           manifest_hash = runtime_config.raw_manifest
           result_hash['releases'] += safe_property(manifest_hash, 'releases', :class => Array, :default => [])
           result_hash['addons'] += safe_property(manifest_hash, 'addons', :class => Array, :default => [])
+          result_hash['variables'] += safe_property(manifest_hash, 'variables', :class => Array, :default => [])
 
           tags = safe_property(manifest_hash, 'tags', :class => Hash, :optional => true)
           if tags && result_hash['tags']

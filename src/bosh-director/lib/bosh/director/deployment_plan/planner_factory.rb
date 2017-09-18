@@ -90,7 +90,7 @@ module Bosh
           end
 
           if runtime_config_consolidator.have_runtime_configs?
-            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new.parse(runtime_config_consolidator.interpolate_manifest_for_deployment(name))
+            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new(@logger).parse(runtime_config_consolidator.interpolate_manifest_for_deployment(name))
 
             #TODO: only add releases for runtime jobs that will be added.
             parsed_runtime_config.releases.each do |release|
@@ -99,6 +99,7 @@ module Bosh
             parsed_runtime_config.addons.each do |addon|
               addon.add_to_deployment(deployment)
             end
+            deployment.add_variables(parsed_runtime_config.variables)
           end
 
           process_links(deployment)

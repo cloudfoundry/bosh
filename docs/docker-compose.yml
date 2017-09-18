@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+    postgres:
+        image: postgres:9.5
+        container_name: db_postgres
+        restart: always
+        ports:
+            - 5432:5432
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_DB=bosh
+    mysql:
+        image: mysql
+        container_name: mysql
+        restart: always
+        ports:
+            - 3306:3306
+        environment:
+            - MYSQL_ROOT_PASSWORD=password
+            - MYSQL_DB=bosh

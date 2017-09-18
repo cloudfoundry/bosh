@@ -7,11 +7,12 @@ LOG_DIR=/var/vcap/sys/log/director
 PIDFILE=$RUN_DIR/sync_dns.pid
 RUNAS=vcap
 
-export PATH=/var/vcap/packages/ruby/bin:/var/vcap/jobs/director/bin:$PATH
+source /var/vcap/packages/ruby-2.4/bosh/runtime.env
+export PATH=/var/vcap/jobs/director/bin:$PATH
 export LANG=en_US.UTF-8
 
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
-export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 
 export TMPDIR=/var/vcap/data/tmp/director
 

@@ -172,6 +172,18 @@ module Bosh::Director
         @releases[release.name] = release
       end
 
+      # Adds variables and gives error if there is a duplicate variable already.
+      # @param [Bosh::Director::DeploymentPlan::Variables] variables
+      def add_variables(variables)
+        variables.spec.each do |variable|
+          if @variables.contains_variable?(variable['name'])
+            raise DeploymentDuplicateVariableName,
+                  "Duplicate variable name '#{variable['name']}'"
+          end
+        end
+        @variables.add(variables)
+      end
+
       # Returns all releases in a deployment plan
       # @return [Array<Bosh::Director::DeploymentPlan::ReleaseVersion>]
       def releases
@@ -274,6 +286,10 @@ module Bosh::Director
 
       def availability_zone_names
         @cloud_planner.availability_zone_names
+      end
+
+      def team_names
+        @model.teams.map(&:name)
       end
     end
   end

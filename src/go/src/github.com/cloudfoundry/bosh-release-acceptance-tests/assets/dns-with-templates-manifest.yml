@@ -13,7 +13,7 @@ instance_groups:
   azs: [z1]
   jobs:
   - name: bosh-dns
-    release: bosh-dns-release
+    release: bosh-dns
   - name: query-with-az-filter
     release: linked-template-release
   - name: query-all
@@ -26,7 +26,7 @@ instance_groups:
 - name: provider
   jobs:
   - name: bosh-dns
-    release: bosh-dns-release
+    release: bosh-dns
   - name: link-provider
     release: linked-template-release
   instances: 3
@@ -37,8 +37,8 @@ instance_groups:
   - name: default
 
 releases:
-- name: bosh-dns-release
-  version: create
+- name: bosh-dns
+  version: latest
   url: file://((dns-release-path))
 - name: linked-template-release
   version: create

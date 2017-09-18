@@ -418,11 +418,11 @@ module Bhm
         allow(EM).to receive(:schedule).and_yield
       end
 
-      it 'has the cloudwatch plugin' do
-        expect(Bhm::Plugins::CloudWatch).to receive(:new).with(
+      it 'has the tsdb plugin' do
+        expect(Bhm::Plugins::Tsdb).to receive(:new).with(
             {
-                'access_key_id' => 'access_key',
-                'secret_access_key' => 'secret_access_key'
+              'host' => 'localhost',
+              'port' => 4242,
             }
         ).and_call_original
 

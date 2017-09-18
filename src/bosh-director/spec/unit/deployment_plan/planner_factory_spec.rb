@@ -209,6 +209,32 @@ LOGMESSAGE
                   ]
                 )
               end
+
+              context 'with runtime variables' do
+                let(:runtime_config_hash) do
+                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                    'variables'=> [{
+                       'name' => '/dns_healthcheck_server_tlsX',
+                       'type' => 'certificate',
+                       'options' => {'is_ca' => true, 'common_name' => 'health.bosh-dns', 'extended_key_usage' => ['server_auth']}
+                     },
+                     {
+                       'name' => '/dns_healthcheck_tls',
+                       'type' => 'certificate',
+                       'options' => { 'ca' => '/dns_healthcheck_server_tlsX' }
+
+                     },
+                     {
+                       'name' => '/dns_healthcheck_password',
+                       'type' => 'password'
+                     }])
+                end
+                it 'has variables from runtime config' do
+                  expect(planner.variables.spec[0]).to eq(runtime_config_hash['variables'][0])
+                  expect(planner.variables.spec[1]).to eq(runtime_config_hash['variables'][1])
+                  expect(planner.variables.spec[2]).to eq(runtime_config_hash['variables'][2])
+                end
+              end
             end
 
             describe 'disk_pools' do
