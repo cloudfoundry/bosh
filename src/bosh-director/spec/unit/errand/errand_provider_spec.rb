@@ -235,7 +235,7 @@ module Bosh::Director
         end
 
         context 'when there is a lifecycle: errand instance group with that name' do
-          let(:dns_encoder) { DnsEncoder.new({}) }
+          let(:dns_encoder) { DnsEncoder.new }
           let(:instance_group) do
             instance_double(DeploymentPlan::InstanceGroup,
               name: instance_group_name,

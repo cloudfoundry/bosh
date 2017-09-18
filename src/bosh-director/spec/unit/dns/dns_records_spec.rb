@@ -5,7 +5,7 @@ module Bosh::Director
     let(:include_index_records) { false }
     let(:version) { 2 }
     let(:az_hash) {{ 'az1' => 3, 'az2' => 7, 'az3' => 11 }}
-    let(:dns_encoder) { DnsEncoder.new(az_hash) }
+    let(:dns_encoder) { DnsEncoder.new({}, az_hash) }
     let(:dns_records) { DnsRecords.new(version, include_index_records, dns_encoder) }
 
     describe '#to_json' do
