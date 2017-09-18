@@ -357,17 +357,20 @@ module Bosh::Director::ConfigServer
       end
 
       response = @config_server_http_client.post(request_body)
-      unless response.kind_of? Net::HTTPSuccess
-        @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{response.message}. Request body sent: #{request_body}")
-        raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. Error: '#{response.message}'"
-      end
 
       generated_variable = nil
       begin
-        generated_variable = JSON.parse(response.body)
+        parsed_response_body = JSON.parse(response.body)
       rescue JSON::ParserError
         raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{get_name_root(name)}' with type '#{type}'"
       end
+
+      unless response.kind_of? Net::HTTPSuccess
+        @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{parsed_response_body['error']}. Request body sent: #{request_body}")
+        raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. Error: '#{parsed_response_body['error']}'"
+      end
+
+      generated_variable = parsed_response_body
 
       raise Bosh::Director::ConfigServerGenerationError, "Failed to version generated variable '#{name}'. Expected Config Server response to have key 'id'" unless generated_variable.has_key?('id')
 
