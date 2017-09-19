@@ -4,34 +4,45 @@ module Bosh::Director
       get '/', scope: :read do
         content_type(:json)
 
-        unless params['name'] && params['release_name'] && params['fingerprint']
+        if params.empty?
+          templates = Models::Template.all
+
+        elsif params['name'] && params['release_name'] && params['fingerprint']
+          release = Models::Release.find(name: params['release_name'])
+
+          unless release
+            status(404)
+            return
+          end
+
+          template = Models::Template.find(
+            name: params['name'],
+            release_id: release.id,
+            fingerprint: params['fingerprint'],
+          )
+
+          unless template
+            status(404)
+            return
+          end
+
+          templates = [template]
+        else
           status(400)
           return
         end
 
-        release = Models::Release.find(name: params['release_name'])
+        result = []
 
-        unless release
-          status(404)
-          return
+        templates.each do |template|
+          result << {
+            name: template.name,
+            fingerprint: template.fingerprint,
+            spec: template.spec,
+          }
         end
 
-        template = Models::Template.find(
-          name: params['name'],
-          release_id: release.id,
-          fingerprint: params['fingerprint'],
-        )
-
-        unless template
-          status(404)
-          return
-        end
-
-        JSON.generate([{
-          name: template.name,
-          fingerprint: template.fingerprint,
-          spec: template.spec,
-        }])
+        JSON.generate(result)
       end
     end
   end

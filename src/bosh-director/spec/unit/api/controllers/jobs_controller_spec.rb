@@ -17,12 +17,19 @@ module Bosh::Director
       before { App.new(config) }
 
       before do
-        release = Models::Release.make(:name => 'test-release')
+        release_1 = Models::Release.make(:name => 'test-release-1')
+        release_2 = Models::Release.make(:name => 'test-release-2')
         Models::Template.make(
-          name: 'test-job',
-          release: release,
+          name: 'test-job-1',
+          release: release_1,
           fingerprint: 'deadbeef',
-          spec: {'some' => 'spec'},
+          spec: {'some' => 'spec-1'},
+        )
+        Models::Template.make(
+          name: 'test-job-2',
+          release: release_2,
+          fingerprint: 'deadchicken',
+          spec: {'some' => 'spec-2'},
         )
       end
 
@@ -43,31 +50,31 @@ module Bosh::Director
           context 'when all request params are present' do
 
             it 'returns the job details' do
-              get '/?release_name=test-release&name=test-job&fingerprint=deadbeef'
+              get '/?release_name=test-release-1&name=test-job-1&fingerprint=deadbeef'
               expect(last_response.body).to eq(JSON.generate([{
-                name: 'test-job',
+                name: 'test-job-1',
                 fingerprint: 'deadbeef',
-                spec: {'some' => 'spec'},
+                spec: {'some' => 'spec-1'},
               }]))
             end
 
             context 'when release_name does not exist' do
               it 'returns 404' do
-                get '/?release_name=bad&name=test-job&fingerprint=deadbeef'
+                get '/?release_name=bad&name=test-job-1&fingerprint=deadbeef'
                 expect(last_response.status).to eq(404)
               end
             end
 
             context 'when name does not exist' do
               it 'returns 404' do
-                get '/?release_name=test-release&name=bad&fingerprint=deadbeef'
+                get '/?release_name=test-release-1&name=bad&fingerprint=deadbeef'
                 expect(last_response.status).to eq(404)
               end
             end
 
             context 'when fingerprint does not exist' do
               it 'returns 404' do
-                get '/?release_name=test-release&name=test-job&fingerprint=bad'
+                get '/?release_name=test-release-1&name=test-job-1&fingerprint=bad'
                 expect(last_response.status).to eq(404)
               end
             end
@@ -75,7 +82,7 @@ module Bosh::Director
 
           context 'when any request params are missing' do
             it 'returns a 400' do
-              get '/?name=test-job&fingerprint=deadbeef'
+              get '/?name=test-job-1&fingerprint=deadbeef'
               expect(last_response.status).to eq(400)
             end
           end
@@ -86,11 +93,26 @@ module Bosh::Director
 
           context 'when all request params are present' do
             it 'returns the job details' do
-              get '/?release_name=test-release&name=test-job&fingerprint=deadbeef'
+              get '/?release_name=test-release-1&name=test-job-1&fingerprint=deadbeef'
               expect(last_response.body).to eq(JSON.generate([{
-                name: 'test-job',
+                name: 'test-job-1',
                 fingerprint: 'deadbeef',
-                spec: {'some' => 'spec'},
+                spec: {'some' => 'spec-1'},
+              }]))
+            end
+          end
+
+          context 'when user provides no parameters' do
+            it 'returns an array of each job name, fingerprint, and spec' do
+              get '/'
+              expect(last_response.body).to eq(JSON.generate([{
+                name: 'test-job-1',
+                fingerprint: 'deadbeef',
+                spec: {'some' => 'spec-1'},
+              }, {
+                  name: 'test-job-2',
+                  fingerprint: 'deadchicken',
+                  spec: {'some' => 'spec-2'},
               }]))
             end
           end
@@ -101,11 +123,11 @@ module Bosh::Director
 
           context 'when all request params are present' do
             it 'returns the job details' do
-              get '/?release_name=test-release&name=test-job&fingerprint=deadbeef'
+              get '/?release_name=test-release-1&name=test-job-1&fingerprint=deadbeef'
               expect(last_response.body).to eq(JSON.generate([{
-                name: 'test-job',
+                name: 'test-job-1',
                 fingerprint: 'deadbeef',
-                spec: {'some' => 'spec'},
+                spec: {'some' => 'spec-1'},
               }]))
             end
           end
@@ -116,7 +138,14 @@ module Bosh::Director
 
           context 'when all request params are present' do
             it 'returns 401' do
-              get '/?release_name=test-release&name=test-job&fingerprint=deadbeef'
+              get '/?release_name=test-release-1&name=test-job-1&fingerprint=deadbeef'
+              expect(last_response.status).to eq(401)
+            end
+          end
+
+          context 'when user provides no parameters' do
+            it 'returns 401' do
+              get '/'
               expect(last_response.status).to eq(401)
             end
           end
