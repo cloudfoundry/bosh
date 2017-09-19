@@ -235,7 +235,6 @@ module Bosh::Director
         end
 
         context 'when there is a lifecycle: errand instance group with that name' do
-          let(:dns_encoder) { DnsEncoder.new }
           let(:instance_group) do
             instance_double(DeploymentPlan::InstanceGroup,
               name: instance_group_name,
@@ -249,7 +248,6 @@ module Bosh::Director
 
           before do
             allow(instance).to receive(:model).and_return(instance_model)
-            allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
             allow(instance_group).to receive(:bind_instances)
             allow(package_compile_step).to receive(:perform)
@@ -258,7 +256,11 @@ module Bosh::Director
           it 'returns an errand object that will run on the first instance in that instance group' do
             expect(package_compile_step).to receive(:perform)
             expect(instance_group).to receive(:bind_instances).with(ip_provider)
-            expect(JobRenderer).to receive(:render_job_instances_with_cache).with(needed_instance_plans, template_blob_cache, dns_encoder, logger)
+            expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
+              needed_instance_plans,
+              template_blob_cache,
+              an_instance_of(DnsEncoder),
+              logger)
             expect(Errand::Runner).to receive(:new).with(instance_group_name, false, task_result, instance_manager, logs_fetcher).and_return(runner)
             expect(Errand::LifecycleErrandStep).to receive(:new).with(
               runner, deployment_planner, instance_group_name, instance, instance_group, keep_alive, deployment_name, logger
@@ -274,7 +276,11 @@ module Bosh::Director
             it 'returns an errand object that will run on the first instance in that instance group' do
               expect(package_compile_step).to receive(:perform)
               expect(instance_group).to receive(:bind_instances).with(ip_provider)
-              expect(JobRenderer).to receive(:render_job_instances_with_cache).with(needed_instance_plans, template_blob_cache, dns_encoder, logger)
+              expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
+                needed_instance_plans,
+                template_blob_cache,
+                an_instance_of(DnsEncoder),
+                logger)
               expect(Errand::Runner).to receive(:new).with(instance_group_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
               expect(Errand::LifecycleErrandStep).to receive(:new).with(
                 runner, deployment_planner, instance_group_name, instance, instance_group, keep_alive, deployment_name, logger

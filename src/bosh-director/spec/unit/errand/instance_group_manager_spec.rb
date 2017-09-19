@@ -43,8 +43,7 @@ module Bosh::Director
     before do
       fake_app
       allow(LocalDnsEncoderManager).
-        to receive(:new_encoder_with_updated_index).
-        with(deployment).
+        to receive(:create_dns_encoder).
         and_return(dns_encoder)
       allow(VmCreator).to receive(:new).
         with(

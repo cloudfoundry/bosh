@@ -65,18 +65,52 @@ module Bosh::Director
     end
 
     describe '.new_encoder_with_updated_index' do
-      let(:plan) {instance_double Bosh::Director::DeploymentPlan::Planner}
+      let(:plan) do
+        instance_double(Bosh::Director::DeploymentPlan::Planner,
+          name: 'new-deployment',
+          availability_zones: [
+            instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'new-az')
+          ],
+          instance_groups: [
+            instance_double(Bosh::Director::DeploymentPlan::InstanceGroup,
+              name: 'some-ig',
+              networks: [
+                instance_double(Bosh::Director::DeploymentPlan::Network, name: 'my-other-network'),
+                instance_double(Bosh::Director::DeploymentPlan::Network, name: 'my-network')
+              ]
+            )
+          ]
+        )
+      end
 
       before do
         Models::LocalDnsEncodedAz.create(name: 'old-az')
-        allow(plan).to receive(:availability_zones).and_return [
-          instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'new-az')
-        ]
+        deployment = Models::Deployment.make(name: 'old-deployment')
+        net = Models::LocalDnsEncodedNetwork.create(name: 'my-network')
+        ig = Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
+        Models::LocalDnsServiceGroup.create(instance_group_id: ig.id, network_id: net.id)
+
+        deployment2 = Models::Deployment.make(name: 'new-deployment')
+        allow(plan).to receive(:model).and_return deployment2
       end
 
       it 'returns a dns encoder that includes the provided azs' do
         encoder = subject.new_encoder_with_updated_index(plan)
         expect(encoder.id_for_az('new-az')).to eq('2')
+      end
+
+      it 'returns an encoder that includes the provided groups' do
+        encoder = subject.new_encoder_with_updated_index(plan)
+        expect(encoder.id_for_group_tuple(
+          'some-ig',
+          'my-network',
+          'new-deployment',
+        )).to eq '3'
+        expect(encoder.id_for_group_tuple(
+          'some-ig',
+          'my-other-network',
+          'new-deployment',
+        )).to eq '2'
       end
     end
   end

@@ -187,7 +187,8 @@ module Bosh::Director
         DeploymentPlan::Steps::UpdateStep.new(
           self,
           deployment_plan,
-          multi_job_updater(deployment_plan, dns_encoder)
+          multi_job_updater(deployment_plan, dns_encoder),
+          dns_encoder
         )
       end
 

@@ -5,7 +5,8 @@ require 'bosh/director/job_updater'
 module Bosh::Director
   module DeploymentPlan::Steps
     describe UpdateStep do
-      subject { UpdateStep.new(base_job, deployment_plan, multi_job_updater) }
+      subject { UpdateStep.new(base_job, deployment_plan, multi_job_updater, dns_encoder) }
+      let(:dns_encoder) { Bosh::Director::DnsEncoder.new }
       let(:base_job) { Jobs::BaseJob.new }
       let(:pre_cleanup) { instance_double('Bosh::Director::DeploymentPlan::Steps::PreCleanupStep') }
       let(:update_active_vm_cpis) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateActiveVmCpisStep') }
@@ -32,7 +33,7 @@ module Bosh::Director
         allow(UpdateJobsStep).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
         allow(UpdateErrandsStep).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, anything, anything).and_return(vm_creator)
+        allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, dns_encoder, anything).and_return(vm_creator)
         allow(CleanupStemcellReferencesStep).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
         allow(PersistDeploymentStep).to receive(:new).with(deployment_plan).and_return(persist_deployment)
       end

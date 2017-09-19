@@ -274,10 +274,6 @@ module Bosh::Director
 
         let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
         let(:cloud_config) { Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
-        let(:dns_encoder) { LocalDnsEncoderManager.new_encoder_with_updated_index(
-           instance_double(Bosh::Director::DeploymentPlan::Planner,
-           availability_zones: [availability_zone])
-        )}
         let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
 
         before do
