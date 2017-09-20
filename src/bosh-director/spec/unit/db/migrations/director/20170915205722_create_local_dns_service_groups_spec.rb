@@ -90,6 +90,13 @@ module Bosh::Director
           }
         }.to raise_error Sequel::NotNullConstraintViolation
       end
+
+      it 'does not prevent deployment deletion' do
+        db[:local_dns_encoded_instance_groups] << basic_ig
+        expect(db[:local_dns_encoded_instance_groups].where(name: 'test_ig').all.count).to eq 1
+        db[:deployments].where(id: 42).delete
+        expect(db[:local_dns_encoded_instance_groups].where(name: 'test_ig').all.count).to eq 0
+      end
     end
 
     describe 'dns service groups' do
@@ -145,6 +152,13 @@ module Bosh::Director
             network_id: 28 # doesn't exist
           }
         }.to raise_error Sequel::ForeignKeyConstraintViolation
+      end
+
+      it 'does not prevent instance group encoding deletion' do
+        db[:local_dns_service_groups] << basic_group
+        expect(db[:local_dns_service_groups].where(instance_group_id: 3).all.count).to eq 1
+        db[:local_dns_encoded_instance_groups].where(id: 3).delete
+        expect(db[:local_dns_service_groups].where(instance_group_id: 3).all.count).to eq 0
       end
     end
 
