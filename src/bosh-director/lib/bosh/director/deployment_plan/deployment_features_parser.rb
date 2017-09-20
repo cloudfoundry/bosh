@@ -12,7 +12,7 @@ module Bosh::Director::DeploymentPlan
 
       validate(spec)
 
-      DeploymentFeatures.new(spec['use_dns_addresses'])
+      DeploymentFeatures.new(spec['use_dns_addresses'],spec['use_short_dns_addresses'])
     end
 
     private
@@ -26,10 +26,15 @@ module Bosh::Director::DeploymentPlan
     end
 
     def validate_use_dns_addresses(spec)
-      return if !spec.has_key?('use_dns_addresses')
+      validate_bool_or_nil(spec, 'use_dns_addresses')
+      validate_bool_or_nil(spec, 'use_short_dns_addresses')
+    end
 
-      if spec['use_dns_addresses'] != !!spec['use_dns_addresses']
-        raise Bosh::Director::FeaturesInvalidFormat, "Key 'use_dns_addresses' in 'features' expected to be a boolean, but received '#{spec['use_dns_addresses'].class}'"
+    def validate_bool_or_nil(spec, key)
+      return if !spec.has_key?(key)
+
+      if spec[key] != !!spec[key]
+        raise Bosh::Director::FeaturesInvalidFormat, "Key '#{key}' in 'features' expected to be a boolean, but received '#{spec[key].class}'"
       end
     end
   end

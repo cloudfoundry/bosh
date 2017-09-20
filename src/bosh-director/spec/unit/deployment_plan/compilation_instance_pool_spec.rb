@@ -31,7 +31,7 @@ module Bosh::Director
 
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
-    let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder }
+    let(:dns_encoder) { DnsEncoder.new }
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
@@ -55,6 +55,7 @@ module Bosh::Director
         ip_provider: ip_provider,
         recreate: false,
         template_blob_cache: template_blob_cache,
+        use_short_dns_addresses?: false,
       )
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}

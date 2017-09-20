@@ -8,7 +8,7 @@ module Bosh::Director
       logger = Config.logger
       disk_manager = DiskManager.new(logger)
       agent_broadcaster = AgentBroadcaster.new
-      dns_state_updater = DirectorDnsStateUpdater.new
+      dns_state_updater = DirectorDnsStateUpdater.new(dns_encoder)
       vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
       vm_creator = VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
       vm_recreator = VmRecreator.new(vm_creator, vm_deleter)

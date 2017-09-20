@@ -6,7 +6,7 @@ module Bosh::Director
       end
     end
 
-    def self.create_dns_encoder(use_short_dns_names=false)
+    def self.create_dns_encoder(use_short_dns_names)
       az_hash = {}
 
       Models::LocalDnsEncodedAz.all.each do |item|
@@ -28,7 +28,7 @@ module Bosh::Director
     def self.new_encoder_with_updated_index(plan)
       persist_az_names(plan.availability_zones.map(&:name))
       persist_service_groups(plan)
-      create_dns_encoder#(plan.short_dns_names)
+      create_dns_encoder(plan.use_short_dns_addresses?)
     end
 
     private

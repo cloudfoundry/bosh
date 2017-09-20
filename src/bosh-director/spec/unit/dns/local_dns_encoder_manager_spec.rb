@@ -37,7 +37,7 @@ module Bosh::Director
       end
 
       it 'should create a dns encoder that uses the current index' do
-        encoder = subject.create_dns_encoder
+        encoder = subject.create_dns_encoder(false)
         expect(encoder.id_for_az('az1')).to eq('1')
         expect(encoder.id_for_group_tuple(
           'some-ig',
@@ -47,7 +47,7 @@ module Bosh::Director
       end
 
       it 'respects the option for short names as default' do
-        encoder = subject.create_dns_encoder
+        encoder = subject.create_dns_encoder(false)
         expect(encoder.encode_query(
           instance_group: 'some-ig',
           default_network: 'my-network',
@@ -68,6 +68,7 @@ module Bosh::Director
       let(:plan) do
         instance_double(Bosh::Director::DeploymentPlan::Planner,
           name: 'new-deployment',
+          use_short_dns_addresses?: false,
           availability_zones: [
             instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'new-az')
           ],
@@ -111,6 +112,26 @@ module Bosh::Director
           'my-other-network',
           'new-deployment',
         )).to eq '2'
+      end
+
+      it 'respects the short-dns-names configuration in the plan' do
+        allow(plan).to receive(:use_short_dns_addresses?).and_return false
+        encoder = subject.new_encoder_with_updated_index(plan)
+        expect(encoder.encode_query(
+          instance_group: 'some-ig',
+          deployment_name: 'new-deployment',
+          default_network: 'my-network',
+          root_domain: 'sub.bosh'
+        )).to eq 'q-s0.some-ig.my-network.new-deployment.sub.bosh'
+
+        allow(plan).to receive(:use_short_dns_addresses?).and_return true
+        encoder = subject.new_encoder_with_updated_index(plan)
+        expect(encoder.encode_query(
+          instance_group: 'some-ig',
+          deployment_name: 'new-deployment',
+          default_network: 'my-network',
+          root_domain: 'sub.bosh'
+        )).to eq 'q-s0.g-3.sub.bosh'
       end
     end
   end

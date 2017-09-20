@@ -284,6 +284,10 @@ module Bosh::Director
         @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
       end
 
+      def use_short_dns_addresses?
+        @features.use_short_dns_addresses.nil? ? false : @features.use_short_dns_addresses
+      end
+
       def availability_zone_names
         @cloud_planner.availability_zone_names
       end

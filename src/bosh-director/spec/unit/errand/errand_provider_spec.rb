@@ -8,7 +8,14 @@ module Bosh::Director
 
     describe '#get' do
       let(:deployment_planner_provider) { instance_double(Errand::DeploymentPlannerProvider) }
-      let(:deployment_planner) { instance_double(DeploymentPlan::Planner, availability_zones: [], template_blob_cache: template_blob_cache, ip_provider: ip_provider) }
+      let(:deployment_planner) do
+        instance_double(DeploymentPlan::Planner,
+          availability_zones: [],
+          template_blob_cache: template_blob_cache,
+          ip_provider: ip_provider,
+          use_short_dns_addresses?: false
+        )
+      end
       let(:task_result) { instance_double(TaskDBWriter) }
       let(:instance_manager) { instance_double(Api::InstanceManager) }
       let(:logs_fetcher) { instance_double (LogsFetcher) }

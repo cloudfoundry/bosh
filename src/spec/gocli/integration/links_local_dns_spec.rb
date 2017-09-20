@@ -212,6 +212,12 @@ describe 'Links with local_dns enabled', type: :integration do
             expect(rendered_template['i_eat_links']['address']).to eq('q-a1s0.mysql.manual-network.simple.bosh')
           end
 
+          it 'uses a short DNS name if manifest so indicates' do
+            manifest['features'] = {'use_short_dns_addresses' => true}
+            deploy_simple_manifest(manifest_hash: manifest)
+            expect(rendered_template['i_eat_links']['address']).to eq('q-a1s0.g-2.bosh')
+          end
+
           it 'respects address provided in a manual link' do
             manifest['jobs'] = [job_link_overrided_spec]
             deploy_simple_manifest(manifest_hash: manifest)

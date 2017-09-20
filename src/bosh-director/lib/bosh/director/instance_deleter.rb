@@ -7,7 +7,8 @@ module Bosh::Director
       @powerdns_manager = powerdns_manager
       @disk_manager = disk_manager
       @logger = Config.logger
-      @local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
+      encoder = LocalDnsEncoderManager.create_dns_encoder(false)
+      @local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger, encoder)
 
       @blobstore = App.instance.blobstores.blobstore
       @force = options.fetch(:force, false)
