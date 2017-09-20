@@ -46,7 +46,7 @@ bosh/src$ bundle exec rake spec:integration
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
 ```
-bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
+bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration_gocli
 ```
 
 You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` as described in the [workstation setup docs](workstation_setup.md).
