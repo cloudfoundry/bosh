@@ -21,11 +21,9 @@ module Bosh::Director
 
     let(:service_groups) {{
       { instance_group: 'potato-group',
-        network:        'potato-net',
         deployment:     'fake-deployment',
       } => 3,
       { instance_group: 'lemon-group',
-        network:        'surprise-network',
         deployment:     'fake-deployment',
       } => 7,
     }}
@@ -76,12 +74,10 @@ module Bosh::Director
         it 'can look up the group id' do
           expect(subject.id_for_group_tuple(
             'potato-group',
-            'potato-net',
             'fake-deployment'
           )).to eq '3'
           expect(subject.id_for_group_tuple(
             'lemon-group',
-            'surprise-network',
             'fake-deployment'
           )).to eq '7'
         end
@@ -90,12 +86,10 @@ module Bosh::Director
         it 'can still look up the group id' do
           expect(subject.id_for_group_tuple(
             'potato-group',
-            'potato-net',
             'fake-deployment'
           )).to eq '3'
           expect(subject.id_for_group_tuple(
             'lemon-group',
-            'surprise-network',
             'fake-deployment'
           )).to eq '7'
         end

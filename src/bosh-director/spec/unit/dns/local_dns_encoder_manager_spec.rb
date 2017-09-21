@@ -31,9 +31,7 @@ module Bosh::Director
       before do
         deployment = Models::Deployment.make(name: 'a-deployment')
         Models::LocalDnsEncodedAz.create(name: 'az1')
-        net = Models::LocalDnsEncodedNetwork.create(name: 'my-network')
-        ig = Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
-        Models::LocalDnsServiceGroup.create(instance_group_id: ig.id, network_id: net.id)
+        Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
       end
 
       it 'should create a dns encoder that uses the current index' do
@@ -41,7 +39,6 @@ module Bosh::Director
         expect(encoder.id_for_az('az1')).to eq('1')
         expect(encoder.id_for_group_tuple(
           'some-ig',
-          'my-network',
           'a-deployment'
         )).to eq('1')
       end
@@ -87,9 +84,7 @@ module Bosh::Director
       before do
         Models::LocalDnsEncodedAz.create(name: 'old-az')
         deployment = Models::Deployment.make(name: 'old-deployment')
-        net = Models::LocalDnsEncodedNetwork.create(name: 'my-network')
-        ig = Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
-        Models::LocalDnsServiceGroup.create(instance_group_id: ig.id, network_id: net.id)
+        Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
 
         deployment2 = Models::Deployment.make(name: 'new-deployment')
         allow(plan).to receive(:model).and_return deployment2
@@ -104,14 +99,12 @@ module Bosh::Director
         encoder = subject.new_encoder_with_updated_index(plan)
         expect(encoder.id_for_group_tuple(
           'some-ig',
-          'my-network',
-          'new-deployment',
-        )).to eq '3'
-        expect(encoder.id_for_group_tuple(
-          'some-ig',
-          'my-other-network',
           'new-deployment',
         )).to eq '2'
+        expect(encoder.id_for_group_tuple(
+          'some-ig',
+          'old-deployment',
+        )).to eq '1'
       end
 
       it 'respects the short-dns-names configuration in the plan' do
@@ -131,7 +124,7 @@ module Bosh::Director
           deployment_name: 'new-deployment',
           default_network: 'my-network',
           root_domain: 'sub.bosh'
-        )).to eq 'q-s0.g-3.sub.bosh'
+        )).to eq 'q-s0.g-2.sub.bosh'
       end
     end
   end

@@ -14,12 +14,11 @@ module Bosh::Director
       end
 
       service_groups = {}
-      Bosh::Director::Models::LocalDnsServiceGroup.all_groups_eager_load.each do |item|
+      Bosh::Director::Models::LocalDnsEncodedInstanceGroup.eager(:deployment).each do |ig|
         service_groups[{
-          instance_group: item.instance_group.name,
-          deployment: item.instance_group.deployment.name,
-          network: item.network.name
-        }] = item.id.to_s
+          instance_group: ig.name,
+          deployment: ig.deployment.name,
+        }] = ig.id.to_s
       end
 
       Bosh::Director::DnsEncoder.new(service_groups, az_hash, use_short_dns_names)
@@ -47,21 +46,11 @@ module Bosh::Director
       Models::LocalDnsEncodedNetwork.find_or_create(name: name)
     end
 
-    def self.encode_service_group(instance_group, network)
-      Models::LocalDnsServiceGroup.find_or_create(
-        instance_group: instance_group,
-        network: network)
-    end
-
     def self.persist_service_groups(plan)
       deployment_model = plan.model
 
       plan.instance_groups.each do |ig|
-        ig_encoded = encode_instance_group(ig.name, deployment_model)
-        ig.networks.each do |net|
-          net_encoded = encode_network(net.name)
-          encode_service_group(ig_encoded, net_encoded)
-        end
+        encode_instance_group(ig.name, deployment_model)
       end
     end
   end

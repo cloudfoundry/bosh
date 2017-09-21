@@ -31,10 +31,9 @@ module Bosh::Director
       index
     end
 
-    def id_for_group_tuple(instance_group, network, deployment)
+    def id_for_group_tuple(instance_group, deployment)
       index = @service_groups[{
         instance_group: instance_group,
-        network: network,
         deployment: deployment
       }]
       "#{index}"
@@ -73,7 +72,6 @@ module Bosh::Director
     def encode_service_group(criteria)
       "g-#{id_for_group_tuple(
         criteria[:instance_group],
-        criteria[:default_network],
         criteria[:deployment_name])}"
     end
   end

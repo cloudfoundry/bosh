@@ -3,7 +3,7 @@ require_relative '../../../../db_spec_helper'
 module Bosh::Director
   describe 'create_dns_groups' do
     let(:db) { DBSpecHelper.db }
-    let(:migration_file) { '20170915205722_create_local_dns_service_groups.rb' }
+    let(:migration_file) { '20170915205722_create_dns_encoded_networks_and_instance_groups.rb' }
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)
@@ -20,7 +20,7 @@ module Bosh::Director
       }
     end
 
-    it 'creates tables for instance group names and groups' do
+    it 'creates tables for instance group names and networks' do
       db[:local_dns_encoded_instance_groups] << {
         name: 'test_ig',
         deployment_id: 42
@@ -40,17 +40,6 @@ module Bosh::Director
       expect(db[:local_dns_encoded_networks].first).to eq({
         id: 7,
         name: 'test_network'
-      })
-
-      db[:local_dns_service_groups] << {
-        instance_group_id: 1,
-        network_id: 7
-      }
-
-      expect(db[:local_dns_service_groups].first).to eq({
-        id: 1,
-        instance_group_id: 1,
-        network_id: 7
       })
     end
 
@@ -99,69 +88,6 @@ module Bosh::Director
       end
     end
 
-    describe 'dns service groups' do
-      before do
-        db[:local_dns_encoded_networks] << {
-          id: 21,
-          name: 'net1'
-        }
-
-        db[:local_dns_encoded_networks] << {
-          id: 22,
-          name: 'net2'
-        }
-
-        db[:local_dns_encoded_instance_groups] << {
-          id: 3,
-          name: 'group1',
-          deployment_id: 42
-        }
-
-        db[:local_dns_encoded_instance_groups] << {
-          id: 4,
-          name: 'group2',
-          deployment_id: 42
-        }
-      end
-
-      let(:basic_group)                 {{instance_group_id: 3, network_id: 21}}
-      let(:group_with_different_ig_id)  {{instance_group_id: 4, network_id: 21}}
-      let(:group_with_different_net)    {{instance_group_id: 3, network_id: 22}}
-
-      it 'does not allow dupes of a group' do
-        db[:local_dns_service_groups] << basic_group
-        db[:local_dns_service_groups] << group_with_different_ig_id
-        db[:local_dns_service_groups] << group_with_different_net
-
-        expect {
-          db[:local_dns_service_groups] << basic_group
-        }.to raise_error Sequel::UniqueConstraintViolation
-      end
-
-      it 'requires each group to point to real instance groups and networks' do
-        expect {
-          db[:local_dns_service_groups] << {
-            instance_group_id: 8, # doesn't exist
-            network_id: 21
-          }
-        }.to raise_error Sequel::ForeignKeyConstraintViolation
-
-        expect {
-          db[:local_dns_service_groups] << {
-            instance_group_id: 3,
-            network_id: 28 # doesn't exist
-          }
-        }.to raise_error Sequel::ForeignKeyConstraintViolation
-      end
-
-      it 'does not prevent instance group encoding deletion' do
-        db[:local_dns_service_groups] << basic_group
-        expect(db[:local_dns_service_groups].where(instance_group_id: 3).all.count).to eq 1
-        db[:local_dns_encoded_instance_groups].where(id: 3).delete
-        expect(db[:local_dns_service_groups].where(instance_group_id: 3).all.count).to eq 0
-      end
-    end
-
     describe 'encoded networks' do
       it 'does not allow dupes' do
         db[:local_dns_encoded_networks] << {
@@ -190,7 +116,6 @@ module Bosh::Director
       end
 
       it 'requires a real network name' do
-        # not null
         expect {
           db[:local_dns_encoded_networks] << {
             id: 1,
@@ -199,7 +124,5 @@ module Bosh::Director
         }.to raise_error Sequel::NotNullConstraintViolation
       end
     end
-
-    # verify, given mock data
   end
 end

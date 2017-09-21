@@ -31,7 +31,10 @@ module Bosh::Director
     end
     let!(:vm) { Models::Vm.make(instance: instance, active: true) }
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
-    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
+    let(:deployment_model) do
+      manifest = Bosh::Spec::Deployments.legacy_manifest
+      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+    end
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder(false) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
