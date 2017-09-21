@@ -1,6 +1,6 @@
 module Bosh::Director::Models
   class Deployment < Sequel::Model(Bosh::Director::Config.db)
-    many_to_many :stemcells
+    many_to_many :stemcells, order: [Sequel.asc(:name), Sequel.asc(:version)]
     many_to_many :release_versions
     one_to_many  :job_instances, :class => "Bosh::Director::Models::Instance"
     one_to_many  :instances
@@ -8,7 +8,7 @@ module Bosh::Director::Models
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
     many_to_one  :cloud_config
     many_to_many :runtime_configs
-    many_to_many :teams
+    many_to_many :teams, order: Sequel.asc(:name)
     one_to_many  :variable_sets, :class => 'Bosh::Director::Models::VariableSet'
 
     def validate
