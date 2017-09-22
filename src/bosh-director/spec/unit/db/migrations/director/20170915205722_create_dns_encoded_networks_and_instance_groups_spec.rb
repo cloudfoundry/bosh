@@ -7,7 +7,6 @@ module Bosh::Director
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)
-      DBSpecHelper.migrate(migration_file)
 
       db[:deployments] << {
         id: 42,
@@ -21,6 +20,8 @@ module Bosh::Director
     end
 
     it 'creates tables for instance group names and networks' do
+      DBSpecHelper.migrate(migration_file)
+
       db[:local_dns_encoded_instance_groups] << {
         name: 'test_ig',
         deployment_id: 42
@@ -47,6 +48,10 @@ module Bosh::Director
       let(:basic_ig)                {{name: 'test_ig',    deployment_id: 42}}
       let(:ig_in_other_deployment)  {{name: 'test_ig',    deployment_id: 28}}
       let(:ig_with_other_name)      {{name: 'test_ig_2',  deployment_id: 42}}
+
+      before do
+        DBSpecHelper.migrate(migration_file)
+      end
 
       it 'does not allow dupes of an instance group name within a deployment' do
         db[:local_dns_encoded_instance_groups] << basic_ig
@@ -89,6 +94,10 @@ module Bosh::Director
     end
 
     describe 'encoded networks' do
+      before do
+        DBSpecHelper.migrate(migration_file)
+      end
+
       it 'does not allow dupes' do
         db[:local_dns_encoded_networks] << {
           id: 1,
@@ -122,6 +131,73 @@ module Bosh::Director
             name: nil
           }
         }.to raise_error Sequel::NotNullConstraintViolation
+      end
+    end
+
+    describe 'backfilling known content' do
+      it 'records known network names from existing local_dns_records table' do
+        db[:local_dns_records] << {
+          ip: 'dumdumdum',
+          network: 'some-network'
+        }
+        db[:local_dns_records] << {
+          ip: 'dumdumdum',
+          network: 'another'
+        }
+        db[:local_dns_records] << {
+          ip: 'new-ip',
+          network: 'another'
+        }
+        db[:local_dns_records] << {
+          ip: 'new-ip',
+          network: nil
+        }
+        DBSpecHelper.migrate(migration_file)
+        expect(db[:local_dns_encoded_networks].all.count).to eq 2
+        expect(db[:local_dns_encoded_networks].all).to include(id: 1, name: 'some-network')
+        expect(db[:local_dns_encoded_networks].all).to include(id: 2, name: 'another')
+      end
+
+      it 'records known encoded instance groups from existing local_dns_records table' do
+        db[:variable_sets] << {
+          id: 15,
+          deployment_id: 28,
+          created_at: Time.now,
+        }
+
+        db[:instances] << {
+          job: 'alice',
+          index: 0,
+          deployment_id: 28,
+          state: 'running',
+          variable_set_id: 15
+        }
+        db[:instances] << {
+          job: 'bob',
+          index: 1,
+          deployment_id: 28,
+          state: 'running',
+          variable_set_id: 15
+        }
+        db[:instances] << {
+          job: 'bob',
+          index: 2,
+          deployment_id: 28,
+          state: 'running',
+          variable_set_id: 15
+        }
+        db[:instances] << {
+          job: 'alice',
+          index: 0,
+          deployment_id: 42,
+          state: 'running',
+          variable_set_id: 15
+        }
+        DBSpecHelper.migrate(migration_file)
+        expect(db[:local_dns_encoded_instance_groups].all.count).to eq 3
+        expect(db[:local_dns_encoded_instance_groups].all).to include(id: 1, name: 'alice', deployment_id: 28)
+        expect(db[:local_dns_encoded_instance_groups].all).to include(id: 2, name: 'bob', deployment_id: 28)
+        expect(db[:local_dns_encoded_instance_groups].all).to include(id: 3, name: 'alice', deployment_id: 42)
       end
     end
   end
