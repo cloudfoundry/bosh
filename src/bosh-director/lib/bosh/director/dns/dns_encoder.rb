@@ -28,7 +28,7 @@ module Bosh::Director
 
       index = @az_hash[az_name]
       raise RuntimeError.new("Unknown AZ: '#{az_name}'") if index.nil?
-      index
+      "#{index}"
     end
 
     def id_for_group_tuple(instance_group, deployment)
