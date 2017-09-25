@@ -124,9 +124,8 @@ describe 'cpi config', type: :integration do
                                           return_exit_code: true)
 
       expect(exit_code).to_not eq(0)
-      expect(output).to include("Failed to find variable '/cpi-someBarVal1-var' from config server: HTTP code '404'")
-      expect(output).to include("Failed to find variable '/cpi-someFooVal1-var' from config server: HTTP code '404'")
-
+      expect(output).to include("Failed to find variable '/cpi-someBarVal1-var' from config server: HTTP Code '404', Error: 'Name '/cpi-someBarVal1-var' not found'")
+      expect(output).to include("Failed to find variable '/cpi-someFooVal1-var' from config server: HTTP Code '404', Error: 'Name '/cpi-someFooVal1-var' not found'")
     end
   end
 end
