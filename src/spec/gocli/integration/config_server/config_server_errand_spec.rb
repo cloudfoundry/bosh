@@ -67,7 +67,7 @@ describe 'using director with config server and a deployment with errands', type
 Error: Unable to render instance groups for deployment. Errors are:
   - Unable to render jobs for instance group 'fake-errand-name'. Errors are:
     - Unable to render templates for job 'errand1'. Errors are:
-      - Failed to find variable '/TestDirector/errand/gargamel_color_variable' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/errand/gargamel_color_variable' from config server: HTTP Code '404', Error: 'Name '/TestDirector/errand/gargamel_color_variable' not found'
       EOF
     end
   end

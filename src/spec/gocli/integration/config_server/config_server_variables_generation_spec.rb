@@ -148,7 +148,7 @@ describe 'variable generation with config server', type: :integration do
                return_exit_code: true)
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include("Config Server failed to generate value for '/TestDirector/simple/var_d' with type 'certificate'. Error: 'Bad Request'")
+            expect(output).to include("Config Server failed to generate value for '/TestDirector/simple/var_d' with type 'certificate'. HTTP Code '400', Error: 'Loading certificates: No certificate found'")
           end
         end
       end
@@ -166,7 +166,7 @@ describe 'variable generation with config server', type: :integration do
 
       context 'when a variable type is not known by the config server' do
         before do
-          variables << {'name' => 'var_e', 'type' => 'incorrect'}
+          variables << {'name' => 'var_e', 'type' => 'meow'}
         end
 
         it 'throws an error' do
@@ -181,7 +181,7 @@ describe 'variable generation with config server', type: :integration do
           )
 
           expect(exit_code).to_not eq(0)
-          expect(output).to include ("Error: Config Server failed to generate value for '/TestDirector/simple/var_e' with type 'incorrect'. Error: 'Bad Request'")
+          expect(output).to include ("Error: Config Server failed to generate value for '/TestDirector/simple/var_e' with type 'meow'. HTTP Code '400', Error: 'Unsupported value type: meow'")
         end
       end
 
