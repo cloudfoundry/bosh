@@ -1940,7 +1940,11 @@ module Bosh::Director::ConfigServer
 
   class SampleForbiddenResponse < Net::HTTPForbidden
     def initialize
-      super(nil, '403', 'There was a problem.')
+      super(nil, '403', '')
+    end
+
+    def body
+      '{"error": "There was a problem."}'
     end
   end
 end
