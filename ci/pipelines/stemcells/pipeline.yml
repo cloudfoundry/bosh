@@ -166,9 +166,9 @@ jobs:
           passed: [build-vsphere-esxi-ubuntu-trusty]
           tags:
           - vsphere-v5.1
-        - put: environment
-          params:
-            acquire: true
+      - put: environment
+        params:
+          acquire: true
 
       - do:
         - task: deploy-director
