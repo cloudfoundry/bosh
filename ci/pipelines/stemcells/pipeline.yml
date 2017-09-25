@@ -213,16 +213,15 @@ jobs:
             vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
             vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
             azure/bosh-stemcell-%s-azure-hyperv-ubuntu-trusty-go_agent.tgz
-      - aggregate:
-        - put: bosh-src-push
-          params:
-            repository: bosh-src
-            tag: version-tag/tag
-            only_tag: true
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: bosh-src-push
+        params:
+          repository: bosh-src
+          tag: version-tag/tag
+          only_tag: true
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   #
   # WARDEN
@@ -245,14 +244,13 @@ jobs:
           HYPERVISOR:   boshlite
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-      - aggregate:
-        - put: warden-boshlite-ubuntu-trusty
-          params:
-            file: stemcell/*.tgz
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: warden-boshlite-ubuntu-trusty
+        params:
+          file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   #
   # AWS
@@ -275,14 +273,13 @@ jobs:
           HYPERVISOR:   xen
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-      - aggregate:
-        - put: aws-xen-ubuntu-trusty
-          params:
-            file: stemcell/*.tgz
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: aws-xen-ubuntu-trusty
+        params:
+          file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   #
   # Azure
@@ -305,14 +302,13 @@ jobs:
           HYPERVISOR:   hyperv
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-      - aggregate:
-        - put: azure-hyperv-ubuntu-trusty
-          params:
-            file: stemcell/*.tgz
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: azure-hyperv-ubuntu-trusty
+        params:
+          file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   #
   # Google
@@ -335,14 +331,13 @@ jobs:
           HYPERVISOR:   kvm
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-      - aggregate:
-        - put: google-kvm-ubuntu-trusty
-          params:
-            file: stemcell/*-go_agent.tgz
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: google-kvm-ubuntu-trusty
+        params:
+          file: stemcell/*-go_agent.tgz
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   #
   # OpenStack
@@ -372,10 +367,10 @@ jobs:
         - put: openstack-kvm-ubuntu-trusty
           params:
             file: stemcell/*-go_agent.tgz
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   #
   # vSphere
@@ -398,14 +393,13 @@ jobs:
           HYPERVISOR:   esxi
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-      - aggregate:
-        - put: vsphere-esxi-ubuntu-trusty
-          params:
-            file: stemcell/*.tgz
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: vsphere-esxi-ubuntu-trusty
+        params:
+          file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   #
   # vCloud
@@ -428,14 +422,13 @@ jobs:
           HYPERVISOR:   esxi
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-      - aggregate:
-        - put: vcloud-esxi-ubuntu-trusty
-          params:
-            file: stemcell/*.tgz
-        - put: stemcells-index
-          params:
-            repository: stemcells-index
-            rebase: true
+      - put: vcloud-esxi-ubuntu-trusty
+        params:
+          file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repository: stemcells-index
+          rebase: true
 
   - name: bats-ubuntu
     serial: false
