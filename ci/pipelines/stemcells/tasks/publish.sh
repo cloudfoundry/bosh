@@ -26,6 +26,8 @@ git config --global user.email "ci@localhost"
 git config --global user.name "CI Bot"
 git commit -m "publish: $OS_NAME-$OS_VERSION/$VERSION"
 
+cd ..
+
 #
 # copy s3 objects into the public bucket
 #
