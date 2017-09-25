@@ -19,7 +19,7 @@ module Bosh::Director
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:runner) { instance_double(Errand::Runner) }
       let(:errand_step) { instance_double(Errand::LifecycleErrandStep) }
-      let(:instance) { instance_double(DeploymentPlan::Instance) }
+      let(:instance) { instance_double(DeploymentPlan::Instance, current_job_state: double(:current_job_state)) }
       let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
       let(:keep_alive) { false }
       let(:instance_slugs) { [] }
@@ -49,14 +49,17 @@ module Bosh::Director
         end
 
         context 'when multiple instances within multiple instance groups have that job' do
+          let(:job_state1) { double(:job_state1) }
+          let(:job_state2) { double(:job_state2) }
+          let(:job_state3) { double(:job_state3) }
           let(:needed_instance_plans) { [] }
           let(:service_group_name) { 'service-group-name' }
           let(:errand_group_name) { 'errand-group-name' }
-          let(:instance1) { instance_double(DeploymentPlan::Instance, model: instance1_model, job_name: service_group_name, uuid: 'uuid-1', index: 1) }
+          let(:instance1) { instance_double(DeploymentPlan::Instance, model: instance1_model, job_name: service_group_name, uuid: 'uuid-1', index: 1, current_job_state: job_state1) }
           let(:instance1_model) { Models::Instance.make }
-          let(:instance2) { instance_double(DeploymentPlan::Instance, model: instance2_model, job_name: service_group_name, uuid: 'uuid-2', index: 2) }
+          let(:instance2) { instance_double(DeploymentPlan::Instance, model: instance2_model, job_name: service_group_name, uuid: 'uuid-2', index: 2, current_job_state: job_state2) }
           let(:instance2_model) { Models::Instance.make }
-          let(:instance3) { instance_double(DeploymentPlan::Instance, model: instance3_model, job_name: errand_group_name, uuid: 'uuid-3', index: 3) }
+          let(:instance3) { instance_double(DeploymentPlan::Instance, model: instance3_model, job_name: errand_group_name, uuid: 'uuid-3', index: 3, current_job_state: job_state3) }
           let(:instance3_model) { Models::Instance.make }
           let(:instance_group1) { instance_double(DeploymentPlan::InstanceGroup, name: service_group_name, jobs: [job], bind_instances: nil, instances: [instance1, instance2], is_errand?: false) }
           let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [instance3], is_errand?: true, needed_instance_plans: needed_instance_plans) }
@@ -171,6 +174,41 @@ module Bosh::Director
 
             returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
             expect(returned_errands.steps).to contain_exactly(errand_step1, errand_step2, errand_step3)
+          end
+
+          context 'when a matching instance has no vm reference' do
+            let(:job_state2) { nil }
+
+            it 'runs the jobs successfully on all remaining instances' do
+              expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
+              expect(Errand::LifecycleServiceStep).to receive(:new).with(
+                runner, instance1, logger
+              ).and_return(errand_step1)
+              expect(Errand::LifecycleServiceStep).not_to receive(:new).with(
+                runner, instance2, logger
+              )
+              expect(Errand::LifecycleErrandStep).to receive(:new).with(
+                runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, logger
+              ).and_return(errand_step3)
+
+              returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
+              expect(returned_errands.steps).to contain_exactly(errand_step1, errand_step3)
+            end
+
+            it 'writes to the event log that a vm2 was missing' do
+              subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
+              output = task_writer.string
+              lines = output.split("\n")
+
+              line_0_json = JSON.parse(lines[0])
+              expect(line_0_json['state']).to eq('started')
+              expect(line_0_json['stage']).to eq('Preparing deployment')
+
+              line_1_json = JSON.parse(lines[1])
+              expect(line_1_json['message']).to eq("Skipping instance: #{instance2.to_s} " +
+                                                   "no matching VM reference was found")
+              expect(line_1_json['type']).to eq('warning')
+            end
           end
 
           it 'writes to the event log' do
