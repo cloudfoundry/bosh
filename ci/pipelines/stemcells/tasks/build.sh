@@ -8,15 +8,10 @@ check_param HYPERVISOR
 check_param OS_NAME
 check_param OS_VERSION
 
-# optional
-: ${BOSHIO_TOKEN:=""}
-
-# outputs
-output_dir="stemcell"
-mkdir -p ${output_dir}
-
 export TASK_DIR=$PWD
 export CANDIDATE_BUILD_NUMBER=$( cat version/number | sed 's/\.0$//;s/\.0$//' )
+
+git clone stemcells-index stemcells-index-output
 
 # This is copied from https://github.com/concourse/concourse/blob/3c070db8231294e4fd51b5e5c95700c7c8519a27/jobs/baggageclaim/templates/baggageclaim_ctl.erb#L23-L54
 # helps the /dev/mapper/control issue and lets us actually do scary things with the /dev mounts
@@ -75,33 +70,38 @@ sudo --preserve-env --set-home --user ubuntu -- /bin/bash --login -i <<SUDO
   rm -f ./tmp/base_os_image.tgz
 SUDO
 
+#
+# Output and checksum the stemcell artifacts
+#
+
 stemcell_name="bosh-stemcell-$CANDIDATE_BUILD_NUMBER-$IAAS-$HYPERVISOR-$OS_NAME-$OS_VERSION-go_agent"
+meta4_path=$TASK_DIR/stemcells-index-output/dev/$OS_NAME-$OS_VERSION/$CANDIDATE_BUILD_NUMBER/$IAAS-$HYPERVISOR-go_agent.meta4
+
+mkdir -p "$( dirname "$meta4_path" )"
+meta4 create --metalink="$meta4_path"
 
 if [ -e bosh-src/tmp/*-raw.tgz ] ; then
   # openstack currently publishes raw files
   raw_stemcell_filename="${stemcell_name}-raw.tgz"
   mv bosh-src/tmp/*-raw.tgz "${output_dir}/${raw_stemcell_filename}"
 
-  raw_checksum="$(sha1sum "${output_dir}/${raw_stemcell_filename}" | awk '{print $1}')"
-  echo "$raw_stemcell_filename sha1=$raw_checksum"
-  if [ -n "${BOSHIO_TOKEN}" ]; then
-    curl -X POST \
-      --fail \
-      -d "sha1=${raw_checksum}" \
-      -H "Authorization: bearer ${BOSHIO_TOKEN}" \
-      "https://bosh.io/checksums/${raw_stemcell_filename}"
-  fi
+  meta4 import-file --metalink="$meta4_path" --version="$version" "stemcell/${raw_stemcell_filename}"
+  meta4 file-set-url --metalink="$meta4_path" --file="${raw_stemcell_filename}" "https://s3.amazonaws.com/bosh-core-stemcells/${IAAS}/${raw_stemcell_filename}"
 fi
 
 stemcell_filename="${stemcell_name}.tgz"
 mv "bosh-src/tmp/${stemcell_filename}" "${output_dir}/${stemcell_filename}"
+mv "bosh-src/tmp/${stemcell_filename}" "stemcell/${stemcell_filename}"
 
-checksum="$(sha1sum "${output_dir}/${stemcell_filename}" | awk '{print $1}')"
-echo "$stemcell_filename sha1=$checksum"
-if [ -n "${BOSHIO_TOKEN}" ]; then
-  curl -X POST \
-    --fail \
-    -d "sha1=${checksum}" \
-    -H "Authorization: bearer ${BOSHIO_TOKEN}" \
-    "https://bosh.io/checksums/${stemcell_filename}"
-fi
+meta4 import-file --metalink="$meta4_path" --version="$version" "stemcell/${stemcell_filename}"
+meta4 file-set-url --metalink="$meta4_path" --file="${stemcell_filename}" "https://s3.amazonaws.com/bosh-core-stemcells/${IAAS}/${stemcell_filename}"
+
+# just in case we need to debug/verify the live results
+cat "$meta4_path"
+
+cd stemcells-index-output
+
+git add -A
+git config --global user.email "ci@localhost"
+git config --global user.name "CI Bot"
+git commit -m "dev: $OS_NAME-$OS_VERSION/$CANDIDATE_BUILD_NUMBER ($IAAS-$HYPERVISOR)"

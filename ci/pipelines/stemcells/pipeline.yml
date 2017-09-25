@@ -235,13 +235,15 @@ jobs:
         - get: bosh-src
       - task: assert-version-aligned
         file: bosh-src/ci/tasks/assert-version-aligns.yml
-      - task: copy-artifacts
+      - task: copy-ubuntu-trusty-artifacts
         file: bosh-src/ci/pipelines/stemcells/tasks/publish.yml
         params:
           AWS_ACCESS_KEY_ID: {{stemcell_aws_access_key}}
           AWS_SECRET_ACCESS_KEY: {{stemcell_aws_secret_key}}
           CANDIDATE_BUCKET_NAME: {{candidate_stemcell_bucket}}
           PUBLISHED_BUCKET_NAME: {{published_stemcell_bucket}}
+          OS_NAME: ubuntu
+          OS_VERSION: trusty
           COPY_KEYS: |
             aws/bosh-stemcell-%s-aws-xen-ubuntu-trusty-go_agent.tgz
             google/bosh-stemcell-%s-google-kvm-ubuntu-trusty-go_agent.tgz
@@ -269,6 +271,7 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-src
             passed: [build-stemcell]
+          - get: stemcells-index
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
@@ -277,11 +280,14 @@ jobs:
           HYPERVISOR:   boshlite
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: warden-boshlite-ubuntu-trusty
           params:
             file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repo: stemcells-index
+          rebase: true
 
   # - name: build-warden-boshlite-centos-7
   #   plan:
@@ -317,6 +323,7 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-src
             passed: [build-stemcell]
+          - get: stemcells-index
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
@@ -325,11 +332,14 @@ jobs:
           HYPERVISOR:   xen
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: aws-xen-ubuntu-trusty
           params:
             file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repo: stemcells-index
+          rebase: true
 
   # - name: build-aws-xen-centos-7
   #   plan:
@@ -365,6 +375,7 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-src
             passed: [build-stemcell]
+          - get: stemcells-index
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
@@ -373,11 +384,14 @@ jobs:
           HYPERVISOR:   hyperv
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: azure-hyperv-ubuntu-trusty
           params:
             file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repo: stemcells-index
+          rebase: true
 
   # - name: build-azure-hyperv-centos-7
   #   plan:
@@ -413,6 +427,7 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-src
             passed: [build-stemcell]
+          - get: stemcells-index
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
@@ -421,11 +436,14 @@ jobs:
           HYPERVISOR:   kvm
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: google-kvm-ubuntu-trusty
           params:
             file: stemcell/*-go_agent.tgz
+      - put: stemcells-index
+        params:
+          repo: stemcells-index
+          rebase: true
 
   # - name: build-google-kvm-centos-7
   #   plan:
@@ -461,6 +479,7 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-src
             passed: [build-stemcell]
+          - get: stemcells-index
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
@@ -469,7 +488,6 @@ jobs:
           HYPERVISOR:   kvm
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: openstack-kvm-ubuntu-trusty-raw
           params:
@@ -477,6 +495,10 @@ jobs:
         - put: openstack-kvm-ubuntu-trusty
           params:
             file: stemcell/*-go_agent.tgz
+      - put: stemcells-index
+        params:
+          repo: stemcells-index
+          rebase: true
 
   # - name: build-openstack-kvm-centos-7
   #   plan:
@@ -515,6 +537,7 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-src
             passed: [build-stemcell]
+          - get: stemcells-index
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
@@ -523,11 +546,14 @@ jobs:
           HYPERVISOR:   esxi
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: vsphere-esxi-ubuntu-trusty
           params:
             file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repo: stemcells-index
+          rebase: true
 
   # - name: build-vsphere-esxi-centos-7
   #   plan:
@@ -563,6 +589,7 @@ jobs:
             passed: [build-stemcell]
           - get: bosh-src
             passed: [build-stemcell]
+          - get: stemcells-index
       - task: create-stemcell
         file: bosh-src/ci/pipelines/stemcells/tasks/build.yml
         privileged: true
@@ -571,11 +598,14 @@ jobs:
           HYPERVISOR:   esxi
           OS_NAME:      ubuntu
           OS_VERSION:   trusty
-          BOSHIO_TOKEN: {{boshio_checksum_token}}
       - aggregate:
         - put: vcloud-esxi-ubuntu-trusty
           params:
             file: stemcell/*.tgz
+      - put: stemcells-index
+        params:
+          repo: stemcells-index
+          rebase: true
 
   # - name: bats-centos
   #   serial: false
@@ -727,6 +757,13 @@ resources:
     source:
       uri: {{bosh_src_url}}
       branch: {{stemcell-branch}}
+
+  - name: stemcells-index
+    type: git
+    source:
+      uri: git@github.com:bosh-io/stemcells-core-index.git
+      branch: master
+      private_key: {{boshio_stemcells_index_key}}
 
   - name: version
     type: semver

@@ -9,9 +9,12 @@ image_resource:
 inputs:
   - name: bosh-src
   - name: version
+  - name: stemcells-index
 
 outputs:
   - name: stemcell
+  - name: stemcells-index
+    path: stemcells-index-output
 
 run:
   path: bosh-src/ci/pipelines/stemcells/tasks/build.sh
@@ -21,4 +24,3 @@ params:
   HYPERVISOR:   replace-me
   OS_NAME:      replace-me
   OS_VERSION:   replace-me
-  BOSHIO_TOKEN: ""
