@@ -61,13 +61,6 @@ plugins:
       host: localhost
       port: 4242
 
-  - name: cloud_watch
-    events:
-      - heartbeat
-    options:
-      access_key_id: access_key
-      secret_access_key: secret_access_key
-
   - name: resurrector
     events:
       - alerts

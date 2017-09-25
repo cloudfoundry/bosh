@@ -82,6 +82,7 @@ describe Bosh::Director::MetadataUpdater do
             'job' => 'job-value',
             'index' => '12345',
             'name' => 'job-value/some_instance_id',
+            'instance_group' => 'job-value',
           }
           expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
           metadata_updater.update_vm_metadata(instance, {})
@@ -143,11 +144,15 @@ describe Bosh::Director::MetadataUpdater do
       it 'adds instance specific metadata' do
         expected_disk_metadata = {
           'instance_id' => 'some_instance_id',
-          'job' => 'job-value',
           'instance_index' => '12345',
-          'instance_name' => 'job-value/some_instance_id',
+          'instance_group' => 'job-value',
         }
         expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid', hash_including(expected_disk_metadata))
+        metadata_updater.update_disk_metadata(cloud, disk, {})
+      end
+
+      it 'does not include job in disk metadata' do
+        expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid', hash_excluding('job'))
         metadata_updater.update_disk_metadata(cloud, disk, {})
       end
 

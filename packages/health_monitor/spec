@@ -1,7 +1,8 @@
 ---
 name: health_monitor
 dependencies:
-- ruby
+- ruby-2.4
+
 files:
 - bosh-monitor/**/*
 - vendor/cache/*.gem

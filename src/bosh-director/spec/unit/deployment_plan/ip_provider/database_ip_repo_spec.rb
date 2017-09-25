@@ -96,7 +96,7 @@ module Bosh::Director::DeploymentPlan
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
             new_address = Bosh::Director::Models::IpAddress.first
             expect(new_address.static).to eq(false)
-            expect(new_address.address).to eq(original_address.address)
+            expect(new_address.address_str).to eq(original_address.address_str)
           end
         end
 
@@ -116,7 +116,7 @@ module Bosh::Director::DeploymentPlan
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
             new_address = Bosh::Director::Models::IpAddress.first
             expect(new_address.static).to eq(true)
-            expect(new_address.address).to eq(original_address.address)
+            expect(new_address.address_str).to eq(original_address.address_str)
           end
         end
 
@@ -136,7 +136,7 @@ module Bosh::Director::DeploymentPlan
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
             new_address = Bosh::Director::Models::IpAddress.first
             expect(new_address.static).to eq(true)
-            expect(new_address.address).to eq(original_address.address)
+            expect(new_address.address_str).to eq(original_address.address_str)
           end
         end
       end
@@ -174,8 +174,8 @@ module Bosh::Director::DeploymentPlan
           reservation = BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
           ip_repo.add(reservation)
 
-          saved_address = Bosh::Director::Models::IpAddress.order(:address).last
-          expect(saved_address.address).to eq(cidr_ip('192.168.1.5'))
+          saved_address = Bosh::Director::Models::IpAddress.order(:address_str).last
+          expect(saved_address.address_str).to eq(cidr_ip('192.168.1.5').to_s)
           expect(saved_address.network_name).to eq('my-manual-network')
           expect(saved_address.task_id).to eq('fake-task-id')
           expect(saved_address.created_at).to_not be_nil
@@ -304,18 +304,18 @@ module Bosh::Director::DeploymentPlan
           original_saves = {}
           ips.each do |ip|
             ip_address = Bosh::Director::Models::IpAddress.new(
-              address: ip,
+              address_str: ip.to_s,
               network_name: 'my-manual-network',
               instance: instance_model,
               task_id: Bosh::Director::Config.current_job.task_id
             )
             original_save = ip_address.method(:save)
-            original_saves[ip] = original_save
+            original_saves[ip.to_s] = original_save
           end
 
           allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save) do |model|
-            if ips.include?(model.address)
-              original_save = original_saves[model.address]
+            if ips.map(&:to_s).include?(model.address_str)
+              original_save = original_saves[model.address_str]
               original_save.call
               raise fail_error
             end

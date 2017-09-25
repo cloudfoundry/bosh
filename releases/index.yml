@@ -49,6 +49,8 @@ builds:
     version: "82"
   19200fec012800c5725bf021e47c2ce8baa784f1:
     version: "39"
+  19b323d7-7e06-42b9-6c81-763dec1d4f46:
+    version: 263.2.0
   19e85380-7867-4ad3-a222-fc973f414762:
     version: "255.5"
   1abbb9d95dd0121a238e319580cda00dcc9d6e82:
@@ -501,6 +503,8 @@ builds:
     version: "161"
   d514d2325bacf762d34a0642bb7cacd4bd61cfab:
     version: "40"
+  d550dedd-ec31-442e-61e2-a4885d15abb3:
+    version: 263.1.0
   d5cfd8f9d0c72587e65f7dd498dde62a8794dce6:
     version: "29"
   d673a62319f43c39b37db7062dec46db2cb66dff:

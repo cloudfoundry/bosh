@@ -34,10 +34,10 @@ module Bosh::Director
         end
 
         runner = Errand::Runner.new(errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
-
         matcher = Errand::InstanceMatcher.new(requested_instances)
+        matching_instance_group, unmatched_filters = matcher.match(errand_instance_groups)
 
-        errand_steps = errand_instance_groups.map do |errand_instance_group|
+        errand_steps = matching_instance_group.map do |errand_instance_group, matching_instances|
           errand_instance_group.bind_instances(deployment_planner.ip_provider)
 
           if errand_instance_group.is_errand?
@@ -45,7 +45,7 @@ module Bosh::Director
             target_instance = errand_instance_group.instances.first
             compile_step(deployment_planner).perform
 
-            if matcher.matches?(target_instance, errand_instance_group.instances)
+            if matching_instances.include?(target_instance)
               Errand::LifecycleErrandStep.new(
                 runner,
                 deployment_planner,
@@ -57,17 +57,14 @@ module Bosh::Director
                 @logger)
             end
           else
-            errand_instance_group.instances.map do |target_instance|
-              if matcher.matches?(target_instance, errand_instance_group.instances)
-                Errand::LifecycleServiceStep.new(runner, target_instance, @logger)
-              end
+            matching_instances.collect do |target_instance|
+              Errand::LifecycleServiceStep.new(runner, target_instance, @logger)
             end
           end
         end
 
-        unmatched = matcher.unmatched_criteria
-        if unmatched.any?
-          raise "No instances match selection criteria: [#{ unmatched.join(', ') }]"
+        if unmatched_filters.any?
+          raise "No instances match selection criteria: [#{ unmatched_filters.join(', ') }]"
         end
 
         result = Errand::ParallelStep.new(Config.max_threads, errand_name, deployment_planner.model, errand_steps.flatten.compact)

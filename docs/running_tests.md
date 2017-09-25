@@ -37,7 +37,7 @@ bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
 
 ### Integration Tests
 
-Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. Run the integration tests with the `spec:integration` rake task:
+Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](workstation_setup.md). Run the integration tests with the `spec:integration` rake task:
 
 ```
 bosh/src$ bundle exec rake spec:integration
@@ -46,8 +46,22 @@ bosh/src$ bundle exec rake spec:integration
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
 ```
-bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration
+bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration_gocli
 ```
+
+You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` as described in the [workstation setup docs](workstation_setup.md).
+
+```
+bosh/src$ bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+```
+
+Run tests against a specific database by setting the `DB` environment variable.
+
+```
+bosh/src$ DB=mysql bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+```
+
+The integration test are run in a sandbox, detailed logs can be found in folder like `src/tmp/integration-tests-workspace/pid-<pid>/sandbox/boshdir/tasks/<n>/debug`.
 
 ### Acceptance Tests (BATs)
 

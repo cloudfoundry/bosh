@@ -31,7 +31,7 @@ packages:
 - libpq
 - postgres-9.4
 - mysql
-- ruby
+- ruby-2.4
 - s3cli
 - davcli
 - bosh-gcscli
@@ -49,6 +49,9 @@ properties:
   director.port:
     description: Port that the director nginx listens on
     default: 25555
+  director.ipv6_listen:
+    description: Enable binding to IPv6 addresses
+    default: false
   director.backend_port:
     description: Port that the director listens on
     default: 25556

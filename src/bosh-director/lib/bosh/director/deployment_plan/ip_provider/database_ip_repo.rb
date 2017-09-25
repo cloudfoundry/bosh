@@ -11,7 +11,7 @@ module Bosh::Director::DeploymentPlan
     def delete(ip, _)
       cidr_ip = CIDRIP.new(ip)
 
-      ip_address = Bosh::Director::Models::IpAddress.first(address: cidr_ip.to_i)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: cidr_ip.to_i.to_s)
 
       if ip_address
         @logger.debug("Releasing ip '#{cidr_ip}'")
@@ -73,7 +73,11 @@ module Bosh::Director::DeploymentPlan
                .reject {|a| a < first_range_address }
                .sort
                .find { |a| !addresses_we_cant_allocate.include?(a+1) }
-      ip_address = NetAddr::CIDRv4.new(addr+1)
+      if subnet.range.version == 6
+        ip_address = NetAddr::CIDRv6.new(addr+1)
+      else
+        ip_address = NetAddr::CIDRv4.new(addr+1)
+      end
 
       unless subnet.range == ip_address || subnet.range.contains?(ip_address)
         raise NoMoreIPsAvailableAndStopRetrying
@@ -85,14 +89,14 @@ module Bosh::Director::DeploymentPlan
     end
 
     def all_ip_addresses
-      Bosh::Director::Models::IpAddress.select(:address).all.map { |a| a.address }
+      Bosh::Director::Models::IpAddress.select(:address_str).all.map { |a| a.address_str.to_i }
     end
 
     def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
       # try to save IP first before validating its instance to prevent race conditions
       save_ip(ip, reservation, is_static)
     rescue IpFoundInDatabaseAndCanBeRetried
-      ip_address = Bosh::Director::Models::IpAddress.first(address: ip.to_i)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_i.to_s)
 
       retry unless ip_address
 
@@ -119,7 +123,7 @@ module Bosh::Director::DeploymentPlan
 
     def save_ip(ip, reservation, is_static)
       reservation.instance_model.add_ip_address(
-        address: ip.to_i,
+        address_str: ip.to_i.to_s,
         network_name: reservation.network.name,
         task_id: Bosh::Director::Config.current_job.task_id,
         static: is_static

@@ -42,10 +42,6 @@ nats/vendor/cache/thin-1.5.1.gem:
   size: 55296
   object_id: 5b19908f-9a4c-4b03-a377-29d7b9d00a9b
   sha: 4280f5a3db7c4d6470c15f6acec9a0dded057ab8
-nats/vendor/cache/yajl-ruby-1.1.0.gem:
-  size: 559616
-  object_id: 9d949fd3-d8d9-45f0-92ab-4a8f5a9abc56
-  sha: b22512fc1bd68f495f4538d3e29735da494bea04
 nginx/headers-more-nginx-module-0.30.tar.gz:
   size: 27793
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
@@ -74,22 +70,6 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-ruby/bundler-1.15.3.gem:
-  size: 336384
-  object_id: faae3244-82c9-400b-542b-2da1741f01e7
-  sha: bd1e1ba80789ea013a11a2909a154dcee118ebbc
-ruby/ruby-2.3.1.tar.gz:
-  size: 17797997
-  object_id: bcd99e02-ae75-4d74-beff-ab517520c75c
-  sha: c39b4001f7acb4e334cb60a0f4df72d434bef711
-ruby/rubygems-2.6.4.tgz:
-  size: 478582
-  object_id: 91c3d9ab-be40-4d2b-a3d0-0cdcccb48ebe
-  sha: 8ef39e536af2ecd20b0e7a95765fa6a485087ac8
-ruby/yaml-0.1.7.tar.gz:
-  size: 527518
-  object_id: 638fbb05-dabe-4ae1-4f1a-7ae43721d77d
-  sha: 3590cbf092ef4c71bc0a9b404c00a626b1e04dee
 s3cli/s3cli-0.0.55-linux-amd64:
   size: 10330042
   object_id: 7131652f-fdc7-4a84-4437-c22c908e0148

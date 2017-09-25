@@ -428,8 +428,8 @@ module Bosh::Director
       post '/:deployment/errands/:errand_name/runs' do
         errand_name = params[:errand_name]
         parsed_request_body = json_decode(request.body.read)
-        keep_alive = parsed_request_body['keep-alive'] || FALSE
-        when_changed = parsed_request_body['when-changed'] || FALSE
+        keep_alive = parsed_request_body['keep-alive'] || false
+        when_changed = parsed_request_body['when-changed'] || false
         instances = parsed_request_body['instances'] || []
 
         task = JobQueue.new.enqueue(

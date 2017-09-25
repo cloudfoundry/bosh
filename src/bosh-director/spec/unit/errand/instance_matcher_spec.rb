@@ -4,188 +4,164 @@ module Bosh::Director
   describe Errand::InstanceMatcher do
     subject(:matcher) { Errand::InstanceMatcher.new(requested) }
     let(:instances_in_group) { [] }
-    context 'when no requested instances are supplied' do
-      let(:requested) { [] }
+
+    describe '#match' do
       let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name') }
+      let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance], name: 'group-name') }
 
-      it 'matches always' do
-        expect(matcher.matches?(instance, instances_in_group)).to eq(true)
-      end
+      context 'when no requested instances are supplied' do
+        let(:requested) { [] }
 
-      it 'has no unmatched criteria' do
-        expect(matcher.unmatched_criteria).to eq([])
-      end
-    end
-
-    context 'when matching by group name' do
-      let(:requested) { [{'group' => 'group-name'}] }
-      let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name') }
-
-      context 'when the instance matches' do
-        it 'returns true' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(true)
-        end
-
-        it 'reports no unmatched requests' do
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name'}])
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([])
+        it 'matches always' do
+          matching_instances, unmatched = matcher.match([instance_group])
+          expect( matching_instances ).to eq({instance_group => [instance]})
+          expect( unmatched ).to eq []
         end
       end
 
-      context 'when the instance does not match' do
-        let(:requested) { [{'group' => 'different-group-name'}] }
-        it 'returns false' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(false)
+      context 'when matching by group name' do
+        let(:instance2) { instance_double(DeploymentPlan::Instance, job_name: 'group-name-2') }
+        let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance2], name: 'group-name-2') }
+
+        let(:requested) { [{'group' => 'group-name'}] }
+
+        it 'returns all instances from the group but no other' do
+          matching_instances, unmatched = matcher.match([instance_group, instance_group2])
+          expect( matching_instances ).to eq(instance_group => [instance])
+          expect( unmatched ).to eq []
         end
 
-        it 'reports no unmatched requests' do
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'different-group-name'}])
-        end
-      end
-    end
+        context 'when the group name does not exist' do
+          let(:requested) { [{'group' => 'does-not-exist'}] }
 
-    context 'when matching by group name and uuid' do
-      let(:requested) { [{'group' => 'group-name', 'id' => '123abc'}] }
-      let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
-
-      context 'when the instance does not match' do
-        let(:requested) { [{'group' => 'group-name', 'id' => '123def'}] }
-
-        it 'returns true' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(false)
+          it 'reports unmatched filter' do
+            matching_instances, unmatched = matcher.match([instance_group, instance_group2])
+            expect( matching_instances.empty? ).to be_truthy
+            expect( unmatched ).to contain_exactly(*requested)
+          end
         end
 
-        it 'reports unmatched requests' do
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '123def'}])
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '123def'}])
+        context 'when the group specified is real but with 0 instances' do
+          let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [], name: 'group-name') }
+
+          it 'reports no instances and no unmatched' do
+            matching_instances, unmatched = matcher.match([instance_group, instance_group2])
+            expect( matching_instances.empty? ).to be_truthy
+            expect( unmatched ).to eq []
+          end
         end
-      end
+        context 'when matching by group name and uuid' do
+          let(:requested) { [{'group' => 'group-name', 'id' => '123abc'}] }
+          let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
+          let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance], name: 'group-name') }
 
-      context 'when the instance matches' do
-        let(:requested) { [{'group' => 'group-name', 'id' => '123abc'}] }
+          context 'when the instance does not match' do
+            let(:requested) { [{'group' => 'group-name', 'id' => '123def'}] }
 
-        it 'returns true' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(true)
+            it 'reports unmatched filter' do
+              matching_instances, unmatched = matcher.match([instance_group])
+              expect( matching_instances.empty? ).to be_truthy
+              expect( unmatched ).to eq [*requested]
+            end
+          end
+
+          context 'when the instance matches' do
+            let(:requested) { [{'group' => 'group-name', 'id' => '123abc'}] }
+
+            it 'returns true' do
+              matching_instances, unmatched = matcher.match([instance_group])
+              expect( matching_instances ).to eq instance_group => [instance]
+              expect( unmatched ).to eq []
+            end
+
+          end
         end
+        context 'when matching by group name and index' do
+          let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
+          let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance], name: 'group-name') }
 
-        it 'reports no unmatched requests' do
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '123abc'}])
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([])
+          context 'when the instance matches' do
+            let(:requested) { [{'group' => 'group-name', 'id' => '2'}] }
+            it 'returns true' do
+              matching_instances, unmatched = matcher.match([instance_group])
+              expect( matching_instances ).to eq instance_group => [instance]
+              expect( unmatched ).to eq []
+            end
+          end
+
+          context 'when the instance does not match' do
+            let(:requested) { [{'group' => 'group-name', 'id' => '3'}] }
+
+
+            it 'reports unmatched requests' do
+              matching_instances, unmatched = matcher.match([instance_group, instance_group2])
+              expect( matching_instances.empty? ).to be_truthy
+              expect( unmatched ).to contain_exactly(*requested)
+            end
+          end
         end
-      end
-    end
+        context 'when criteria overlap' do
+          let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
+          let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance], name: 'group-name') }
 
-    context 'when matching by group name and index' do
-      let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
+          context 'when the instance matches all crieterias' do
+            let(:requested) { [{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123abc'}, {'group' => 'group-name'}] }
 
-      context 'when the instance matches' do
-        let(:requested) { [{'group' => 'group-name', 'id' => '2'}] }
-        it 'returns true' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(true)
+            it 'reports no unmatched requests' do
+              matching_instances, unmatched = matcher.match([instance_group])
+              expect( matching_instances ).to eq instance_group => [instance]
+              expect( unmatched ).to eq []
+            end
+          end
+
+          context 'when the instance matches some criteria' do
+            let(:requested) { [{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123abc'}, {'group' => 'other-group-name'}] }
+
+            it 'reports unmatched requests' do
+              matching_instances, unmatched = matcher.match([instance_group, instance_group2])
+              expect( matching_instances ).to eq instance_group => [instance]
+              expect( unmatched ).to contain_exactly({'group' => 'other-group-name'})
+            end
+          end
         end
+        context 'when run against multiple instances' do
+          let(:instance1) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
+          let(:instance2) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123def', index: 0) }
+          let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance1,instance2], name: 'group-name') }
 
-        it 'reports no unmatched requests' do
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '2'}])
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([])
+          let(:requested) { [{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123def'}, {'group' => 'other-group-name', 'id' => 'foo'}] }
+
+          it 'recalls all that criteria that have ever been matched by any instance' do
+            matching_instances, unmatched = matcher.match([instance_group])
+            expect( matching_instances ).to eq instance_group => [instance1, instance2]
+            expect( unmatched ).to contain_exactly({'group' => 'other-group-name', 'id' => 'foo'})
+          end
         end
-      end
+        context 'when matching by instance-group/first' do
+          let(:instance1) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: 'a', index: 2) }
+          let(:instance2) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: 'b', index: 0) }
+          let(:instance3) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: 'c', index: 0) }
+          let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance1,instance2,instance3], name: 'group-name') }
 
-      context 'when the instance does not match' do
-        let(:requested) { [{'group' => 'group-name', 'id' => '3'}] }
+          let(:requested) { [{'group' => 'group-name', 'id' => 'first'}] }
 
-        it 'returns true' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(false)
+          it 'matches on the instance with the first instance sorted by uuid' do
+            matching_instances, unmatched = matcher.match([instance_group])
+            expect( matching_instances ).to eq instance_group => [instance1]
+            expect( unmatched ).to eq []
+          end
         end
+        context 'with malformed filters' do
+          let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name') }
+          let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, instances: [instance], name: 'group-name') }
+          let(:requested) { ['group', 7, [], nil] }
 
-        it 'reports unmatched requests' do
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '3'}])
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '3'}])
+          it 'quietly does not match any instances' do
+            matching_instances, unmatched = matcher.match([instance_group])
+            expect( matching_instances.empty? ).to be_truthy
+            expect( unmatched ).to eq [*requested]
+          end
         end
-      end
-    end
-
-    context 'when criteria overlap' do
-      let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
-
-      context 'when the instance matches all crieterias' do
-        let(:requested) { [{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123abc'}, {'group' => 'group-name'}] }
-
-        it 'returns true' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(true)
-        end
-
-        it 'reports no unmatched requests' do
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123abc'}, {'group' => 'group-name'}])
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([])
-        end
-      end
-
-      context 'when the instance matches some criteria' do
-        let(:requested) { [{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123abc'}, {'group' => 'other-group-name'}] }
-
-        it 'returns true' do
-          expect(matcher.matches?(instance, instances_in_group)).to eq(true)
-        end
-
-        it 'reports no unmatched requests' do
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123abc'}, {'group' => 'other-group-name'}])
-          matcher.matches?(instance, instances_in_group)
-          expect(matcher.unmatched_criteria).to eq([{'group' => 'other-group-name'}])
-        end
-      end
-    end
-
-    context 'when run against multiple instances' do
-      let(:instance1) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123abc', index: 2) }
-      let(:instance2) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: '123def', index: 0) }
-      let(:requested) { [{'group' => 'group-name', 'id' => '2'}, {'group' => 'group-name', 'id' => '123def'}, {'group' => 'other-group-name', 'id' => 'foo'}] }
-
-      it 'recalls all that criteria that have ever been matched by any instance' do
-        expect(matcher.matches?(instance1, instances_in_group)).to eq(true)
-        expect(matcher.matches?(instance2, instances_in_group)).to eq(true)
-        expect(matcher.unmatched_criteria).to eq([{'group' => 'other-group-name', 'id' => 'foo'}])
-      end
-    end
-
-    context 'when matching by instance-group/first' do
-      let(:instance1) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: 'a', index: 2) }
-      let(:instance2) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: 'b', index: 0) }
-      let(:instance3) { instance_double(DeploymentPlan::Instance, job_name: 'group-name', uuid: 'c', index: 0) }
-      let(:instances_in_group) { [instance3, instance1, instance2] }
-      let(:requested) { [{'group' => 'group-name', 'id' => 'first'}] }
-
-      it 'matches on the instance with the first instance sorted by uuid' do
-        expect(matcher.matches?(instance1, instances_in_group)).to eq(true)
-      end
-
-      it 'does not match against the other instances in the group' do
-        expect(matcher.matches?(instance2, instances_in_group)).to eq(false)
-        expect(matcher.matches?(instance3, instances_in_group)).to eq(false)
-      end
-
-      it 'recalls that the criteria has been matched' do
-        expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => 'first'}])
-        matcher.matches?(instance2, instances_in_group)
-        expect(matcher.unmatched_criteria).to eq([{'group' => 'group-name', 'id' => 'first'}])
-        matcher.matches?(instance1, instances_in_group)
-        expect(matcher.unmatched_criteria).to eq([])
-      end
-    end
-
-    context 'with malformed filters' do
-      let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'group-name') }
-      let(:requested) { ['group', 7, [], nil] }
-
-      it 'quietly does not match any instances' do
-        expect(matcher.matches?(instance, instances_in_group)).to eq(false)
-        expect(matcher.unmatched_criteria).to eq(['group', 7, [], nil])
       end
     end
   end

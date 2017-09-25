@@ -19,7 +19,7 @@ module Bosh::Director
         end
 
         if diff.missing.empty? && !diff.obsolete.empty?
-          insert_tombstone
+          Models::LocalDnsRecord.insert_tombstone
         end
       end
     end
@@ -41,7 +41,7 @@ module Bosh::Director
         Config.db.transaction do
           @logger.debug("Deleting local dns records for '#{instance_model}' records: #{records.map(&:to_hash)}")
           records.map(&:delete)
-          insert_tombstone
+          Models::LocalDnsRecord.insert_tombstone
         end
       end
     end
@@ -78,10 +78,6 @@ module Bosh::Director
 
     def delete_obsolete_local_dns_records(record_hash)
       Models::LocalDnsRecord.where(record_hash).delete
-    end
-
-    def insert_tombstone
-      Models::LocalDnsRecord.create(:ip => "#{SecureRandom.uuid}-tombstone")
     end
 
     def insert_new_record(attrs)

@@ -38,14 +38,14 @@ module Bosh::Director
         new(name, parsed_addon_jobs, addon_level_properties, addon_include, addon_exclude)
       end
 
-      def applies?(deployment_name, deployment_instance_group)
-        @addon_include.applies?(deployment_name, deployment_instance_group) && !@addon_exclude.applies?(deployment_name, deployment_instance_group)
+      def applies?(deployment_name, deployment_teams, deployment_instance_group)
+        @addon_include.applies?(deployment_name, deployment_teams, deployment_instance_group) && !@addon_exclude.applies?(deployment_name, deployment_teams, deployment_instance_group)
       end
 
       def add_to_deployment(deployment)
         jobs = convert_addon_jobs_to_object(deployment)
         deployment.instance_groups.each do |instance_group|
-          if applies?(deployment.name, instance_group)
+          if applies?(deployment.name, deployment.team_names, instance_group)
             add_jobs_to_instance_group(instance_group, jobs)
           end
         end

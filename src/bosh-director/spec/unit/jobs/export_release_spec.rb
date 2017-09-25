@@ -16,6 +16,8 @@ module Bosh::Director
     let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
     let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
+    let(:options) { {} }
+
     before do
       fake_locks
       allow(Digest::MultiDigest).to receive(:new).and_return(multi_digest)
@@ -33,7 +35,7 @@ module Bosh::Director
       allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
     end
 
-    subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2) }
+    subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2, options) }
 
     def create_stemcell
       Bosh::Director::Models::Stemcell.create(
@@ -209,7 +211,7 @@ module Bosh::Director
                 allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
                 allow(planner).to receive(:release)
                 allow(planner).to receive(:add_instance_group)
-                allow(job).to receive(:create_instance_group_with_all_the_jobs_so_everything_compiles)
+                allow(job).to receive(:create_compilation_instance_group)
               }
 
               it 'skips links binding' do
@@ -232,22 +234,41 @@ module Bosh::Director
         let(:planner_factory) { DeploymentPlan::PlannerFactory.create(logger) }
         let(:planner) { planner_factory.create_from_model(deployment_model) }
         let(:task_dir) { Dir.mktmpdir }
+        let(:release) {Bosh::Director::Models::Release.create(name: release_name)}
+        let(:release_version) {release.add_version(:version => '0.1-dev')}
 
-        before {
-          release = Bosh::Director::Models::Release.create(name: release_name)
-          release_version = release.add_version(:version => '0.1-dev')
+        before do
           release_version.add_package(Bosh::Director::Models::Package.make(name: 'foo'))
           release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
+
           release_version.add_template(
             :name => deployment_manifest['jobs'].first['templates'].first['name'],
             :version => 'foo_version',
             :release_id => release.id,
-            fingerprint: 'foo_fingerprint',
-            :blobstore_id => 'foo_blobstore_id',
+            fingerprint: 'foobar_fingerprint',
+            :blobstore_id => 'foobar_blobstore_id',
             :sha1 => 'foo_sha1',
             :package_names_json => '["foo", "bar"]')
 
-          stemcell = create_stemcell
+          release_version.add_template(
+            :name => 'foobaz',
+            :version => 'foo_version',
+            :release_id => release.id,
+            fingerprint: 'foobaz_fingerprint',
+            :blobstore_id => 'foobaz_blobstore_id',
+            :sha1 => 'foo_sha1',
+            :package_names_json => '["foo", "bar"]')
+
+          release_version.add_template(
+            :name => 'foofoo',
+            :version => 'foo_version',
+            :release_id => release.id,
+            fingerprint: 'foofoo_fingerprint',
+            :blobstore_id => 'foofoo_blobstore_id',
+            :sha1 => 'foo_sha1',
+            :package_names_json => '["foo", "bar"]')
+
+          create_stemcell
 
           package_ruby = release_version.add_package(
               name: 'ruby',
@@ -292,7 +313,7 @@ module Bosh::Director
           allow(planner_factory).to receive(:create_from_model).and_return(planner)
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
-        }
+        end
 
         it 'should order the files in the tarball' do
           allow(blobstore_client).to receive(:get)
@@ -304,8 +325,9 @@ module Bosh::Director
           job.perform
         end
 
-        it 'should contain all compiled packages & jobs' do
-          allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+        context 'when specific jobs are not specified' do
+          it 'should contain all compiled packages & jobs' do
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
               files = Dir.entries(download_dir)
               expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
@@ -316,19 +338,21 @@ module Bosh::Director
               expect(files).to include('foobar.tgz')
 
               File.write(output_path, 'Some glorious content')
-          }
+            }
 
-          expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-          expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
-          expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
-          expect(blobstore_client).to receive(:get).with('foo_blobstore_id', anything, sha1: 'foo_sha1')
-          job.perform
-        end
+            expect(blobstore_client).to receive(:create).and_return('blobstore_id')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('foobar_blobstore_id', anything, sha1: 'foo_sha1')
+            expect(blobstore_client).to receive(:get).with('foobaz_blobstore_id', anything, sha1: 'foo_sha1')
+            expect(blobstore_client).to receive(:get).with('foofoo_blobstore_id', anything, sha1: 'foo_sha1')
+            job.perform
+          end
 
-        it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
-          allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
-             manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
-             expected_manifest_hash = YAML.load(%q(---
+          it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
+              expected_manifest_hash = YAML.load(%q(---
 compiled_packages:
 - name: postgres
   version: postgres_version
@@ -346,7 +370,15 @@ compiled_packages:
 jobs:
 - name: foobar
   version: foo_version
-  fingerprint: foo_fingerprint
+  fingerprint: foobar_fingerprint
+  sha1: foo_sha1
+- name: foobaz
+  version: foo_version
+  fingerprint: foobaz_fingerprint
+  sha1: foo_sha1
+- name: foofoo
+  version: foo_version
+  fingerprint: foofoo_fingerprint
   sha1: foo_sha1
 commit_hash: unknown
 uncommitted_changes: false
@@ -354,23 +386,134 @@ name: bosh-release
 version: 0.1-dev
 ))
 
-             File.write(output_path, 'Some glorious content')
+              File.write(output_path, 'Some glorious content')
 
-             expect(manifest_hash['compiled_packages']).to match_array(expected_manifest_hash['compiled_packages'])
-             expect(manifest_hash['jobs']).to match_array(expected_manifest_hash['jobs'])
+              expect(manifest_hash['compiled_packages']).to match_array(expected_manifest_hash['compiled_packages'])
+              expect(manifest_hash['jobs']).to match_array(expected_manifest_hash['jobs'])
 
-             manifest_hash.delete('compiled_packages')
-             expected_manifest_hash.delete('compiled_packages')
-             manifest_hash.delete('jobs')
-             expected_manifest_hash.delete('jobs')
+              manifest_hash.delete('compiled_packages')
+              expected_manifest_hash.delete('compiled_packages')
+              manifest_hash.delete('jobs')
+              expected_manifest_hash.delete('jobs')
 
-             expect(manifest_hash).to eq(expected_manifest_hash)
+              expect(manifest_hash).to eq(expected_manifest_hash)
+            }
+
+            allow(blobstore_client).to receive(:get)
+            allow(blobstore_client).to receive(:create).and_return('blobstore_id')
+
+            job.perform
+          end
+        end
+
+        context 'when an empty list of jobs are specified' do
+          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
+          let(:options) {
+            {
+              'jobs' => []
+            }
           }
 
-          allow(blobstore_client).to receive(:get)
-          allow(blobstore_client).to receive(:create).and_return('blobstore_id')
+          it 'should contain all jobs' do
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              files = Dir.entries(download_dir)
+              expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
-          job.perform
+              files = Dir.entries(File.join(download_dir, 'compiled_packages'))
+              expect(files).to include('postgres.tgz')
+
+              files = Dir.entries(File.join(download_dir, 'jobs'))
+              expect(files).to contain_exactly('.', '..', 'foobaz.tgz', 'foobar.tgz', 'foofoo.tgz')
+
+              File.write(output_path, 'Some glorious content')
+            }
+
+            expect(blobstore_client).to receive(:create).and_return('blobstore_id')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
+            allow(blobstore_client).to receive(:get)
+            job.perform
+          end
+        end
+
+        context 'when specific jobs are specified' do
+          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
+
+          let(:options) {
+            {
+              'jobs' => [{'name' => 'foobaz'}]
+            }
+          }
+
+          it 'should contain only specified jobs' do
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              files = Dir.entries(download_dir)
+              expect(files).to include('compiled_packages', 'release.MF', 'jobs')
+
+              files = Dir.entries(File.join(download_dir, 'compiled_packages'))
+              expect(files).to include('postgres.tgz')
+
+              files = Dir.entries(File.join(download_dir, 'jobs'))
+              expect(files).to include('foobaz.tgz')
+              expect(files).not_to include('foobar.tgz', 'foofoo.tgz')
+
+              File.write(output_path, 'Some glorious content')
+            }
+
+            expect(blobstore_client).to receive(:create).and_return('blobstore_id')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
+            allow(blobstore_client).to receive(:get)
+            job.perform
+          end
+
+          it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
+            allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+              manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
+              expected_manifest_hash = YAML.load(%q(---
+compiled_packages:
+- name: postgres
+  version: postgres_version
+  fingerprint: postgres_fingerprint
+  sha1: postgrescompiledpackagesha1
+  stemcell: ubuntu/1
+  dependencies:
+  - ruby
+- name: ruby
+  version: ruby_version
+  fingerprint: ruby_fingerprint
+  sha1: rubycompiledpackagesha1
+  stemcell: ubuntu/1
+  dependencies: []
+jobs:
+- name: foobaz
+  version: foo_version
+  fingerprint: foobaz_fingerprint
+  sha1: foo_sha1
+commit_hash: unknown
+uncommitted_changes: false
+name: bosh-release
+version: 0.1-dev
+))
+
+              File.write(output_path, 'Some glorious content')
+
+              expect(manifest_hash['compiled_packages']).to match_array(expected_manifest_hash['compiled_packages'])
+              expect(manifest_hash['jobs']).to match_array(expected_manifest_hash['jobs'])
+
+              manifest_hash.delete('compiled_packages')
+              expected_manifest_hash.delete('compiled_packages')
+              manifest_hash.delete('jobs')
+              expected_manifest_hash.delete('jobs')
+
+              expect(manifest_hash).to eq(expected_manifest_hash)
+            }
+
+            allow(blobstore_client).to receive(:get)
+            allow(blobstore_client).to receive(:create).and_return('blobstore_id')
+
+            job.perform
+          end
         end
 
         it 'should put a tarball in the blobstore' do

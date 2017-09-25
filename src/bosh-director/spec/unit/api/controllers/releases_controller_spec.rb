@@ -164,12 +164,12 @@ module Bosh::Director
           post '/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
         end
 
-        context 'when the request does not contains the sha2 flag' do
+        context 'when the request does NOT contains the sha2 flag' do
           before { authorize 'admin', 'admin' }
 
           it 'authenticated access redirect to the created task' do
             expected_sha2_param = nil
-            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param]
+            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param, {:jobs => nil}]
             expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
             perform
           end
@@ -190,7 +190,7 @@ module Bosh::Director
 
           it 'authenticated access redirect to the created task' do
             expected_sha2_param = 'true'
-            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param]
+            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param, {:jobs => nil}]
             expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
             perform
           end
@@ -222,6 +222,38 @@ module Bosh::Director
           it 'returns versions' do
             perform
             expect(last_response.status).to eq(401)
+          end
+        end
+
+        context 'when user specifies jobs' do
+          let(:params) do
+            {
+              release_name: 'release-name-value',
+              release_version: 'release-version-value',
+              stemcell_os:    'bosh-stemcell-os-value',
+              stemcell_version:    'bosh-stemcell-version-value',
+              jobs: [
+                {name: 'foo'},
+                {name: 'bar'},
+              ],
+            }
+          end
+
+          before { authorize 'admin', 'admin' }
+          it 'creates export-release task with jobs param populated' do
+            mock_release_manager = instance_double('Bosh::Director::Api::ReleaseManager')
+            allow(ReleaseManager).to receive(:new).and_return(mock_release_manager)
+
+            expected_options = {
+              :jobs => [
+                {'name' => 'foo'},
+                {'name' => 'bar'},
+              ]
+            }
+
+            expected_params = [nil, params[:release_name], params[:release_version], params[:stemcell_os], params[:stemcell_version], nil, expected_options]
+            expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
+            perform
           end
         end
       end

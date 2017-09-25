@@ -4,24 +4,22 @@ mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
 
 libpq_dir=/var/vcap/packages/libpq
 mysqlclient_dir=/var/vcap/packages/mysql
-ruby_dir=/var/vcap/packages/ruby
 
-bundle_cmd="$ruby_dir/bin/bundle"
-gem_cmd="$ruby_dir/bin/gem"
+source /var/vcap/packages/ruby-2.4/bosh/compile.env
 
 for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   gem_name="$( basename "$( dirname "$gemspec" )" )"
   gem_spec="$( basename "$gemspec" )"
 
   pushd "$gem_name"
-    $gem_cmd build "$gem_spec"
+    gem build "$gem_spec"
     mv *.gem ../vendor/cache
   popd > /dev/null
 done
 
 cat > Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '1.8.3'
+gem 'json', '2.1.0'
 
 gem 'bosh-director'
 gem 'mysql2'
@@ -29,17 +27,17 @@ gem 'pg'
 EOF
 
 if [ "`uname -m`" == "ppc64le" ]; then
-    $bundle_cmd config build.nokogiri '--use-system-libraries'
+    bundle config build.nokogiri '--use-system-libraries'
 fi
 
-$bundle_cmd config build.mysql2 \
+bundle config build.mysql2 \
   --with-mysql-config=$mysqlclient_dir/bin/mariadb_config \
 
-$bundle_cmd config build.pg \
+bundle config build.pg \
   --with-pg-lib=$libpq_dir/lib \
   --with-pg-include=$libpq_dir/include
 
-$bundle_cmd install \
+bundle install \
   --local \
   --no-prune \
   --binstubs ${BOSH_INSTALL_TARGET}/bin \

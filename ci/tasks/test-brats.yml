@@ -8,10 +8,9 @@ image_resource:
 
 inputs:
   - name: bosh-src
-  - name: dns-release
+  - name: bosh-dns-release
   - name: candidate-warden-ubuntu-stemcell
-
-params: []
+  - name: bosh-release
 
 run:
   path: bosh-src/ci/tasks/test-brats.sh

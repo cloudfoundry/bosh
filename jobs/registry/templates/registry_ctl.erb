@@ -5,9 +5,9 @@ LOG_DIR=/var/vcap/sys/log/registry
 PIDFILE=$RUN_DIR/registry.pid
 RUNAS=vcap
 
-export PATH=/var/vcap/packages/ruby/bin:$PATH
+source /var/vcap/packages/ruby-2.4/bosh/runtime.env
 export BUNDLE_GEMFILE=/var/vcap/packages/registry/Gemfile
-export GEM_HOME=/var/vcap/packages/registry/gem_home/ruby/2.3.0
+export GEM_HOME=/var/vcap/packages/registry/gem_home/ruby/2.4.0
 
 <% if_p('env.http_proxy') do |http_proxy| %>
 export HTTP_PROXY="<%= http_proxy %>"

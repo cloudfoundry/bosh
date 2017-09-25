@@ -56,6 +56,7 @@ describe 'CPI calls', type: :integration do
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
+          'instance_group' => /compilation-.*/,
           'index' => '0',
           'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
@@ -73,6 +74,7 @@ describe 'CPI calls', type: :integration do
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
+          'instance_group' => /compilation-.*/,
           'index' => '0',
           'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
@@ -110,6 +112,7 @@ describe 'CPI calls', type: :integration do
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => /compilation-.*/,
+          'instance_group' => /compilation-.*/,
           'index' => '0',
           'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
@@ -127,6 +130,7 @@ describe 'CPI calls', type: :integration do
           'director' => 'TestDirector',
           'deployment' => 'simple',
           'job' => /compilation-.*/,
+          'instance_group' => /compilation-.*/,
           'index' => '0',
           'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
@@ -165,6 +169,7 @@ describe 'CPI calls', type: :integration do
           'created_at' => kind_of(String),
           'deployment' => 'simple',
           'job' => 'foobar',
+          'instance_group' => 'foobar',
           'index' => '0',
           'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
           'name' => /foobar\/[0-9a-f]{8}-[0-9a-f-]{27}/
@@ -233,6 +238,7 @@ describe 'CPI calls', type: :integration do
             'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',
+            'instance_group' => 'first-job',
             'index' => '0',
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/
@@ -262,10 +268,9 @@ describe 'CPI calls', type: :integration do
             'director' => 'TestDirector',
             'attached_at' => kind_of(String),
             'deployment' => 'simple',
-            'job' => 'first-job',
+            'instance_group' => 'first-job',
             'instance_index' => '0',
             'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
 
@@ -340,6 +345,7 @@ describe 'CPI calls', type: :integration do
             'created_at' => kind_of(String),
             'deployment' => 'simple',
             'job' => 'first-job',
+            'instance_group' => 'first-job',
             'index' => '0',
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
@@ -365,10 +371,9 @@ describe 'CPI calls', type: :integration do
             'director' => 'TestDirector',
             'attached_at' => kind_of(String),
             'deployment' => 'simple',
-            'job' => 'first-job',
+            'instance_group' => 'first-job',
             'instance_index' => '0',
             'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'instance_name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/,
             'tag1' => 'value1',
             'tag2' => 'value2'
           }

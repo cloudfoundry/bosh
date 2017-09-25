@@ -1,9 +1,6 @@
-#Using Bosh Monitor Plugins
+# Using Bosh Monitor Plugins
 
-##AWS CloudWatch
-Sends various events to Amazon's CloudWatch using their
-
-##DataDog
+## DataDog
 Sends various events to DataDog.com using their API
 
 | option           | description            |
@@ -11,7 +8,7 @@ Sends various events to DataDog.com using their API
 | api_key          | Your api Key           |
 | application_key  | Your Application Key   |
 
-##Consul Event Forwarder Plugin
+## Consul Event Forwarder Plugin
 The Consul plugin works by forwarding nats heartbeat events and alerts to a consul server or agent. The nats messages can be forwarded as ttl checks and events. Heartbeat messages will be forwarded as TTL checks, each time a heartbeat occurs it will update the ttl check with it's status. When an alert occurs it will be forwareded to Consul as an Event. The current best use case seems to be to forward to a consul agent (possibly on your inception server)
 
 | option                | description                         |
@@ -28,7 +25,7 @@ The Consul plugin works by forwarding nats heartbeat events and alerts to a cons
 |  ttl_note             | A note that will be passed back to consul with a ttl check
 |  heartbeats_as_alerts | * If set to true all heartbeats will also be forwarded as event, this gives you 'real time' vitals data to correlate with
 
-####* When heartbeats are sent as alerts the format has been made more concise to come in under the event payload bytesize limits that consul enforces
+#### When heartbeats are sent as alerts the format has been made more concise to come in under the event payload bytesize limits that consul enforces
 ```ruby
 {
   :agent  => agent_id,

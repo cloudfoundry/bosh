@@ -14,7 +14,7 @@ gem 'rake', '~>10.0'
 
 # json version is hardcoded in release director, health_monitor and registry packages
 # when modified needs to be updated there as well
-gem 'json', '=1.8.3'
+gem 'json', '=2.1.0'
 
 gem 'talentbox-delayed_job_sequel', '~> 4.1'
 
@@ -42,7 +42,7 @@ group :development, :test do
 
   gem 'parallel_tests', '~> 2.0'
   gem 'rack-test'
-  gem 'webmock'
+  gem 'webmock', '~>1.0'
   gem 'fakefs'
   gem 'sinatra'
   gem 'sinatra-contrib'

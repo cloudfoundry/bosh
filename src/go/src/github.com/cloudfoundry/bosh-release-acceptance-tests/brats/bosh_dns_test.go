@@ -2,14 +2,17 @@ package brats_test
 
 import (
 	"fmt"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	"os/exec"
-	"path/filepath"
-	"regexp"
-	"time"
 )
 
 func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string {
@@ -27,10 +30,43 @@ func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string 
 	return out
 }
 
-var _ = Describe("BoshDns", func() {
-	Context("When deploy vms across different azs", func() {
-		var deploymentName = "dns-with-templates"
+func mustGetLatestDnsVersions() []int {
+	session, err := gexec.Start(exec.Command(
+		boshBinaryPath, "-n",
+		"-d", deploymentName,
+		"ssh",
+		"-c", "sudo cat /var/vcap/instance/dns/records.json",
+	), GinkgoWriter, GinkgoWriter)
+	Expect(err).ToNot(HaveOccurred())
+	Eventually(session, time.Minute).Should(gexec.Exit(0))
 
+	trimmedOutput := strings.TrimSpace(string(session.Out.Contents()))
+
+	results := extractDnsVersionsList(trimmedOutput)
+	Expect(len(results)).To(BeNumerically(">", 0))
+
+	return results
+}
+
+var versionSegmentsPattern = regexp.MustCompile(`"version":(\d+)`)
+
+func extractDnsVersionsList(sshContents string) []int {
+	matches := versionSegmentsPattern.FindAllStringSubmatch(sshContents, -1)
+	Expect(matches).ToNot(BeNil())
+	results := make([]int, len(matches))
+
+	for i, match := range matches {
+		Expect(len(match)).To(Equal(2))
+		value, err := strconv.Atoi(match[1])
+		Expect(err).ToNot(HaveOccurred())
+
+		results[i] = value
+	}
+	return results
+}
+
+var _ = Describe("BoshDns", func() {
+	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
 			startInnerBosh()
 
@@ -49,7 +85,7 @@ var _ = Describe("BoshDns", func() {
 				"-v", "linked-template-release-path=../assets/linked-templates-release",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, 6*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		AfterEach(stopInnerBosh)
@@ -107,6 +143,32 @@ var _ = Describe("BoshDns", func() {
 					}
 				}
 			})
+		})
+
+		It("can force a new DNS blob to propagate to ALL vms", func() {
+			versionPerInstance := mustGetLatestDnsVersions()
+			previousMax := -1
+			for _, version := range versionPerInstance {
+				if previousMax < version {
+					previousMax = version
+				}
+			}
+
+			session, err := gexec.Start(exec.Command("ssh",
+				fmt.Sprintf("%s@%s", innerDirectorUser, innerDirectorIP),
+				"-i", innerBoshJumpboxPrivateKeyPath,
+				"-oStrictHostKeyChecking=no",
+				"sudo /var/vcap/jobs/director/bin/sync_dns_ctl force"),
+				GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+			newVersionPerInstance := mustGetLatestDnsVersions()
+			firstNewVersion := newVersionPerInstance[0]
+			Expect(firstNewVersion).To(BeNumerically(">", previousMax))
+			for _, version := range newVersionPerInstance {
+				Expect(version).To(Equal(firstNewVersion))
+			}
 		})
 	})
 })

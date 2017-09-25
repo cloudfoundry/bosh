@@ -42,6 +42,7 @@ http {
 
   server {
     listen <%= p('director.port') %>;
+    <% if p('director.ipv6_listen') %>listen [::]:<%= p('director.port') %>;<% end %>
 
     ssl                 on;
     ssl_certificate     /var/vcap/jobs/director/config/ssl/director.pem;
