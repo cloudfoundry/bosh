@@ -233,6 +233,7 @@ jobs:
             - test-stemcells
             # - bats-centos
         - get: bosh-src
+        - get: stemcells-index
       - task: assert-version-aligned
         file: bosh-src/ci/tasks/assert-version-aligns.yml
       - task: copy-ubuntu-trusty-artifacts
@@ -253,11 +254,16 @@ jobs:
             vsphere/bosh-stemcell-%s-vsphere-esxi-ubuntu-trusty-go_agent.tgz
             vcloud/bosh-stemcell-%s-vcloud-esxi-ubuntu-trusty-go_agent.tgz
             azure/bosh-stemcell-%s-azure-hyperv-ubuntu-trusty-go_agent.tgz
-      - put: bosh-src-push
-        params:
-          repository: bosh-src
-          tag: version-tag/tag
-          only_tag: true
+      - aggregate:
+        - put: bosh-src-push
+          params:
+            repository: bosh-src
+            tag: version-tag/tag
+            only_tag: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   #
   # WARDEN
@@ -284,10 +290,10 @@ jobs:
         - put: warden-boshlite-ubuntu-trusty
           params:
             file: stemcell/*.tgz
-      - put: stemcells-index
-        params:
-          repo: stemcells-index
-          rebase: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   # - name: build-warden-boshlite-centos-7
   #   plan:
@@ -336,10 +342,10 @@ jobs:
         - put: aws-xen-ubuntu-trusty
           params:
             file: stemcell/*.tgz
-      - put: stemcells-index
-        params:
-          repo: stemcells-index
-          rebase: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   # - name: build-aws-xen-centos-7
   #   plan:
@@ -388,10 +394,10 @@ jobs:
         - put: azure-hyperv-ubuntu-trusty
           params:
             file: stemcell/*.tgz
-      - put: stemcells-index
-        params:
-          repo: stemcells-index
-          rebase: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   # - name: build-azure-hyperv-centos-7
   #   plan:
@@ -440,10 +446,10 @@ jobs:
         - put: google-kvm-ubuntu-trusty
           params:
             file: stemcell/*-go_agent.tgz
-      - put: stemcells-index
-        params:
-          repo: stemcells-index
-          rebase: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   # - name: build-google-kvm-centos-7
   #   plan:
@@ -495,10 +501,10 @@ jobs:
         - put: openstack-kvm-ubuntu-trusty
           params:
             file: stemcell/*-go_agent.tgz
-      - put: stemcells-index
-        params:
-          repo: stemcells-index
-          rebase: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   # - name: build-openstack-kvm-centos-7
   #   plan:
@@ -550,10 +556,10 @@ jobs:
         - put: vsphere-esxi-ubuntu-trusty
           params:
             file: stemcell/*.tgz
-      - put: stemcells-index
-        params:
-          repo: stemcells-index
-          rebase: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   # - name: build-vsphere-esxi-centos-7
   #   plan:
@@ -602,10 +608,10 @@ jobs:
         - put: vcloud-esxi-ubuntu-trusty
           params:
             file: stemcell/*.tgz
-      - put: stemcells-index
-        params:
-          repo: stemcells-index
-          rebase: true
+        - put: stemcells-index
+          params:
+            repository: stemcells-index
+            rebase: true
 
   # - name: bats-centos
   #   serial: false
