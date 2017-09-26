@@ -88,9 +88,9 @@ describe 'using director with config server', type: :integration do
 Error: Unable to render instance groups for deployment. Errors are:
   - Unable to render jobs for instance group 'our_instance_group'. Errors are:
     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
-      - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-      - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-      - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP Code '404', Error: 'Name '/TestDirector/simple/i_am_not_here_1' not found'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP Code '404', Error: 'Name '/TestDirector/simple/i_am_not_here_2' not found'
+      - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP Code '404', Error: 'Name '/TestDirector/simple/i_am_not_here_3' not found'
           EOF
         end
       end

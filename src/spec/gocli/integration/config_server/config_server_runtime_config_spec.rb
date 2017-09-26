@@ -73,7 +73,7 @@ describe 'using director with config server', type: :integration do
           output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true, no_login: true, include_credentials: false,  env: client_env)
 
           expect(exit_code).to_not eq(0)
-          expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
+          expect(output).to include("Failed to find variable '/release_name' from config server: HTTP Code '404', Error: 'Name '/release_name' not found'")
         end
 
         context 'when property cannot be found at render time' do
@@ -112,7 +112,7 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include("Failed to find variable '/placeholder_used_at_render_time' from config server: HTTP code '404'")
+            expect(output).to include("Failed to find variable '/placeholder_used_at_render_time' from config server: HTTP Code '404', Error: 'Name '/placeholder_used_at_render_time' not found'")
           end
         end
       end

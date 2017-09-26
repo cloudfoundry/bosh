@@ -110,7 +110,7 @@ module Bosh::Director
           )
         end
 
-        let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, uuid: 'instance-uuid', configuration_hash: 'hash', current_packages: {}) }
+        let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, uuid: 'instance-uuid', configuration_hash: 'hash', current_packages: {}, current_job_state: {}) }
 
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
