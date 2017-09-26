@@ -74,7 +74,6 @@ module Bosh::Director
 
         @configuration_hash = nil
         @template_hashes = nil
-        @vm = nil
 
         @desired_variable_set = nil
         @previous_variable_set = nil
