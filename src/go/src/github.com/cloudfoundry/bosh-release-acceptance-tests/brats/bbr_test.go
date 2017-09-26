@@ -34,11 +34,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			By("create syslog deployment", func() {
-				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
-				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", stemcellUrl), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
-
 				syslogRelease := "https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11"
 				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", syslogRelease), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -103,8 +98,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
-				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
-				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", "--fix", stemcellUrl), GinkgoWriter, GinkgoWriter)
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", "--fix", candidateWardenLinuxStemcellPath), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 			})
@@ -166,11 +160,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 		It("can backup and restore (reattaches to underlying deployment)", func() {
 			By("Set up a deployment that uses the syslog release", func() {
-				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
-				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", stemcellUrl), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
-
 				syslogRelease := "https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11"
 				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", syslogRelease), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -212,8 +201,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
-				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
-				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", "--fix", stemcellUrl), GinkgoWriter, GinkgoWriter)
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", "--fix", candidateWardenLinuxStemcellPath), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
