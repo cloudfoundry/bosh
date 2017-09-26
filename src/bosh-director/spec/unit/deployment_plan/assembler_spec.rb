@@ -50,6 +50,18 @@ module Bosh::Director
         assembler.bind_models
       end
 
+      context 'overriding instances to bind' do
+        let(:instance_model_to_override) { instance_double(Models::Instance, job: 'override', vm_cid: 'cid', ignore: false) }
+
+        it 'only binds the provided instances' do
+          agent_state_migrator = instance_double(DeploymentPlan::AgentStateMigrator)
+          allow(DeploymentPlan::AgentStateMigrator).to receive(:new).and_return(agent_state_migrator)
+          expect(agent_state_migrator).to receive(:get_state).with(instance_model_to_override)
+
+          assembler.bind_models(instances: [instance_model_to_override])
+        end
+      end
+
       describe 'migrate_legacy_dns_records' do
         it 'migrates legacy dns records' do
           expect(powerdns_manager).to receive(:migrate_legacy_records).with(instance_model)

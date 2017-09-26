@@ -12,8 +12,16 @@ module Bosh::Director
     def get(deployment_name, errand_name, keep_alive, requested_instances)
       event_log_stage = Config.event_log.begin_stage('Preparing deployment', 1)
       result = nil
+
+      deployment = Models::Deployment.first(name: deployment_name)
+      # Models::Instance
+      instances = @instance_manager.find_instances_by_deployment(deployment)
+
+      matcher = Errand::InstanceMatcher.new(requested_instances)
+      instances, unmatched_filters = matcher.match(instances)
+
       event_log_stage.advance_and_track('Preparing deployment') do
-        deployment_planner = @deployment_planner_provider.get_by_name(deployment_name)
+        deployment_planner = @deployment_planner_provider.get_by_name(deployment_name, instances)
         dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_planner.availability_zones.map(&:name))
         template_blob_cache = deployment_planner.template_blob_cache
 
@@ -34,13 +42,15 @@ module Bosh::Director
         end
 
         runner = Errand::Runner.new(errand_name, errand_is_job_name, @task_result, @instance_manager, @logs_fetcher)
-        matcher = Errand::InstanceMatcher.new(requested_instances)
-        matching_instance_group, unmatched_filters = matcher.match(errand_instance_groups)
 
-        errand_steps = matching_instance_group.map do |errand_instance_group, matching_instances|
-          errand_instance_group.bind_instances(deployment_planner.ip_provider)
+        errand_steps = errand_instance_groups.map do |errand_instance_group|
+          matching_instances = errand_instance_group.instances.select do |instance|
+            instances.map(&:uuid).include?(instance.uuid)
+          end
 
           if errand_instance_group.is_errand?
+            errand_instance_group.bind_instances(deployment_planner.ip_provider)
+
             render_templates(errand_instance_group, template_blob_cache, dns_encoder)
             target_instance = errand_instance_group.instances.first
             compile_step(deployment_planner).perform
@@ -129,11 +139,11 @@ module Bosh::Director
       @logger = logger
     end
 
-    def get_by_name(deployment_name)
+    def get_by_name(deployment_name, instances)
       deployment_model = Api::DeploymentManager.new.find_by_name(deployment_name)
       planner_factory = DeploymentPlan::PlannerFactory.create(@logger)
       deployment_planner = planner_factory.create_from_model(deployment_model)
-      DeploymentPlan::Assembler.create(deployment_planner).bind_models
+      DeploymentPlan::Assembler.create(deployment_planner).bind_models(instances: instances)
       deployment_planner
     end
   end
