@@ -80,17 +80,18 @@ meta4_path=$TASK_DIR/stemcells-index-output/dev/$OS_NAME-$OS_VERSION/$CANDIDATE_
 mkdir -p "$( dirname "$meta4_path" )"
 meta4 create --metalink="$meta4_path"
 
-if [ -e bosh-src/src/tmp/*-raw.tgz ] ; then
+if [ -e bosh-src/tmp/*-raw.tgz ] ; then
   # openstack currently publishes raw files
   raw_stemcell_filename="${stemcell_name}-raw.tgz"
-  mv bosh-src/src/tmp/*-raw.tgz "stemcell/${raw_stemcell_filename}"
+  mv bosh-src/tmp/*-raw.tgz "${output_dir}/${raw_stemcell_filename}"
 
   meta4 import-file --metalink="$meta4_path" --version="$version" "stemcell/${raw_stemcell_filename}"
   meta4 file-set-url --metalink="$meta4_path" --file="${raw_stemcell_filename}" "https://s3.amazonaws.com/bosh-core-stemcells/${IAAS}/${raw_stemcell_filename}"
 fi
 
 stemcell_filename="${stemcell_name}.tgz"
-mv "bosh-src/src/tmp/${stemcell_filename}" "stemcell/${stemcell_filename}"
+mv "bosh-src/tmp/${stemcell_filename}" "${output_dir}/${stemcell_filename}"
+mv "bosh-src/tmp/${stemcell_filename}" "stemcell/${stemcell_filename}"
 
 meta4 import-file --metalink="$meta4_path" --version="$version" "stemcell/${stemcell_filename}"
 meta4 file-set-url --metalink="$meta4_path" --file="${stemcell_filename}" "https://s3.amazonaws.com/bosh-core-stemcells/${IAAS}/${stemcell_filename}"
