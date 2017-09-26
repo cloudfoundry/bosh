@@ -269,24 +269,23 @@ module Bosh::Director::ConfigServer
       name_root = get_name_root(name)
       response = @config_server_http_client.get_by_id(id)
 
-      fetched_variable = nil
-      if response.kind_of? Net::HTTPOK
-        begin
-          fetched_variable = JSON.parse(response.body)
-        rescue JSON::ParserError
-          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: Invalid JSON response"
-        end
-      elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' with id '#{id}' from config server: HTTP code '404'"
-      else
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: HTTP code '#{response.code}'"
+      begin
+        parsed_response = JSON.parse(response.body)
+      rescue JSON::ParserError
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: Invalid JSON response"
       end
 
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to be a hash, got '#{fetched_variable.class}'" unless fetched_variable.is_a?(Hash)
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'id'" unless fetched_variable.has_key?('id')
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'value'" unless fetched_variable.has_key?('value')
+      if response.kind_of? Net::HTTPNotFound
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' with id '#{id}' from config server: HTTP Code '404', Error: '#{parsed_response['error']}'"
+      elsif !response.kind_of? Net::HTTPOK
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: HTTP Code '#{response.code}', Error: '#{parsed_response['error']}'"
+      end
 
-      extract_variable_value(name, fetched_variable['value'])
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to be a hash, got '#{parsed_response.class}'" unless parsed_response.is_a?(Hash)
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'id'" unless parsed_response.has_key?('id')
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'value'" unless parsed_response.has_key?('value')
+
+      extract_variable_value(name, parsed_response['value'])
     end
 
     def extract_variable_value(name, raw_value)
@@ -308,13 +307,13 @@ module Bosh::Director::ConfigServer
       name_root = get_name_root(name)
       response = @config_server_http_client.get(name_root)
 
-      if response.kind_of? Net::HTTPOK
-        begin
-          response_body = JSON.parse(response.body)
-        rescue JSON::ParserError
-          raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
-        end
+      begin
+        response_body = JSON.parse(response.body)
+      rescue JSON::ParserError
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
+      end
 
+      if response.kind_of? Net::HTTPOK
         response_data = response_body['data']
 
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be an array" unless response_data.is_a?(Array)
@@ -326,9 +325,9 @@ module Bosh::Director::ConfigServer
 
         return fetched_variable['id'], extract_variable_value(name, fetched_variable['value'])
       elsif response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP code '404'"
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP Code '404', Error: '#{response_body['error']}'"
       else
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP code '#{response.code}'"
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP Code '#{response.code}', Error: '#{response_body['error']}'"
       end
     end
 
@@ -357,17 +356,19 @@ module Bosh::Director::ConfigServer
       end
 
       response = @config_server_http_client.post(request_body)
-      unless response.kind_of? Net::HTTPSuccess
-        @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{response.message}. Request body sent: #{request_body}")
-        raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. Error: '#{response.message}'"
-      end
 
-      generated_variable = nil
       begin
-        generated_variable = JSON.parse(response.body)
+        parsed_response_body = JSON.parse(response.body)
       rescue JSON::ParserError
         raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{get_name_root(name)}' with type '#{type}'"
       end
+
+      unless response.kind_of? Net::HTTPSuccess
+        @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{parsed_response_body['error']}. Request body sent: #{request_body}")
+        raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. HTTP Code '#{response.code}', Error: '#{parsed_response_body['error']}'"
+      end
+
+      generated_variable = parsed_response_body
 
       raise Bosh::Director::ConfigServerGenerationError, "Failed to version generated variable '#{name}'. Expected Config Server response to have key 'id'" unless generated_variable.has_key?('id')
 

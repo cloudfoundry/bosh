@@ -63,8 +63,7 @@ describe 'using director with config server', type: :integration do
   end
 
   context 'when config server certificates are trusted' do
-
-    context 'when runtime manifest has variables' do
+    context 'when runtime manifest has placeholders' do
       context 'when config server does not have all names' do
         let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
 
@@ -74,111 +73,8 @@ describe 'using director with config server', type: :integration do
           output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true, no_login: true, include_credentials: false,  env: client_env)
 
           expect(exit_code).to_not eq(0)
-          expect(output).to include("Failed to find variable '/release_name' from config server: HTTP code '404'")
+          expect(output).to include("Failed to find variable '/release_name' from config server: HTTP Code '404', Error: 'Name '/release_name' not found'")
         end
-
-        context 'when runtime config has variables defined' do
-          let(:runtime_config) do
-            {
-              'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
-              'addons' => [
-                {
-                  'name' => 'addon1',
-                  'jobs' => [
-                    {
-                      'name' => 'job_2_with_many_properties',
-                      'release' => 'bosh-release',
-                      'properties' => {
-                        'gargamel' => {'color' => '((/bob))'},
-                        'certificate' => '((/JoeService))'
-                      }
-                    }
-                  ]
-                }],
-              'variables' => [
-                {
-                  'name' => '/bob',
-                  'type' => 'password'
-                },
-                {
-                  'name' => '/joeCA',
-                  'type' => 'certificate',
-                  'options' => {
-                    'is_ca' => true,
-                    'common_name' => 'Joe CA'
-                  }
-                },
-                {
-                  'name' => '/JoeService',
-                  'type' => 'certificate',
-                  'options' => {
-                    'ca' => '/joeCA'
-                  }
-                }
-              ]
-            }
-          end
-
-          let(:named_runtime_config) do
-            {
-              'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
-              'variables' => [
-                {
-                  'name' => '/bob2',
-                  'type' => 'password'
-                },
-                {
-                  'name' => '/joeCA2',
-                  'type' => 'certificate',
-                  'options' => {
-                    'is_ca' => true,
-                    'common_name' => 'Joe CA'
-                  }
-                },
-                {
-                  'name' => '/JoeService2',
-                  'type' => 'certificate',
-                  'options' => {
-                    'ca' => '/joeCA2'
-                  }
-                }
-              ]
-            }
-          end
-
-          before do
-            config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
-            config_server_helper.put_value(prepend_namespace('my_placeholder'), 'value')
-          end
-
-          it 'generates and saves variables' do
-            expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
-
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-            expect(config_server_helper.get_value('/bob')).to match(/......../)
-            expect(config_server_helper.get_value('/joeCA')['certificate']).to include('BEGIN CERTIFICATE')
-            expect(config_server_helper.get_value('/JoeService')['certificate']).to include('BEGIN CERTIFICATE')
-          end
-
-          context 'with multiple runtime configs with variables' do
-            it 'saves all variables' do
-              expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
-              expect(upload_runtime_config(runtime_config_hash: named_runtime_config, include_credentials: false,  env: client_env, name: 'named_runtime_config')).to include('Succeeded')
-
-              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
-
-              expect(config_server_helper.get_value('/bob')).to match(/......../)
-              expect(config_server_helper.get_value('/joeCA')['certificate']).to include('BEGIN CERTIFICATE')
-              expect(config_server_helper.get_value('/JoeService')['certificate']).to include('BEGIN CERTIFICATE')
-              expect(config_server_helper.get_value('/bob2')).to match(/......../)
-              expect(config_server_helper.get_value('/joeCA2')['certificate']).to include('BEGIN CERTIFICATE')
-              expect(config_server_helper.get_value('/JoeService2')['certificate']).to include('BEGIN CERTIFICATE')
-            end
-          end
-
-        end
-
 
         context 'when property cannot be found at render time' do
           let(:runtime_config) do
@@ -216,7 +112,7 @@ describe 'using director with config server', type: :integration do
             )
 
             expect(exit_code).to_not eq(0)
-            expect(output).to include("Failed to find variable '/placeholder_used_at_render_time' from config server: HTTP code '404'")
+            expect(output).to include("Failed to find variable '/placeholder_used_at_render_time' from config server: HTTP Code '404', Error: 'Name '/placeholder_used_at_render_time' not found'")
           end
         end
       end
@@ -390,6 +286,131 @@ describe 'using director with config server', type: :integration do
           instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
           template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
           expect(template_hash['properties_list']['gargamel_color']).to eq('gold')
+        end
+      end
+
+      context 'when runtime config has variables section defined' do
+        let(:runtime_config) do
+          {
+            'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
+            'addons' => [
+              {
+                'name' => 'addon1',
+                'jobs' => [
+                  {
+                    'name' => 'job_2_with_many_properties',
+                    'release' => 'bosh-release',
+                    'properties' => {
+                      'gargamel' => {'color' => '((/bob))'},
+                      'certificate' => '((/JoeService))'
+                    }
+                  }
+                ]
+              }],
+            'variables' => [
+              {
+                'name' => '/bob',
+                'type' => 'password'
+              },
+              {
+                'name' => '/joeCA',
+                'type' => 'certificate',
+                'options' => {
+                  'is_ca' => true,
+                  'common_name' => 'Joe CA'
+                }
+              },
+              {
+                'name' => '/JoeService',
+                'type' => 'certificate',
+                'options' => {
+                  'ca' => '/joeCA'
+                }
+              }
+            ]
+          }
+        end
+
+        let(:named_runtime_config) do
+          {
+            'releases' => [{'name' => 'bosh-release', 'version' => '((/addon_release_version_placeholder))'}],
+            'variables' => [
+              {
+                'name' => '/bob2',
+                'type' => 'password'
+              },
+              {
+                'name' => '/joeCA2',
+                'type' => 'certificate',
+                'options' => {
+                  'is_ca' => true,
+                  'common_name' => 'Joe CA'
+                }
+              },
+              {
+                'name' => '/JoeService2',
+                'type' => 'certificate',
+                'options' => {
+                  'ca' => '/joeCA2'
+                }
+              }
+            ]
+          }
+        end
+
+        let(:unnamed_runtime_config_expected_variables) do
+          [
+            {'id' => String, 'name' => '/JoeService'},
+            {'id' => String, 'name' => '/addon_release_version_placeholder'},
+            {'id' => String, 'name' => '/TestDirector/simple/my_placeholder'},
+            {'id' => String, 'name' => '/bob'},
+            {'id' => String, 'name' => '/joeCA'}
+          ]
+        end
+
+        let(:named_runtime_config_expected_variables) do
+          [
+            {'id' => String, 'name' => '/JoeService2'},
+            {'id' => String, 'name' => '/joeCA2'},
+            {'id' => String, 'name' => '/bob2'}
+          ]
+        end
+
+        before do
+          config_server_helper.put_value('/addon_release_version_placeholder', '0.1-dev')
+          config_server_helper.put_value(prepend_namespace('my_placeholder'), 'value')
+        end
+
+        it 'generates and saves variables' do
+          expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+          expect(config_server_helper.get_value('/bob')).to_not be_empty
+          expect(config_server_helper.get_value('/joeCA')['certificate']).to include('-----BEGIN CERTIFICATE-----')
+          expect(config_server_helper.get_value('/JoeService')['certificate']).to include('-----BEGIN CERTIFICATE-----')
+
+          variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+          expect(variables).to match_array(unnamed_runtime_config_expected_variables)
+        end
+
+        context 'with multiple runtime configs with variables' do
+          it 'saves all variables' do
+            expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
+            expect(upload_runtime_config(runtime_config_hash: named_runtime_config, include_credentials: false,  env: client_env, name: 'named_runtime_config')).to include('Succeeded')
+
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+            expect(config_server_helper.get_value('/bob')).to_not be_empty
+            expect(config_server_helper.get_value('/joeCA')['certificate']).to include('-----BEGIN CERTIFICATE-----')
+            expect(config_server_helper.get_value('/JoeService')['certificate']).to include('-----BEGIN CERTIFICATE-----')
+            expect(config_server_helper.get_value('/bob2')).to_not be_empty
+            expect(config_server_helper.get_value('/joeCA2')['certificate']).to include('-----BEGIN CERTIFICATE-----')
+            expect(config_server_helper.get_value('/JoeService2')['certificate']).to include('-----BEGIN CERTIFICATE-----')
+
+            variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+            expect(variables).to match_array(unnamed_runtime_config_expected_variables + named_runtime_config_expected_variables)
+          end
         end
       end
     end

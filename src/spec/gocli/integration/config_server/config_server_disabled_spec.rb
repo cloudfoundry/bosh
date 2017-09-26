@@ -94,7 +94,7 @@ describe 'using director with config server disabled', type: :integration do
     it 'raises an error' do
       expect {
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
-      }.to raise_error(RuntimeError, /Failed to generate variable from config server: Director is not configured with a config server/)
+      }.to raise_error(RuntimeError, /Failed to generate variable '\/TestDirector\/simple\/admin_password' from config server: Director is not configured with a config server/)
     end
   end
 

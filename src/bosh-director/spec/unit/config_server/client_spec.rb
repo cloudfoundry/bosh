@@ -261,7 +261,7 @@ module Bosh::Director::ConfigServer
                   client.interpolate(manifest_hash)
                 }.to raise_error { |error|
                   expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-                  expect(error.message).to include("- Failed to find variable '/missing_placeholder' from config server: HTTP code '404'")
+                  expect(error.message).to include("- Failed to find variable '/missing_placeholder' from config server: HTTP Code '404', Error: 'Name not found'")
                 }
               end
             end
@@ -658,11 +658,11 @@ module Bosh::Director::ConfigServer
 
                 it 'returns all the errors correctly formatted' do
                   expected_error_msg = <<-EXPECTED.strip
-- Failed to find variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP Code '404', Error: 'Name not found'
                   EXPECTED
 
                   expect {
@@ -684,11 +684,11 @@ module Bosh::Director::ConfigServer
 
                 it 'returns all the errors correctly formatted' do
                   expected_error_msg = <<-EXPECTED.strip
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP code '403'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP code '403'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '403', Error: 'There was a problem'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP Code '403', Error: 'There was a problem'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP Code '403', Error: 'There was a problem'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP Code '403', Error: 'There was a problem'
+- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP Code '403', Error: 'There was a problem'
                   EXPECTED
 
                   expect {
@@ -1149,13 +1149,13 @@ module Bosh::Director::ConfigServer
 
             it 'returns a formatted error message' do
               expected_error_msg = <<-EXPECTED.strip
-- Failed to find variable '/smurf_director_name/provider_deployment_name/integer_placeholder' with id '1' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/cert_placeholder' with id '2' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/hash_placeholder' with id '7' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/nil_placeholder' with id '3' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/empty_placeholder' with id '4' from config server: HTTP code '404'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/string_placeholder' with id '5' from config server: HTTP code '404'
-- Failed to find variable '/absolute_placeholder' with id '6' from config server: HTTP code '404'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/cert_placeholder' with id '2' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/hash_placeholder' with id '7' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/nil_placeholder' with id '3' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/empty_placeholder' with id '4' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/smurf_director_name/provider_deployment_name/string_placeholder' with id '5' from config server: HTTP Code '404', Error: 'Name not found'
+- Failed to find variable '/absolute_placeholder' with id '6' from config server: HTTP Code '404', Error: 'Name not found'
               EXPECTED
 
               expect {
@@ -1343,7 +1343,7 @@ module Bosh::Director::ConfigServer
                 expect(http_client).to receive(:get).with(prepend_namespace('my_smurf')).and_return(SampleForbiddenResponse.new)
                 expect {
                   client.prepare_and_get_property(the_placeholder, 'my_default_value', nil, deployment_name)
-                }.to raise_error(Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '/smurf_director_name/deployment_name/my_smurf' from config server: HTTP code '403'")
+                }.to raise_error(Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '/smurf_director_name/deployment_name/my_smurf' from config server: HTTP Code '403', Error: 'There was a problem'")
               end
             end
 
@@ -1431,7 +1431,7 @@ module Bosh::Director::ConfigServer
                         client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name)
                       }. to raise_error(
                               Bosh::Director::ConfigServerGenerationError,
-                              "Config Server failed to generate value for '#{full_key}' with type 'any-type-you-like'. Error: 'There was a problem.'"
+                              "Config Server failed to generate value for '#{full_key}' with type 'any-type-you-like'. HTTP Code '403', Error: 'There was a problem'"
                             )
 
                       expect(Bosh::Director::Models::Event.count).to eq(1)
@@ -1444,7 +1444,7 @@ module Bosh::Director::ConfigServer
                       expect(error_event.task).to eq("#{task_id}")
                       expect(error_event.deployment).to eq(deployment_name)
                       expect(error_event.context).to eq({})
-                      expect(error_event.error).to eq("Config Server failed to generate value for '/smurf_director_name/deployment_name/my_smurf' with type 'any-type-you-like'. Error: 'There was a problem.'")
+                      expect(error_event.error).to eq("Config Server failed to generate value for '/smurf_director_name/deployment_name/my_smurf' with type 'any-type-you-like'. HTTP Code '403', Error: 'There was a problem'")
                     end
                   end
 
@@ -1527,7 +1527,7 @@ module Bosh::Director::ConfigServer
                         client.prepare_and_get_property(the_placeholder, default_value, type, deployment_name, options)
                       }.to raise_error(
                              Bosh::Director::ConfigServerGenerationError,
-                             "Config Server failed to generate value for '#{full_key}' with type 'certificate'. Error: 'There was a problem.'"
+                             "Config Server failed to generate value for '#{full_key}' with type 'certificate'. HTTP Code '403', Error: 'There was a problem'"
                            )
                     end
 
@@ -1853,9 +1853,9 @@ module Bosh::Director::ConfigServer
               expect {
                 client.generate_values(variables_obj, deployment_name)
               }.to raise_error(
-                     Bosh::Director::ConfigServerGenerationError,
-                     "Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. Error: 'There was a problem.'"
-                   )
+                Bosh::Director::ConfigServerGenerationError,
+                "Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. HTTP Code '403', Error: 'There was a problem'"
+              )
 
               expect(Bosh::Director::Models::Event.count).to eq(1)
 
@@ -1867,7 +1867,7 @@ module Bosh::Director::ConfigServer
               expect(error_event.task).to eq("#{task_id}")
               expect(error_event.deployment).to eq(deployment_name)
               expect(error_event.instance).to eq(nil)
-              expect(error_event.error).to eq("Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. Error: 'There was a problem.'")
+              expect(error_event.error).to eq("Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. HTTP Code '403', Error: 'There was a problem'")
             end
           end
 
@@ -1934,13 +1934,21 @@ module Bosh::Director::ConfigServer
 
   class SampleNotFoundResponse < Net::HTTPNotFound
     def initialize
-      super(nil, '404', 'Not Found Brah')
+      super(nil, '404', '')
+    end
+
+    def body
+      '{"error": "Name not found"}'
     end
   end
 
   class SampleForbiddenResponse < Net::HTTPForbidden
     def initialize
-      super(nil, '403', 'There was a problem.')
+      super(nil, '403', '')
+    end
+
+    def body
+      '{"error": "There was a problem"}'
     end
   end
 end

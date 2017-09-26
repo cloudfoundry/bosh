@@ -17,7 +17,7 @@ export BOSH_BINARY_PATH=$(which bosh)
 export BOSH_RELEASE="${PWD}/bosh-src/src/spec/assets/dummy-release.tgz"
 export BOSH_DIRECTOR_IP="10.245.0.3"
 export BOSH_DIRECTOR_RELEASE_PATH="$(find . -maxdepth 1 -wholename '${PWD}/bosh-release/*.tgz')"
-export DNS_RELEASE_PATH="${src_dir}bosh-dns-release/release.tgz"
+export DNS_RELEASE_PATH="$(find . -maxdepth 1 -wholename '${src_dir}bosh-dns-release/*.tgz')"
 
 pushd "${PWD}/bosh-dns-release" > /dev/null
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
