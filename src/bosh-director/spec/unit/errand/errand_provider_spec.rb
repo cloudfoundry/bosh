@@ -10,23 +10,24 @@ module Bosh::Director
       let(:deployment_planner_provider) { instance_double(Errand::DeploymentPlannerProvider) }
       let(:deployment_planner) { instance_double(DeploymentPlan::Planner, availability_zones: [], template_blob_cache: template_blob_cache, ip_provider: ip_provider) }
       let(:task_result) { instance_double(TaskDBWriter) }
-      let(:instance_manager) { instance_double(Api::InstanceManager) }
+      let(:instance_manager) { Api::InstanceManager.new }
       let(:logs_fetcher) { instance_double (LogsFetcher) }
       let(:event_manager) { instance_double(Bosh::Director::Api::EventManager) }
       let(:task_writer) { StringIO.new }
       let(:event_log) { EventLog::Log.new(task_writer) }
-      let(:deployment_name) { 'fake-dep-name' }
+      let(:deployment_name) { deployment_model.name }
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:runner) { instance_double(Errand::Runner) }
       let(:errand_step) { instance_double(Errand::LifecycleErrandStep) }
-      let(:instance) { instance_double(DeploymentPlan::Instance, current_job_state: double(:current_job_state)) }
+      let(:instance) { instance_double(DeploymentPlan::Instance, current_job_state: double(:current_job_state), uuid: instance_model.uuid, model: instance_model) }
+      let!(:instance_model) { Models::Instance.make(deployment: deployment_model, uuid: 'instance-uuid') }
       let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
       let(:keep_alive) { false }
       let(:instance_slugs) { [] }
       let(:deployment_model) { Bosh::Director::Models::Deployment.make }
 
       before do
-        allow(deployment_planner_provider).to receive(:get_by_name).with(deployment_name).and_return(deployment_planner)
+        allow(deployment_planner_provider).to receive(:get_by_name).with(deployment_name, be_a(Array)).and_return(deployment_planner)
         allow(deployment_planner).to receive(:instance_groups).and_return(instance_groups)
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(deployment_planner).to receive(:instance_group)
@@ -55,12 +56,43 @@ module Bosh::Director
           let(:needed_instance_plans) { [] }
           let(:service_group_name) { 'service-group-name' }
           let(:errand_group_name) { 'errand-group-name' }
-          let(:instance1) { instance_double(DeploymentPlan::Instance, model: instance1_model, job_name: service_group_name, uuid: 'uuid-1', index: 1, current_job_state: job_state1) }
-          let(:instance1_model) { Models::Instance.make }
-          let(:instance2) { instance_double(DeploymentPlan::Instance, model: instance2_model, job_name: service_group_name, uuid: 'uuid-2', index: 2, current_job_state: job_state2) }
-          let(:instance2_model) { Models::Instance.make }
-          let(:instance3) { instance_double(DeploymentPlan::Instance, model: instance3_model, job_name: errand_group_name, uuid: 'uuid-3', index: 3, current_job_state: job_state3) }
-          let(:instance3_model) { Models::Instance.make }
+
+          let(:instance1_model) { Models::Instance.make(deployment: deployment_model, job: service_group_name) }
+          let(:instance1) do
+            instance_double(
+              DeploymentPlan::Instance,
+              model: instance1_model,
+              job_name: instance1_model.job,
+              uuid: instance1_model.uuid,
+              index: 1,
+              current_job_state: job_state1,
+            )
+          end
+
+          let(:instance2_model) { Models::Instance.make(deployment: deployment_model, job: service_group_name) }
+          let(:instance2) do
+            instance_double(
+              DeploymentPlan::Instance,
+              model: instance2_model,
+              job_name: instance2_model.job,
+              uuid: instance2_model.uuid,
+              index: 2,
+              current_job_state: job_state2,
+            )
+          end
+
+          let(:instance3_model) { Models::Instance.make(deployment: deployment_model, job: errand_group_name) }
+          let(:instance3) do
+            instance_double(
+              DeploymentPlan::Instance,
+              model: instance3_model,
+              job_name: instance3_model.job,
+              uuid: instance3_model.uuid,
+              index: 3,
+              current_job_state: job_state3,
+            )
+          end
+
           let(:instance_group1) { instance_double(DeploymentPlan::InstanceGroup, name: service_group_name, jobs: [job], bind_instances: nil, instances: [instance1, instance2], is_errand?: false) }
           let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [instance3], is_errand?: true, needed_instance_plans: needed_instance_plans) }
           let(:instance_groups) { [instance_group1, instance_group2] }
@@ -226,7 +258,8 @@ module Bosh::Director
           end
 
           context 'when selecting an instance from a service group' do
-            let(:instance_slugs) { [{'group' => 'service-group-name', 'id' => 'uuid-2'}] }
+            let(:instance_slugs) { [{'group' => 'service-group-name', 'id' => instance2_model.uuid}] }
+
             it 'only creates an errand for the requested slug' do
               expect(Errand::LifecycleServiceStep).to receive(:new).with(
                 runner, instance2, logger
@@ -265,7 +298,6 @@ module Bosh::Director
         let(:errand_job_name) {'errand-job'}
         let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name, runs_as_errand?: true) }
         let(:needed_instance_plans) { [] }
-        let(:instance_model) { Models::Instance.make }
         let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep) }
 
         before do
@@ -286,7 +318,6 @@ module Bosh::Director
           end
 
           before do
-            allow(instance).to receive(:model).and_return(instance_model)
             allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
             allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
             allow(instance_group).to receive(:bind_instances)
@@ -347,7 +378,7 @@ module Bosh::Director
           it 'returns an errand object that will run on the first instance in that instance group' do
             expect {
               subject.get(deployment_name, instance_group_name, keep_alive, instance_slugs)
-            }.to raise_error(InstanceNotFound, "Instance 'fake-dep-name/instance-group-name/0' doesn't exist")
+            }.to raise_error(InstanceNotFound, "Instance '#{deployment_name}/instance-group-name/0' doesn't exist")
           end
         end
 

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::RunErrand do
-    subject(:job) { described_class.new('fake-dep-name', errand_name, keep_alive, when_changed, instances) }
+    subject(:job) { described_class.new('fake-dep-name', errand_name, keep_alive, when_changed, []) }
 
     let(:keep_alive) { false }
     let(:when_changed) { false }
@@ -10,15 +10,19 @@ module Bosh::Director
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:thread_pool) { double(Bosh::ThreadPool) }
-    let(:instances) { [] }
+    let(:instances) { [instance_double(Bosh::Director::Models::Instance, uuid: 'instance-uuid')] }
     let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache') }
+    let(:instance_manager) { instance_double(Bosh::Director::Api::InstanceManager) }
 
     before do
+      allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)
+      allow(instance_manager).to receive(:find_instances_by_deployment).and_return(instances)
+
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(Config).to receive(:record_events).and_return(true)
-      allow(Config).to receive(:current_job).and_return(job)
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(Config).to receive(:result).and_return(task_result)
+      allow(Config).to receive(:current_job).and_return(job)
       allow(Bosh::ThreadPool).to receive(:new).and_return(thread_pool)
       allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything, logger)
       allow(template_blob_cache).to receive(:clean_cache!)
@@ -100,7 +104,7 @@ module Bosh::Director
           )
         end
 
-        let(:instance_model) { Models::Instance.make(job: 'errand1', uuid: 'instance_id') }
+        let(:instance_model) { Models::Instance.make(job: 'errand1', uuid: 'instance-uuid') }
         let(:errand_instance_group) do
           instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
             instances: [instance],
@@ -116,14 +120,13 @@ module Bosh::Director
 
         let(:errand_job){ instance_double('Bosh::Director::DeploymentPlan::Job', name: 'errand1', runs_as_errand?: true )}
 
-
         let(:cloud_config) { Models::CloudConfig.make }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
         let(:errand_result) { Errand::Result.new(instance, errand_name, 0, nil, nil, nil) }
 
         it 'runs the specified errand job on the found service instance' do
           expect(Errand::Runner).to receive(:new).
-            with('errand1', true, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
+            with('errand1', true, task_result, instance_manager, be_a(Bosh::Director::LogsFetcher)).
             and_return(runner)
           expect(runner).to receive(:run).and_return(errand_result)
           subject.perform
@@ -174,7 +177,6 @@ module Bosh::Director
         let(:cloud_config) { Models::CloudConfig.make }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
 
-
         before do
           allow(template_blob_cache).to receive(:clean_cache!)
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step)
@@ -190,8 +192,8 @@ module Bosh::Director
 
               context 'when instance group has at least 1 instance' do
                 before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
-                let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance_id') }
-                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, to_s: 'foo-job/instance_id', uuid: 'instance_id', configuration_hash: 'hash', current_packages: {}) }
+                let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance-uuid') }
+                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, to_s: 'foo-job/instance-uuid', uuid: 'instance-uuid', configuration_hash: 'hash', current_packages: {}) }
 
                 before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', {timeout: 10, deployment_name: 'fake-dep-name'}).and_return(lock) }
 
@@ -213,7 +215,7 @@ module Bosh::Director
 
                 before do
                   allow(LogsFetcher).to receive(:new).
-                    with(be_a(Api::InstanceManager), log_bundles_cleaner, logger).
+                    with(instance_manager, log_bundles_cleaner, logger).
                     and_return(logs_fetcher)
                 end
                 let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
@@ -233,7 +235,7 @@ module Bosh::Director
 
                 before do
                   allow(Errand::Runner).to receive(:new).
-                    with('fake-errand-name', false, task_result, be_a(Api::InstanceManager), be_a(Bosh::Director::LogsFetcher)).
+                    with('fake-errand-name', false, task_result, instance_manager, logs_fetcher).
                     and_return(runner)
                 end
                 let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
@@ -343,7 +345,7 @@ module Bosh::Director
                         successful_state_hash: successful_state_hash,
                       )
                     end
-                    let(:single_errand_state_hash) { ::Digest::SHA1.hexdigest('instance_id' + successful_configuration_hash + successful_packages_spec.to_s) }
+                    let(:single_errand_state_hash) { ::Digest::SHA1.hexdigest('instance-uuid' + successful_configuration_hash + successful_packages_spec.to_s) }
                     let(:successful_state_hash) { ::Digest::SHA1.hexdigest(single_errand_state_hash) }
 
                     context 'when errand succeeded on the previous run' do
@@ -464,7 +466,7 @@ module Bosh::Director
               end
             end
 
-            context "when instance group cannot run as an errand (e.g. marked as 'lifecycle: service')" do
+            context "when instance group cannot run as an errand" do
               before { allow(deployment_instance_group).to receive(:is_errand?).and_return(false) }
 
               it 'raises an error because non-errand jobs cannot be used with run errand cmd' do
@@ -498,6 +500,7 @@ module Bosh::Director
           let(:errand_provider) { instance_double(Errand::ErrandProvider, get: errand) }
           let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
           let(:task) { instance_double('Bosh::Director::Models::Task', id: 42, state: 'cancelling', username: 'username' ) }
+
           before do
             allow(Errand::DeploymentPlannerProvider).to receive(:new)
             allow(Errand::ErrandProvider).to receive(:new).and_return(errand_provider)

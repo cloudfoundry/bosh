@@ -26,13 +26,14 @@ module Bosh::Director
       deployment_options = @deployment_plan.deployment_wide_options
       fix = deployment_options.fetch(:fix, false)
       tags = deployment_options.fetch(:tags, {})
+      instances = options.fetch(:instances, @deployment_plan.candidate_existing_instances)
 
       bind_releases
 
       migrate_legacy_dns_records
 
       network_reservation_repository = Bosh::Director::DeploymentPlan::NetworkReservationRepository.new(@deployment_plan, @logger)
-      states_by_existing_instance = current_states_by_instance(@deployment_plan.candidate_existing_instances, fix)
+      states_by_existing_instance = current_states_by_instance(instances, fix)
 
       migrate_existing_instances_to_global_networking(network_reservation_repository, states_by_existing_instance)
 
