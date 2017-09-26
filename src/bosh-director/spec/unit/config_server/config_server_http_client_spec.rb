@@ -55,7 +55,7 @@ module Bosh::Director::ConfigServer
       it 'raises an error' do
         expect {
           subject.get_by_id(1)
-        }.to raise_error(Bosh::Director::ConfigServerDisabledError, 'Failed to fetch variable from config server: Director is not configured with a config server')
+        }.to raise_error(Bosh::Director::ConfigServerDisabledError, "Failed to fetch variable with id '1' from config server: Director is not configured with a config server")
       end
     end
 
@@ -63,15 +63,15 @@ module Bosh::Director::ConfigServer
       it 'raises an error' do
         expect {
           subject.get('name')
-        }.to raise_error(Bosh::Director::ConfigServerDisabledError, 'Failed to fetch variable \'name\' from config server: Director is not configured with a config server')
+        }.to raise_error(Bosh::Director::ConfigServerDisabledError, "Failed to fetch variable 'name' from config server: Director is not configured with a config server")
       end
     end
 
     describe '#post' do
       it 'raises an error' do
         expect {
-          subject.post('body')
-        }.to raise_error(Bosh::Director::ConfigServerDisabledError, 'Failed to generate variable from config server: Director is not configured with a config server')
+          subject.post({'name' => '/var_name', 'type' => 'password'})
+        }.to raise_error(Bosh::Director::ConfigServerDisabledError, "Failed to generate variable '/var_name' from config server: Director is not configured with a config server")
       end
     end
   end

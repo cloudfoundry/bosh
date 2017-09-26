@@ -34,7 +34,7 @@ module Bosh::Director::ConfigServer
 
   class ConfigServerDisabledHTTPClient
     def get_by_id(id)
-      raise Bosh::Director::ConfigServerDisabledError, 'Failed to fetch variable from config server: Director is not configured with a config server'
+      raise Bosh::Director::ConfigServerDisabledError, "Failed to fetch variable with id '#{id}' from config server: Director is not configured with a config server"
     end
 
     def get(name)
@@ -42,7 +42,7 @@ module Bosh::Director::ConfigServer
     end
 
     def post(body)
-      raise Bosh::Director::ConfigServerDisabledError, 'Failed to generate variable from config server: Director is not configured with a config server'
+      raise Bosh::Director::ConfigServerDisabledError, "Failed to generate variable '#{body['name']}' from config server: Director is not configured with a config server"
     end
   end
 end
