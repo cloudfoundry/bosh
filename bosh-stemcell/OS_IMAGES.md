@@ -7,9 +7,13 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `LWRS9GyUmcn6XyxSRlcesihAc2bzkNRO`
+  - USN-3424-1: libxml2 vulnerabilities
+  - built from 3312.x (2ad5285d4d584bb0387ee0029559eee243bab14f)
+
 * `chTBtmA9RYmEYuyoS1eVuBr9IcXuFKRg`
   - USN-3422-2: Linux kernel (Trusty HWE) vulnerabilities
-  - built from 3312.x (7745d43cbaf1fc9c2b010d21bd40870acb83df8e)
+  - built from 3312.x (???)
 
 * `5qRUYAm2dyYVZJHeg7jFOaInk9OKAq9Z`
   - Periodic bump
@@ -40,7 +44,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
   - built from 3312.x (b0b4cf6c4f945ebbce0a57a99e75bf8c98cfe079)
 
 * `KwB5Q1UvqB3F1txdk5ZLxW5pslhK6UhO`
-  - USN-3304-1: Sudo vulnerability 
+  - USN-3304-1: Sudo vulnerability
   - built from 3312.x (11f4519b66df5e8e2775dba9859e09cfe238ca59)
 
 * `tTkI.zv1KBWhUkwOAbPbXpzO16YMWmnd`
