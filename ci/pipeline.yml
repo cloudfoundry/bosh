@@ -44,19 +44,19 @@ shared:
     file: bosh-src/ci/bats/tasks/deploy-director.yml
     params:
       BAT_INFRASTRUCTURE: vsphere
-      BOSH_CLIENT:                          {{stemcell-test-director-username}}
-      BOSH_CLIENT_SECRET:                   {{stemcell-test-director-password}}
-      BOSH_VSPHERE_VCENTER:                 {{vcenter-ip}}
-      BOSH_VSPHERE_VCENTER_USER:            {{vcenter-user}}
-      BOSH_VSPHERE_VCENTER_PASSWORD:        {{vcenter-password}}
-      BOSH_VSPHERE_VERSION:                 {{vsphere-version}}
-      BOSH_VSPHERE_VCENTER_DC:              {{vcenter-dc}}
-      BOSH_VSPHERE_VCENTER_CLUSTER:         {{vcenter-cluster}}
-      BOSH_VSPHERE_VCENTER_DATASTORE:       {{vcenter-datastore}}
-      BOSH_VSPHERE_VCENTER_VLAN:            {{vcenter-vlan}}
-      BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
-      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
-      BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+      BOSH_CLIENT:                          ((stemcell-test-director-username))
+      BOSH_CLIENT_SECRET:                   ((stemcell-test-director-password))
+      BOSH_VSPHERE_VCENTER:                 ((vcenter-ip))
+      BOSH_VSPHERE_VCENTER_USER:            ((vcenter-user))
+      BOSH_VSPHERE_VCENTER_PASSWORD:        ((vcenter-password))
+      BOSH_VSPHERE_VERSION:                 ((vsphere-version))
+      BOSH_VSPHERE_VCENTER_DC:              ((vcenter-dc))
+      BOSH_VSPHERE_VCENTER_CLUSTER:         ((vcenter-cluster))
+      BOSH_VSPHERE_VCENTER_DATASTORE:       ((vcenter-datastore))
+      BOSH_VSPHERE_VCENTER_VLAN:            ((vcenter-vlan))
+      BOSH_VSPHERE_VCENTER_VM_FOLDER:       ((vcenter-vm-folder))
+      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: ((vcenter-template-folder))
+      BOSH_VSPHERE_VCENTER_DISK_PATH:       ((vcenter-disk-path))
 
   - &prepare-bats-config
     task: prepare-bats
@@ -76,9 +76,9 @@ shared:
   - &slack-alert
     put: slack-alert
     params:
-      channel: {{slack_channel_name}}
+      channel: ((slack_channel_name))
       icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-      text: {{slack_failure_message}}
+      text: ((slack_failure_message))
 
 jobs:
   - name: unit-2.4
@@ -253,22 +253,22 @@ jobs:
           params:
             RUBY_VERSION: 2.4.2
             DB: mysql
-            DB_HOST: {{mysql-rds-host}}
-            DB_USER: {{mysql-rds-user}}
-            DB_PASSWORD: {{mysql-rds-password}}
-            AWS_ACCESS_KEY_ID: {{mysql-rds-aws-access-key-id}}
-            AWS_SECRET_ACCESS_KEY: {{mysql-rds-aws-secret-access-key}}
-            AWS_REGION: {{mysql-rds-aws-region}}
-            RDS_MYSQL_DB_IDENTIFIER: {{mysql-rds-db-identifier}}
+            DB_HOST: ((mysql-rds-host))
+            DB_USER: ((mysql-rds-user))
+            DB_PASSWORD: ((mysql-rds-password))
+            AWS_ACCESS_KEY_ID: ((mysql-rds-aws-access-key-id))
+            AWS_SECRET_ACCESS_KEY: ((mysql-rds-aws-secret-access-key))
+            AWS_REGION: ((mysql-rds-aws-region))
+            RDS_MYSQL_DB_IDENTIFIER: ((mysql-rds-db-identifier))
         - task: test-postgresql-rds
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
           params:
             RUBY_VERSION: 2.4.2
             DB: postgresql
-            DB_HOST: {{postgresql-rds-host}}
-            DB_USER: {{postgresql-rds-user}}
-            DB_PASSWORD: {{postgresql-rds-password}}
+            DB_HOST: ((postgresql-rds-host))
+            DB_USER: ((postgresql-rds-user))
+            DB_PASSWORD: ((postgresql-rds-password))
           on_failure:
             <<: *slack-alert
 
@@ -281,10 +281,10 @@ jobs:
       - task: test-s3
         file: bosh-src/ci/tasks/test-s3-blobstore-client-integration.yml
         params:
-          access_key_id: {{blobstore_client_aws_access_key_id}}
-          secret_access_key: {{blobstore_client_aws_secret_access_key}}
-          s3_region: {{blobstore_client_aws_s3_region}}
-          s3_host: {{blobstore_client_aws_s3_host}}
+          access_key_id: ((blobstore_client_aws_access_key_id))
+          secret_access_key: ((blobstore_client_aws_secret_access_key))
+          s3_region: ((blobstore_client_aws_s3_region))
+          s3_host: ((blobstore_client_aws_s3_host))
           run_aws_tests: "Not null"
       - task: test-local
         file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
@@ -293,8 +293,8 @@ jobs:
       - task: test-gcs
         file: bosh-src/ci/tasks/test-gcs-blobstore-client-integration.yml
         params:
-          google_project: {{blobstore_client_google_project}}
-          google_json_key_data: {{blobstore_client_google_json_key_data}}
+          google_project: ((blobstore_client_google_project))
+          google_json_key_data: ((blobstore_client_google_json_key_data))
 
   - name: blobstore-performance
     public: true
@@ -699,8 +699,8 @@ jobs:
       - task: promote-release
         file: bosh-src-master/ci/tasks/finalize-bosh-release.yml
         params:
-          BLOBSTORE_ACCESS_KEY_ID: {{bosh_release_access_key_id}}
-          BLOBSTORE_SECRET_ACCESS_KEY: {{bosh_release_secret_access_key}}
+          BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
+          BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
       - put: candidate-version
         params:
           file: bumped-candidate-version/number
@@ -714,24 +714,24 @@ resources:
   - name: bosh-src
     type: git
     source:
-      uri: {{bosh_src_url}}
+      uri: ((bosh_src_url))
       branch: master
-      private_key: {{github_deployment_key}}
+      private_key: ((github_deployment_key))
 
   - name: candidate-version
     type: semver
     source:
-      bucket: {{candidate_release_bucket}}
+      bucket: ((candidate_release_bucket))
       key: version
-      access_key_id: {{candidate_release_access_key_id}}
-      secret_access_key: {{candidate_release_secret_access_key}}
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
 
   - name: bosh-candidate-release-tarballs
     type: s3
     source:
-      bucket: {{candidate_release_bucket}}
-      access_key_id: {{candidate_release_access_key_id}}
-      secret_access_key: {{candidate_release_secret_access_key}}
+      bucket: ((candidate_release_bucket))
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
       versioned_file: "bosh-dev-release.tgz"
 
   - name: davcli
@@ -756,9 +756,9 @@ resources:
   - name: bosh-master
     type: git
     source:
-      uri: {{bosh_src_url}}
+      uri: ((bosh_src_url))
       branch: master
-      private_key: {{github_deployment_key}}
+      private_key: ((github_deployment_key))
 
   - name: fuzz-interval-trigger
     type: time
@@ -773,14 +773,14 @@ resources:
   - name: slack-alert
     type: slack-notification
     source:
-      url: {{slack_hook_url}}
+      url: ((slack_hook_url))
 
   - name: bosh-cli
     type: s3
     source:
       regexp: alpha-bosh-cli-(.*)-linux-amd64
-      bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
-      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
+      bucket: ((bosh_cli_aws_s3_alpha_release_bucket))
+      region_name: ((bosh_cli_aws_s3_release_bucket_region))
 
   - name: bosh-dns-release
     type: bosh-io-release
@@ -809,7 +809,7 @@ resources:
       pool: vsphere
       uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
       branch: master
-      private_key: {{github_deployment_key__bosh-cpi-environments}}
+      private_key: ((github_deployment_key__bosh-cpi-environments))
 
   - name: vsphere-esxi-ubuntu-trusty
     type: bosh-io-stemcell
