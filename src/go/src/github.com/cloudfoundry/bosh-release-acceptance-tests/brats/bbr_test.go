@@ -35,7 +35,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 			By("create syslog deployment", func() {
 				syslogRelease := "https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11"
-				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", syslogRelease), GinkgoWriter, GinkgoWriter)
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", syslogRelease), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 
@@ -161,7 +161,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 		It("can backup and restore (reattaches to underlying deployment)", func() {
 			By("Set up a deployment that uses the syslog release", func() {
 				syslogRelease := "https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11"
-				session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", syslogRelease), GinkgoWriter, GinkgoWriter)
+				session, err = gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-release", syslogRelease), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
