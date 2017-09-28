@@ -160,8 +160,6 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
-          passed:
-            - "build-main-ruby-go"
         - get: bosh-cli
           trigger: true
         - get: bosh-deployment
