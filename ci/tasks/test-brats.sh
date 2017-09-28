@@ -16,7 +16,7 @@ export BOSH_SSH_PRIVATE_KEY_PATH="/tmp/jumpbox_ssh_key.pem"
 export BOSH_BINARY_PATH=$(which bosh)
 export BOSH_RELEASE="${PWD}/bosh-src/src/spec/assets/dummy-release.tgz"
 export BOSH_DIRECTOR_IP="10.245.0.3"
-export BOSH_DIRECTOR_RELEASE_PATH="$(realpath $(find ${PWD}/bosh-release -maxdepth 1 -path '*.tgz'))"
+export BOSH_DIRECTOR_RELEASE_PATH="${PWD}/bosh-release"
 export DNS_RELEASE_PATH="$(realpath $(find ${PWD}/bosh-dns-release -maxdepth 1 -path '*.tgz'))"
 export CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath ${src_dir}candidate-warden-ubuntu-stemcell/*.tgz)"
 
