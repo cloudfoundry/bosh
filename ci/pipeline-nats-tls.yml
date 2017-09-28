@@ -710,8 +710,8 @@ jobs:
     trigger: true
     passed:
     - unit-2.4
-    - unit-2.4-mysql
-    - unit-2.4-postgres
+    # - unit-2.4-mysql
+    # - unit-2.4-postgres
     - integration-mysql-gocli-sha1
     - integration-postgres-gocli-sha2
     - blobstore-client-integration
