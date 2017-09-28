@@ -4,13 +4,17 @@ set -eu
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 bosh_path="${bosh_release_path:-${script_dir}/../../../}"
-export bosh_release_path="${bosh_path}/release.tgz"
+bosh_release_path=""
 
 pushd "${bosh_path}" > /dev/null
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
     bosh create-release --tarball release.tgz
   fi
+
+  bosh_release_path="$(realpath "$(find . -maxdepth 1 -name "*.tgz")")"
 popd > /dev/null
+
+export bosh_release_path
 
 cd /usr/local/bosh-deployment
 
