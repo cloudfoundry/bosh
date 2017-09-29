@@ -666,7 +666,7 @@ jobs:
       - get: bosh-src
         passed:
         - candidate-release
-      - get: bosh-dns-release
+      - get: bosh-dns-release-resource
       - get: warden-ubuntu-trusty
       - get: bosh-release
         resource: bosh-candidate-release-tarballs
@@ -680,6 +680,7 @@ jobs:
       input_mapping:
         candidate-warden-ubuntu-stemcell: warden-ubuntu-trusty
         bosh-dev-release: bosh-release
+        bosh-dns-release: bosh-dns-release-resource
 
 ############################
 # Misc
@@ -831,7 +832,7 @@ resources:
     uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
     branch: gocli-bats
 
-- name: bosh-dns-release
+- name: bosh-dns-release-resource
   type: bosh-io-release
   source:
     repository: cloudfoundry/dns-release
