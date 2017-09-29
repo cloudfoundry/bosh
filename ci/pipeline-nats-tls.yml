@@ -832,10 +832,9 @@ resources:
     branch: gocli-bats
 
 - name: bosh-dns-release
-  type: git
+  type: bosh-io-release
   source:
-    uri: https://github.com/cloudfoundry/bosh-dns-release
-    branch: master
+    repository: cloudfoundry/dns-release
 
 - name: cpi-release
   type: bosh-io-release
