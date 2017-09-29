@@ -8,22 +8,32 @@ module Bosh::Director
     let(:errand_step1) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
     let(:errand_step2) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
     let(:checkpoint_block) { Proc.new{} }
-    let(:mutex) { Mutex.new }
-    let(:resource) { ConditionVariable.new }
     let(:good_state_hash) { ::Digest::SHA1.hexdigest('cornedbeefdeadbeef') }
+    let(:queue) { Thread::Queue.new }
 
     before do
       allow(errand_step1).to receive(:state_hash).and_return('deadbeef')
       allow(errand_step2).to receive(:state_hash).and_return('cornedbeef')
     end
 
+    def wait_for_parallel_call(queue, result)
+      queue << true
+
+      10.times do
+        return result if queue.length == 2
+        sleep 0.1
+      end
+
+      raise "Parallel call did not occur"
+    end
+
     describe '#prepare' do
       it 'runs all prepare steps in parallel' do
         expect(errand_step1).to receive(:prepare) do
-          mutex.synchronize { resource.wait(mutex) }
+          wait_for_parallel_call queue, nil
         end
         expect(errand_step2).to receive(:prepare) do
-          mutex.synchronize { resource.signal }
+          wait_for_parallel_call queue, nil
         end
 
         subject.prepare
@@ -42,14 +52,12 @@ module Bosh::Director
       it 'runs all the steps in parallel' do
         expect(errand_step1).to receive(:run) do |args, &blk|
           expect(blk).to be(checkpoint_block)
-          mutex.synchronize { resource.wait(mutex) }
-          result1
+          wait_for_parallel_call queue, result1
         end
 
         expect(errand_step2).to receive(:run) do |args, &blk|
           expect(blk).to be(checkpoint_block)
-          mutex.synchronize { resource.signal }
-          result2
+          wait_for_parallel_call queue, result2
         end
 
         results = subject.run(&checkpoint_block)
