@@ -72,7 +72,7 @@ describe 'finalize release', type: :integration do
         Dir.chdir(ClientSandbox.test_release_dir) do
           FileUtils.cp(spec_asset('blobstore_config_requiring_credentials.yml'), 'config/final.yml')
           out = bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force", json: true, failure_expected: true)
-          expect(out).to match(/Creating blob in inner blobstore:\\n    Generating blobstore ID:\\n      the client operates in read only mode. Change 'credentials_source' parameter value/)
+          expect(out).to match(/Creating blob in inner blobstore:\\n\s+Generating blobstore ID:\\n\s+the client operates in read only mode. Change 'credentials_source' parameter value/)
         end
       end
 
