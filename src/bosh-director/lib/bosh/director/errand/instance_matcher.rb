@@ -6,7 +6,7 @@ module Bosh::Director
         if req.is_a?(Hash)
           Errand::InstanceFilter.new(req['group'], req['id'], req)
         else
-          Errand::InstanceFilter.new(nil,nil, req)
+          Errand::InstanceFilter.new(nil, nil, req)
         end
       end
     end
@@ -41,12 +41,13 @@ module Bosh::Director
       @original = original
     end
 
-    def matches?(instance, instances_in_group)
+    def matches?(instance, all_instances)
       if @index_or_id.nil? || @index_or_id.empty?
         return instance.job == @group_name
       end
 
       if @index_or_id == 'first' && instance.job == @group_name
+        instances_in_group = all_instances.select { |i| i.job == @group_name }
         return instances_in_group.map(&:uuid).sort.first == instance.uuid
       end
 

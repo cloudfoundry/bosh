@@ -137,11 +137,12 @@ module Bosh::Director
           let(:instance1) { instance_double(Models::Instance, job: 'group-name', uuid: 'a', index: 2) }
           let(:instance2) { instance_double(Models::Instance, job: 'group-name', uuid: 'b', index: 0) }
           let(:instance3) { instance_double(Models::Instance, job: 'group-name', uuid: 'c', index: 0) }
+          let(:instance_in_other_group) { instance_double(Models::Instance, job: 'other-group', uuid: '0', index: 0) }
 
           let(:requested) { [{'group' => 'group-name', 'id' => 'first'}] }
 
           it 'matches on the instance with the first instance sorted by uuid' do
-            matching_instances, unmatched = matcher.match([instance1, instance2, instance3])
+            matching_instances, unmatched = matcher.match([instance1, instance2, instance3, instance_in_other_group])
             expect( matching_instances ).to eq [instance1]
             expect( unmatched ).to eq []
           end
