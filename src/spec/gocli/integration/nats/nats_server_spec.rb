@@ -76,7 +76,7 @@ describe 'nats server', type: :integration do
     with_reset_sandbox_before_each
     context 'and connecting agent is legacy' do
       it 'should fail the deployment' do
-        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true)
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_to_enable_legacy_agent, failure_expected: true)
         expect(output).to match(/Timed out pinging to \b.+\b after \b.+\b seconds/)
       end
     end
