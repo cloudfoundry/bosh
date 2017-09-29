@@ -66,29 +66,95 @@ func extractDnsVersionsList(sshContents string) []int {
 }
 
 var _ = Describe("BoshDns", func() {
-	Context("When deploying vms across different azs", func() {
+	var (
+		manifestPath              string
+		linkedTemplateReleasePath string
+	)
+
+	BeforeEach(func() {
+		startInnerBosh()
+
+		session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", candidateWardenLinuxStemcellPath), GinkgoWriter, GinkgoWriter)
+		Expect(err).ToNot(HaveOccurred())
+		Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+
+		manifestPath, err = filepath.Abs("../assets/dns-with-templates-manifest.yml")
+		Expect(err).NotTo(HaveOccurred())
+
+		linkedTemplateReleasePath, err = filepath.Abs("../assets/linked-templates-release")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(stopInnerBosh)
+
+	Context("having enabled short dns addresses", func() {
 		BeforeEach(func() {
-			startInnerBosh()
 
-			session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", candidateWardenLinuxStemcellPath), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+			opFilePath, err := filepath.Abs("../assets/op-enable-short-dns-addresses.yml")
+			Expect(err).NotTo(HaveOccurred())
 
-			manifestPath, err := filepath.Abs("../assets/dns-with-templates-manifest.yml")
-
-			session, err = gexec.Start(exec.Command(
+			session, err := gexec.Start(exec.Command(
 				boshBinaryPath, "deploy",
 				"-n",
 				"-d", deploymentName,
 				manifestPath,
+				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
-				"-v", "linked-template-release-path=../assets/linked-templates-release",
+				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
-		AfterEach(stopInnerBosh)
+		It("can find instances using the address helper with short names", func() {
+			session, err := gexec.Start(exec.Command(
+				boshBinaryPath, "-n",
+				"-d", deploymentName,
+				"instances",
+				"--column", "instance",
+				"--column", "az",
+				"--column", "ips",
+			), GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+			instanceList := session.Out.Contents()
+
+			matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
+			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
+
+			session, err = gexec.Start(exec.Command(boshBinaryPath,
+				"-d", deploymentName,
+				"run-errand", "query-all",
+			), GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+			Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
+
+			output := string(session.Out.Contents())
+
+			for _, ips := range knownProviders {
+				for _, ip := range ips {
+					Expect(output).To(MatchRegexp(`q-s0\.g-\d+\.bosh\.\s+\d+\s+IN\s+A\s+%s`, ip))
+				}
+			}
+		})
+	})
+
+	Context("When deploying vms across different azs", func() {
+		BeforeEach(func() {
+			session, err := gexec.Start(exec.Command(
+				boshBinaryPath, "deploy",
+				"-n",
+				"-d", deploymentName,
+				manifestPath,
+				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
+				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
+			), GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+		})
 
 		It("can find instances using the address helper", func() {
 			session, err := gexec.Start(exec.Command(
@@ -105,7 +171,7 @@ var _ = Describe("BoshDns", func() {
 			instanceList := session.Out.Contents()
 
 			By("finding instances in all AZs", func() {
-				matchExpression := regexp.MustCompile("provider\\S+\\s+(z1|z2)\\s+(\\S+)")
+				matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
 				session, err = gexec.Start(exec.Command(boshBinaryPath,
@@ -116,16 +182,17 @@ var _ = Describe("BoshDns", func() {
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
+				output := string(session.Out.Contents())
 
 				for _, ips := range knownProviders {
 					for _, ip := range ips {
-						Expect(string(session.Out.Contents())).To(ContainSubstring(ip))
+						Expect(output).To(ContainSubstring(ip))
 					}
 				}
 			})
 
 			By("finding instances filtering by AZ", func() {
-				matchExpression := regexp.MustCompile("provider\\S+\\s+(z1)\\s+(\\S+)")
+				matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
 				session, err = gexec.Start(exec.Command(boshBinaryPath,
@@ -136,10 +203,11 @@ var _ = Describe("BoshDns", func() {
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 2"))
+				output := string(session.Out.Contents())
 
 				for _, ips := range knownProviders {
 					for _, ip := range ips {
-						Expect(string(session.Out.Contents())).To(ContainSubstring(ip))
+						Expect(output).To(ContainSubstring(ip))
 					}
 				}
 			})
