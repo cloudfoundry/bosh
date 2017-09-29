@@ -8,7 +8,7 @@ describe 'nats server', type: :integration do
     }
   end
 
-  let(:cloud_config) do
+  let(:cloud_config_to_enable_legacy_agent) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash.delete('resource_pools')
 
@@ -55,13 +55,19 @@ describe 'nats server', type: :integration do
 
     context 'and connecting agent is legacy' do
       it 'should deploy successfully' do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+        output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_to_enable_legacy_agent, return_exit_code: true)
+
+        expect(exit_code).to eq(0)
+        expect(output).to include('Succeeded')
       end
     end
 
     context 'and connecting agent is updated' do
       it 'should deploy successfully' do
-        deploy_from_scratch
+        output, exit_code = deploy_from_scratch(return_exit_code: true)
+
+        expect(exit_code).to eq(0)
+        expect(output).to include('Succeeded')
       end
     end
   end
@@ -77,7 +83,10 @@ describe 'nats server', type: :integration do
 
     context 'and connecting agent is updated' do
       it 'should deploy successfully' do
-        deploy_from_scratch
+        output, exit_code = deploy_from_scratch(return_exit_code: true)
+
+        expect(exit_code).to eq(0)
+        expect(output).to include('Succeeded')
       end
     end
   end
