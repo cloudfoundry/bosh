@@ -5,7 +5,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
   let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
   let(:deployment_name) { manifest_hash['name'] }
 
-  context('while errand is running') do
+  context 'while errand is running' do
     with_reset_sandbox_before_each
 
     let(:manifest_hash_errand) do
@@ -454,6 +454,60 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       output, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
       expect(output).to include('fake-errand-stdout')
       expect(exit_code).to eq(0)
+    end
+  end
+
+  context 'when instance lifecycle = service' do
+    with_reset_sandbox_before_each
+
+    let(:manifest_hash) do
+      Bosh::Spec::Deployments.simple_manifest.merge({'jobs' => [
+        {
+          'name' => 'service-with-errand',
+          'template' => 'errand1',
+          'lifecycle' => 'service',
+          'resource_pool' => 'a',
+          'instances' => 2,
+          'networks' => [{'name' => 'a'}],
+          'properties' => {
+            'errand1' => {
+              'exit_code' => 0,
+              'stdout' => 'service-errand-stdout',
+              'stderr' => 'service-errand-stderr',
+              'run_package_file' => true,
+            },
+          },
+        },
+        {
+          'name' => 'errand-with-same-errand-and-multiple-instances',
+          'template' => 'errand1',
+          'lifecycle' => 'errand',
+          'resource_pool' => 'a',
+          'instances' => 2,
+          'networks' => [{'name' => 'a'}],
+          'properties' => {
+            'errand1' => {
+              'exit_code' => 0,
+              'stdout' => 'service-errand-stdout',
+              'stderr' => 'service-errand-stderr',
+              'run_package_file' => true,
+            },
+          },
+        }
+      ]})
+    end
+
+    context 'running with /first' do
+      it 'runs the errand on the first instance (ordered by uuid)' do
+        deploy_from_scratch(manifest_hash: manifest_hash)
+        first = director.instances.select{ |i| i.job_name == 'service-with-errand' }.map(&:id).sort.first
+
+        # with keep alive, does not delete/create errand vms (always exactly 1 fake-errand-name/0)
+        output, exit_code = bosh_runner.run('run-errand errand1 --instance service-with-errand/first', return_exit_code: true, deployment_name: deployment_name)
+        expect(output).to include('service-errand-stdout')
+        expect(output).to include("Instance   service-with-errand/#{first}")
+        expect(exit_code).to eq(0)
+      end
     end
   end
 
