@@ -6,10 +6,10 @@ davcli/davcli-0.0.6-linux-amd64:
   size: 8705864
   object_id: fbe6b42b-cd0e-47a6-a0b4-501be4b52426
   sha: 6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08
-gnatsd/gnatsd-0.9.6+2017-09-11T16_05_36Z-4ae1ca3-linux-amd64:
+gnatsd/gnatsd-0.9.6-bosh.6-linux-amd64:
   size: 9505349
-  object_id: bf280241-e422-4d35-7608-6a6700cf31c2
-  sha: e2c22a94cf9abc84261a515d069817274deee3e2
+  object_id: 70102157-266f-468c-4d1d-fb1a8c92b600
+  sha: e395846d463ad39fdf79853037317e57bf88e523
 mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   size: 519628
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
