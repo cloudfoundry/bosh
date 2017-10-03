@@ -53,13 +53,6 @@ groups:
     - fuzz-tests
 
 shared:
-- &slack-alert
-  put: slack-alert
-  params:
-    channel: {{slack_channel_name}}
-    icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-    text: {{slack_failure_message}}
-
 - &deploy-director
   task: deploy-director
   tags: [vsphere-v5.1]
@@ -110,8 +103,6 @@ jobs:
       params:
         RUBY_VERSION: 2.4.2
         DB: sqlite
-  on_failure:
-    <<: *slack-alert
 
 - name: unit-2.4-mysql
   public: true
@@ -150,8 +141,6 @@ jobs:
         params:
           RUBY_VERSION: 2.4.2
           DB: mysql
-      on_failure:
-        <<: *slack-alert
     - task: test-mysql-5.7
       privileged: true
       config:
@@ -167,8 +156,6 @@ jobs:
         params:
           RUBY_VERSION: 2.4.2
           DB: mysql
-  on_failure:
-    <<: *slack-alert
 
 - name: unit-2.4-postgres
   public: true
@@ -241,40 +228,6 @@ jobs:
           RUBY_VERSION: 2.4.2
           DB: postgresql
           DB_VERSION: 9.6
-  on_failure:
-    <<: *slack-alert
-
-# - name: unit-2.4-rds
-#   public: true
-#   serial: true
-#   build_logs_to_retain: 250
-#   plan:
-#   - { get: bosh-src, trigger: true }
-#   - aggregate:
-#     - task: test-mysql-rds
-#       privileged: true
-#       file: bosh-src/ci/tasks/test-unit-remote-db.yml
-#       params:
-#         RUBY_VERSION: 2.4.2
-#         DB: mysql
-#         DB_HOST: {{mysql-rds-host}}
-#         DB_USER: {{mysql-rds-user}}
-#         DB_PASSWORD: {{mysql-rds-password}}
-#         AWS_ACCESS_KEY_ID: {{mysql-rds-aws-access-key-id}}
-#         AWS_SECRET_ACCESS_KEY: {{mysql-rds-aws-secret-access-key}}
-#         AWS_REGION: {{mysql-rds-aws-region}}
-#         RDS_MYSQL_DB_IDENTIFIER: {{mysql-rds-db-identifier}}
-#     - task: test-postgresql-rds
-#       privileged: true
-#       file: bosh-src/ci/tasks/test-unit-remote-db.yml
-#       params:
-#         RUBY_VERSION: 2.4.2
-#         DB: postgresql
-#         DB_HOST: {{postgresql-rds-host}}
-#         DB_USER: {{postgresql-rds-user}}
-#         DB_PASSWORD: {{postgresql-rds-password}}
-#       on_failure:
-#         <<: *slack-alert
 
 ############################
 # Integration Tests
@@ -322,8 +275,6 @@ jobs:
         NUM_GROUPS:   24
         GROUP:        3,6,9,12,15,18,21,24
         SHA2_MODE:    true
-  on_failure:
-    <<: *slack-alert
 
 - name: integration-mysql-gocli-sha1
   public: true
@@ -365,8 +316,6 @@ jobs:
         RUBY_VERSION: 2.4.2
         NUM_GROUPS: 24
         GROUP:      3,6,9,12,15,18,21,24
-  on_failure:
-    <<: *slack-alert
 
 - name: blobstore-client-integration
   public: true
@@ -419,8 +368,6 @@ jobs:
       params:
         DB: mysql
         RUBY_VERSION: 2.4.2
-  on_failure:
-    <<: *slack-alert
 
 ############################
 # Performance Tests
@@ -435,8 +382,6 @@ jobs:
   - task: test
     privileged: true
     file: bosh-src/ci/tasks/test-blobstore-load.yml
-  on_failure:
-    <<: *slack-alert
 
 - name: load-tests-postgres
   public: true
@@ -458,8 +403,6 @@ jobs:
     params:
       DB: postgresql
       LEGACY: false
-  on_failure:
-    <<: *slack-alert
 
 - name: load-tests-mysql
   public: true
@@ -481,8 +424,6 @@ jobs:
     params:
       DB: mysql
       LEGACY: false
-  on_failure:
-    <<: *slack-alert
 
 - name: legacy-load-tests-postgres
   public: true
@@ -504,8 +445,6 @@ jobs:
     params:
       DB: postgresql
       LEGACY: true
-  on_failure:
-    <<: *slack-alert
 
 - name: legacy-load-tests-mysql
   public: true
@@ -528,8 +467,6 @@ jobs:
     params:
       DB: mysql
       LEGACY: true
-  on_failure:
-    <<: *slack-alert
 
 ############################
 # Acceptance Tests
@@ -648,8 +585,6 @@ jobs:
     params:
       BOSH_SRC_PATH: bosh-src/src
       RUBY_VERSION: 2.4.2
-  on_failure:
-    <<: *slack-alert
 
 - name: candidate-release
   plan:
@@ -675,15 +610,10 @@ jobs:
     params:
       file: "release/bosh-dev-release.tgz"
 
-resources:
-- name: slack-alert
-  type: slack-notification
-  source:
-    url: {{slack_hook_url}}
-
 ############################
 # Sources
 ############################
+resources:
 - name: bosh-src
   type: git
   source:
@@ -762,7 +692,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-    branch: master
+    branch: nats-tls
 
 ############################
 # Acceptance Test (BATs)
