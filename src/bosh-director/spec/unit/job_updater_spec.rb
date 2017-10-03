@@ -205,32 +205,6 @@ module Bosh::Director
         end
       end
 
-      context 'when the job has unneeded instances' do
-        let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-        let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance) }
-        before { allow(job).to receive(:unneeded_instances).and_return([instance]) }
-        before { allow(job).to receive(:obsolete_instance_plans).and_return([instance_plan]) }
-
-        it 'should delete the unneeded instances' do
-          allow(Bosh::Director::Config.event_log).to receive(:begin_stage).and_call_original
-          expect(Bosh::Director::Config.event_log).to receive(:begin_stage).
-            with('Deleting unneeded instances', 1, ['job_name'])
-          expect(instance_deleter).to receive(:delete_instance_plans).
-            with([instance_plan], instance_of(Bosh::Director::EventLog::Stage), {max_threads: 1})
-
-          job_updater.update
-        end
-      end
-
-      context 'when the job has no unneeded instances' do
-        before { allow(job).to receive(:unneeded_instances).and_return([]) }
-
-        it 'should not delete instances if there are not any unneeded instances' do
-          expect(instance_deleter).to_not receive(:delete_instance_plans)
-          job_updater.update
-        end
-      end
-
       context 'when there are multiple AZs' do
         let(:update_config) {
           DeploymentPlan::UpdateConfig.new({'canaries' => canaries, 'max_in_flight' => max_in_flight, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
