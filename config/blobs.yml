@@ -10,10 +10,6 @@ gnatsd/gnatsd-0.9.6+2017-09-11T16_05_36Z-4ae1ca3-linux-amd64:
   size: 9505349
   object_id: bf280241-e422-4d35-7608-6a6700cf31c2
   sha: e2c22a94cf9abc84261a515d069817274deee3e2
-golang/go1.7.5.linux-amd64.tar.gz:
-  size: 84176916
-  object_id: c442e2e9-2f9f-4c8f-623f-c1c65da76a50
-  sha: 7c6902ce8cd3b9963082d748c50df074e4896796
 mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   size: 519628
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668

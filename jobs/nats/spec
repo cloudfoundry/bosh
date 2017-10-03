@@ -10,7 +10,6 @@ templates:
 
 packages:
   - gonats
-  - golang
 
 properties:
   nats.listen_address:
