@@ -19,7 +19,10 @@ describe 'nats.cfg.erb' do
               'user' => 'my-user',
               'password' => 'my-password',
               'auth_timeout' => 10,
-              'allow_legacy_agents' => true
+              'allow_legacy_agents' => true,
+              'tls' => {
+                'timeout' => 10
+              }
             }
           }
         }
@@ -80,7 +83,7 @@ describe 'nats.cfg.erb' do
             key_file:   "/var/vcap/jobs/nats/config/nats_server_private_key"
             ca_file:    "/var/vcap/jobs/nats/config/nats_client_ca.pem"
             verify:     true
-            timeout:    2
+            timeout:    10
             enable_cert_authorization: true
             allow_legacy_clients: true
           }
@@ -104,7 +107,10 @@ describe 'nats.cfg.erb' do
               'ping_interval' => 7,
               'ping_max_outstanding' => 10,
               'auth_timeout' => 10,
-              'allow_legacy_agents' => false
+              'allow_legacy_agents' => false,
+              'tls' => {
+                'timeout' => 10
+              }
             }
           }
         }
@@ -163,7 +169,7 @@ describe 'nats.cfg.erb' do
             key_file:   "/var/vcap/jobs/nats/config/nats_server_private_key"
             ca_file:    "/var/vcap/jobs/nats/config/nats_client_ca.pem"
             verify:     true
-            timeout:    2
+            timeout:    10
             enable_cert_authorization: true
             allow_legacy_clients: false
           }

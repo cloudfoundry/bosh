@@ -52,7 +52,7 @@ tls {
   key_file:   "/var/vcap/jobs/nats/config/nats_server_private_key"
   ca_file:    "/var/vcap/jobs/nats/config/nats_client_ca.pem"
   verify:     true
-  timeout:    2
+  timeout:    <%= p('nats.tls.timeout') %>
   enable_cert_authorization: true
   allow_legacy_clients: <%= p('nats.allow_legacy_agents') %>
 }

@@ -31,13 +31,16 @@ properties:
     description: Password clients must use to access nats mbus
   nats.auth_timeout:
     description: Timeout (in seconds) for clients to send auth credentials
-    default: 1
+    default: 30
   nats.tls.ca:
     description: CA cert to trust when communicating with NATS server
   nats.tls.server.certificate:
     description: Certificate for NATs mutual TLS
   nats.tls.server.private_key:
     description: Private Key for NATs mutual TLS
+  nats.tls.timeout:
+    description: Timeout (in seconds) for TLS handshake
+    default: 30
   nats.allow_legacy_agents:
     default: true
     description: Flag for allowing legacy agents
