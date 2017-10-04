@@ -558,7 +558,7 @@ jobs:
           - candidate-release
     - task: test-brats
       file: bosh-src/ci/tasks/test-brats.yml
-      tags: ["worker-brats"]
+      tags: ["worker-gonats"]
       privileged: true
       input_mapping:
         candidate-warden-ubuntu-stemcell: warden-ubuntu-trusty
