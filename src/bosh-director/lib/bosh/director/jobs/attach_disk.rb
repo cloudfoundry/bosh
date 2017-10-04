@@ -18,7 +18,10 @@ module Bosh::Director
         @instance_id = instance_id
         @disk_cid = disk_cid
         @transactor = Transactor.new
-        @disk_manager = DiskManager.new(logger)
+        # TODO this will have to take deployment plan into account
+        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(false)
+        template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
+        @disk_manager = DiskManager.new(logger, template_blob_cache, dns_encoder)
         @orphan_disk_manager = OrphanDiskManager.new(logger)
       end
 
@@ -76,6 +79,7 @@ module Bosh::Director
 
         if instance.state == 'stopped'
           @disk_manager.attach_disk(disk, instance.deployment.tags)
+          # TODO DNS: We will have to update instance.spec, render templates and trigger DNS broadcast
         end
       end
     end

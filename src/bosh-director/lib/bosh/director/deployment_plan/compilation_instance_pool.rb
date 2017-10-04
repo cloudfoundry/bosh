@@ -4,11 +4,11 @@ module Bosh::Director
 
       def self.create(deployment_plan)
         logger = Config.logger
-        disk_manager = DiskManager.new(logger)
         agent_broadcaster = AgentBroadcaster.new
         powerdns_manager = PowerDnsManagerProvider.create
         vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
         dns_encoder = LocalDnsEncoderManager.create_dns_encoder(deployment_plan.use_short_dns_addresses?)
+        disk_manager = DiskManager.new(logger, deployment_plan.template_blob_cache, dns_encoder)
         vm_creator = Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, deployment_plan.template_blob_cache, dns_encoder, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(deployment_plan.ip_provider, powerdns_manager, disk_manager)
         instance_provider = InstanceProvider.new(deployment_plan, vm_creator, logger)

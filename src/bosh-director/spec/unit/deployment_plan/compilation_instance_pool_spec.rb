@@ -34,7 +34,7 @@ module Bosh::Director
     let(:dns_encoder) { DnsEncoder.new }
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-    let(:disk_manager) { DiskManager.new(logger) }
+    let(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
     let(:compilation_config) do
       compilation_spec = {
         'workers' => n_workers,
@@ -402,7 +402,7 @@ module Bosh::Director
 
     describe '.create' do
       let(:instance_reuser) { InstanceReuser.new }
-      let(:disk_manager) { DiskManager.new(logger) }
+      let(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
       let(:agent_broadcaster) { AgentBroadcaster.new }
       let(:powerdns_manager) { PowerDnsManagerProvider.create }
       let(:vm_deleter) { instance_double('Bosh::Director::VmDeleter') }
@@ -412,7 +412,7 @@ module Bosh::Director
 
       before do
         allow(InstanceReuser).to receive(:new).and_return(instance_reuser)
-        allow(DiskManager).to receive(:new).with(logger).and_return(disk_manager)
+        allow(DiskManager).to receive(:new).with(logger, anything, anything).and_return(disk_manager)
         allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
         allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)

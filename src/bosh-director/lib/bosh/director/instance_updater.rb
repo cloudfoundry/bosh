@@ -6,7 +6,7 @@ module Bosh::Director
 
     def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder)
       logger = Config.logger
-      disk_manager = DiskManager.new(logger)
+      disk_manager = DiskManager.new(logger, template_blob_cache, dns_encoder)
       agent_broadcaster = AgentBroadcaster.new
       dns_state_updater = DirectorDnsStateUpdater.new(dns_encoder)
       vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
@@ -104,8 +104,8 @@ module Bosh::Director
 
         instance_plan.release_obsolete_network_plans(@ip_provider)
 
-        update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
+        update_dns(instance_plan)
 
         unless recreated
           instance.update_instance_settings

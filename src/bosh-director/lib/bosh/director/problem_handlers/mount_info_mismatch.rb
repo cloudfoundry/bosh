@@ -52,7 +52,9 @@ module Bosh::Director
 
       def reattach_disk(reboot = false)
         cloud = CloudFactory.create_with_latest_configs.get_for_az(@instance.availability_zone)
+        # TODO should this call DiskManager.attach_disk?
         cloud.attach_disk(@vm_cid, @disk_cid)
+        # TODO DNS: We will have to update instance.spec, render templates and trigger DNS broadcast
         MetadataUpdater.build.update_disk_metadata(cloud, @disk, @disk.instance.deployment.tags)
         if reboot
           reboot_vm(@instance)

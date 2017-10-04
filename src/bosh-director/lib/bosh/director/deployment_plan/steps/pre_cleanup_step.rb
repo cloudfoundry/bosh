@@ -20,7 +20,8 @@ module Bosh::Director
 
           if !obsolete_plans.empty?
             event_log_stage = Config.event_log.begin_stage('Deleting unneeded instances', obsolete_plans.size)
-            instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, PowerDnsManagerProvider.create, DiskManager.new(@logger))
+            dns_encoder = LocalDnsEncoderManager.create_dns_encoder(@deployment_plan.use_short_dns_addresses?)
+            instance_deleter = InstanceDeleter.new(@deployment_plan.ip_provider, PowerDnsManagerProvider.create, DiskManager.new(@logger, @deployment_plan.template_blob_cache, dns_encoder))
 
             instance_deleter.delete_instance_plans(obsolete_plans, event_log_stage)
             @logger.info('Deleted no longer needed instances')

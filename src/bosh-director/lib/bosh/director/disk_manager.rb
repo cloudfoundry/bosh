@@ -1,7 +1,9 @@
 module Bosh::Director
   class DiskManager
-    def initialize(logger)
+    def initialize(logger, template_blob_cache, dns_encoder)
       @logger = logger
+      @template_blob_cache = template_blob_cache
+      @dns_encoder = dns_encoder
       @orphan_disk_manager = OrphanDiskManager.new(@logger)
       @transactor = Transactor.new
       @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
@@ -44,6 +46,7 @@ module Bosh::Director
         detach_disk(disk)
         @orphan_disk_manager.orphan_disk(disk)
       end
+      apply_initial_vm_state(instance_plan)
     end
 
     def attach_disks_if_needed(instance_plan)
@@ -55,6 +58,7 @@ module Bosh::Director
       instance_plan.instance.model.active_persistent_disks.collection.each do |disk|
         attach_disk(disk.model, instance_plan.tags)
       end
+      apply_initial_vm_state(instance_plan)
     end
 
     def delete_persistent_disks(instance_model)
@@ -75,7 +79,19 @@ module Bosh::Director
       vm_cid = disk.instance.vm_cid
       cloud.attach_disk(vm_cid, disk.disk_cid)
       MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
+      agent_client = agent_client(disk.instance)
+      agent_client.wait_until_ready
       mount_disk(disk) if disk.managed?
+    end
+
+    def apply_initial_vm_state(instance_plan)
+      instance_plan.instance.apply_initial_vm_state(instance_plan.spec)
+
+      unless instance_plan.instance.compilation?
+        # re-render job templates with updated dynamic network settings
+        @logger.debug("Re-rendering templates with updated dynamic networks: #{instance_plan.spec.as_template_spec['networks']}")
+        JobRenderer.render_job_instances_with_cache([instance_plan], @template_blob_cache, @dns_encoder, @logger)
+      end
     end
 
     def detach_disk(disk)
@@ -165,7 +181,6 @@ module Bosh::Director
 
     def mount_disk(disk)
       agent_client = agent_client(disk.instance)
-      agent_client.wait_until_ready
       agent_client.mount_disk(disk.disk_cid)
     rescue => e
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")

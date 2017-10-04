@@ -25,7 +25,8 @@ module Bosh::Director
       let(:deployment_plan) do
         instance_double('Bosh::Director::DeploymentPlan::Planner',
           errand_instance_groups: [errand_instance_group, ignored_errand_instance_group],
-                ip_provider: ip_provider
+          ip_provider: ip_provider,
+          template_blob_cache: Bosh::Director::Core::Templates::TemplateBlobCache.new
         )
       end
 

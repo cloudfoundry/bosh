@@ -7,7 +7,7 @@ module Bosh::Director
     end
 
     def new_job_updater(ip_provider, job)
-      JobUpdater.new(ip_provider, job, DiskManager.new(@logger), @template_blob_cache, @dns_encoder)
+      JobUpdater.new(ip_provider, job, DiskManager.new(@logger, @template_blob_cache, @dns_encoder), @template_blob_cache, @dns_encoder)
     end
   end
 end

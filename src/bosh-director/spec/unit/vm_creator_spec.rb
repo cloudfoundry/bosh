@@ -8,7 +8,7 @@ module Bosh
         logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster
       ) }
 
-      let(:disk_manager) { DiskManager.new(logger) }
+      let(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:cloud_factory) { instance_double(CloudFactory) }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }

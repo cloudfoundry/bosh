@@ -24,7 +24,9 @@ module Bosh::Director
 
     let(:options) { {} }
     let(:deleter) { InstanceDeleter.new(ip_provider, powerdns_manager, disk_manager, options) }
-    let(:disk_manager) { DiskManager.new(logger) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
+    let(:dns_encoder) { instance_double(DnsEncoder) }
+    let(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
 
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation) }

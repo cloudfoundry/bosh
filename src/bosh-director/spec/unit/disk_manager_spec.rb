@@ -2,16 +2,21 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Bosh::Director::DiskManager do
-    subject(:disk_manager) { DiskManager.new(logger) }
+    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
+    let(:dns_encoder) { instance_double(DnsEncoder) }
+    subject(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
 
     let(:cloud) { Config.cloud }
     let(:enable_cpi_resize_disk) { false }
     let(:cloud_factory) { instance_double(CloudFactory) }
+    let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new({
+       reservation: DesiredNetworkReservation.new_dynamic(instance_model, instance_double(DeploymentPlan::DynamicNetwork, name: 'default', network_settings: { 'type' => 'dynamic'}))
+    }) }
     let(:instance_plan) { DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,
         desired_instance: DeploymentPlan::DesiredInstance.new(job),
         instance: instance,
-        network_plans: [],
+        network_plans: [network_plan],
         tags: tags,
       }) }
     let(:tags) {{'tags' => {'mytag' => 'myvalue'}}}
@@ -20,6 +25,16 @@ module Bosh::Director
     let(:job) do
       job = DeploymentPlan::InstanceGroup.new(logger)
       job.name = 'job-name'
+      job.vm_type = DeploymentPlan::VmType.new({
+        'name' => 'vm-type',
+        'cloud_properties' => {}
+      })
+      job.default_network = {
+          'gateway' => 'default'
+      }
+      job.update = {}
+      job.stemcell = DeploymentPlan::Stemcell.new('default', 'ubuntu-trusty', 'ubuntu-trusty', 'latest')
+      job.env = DeploymentPlan::Env.new({})
       job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
       job.persistent_disk_collection.add_by_disk_type(disk_type)
       job
@@ -57,6 +72,8 @@ module Bosh::Director
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
       allow(agent_client).to receive(:update_settings)
+      allow(agent_client).to receive(:apply)
+      allow(agent_client).to receive(:get_state)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:enable_cpi_resize_disk).and_return(enable_cpi_resize_disk)
       allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
@@ -163,6 +180,16 @@ module Bosh::Director
             let(:job) do
               job = DeploymentPlan::InstanceGroup.new(logger)
               job.name = 'job-name'
+              job.vm_type = DeploymentPlan::VmType.new({
+                  'name' => 'vm-type',
+                  'cloud_properties' => {}
+              })
+              job.default_network = {
+                  'gateway' => 'default'
+              }
+              job.update = {}
+              job.stemcell = DeploymentPlan::Stemcell.new('default', 'ubuntu-trusty', 'ubuntu-trusty', 'latest')
+              job.env = DeploymentPlan::Env.new({})
               job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
               job.persistent_disk_collection.add_by_disk_name_and_type('unmanaged-disk-name', disk_type)
               job
@@ -514,6 +541,16 @@ module Bosh::Director
           let(:job) do
             job = DeploymentPlan::InstanceGroup.new(logger)
             job.name = 'job-name'
+            job.vm_type = DeploymentPlan::VmType.new({
+                'name' => 'vm-type',
+                'cloud_properties' => {}
+            })
+            job.default_network = {
+                'gateway' => 'default'
+            }
+            job.update = {}
+            job.stemcell = DeploymentPlan::Stemcell.new('default', 'ubuntu-trusty', 'ubuntu-trusty', 'latest')
+            job.env = DeploymentPlan::Env.new({})
             job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
             job
           end

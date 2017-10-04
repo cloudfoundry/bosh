@@ -4,7 +4,7 @@ module Bosh::Director
   describe JobUpdater do
     subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-    let(:disk_manager) { DiskManager.new(logger) }
+    let(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
 
     let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
     let(:dns_encoder) { instance_double(DnsEncoder) }

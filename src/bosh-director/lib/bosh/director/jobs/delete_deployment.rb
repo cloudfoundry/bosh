@@ -27,7 +27,9 @@ module Bosh::Director
           ip_provider = DeploymentPlan::IpProviderFactory.new(true, logger)
 
           powerdns_manager = PowerDnsManagerProvider.create
-          disk_manager = DiskManager.new(logger)
+          template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
+          dns_encoder = LocalDnsEncoderManager.create_dns_encoder(false)
+          disk_manager = DiskManager.new(logger, template_blob_cache, dns_encoder)
           instance_deleter = InstanceDeleter.new(ip_provider, powerdns_manager, disk_manager, force: @force)
           deployment_deleter = DeploymentDeleter.new(Config.event_log, logger, powerdns_manager, Config.max_threads)
 

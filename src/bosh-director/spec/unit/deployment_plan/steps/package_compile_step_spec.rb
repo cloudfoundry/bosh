@@ -11,7 +11,7 @@ module Bosh::Director
     let(:dns_encoder) { instance_double(DnsEncoder) }
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-    let(:disk_manager) { DiskManager.new(logger) }
+    let(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
     let(:release_version_model) { Models::ReleaseVersion.make(version: 'new') }
     let(:reuse_compilation_vms) { false }
     let(:number_of_workers) { 3 }
@@ -560,7 +560,7 @@ module Bosh::Director
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
       let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
-      let(:disk_manager) { DiskManager.new(logger) }
+      let(:disk_manager) { DiskManager.new(logger, template_blob_cache, dns_encoder) }
 
       it 'reuses compilation VMs' do
         prepare_samples
