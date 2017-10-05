@@ -41,8 +41,8 @@ describe 'deploy job update', type: :integration do
     task_id = bosh_runner.get_most_recent_task_id
     deleting_job_events = events(task_id).select { |e| e['stage'] == 'Deleting unneeded instances' }
     expect(deleting_job_events[0]['state']).to eq('started')
-    expect(deleting_job_events[1]['state']).to eq('started')
-    expect(deleting_job_events[2]['state']).to eq('finished')
+    expect(deleting_job_events[1]['state']).to eq('finished')
+    expect(deleting_job_events[2]['state']).to eq('started')
     expect(deleting_job_events[3]['state']).to eq('finished')
   end
 
