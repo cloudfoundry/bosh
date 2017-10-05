@@ -219,9 +219,7 @@ module Bosh::Director
             before do
               allow(job2).to receive(:instances).and_return([
                 instance_double('Bosh::Director::DeploymentPlan::Instance', {
-                  model: instance_double('Bosh::Director::Models::Instance', {
-                    active_vm: instance_double('Bosh::Director::Models::Vm'),
-                  })
+		  vm_created?: true,
                 })
               ])
             end
@@ -235,9 +233,7 @@ module Bosh::Director
             before do
               allow(job2).to receive(:instances).and_return([
                 instance_double('Bosh::Director::DeploymentPlan::Instance', {
-                  model: instance_double('Bosh::Director::Models::Instance', {
-                    active_vm: nil,
-                  })
+		  vm_created?: false,
                 })
               ])
             end

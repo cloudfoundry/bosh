@@ -9,12 +9,23 @@ module Bosh::Director
     let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
     let(:dns_encoder) { instance_double(DnsEncoder) }
 
+    let(:canary_updater) { instance_double('Bosh::Director::InstanceUpdater') }
+    let(:changed_updater) { instance_double('Bosh::Director::InstanceUpdater') }
+    let(:unchanged_updater) { instance_double('Bosh::Director::InstanceUpdater') }
+
+    before do
+      allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
+                                                  .with(ip_provider, template_blob_cache, dns_encoder)
+                                                  .and_return(canary_updater, changed_updater, unchanged_updater)
+    end
+
     let(:job) do
       instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
         name: 'job_name',
         update: update_config,
         unneeded_instances: [],
-        obsolete_instance_plans: []
+        obsolete_instance_plans: [],
+        lifecycle: 'service',
       })
     end
 
@@ -65,6 +76,65 @@ module Bosh::Director
         it 'persists the full spec to the database in case something that is not sent to the vm changes' do
           expect(needed_instance_plans.first).to receive(:persist_current_spec)
           job_updater.update
+        end
+      end
+
+      context 'when instance plans are errands' do
+        subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
+        let(:job) do
+          instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+            name: 'job_name',
+            update: update_config,
+	    instances: [needed_instance],
+            unneeded_instances: [],
+	    needed_instance_plans: needed_instance_plans,
+            obsolete_instance_plans: [],
+	    lifecycle: 'errand',
+          })
+	end
+
+	let(:vm_created) { false }
+        let(:needed_instance_model) { nil }
+        let(:needed_instance) { instance_double(DeploymentPlan::Instance, vm_created?: vm_created, availability_zone: 'z1', model: needed_instance_model) }
+        let(:needed_instance_plans) do
+          instance_plan = DeploymentPlan::InstancePlan.new(
+            instance: needed_instance,
+            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            existing_instance: nil
+          )
+          allow(instance_plan).to receive(:changed?) { true }
+          allow(instance_plan).to receive(:should_be_ignored?) { false }
+          allow(instance_plan).to receive(:changes) { [] }
+          allow(instance_plan).to receive(:persist_current_spec)
+          [instance_plan]
+	end
+
+	context 'when a vm is already running' do
+	  let(:vm_created) { true }
+	  let(:needed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
+
+          it 'applies' do
+            expect(canary_updater).to receive(:update)
+
+            job_updater.update
+
+            check_event_log(task.id) do |events|
+              [
+                updating_stage_event(index: 1, total: 1, task: 'job_name/fake_uuid (1) (canary)', state: 'started'),
+                updating_stage_event(index: 1, total: 1, task: 'job_name/fake_uuid (1) (canary)', state: 'finished'),
+              ].each_with_index do |expected_event, index|
+                expect(events[index]).to include(expected_event)
+              end
+            end
+          end
+	end
+
+        it 'should not apply' do
+          job_updater.update
+
+          check_event_log(task.id) do |events|
+            expect(events).to be_empty
+          end
         end
       end
 
@@ -139,16 +209,6 @@ module Bosh::Director
 
         let(:needed_instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
 
-        let(:canary_updater) { instance_double('Bosh::Director::InstanceUpdater') }
-        let(:changed_updater) { instance_double('Bosh::Director::InstanceUpdater') }
-        let(:unchanged_updater) { instance_double('Bosh::Director::InstanceUpdater') }
-
-        before do
-          allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-                                                      .with(ip_provider, template_blob_cache, dns_encoder)
-                                                      .and_return(canary_updater, changed_updater, unchanged_updater)
-        end
-
         it 'should update changed job instances with canaries' do
           expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
           expect(changed_updater).to receive(:update).with(changed_instance_plan)
@@ -211,22 +271,13 @@ module Bosh::Director
         before { allow(job).to receive(:unneeded_instances).and_return([instance]) }
         before { allow(job).to receive(:obsolete_instance_plans).and_return([instance_plan]) }
 
-        it 'should delete the unneeded instances' do
+        it 'should delete them' do
           allow(Bosh::Director::Config.event_log).to receive(:begin_stage).and_call_original
           expect(Bosh::Director::Config.event_log).to receive(:begin_stage).
             with('Deleting unneeded instances', 1, ['job_name'])
           expect(instance_deleter).to receive(:delete_instance_plans).
             with([instance_plan], instance_of(Bosh::Director::EventLog::Stage), {max_threads: 1})
 
-          job_updater.update
-        end
-      end
-
-      context 'when the job has no unneeded instances' do
-        before { allow(job).to receive(:unneeded_instances).and_return([]) }
-
-        it 'should not delete instances if there are not any unneeded instances' do
-          expect(instance_deleter).to_not receive(:delete_instance_plans)
           job_updater.update
         end
       end

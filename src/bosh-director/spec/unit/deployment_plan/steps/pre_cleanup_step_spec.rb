@@ -17,14 +17,14 @@ module Bosh::Director
         instance_double('Bosh::Director::DeploymentPlan::Planner',
           instance_groups_starting_on_deploy: [],
           ip_provider: ip_provider,
-          tags: {}
+          tags: {},
+          instance_plans_for_obsolete_instance_groups: [existing_instance_plan]
         )
       end
 
       before do
         Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
 
-        allow(deployment_plan).to receive(:instance_plans_for_obsolete_instance_groups).and_return([existing_instance_plan])
         allow(event_log).to receive(:begin_stage)
         allow(InstanceDeleter).to receive(:new).and_return(instance_deleter)
         allow(instance_deleter).to receive(:delete_instance_plans)
