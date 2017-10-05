@@ -38,6 +38,9 @@ module Bosh::Director
       # Tags in deployment by alias
       attr_reader :tags
 
+      # Job instances from the old manifest that are not in the new manifest
+      attr_reader :instance_plans_for_obsolete_instance_groups
+
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
@@ -216,12 +219,6 @@ module Bosh::Director
         @instance_plans_for_obsolete_instance_groups = instance_plans
       end
 
-      def all_obsolete
-        instance_groups.flat_map do |instance_group|
-	  instance_group.obsolete_instance_plans
-	end + @instance_plans_for_obsolete_instance_groups
-      end
-
       # Adds a instance_group by name
       # @param [Bosh::Director::DeploymentPlan::InstanceGroup] instance_group
       def add_instance_group(instance_group)
@@ -249,7 +246,7 @@ module Bosh::Director
           if instance_group.is_service?
             instance_groups << instance_group
           elsif instance_group.is_errand?
-            if instance_group.instances.any? { |i| nil != i.model && !i.model.active_vm.nil? }
+            if instance_group.instances.any? { |i| i.vm_created? }
               instance_groups << instance_group
             end
           end

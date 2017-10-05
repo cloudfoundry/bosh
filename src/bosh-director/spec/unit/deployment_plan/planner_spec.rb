@@ -193,27 +193,6 @@ module Bosh::Director
           end
         end
 
-	describe '#all_obsolete' do
-          before { subject.add_instance_group(job1) }
-          let(:obsolete_plan_one) { instance_double(InstancePlan, obsolete?: true) }
-          let(:obsolete_plan_two) { instance_double(InstancePlan, obsolete?: true) }
-
-          let(:job1) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-              name: 'fake-job1-name',
-              canonical_name: 'fake-job1-cname',
-              is_service?: true,
-              is_errand?: false,
-	      obsolete_instance_plans: [obsolete_plan_one],
-            })
-	  end
-
-	  it 'returns an array containing all obsolete instances' do
-	    subject.mark_instance_plans_for_deletion([obsolete_plan_two])
-	    expect(subject.all_obsolete).to eq([obsolete_plan_one, obsolete_plan_two])
-	  end
-	end
-
         describe '#instance_groups_starting_on_deploy' do
           before { subject.add_instance_group(job1) }
           let(:job1) do
@@ -240,9 +219,7 @@ module Bosh::Director
             before do
               allow(job2).to receive(:instances).and_return([
                 instance_double('Bosh::Director::DeploymentPlan::Instance', {
-                  model: instance_double('Bosh::Director::Models::Instance', {
-                    active_vm: instance_double('Bosh::Director::Models::Vm'),
-                  })
+		  vm_created?: true,
                 })
               ])
             end
@@ -256,9 +233,7 @@ module Bosh::Director
             before do
               allow(job2).to receive(:instances).and_return([
                 instance_double('Bosh::Director::DeploymentPlan::Instance', {
-                  model: instance_double('Bosh::Director::Models::Instance', {
-                    active_vm: nil,
-                  })
+		  vm_created?: false,
                 })
               ])
             end

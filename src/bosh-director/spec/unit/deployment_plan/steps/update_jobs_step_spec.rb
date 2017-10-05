@@ -12,7 +12,7 @@ module Bosh::Director
 
       let(:deployment_plan) do
         instance_double('Bosh::Director::DeploymentPlan::Planner',
-          instance_groups_starting_on_deploy: [instance_group1],
+          instance_groups: [instance_group1],
           ip_provider: ip_provider,
         )
       end

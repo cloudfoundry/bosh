@@ -18,7 +18,7 @@ module Bosh::Director
           instance_groups_starting_on_deploy: [],
           ip_provider: ip_provider,
           tags: {},
-	   all_obsolete: [existing_instance_plan]
+          instance_plans_for_obsolete_instance_groups: [existing_instance_plan]
         )
       end
 
@@ -52,7 +52,7 @@ module Bosh::Director
 
         context 'when no instance plans require deletion' do
           before do
-            allow(deployment_plan).to receive(:all_obsolete).and_return([])
+            allow(deployment_plan).to receive(:instance_plans_for_obsolete_instance_groups).and_return([])
           end
 
           it 'exits early and logs the lack of work needed' do
