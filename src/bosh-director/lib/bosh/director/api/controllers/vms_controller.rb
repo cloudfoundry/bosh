@@ -6,10 +6,10 @@ module Bosh::Director
       delete '/:vm_cid' do
         vm_cid = params[:vm_cid]
         task = JobQueue.new.enqueue(
-            current_user,
-            Jobs::DeleteVm,
-            "delete vm #{vm_cid}",
-            [vm_cid]
+          current_user,
+          Jobs::DeleteVm,
+          "delete vm #{vm_cid}",
+          [vm_cid]
         )
         redirect "/tasks/#{task.id}"
       end
