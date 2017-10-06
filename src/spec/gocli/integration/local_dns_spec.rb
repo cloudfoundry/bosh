@@ -358,6 +358,7 @@ describe 'local DNS', type: :integration do
         Bosh::Director::Canonicalizer.canonicalize(instance.job_name),
         az,
         az_index,
+        ['1'],
         Bosh::Director::Canonicalizer.canonicalize('local_dns'),
         Bosh::Director::Canonicalizer.canonicalize('simple.local_dns'),
         instance.ips[0],
