@@ -87,7 +87,7 @@ var _ = Describe("BoshDns", func() {
 
 	AfterEach(stopInnerBosh)
 
-	Context("having enabled short dns addresses", func() {
+	PContext("having enabled short dns addresses", func() {
 		BeforeEach(func() {
 
 			opFilePath, err := filepath.Abs("../assets/op-enable-short-dns-addresses.yml")
