@@ -768,7 +768,7 @@ resources:
   - name: load-tests-interval
     type: time
     source:
-      interval: 1h
+      interval: 5h
 
   - name: slack-alert
     type: slack-notification
