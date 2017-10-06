@@ -223,21 +223,28 @@ describe 'using director with config server', type: :integration do
 
             config_server_helper.put_value('/tag-mode', 'ha')
             config_server_helper.put_value('/tag-value', 'deprecated')
-
-            manifest_hash['jobs'].first['instances'] = 1
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
           end
 
           it 'does variable substitution on the initial creation' do
-            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.first
-            inputs = set_vm_metadata_invocation.inputs
-            expect(inputs['metadata']['tag_mode']).to eq('ha')
-            expect(inputs['metadata']['tag_value']).to eq('deprecated')
+            manifest_hash = Bosh::Spec::Deployments.simple_manifest
+            manifest_hash['jobs'].first['instances'] = 1
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+
+            set_vm_metadata_invocations = current_sandbox.cpi.invocations.select {|invocation| invocation.method_name == 'set_vm_metadata' && invocation.inputs['metadata']['compiling'].nil? }
+            expect(set_vm_metadata_invocations.count).to eq(3)
+            set_vm_metadata_invocations.each {|set_vm_metadata_invocation|
+              inputs = set_vm_metadata_invocation.inputs
+              unless inputs['metadata']['compiling']
+                expect(inputs['metadata']['tag_mode']).to eq('ha')
+                expect(inputs['metadata']['tag_value']).to eq('deprecated')
+              end
+            }
           end
 
           it 'retains the tags with variable substitution on recreate' do
             skip("#139724667")
 
+            manifest_hash['jobs'].first['instances'] = 1
             current_sandbox.cpi.kill_agents
             current_sandbox.cpi.invocations.drop(current_sandbox.cpi.invocations.size)
 
