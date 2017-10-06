@@ -1,0 +1,4 @@
+---
+- type: replace
+  path: /features?/use_short_dns_addresses
+  value: true

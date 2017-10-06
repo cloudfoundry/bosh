@@ -99,6 +99,7 @@ module Bosh::Director
             template_blob_cache: template_blob_cache,
             instance_groups: [errand_instance_group],
             availability_zones: [],
+            use_short_dns_addresses?: false,
             instance_group: nil,
             model: deployment_model,
           )
@@ -170,6 +171,7 @@ module Bosh::Director
             template_blob_cache: template_blob_cache,
             instance_groups: [],
             availability_zones: [],
+            use_short_dns_addresses?: false,
             model: deployment_model,
           )
         end

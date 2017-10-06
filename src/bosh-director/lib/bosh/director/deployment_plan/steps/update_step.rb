@@ -2,11 +2,12 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class UpdateStep
-        def initialize(base_job, deployment_plan, multi_job_updater)
+        def initialize(base_job, deployment_plan, multi_job_updater, dns_encoder)
           @base_job = base_job
           @logger = base_job.logger
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
+          @dns_encoder = dns_encoder
         end
 
         def perform
@@ -33,8 +34,7 @@ module Bosh::Director
           agent_broadcaster = AgentBroadcaster.new
           disk_manager = DiskManager.new(@logger)
           vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-          dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(@deployment_plan.availability_zones.map(&:name))
-          @vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
+          @vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, disk_manager, template_blob_cache, @dns_encoder, agent_broadcaster)
         end
 
         def setup_step
@@ -43,7 +43,7 @@ module Bosh::Director
             lambda { App.instance.blobstores.blobstore },
             Config.root_domain,
             AgentBroadcaster.new,
-            LocalDnsEncoderManager.create_dns_encoder,
+            @dns_encoder,
             @logger
           )
           SetupStep.new(@base_job, @deployment_plan, vm_creator, local_dns_repo, dns_publisher)

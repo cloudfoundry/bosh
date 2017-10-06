@@ -283,6 +283,40 @@ module Bosh::Director
           end
         end
 
+        describe '#use_short_dns_addresses?' do
+          context 'when deployment use_short_dns_addresses is defined' do
+            context 'when deployment use_short_dns_addresses is TRUE' do
+              before do
+                subject.set_features(DeploymentFeatures.new(true, true))
+              end
+
+              it 'returns TRUE' do
+                expect(subject.use_short_dns_addresses?).to eq(true)
+              end
+            end
+
+            context 'when deployment use_short_dns_addresses is FALSE' do
+              before do
+                subject.set_features(DeploymentFeatures.new(true, false))
+              end
+
+              it 'returns FALSE' do
+                expect(subject.use_short_dns_addresses?).to eq(false)
+              end
+            end
+          end
+
+          context 'when deployment use_short_dns_addresses is NOT defined' do
+            before do
+              subject.set_features(DeploymentFeatures.new)
+            end
+
+            it 'returns FALSE' do
+              expect(subject.use_short_dns_addresses?).to eq(false)
+            end
+          end
+        end
+
         describe '#use_dns_addresses?' do
           context 'when director use_dns_addresses flag is TRUE' do
             before do

@@ -2,9 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsEncoder do
-    subject { described_class.new(az_hash) }
+    subject { described_class.new(service_groups, az_hash, short_dns_enabled) }
     let(:az_hash) {}
-
+    let(:short_dns_enabled) { false }
     let(:instance_group) { 'potato-group' }
     let(:default_network) { 'potato-net' }
     let(:deployment_name) { 'fake-deployment' }
@@ -18,6 +18,16 @@ module Bosh::Director
         root_domain: root_domain
       }.merge(specific_query)
     end
+
+    let(:service_groups) {{
+      { instance_group: 'potato-group',
+        deployment:     'fake-deployment',
+      } => 3,
+      { instance_group: 'lemon-group',
+        deployment:     'fake-deployment',
+      } => 7,
+    }}
+
 
     describe '#encode_query' do
       context 'no filters' do
@@ -41,6 +51,47 @@ module Bosh::Director
           it 'includes all the codes in order' do
             expect(subject.encode_query(criteria)).to eq('q-a1a2s0.potato-group.potato-net.fake-deployment.sub.bosh')
           end
+        end
+      end
+
+      describe 'short DNS names enabled by providing service groups' do
+        let(:short_dns_enabled) { true }
+        it 'produces an abbreviated address with three octets' do
+          expect(subject.encode_query(criteria)).to eq('q-s0.g-3.sub.bosh')
+        end
+
+        it 'chooses from among all known service groups' do
+          criteria[:instance_group] = 'lemon-group'
+          criteria[:default_network] = 'surprise-network'
+          expect(subject.encode_query(criteria)).to eq('q-s0.g-7.sub.bosh')
+        end
+      end
+    end
+
+    describe '#id_for_group_tuple' do
+      context 'when short dns is enabled' do
+        let(:short_dns_enabled) { true }
+        it 'can look up the group id' do
+          expect(subject.id_for_group_tuple(
+            'potato-group',
+            'fake-deployment'
+          )).to eq '3'
+          expect(subject.id_for_group_tuple(
+            'lemon-group',
+            'fake-deployment'
+          )).to eq '7'
+        end
+      end
+      context 'even when short dns is not enabled' do
+        it 'can still look up the group id' do
+          expect(subject.id_for_group_tuple(
+            'potato-group',
+            'fake-deployment'
+          )).to eq '3'
+          expect(subject.id_for_group_tuple(
+            'lemon-group',
+            'fake-deployment'
+          )).to eq '7'
         end
       end
     end

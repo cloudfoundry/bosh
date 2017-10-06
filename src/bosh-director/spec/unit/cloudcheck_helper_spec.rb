@@ -31,9 +31,12 @@ module Bosh::Director
     end
     let!(:vm) { Models::Vm.make(instance: instance, active: true) }
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
-    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest)) }
+    let(:deployment_model) do
+      manifest = Bosh::Spec::Deployments.legacy_manifest
+      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+    end
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
-    let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder }
+    let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder(false) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
     let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, template_cache, dns_encoder, agent_broadcaster) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
@@ -43,6 +46,8 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
+    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false) }
+    let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     before do
@@ -56,6 +61,8 @@ module Bosh::Director
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persister)
+      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
+      allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
       fake_app
     end
 

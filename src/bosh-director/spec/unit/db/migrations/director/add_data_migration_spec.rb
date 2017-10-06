@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20170828174622_add_spec_json_to_templates.rb')
+      expect(latest_db_migration_file).to eq('20170915205722_create_dns_encoded_networks_and_instance_groups.rb')
     end
   end
 end

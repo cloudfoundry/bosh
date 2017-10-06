@@ -87,7 +87,7 @@ module Bosh::Director
           begin
             current_variable_set = deployment_plan.model.current_variable_set
 
-            dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan.availability_zones.map(&:name))
+            dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
 
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 
@@ -187,7 +187,8 @@ module Bosh::Director
         DeploymentPlan::Steps::UpdateStep.new(
           self,
           deployment_plan,
-          multi_job_updater(deployment_plan, dns_encoder)
+          multi_job_updater(deployment_plan, dns_encoder),
+          dns_encoder
         )
       end
 

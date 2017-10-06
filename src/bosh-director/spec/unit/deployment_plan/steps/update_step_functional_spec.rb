@@ -26,7 +26,8 @@ module Bosh::Director::DeploymentPlan::Steps
     end
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-    let(:update_step) { UpdateStep.new(base_job, deployment_plan, multi_job_updater) }
+    let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
+    let(:update_step) { UpdateStep.new(base_job, deployment_plan, multi_job_updater, dns_encoder) }
 
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
     let(:assembler) { Assembler.new(deployment_plan, nil, nil) }
@@ -164,7 +165,6 @@ module Bosh::Director::DeploymentPlan::Steps
     end
 
     context 'when the director database contains no instances' do
-      let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
       let(:multi_job_updater) do
         Bosh::Director::DeploymentPlan::SerialMultiJobUpdater.new(
           Bosh::Director::JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder)
