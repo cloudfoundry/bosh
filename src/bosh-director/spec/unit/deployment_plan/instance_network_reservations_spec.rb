@@ -18,6 +18,7 @@ module Bosh::Director
       DeploymentPlan::ManualNetwork.new('fake-network', [], logger)
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+    let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(DeploymentPlan::InMemoryIpRepo.new(logger), {'fake-network' => network}, logger) }
     before do
       allow(deployment).to receive(:network).with('fake-network').and_return(network)

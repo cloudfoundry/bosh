@@ -331,6 +331,7 @@ module Bosh::Director
             'cloud_properties' => resource_pool.cloud_properties
           })
 
+          vm_requirements = nil
           vm_extensions = []
 
           stemcell = resource_pool.stemcell
@@ -344,11 +345,19 @@ module Bosh::Director
             env_hash = resource_pool.env
           end
         else
-          vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String)
-          vm_type = @deployment.vm_type(vm_type_name)
-          if vm_type.nil?
-            raise InstanceGroupUnknownVmType,
-              "Instance group '#{@instance_group.name}' references an unknown vm type '#{vm_type_name}'"
+          vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String, optional: true)
+          vm_requirements = safe_property(@instance_group_spec, 'vm_requirements', class: Hash, optional: true)
+          vm_type = nil
+          if vm_type_name && vm_requirements
+            raise InstanceGroupBadVmConfiguration, "Instance group '#{@instance_group.name}' specifies both 'vm_type' and 'vm_requirements' keys, only one is allowed."
+          elsif vm_type_name
+            vm_type = @deployment.vm_type(vm_type_name)
+            raise InstanceGroupUnknownVmType, "Instance group '#{@instance_group.name}' references an unknown vm type '#{vm_type_name}'" unless vm_type
+          elsif vm_requirements
+            vm_requirements = VmRequirements.new(vm_requirements)
+            @logger.debug("Using 'vm_requirements' block for instance group '#{@instance_group.name}'")
+          else
+            raise InstanceGroupBadVmConfiguration, "Instance group '#{@instance_group.name}' is missing either 'vm_type' or 'vm_requirements' or 'resource_pool' section."
           end
 
           vm_extension_names = Array(safe_property(@instance_group_spec, 'vm_extensions', class: Array, optional: true))
@@ -362,6 +371,7 @@ module Bosh::Director
           end
         end
 
+        @instance_group.vm_requirements = vm_requirements
         @instance_group.vm_type = vm_type
         @instance_group.vm_extensions = vm_extensions
         @instance_group.stemcell = stemcell

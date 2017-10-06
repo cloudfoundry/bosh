@@ -288,10 +288,10 @@ module Bosh
         end
 
         def packages_changed?
-          job = @desired_instance.instance_group
+          instance_group = @desired_instance.instance_group
 
-          changed = job.package_spec != @instance.current_packages
-          log_changes(__method__, @instance.current_packages, job.package_spec, @instance) if changed
+          changed = instance_group.package_spec != @instance.current_packages
+          log_changes(__method__, @instance.current_packages, instance_group.package_spec, @instance) if changed
           changed
         end
 
@@ -302,9 +302,9 @@ module Bosh
         end
 
         def needs_disk?
-          job = @desired_instance.instance_group
+          instance_group = @desired_instance.instance_group
 
-          job.persistent_disk_collection.needs_disk?
+          instance_group.persistent_disk_collection.needs_disk?
         end
 
         def persist_current_spec
@@ -330,10 +330,10 @@ module Bosh
         end
 
         def env_changed?
-          job = @desired_instance.instance_group
+          instance_group = @desired_instance.instance_group
 
-          if @existing_instance && @existing_instance.vm_env && job.env.spec != @existing_instance.vm_env
-            log_changes(__method__, @existing_instance.vm_env, job.env.spec, @existing_instance)
+          if @existing_instance && @existing_instance.vm_env && instance_group.env.spec != @existing_instance.vm_env
+            log_changes(__method__, @existing_instance.vm_env, instance_group.env.spec, @existing_instance)
             return true
           end
           false

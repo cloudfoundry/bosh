@@ -15,7 +15,7 @@ module Bosh
 
       def initialize(options, context)
         @options = options
-
+        @context = context
 
         @base_dir = options['dir']
         if @base_dir.nil?
@@ -34,7 +34,7 @@ module Bosh
           ))
 
         @commands = CommandTransport.new(@base_dir, @logger)
-        @inputs_recorder = InputsRecorder.new(@base_dir, @logger, context)
+        @inputs_recorder = InputsRecorder.new(@base_dir, @logger, @context)
 
         prepare
       rescue Errno::EACCES
@@ -250,6 +250,20 @@ module Bosh
       SET_DISK_METADATA_SCHEMA = Membrane::SchemaParser.parse { {disk_cid: String, metadata: Hash} }
       def set_disk_metadata(disk_cid, metadata)
         validate_and_record_inputs(SET_DISK_METADATA_SCHEMA, __method__, disk_cid, metadata)
+      end
+
+      CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA = Membrane::SchemaParser.parse { { vm_requirements: {'ram' => Integer, 'cpu' => Integer, 'ephemeral_disk_size' => Integer} } }
+      def calculate_vm_cloud_properties(vm_requirements)
+        validate_and_record_inputs(
+          CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA,
+          __method__,
+          vm_requirements
+        )
+        instance_type = @context['cvcpkey'].nil? ? 'dummy' : @context['cvcpkey']
+        {
+          instance_type: instance_type,
+          ephemeral_disk: { size: vm_requirements['ephemeral_disk_size'] }
+        }
       end
 
       # Additional Dummy test helpers

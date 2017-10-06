@@ -58,13 +58,14 @@ module Bosh::Director::DeploymentPlan
         update_spec: {},
         properties: properties,
         lifecycle: lifecycle,
+        vm_requirements: nil,
       )
     end
     let(:index) { 0 }
     let(:instance_state) { {} }
     let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
     let(:instance) {
-      instance = Instance.create_from_job(instance_group, index, 'started', plan, instance_state, availability_zone, logger)
+      instance = Instance.create_from_instance_group(instance_group, index, 'started', plan, instance_state, availability_zone, logger)
       instance.desired_variable_set = desired_variable_set
       instance
     }

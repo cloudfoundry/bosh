@@ -16,7 +16,7 @@ module Bosh::Director
 
     def make_instance_plan
       instance_model = Models::Instance.make
-      instance = DeploymentPlan::Instance.create_from_job(job, instance_model.index, 'started', deployment, {}, nil, logger)
+      instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, instance_model.index, 'started', deployment, {}, nil, logger)
       instance.bind_existing_instance_model(instance_model)
       DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,
@@ -26,10 +26,10 @@ module Bosh::Director
       })
     end
     let(:deployment) { instance_double(DeploymentPlan::Planner) }
-    let(:job) do
-      job = DeploymentPlan::InstanceGroup.new(logger)
-      job.name = 'fake-job'
-      job
+    let(:instance_group) do
+      instance_group = DeploymentPlan::InstanceGroup.new(logger)
+      instance_group.name = 'fake-job'
+      instance_group
     end
 
     context 'when there are vip networks' do

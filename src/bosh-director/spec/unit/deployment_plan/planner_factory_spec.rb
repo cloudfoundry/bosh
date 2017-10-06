@@ -118,13 +118,12 @@ LOGMESSAGE
           end
 
           context 'Planner.new' do
-            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+            let(:deployment_model) { Models::Deployment.make(name: 'simple') }
             let(:expected_attrs) { {:name=>"simple", :properties=>{}} }
             let(:expected_plan_options) { {"recreate"=>false, "fix"=>false, "skip_drain"=>nil, "job_states"=>{}, "max_in_flight"=>nil, "canaries"=>nil, "tags"=>{}} }
 
             before do
               allow(deployment_repo).to receive(:find_or_create_by_name).with(deployment_name, plan_options).and_return(deployment_model)
-              allow(deployment_model).to receive(:name).and_return(deployment_name)
               allow(runtime_config_consolidator).to receive(:runtime_configs).and_return(runtime_config_models)
             end
 

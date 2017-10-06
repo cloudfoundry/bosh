@@ -65,6 +65,7 @@ module Bosh::Clouds
     def resize_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def get_disks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def ping(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def calculate_vm_cloud_properties(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def info; invoke_cpi_method(__method__.to_s); end
 
     private

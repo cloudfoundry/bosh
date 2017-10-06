@@ -36,6 +36,9 @@ module Bosh::Director
       # @return [DeploymentPlan::VmType]
       attr_accessor :vm_type
 
+      # @return [DeploymentPlan::VmRequirements]
+      attr_accessor :vm_requirements
+
       # @return [DeploymentPlan::VmExtension]
       attr_accessor :vm_extensions
 

@@ -23,6 +23,8 @@ module Bosh::Director
 
       attr_reader :vm_type
 
+      attr_reader :vm_requirements
+
       attr_reader :vm_extensions
 
       def initialize(compilation_config, azs_list, vm_types = [], vm_extensions = [])
@@ -40,10 +42,9 @@ module Bosh::Director
 
         parse_availability_zone(azs_list, compilation_config)
 
-        parse_vm_type(compilation_config, vm_types)
+        parse_vm_type_and_vm_requirements(compilation_config, vm_types)
 
         parse_vm_extensions(compilation_config, vm_extensions)
-
       end
 
       def availability_zone_name
@@ -57,25 +58,29 @@ module Bosh::Director
         @availability_zone = azs_list[az_name]
         if az_name && !az_name.empty? && @availability_zone.nil?
           raise Bosh::Director::CompilationConfigInvalidAvailabilityZone,
-                "Compilation config references unknown az '#{az_name}'. Known azs are: [#{azs_list.keys.join(', ')}]"
+            "Compilation config references unknown az '#{az_name}'. Known azs are: [#{azs_list.keys.join(', ')}]"
         end
       end
 
-      def parse_vm_type(compilation_config, vm_types)
+      def parse_vm_type_and_vm_requirements(compilation_config, vm_types)
         vm_type_name = safe_property(compilation_config, 'vm_type', class: String, optional: true)
+        vm_requirements = safe_property(compilation_config, 'vm_requirements', class: Hash, optional: true)
+
+        if [vm_type_name, vm_requirements, @cloud_properties].reject { |v| v.nil? || v.empty? }.count > 1
+          raise Bosh::Director::CompilationConfigBadVmConfiguration,
+            "Compilation config specifies more than one of 'vm_type', 'vm_requirements', and 'cloud_properties' keys, only one is allowed."
+        end
+
         if vm_type_name
-          @vm_type = vm_types.find { |vm_type| vm_type.name == vm_type_name }
+          @vm_type = vm_types.find {|vm_type| vm_type.name == vm_type_name}
 
           if @vm_type.nil?
-            vm_types_names = vm_types.map { |vm_type| vm_type.name }
+            vm_types_names = vm_types.map {|vm_type| vm_type.name}
             raise Bosh::Director::CompilationConfigInvalidVmType,
-                  "Compilation config references unknown vm type '#{vm_type_name}'. Known vm types are: #{vm_types_names.join(', ')}"
+              "Compilation config references unknown vm type '#{vm_type_name}'. Known vm types are: #{vm_types_names.join(', ')}"
           end
-
-          unless @cloud_properties.empty?
-            raise Bosh::Director::CompilationConfigCloudPropertiesNotAllowed,
-                  "Compilation config is using vm type '#{@vm_type.name}' and should not be configuring cloud_properties."
-          end
+        elsif vm_requirements
+          @vm_requirements = Bosh::Director::DeploymentPlan::VmRequirements.new(vm_requirements)
         end
       end
 
@@ -83,18 +88,19 @@ module Bosh::Director
         @vm_extensions = []
 
         vm_extension_names = safe_property(compilation_config, 'vm_extensions', class: Array, optional: true)
-        Array(vm_extension_names).each { |vm_extension_name|
-          vm_extension = vm_extensions.find { |vm_extension| vm_extension.name == vm_extension_name }
+
+        Array(vm_extension_names).each {|vm_extension_name|
+          vm_extension = vm_extensions.find {|vm_extension| vm_extension.name == vm_extension_name}
 
           if vm_extension.nil?
-            vm_extensions_names = vm_extensions.map { |vm_extension| vm_extension.name }
+            vm_extensions_names = vm_extensions.map {|vm_extension| vm_extension.name}
             raise Bosh::Director::CompilationConfigInvalidVmExtension,
-                  "Compilation config references unknown vm extension '#{vm_extension_name}'. Known vm extensions are: #{vm_extensions_names.join(', ')}"
+              "Compilation config references unknown vm extension '#{vm_extension_name}'. Known vm extensions are: #{vm_extensions_names.join(', ')}"
           end
 
-          if @vm_type.nil?
-            raise Bosh::Director::CompilationConfigVmTypeRequired,
-                  "Compilation config is using vm extension '#{vm_extension.name}' and must configure a vm type."
+          if @vm_type.nil? && @vm_requirements.nil?
+            raise Bosh::Director::CompilationConfigBadVmConfiguration,
+              "Compilation config is using vm extension '#{vm_extension.name}' and must configure a vm type or vm_requirements block."
           end
 
           @vm_extensions.push(vm_extension)

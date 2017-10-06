@@ -16,10 +16,10 @@ module Bosh::Director::DeploymentPlan
         use_short_dns_addresses,
       )
     end
-    let(:job) do
-      job = InstanceGroup.new(logger)
-      job.name = 'fake-job'
-      job
+    let(:instance_group) do
+      instance_group = InstanceGroup.new(logger)
+      instance_group.name = 'fake-job'
+      instance_group
     end
 
     let(:az) { AvailabilityZone.new('az-1', {'foo' => 'bar'}) }

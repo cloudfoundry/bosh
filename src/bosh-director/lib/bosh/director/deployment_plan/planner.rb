@@ -58,6 +58,7 @@ module Bosh::Director
       attr_reader :features
 
       attr_reader :template_blob_cache
+      attr_reader :vm_requirements_cache
 
       attr_accessor :addons
 
@@ -99,6 +100,7 @@ module Bosh::Director
 
         @logger = Config.logger
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
+        @vm_requirements_cache = VmRequirementsCache.new(CloudFactory.create_with_latest_configs(@model), @logger)
       end
 
       def_delegators :@cloud_planner,

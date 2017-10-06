@@ -3,10 +3,11 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do
     subject(:parser) { described_class.new(deployment, event_log, logger) }
-    let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, cloud_config, deployment_model, planner_options) }
+    let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, cloud_config, runtime_configs, deployment_model, planner_options) }
     let(:planner_options) { {} }
     let(:event_log) { Config.event_log }
     let(:cloud_config) { Models::CloudConfig.make }
+    let(:runtime_configs) { [Models::RuntimeConfig.make] }
 
     describe '#parse' do
       let(:options) { {} }
@@ -34,6 +35,9 @@ module Bosh::Director
 
       before { allow(DeploymentPlan::UpdateConfig).to receive(:new).and_return(update_config) }
       let(:update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig') }
+
+      before { allow(CloudFactory).to receive(:create_with_latest_configs).with(deployment_model).and_return(:cloud) }
+      let(:cloud) {instance_double(CloudFactory)}
 
       describe 'name key' do
         it 'parses name' do
@@ -410,6 +414,7 @@ module Bosh::Director
             let(:instance_group_1) do
               instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'instance-group-1-name',
+                vm_type: 'default',
                 canonical_name: 'same-canonical-name',
               })
             end
@@ -417,6 +422,7 @@ module Bosh::Director
             let(:instance_group_2) do
               instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
                 name: 'instance-group-2-name',
+                vm_type: 'default',
                 canonical_name: 'same-canonical-name',
               })
             end

@@ -5,15 +5,15 @@ module Bosh::Director::DeploymentPlan
     let (:instance_plan_sorter) { InstancePlanSorter.new(logger) }
 
     describe '#sort' do
-      let (:desired_instance) { DesiredInstance.new(job) }
-      let (:job) do
-        job = InstanceGroup.new(logger)
-        job.name = 'job_name'
-        job
+      let (:desired_instance) { DesiredInstance.new(instance_group) }
+      let (:instance_group) do
+        instance_group = InstanceGroup.new(logger)
+        instance_group.name = 'job_name'
+        instance_group
       end
       let (:bootstrap_az) { AvailabilityZone.new('bootstrap_name', {}) }
       let (:bootstrap_instance) {
-        bootstrap_instance = Instance.create_from_job(job, 0, 'started', nil, {}, bootstrap_az, logger)
+        bootstrap_instance = Instance.create_from_instance_group(instance_group, 0, 'started', nil, {}, bootstrap_az, logger)
         bootstrap_instance.bind_existing_instance_model(BD::Models::Instance.make(uuid: 'a-uuid', index: 0, job: 'job_name', bootstrap: true))
         bootstrap_instance
       }
@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
       context 'when there are multiple instance plans' do
         let (:az_2) { AvailabilityZone.new('az2_name', {}) }
         let (:instance_in_bootstrap_az) {
-          instance = Instance.create_from_job(job, 4, 'started', nil, {}, bootstrap_az, logger)
+          instance = Instance.create_from_instance_group(instance_group, 4, 'started', nil, {}, bootstrap_az, logger)
           instance.bind_existing_instance_model(BD::Models::Instance.make(uuid: 'bb-uuid1', index: 4, job: 'job_name'))
           instance
         }
@@ -44,7 +44,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should sort instance plans in alphanum in the same az' do
-          instance2_in_bootstrap_az = Instance.create_from_job(job, 2, 'started', nil, {}, bootstrap_az, logger)
+          instance2_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', nil, {}, bootstrap_az, logger)
           instance2_in_bootstrap_az.bind_existing_instance_model(BD::Models::Instance.make(uuid: 'bb-uuid2', index: 2, job: 'job_name'))
           instance_plan2_in_bootstrap_az = InstancePlan.new(
             existing_instance: instance2_in_bootstrap_az.model,
@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should sort instance plans in alphanum order in alphanum sorted az' do
-          instance2_not_in_bootstrap_az = Instance.create_from_job(job, 2, 'started', nil, {}, az_2, logger)
+          instance2_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', nil, {}, az_2, logger)
           instance2_not_in_bootstrap_az.bind_existing_instance_model(BD::Models::Instance.make(uuid: '1-uuid2', index: 2, job: 'job_name'))
           instance_plan2_not_in_bootstrap_az = InstancePlan.new(
             existing_instance: instance2_not_in_bootstrap_az.model,
@@ -69,7 +69,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should set instance plans from az with bootstrap node first' do
-          instance2_not_in_bootstrap_az = Instance.create_from_job(job, 2, 'started', nil, {}, az_2, logger)
+          instance2_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', nil, {}, az_2, logger)
           instance2_not_in_bootstrap_az.bind_existing_instance_model(BD::Models::Instance.make(uuid: '1-uuid2', index: 2, job: 'job_name'))
           instance_plan2_not_in_bootstrap_az = InstancePlan.new(
             existing_instance: instance2_not_in_bootstrap_az.model,
@@ -77,7 +77,7 @@ module Bosh::Director::DeploymentPlan
             instance: instance2_not_in_bootstrap_az,
             network_plans: [])
 
-          instance3_not_in_bootstrap_az = Instance.create_from_job(job, 3, 'started', nil, {}, az_2, logger)
+          instance3_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 3, 'started', nil, {}, az_2, logger)
           instance3_not_in_bootstrap_az.bind_existing_instance_model(BD::Models::Instance.make(uuid: '2-uuid2', index: 3, job: 'job_name'))
           instance_plan3_not_in_bootstrap_az = InstancePlan.new(
             existing_instance: instance3_not_in_bootstrap_az.model,
@@ -93,7 +93,7 @@ module Bosh::Director::DeploymentPlan
           az_3 = AvailabilityZone.new('az3_name', {})
           az_4 = AvailabilityZone.new('az4_name', {})
 
-          instance4_az_3 = Instance.create_from_job(job, 7, 'started', nil, {}, az_3, logger)
+          instance4_az_3 = Instance.create_from_instance_group(instance_group, 7, 'started', nil, {}, az_3, logger)
           instance4_az_3.bind_existing_instance_model(BD::Models::Instance.make(uuid: '1234-uuid2', index: 7, job: 'job_name'))
           instance_plan3_az_3 = InstancePlan.new(
             existing_instance: instance4_az_3.model,
@@ -101,7 +101,7 @@ module Bosh::Director::DeploymentPlan
             instance: instance4_az_3,
             network_plans: [])
 
-          instance5_az_4 = Instance.create_from_job(job, 8, 'started', nil, {}, az_4, logger)
+          instance5_az_4 = Instance.create_from_instance_group(instance_group, 8, 'started', nil, {}, az_4, logger)
           instance5_az_4.bind_existing_instance_model(BD::Models::Instance.make(uuid: '42341-uuid2', index: 8, job: 'job_name'))
           instance_plan5_az_4 = InstancePlan.new(
             existing_instance: instance5_az_4.model,
@@ -116,7 +116,7 @@ module Bosh::Director::DeploymentPlan
 
         context 'when instance does not have az' do
           it 'should sort it without errors' do
-            instance2_without_az = Instance.create_from_job(job, 2, 'started', nil, {}, nil, logger)
+            instance2_without_az = Instance.create_from_instance_group(instance_group, 2, 'started', nil, {}, nil, logger)
             instance2_without_az.bind_existing_instance_model(BD::Models::Instance.make(uuid: '1-uuid2', index: 2, job: 'job_name'))
             instance_plan2_without_az = InstancePlan.new(
               existing_instance: instance2_without_az.model,
