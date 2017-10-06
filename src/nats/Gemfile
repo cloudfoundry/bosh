@@ -1,3 +1,0 @@
-gem 'eventmachine', '=1.0.4'
-gem 'daemons', '=1.1.9'
-gem 'nats', '=0.5.0.beta.12'
