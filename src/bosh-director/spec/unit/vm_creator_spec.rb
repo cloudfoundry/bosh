@@ -705,6 +705,14 @@ module Bosh
           )
         end
 
+        let(:agent_env_hash) do
+          {
+            'bosh' => {
+              'abc' => 'def'
+            }
+          }
+        end
+
         let(:resolved_env_hash) do
           {
             'foo' => 'bar',
@@ -722,6 +730,7 @@ module Bosh
           allow(instance_plan).to receive(:spec).and_return(instance_spec)
           allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
           allow(client_factory).to receive(:create_client).and_return(config_server_client)
+          allow(Config).to receive(:agent_env).and_return(agent_env_hash)
         end
 
         it 'should happen' do
@@ -734,7 +743,8 @@ module Bosh
           expect(cloud).to receive(:create_vm) do |_, _, cloud_properties_param, network_settings_param, _, env_param|
             expect(cloud_properties_param).to eq(resolved_cloud_properties)
             expect(network_settings_param).to eq(resolved_networks_settings)
-            expect(env_param).to eq(resolved_env_hash)
+            expect(env_param).to include(resolved_env_hash)
+            expect(env_param['bosh']).to include(agent_env_hash['bosh'])
           end.and_return('new-vm-cid')
 
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)

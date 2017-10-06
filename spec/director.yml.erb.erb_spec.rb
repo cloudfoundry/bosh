@@ -8,6 +8,13 @@ require_relative './template_example_group'
 describe 'director.yml.erb.erb' do
   let(:merged_manifest_properties) do
     {
+      'agent' => {
+        'env' => {
+          'bosh' => {
+            'foo' => 'bar'
+          }
+        }
+      },
       'ntp' => [
         '0.north-america.pool.ntp.org',
         '1.north-america.pool.ntp.org',
@@ -427,6 +434,22 @@ describe 'director.yml.erb.erb' do
       end
     end
 
+    context 'when agent env properties are provided' do
+      before do
+        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
+        merged_manifest_properties['agent']['env']['bosh'] = {'foo' => 'bar'}
+        merged_manifest_properties['agent']['env']['abc'] = {'foo' => 'bar'}
+      end
+
+      it 'configures the cpi correctly with agent.env.bosh properties' do
+        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
+      end
+
+      it 'ignores non-supported agent.env properties' do
+        expect(parsed_yaml['agent']['env']['abc']).to eq(nil)
+      end
+    end
+
     context 'when configured to use a cpi_job' do
       before do
         merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
@@ -435,6 +458,11 @@ describe 'director.yml.erb.erb' do
       it 'configures the cpi correctly' do
         expect(parsed_yaml['cloud']['provider']['name']).to eq('test-cpi')
         expect(parsed_yaml['cloud']['provider']['path']).to eq('/var/vcap/jobs/test-cpi/bin/cpi')
+      end
+
+      it 'configures agent env correctly' do
+        expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
+        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
       end
     end
 

@@ -434,6 +434,9 @@ properties:
     description: Customer-Supplied Encryption key used when storing blobs in GCS (Optional - Base64 encoded 32 byte key)
   agent.nats.address:
     description: Address for agent to connect to nats
+  agent.env.bosh:
+    description: Base env for agent
+    default: {}
   registry.address:
     description: Address of the Registry to connect to
   registry.port:
