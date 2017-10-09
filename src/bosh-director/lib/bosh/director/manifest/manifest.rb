@@ -6,31 +6,33 @@ module Bosh::Director
     def self.load_from_model(deployment_model, options = {})
       manifest_text = deployment_model.manifest || '{}'
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(deployment_model.runtime_configs)
-      self.load_manifest(YAML.load(manifest_text), deployment_model.cloud_config, consolidated_runtime_config, options)
+      self.load_manifest(manifest_text, deployment_model.cloud_config, consolidated_runtime_config, options)
     end
 
-    def self.load_from_hash(manifest_hash, cloud_config, runtime_configs, options = {})
+    def self.load_from_text(manifest_text, cloud_config, runtime_configs, options = {})
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
-      self.load_manifest(manifest_hash, cloud_config, consolidated_runtime_config, options)
+      self.load_manifest(manifest_text, cloud_config, consolidated_runtime_config, options)
     end
 
     def self.generate_empty_manifest
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new([])
-      self.load_manifest({}, nil, consolidated_runtime_config, {:resolve_interpolation => false})
+      self.load_manifest('{}', nil, consolidated_runtime_config, {:resolve_interpolation => false})
     end
 
     # hybrid_manifest_hash is a resolved raw_manifest except for properties
     attr_reader :hybrid_manifest_hash
     attr_reader :raw_manifest_hash
+    attr_reader :raw_manifest_text
 
     # hybrid_runtime_config_hash a resolved raw_runtime_config_hash except for properties
     attr_reader :hybrid_runtime_config_hash
     # hybrid_cloud_config_hash a resolved raw_cloud_config_hash except for cloud_properties
     attr_reader :hybrid_cloud_config_hash
 
-    def initialize(hybrid_manifest_hash, raw_manifest_hash, hybrid_cloud_config_hash, raw_cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
+    def initialize(hybrid_manifest_hash, raw_manifest_text, hybrid_cloud_config_hash, raw_cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
       @hybrid_manifest_hash = hybrid_manifest_hash
-      @raw_manifest_hash = raw_manifest_hash
+      @raw_manifest_text = raw_manifest_text
+      @raw_manifest_hash = YAML.load(raw_manifest_text)
 
       @hybrid_cloud_config_hash = hybrid_cloud_config_hash
       @raw_cloud_config_hash = raw_cloud_config_hash
@@ -60,7 +62,7 @@ module Bosh::Director
 
     private
 
-    def self.load_manifest(manifest_hash, cloud_config, consolidated_runtime_config, options = {})
+    def self.load_manifest(manifest_text, cloud_config, consolidated_runtime_config, options = {})
       resolve_interpolation = options.fetch(:resolve_interpolation, true)
       ignore_cloud_config = options.fetch(:ignore_cloud_config, false)
 
@@ -69,9 +71,9 @@ module Bosh::Director
       raw_cloud_config_hash =  cloud_config.raw_manifest unless cloud_config.nil?
       raw_runtime_config_hash = consolidated_runtime_config.raw_manifest
 
-      manifest_hash = manifest_hash.nil? ? {} : manifest_hash
+      manifest_text = manifest_text.nil? ? '{}' : manifest_text
 
-      raw_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+      manifest_hash = YAML.load(manifest_text)
 
       if resolve_interpolation
         variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
@@ -85,7 +87,7 @@ module Bosh::Director
         hybrid_runtime_config_hash = Bosh::Common::DeepCopy.copy(raw_runtime_config_hash)
       end
 
-      new(hybrid_manifest_hash, raw_manifest_hash, hybrid_cloud_config_hash, raw_cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
+      new(hybrid_manifest_hash, manifest_text, hybrid_cloud_config_hash, raw_cloud_config_hash, hybrid_runtime_config_hash, raw_runtime_config_hash)
     end
 
     def resolve_aliases_for_generic_hash(generic_hash)

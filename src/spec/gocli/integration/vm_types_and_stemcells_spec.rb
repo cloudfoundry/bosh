@@ -62,15 +62,18 @@ describe 'vm_types and stemcells', type: :integration do
     ])
   end
 
-  it 'saves manifest with resolved latest stemcell versions' do
+  it 'uses manifest with resolved latest stemcell versions' do
     manifest_hash['stemcells'].first['version'] = 'latest'
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect(bosh_runner.run('manifest', deployment_name: 'simple')).to match_output %(
-stemcells:
-- alias: default
-  os: toronto-os
-  version: '1'
-    )
+    expect(table(bosh_runner.run('deployments', json: true))).to eq([
+      {
+        'name' => 'simple',
+        'release_s' => 'bosh-release/0+dev.1',
+        'stemcell_s' => 'ubuntu-stemcell/1',
+        'team_s' => '',
+        'cloud_config' => 'latest'
+      }
+    ])
   end
 
   context 'when env on a job changes' do

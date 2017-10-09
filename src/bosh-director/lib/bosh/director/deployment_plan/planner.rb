@@ -72,7 +72,7 @@ module Bosh::Director
         @properties = attrs.fetch(:properties)
         @releases = {}
 
-        @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
+        @uninterpolated_manifest_text = uninterpolated_manifest_text
         @cloud_config = cloud_config
         @runtime_configs = runtime_configs
         @model = deployment_model

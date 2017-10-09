@@ -96,9 +96,9 @@ module Bosh::Director
         end
 
         it 'manifest should be immutable' do
-          subject = Planner.new(planner_attributes, minimal_manifest, cloud_config, runtime_config_consolidator, deployment_model, options)
+          subject = Planner.new(planner_attributes, YAML.dump(minimal_manifest), cloud_config, runtime_config_consolidator, deployment_model, options)
           minimal_manifest['name'] = 'new_name'
-          expect(subject.uninterpolated_manifest_text['name']).to eq('minimal')
+          expect(YAML.load(subject.uninterpolated_manifest_text)['name']).to eq('minimal')
         end
 
         it 'should parse recreate' do

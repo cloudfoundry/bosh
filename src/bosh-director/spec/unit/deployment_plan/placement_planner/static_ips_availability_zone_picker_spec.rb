@@ -23,7 +23,7 @@ module Bosh::Director::DeploymentPlan
     let(:planner) { planner_factory.create_from_manifest(manifest, cloud_config_model, [], {}) }
     let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, cloud_config_hash, cloud_config_hash, nil, nil) }
+    let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, cloud_config_hash, nil, nil) }
     let(:job) { planner.instance_groups.first }
     let(:job_availability_zones) { ['zone1', 'zone2'] }
     let(:job_networks) { [{'name' => 'a', 'static_ips' => static_ips}] }
