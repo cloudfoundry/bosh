@@ -154,8 +154,8 @@ module Bosh::Director
         }
         DBSpecHelper.migrate(migration_file)
         expect(db[:local_dns_encoded_networks].all.count).to eq 2
-        expect(db[:local_dns_encoded_networks].all).to include(id: 1, name: 'some-network')
-        expect(db[:local_dns_encoded_networks].all).to include(id: 2, name: 'another')
+        expect(db[:local_dns_encoded_networks].all).to include(id: anything, name: 'some-network')
+        expect(db[:local_dns_encoded_networks].all).to include(id: anything, name: 'another')
       end
 
       it 'records known encoded instance groups from existing local_dns_records table' do
@@ -195,9 +195,9 @@ module Bosh::Director
         }
         DBSpecHelper.migrate(migration_file)
         expect(db[:local_dns_encoded_instance_groups].all.count).to eq 3
-        expect(db[:local_dns_encoded_instance_groups].all).to include(id: 1, name: 'alice', deployment_id: 28)
-        expect(db[:local_dns_encoded_instance_groups].all).to include(id: 2, name: 'bob', deployment_id: 28)
-        expect(db[:local_dns_encoded_instance_groups].all).to include(id: 3, name: 'alice', deployment_id: 42)
+        expect(db[:local_dns_encoded_instance_groups].all).to include(id: anything, name: 'alice', deployment_id: 28)
+        expect(db[:local_dns_encoded_instance_groups].all).to include(id: anything, name: 'bob', deployment_id: 28)
+        expect(db[:local_dns_encoded_instance_groups].all).to include(id: anything, name: 'alice', deployment_id: 42)
       end
     end
   end
