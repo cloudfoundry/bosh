@@ -114,8 +114,8 @@ module Bosh::Director
         # the default one does nothing
         @event_log = EventLog::Log.new
 
-        # by default keep only last 100 tasks of each type in disk
-        @max_tasks = config.fetch('max_tasks', 100).to_i
+        # by default keep only last 2000 tasks of each type in disk
+        @max_tasks = config.fetch('max_tasks', 2000).to_i
 
         @max_threads = config.fetch('max_threads', 32).to_i
 
