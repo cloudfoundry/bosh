@@ -14,7 +14,7 @@ publisher = Bosh::Director::BlobstoreDnsPublisher.new(
   lambda { blobstore },
   Bosh::Director::Config.root_domain,
   Bosh::Director::AgentBroadcaster.new,
-  Bosh::Director::LocalDnsEncoderManager.create_dns_encoder,
+  Bosh::Director::LocalDnsEncoderManager.create_dns_encoder(false),
   logger
 )
 
