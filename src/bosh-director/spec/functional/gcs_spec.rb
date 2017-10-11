@@ -155,7 +155,7 @@ module Bosh::Blobstore
         end
 
         it 'should raise an error when the object is missing' do
-          expect { gcs.get('nonexistent-key') }.to raise_error BlobstoreError, /Anonymous users does not have storage.objects.get access to bosh-blobstore-bucket.*nonexistent-key/
+          expect { gcs.get('nonexistent-key') }.to raise_error NotFound, /Blobstore object 'nonexistent-key' not found/
         end
       end
 
