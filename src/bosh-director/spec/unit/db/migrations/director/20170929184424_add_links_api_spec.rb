@@ -51,15 +51,16 @@ module Bosh::Director
         expect(db[:link_providers].count).to eq(4)
 
         expected_outputs = [
-          {link_name: 'link_name_1', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_1', link_def_type: 'link_type_1', content: '{"my_val":"hello"}'},
-          {link_name: 'link_name_2', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_1', link_def_type: 'link_type_2', content: '{"foo":"bar"}'},
-          {link_name: 'link_name_3', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_1', link_def_type: 'link_type_1', content: '{"bar":"baz"}'},
-          {link_name: 'link_name_4', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_2', link_def_type: 'link_type_2', content: '{"foobar":"bazbaz"}'},
+          {instance_group: 'provider_instance_group_1', link_name: 'link_name_1', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_1', link_def_type: 'link_type_1', content: '{"my_val":"hello"}'},
+          {instance_group: 'provider_instance_group_1', link_name: 'link_name_2', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_1', link_def_type: 'link_type_2', content: '{"foo":"bar"}'},
+          {instance_group: 'provider_instance_group_2', link_name: 'link_name_3', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_1', link_def_type: 'link_type_1', content: '{"bar":"baz"}'},
+          {instance_group: 'provider_instance_group_2', link_name: 'link_name_4', deployment_id: 42, owner_type: 'job', owner_name: 'provider_job_2', link_def_type: 'link_type_2', content: '{"foobar":"bazbaz"}'},
         ]
 
         idx = 0
         db[:link_providers].order(:id).each do |provider|
           output = expected_outputs[idx]
+          expect(provider[:link_provider_id]).to eq("fake-deployment.#{output[:instance_group]}.#{output[:owner_name]}.#{output[:link_name]}")
           expect(provider[:name]).to eq(output[:link_name])
           expect(provider[:deployment_id]).to eq(output[:deployment_id])
           expect(provider[:owner_object_type]).to eq(output[:owner_type])

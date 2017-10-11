@@ -133,6 +133,7 @@ module Bosh::Director
       end
 
       def add_link_from_release(instance_group_name, kind, link_name, source)
+      #TODO populate new provider object
         @link_infos[instance_group_name] ||= {}
         @link_infos[instance_group_name][kind] ||= {}
         @link_infos[instance_group_name][kind][link_name] ||= {}
@@ -153,6 +154,7 @@ module Bosh::Director
       end
 
       def add_link_from_manifest(instance_group_name, kind, link_name, source)
+        #TODO populate new provider object
         @link_infos[instance_group_name] ||= {}
         @link_infos[instance_group_name][kind] ||= {}
         @link_infos[instance_group_name][kind][link_name] ||= {}

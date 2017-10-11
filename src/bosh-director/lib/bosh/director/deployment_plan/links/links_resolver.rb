@@ -13,6 +13,8 @@ module Bosh::Director
           resolve_consumed_links(instance_group, job)
           ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
           add_shared_provided_links_to_deployment_plan(instance_group, job)
+
+          add_provided_links(instance_group, job)
         end
       end
 
@@ -68,6 +70,37 @@ module Bosh::Director
               "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
                 'but the release job does not consume it.'
           end
+        end
+      end
+
+      def add_provided_links(instance_group, job)
+        job.provided_links(instance_group.name).each do |provided_link|
+
+         link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
+
+          provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, name: provided_link.name, owner_object_name: job.name)
+          if provider.nil?
+            if provided_link.original_name.nil?
+              definition_name = provided_link.name
+            else
+              definition_name = provided_link.original_name
+            end
+
+            provider = Bosh::Director::Models::LinkProvider.new(
+              link_provider_id: "#{@deployment_plan.model.name}.#{instance_group.name}.#{job.name}.#{provided_link.name}",
+              deployment: @deployment_plan.model,
+              name: provided_link.name,
+              shared: provided_link.shared,
+              consumable: true,
+              content: link_spec.to_json,
+              link_provider_definition_type: provided_link.type,
+              link_provider_definition_name: definition_name,
+              owner_object_name: job.name,
+              owner_object_type: 'Job',
+              owner_object_info: "{ \"instance_group\": \"#{instance_group.name}\" "
+            )
+          end
+          @deployment_plan.add_link_providers(provider)
         end
       end
 

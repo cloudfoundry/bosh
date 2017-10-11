@@ -2,6 +2,7 @@ Sequel.migration do
   up do
     create_table :link_providers do
       primary_key :id
+      String :link_provider_id, :null => false
       String :name, :null => false
       Boolean :shared, :null => false
       foreign_key :deployment_id, :deployments, :null => false, :on_delete => :cascade
@@ -25,9 +26,9 @@ Sequel.migration do
         provider_jobs.each do |provider_job_name, link_names|
           link_names.each do |link_name, link_types|
             link_types.each do |link_type, content|
-              puts "#{instance_group_name} || #{provider_job_name} || #{link_name} || #{link_type} || #{content}"
               self[:link_providers] << {
                 name: link_name,
+                link_provider_id: "#{deployment[:name]}.#{instance_group_name}.#{provider_job_name}.#{link_name}",
                 deployment_id: deployment[:id],
                 shared: true,
                 consumable: true,

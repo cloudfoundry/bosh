@@ -67,6 +67,8 @@ module Bosh::Director
       attr_reader :cloud_config
       attr_reader :runtime_configs
 
+      attr_reader :link_providers
+
       def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_configs, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
@@ -96,6 +98,8 @@ module Bosh::Director
         @features = DeploymentFeatures.new
 
         @addons = []
+
+        @link_providers = []
 
         @logger = Config.logger
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
@@ -262,6 +266,10 @@ module Bosh::Director
 
       def using_global_networking?
         !@cloud_config.nil?
+      end
+
+      def add_link_providers(link_provider)
+        @link_providers << link_provider
       end
 
       # If we don't want to do what we are doing in this method, then link_spec should be an object

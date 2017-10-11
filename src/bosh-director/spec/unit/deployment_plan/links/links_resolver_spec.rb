@@ -15,6 +15,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     generate_deployment_manifest('fake-deployment', links, ['127.0.0.3', '127.0.0.4'])
   end
 
+  let(:job_provides) do
+    {'db' => {'as' => 'db'}}
+  end
+
   def generate_deployment_manifest(name, links, mysql_static_ips)
     {
       'name' => name,
@@ -39,7 +43,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           'templates' => [
             {'name' => 'mysql-template',
               'release' => 'fake-release',
-              'provides' => {'db' => {'as' => 'db'}},
+              'provides' => job_provides,
               'properties' => {'mysql' => nil}
             }
           ],
@@ -136,7 +140,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       name: 'mysql-template',
       spec: {
         provides: provided_links,
-        properties: {mysql: {description: 'some description'}},
+        properties: {mysql: {description: 'some description'}, oranges: {description: 'shades of orange'}, pineapples: {description: 'types of the tasty fruit'}},
       },
       release_id: 1)
     version.add_template(template_model)
@@ -394,6 +398,71 @@ Unable to process links for deployment. Errors are:
         links_hash = {"api-server-template" => {"backup_db" => link_spec}}
 
         expect(api_server_instance_group.resolved_links).to eq(links_hash)
+      end
+
+      context 'when a link is shared' do
+        let (:links) { {'backup_db' => {"from" => 'db', "shared" => true}} }
+
+        it 'adds shared provider to deployment_plan.link_providers' do
+
+          links_resolver.resolve(api_server_instance_group)
+          expect(deployment_plan.link_providers.size).to eq(1)
+        end
+      end
+
+      it 'adds non-shared provider to the deployment_plan.link_providers' do
+        links_resolver.resolve(api_server_instance_group)
+        expect(deployment_plan.link_providers.size).to eq(1)
+      end
+
+      it 'checks for existing provider in link_provider table' do
+        links_resolver.resolve(api_server_instance_group)
+        expect(deployment_plan.link_providers.size).to eq(1)
+
+        links_resolver.resolve(api_server_instance_group)
+        expect(deployment_plan.link_providers.size).to eq(1)
+      end
+
+      context 'when provider name is renamed' do
+        let (:links) { {'backup_db' => {"from" => 'source_db'} } }
+        let(:job_provides) do
+          {'db' => {'as' => 'source_db'}}
+        end
+
+        it 'provider name is not the same as the original name from release' do
+          puts deployment_manifest.inspect
+
+          links_resolver.resolve(api_server_instance_group)
+
+          puts deployment_plan.link_providers.inspect
+
+          expect(deployment_plan.link_providers[0].name).to eq("source_db")
+          expect(deployment_plan.link_providers[0].link_provider_definition_name).to eq("db")
+        end
+      end
+
+      # Feature to be implemented in story #151894692
+      xcontext 'if the the alias is nil' do
+        let (:links) { {'backup_db' => {"from" => 'db'}} }
+
+        let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
+        let(:provided_links) do
+          [
+            {name: "db", type: "db", properties: ['mysql']},
+            {name: "unconsumable", type: "key", properties: ["oranges","pineapples"]}
+          ]
+        end
+
+        let(:job_provides) do
+          {'db' => {'as' => 'db'}, 'unconsumable' => nil}
+        end
+
+        it 'is not consumable' do
+          links_resolver.resolve(api_server_instance_group)
+          expect(deployment_plan.link_providers.size).to eq(2)
+          expect(deployment_plan.link_providers[0].consumable).to be_truthy
+          expect(deployment_plan.link_providers[1].consumable).to be_falsey
+        end
       end
     end
 

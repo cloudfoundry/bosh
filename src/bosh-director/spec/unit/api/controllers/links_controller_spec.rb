@@ -63,6 +63,7 @@ module Bosh::Director
           let!(:provider_1) do
             Models::LinkProvider.create(
               :name => 'link_name_1',
+              :link_provider_id => "#{deployment.name}.instance_group.job_name_1.link_name_1",
               :deployment => deployment,
               :shared => true,
               :consumable => true,
@@ -76,6 +77,7 @@ module Bosh::Director
           let!(:provider_2) do
             Models::LinkProvider.create(
               :name => 'link_name_2',
+              :link_provider_id => "#{deployment.name}.instance_group.job_name_2.link_name_2",
               :deployment => deployment,
               :shared => false,
               :consumable => true,
