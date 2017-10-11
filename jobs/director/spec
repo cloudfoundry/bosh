@@ -93,7 +93,7 @@ properties:
     description: SSL private key for director (PEM encoded)
   director.max_tasks:
     description: Max number of tasks per each type to keep in disk
-    default: 100
+    default: 2000
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
