@@ -6,6 +6,38 @@ require 'tempfile'
 require 'bosh/director'
 require_relative 'blobstore_shared_examples'
 
+RSpec::Matchers.define :eventually_error do |block|
+  supports_block_expectations
+
+  match do |actual|
+    begin
+      Timeout.timeout(10) do
+        first, second = nil, nil
+        until values_match?(first, second)
+          begin
+            block.call
+          rescue Exception => err
+            first = err
+          end
+          begin
+            actual.call
+          rescue Exception => err2
+            second = err2
+          end
+          sleep 0.5
+        end
+        return true
+      end
+    rescue Timeout::Error
+      return false
+    end
+  end
+
+  failure_message do |_actual|
+    block.call.failure_message
+  end
+end
+
 module Bosh::Blobstore
   describe GcscliBlobstoreClient do
 
@@ -155,26 +187,26 @@ module Bosh::Blobstore
         end
 
         it 'should raise an error when the object is missing' do
-          expect { gcs.get('nonexistent-key') }.to raise_error NotFound, /Blobstore object 'nonexistent-key' not found/
+          expect { gcs.get('nonexistent-key') }.to eventually_error -> { raise_error NotFound, /Blobstore object 'nonexistent-key' not found/ }
         end
       end
 
       describe 'create object' do
         it 'should raise an error' do
-          expect { gcs.create(contents) }.to raise_error BlobstoreError, /performing operation put: the client operates in read only mode./
+          expect { gcs.create(contents) }.to eventually_error -> { raise_error BlobstoreError, /performing operation put: the client operates in read only mode./ }
         end
       end
 
       describe 'delete object' do
         context 'when the key exists' do
           it 'should raise an error' do
-            expect { gcs.delete('public') }.to raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./
+            expect { gcs.delete('public') }.to eventually_error -> { raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./ }
           end
         end
 
         context 'when the key does not exist' do
           it 'should raise an error' do
-            expect { gcs.delete('nonexistent-key') }.to raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./
+            expect { gcs.delete('nonexistent-key') }.to eventually_error -> { raise_error BlobstoreError, /performing operation delete: the client operates in read only mode./ }
           end
         end
       end
@@ -185,6 +217,5 @@ module Bosh::Blobstore
         end
       end
     end
-
   end
 end
