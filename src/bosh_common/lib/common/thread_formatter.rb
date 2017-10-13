@@ -3,7 +3,10 @@ class ThreadFormatter
 
   # get pattern layout for Logging::Logger
   def self.layout
-    Logging.layouts.pattern(:pattern => "%.1l, [%d #%p] [%T] %5l -- %c: %m\n")
+    Logging.layouts.pattern({
+      :pattern => "%.1l, [%d #%p] [%T] %5l -- %c: %m\n",
+      :date_pattern => "%Y-%m-%dT%H:%M:%S.%s"
+    })
   end
 
   attr_accessor :datetime_format
