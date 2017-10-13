@@ -151,7 +151,8 @@ module Bosh::Director
           existing_instance: instance.model,
           instance: instance,
           desired_instance: desired_instance,
-          network_plans: [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)]
+          network_plans: [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)],
+          tags: @deployment_plan.tags
         )
 
         compile_job.add_instance_plans([instance_plan])
@@ -162,7 +163,7 @@ module Bosh::Director
         instance_model = instance_plan.instance.model
         parent_id = add_event(instance_model.deployment.name, instance_model.name)
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
-        @vm_creator.create_for_instance_plan(instance_plan, [], {})
+        @vm_creator.create_for_instance_plan(instance_plan, [], instance_plan.tags)
         instance_plan.instance
       rescue Exception => e
         raise e

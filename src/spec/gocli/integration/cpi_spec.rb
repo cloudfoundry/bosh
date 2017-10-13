@@ -321,7 +321,15 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.11']
+        manifest_hash['jobs'] = [
+          Bosh::Spec::Deployments.simple_job(
+            name: 'first-job',
+            static_ips: ['192.168.1.11'],
+            instances: 1,
+            templates: ['name' => 'foobar'],
+            persistent_disk_pool: Bosh::Spec::Deployments.disk_pool['name']
+          )
+        ]
 
         # add tags
         manifest_hash.merge!({
@@ -345,8 +353,118 @@ describe 'CPI calls', type: :integration do
 
         second_deploy_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
 
-        expect(second_deploy_invocations[0].method_name).to eq('snapshot_disk')
+        expect(second_deploy_invocations[0].method_name).to eq('create_vm')
         expect(second_deploy_invocations[0].inputs).to match({
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'type' => 'manual',
+              'ip' => String,
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            }
+          },
+          'disk_cids' => [],
+          'env' => anything
+        })
+
+        expect(second_deploy_invocations[1].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[1].inputs).to match({
+          'vm_cid' => String,
+          'metadata' => {
+            'director' => 'TestDirector',
+            'created_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_group' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+            'tag2' => 'value2'
+          }
+        })
+
+        expect(second_deploy_invocations[2].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[2].inputs).to match({
+          'vm_cid' => String,
+          'metadata' => {
+            'director' => 'TestDirector',
+            'created_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_group' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'compiling' => 'foo'
+          }
+        })
+
+        expect(second_deploy_invocations[3].method_name).to eq('delete_vm')
+
+        expect(second_deploy_invocations[4].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[4].inputs).to match({
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'type' => 'manual',
+              'ip' => String,
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            }
+          },
+          'disk_cids' => [],
+          'env' => anything
+        })
+
+        expect(second_deploy_invocations[5].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[5].inputs).to match({
+          'vm_cid' => String,
+          'metadata' => {
+            'director' => 'TestDirector',
+            'created_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_group' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'tag1' => 'value1',
+            'tag2' => 'value2'
+          }
+        })
+
+        expect(second_deploy_invocations[6].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[6].inputs).to match({
+          'vm_cid' => String,
+          'metadata' => {
+            'director' => 'TestDirector',
+            'created_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_group' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'compiling' => 'bar'
+          }
+        })
+
+        expect(second_deploy_invocations[7].method_name).to eq('delete_vm')
+
+        expect(second_deploy_invocations[8].method_name).to eq('snapshot_disk')
+        expect(second_deploy_invocations[8].inputs).to match({
           'disk_id' => disk_cid,
           'metadata' => {
             'deployment' => 'simple',
@@ -359,13 +477,13 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[1].method_name).to eq('delete_vm')
-        expect(second_deploy_invocations[1].inputs).to match({
+        expect(second_deploy_invocations[9].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[9].inputs).to match({
           'vm_cid' => vm_cid
         })
 
-        expect(second_deploy_invocations[2].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[2].inputs).to match({
+        expect(second_deploy_invocations[10].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[10].inputs).to match({
           'agent_id' => String,
           'stemcell_id' => String,
           'cloud_properties' => {},
@@ -382,7 +500,7 @@ describe 'CPI calls', type: :integration do
           },
           'disk_cids' => [disk_cid],
           'env' => {
-            'bosh' =>{
+            'bosh' => {
               'mbus' => expected_mbus,
               'password' => 'foobar',
               'group' => expected_group,
@@ -391,8 +509,8 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[3].inputs).to match({
+        expect(second_deploy_invocations[11].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[11].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
             'director' => 'TestDirector',
@@ -408,18 +526,18 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect_name(second_deploy_invocations[3])
+        expect_name(second_deploy_invocations[11])
 
-        new_vm_cid = second_deploy_invocations[3].inputs['vm_cid']
+        new_vm_cid = second_deploy_invocations[11].inputs['vm_cid']
 
-        expect(second_deploy_invocations[4].method_name).to eq('attach_disk')
-        expect(second_deploy_invocations[4].inputs).to match({
+        expect(second_deploy_invocations[12].method_name).to eq('attach_disk')
+        expect(second_deploy_invocations[12].inputs).to match({
           'vm_cid' => new_vm_cid,
           'disk_id' => disk_cid
         })
 
-        expect(second_deploy_invocations[5].method_name).to eq('set_disk_metadata')
-        expect(second_deploy_invocations[5].inputs).to match({
+        expect(second_deploy_invocations[13].method_name).to eq('set_disk_metadata')
+        expect(second_deploy_invocations[13].inputs).to match({
           'disk_cid' => disk_cid,
           'metadata' => {
             'director' => 'TestDirector',
