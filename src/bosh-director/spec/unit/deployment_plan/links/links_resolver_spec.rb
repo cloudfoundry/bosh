@@ -412,7 +412,66 @@ Unable to process links for deployment. Errors are:
 
       it 'adds non-shared provider to the deployment_plan.link_providers' do
         links_resolver.resolve(api_server_instance_group)
+
+        instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
+        instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
+
+        link_spec = {
+          'deployment_name' => api_server_instance_group.deployment_name,
+          'domain' => 'bosh',
+          'default_network' => 'fake-manual-network',
+          'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+          'instance_group' => 'mysql',
+          "properties" => {"mysql" => nil},
+          'instances' => [
+            {
+              'name' => 'mysql',
+              'id' => instance1.uuid,
+              'index' => 0,
+              "bootstrap" => true,
+              'az' => nil,
+              'address' => '127.0.0.3',
+              'addresses' => {
+                'fake-manual-network' => '127.0.0.3',
+                'fake-dynamic-network' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
+              },
+              'dns_addresses' => {
+                'fake-manual-network' => '127.0.0.3',
+                'fake-dynamic-network' => "#{instance1.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
+              }
+            },
+            {
+              'name' => 'mysql',
+              'id' => instance2.uuid,
+              'index' => 1,
+              "bootstrap" => false,
+              'az' => nil,
+              'address' => '127.0.0.4',
+              'addresses' => {
+                'fake-manual-network' => '127.0.0.4',
+                'fake-dynamic-network' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
+              },
+              'dns_addresses' => {
+                'fake-manual-network' => '127.0.0.4',
+                'fake-dynamic-network' => "#{instance2.uuid}.mysql.fake-dynamic-network.fake-deployment.bosh"
+              }
+            }
+          ]
+        }
+
         expect(deployment_plan.link_providers.size).to eq(1)
+        prov = deployment_plan.link_providers[0]
+        expect(prov.link_provider_id).to eq("#{api_server_instance_group.deployment_name}.mysql.mysql-template.db")
+        expect(prov.deployment.name).to eq(api_server_instance_group.deployment_name)
+        expect(prov.name).to eq('db')
+        expect(prov.shared).to be_falsey
+        expect(prov.consumable).to be_truthy
+        expect(prov.content).to eq(link_spec.to_json)
+        expect(prov.link_provider_definition_name).to eq('db')
+        expect(prov.link_provider_definition_type).to eq('db')
+        expect(prov.owner_object_name).to eq('mysql-template')
+        expect(prov.owner_object_type).to eq('Job')
+        expect(prov.owner_object_info).to eq({instance_group: 'mysql'}.to_json)
       end
 
       it 'checks for existing provider in link_provider table' do
@@ -423,6 +482,43 @@ Unable to process links for deployment. Errors are:
         expect(deployment_plan.link_providers.size).to eq(1)
       end
 
+      context 'when the contents is updated' do
+        let(:api_server_instance_group2) do
+          deployment_plan2.instance_group('api-server')
+        end
+
+        let(:deployment_plan2) do
+          planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
+          manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest2, @cloud_config, [], {:resolve_interpolation => false})
+
+          planner = planner_factory.create_from_manifest(manifest, @cloud_config, [], {})
+          Bosh::Director::DeploymentPlan::Assembler.create(planner).bind_models
+          planner
+        end
+
+        let(:deployment_manifest2) do
+          manifest = generate_deployment_manifest('fake-deployment', links, ['127.0.0.5', '127.0.0.6'])
+          manifest['jobs'][1]['templates'][0]['properties']['mysql']={'happy' => true, 'sad' => false}
+          manifest
+        end
+
+        it 'checks for existing provider in link_provider table and update the contents' do
+          links_resolver.resolve(api_server_instance_group)
+          expect(deployment_plan.link_providers.size).to eq(1)
+
+          original_id = deployment_plan.link_providers[0].id
+
+          links_resolver.resolve(api_server_instance_group2)
+          expect(deployment_plan2.link_providers.size).to eq(1)
+          content = JSON.parse(deployment_plan2.link_providers[0].content)
+
+          expect(deployment_plan2.link_providers[0].id).to eq(original_id)
+          expect(content['properties']['mysql']).to eq({'happy' => true, 'sad' => false})
+          expect(content['instances'][0]['address']).to eq("127.0.0.5")
+          expect(content['instances'][1]['address']).to eq("127.0.0.6")
+        end
+      end
+
       context 'when provider name is renamed' do
         let (:links) { {'backup_db' => {"from" => 'source_db'} } }
         let(:job_provides) do
@@ -430,11 +526,7 @@ Unable to process links for deployment. Errors are:
         end
 
         it 'provider name is not the same as the original name from release' do
-          puts deployment_manifest.inspect
-
           links_resolver.resolve(api_server_instance_group)
-
-          puts deployment_plan.link_providers.inspect
 
           expect(deployment_plan.link_providers[0].name).to eq("source_db")
           expect(deployment_plan.link_providers[0].link_provider_definition_name).to eq("db")
@@ -801,7 +893,7 @@ Unable to process links for deployment. Errors are:
               'networks' => [
                 {
                   'name' => 'fake-manual-network',
-                  'static_ips' => ['127.0.0.3', '127.0.0.4'],
+                  'static_ips' => mysql_static_ips,
                   'default' => ['dns', 'gateway'],
 
                 },

@@ -178,6 +178,28 @@ module Bosh::Director
 
             assembler.bind_models({:should_bind_links => false})
           end
+
+          it 'should clean up unreferenced link_providers after binding' do
+            old_provider = Models::LinkProvider.new(
+              link_provider_id: 'simple.ig-1.oldjob.creds',
+              name: 'old',
+              deployment: deployment_plan.model,
+              link_provider_definition_type: 'creds',
+              link_provider_definition_name: 'login',
+              consumable: true,
+              shared: false,
+              content: '{"user":"bob","password":"jim"}',
+              owner_object_type: 'Job'
+            )
+            old_provider.save
+
+            expect(links_resolver).to receive(:resolve).with(instance_group_1)
+            expect(links_resolver).to receive(:resolve).with(instance_group_2)
+            allow(deployment_plan).to receive(:link_providers).and_return([])
+
+            assembler.bind_models
+            expect(Models::LinkProvider.all).to be_empty
+          end
         end
 
         context 'properties binding' do

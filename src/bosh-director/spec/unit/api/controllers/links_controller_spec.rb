@@ -56,7 +56,7 @@ module Bosh::Director
         it 'returns 400 if deployment name is not provided' do
           get '/link_provider/'
           expect(last_response.status).to eq(400)
-          expect(last_response.body).to eq('{"code":190023,"description":"Deployment name is required"}')
+          expect(last_response.body).to eq('{"code":190024,"description":"Deployment name is required"}')
         end
 
         context 'and there are providers in the database' do

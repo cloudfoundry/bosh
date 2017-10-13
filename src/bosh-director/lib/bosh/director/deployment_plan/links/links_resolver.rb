@@ -97,9 +97,13 @@ module Bosh::Director
               link_provider_definition_name: definition_name,
               owner_object_name: job.name,
               owner_object_type: 'Job',
-              owner_object_info: "{ \"instance_group\": \"#{instance_group.name}\" "
+              owner_object_info: "{\"instance_group\":\"#{instance_group.name}\"}"
             )
+          else
+            provider.content = link_spec.to_json
           end
+          provider.save
+
           @deployment_plan.add_link_providers(provider)
         end
       end

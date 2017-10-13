@@ -4,10 +4,12 @@ module Bosh::Director::Models
 
     def validate
       validates_presence [
+        :link_provider_id,
         :name,
-        :deployment_id,
         :shared,
+        :deployment_id,
         :consumable,
+        :content,
         :link_provider_definition_type,
         :link_provider_definition_name,
         :owner_object_type,

@@ -136,6 +136,16 @@ module Bosh::Director
       @deployment_plan.instance_groups.each do |instance_group|
         links_resolver.resolve(instance_group)
       end
+      # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
+      link_providers = Bosh::Director::Models::LinkProvider.where(deployment: @deployment_plan.model)
+      link_providers.each do |link_provider|
+        result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
+        if result.empty?
+          link_provider.destroy
+          # TODO: orphaning any links refering to them.
+        end
+      end
+
     end
 
     # Binds template models for each release spec in the deployment plan
