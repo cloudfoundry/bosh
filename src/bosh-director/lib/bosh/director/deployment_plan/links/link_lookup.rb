@@ -11,7 +11,10 @@ module Bosh::Director
           unless provider_deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
           end
-          DeploymentLinkSpecLookup.new(consumed_link, link_path, provider_deployment.link_spec, link_network_options)
+          # link_providers = Models::LinkProvider.find(deployment: provider_deployment)
+          # link_providers = Models::LinkProvider.where(:deployment == provider_deployment)
+          # DeploymentLinkSpecLookup.new(consumed_link, link_path, link_providers, link_network_options)
+          DeploymentLinkProviderLookup.new(consumed_link, link_path, provider_deployment.link_spec, link_network_options)
         end
       end
     end
@@ -52,7 +55,7 @@ module Bosh::Director
         @instance_groups = deployment_plan.instance_groups
       end
 
-      def find_link_spec
+      def find_link_provider
         instance_group = @instance_groups.find { |instance_group| instance_group.name == @link_path.job }
         return nil unless instance_group
 
@@ -106,25 +109,27 @@ module Bosh::Director
     end
 
     # Used to find link source from link spec in deployment model (saved in DB)
-    class DeploymentLinkSpecLookup < BaseLinkLookup
-      def initialize(consumed_link, link_path, deployment_link_spec, link_network_options)
+    class DeploymentLinkProviderLookup < BaseLinkLookup
+      def initialize(consumed_link, link_path, deployment_link_provider, link_network_options)
         super(link_network_options)
         @consumed_link = consumed_link
         @link_path = link_path
-        @deployment_link_spec = deployment_link_spec
+        @deployment_link_provider = deployment_link_provider
       end
 
-      def find_link_spec
-        job = @deployment_link_spec[@link_path.job]
-        return nil unless job
+      def find_link_provider
+        return nil if @deployment_link_provider.empty?
 
-        template = job[@link_path.template]
-        return nil unless template
+        link_provider_id = "#{@link_path.deployment_plan_name}.#{@link_path.job}.#{@link_path.template}.#{@link_path.name}"
 
-        link_spec = template.fetch(@link_path.name, {})[@consumed_link.type]
-        return nil unless link_spec
+        job = @deployment_link_provider.select{|lp| lp['link_provider_id'] == link_provider_id}
+        return nil if job.empty?
 
-        update_addresses!(link_spec)
+        template = job.select{|j| j['link_provider_defination_type'] == @consumed_link.type }
+        return nil if template.empty?
+
+
+        update_addresses!(template.first['content'])
       end
 
       private
