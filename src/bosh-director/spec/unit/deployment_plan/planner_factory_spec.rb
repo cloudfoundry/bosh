@@ -17,7 +17,7 @@ module Bosh
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
-        let(:manifest) { Manifest.new(hybrid_manifest_hash, raw_manifest_hash, cloud_config_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
+        let(:manifest) { Manifest.new(hybrid_manifest_hash, YAML.dump(raw_manifest_hash), cloud_config_hash, cloud_config_hash, runtime_config_hash, runtime_config_hash)}
         let(:plan_options) { {} }
         let(:event_log_io) { StringIO.new("") }
         let(:logger_io) { StringIO.new("") }
@@ -129,7 +129,7 @@ LOGMESSAGE
             end
 
             it 'calls planner new with appropriate arguments' do
-              expect(Planner).to receive(:new).with(expected_attrs, raw_manifest_hash,cloud_config_model, runtime_config_models, deployment_model, expected_plan_options).and_call_original
+              expect(Planner).to receive(:new).with(expected_attrs, YAML.dump(raw_manifest_hash), cloud_config_model, runtime_config_models, deployment_model, expected_plan_options).and_call_original
               planner
             end
           end

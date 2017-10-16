@@ -5,7 +5,7 @@ module Bosh
     describe DeploymentPlan::ManifestMigrator do
       subject { DeploymentPlan::ManifestMigrator.new }
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
-      let(:manifest) { Manifest.new(manifest_hash, manifest_hash, nil, nil, nil, nil)}
+      let(:manifest) { Manifest.new(manifest_hash, YAML.dump(manifest_hash), nil, nil, nil, nil)}
       let(:cloud_config) { nil }
       let(:migrated_manifest) { subject.migrate(manifest, cloud_config)[0] }
       let(:migrated_manifest_hash) { migrated_manifest.hybrid_manifest_hash }

@@ -28,7 +28,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:stemcells).and_return({})
         allow(deployment_plan).to receive(:instance_groups_starting_on_deploy).and_return([])
         allow(deployment_plan).to receive(:releases).and_return([])
-        allow(deployment_plan).to receive(:uninterpolated_manifest_text).and_return({})
+        allow(deployment_plan).to receive(:uninterpolated_manifest_text).and_return('{}')
         allow(deployment_plan).to receive(:mark_instance_plans_for_deletion)
         allow(deployment_plan).to receive(:deployment_wide_options).and_return({})
         allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)

@@ -119,7 +119,7 @@ module Bosh::Director
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
 
-              allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
+              allow(Bosh::Director::Manifest).to receive(:load_from_text).and_return(manifest)
 
               allow(deployment_instance_group).to receive(:unignored_instance_plans).and_return(instance_plans)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
@@ -175,7 +175,7 @@ module Bosh::Director
             let(:manifest) { instance_double( Bosh::Director::Manifest)}
 
             before do
-              allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
+              allow(Bosh::Director::Manifest).to receive(:load_from_text).and_return(manifest)
               expect(Models::Deployment).to_not receive(:find).with({name: 'deployment-name'})
             end
 
@@ -196,7 +196,7 @@ module Bosh::Director
             let(:manifest_error) { Exception.new('oh noes!') }
 
             it 'should not raise when manifest cannot be loaded' do
-              expect(Bosh::Director::Manifest).to receive(:load_from_hash).and_raise manifest_error
+              expect(Bosh::Director::Manifest).to receive(:load_from_text).and_raise manifest_error
 
               expect { job.perform }.to raise_error(manifest_error)
             end
@@ -217,7 +217,7 @@ module Bosh::Director
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
             allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
-            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
+            allow(Bosh::Director::Manifest).to receive(:load_from_text).and_return(manifest)
           end
 
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
@@ -480,7 +480,7 @@ Unable to render instance groups for deployment. Errors are:
             allow(notifier).to receive(:send_start_event)
             allow(JobRenderer).to receive(:render_job_instances_with_cache).and_raise(error_msgs)
             allow(planner).to receive(:instance_models).and_return([])
-            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
+            allow(Bosh::Director::Manifest).to receive(:load_from_text).and_return(manifest)
           end
 
           it 'formats the error messages' do
@@ -569,7 +569,7 @@ Unable to render instance groups for deployment. Errors are:
             allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
-            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
+            allow(Bosh::Director::Manifest).to receive(:load_from_text).and_return(manifest)
           end
 
           it 'should exit before trying to create vms' do
@@ -598,7 +598,7 @@ Unable to render instance groups for deployment. Errors are:
           before do
             expect(notifier).to receive(:send_start_event).ordered
             expect(notifier).to receive(:send_error_event).ordered
-            allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
+            allow(Bosh::Director::Manifest).to receive(:load_from_text).and_return(manifest)
           end
 
           it 'does not compile or update' do
