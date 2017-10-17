@@ -244,7 +244,7 @@ module Bosh::Director
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)['code']).to eq(440001)
-          expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded manifest: ')
+          expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded body: ')
         end
 
         it 'gives a nice error when request body is empty' do
@@ -253,7 +253,7 @@ module Bosh::Director
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)).to eq(
               'code' => 440001,
-              'description' => 'Manifest should not be empty',
+              'description' => 'Body should not be empty',
           )
         end
 
@@ -399,6 +399,220 @@ module Bosh::Director
             expect(response.status).to eq(400)
             expect(JSON.parse(response.body)['description']).to eq("'name' is required")
           end
+        end
+      end
+    end
+
+    describe 'diff' do
+
+      let(:config_hash_with_one_az) {
+        {
+          'azs' => [
+            {
+              'name' => 'az1',
+              'cloud_properties' => {}
+            }
+          ]
+        }
+      }
+
+      let(:config_hash_with_two_azs) {
+        {
+          'azs' => [
+            {
+              'name' => 'az1',
+              'cloud_properties' => {}
+            },
+            {
+              'name' => 'az2',
+              'cloud_properties' => {}
+            }
+          ]
+        }
+      }
+
+      let(:new_config) do
+        YAML.dump({
+          'type' => 'myType',
+          'name' => 'myName',
+          'content' => new_content
+        })
+      end
+
+      let(:new_content) { "---\n" }
+
+      context 'authenticated access' do
+
+        before { authorize 'admin', 'admin' }
+
+        context 'when diffing yields an error' do
+          let(:new_content) {'does not matter'}
+          it 'returns 400 with an empty diff and an error message if the diffing fails' do
+            allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
+
+            post '/diff', new_config, { 'CONTENT_TYPE' => 'text/yaml' }
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['diff']).to eq([])
+            expect(JSON.parse(last_response.body)['error']).to include('Unable to diff config content')
+          end
+        end
+
+        context 'when there is a previous config with given name and type' do
+
+          before do
+            Models::Config.create(
+              type: 'myType',
+              name: 'myName',
+              raw_manifest: config_hash_with_two_azs
+            )
+          end
+
+          context 'when uploading an empty cloud config' do
+            let(:new_content) { "---\n" }
+
+            it 'returns the diff' do
+
+              post(
+                '/diff',
+                new_config,
+                { 'CONTENT_TYPE' => 'text/yaml' }
+              )
+
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["azs:","removed"],["- name: az1","removed"],["  cloud_properties: {}","removed"],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
+            end
+          end
+
+          context 'when there is no diff' do
+            let(:new_content) { YAML.dump(config_hash_with_two_azs) }
+
+            it 'returns empty diff' do
+
+              post(
+                '/diff',
+                new_config,
+                {'CONTENT_TYPE' => 'text/yaml'}
+              )
+              expect(last_response.body).to eq('{"diff":[]}')
+            end
+          end
+
+          context 'when there is a diff' do
+            let(:new_content) { YAML.dump(config_hash_with_one_az) }
+
+            it 'returns the diff' do
+              post(
+                '/diff',
+                new_config,
+                {'CONTENT_TYPE' => 'text/yaml'}
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
+            end
+          end
+
+          context 'when invalid content YAML is given' do
+            let(:new_content) { "}}}i'm not really yaml, hah!" }
+            it 'gives a nice error when request body is not a valid yml' do
+
+              post('/diff', new_config, {'CONTENT_TYPE' => 'text/yaml'})
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440001)
+              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded config content: ')
+            end
+          end
+
+          context 'when the body is not valid YAML' do
+            it 'gives a nice error when request body is not a valid yml' do
+              post('/diff', "}}}i'm not really yaml, hah!", { 'CONTENT_TYPE' => 'text/yaml' })
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440001)
+              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded body: ')
+            end
+          end
+
+          context 'when request body is empty' do
+            it 'gives a nice error ' do
+              post '/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                'code' => 440001,
+                'description' => 'Body should not be empty',
+              )
+            end
+          end
+
+          context 'when config content is empty' do
+            let(:new_content) { '' }
+            it 'gives a nice error ' do
+              post '/diff', new_config, {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                'code' => 440001,
+                'description' => 'Config content should not be empty',
+              )
+            end
+          end
+
+          context 'when config content is not a hash' do
+            let(:new_content) { 'I am not a hash' }
+            it 'does not yield an error ' do
+              post '/diff', new_config, {'CONTENT_TYPE' => 'text/yaml'}
+
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body)['error']).to be_nil
+              expect(last_response.body).to eq('')
+            end
+          end
+        end
+
+        context 'when there is no previous cloud config' do
+          let(:new_content) { YAML.dump(config_hash_with_one_az) }
+          it 'returns the diff' do
+            post(
+              '/diff',
+              new_config,
+              {'CONTENT_TYPE' => 'text/yaml'}
+            )
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
+          end
+        end
+
+        context 'when previous config is nil' do
+          before do
+            Models::Config.create(
+              type: 'myType',
+              name: 'myName',
+              raw_manifest: nil
+            )
+          end
+          let(:new_content) { YAML.dump(config_hash_with_one_az) }
+
+          it 'returns the diff' do
+            post(
+              '/diff',
+              new_config,
+              {'CONTENT_TYPE' => 'text/yaml'}
+            )
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
+          end
+        end
+
+      end
+
+      context 'accessing with invalid credentials' do
+        before { authorize 'invalid-user', 'invalid-password' }
+
+        it 'returns 401' do
+          post '/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
+          expect(last_response.status).to eq(401)
         end
       end
     end

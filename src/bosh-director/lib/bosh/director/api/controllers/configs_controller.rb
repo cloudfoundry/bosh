@@ -25,7 +25,7 @@ module Bosh::Director
       post '/', :consumes => :yaml do
         begin
           manifest = {}
-          manifest = validate_manifest_yml(request.body.read, nil)
+          manifest = validate_yml(request.body.read, 'body')
           validate_create_format(manifest)
           config = Bosh::Director::Api::ConfigManager.new.create(manifest['type'], manifest['name'], manifest['content'])
           create_event(manifest['type'], manifest['name'])
@@ -41,6 +41,38 @@ module Bosh::Director
 
         status(201)
         return json_encode(sql_to_hash(config))
+      end
+
+      post '/diff', :consumes => :yaml do
+        body = validate_yml(request.body.read, 'body')
+        new_config_hash = validate_yml(body['content'], 'config content') || {}
+
+        old_config = Bosh::Director::Api::ConfigManager.new.find(
+            type: body['type'],
+            name: body['name'],
+            latest: true
+        ).first
+
+        old_config_hash = if old_config.nil? || old_config.raw_manifest.nil?
+          {}
+        else
+          old_config.raw_manifest
+        end
+
+        begin
+          diff = Changeset.new(old_config_hash, new_config_hash).diff(false).order
+          result = {
+            'diff' => diff.map { |l| [l.to_s, l.status] }
+          }
+        rescue => error
+          result = {
+            'diff' => [],
+            'error' => "Unable to diff config content: #{error.inspect}\n#{error.backtrace.join("\n")}"
+          }
+          status(400)
+        end
+
+        json_encode(result)
       end
 
       delete '/' do
@@ -93,6 +125,7 @@ module Bosh::Director
         check_name_and_type(manifest, 'name')
         check_name_and_type(manifest, 'content')
       end
+
     end
   end
 end

@@ -92,12 +92,16 @@ module Bosh::Director
       end
 
       def validate_manifest_yml(yml_string, context)
-        raise BadManifest, 'Manifest should not be empty' if yml_string.to_s == ''
+        validate_yml(yml_string, 'manifest', context: context)
+      end
+
+      def validate_yml(yml_string, section, context: nil)
+        raise BadManifest, "#{section.capitalize} should not be empty" if yml_string.to_s == ''
 
         begin
           YAML.load(yml_string, context)
         rescue Exception => e
-          raise BadManifest, "Incorrect YAML structure of the uploaded manifest: #{e.inspect}"
+          raise BadManifest, "Incorrect YAML structure of the uploaded #{section}: '+ e.inspect"
         end
       end
     end
