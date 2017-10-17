@@ -23,19 +23,14 @@ module Bosh::Director
       end
 
       post '/', :consumes => :yaml do
-        begin
-          manifest = {}
-          manifest = validate_yml(request.body.read, 'body')
-          validate_create_format(manifest)
-          config = Bosh::Director::Api::ConfigManager.new.create(manifest['type'], manifest['name'], manifest['content'])
-          create_event(manifest['type'], manifest['name'])
-        rescue => e
-          if manifest.is_a?(Hash) && manifest.key?('type') && manifest.key?('name')
-            create_event(manifest['type'], manifest['name'], e)
-          else
-            create_event('invalid type', 'invalid name', e)
-          end
+        config_request = validate_config_request(request.body.read)
+        validate_config_content(config_request['content'])
 
+        begin
+          config = Bosh::Director::Api::ConfigManager.new.create(config_request['type'], config_request['name'], config_request['content'])
+          create_event(config_request['type'], config_request['name'])
+        rescue => e
+          create_event(config_request['type'], config_request['name'], e)
           raise e
         end
 
@@ -44,21 +39,21 @@ module Bosh::Director
       end
 
       post '/diff', :consumes => :yaml do
-        body = validate_yml(request.body.read, 'body')
-        new_config_hash = validate_yml(body['content'], 'config content') || {}
+        config_request = validate_config_request(request.body.read)
 
-        unless new_config_hash.class == Hash
-          result = {
-            'diff' => [],
-            'error' => 'Config content must be a Hash'
-          }
+        begin
+          new_config_hash = validate_config_content(config_request['content'])
+        rescue => e
           status(400)
-          return json_encode(result)
+          return json_encode({
+            'diff' => [],
+            'error' => e.message
+          })
         end
 
         old_config = Bosh::Director::Api::ConfigManager.new.find(
-            type: body['type'],
-            name: body['name'],
+            type: config_request['type'],
+            name: config_request['name'],
             latest: true
         ).first
 
@@ -119,22 +114,41 @@ module Bosh::Director
 
       def check(param, name)
         if param[name].nil? || param[name].empty?
-          raise ValidationMissingField, "'#{name}' is required"
+          raise BadConfigRequest, "'#{name}' is required"
         end
       end
 
-      def check_name_and_type(manifest, name)
+      def check_name_and_type(manifest, name, type)
         check(manifest, name)
-        raise InvalidYamlError, "'#{name}' must be a string" unless manifest[name].is_a?(String)
+        raise BadConfigRequest, "'#{name}' must be a #{type.to_s.downcase}" unless manifest[name].is_a?(type)
       end
 
-      def validate_create_format(manifest)
-        raise InvalidYamlError, "YAML hash expected" unless manifest.is_a?(Hash)
-        check_name_and_type(manifest, 'type')
-        check_name_and_type(manifest, 'name')
-        check_name_and_type(manifest, 'content')
+      def validate_config_request(body)
+        config_request = begin
+          YAML.load(body)
+        rescue => e
+          raise InvalidYamlError, "Incorrect YAML structure of the uploaded body: #{e.message}"
+        end
+
+        raise BadConfigRequest, 'YAML hash expected' if !config_request.is_a?(Hash) || config_request.nil?
+
+        check_name_and_type(config_request, 'type', String)
+        check_name_and_type(config_request, 'name', String)
+
+        config_request
       end
 
+      def validate_config_content(content)
+       content = begin
+          YAML.load(content)
+        rescue => e
+          raise BadConfig, "Config must be valid YAML: #{e.message}"
+        end
+
+       raise BadConfig, 'YAML hash expected' unless content.is_a?(Hash)
+
+       content
+      end
     end
   end
 end

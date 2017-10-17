@@ -133,7 +133,7 @@ module Bosh::Director
             get '/?type=my-type&name=some-name'
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(40001)
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
             expect(JSON.parse(last_response.body)['description']).to eq("'latest' is required")
           end
         end
@@ -186,7 +186,7 @@ module Bosh::Director
     end
 
     describe 'POST', '/' do
-      let(:config_data) { "fake-config" }
+      let(:config_data) { 'a: 1' }
       let(:content) {
         YAML.dump({ 'name' => 'my-name', 'type' => 'my-type', 'content' => config_data })
        }
@@ -206,14 +206,14 @@ module Bosh::Director
               'id' => Bosh::Director::Models::Config.first.id,
               'type' => 'my-type',
               'name' => 'my-name',
-              'content' => config_data
+              'content' => 'a: 1'
             }
           )
         end
 
         it 'creates a new config with whitespace preceding content' do
           expect {
-            post '/', YAML.dump({ 'name' => 'my-name', 'type' => 'my-type', 'content' => '    a: 123' }), {'CONTENT_TYPE' => 'text/yaml'}
+            post '/', YAML.dump({ 'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123' }), {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
           expect(last_response.status).to eq(201)
@@ -223,7 +223,7 @@ module Bosh::Director
               'id' => Bosh::Director::Models::Config.first.id,
               'type' => 'my-type',
               'name' => 'my-name',
-              'content' => '    a: 123'
+              'content' => 'a: 123'
             }
           )
         end
@@ -243,8 +243,24 @@ module Bosh::Director
           post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
           expect(last_response.status).to eq(400)
-          expect(JSON.parse(last_response.body)['code']).to eq(440001)
+          expect(JSON.parse(last_response.body)['code']).to eq(710000)
           expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded body: ')
+        end
+
+        context 'when content is not valid yaml' do
+          it 'gives a nice error' do
+            new_config = YAML.dump({
+              'type' => 'myType',
+              'name' => 'myName',
+              'content' => "}}}i'm not really yaml, hah!"
+            })
+
+            post '/', new_config, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440011)
+            expect(JSON.parse(last_response.body)['description']).to include('Config must be valid YAML: ')
+          end
         end
 
         it 'gives a nice error when request body is empty' do
@@ -252,8 +268,8 @@ module Bosh::Director
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)).to eq(
-              'code' => 440001,
-              'description' => 'Body should not be empty',
+              'code' => 440010,
+              'description' => 'YAML hash expected',
           )
         end
 
@@ -262,7 +278,7 @@ module Bosh::Director
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)).to eq(
-            'code' => 710000,
+            'code' => 440010,
             'description' => 'YAML hash expected',
           )
         end
@@ -278,60 +294,42 @@ module Bosh::Director
           expect(event.user).to eq('admin')
         end
 
-        context 'when using config with missing content' do
-         let(:content) {
-           YAML.dump({ 'type' => 'my-type', 'name' => 'my-name', 'content' => {} })
-         }
-
-          it 'creates a new event with error' do
-            expect {
-              post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
-            }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
-            event = Bosh::Director::Models::Event.first
-            expect(event.object_type).to eq('config/my-type')
-            expect(event.object_name).to eq('my-name')
-            expect(event.action).to eq('create')
-            expect(event.user).to eq('admin')
-            expect(event.error).to eq("'content' is required")
-          end
-        end
-
-        context 'when yaml enclosure is invalid for content' do
-          let(:content) { "---\nname: n\ntype: t\ncontent:\n  a: 1\n" }
+        context 'when the content is no YAML hash' do
+          let(:content) { "---\nname: n\ntype: t\ncontent: |\n  I am a string\n" }
 
           it 'return 400' do
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(710000)
-            expect(JSON.parse(last_response.body)['description']).to eq("'content' must be a string")
+            expect(JSON.parse(last_response.body)['code']).to eq(440011)
+            expect(JSON.parse(last_response.body)['description']).to eq('YAML hash expected')
           end
         end
 
         context 'when `type` argument is missing' do
           let(:content) {
-            YAML.dump({'name' => 'my-name', 'content' => {} })
+            YAML.dump({'name' => 'my-name', 'content' => '{}' })
           }
 
           it 'return 400' do
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(40001)
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
             expect(JSON.parse(last_response.body)['description']).to eq("'type' is required")
           end
         end
 
         context 'when `name` argument is missing' do
           let(:content) {
-            YAML.dump({'type' => 'my-type', 'content' => {} })
+            YAML.dump({'type' => 'my-type', 'content' => '{}' })
           }
 
           it 'return 400' do
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(40001)
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
             expect(JSON.parse(last_response.body)['description']).to eq("'name' is required")
           end
         end
@@ -448,7 +446,7 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         context 'when diffing yields an error' do
-          let(:new_content) {'{}'}
+          let(:new_content) {'a: 1'}
           it 'returns 400 with an empty diff and an error message if the diffing fails' do
             allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
 
@@ -470,7 +468,7 @@ module Bosh::Director
             )
           end
 
-          context 'when uploading an empty cloud config' do
+          context 'when uploading an empty config' do
             let(:new_content) { "---\n" }
 
             it 'returns the diff' do
@@ -481,8 +479,8 @@ module Bosh::Director
                 { 'CONTENT_TYPE' => 'text/yaml' }
               )
 
-              expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:","removed"],["- name: az1","removed"],["  properties: {}","removed"],["- name: az2","removed"],["  properties:","removed"],["    some-key: \"<redacted>\"","removed"]]}')
+              expect(JSON.parse(last_response.body)['diff']).to eq([])
+              expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
             end
           end
 
@@ -521,8 +519,8 @@ module Bosh::Director
               post('/diff', new_config, {'CONTENT_TYPE' => 'text/yaml'})
 
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['code']).to eq(440001)
-              expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded config content: ')
+              expect(JSON.parse(last_response.body)['diff']).to eq([])
+              expect(JSON.parse(last_response.body)['error']).to include('Config must be valid YAML')
             end
           end
 
@@ -531,7 +529,7 @@ module Bosh::Director
               post('/diff', "}}}i'm not really yaml, hah!", { 'CONTENT_TYPE' => 'text/yaml' })
 
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['code']).to eq(440001)
+              expect(JSON.parse(last_response.body)['code']).to eq(710000)
               expect(JSON.parse(last_response.body)['description']).to include('Incorrect YAML structure of the uploaded body: ')
             end
           end
@@ -542,8 +540,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)).to eq(
-                'code' => 440001,
-                'description' => 'Body should not be empty',
+                'code' => 440010,
+                'description' => 'YAML hash expected',
               )
             end
           end
@@ -554,10 +552,8 @@ module Bosh::Director
               post '/diff', new_config, {'CONTENT_TYPE' => 'text/yaml'}
 
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)).to eq(
-                'code' => 440001,
-                'description' => 'Config content should not be empty'
-              )
+              expect(JSON.parse(last_response.body)['diff']).to eq([])
+              expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
             end
           end
 
@@ -567,7 +563,7 @@ module Bosh::Director
               post '/diff', new_config, {'CONTENT_TYPE' => 'text/yaml'}
 
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['error']).to eq('Config content must be a Hash')
+              expect(JSON.parse(last_response.body)['error']).to eq('YAML hash expected')
             end
           end
         end

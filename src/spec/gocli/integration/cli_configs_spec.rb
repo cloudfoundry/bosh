@@ -28,10 +28,10 @@ describe 'cli configs', type: :integration do
       expect(bosh_runner.run('configs --type=my-type --json')).to include('"name": "default"')
     end
 
-    it 'uploads an empty config' do
+    it 'uploads an empty YAML hash' do
       Dir.mktmpdir do |tmpdir|
         empty_config_filename = File.join(tmpdir, 'empty_config.yml')
-        File.write(empty_config_filename, '')
+        File.write(empty_config_filename, '{}')
         expect(bosh_runner.run("update-config my-type #{empty_config_filename}")).to include('Succeeded')
       end
     end
