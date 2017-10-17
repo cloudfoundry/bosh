@@ -65,6 +65,27 @@
     cd ~/workspace/bosh/src
     bundle install
     ```
+9. Special instructions for nginx on  Mac
+
+    Before running `rake spec:integration:install_dependencies`, modify the nginx packaging script to fix compilation on OSX.
+    
+    ```
+    diff --git a/packages/nginx/packaging b/packages/nginx/packaging
+    index 007e408a5..cc8956efe 100755
+    --- a/packages/nginx/packaging
+    +++ b/packages/nginx/packaging
+    @@ -27,7 +27,9 @@ pushd nginx-1.12.1
+             --add-module=../headers-more-nginx-module-0.30 \
+             --with-http_ssl_module \
+             --with-http_dav_module \
+    -    --add-module=../nginx-upload-module-2.2
+    +    --add-module=../nginx-upload-module-2.2 \
+    +    --with-ld-opt="-L/usr/local/opt/openssl/lib" \
+    +    --with-cc-opt="-I/usr/local/opt/openssl/include"
+    
+         make
+         make install
+    ```
 
 ## Issues
 
