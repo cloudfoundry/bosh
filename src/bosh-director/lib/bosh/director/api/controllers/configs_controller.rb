@@ -23,14 +23,16 @@ module Bosh::Director
       end
 
       post '/', :consumes => :yaml do
-        config_request = validate_config_request(request.body.read)
-        validate_config_content(config_request['content'])
-
         begin
-          config = Bosh::Director::Api::ConfigManager.new.create(config_request['type'], config_request['name'], config_request['content'])
-          create_event(config_request['type'], config_request['name'])
+          config_hash = load_yml(request.body.read)
+          validate_type_and_name(config_hash)
+          validate_config_content(config_hash['content'])
+          config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
+          create_event(config_hash['type'], config_hash['name'])
         rescue => e
-          create_event(config_request['type'], config_request['name'], e)
+          type = config_hash ? config_hash['type'] : nil
+          name = config_hash ? config_hash['name'] : nil
+          create_event(type, name, e)
           raise e
         end
 
@@ -39,7 +41,8 @@ module Bosh::Director
       end
 
       post '/diff', :consumes => :yaml do
-        config_request = validate_config_request(request.body.read)
+        config_request = load_yml(request.body.read)
+        validate_type_and_name(config_request)
 
         begin
           new_config_hash = validate_config_content(config_request['content'])
@@ -123,18 +126,18 @@ module Bosh::Director
         raise BadConfigRequest, "'#{name}' must be a #{type.to_s.downcase}" unless manifest[name].is_a?(type)
       end
 
-      def validate_config_request(body)
+      def validate_type_and_name(config)
+        check_name_and_type(config, 'type', String)
+        check_name_and_type(config, 'name', String)
+      end
+
+      def load_yml(body)
         config_request = begin
           YAML.load(body)
         rescue => e
           raise InvalidYamlError, "Incorrect YAML structure of the uploaded body: #{e.message}"
         end
-
         raise BadConfigRequest, 'YAML hash expected' if !config_request.is_a?(Hash) || config_request.nil?
-
-        check_name_and_type(config_request, 'type', String)
-        check_name_and_type(config_request, 'name', String)
-
         config_request
       end
 

@@ -248,7 +248,7 @@ module Bosh::Director
         end
 
         context 'when content is not valid yaml' do
-          it 'gives a nice error' do
+          it 'creates a new event and gives a nice error' do
             new_config = YAML.dump({
               'type' => 'myType',
               'name' => 'myName',
@@ -256,6 +256,12 @@ module Bosh::Director
             })
 
             post '/', new_config, {'CONTENT_TYPE' => 'text/yaml'}
+
+            event = Bosh::Director::Models::Event.first
+            expect(event.object_type).to eq('config/myType')
+            expect(event.object_name).to eq('myName')
+            expect(event.action).to eq('create')
+            expect(event.user).to eq('admin')
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440011)
@@ -311,8 +317,15 @@ module Bosh::Director
             YAML.dump({'name' => 'my-name', 'content' => '{}' })
           }
 
-          it 'return 400' do
+          it 'creates a new event and return 400' do
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+
+            event = Bosh::Director::Models::Event.first
+            expect(event.object_type).to eq('config/')
+            expect(event.object_name).to eq('my-name')
+            expect(event.action).to eq('create')
+            expect(event.user).to eq('admin')
+            expect(event.error).to eq("'type' is required")
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440010)
@@ -325,8 +338,14 @@ module Bosh::Director
             YAML.dump({'type' => 'my-type', 'content' => '{}' })
           }
 
-          it 'return 400' do
+          it 'creates a new event and return 400' do
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+
+            event = Bosh::Director::Models::Event.first
+            expect(event.object_type).to eq('config/my-type')
+            expect(event.object_name).to eq(nil)
+            expect(event.action).to eq('create')
+            expect(event.user).to eq('admin')
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440010)
