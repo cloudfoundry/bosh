@@ -174,6 +174,11 @@ module Bosh::Director::Models
     raw_manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
+  Config.blueprint(:runtime) do
+    type { 'runtime' }
+    name { 'default' }
+  end
+
   CpiConfig.blueprint do
     manifest { Bosh::Spec::Deployments.simple_cpi_config }
   end
