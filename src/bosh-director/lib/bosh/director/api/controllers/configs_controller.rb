@@ -47,6 +47,15 @@ module Bosh::Director
         body = validate_yml(request.body.read, 'body')
         new_config_hash = validate_yml(body['content'], 'config content') || {}
 
+        unless new_config_hash.class == Hash
+          result = {
+            'diff' => [],
+            'error' => 'Config content must be a Hash'
+          }
+          status(400)
+          return json_encode(result)
+        end
+
         old_config = Bosh::Director::Api::ConfigManager.new.find(
             type: body['type'],
             name: body['name'],
@@ -60,7 +69,7 @@ module Bosh::Director
         end
 
         begin
-          diff = Changeset.new(old_config_hash, new_config_hash).diff(false).order
+          diff = Changeset.new(old_config_hash, new_config_hash).diff(true).order
           result = {
             'diff' => diff.map { |l| [l.to_s, l.status] }
           }

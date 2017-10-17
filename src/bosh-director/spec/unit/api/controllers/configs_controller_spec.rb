@@ -410,7 +410,7 @@ module Bosh::Director
           'azs' => [
             {
               'name' => 'az1',
-              'cloud_properties' => {}
+              'properties' => {}
             }
           ]
         }
@@ -421,11 +421,13 @@ module Bosh::Director
           'azs' => [
             {
               'name' => 'az1',
-              'cloud_properties' => {}
+              'properties' => {}
             },
             {
               'name' => 'az2',
-              'cloud_properties' => {}
+              'properties' => {
+                'some-key' => 'some-value'
+              }
             }
           ]
         }
@@ -446,7 +448,7 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         context 'when diffing yields an error' do
-          let(:new_content) {'does not matter'}
+          let(:new_content) {'{}'}
           it 'returns 400 with an empty diff and an error message if the diffing fails' do
             allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
 
@@ -480,7 +482,7 @@ module Bosh::Director
               )
 
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:","removed"],["- name: az1","removed"],["  cloud_properties: {}","removed"],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
+              expect(last_response.body).to eq('{"diff":[["azs:","removed"],["- name: az1","removed"],["  properties: {}","removed"],["- name: az2","removed"],["  properties:","removed"],["    some-key: \"<redacted>\"","removed"]]}')
             end
           end
 
@@ -508,7 +510,7 @@ module Bosh::Director
                 {'CONTENT_TYPE' => 'text/yaml'}
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
+              expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  properties:","removed"],["    some-key: \"<redacted>\"","removed"]]}')
             end
           end
 
@@ -554,19 +556,18 @@ module Bosh::Director
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)).to eq(
                 'code' => 440001,
-                'description' => 'Config content should not be empty',
+                'description' => 'Config content should not be empty'
               )
             end
           end
 
           context 'when config content is not a hash' do
             let(:new_content) { 'I am not a hash' }
-            it 'does not yield an error ' do
+            it 'errors' do
               post '/diff', new_config, {'CONTENT_TYPE' => 'text/yaml'}
 
-              expect(last_response.status).to eq(200)
-              expect(JSON.parse(last_response.body)['error']).to be_nil
-              expect(last_response.body).to eq('')
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['error']).to eq('Config content must be a Hash')
             end
           end
         end
@@ -580,7 +581,7 @@ module Bosh::Director
               {'CONTENT_TYPE' => 'text/yaml'}
             )
             expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
+            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
           end
         end
 
@@ -601,7 +602,7 @@ module Bosh::Director
               {'CONTENT_TYPE' => 'text/yaml'}
             )
             expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
+            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
           end
         end
 
