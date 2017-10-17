@@ -116,11 +116,7 @@ module IntegrationExampleGroup
       end
     end
 
-    if options[:manifest_file]
-      cmd += " #{spec_asset(options[:manifest_file])}"
-    else
-      cmd += " #{deployment_file(deployment_hash).path}"
-    end
+    cmd += " #{deployment_file(deployment_hash).path}"
 
     bosh_runner.run(cmd, options)
   end
