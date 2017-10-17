@@ -7,6 +7,30 @@ module Bosh::Director
       let(:link_path) {instance_double(Bosh::Director::DeploymentPlan::LinkPath)}
       let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
       let(:link_network_options) {{:global_use_dns_entry => false}}
+      let(:link_providers) do
+        [
+          Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
+            link_provider_id: "my_deployment.ig_1.job_1.my_link",
+            name: 'my_link',
+            link_provider_definition_type: 'my_type',
+            owner_object_name: 'job_1',
+            #'default_network' => 'default',
+            content: {
+              'instances' =>
+                [
+                  {
+                    'address' => 'net-2-addr',
+                    'addresses' => {
+                      'net-1' => 'net-1-addr',
+                      'net-2' => 'net-2-addr',
+                      'net-3' => 'net-3-addr',
+                    }
+                  }
+                ]
+            }.to_json
+          )
+        ]
+      end
 
       describe '#create' do
         context 'when provider and consumer is from the SAME deployment' do
@@ -29,10 +53,14 @@ module Bosh::Director
             allow(link_path).to receive(:deployment).and_return('dep-1')
             allow(deployment_plan).to receive(:name).and_return('dep-2')
             allow(Bosh::Director::Models::Deployment).to receive(:find).with({name: 'dep-1'}).and_return(provider_deployment_model)
+            allow(provider_deployment_model).to receive(:id).and_return(1)
+            link_list = instance_double(Sequel::Dataset)
+            allow(Bosh::Director::Models::LinkProvider).to receive(:where).and_return(link_list)
+            allow(link_list).to receive(:all).and_return(link_providers)
           end
 
           it 'returns a DeploymentLinkProviderLookup object' do
-            expect(provider_deployment_model).to receive(:link_spec).and_return({'meow' => 'cat'})
+            #expect(provider_deployment_model).to receive(:link_spec).and_return({'meow' => 'cat'})
 
             deployment_link_lookup = LinkLookupFactory.create(consumed_link, link_path, deployment_plan, link_network_options)
             expect(deployment_link_lookup).to be_kind_of(DeploymentLinkProviderLookup)
@@ -487,6 +515,7 @@ module Bosh::Director
         allow(link_path).to receive(:name).and_return('my_link')
         allow(link_path).to receive(:job).and_return('ig_1')
         allow(link_path).to receive(:template).and_return('job_1')
+        allow(link_path).to receive(:to_s).and_return('my_deployment.ig_1.job_1.my_link')
         allow(consumed_link).to receive(:type).and_return('my_type')
       end
 
@@ -502,24 +531,26 @@ module Bosh::Director
         context 'when link provider does NOT have default_network key' do
           let(:link_providers) do
             [
-              {#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-              'link_provider_id' => "my_deployment.ig_1.job_1.my_link",
-              'name' => 'my_link',
-              'link_provider_defination_type' => 'my_type',
-              'owner_object_name' => 'job_1',
+              Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
+              link_provider_id: "my_deployment.ig_1.job_1.my_link",
+              name: 'my_link',
+              link_provider_definition_type: 'my_type',
+              owner_object_name: 'job_1',
               #'default_network' => 'default',
-              'content' => {
-                'instances' => [
-                {
-                  'address' => 'net-2-addr',
-                  'addresses' => {
-                    'net-1' => 'net-1-addr',
-                    'net-2' => 'net-2-addr',
-                    'net-3' => 'net-3-addr',
-                  }
-                }
-                ]}
-              }
+              content: {
+                'instances' =>
+                  [
+                    {
+                      'address' => 'net-2-addr',
+                      'addresses' => {
+                        'net-1' => 'net-1-addr',
+                        'net-2' => 'net-2-addr',
+                        'net-3' => 'net-3-addr',
+                      }
+                    }
+                  ]
+                }.to_json
+              )
             ]
           end
 
@@ -671,13 +702,12 @@ module Bosh::Director
         context 'when provided link spec has default_network key' do
           let(:link_providers) do
             [
-              {#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-               'link_provider_id' => "my_deployment.ig_1.job_1.my_link",
-               'name' => 'my_link',
-               'link_provider_defination_type' => 'my_type',
-               'owner_object_name' => 'job_1',
-               #'default_network' => 'default',
-               'content' => {
+              Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
+               link_provider_id: "my_deployment.ig_1.job_1.my_link",
+               name: 'my_link',
+               link_provider_definition_type: 'my_type',
+               owner_object_name: 'job_1',
+               content: {
                  'default_network' => 'net-2',
                  'instances' => [
                    {
@@ -693,8 +723,8 @@ module Bosh::Director
                        'net-3' => 'dns-net-3-addr',
                      }
                    }
-                 ]}
-              }
+                 ]}.to_json
+              )
             ]
 
           end
@@ -728,13 +758,12 @@ module Bosh::Director
                 let(:event_log) { double(:event_logger) }
                 let(:link_providers) do
                   [
-                    {#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-                     'link_provider_id' => "my_deployment.ig_1.job_1.my_link",
-                     'name' => 'my_link',
-                     'link_provider_defination_type' => 'my_type',
-                     'owner_object_name' => 'job_1',
-
-                     'content' => {
+                    Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
+                     link_provider_id: "my_deployment.ig_1.job_1.my_link",
+                     name: 'my_link',
+                     link_provider_definition_type: 'my_type',
+                     owner_object_name: 'job_1',
+                     content: {
                        'default_network' => 'net-2',
                        'instances' => [
                          {
@@ -752,8 +781,8 @@ module Bosh::Director
                              'net-3' => '3.3.3.3',
                            }
                          }
-                       ]}
-                    }
+                       ]}.to_json
+                    )
                   ]
                 end
 
@@ -802,13 +831,12 @@ module Bosh::Director
                 let(:event_log) { double(:event_logger) }
                 let(:link_providers) do
                   [
-                    {#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-                      'link_provider_id' => "my_deployment.ig_1.job_1.my_link",
-                      'name' => 'my_link',
-                      'link_provider_defination_type' => 'my_type',
-                      'owner_object_name' => 'job_1',
-                      #'default_network' => 'default',
-                      'content' => {
+                    Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
+                      link_provider_id: "my_deployment.ig_1.job_1.my_link",
+                      name: 'my_link',
+                      link_provider_definition_type: 'my_type',
+                      owner_object_name: 'job_1',
+                      content: {
                         'default_network' => 'net-2',
                         'instances' => [
                           {
@@ -827,8 +855,8 @@ module Bosh::Director
                             }
                           }
                         ]
-                      }
-                    }
+                      }.to_json
+                    )
                   ]
                 end
 

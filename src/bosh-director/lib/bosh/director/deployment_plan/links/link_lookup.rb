@@ -11,10 +11,9 @@ module Bosh::Director
           unless provider_deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
           end
-          # link_providers = Models::LinkProvider.find(deployment: provider_deployment)
-          # link_providers = Models::LinkProvider.where(:deployment == provider_deployment)
-          # DeploymentLinkSpecLookup.new(consumed_link, link_path, link_providers, link_network_options)
-          DeploymentLinkProviderLookup.new(consumed_link, link_path, provider_deployment.link_spec, link_network_options)
+
+          link_providers = Models::LinkProvider.where(deployment_id: provider_deployment.id).all
+          DeploymentLinkProviderLookup.new(consumed_link, link_path, link_providers, link_network_options)
         end
       end
     end
@@ -120,23 +119,20 @@ module Bosh::Director
       def find_link_provider
         return nil if @deployment_link_provider.empty?
 
-        link_provider_id = "#{@link_path.deployment_plan_name}.#{@link_path.job}.#{@link_path.template}.#{@link_path.name}"
-
-        job = @deployment_link_provider.select{|lp| lp['link_provider_id'] == link_provider_id}
+        link_provider_id = @link_path.to_s
+        job = @deployment_link_provider.select{|lp| lp[:link_provider_id] == link_provider_id}
         return nil if job.empty?
 
-        template = job.select{|j| j['link_provider_defination_type'] == @consumed_link.type }
+        template = job.select{|j| j[:link_provider_definition_type] == @consumed_link.type }
         return nil if template.empty?
 
-
-        update_addresses!(template.first['content'])
+        update_addresses!(JSON.parse(template.first[:content]))
       end
 
       private
 
       def update_addresses!(link_spec)
         link_spec_copy = Bosh::Common::DeepCopy.copy(link_spec)
-
         if !link_spec_copy.has_key?('default_network')
           if !@link_use_ip_address.nil?
             raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'

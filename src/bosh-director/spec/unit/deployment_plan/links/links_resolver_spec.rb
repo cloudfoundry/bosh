@@ -245,6 +245,50 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       context 'when another deployment has link source' do
         before do
           Bosh::Director::Models::Deployment.where(name: 'other-deployment').first.update(link_spec: link_spec)
+
+          Bosh::Director::Models::LinkProvider.insert(
+            deployment_id: Bosh::Director::Models::Deployment.find(name: 'other-deployment').id,
+            link_provider_id: "other-deployment.mysql.mysql-template.db",
+            name: 'my_link',
+            shared: false,
+            consumable: true,
+            link_provider_definition_name: 'db',
+            link_provider_definition_type: 'db',
+            owner_object_name: 'job_1',
+            owner_object_type: 'Job',
+            #'default_network' => 'default'
+            content: {
+              "deployment_name" => "other-deployment",
+              "default_network" => "fake-manual-network",
+              "networks" => [
+                "fake-manual-network",
+                "fake-dynamic-network"
+              ],
+              "properties" => {
+                "mysql" => "nil"
+              },
+              'instances' => [
+                {
+                  'name' => 'mysql',
+                  'index' => 0,
+                  'bootstrap' => true,
+                  'id' => '7aed7038-0b3f-4dba-ac6a-da8932502c00',
+                  'az' => nil,
+                  'dns_addresses' => {'fake-manual-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-manual-network.other-deployment.bosh', 'fake-dynamic-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh'},
+                  'addresses' => {'fake-manual-network' => '127.0.0.4', 'fake-dynamic-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh'}
+                },
+                {
+                  'name' => 'mysql',
+                  'index' => 1,
+                  'bootstrap' => false,
+                  'id' => 'adecbe93-e242-4585-acde-ffbc1dad4b41',
+                  'az' => nil,
+                  'dns_addresses' => {'fake-manual-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-manual-network.other-deployment.bosh', 'fake-dynamic-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh'},
+                  'addresses' => {'fake-manual-network' => '127.0.0.5', 'fake-dynamic-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh'}
+                }
+              ]
+            }.to_json
+          )
         end
 
         context 'when requesting for ip addresses only' do
@@ -256,10 +300,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             provider_dep = Bosh::Director::Models::Deployment.where(name: 'other-deployment').first
 
             spec = {
-              'deployment_name' => provider_dep.name,
               'default_network' => 'fake-manual-network',
-              'networks' => ['fake-manual-network', 'fake-dynamic-network'],
-              "properties" => {"mysql" => nil},
+              'deployment_name' => provider_dep.name,
               'instances' => [
                 {
                   'name' => 'mysql',
@@ -277,12 +319,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                   'az' => nil,
                   'address' => '127.0.0.5'
                 }
-              ]
+              ],
+              'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+              "properties" => {"mysql" => "nil"}
             }
-
             links_hash = {"api-server-template" => {"db" => spec}}
+            expect(api_server_instance_group.resolved_links).to include(links_hash)
 
-            expect(api_server_instance_group.resolved_links).to eq(links_hash)
           end
         end
 
@@ -298,7 +341,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               'deployment_name' => provider_dep.name,
               'networks' => ['fake-manual-network', 'fake-dynamic-network'],
               'default_network' => 'fake-manual-network',
-              "properties" => {"mysql" => nil},
+              "properties" => {"mysql" => "nil"},
               'instances' => [
                 {
                   'name' => 'mysql',
@@ -575,7 +618,7 @@ Unable to process links for deployment. Errors are:
       let(:link_lookup) { instance_double(Bosh::Director::DeploymentPlan::PlannerLinkLookup) }
 
       before do
-        allow(link_lookup).to receive(:find_link_spec).and_return({'instances' => []})
+        allow(link_lookup).to receive(:find_link_provider).and_return({'instances' => []})
       end
 
       context 'when link source specifies network' do

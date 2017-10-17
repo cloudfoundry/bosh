@@ -46,7 +46,7 @@ module Bosh::Director
             }
 
             link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network_options)
-            link_spec = link_lookup.find_link_spec
+            link_spec = link_lookup.find_link_provider
 
             unless link_spec
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
