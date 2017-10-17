@@ -4,7 +4,7 @@
 module Bosh::Director
   class CloudFactory
     def self.create_with_latest_configs(deployment = nil)
-      cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest
+      cpi_configs = Bosh::Director::Models::Config.latest_set('cpi')
       cloud_configs = Bosh::Director::Models::Config.latest_set('cloud')
 
       if deployment.nil?
@@ -13,19 +13,23 @@ module Bosh::Director
         planner = create_cloud_planner(cloud_configs, deployment.name)
       end
 
-      new(planner, parse_cpi_config(cpi_config))
+      new(planner, parse_cpi_configs(cpi_configs))
     end
 
     def self.create_from_deployment(deployment,
-      cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
+      cpi_configs = Bosh::Director::Models::Config.latest_set('cpi'))
       planner = create_cloud_planner(deployment.cloud_configs, deployment.name) unless deployment.nil?
 
-      new(planner, parse_cpi_config(cpi_config))
+      new(planner, parse_cpi_configs(cpi_configs))
     end
 
-    def self.parse_cpi_config(cpi_config)
-      return nil if cpi_config.nil?
-      Bosh::Director::CpiConfig::CpiManifestParser.new.parse(cpi_config.raw_manifest)
+    def self.parse_cpi_configs(cpi_configs)
+      return nil if cpi_configs.nil? || cpi_configs.empty?
+
+      cpi_configs_raw_manifests = cpi_configs.map {|config| config.raw_manifest}
+      manifest_parser = Bosh::Director::CpiConfig::CpiManifestParser.new
+      merged_cpi_configs_hash = manifest_parser.merge_configs(cpi_configs_raw_manifests)
+      manifest_parser.parse(merged_cpi_configs_hash)
     end
 
     def self.create_cloud_planner(cloud_configs, deployment_name = nil)

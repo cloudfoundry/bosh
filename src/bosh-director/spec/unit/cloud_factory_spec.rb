@@ -22,32 +22,56 @@ module Bosh::Director
         allow(deployment).to receive(:name).and_return('happy')
         allow(Api::CloudConfigManager).to receive(:interpolated_manifest).with([cloud_config], 'happy').and_return({})
         allow(CpiConfig::CpiManifestParser).to receive(:new).and_return(cpi_manifest_parser)
+        allow(cpi_manifest_parser).to receive(:merge_configs).and_return(parsed_cpi_config)
         allow(cpi_manifest_parser).to receive(:parse).and_return(parsed_cpi_config)
         allow(cpi_config).to receive(:raw_manifest).and_return({})
         allow(DeploymentPlan::CloudManifestParser).to receive(:new).and_return(cloud_manifest_parser)
         allow(cloud_manifest_parser).to receive(:parse).and_return(planner)
       }
 
-      it 'constructs a cloud factory with all its dependencies from a deployment' do
-        expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
-        described_class.create_from_deployment(deployment, cpi_config)
-      end
+      describe '.create_from_deployment' do
+        it 'constructs a cloud factory with all its dependencies from a deployment' do
+          expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
+          described_class.create_from_deployment(deployment, [cpi_config])
+        end
 
-      it 'constructs a cloud factory without planner if no deployment is given' do
-        expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
-        deployment = nil
-        described_class.create_from_deployment(deployment, cpi_config)
-      end
+        it 'constructs a cloud factory without planner if no deployment is given' do
+          expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
+          deployment = nil
+          described_class.create_from_deployment(deployment, [cpi_config])
+        end
 
-      it 'constructs a cloud factory without planner if no cloud config is used' do
-        expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
-        expect(deployment).to receive(:cloud_configs).and_return([])
-        described_class.create_from_deployment(deployment, cpi_config)
-      end
+        it 'constructs a cloud factory without planner if no cloud config is used' do
+          expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
+          expect(deployment).to receive(:cloud_configs).and_return([])
+          described_class.create_from_deployment(deployment, [cpi_config])
+        end
 
-      it 'constructs a cloud factory without parsed cpis if no cpi config is used' do
+        it 'constructs a cloud factory without parsed cpis if no cpi config is used' do
           expect(described_class).to receive(:new).with(planner, nil)
           described_class.create_from_deployment(deployment, nil)
+        end
+      end
+
+      describe '.create_with_latest_configs' do
+        before do
+          allow(Bosh::Director::Models::Config).to receive(:latest_set).with('cpi').and_return([cpi_config])
+          allow(Bosh::Director::Models::Config).to receive(:latest_set).with('cloud').and_return([cloud_config])
+        end
+
+        it 'constructs a cloud factory with all its dependencies from a deployment' do
+          expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
+          described_class.create_with_latest_configs(deployment)
+        end
+
+        context 'when no deployment is given' do
+          it 'constructs a cloud factory with all its dependencies without deployment' do
+            expect(described_class).to receive(:new).with(planner, parsed_cpi_config).and_return({})
+            expect(Api::CloudConfigManager).to receive(:interpolated_manifest).with([cloud_config], nil)
+
+            described_class.create_with_latest_configs
+          end
+        end
       end
     end
 
@@ -194,6 +218,29 @@ module Bosh::Director
           expect {
             cloud_factory.get_name_for_az('some-az')
           }.to raise_error 'Deployment plan must be given to lookup cpis from AZ'
+        end
+      end
+    end
+
+    describe '.parse_cpi_configs' do
+      let(:cpi_config1) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name1') }
+      let(:cpi_config2) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name2') }
+      let(:cpi_config3) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name3') }
+      let(:cpi1) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi1', :raw_manifest => cpi_config1)}
+      let(:cpi2) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi2', :raw_manifest => cpi_config2)}
+      let(:cpi3) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi3', :raw_manifest => cpi_config3)}
+
+      it 'returns all known cpis' do
+        parsed_cpis = CloudFactory.parse_cpi_configs([cpi1, cpi2, cpi3])
+
+        expect(parsed_cpis.cpis.size).to eq(3)
+        expect(parsed_cpis.cpis.map(&:name)).to match_array(['cpi-name1', 'cpi-name2', 'cpi-name3'])
+      end
+
+      context 'when no cpis are known' do
+        it 'returns nil' do
+          expect(CloudFactory.parse_cpi_configs(nil)).to be(nil)
+          expect(CloudFactory.parse_cpi_configs([])).to be(nil)
         end
       end
     end

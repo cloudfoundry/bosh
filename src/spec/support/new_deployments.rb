@@ -372,6 +372,20 @@ module Bosh::Spec
       })
     end
 
+    def self.single_cpi_config(name='cpi-name1', properties={'somekey'=>'someval'}, exec_path=nil)
+      cpi_config =  {
+        'cpis' => [
+          {
+            'name' => name,
+            'type' => 'cpi-type',
+            'properties' => properties
+          }
+        ]
+      }
+      cpi_config['cpis'].first['exec_path'] = exec_path unless exec_path.nil?
+      cpi_config
+    end
+
     def self.simple_cpi_config(exec_path=nil)
       cpi_config =  {
         'cpis' => [
