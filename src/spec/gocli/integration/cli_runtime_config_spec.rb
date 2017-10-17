@@ -134,4 +134,31 @@ end
     expect(output).to include('Succeeded')
     expect(exit_code).to eq(0)
   end
+
+  it 'uploads runtime config that can be seen by the generic config commands' do
+    runtime_config = yaml_file('runtime_config.yml', un_named_rc)
+    bosh_runner.run("update-runtime-config #{runtime_config.path}")
+
+    output = bosh_runner.run("configs --type=runtime")
+    expect(output).to include <<-EOF.strip
+Type     Name\u0020\u0020\u0020\u0020\u0020
+runtime  default\u0020\u0020
+
+1 configs
+
+Succeeded
+EOF
+  end
+
+  it 'shows no diff when uploading same unnamed runtime config as with generic config command' do
+    runtime_config = yaml_file('runtime_config.yml', un_named_rc)
+    bosh_runner.run("update-config runtime #{runtime_config.path}")
+    output = bosh_runner.run("update-runtime-config #{runtime_config.path}")
+    expect(output).to match_output %(
+      Using environment 'https://127.0.0.1:61004' as client 'test'
+
+      Succeeded
+    )
+  end
+
 end

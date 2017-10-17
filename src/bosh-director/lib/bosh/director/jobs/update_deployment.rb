@@ -42,7 +42,7 @@ module Bosh::Director
           end
         end
 
-        runtime_config_models = Bosh::Director::Models::RuntimeConfig.find_by_ids(@runtime_config_ids)
+        runtime_config_models = Bosh::Director::Models::Config.find_by_ids(@runtime_config_ids)
         if runtime_config_models.empty?
           logger.debug("No runtime config uploaded yet.")
         else

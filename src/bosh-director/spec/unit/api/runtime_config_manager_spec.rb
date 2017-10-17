@@ -8,22 +8,22 @@ describe Bosh::Director::Api::RuntimeConfigManager do
     it 'saves default runtime config' do
       expect {
         manager.update(valid_runtime_manifest)
-      }.to change(Bosh::Director::Models::RuntimeConfig, :count).from(0).to(1)
+      }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
-      runtime_config = Bosh::Director::Models::RuntimeConfig.first
+      runtime_config = Bosh::Director::Models::Config.first
       expect(runtime_config.created_at).to_not be_nil
-      expect(runtime_config.properties).to eq(valid_runtime_manifest)
-      expect(runtime_config.name).to eq('')
+      expect(runtime_config.content).to eq(valid_runtime_manifest)
+      expect(runtime_config.name).to eq('default')
     end
 
     it 'saves named runtime config' do
       expect {
         manager.update(valid_runtime_manifest, 'foo-runtime')
-      }.to change(Bosh::Director::Models::RuntimeConfig, :count).from(0).to(1)
+      }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
-      runtime_config = Bosh::Director::Models::RuntimeConfig.first
+      runtime_config = Bosh::Director::Models::Config.first
       expect(runtime_config.created_at).to_not be_nil
-      expect(runtime_config.properties).to eq(valid_runtime_manifest)
+      expect(runtime_config.content).to eq(valid_runtime_manifest)
       expect(runtime_config.name).to eq('foo-runtime')
     end
 
@@ -37,10 +37,10 @@ describe Bosh::Director::Api::RuntimeConfigManager do
 
   describe '#list' do
     it 'returns the specified number of runtime configs (most recent first)' do
-      Bosh::Director::Models::RuntimeConfig.new(properties: 'config_from_time_immortal').save
-      older_runtime_config = Bosh::Director::Models::RuntimeConfig.new(properties: 'config_from_yesteryear').save
-      Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config2', name: 'some-foo-name').save
-      newer_runtime_config = Bosh::Director::Models::RuntimeConfig.new(properties: "---\nsuper_shiny: new_config").save
+      Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_from_time_immortal', name: 'default').save
+      older_runtime_config = Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_from_yesteryear', name: 'default').save
+      Bosh::Director::Models::Config.new(type: 'runtime', content: 'named_config2', name: 'some-foo-name').save
+      newer_runtime_config = Bosh::Director::Models::Config.new(type: 'runtime', content: "---\nsuper_shiny: new_config", name: 'default').save
 
       runtime_configs = manager.list(2)
 
@@ -51,10 +51,10 @@ describe Bosh::Director::Api::RuntimeConfigManager do
       let(:name){ 'some-foo-name'}
 
       it 'returns the specified number of runtime configs (most recent first)' do
-        named_config1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config', name: 'some-foo-name').save
-        Bosh::Director::Models::RuntimeConfig.new(properties: 'default_config').save
-        Bosh::Director::Models::RuntimeConfig.new(properties: 'default_config', name: 'some-other-foo-name').save
-        named_config2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config2', name: 'some-foo-name').save
+        named_config1 = Bosh::Director::Models::Config.new(type: 'runtime', content: 'named_config', name: 'some-foo-name').save
+        Bosh::Director::Models::Config.new(type: 'runtime', content: 'default_config', name: 'default').save
+        Bosh::Director::Models::Config.new(type: 'runtime', content: 'default_config', name: 'some-other-foo-name').save
+        named_config2 = Bosh::Director::Models::Config.new(type: 'runtime', content: 'named_config2', name: 'some-foo-name').save
 
         runtime_configs = manager.list(2, name)
 

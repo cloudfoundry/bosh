@@ -40,7 +40,7 @@ module Bosh::Director
     describe '.load_from_model' do
       let(:deployment_model) {instance_double(Bosh::Director::Models::Deployment)}
       let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {'name-2'=>'my-name-2'}) }
-      let(:runtime_configs) { [ Models::RuntimeConfig.make(), Models::RuntimeConfig.make() ] }
+      let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
       let(:manifest_hash) { {"name"=>"a_deployment", "name-1"=>"my-name-1"} }
 
       before do
@@ -128,7 +128,7 @@ module Bosh::Director
 
     describe '.load_from_text' do
       let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {}) }
-      let(:runtime_configs) { [ Models::RuntimeConfig.make(), Models::RuntimeConfig.make() ] }
+      let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
 
       let(:raw_runtime_config_hash) { {'raw_runtime' => '((foo))'} }
       let(:hybrid_runtime_config_hash) { {'my_runtime' => 'foo_value'} }

@@ -90,7 +90,7 @@ module Bosh::Director
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        latest_runtime_configs = Models::RuntimeConfig.latest_set
+        latest_runtime_configs = Models::Config.latest_set('runtime')
         task = @deployment_manager.create_deployment(current_user, manifest_text, latest_cloud_config, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
@@ -123,7 +123,7 @@ module Bosh::Director
         end
 
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        latest_runtime_configs = Models::RuntimeConfig.latest_set
+        latest_runtime_configs = Models::Config.latest_set('runtime')
         task = @deployment_manager.create_deployment(current_user, manifest_text, latest_cloud_config, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
@@ -366,10 +366,10 @@ module Bosh::Director
           @logger.debug("Deploying with context #{params['context']}")
           context = JSON.parse(params['context'])
           cloud_config = Api::CloudConfigManager.new.find_by_id(context['cloud_config_id'])
-          runtime_configs = Models::RuntimeConfig.find_by_ids(context['runtime_config_ids'])
+          runtime_configs = Models::Config.find_by_ids(context['runtime_config_ids'])
         else
           cloud_config = Api::CloudConfigManager.new.latest
-          runtime_configs = Models::RuntimeConfig.latest_set
+          runtime_configs = Models::Config.latest_set('runtime')
         end
 
         options['cloud_config'] = cloud_config
@@ -400,7 +400,7 @@ module Bosh::Director
           end
 
           after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
-          after_runtime_configs = Bosh::Director::Models::RuntimeConfig.latest_set
+          after_runtime_configs = Bosh::Director::Models::Config.latest_set('runtime')
 
           after_manifest = Manifest.load_from_text(manifest_text, after_cloud_config, after_runtime_configs, {:resolve_interpolation => false})
           after_manifest.resolve_aliases

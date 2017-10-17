@@ -1,5 +1,12 @@
 module Bosh::Director::Models
   class Deployment < Sequel::Model(Bosh::Director::Config.db)
+
+    def self.join_table_block(type)
+      lambda do |ds|
+        ds.where(config_id: self.db[:configs].select(:id).where(type: type))
+      end
+    end
+
     many_to_many :stemcells
     many_to_many :release_versions
     one_to_many  :job_instances, :class => "Bosh::Director::Models::Instance"
@@ -7,7 +14,14 @@ module Bosh::Director::Models
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
     many_to_one  :cloud_config
-    many_to_many :runtime_configs
+    many_to_many :runtime_configs,
+      class: Bosh::Director::Models::Config,
+      join_table: :deployments_configs,
+      right_key: :config_id,
+      conditions: {type: 'runtime'},
+      before_add: Config.check_type('runtime'),
+      before_remove: Config.check_type('runtime'),
+      join_table_block: Deployment.join_table_block('runtime')
     many_to_many :teams
     one_to_many  :variable_sets, :class => 'Bosh::Director::Models::VariableSet'
 

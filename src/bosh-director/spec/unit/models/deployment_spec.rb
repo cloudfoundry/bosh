@@ -201,34 +201,74 @@ tags:
       end
     end
 
-    describe '#runtime_configs=' do
+    describe 'runtime_configs' do
       let(:manifest) { '---{}' }
 
       before do
-        rc1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc1-prop', name: 'rc1').save
-        rc2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc2-prop', name: 'rc2').save
-        rc3 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc3-prop', name: 'rc3').save
+        rc1 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc1-prop', name: 'rc1')
+        rc2 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc2-prop', name: 'rc2')
+        rc3 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc3-prop', name: 'rc3')
 
         deployment.add_runtime_config(rc1)
         deployment.add_runtime_config(rc2)
         deployment.add_runtime_config(rc3)
       end
 
-      it 'removes existing records & assigns the new runtime config records' do
-        rc4 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc4-prop', name: 'rc4').save
-        rc5 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc5-prop', name: 'rc5').save
-        rc6 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc6-prop', name: 'rc6').save
+      it '#add_runtime_config rejects adding other config types' do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        Bosh::Director::Config.db[:deployments_configs].insert({deployment_id:deployment.id, config_id:config.id})
+        expect {
+          deployment.add_runtime_config(config)
+        }.to raise_error Bosh::Director::ConfigTypeMismatch, "Expected config type 'runtime', but was 'fake_type'"
+        expect( Bosh::Director::Config.db[:deployments_configs].map(:config_id)).to include(config.id)
+
+      end
+
+      it '#remove_runtime_config rejects removing other config types' do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        Bosh::Director::Config.db[:deployments_configs].insert({deployment_id:deployment.id, config_id:config.id})
+        expect {
+          deployment.remove_runtime_config(config)
+        }.to raise_error Bosh::Director::ConfigTypeMismatch, "Expected config type 'runtime', but was 'fake_type'"
+
+        expect( Bosh::Director::Config.db[:deployments_configs].map(:config_id)).to include(config.id)
+      end
+
+      it "#remove_all_runtime_configs removes only configs associations of type 'runtime'" do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        Bosh::Director::Config.db[:deployments_configs].insert({deployment_id:deployment.id, config_id:config.id})
+
+        deployment.remove_all_runtime_configs
+
+        expect( Bosh::Director::Config.db[:deployments_configs].count).to eq(1)
+        expect( Bosh::Director::Config.db[:deployments_configs].map(:config_id)).to include(config.id)
+
+        expect(Bosh::Director::Models::Config.where(type: 'fake_type').all.size).to eq 1
+        expect(Bosh::Director::Models::Config.where(type: 'runtime').all.size).to eq 3
+      end
+
+      it '#runtime_configs= removes existing records & assigns the new runtime config records' do
+        rc4 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc4-prop', name: 'rc4')
+        rc5 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc5-prop', name: 'rc5')
 
         deployment.runtime_configs = [rc4, rc5]
 
         expect(Bosh::Director::Models::Deployment[id: deployment.id].runtime_configs).to contain_exactly(rc4, rc5)
       end
+
+      it "#runtime_configs filters configs of type 'runtime'" do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        Bosh::Director::Config.db[:deployments_configs].insert({deployment_id:deployment.id, config_id:config.id})
+
+        expect(deployment.runtime_configs.size).to eq 3
+        expect(Bosh::Director::Models::Deployment[id: deployment.id].runtime_configs).not_to include(config)
+      end
     end
 
     describe '#create_with_teams' do
       it 'saves attributes including teams & runtime_configs' do
-        rc1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc1-prop', name: 'rc1').save
-        rc2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'rc2-prop', name: 'rc2').save
+        rc1 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc1-prop', name: 'rc1')
+        rc2 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc2-prop', name: 'rc2')
 
         team1 = Bosh::Director::Models::Team.new( name: 'team1')
         team2 = Bosh::Director::Models::Team.new( name: 'team2')

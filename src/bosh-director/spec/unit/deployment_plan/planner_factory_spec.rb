@@ -12,7 +12,7 @@ module Bosh
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_config_model) { Models::CloudConfig.make(raw_manifest: cloud_config_hash) }
-        let(:runtime_config_models) { [instance_double(Bosh::Director::Models::RuntimeConfig)] }
+        let(:runtime_config_models) { [instance_double(Bosh::Director::Models::Config)] }
         let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator)}
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }

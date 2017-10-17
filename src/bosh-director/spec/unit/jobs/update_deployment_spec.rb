@@ -77,7 +77,7 @@ module Bosh::Director
           allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
           allow(template_blob_cache).to receive(:clean_cache!)
           allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
-          allow(Bosh::Director::Models::RuntimeConfig).to receive(:find_by_ids).and_return([])
+          allow(Bosh::Director::Models::Config).to receive(:find_by_ids).and_return([])
           allow(JobRenderer).to receive(:render_job_instances_with_cache).with(
             anything,
             template_blob_cache,

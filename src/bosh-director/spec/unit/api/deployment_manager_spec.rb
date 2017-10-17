@@ -13,7 +13,7 @@ module Bosh::Director
     end
 
     describe '#create_deployment' do
-      let(:runtime_configs) { [Models::RuntimeConfig.make, Models::RuntimeConfig.make] }
+      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
 
       it 'enqueues a DJ job' do
         cloud_config = Models::CloudConfig.make

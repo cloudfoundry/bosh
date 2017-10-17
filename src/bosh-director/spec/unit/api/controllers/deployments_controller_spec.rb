@@ -117,11 +117,11 @@ module Bosh::Director
             context 'when provided a cloud config and runtime config context to work within' do
               it 'should use the provided context instead of using the latest runtime and cloud config' do
                 cloud_config = Models::CloudConfig.make
-                runtime_config_1 = Models::RuntimeConfig.make
-                runtime_config_2 = Models::RuntimeConfig.make
+                runtime_config_1 = Models::Config.make(type: 'runtime')
+                runtime_config_2 = Models::Config.make(type: 'runtime')
 
                 Models::CloudConfig.make
-                Models::RuntimeConfig.make
+                Models::Config.make(type: 'runtime')
 
                 deployment_context = [['context', JSON.dump({'cloud_config_id' => 1, 'runtime_config_ids' => [runtime_config_1.id, runtime_config_2.id]})]]
 
@@ -139,7 +139,7 @@ module Bosh::Director
             context 'when using cloud config and runtime config' do
               it 'should persist these relations when persisting the deployment' do
                 cloud_config = Models::CloudConfig.make
-                runtime_config = Models::RuntimeConfig.make
+                runtime_config = Models::Config.make(type: 'runtime')
 
                 post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -1491,9 +1491,9 @@ module Bosh::Director
             )
           end
           let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {'azs' => []}) }
-          let(:runtime_config_1) { Models::RuntimeConfig.make(id: 1, raw_manifest: {'addons' => []}) }
-          let(:runtime_config_2) { Models::RuntimeConfig.make(id: 2, raw_manifest: {'addons' => []}) }
-          let(:runtime_config_3) { Models::RuntimeConfig.make(id: 3, raw_manifest: {'addons' => []}, name: 'smurf') }
+          let(:runtime_config_1) { Models::Config.make(id: 1, type: 'runtime', raw_manifest: {'addons' => []}) }
+          let(:runtime_config_2) { Models::Config.make(id: 2, type: 'runtime', raw_manifest: {'addons' => []}) }
+          let(:runtime_config_3) { Models::Config.make(id: 3, type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
 
           before do
             deployment = Models::Deployment.create(

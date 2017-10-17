@@ -113,6 +113,7 @@ module Bosh::Director
   JobNotFound = err(70009, NOT_FOUND)
   ContextIdViolatedMax = err(70010)
   VariableSetNotFound = err(70011)
+  ConfigTypeMismatch = err(70012, INTERNAL_SERVER_ERROR)
 
   # Extracting job from a release
   JobInvalidArchive = err(80000)

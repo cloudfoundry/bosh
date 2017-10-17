@@ -6,7 +6,7 @@ module Bosh::Director
       attr_reader :runtime_configs
 
       def self.create_from_model_ids(runtime_configs_ids)
-        new(Bosh::Director::Models::RuntimeConfig.find_by_ids(runtime_configs_ids))
+        new(Bosh::Director::Models::Config.find_by_ids(runtime_configs_ids))
       end
 
       def initialize(runtime_configs)
