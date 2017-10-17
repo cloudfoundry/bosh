@@ -122,5 +122,6 @@
   "20170821141953_remove_unused_credentials_json_columns": "0daf4d1363029304fc84d0df7b7b69fa04713e37",
   "20170825141953_change_address_to_be_string_for_ipv6": "7807ac7e3e692d54c091421836bcaac826ae86e9",
   "20170828174622_add_spec_json_to_templates": "ecd7869cd86c451b0ff134aff944b6e2c22f9b31",
-  "20170915205722_create_dns_encoded_networks_and_instance_groups": "8e0832e495000c488d0a100a8b3162e7d82dcaea"
+  "20170915205722_create_dns_encoded_networks_and_instance_groups": "8e0832e495000c488d0a100a8b3162e7d82dcaea",
+  "20171010144941_add_configs": "04348263d89a61dd1078c9ee4a2c94da5a1ff012"
 }

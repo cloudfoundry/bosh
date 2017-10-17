@@ -164,6 +164,12 @@ module Bosh::Director::Models
     created_at   { Time.now }
   end
 
+  Config.blueprint do
+    type { 'my-type' }
+    name { 'some-name' }
+    created_at { Time.now }
+  end
+
   CloudConfig.blueprint do
     raw_manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
