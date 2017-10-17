@@ -186,14 +186,17 @@ module Bosh::Director
     end
 
     describe 'POST', '/' do
-      let(:content) { YAML.dump(Bosh::Spec::Deployments.simple_runtime_config) }
+      let(:config_data) { Bosh::Spec::Deployments.simple_runtime_config }
+      let(:content) {
+        YAML.dump({ 'name' => 'my-name', 'type' => 'my-type', 'content' => config_data })
+       }
 
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }
 
         it 'creates a new config' do
           expect {
-            post '/?type=my-type&name=my-name', content, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
           expect(last_response.status).to eq(201)
@@ -203,24 +206,24 @@ module Bosh::Director
               'id' => Bosh::Director::Models::Config.first.id,
               'type' => 'my-type',
               'name' => 'my-name',
-              'content' => content
+              'content' => YAML.dump(config_data)
             }
           )
         end
 
         it 'creates new config and does not update existing ' do
-          post '/?type=my-type&name=my-name', content, {'CONTENT_TYPE' => 'text/yaml'}
+          post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           expect(last_response.status).to eq(201)
 
           expect {
-            post '/?type=my-type&name=my-name', content, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Config, :count).from(1).to(2)
 
           expect(last_response.status).to eq(201)
         end
 
         it 'gives a nice error when request body is not a valid yml' do
-          post '/?type=my-type&name=my-name', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+          post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)['code']).to eq(440001)
@@ -228,7 +231,7 @@ module Bosh::Director
         end
 
         it 'gives a nice error when request body is empty' do
-          post '/?type=my-type&name=my-name', '', {'CONTENT_TYPE' => 'text/yaml'}
+          post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)).to eq(
@@ -237,9 +240,19 @@ module Bosh::Director
           )
         end
 
+        it 'gives a nice error when request body is invalid config yaml' do
+          post '/', '---', {'CONTENT_TYPE' => 'text/yaml'}
+
+          expect(last_response.status).to eq(400)
+          expect(JSON.parse(last_response.body)).to eq(
+            'code' => 710000,
+            'description' => 'YAML hash expected',
+          )
+        end
+
         it 'creates a new event' do
           expect {
-            post '/?type=my-type&name=my-name', content, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
           expect(event.object_type).to eq('config/my-type')
@@ -248,21 +261,31 @@ module Bosh::Director
           expect(event.user).to eq('admin')
         end
 
-        it 'creates a new event with error' do
-          expect {
-            post '/?type=my-type&name=my-name', {}, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
-          event = Bosh::Director::Models::Event.first
-          expect(event.object_type).to eq('config/my-type')
-          expect(event.object_name).to eq('my-name')
-          expect(event.action).to eq('create')
-          expect(event.user).to eq('admin')
-          expect(event.error).to eq('Manifest should not be empty')
+        context 'when using config with missing content' do
+         let(:content) {
+          YAML.dump({ 'type' => 'my-type', 'name' => 'my-name', 'content' => {} })
+         }
+
+          it 'creates a new event with error' do
+            expect {
+              post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+            }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
+            event = Bosh::Director::Models::Event.first
+            expect(event.object_type).to eq('config/my-type')
+            expect(event.object_name).to eq('my-name')
+            expect(event.action).to eq('create')
+            expect(event.user).to eq('admin')
+            expect(event.error).to eq("'content' is required")
+          end
         end
 
         context 'when `type` argument is missing' do
+          let(:content) {
+            YAML.dump({'name' => 'my-name', 'content' => {} })
+          }
+
           it 'return 400' do
-            post '/?name=some-name', content, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(40001)
@@ -271,8 +294,12 @@ module Bosh::Director
         end
 
         context 'when `name` argument is missing' do
+          let(:content) {
+            YAML.dump({'type' => 'my-type', 'content' => {} })
+          }
+
           it 'return 400' do
-            post '/?type=my-type', content, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(40001)
@@ -285,7 +312,7 @@ module Bosh::Director
         before { basic_authorize 'reader', 'reader' }
 
         it 'denies access' do
-          expect(post('/?type=my-type&name=my-name', content, {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
+          expect(post('/', content, {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
         end
       end
     end

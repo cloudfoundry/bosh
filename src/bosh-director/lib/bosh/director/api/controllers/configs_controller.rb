@@ -23,16 +23,19 @@ module Bosh::Director
       end
 
       post '/', :consumes => :yaml do
-        check(params, 'type')
-        check(params, 'name')
-
-        manifest_text = request.body.read
         begin
-          validate_manifest_yml(manifest_text, nil)
-          config = Bosh::Director::Api::ConfigManager.new.create(params['type'], params['name'], manifest_text)
-          create_event(params['type'], params['name'])
+          manifest = {}
+          manifest = validate_manifest_yml(request.body.read, nil)
+          validate_create_format(manifest)
+          config = Bosh::Director::Api::ConfigManager.new.create(manifest['type'], manifest['name'], YAML.dump(manifest['content']))
+          create_event(manifest['type'], manifest['name'])
         rescue => e
-          create_event(params['type'], params['name'], e)
+          if manifest.is_a?(Hash) && manifest.key?('type') && manifest.key?('name')
+            create_event(manifest['type'], manifest['name'], e)
+          else
+            create_event('invalid type', 'invalid name', e)
+          end
+
           raise e
         end
 
@@ -77,6 +80,13 @@ module Bosh::Director
         if param[name].nil? || param[name].empty?
           raise ValidationMissingField, "'#{name}' is required"
         end
+      end
+
+      def validate_create_format(manifest)
+        raise InvalidYamlError, "YAML hash expected" unless manifest.is_a?(Hash)
+        check(manifest, 'type')
+        check(manifest, 'name')
+        check(manifest, 'content')
       end
     end
   end
