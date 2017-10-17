@@ -2,16 +2,16 @@ require_relative '../spec_helper'
 
 describe 'cli runtime config', type: :integration do
   with_reset_sandbox_before_each
-  let(:un_named_rc){ Bosh::Spec::Deployments.simple_runtime_config }
-  let(:named_rc_1){
+  let(:un_named_rc) {Bosh::Spec::Deployments.simple_runtime_config}
+  let(:named_rc_1) {
     rc = Bosh::Spec::Deployments.simple_runtime_config
-    rc['releases'][0] = {'name' => 'named_rc_1', 'version' => '1'}
+    rc['releases'][0] = { 'name' => 'named_rc_1', 'version' => '1' }
     rc
   }
 
-  let(:named_rc_2){
+  let(:named_rc_2) {
     rc = Bosh::Spec::Deployments.simple_runtime_config
-    rc['releases'][0] = {'name' => 'named_rc_2', 'version' => '1'}
+    rc['releases'][0] = { 'name' => 'named_rc_2', 'version' => '1' }
     rc
   }
 
@@ -63,8 +63,8 @@ describe 'cli runtime config', type: :integration do
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{yaml_file('runtime_config.yml', named_rc_1).path}")
     bosh_runner.run("update-runtime-config --name=named_rc_2 #{yaml_file('runtime_config.yml', named_rc_2).path}")
 
-    un_named_rc_v2 = {'releases' => [{'name' => 'test_release_10', 'version' => '10'}]}
-    named_rc_1_v2 = {'releases' => [{'name' => 'test_release_20', 'version' => '20'}]}
+    un_named_rc_v2 = { 'releases' => [{ 'name' => 'test_release_10', 'version' => '10' }] }
+    named_rc_1_v2 = { 'releases' => [{ 'name' => 'test_release_20', 'version' => '20' }] }
 
     bosh_runner.run("update-runtime-config #{yaml_file('runtime_config.yml', un_named_rc_v2).path}")
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{yaml_file('runtime_config.yml', named_rc_1_v2).path}")
@@ -103,8 +103,12 @@ describe 'cli runtime config', type: :integration do
   it "gives an error when release version is 'latest'" do
     runtime_config = Bosh::Spec::Deployments.runtime_config_latest_release
     upload_runtime_config(runtime_config_hash: runtime_config)
-    output, exit_code = deploy_from_scratch(failure_expected: true,
-                                            return_exit_code: true)
+    output, exit_code = deploy_from_scratch(
+      manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+      failure_expected: true,
+      return_exit_code: true
+    )
 
     expect(exit_code).to_not eq(0)
     expect(output).to include(
@@ -115,12 +119,16 @@ describe 'cli runtime config', type: :integration do
     runtime_config = Bosh::Spec::Deployments.runtime_config_release_missing
 
     upload_runtime_config(runtime_config_hash: runtime_config)
-    output, exit_code = deploy_from_scratch(failure_expected: true,
-                                            return_exit_code: true)
+    output, exit_code = deploy_from_scratch(
+      manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+      failure_expected: true,
+      return_exit_code: true
+    )
 
     expect(exit_code).to_not eq(0)
     expect(output).to include("Manifest specifies job 'job_using_pkg_2' which is defined in 'release2', but 'release2' is not listed in the runtime releases section.")
-end
+  end
 
   it 'does not fail when runtime config is very large' do
     runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
@@ -139,15 +147,12 @@ end
     runtime_config = yaml_file('runtime_config.yml', un_named_rc)
     bosh_runner.run("update-runtime-config #{runtime_config.path}")
 
-    output = bosh_runner.run("configs --type=runtime")
-    expect(output).to include <<-EOF.strip
-Type     Name\u0020\u0020\u0020\u0020\u0020
-runtime  default\u0020\u0020
+    output = JSON.load(bosh_runner.run("configs --type=runtime --json"))
 
-1 configs
+    configs = output['Tables'].first['Rows']
 
-Succeeded
-EOF
+    expect(configs.count).to eq (1)
+    expect(configs.first).to eq('name' => 'default', 'type' => 'runtime')
   end
 
   it 'shows no diff when uploading same unnamed runtime config as with generic config command' do

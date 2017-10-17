@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 describe 'cli configs', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:config) { yaml_file('config.yml', Bosh::Spec::Deployments.simple_cloud_config) }
+  let(:config) { yaml_file('config.yml', Bosh::Spec::NewDeployments.simple_cloud_config) }
 
   context 'can upload a config' do
     context 'when config uses placeholders' do
@@ -37,7 +37,7 @@ describe 'cli configs', type: :integration do
     end
     
     it 'does not fail if the uploaded config is a large file' do
-      config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_cloud_config)
+      config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.simple_cloud_config)
 
       for i in 0..10001
         config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

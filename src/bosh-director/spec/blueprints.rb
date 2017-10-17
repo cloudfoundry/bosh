@@ -181,6 +181,12 @@ module Bosh::Director::Models
     raw_manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
+  Config.blueprint(:cloud_with_manifest_v2) do
+    type { 'cloud' }
+    name { 'default' }
+    raw_manifest { Bosh::Spec::NewDeployments.simple_cloud_config }
+  end
+
   Config.blueprint(:runtime) do
     type { 'runtime' }
     name { 'default' }

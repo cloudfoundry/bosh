@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+  require_relative '../spec_helper'
 
 describe 'cli cloud config', type: :integration do
   with_reset_sandbox_before_each
@@ -11,7 +11,7 @@ describe 'cli cloud config', type: :integration do
   end
 
   it 'can upload a cloud config' do
-    cloud_config = yaml_file('cloud_config.yml', Bosh::Spec::Deployments.simple_cloud_config)
+    cloud_config = yaml_file('cloud_config.yml', Bosh::Spec::NewDeployments.simple_cloud_config)
     expect(bosh_runner.run("update-cloud-config #{cloud_config.path}")).to include('Succeeded')
   end
 
@@ -40,7 +40,7 @@ describe 'cli cloud config', type: :integration do
   end
 
   context 'when an az is removed' do
-    let(:initial_cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs }
+    let(:initial_cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs }
 
     let(:new_cloud_config) do
       cloud_config = initial_cloud_config
@@ -50,13 +50,13 @@ describe 'cli cloud config', type: :integration do
     end
 
     let(:initial_manifest) do
-      manifest = Bosh::Spec::Deployments::simple_manifest
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest['jobs'][0]['azs'] = ['z1', 'z2']
       manifest
     end
 
     let(:new_manifest) do
-      manifest = Bosh::Spec::Deployments::simple_manifest
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest['jobs'][0]['azs'] = ['z1']
       manifest
     end
@@ -76,7 +76,7 @@ describe 'cli cloud config', type: :integration do
     # none present yet
     expect(bosh_runner.run('cloud-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as client 'test'/)
 
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_file = yaml_file('cloud_config.yml', cloud_config)
     bosh_runner.run("update-cloud-config #{cloud_config_file.path}")
 
@@ -84,7 +84,7 @@ describe 'cli cloud config', type: :integration do
   end
 
   it 'does not fail if the uploaded cloud config is a large file' do
-    cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_cloud_config)
+    cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.simple_cloud_config)
 
     for i in 0..10001
       cloud_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

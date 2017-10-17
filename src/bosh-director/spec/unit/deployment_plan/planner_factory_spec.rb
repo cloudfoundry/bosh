@@ -11,7 +11,7 @@ module Bosh
         let(:raw_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-        let(:cloud_config_model) { Models::Config.make(:cloud, raw_manifest: cloud_config_hash) }
+        let(:cloud_configs) { [Models::Config.make(:cloud, raw_manifest: cloud_config_hash)] }
         let(:runtime_config_models) { [instance_double(Bosh::Director::Models::Config)] }
         let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator)}
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
@@ -49,7 +49,7 @@ module Bosh
 
         describe '#create_from_manifest' do
           let(:planner) do
-            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
+            subject.create_from_manifest(manifest, cloud_configs, runtime_config_models, plan_options)
           end
 
           it 'returns a planner' do
@@ -113,7 +113,7 @@ LOGMESSAGE
           it 'raises error when manifest has cloud_config properties' do
             hybrid_manifest_hash['vm_types'] = 'foo'
             expect{
-              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
+              subject.create_from_manifest(manifest, cloud_configs, runtime_config_models, plan_options)
             }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
           end
 
@@ -129,7 +129,7 @@ LOGMESSAGE
             end
 
             it 'calls planner new with appropriate arguments' do
-              expect(Planner).to receive(:new).with(expected_attrs, YAML.dump(raw_manifest_hash), cloud_config_model, runtime_config_models, deployment_model, expected_plan_options).and_call_original
+              expect(Planner).to receive(:new).with(expected_attrs, YAML.dump(raw_manifest_hash), cloud_configs, runtime_config_models, deployment_model, expected_plan_options).and_call_original
               planner
             end
           end
@@ -492,7 +492,7 @@ LOGMESSAGE
         end
 
         def upload_stemcell
-          stemcell_entry = cloud_config_model.raw_manifest['resource_pools'].first['stemcell']
+          stemcell_entry = cloud_config_hash['resource_pools'].first['stemcell']
           Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'])
         end
       end

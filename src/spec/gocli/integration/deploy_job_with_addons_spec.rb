@@ -18,9 +18,9 @@ describe 'deploy job with addons', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
@@ -53,9 +53,25 @@ describe 'deploy job with addons', type: :integration do
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
 
-      manifest_hash = Bosh::Spec::Deployments.stemcell_os_specific_addon_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.stemcell_os_specific_addon_manifest
+      manifest_hash['stemcells'] = [
+        {
+          'alias' => 'toronto',
+          'os' => 'toronto-os',
+          'version' => 'latest',
+        },
+        {
+          'alias' => 'centos',
+          'os' => 'toronto-centos',
+          'version' => 'latest'
+        }
+      ]
 
-      cloud_config_hash = Bosh::Spec::Deployments.simple_os_specific_cloud_config
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash['vm_types'] = [
+        { 'name' => 'a', 'cloud_properties' => {}, },
+        { 'name' => 'b', 'cloud_properties' => {}, }
+      ]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -80,10 +96,18 @@ describe 'deploy job with addons', type: :integration do
 
       upload_stemcell
 
-      cloud_config_hash = Bosh::Spec::Deployments.simple_network_specific_cloud_config
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash['networks'] = [
+        { 'name' => 'a', 'subnets' => [Bosh::Spec::NewDeployments.subnet] },
+        { 'name' => 'b', 'subnets' => [Bosh::Spec::NewDeployments.subnet] }
+      ]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      manifest_hash = Bosh::Spec::Deployments.network_specific_addon_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell
+      manifest_hash['jobs'] = [
+        Bosh::Spec::NewDeployments.simple_job(network_name: "a", name: "has-addon-vm", instances: 1),
+        Bosh::Spec::NewDeployments.simple_job(network_name: "b", name: "no-addon-vm", instances: 1)
+      ]
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       instances = director.instances
@@ -118,7 +142,7 @@ describe 'deploy job with addons', type: :integration do
         upload_stemcell(director_client_env)
         upload_cloud_config(director_client_env)
 
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest
 
         # deploy Deployment1
         manifest_hash['name'] = 'dep1'
@@ -151,9 +175,9 @@ describe 'deploy job with addons', type: :integration do
 
       upload_stemcell
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
 
-      upload_cloud_config(manifest_hash: manifest_hash)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -174,8 +198,8 @@ describe 'deploy job with addons', type: :integration do
 
       upload_stemcell
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      upload_cloud_config(manifest_hash: manifest_hash)
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       manifest_hash['releases'] = [{'name' => 'bosh-release', 'version' => '0.1-dev'}, {'name' => 'dummy2', 'version' => '0.2-dev'}]
       manifest_hash['jobs'][0]['templates'] = [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}]
@@ -194,8 +218,8 @@ describe 'deploy job with addons', type: :integration do
 
       upload_stemcell
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      upload_cloud_config(manifest_hash: manifest_hash)
+      manifest_hash =  Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -216,8 +240,8 @@ describe 'deploy job with addons', type: :integration do
 
       upload_stemcell
 
-      manifest_hash = Bosh::Spec::Deployments.multiple_release_manifest
-      upload_cloud_config(manifest_hash: manifest_hash)
+      manifest_hash = Bosh::Spec::NewDeployments.multiple_release_manifest
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       deploy_output = deploy_simple_manifest(manifest_hash: manifest_hash)
 
       # ensure that the diff only contains one instance of the release
@@ -235,18 +259,18 @@ describe 'deploy job with addons', type: :integration do
 
         upload_stemcell
 
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash =  Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         manifest_hash['releases'] = [{'name' => 'test_release_2',
           'version' => '2'}]
 
-        manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(
+        manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(
           name: 'job',
           templates: [{'name' => 'job_using_pkg_1'}],
           instances: 1,
           static_ips: ['192.168.1.10']
         )]
 
-        upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+        upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
         deploy_simple_manifest(manifest_hash: manifest_hash)
       end
     end
@@ -254,13 +278,13 @@ describe 'deploy job with addons', type: :integration do
 
   context 'when deployment' do
     it 'allows addon to be added to deployment and ensures that deployment addon job properties are assigned' do
-      manifest_hash = Bosh::Spec::Deployments.deployment_manifest_with_addon
+      manifest_hash = Bosh::Spec::NewDeployments.deployment_manifest_with_addon
 
       bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(manifest_hash: manifest_hash)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -273,17 +297,17 @@ describe 'deploy job with addons', type: :integration do
     end
 
     it 'allows to apply exclude rules' do
-      manifest_hash = Bosh::Spec::Deployments.deployment_manifest_with_addon
+      manifest_hash = Bosh::Spec::NewDeployments.deployment_manifest_with_addon
       manifest_hash['addons'][0]['exclude'] = {'jobs' => [{'name' => 'foobar_without_packages', 'release' => 'bosh-release'}]}
       manifest_hash['jobs'][1] =
-        Bosh::Spec::Deployments.simple_job(name: 'foobar_without_packages', templates: [{'name' => 'foobar_without_packages', 'release' => 'bosh-release'}], instances: 1)
+        Bosh::Spec::NewDeployments.simple_job(name: 'foobar_without_packages', templates: [{'name' => 'foobar_without_packages', 'release' => 'bosh-release'}], instances: 1)
 
       bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
 
-      upload_cloud_config(manifest_hash: manifest_hash)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -306,7 +330,7 @@ describe 'deploy job with addons', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      manifest_hash = Bosh::Spec::Deployments.complex_deployment_manifest_with_addon
+      manifest_hash = Bosh::Spec::NewDeployments.complex_deployment_manifest_with_addon
 
       bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
@@ -314,7 +338,7 @@ describe 'deploy job with addons', type: :integration do
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
 
-      cloud_config_hash = Bosh::Spec::Deployments.simple_os_specific_cloud_config
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_os_specific_cloud_config
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -380,12 +404,10 @@ describe 'deploy job with addons', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
-
-      upload_cloud_config(cloud_config_hash:  Bosh::Spec::Deployments.simple_os_specific_cloud_config)
     end
 
     it 'merges the releases & addons for a deploy' do
-      deploy_from_scratch
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       director.instances.each do |foobar_instance|
         expect(File.exist?(foobar_instance.job_path('foobar'))).to be_truthy
@@ -398,7 +420,7 @@ describe 'deploy job with addons', type: :integration do
     end
 
     it 'merges the tags key for a deploy' do
-      deploy_from_scratch
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       vms_cids = director.instances.map(&:vm_cid)
       invocations = current_sandbox.cpi.invocations.select do |invocation|
@@ -466,7 +488,7 @@ describe 'deploy job with addons', type: :integration do
       end
 
       it 'picks up the latest named runtime config when deploying' do
-        deploy_from_scratch
+        deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
         director.instances.each do |foobar_instance|
           expect(File.exist?(foobar_instance.job_path('foobar'))).to be_truthy
@@ -489,7 +511,12 @@ describe 'deploy job with addons', type: :integration do
       end
 
       it 'fails when deploying' do
-        output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true)
+        output, exit_code = deploy_from_scratch(
+          failure_expected: true,
+          return_exit_code: true,
+          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+        )
         expect(exit_code).to_not eq(0)
         expect(output).to_not eq("Runtime config 'tags' key cannot be defined in multiple runtime configs.")
       end

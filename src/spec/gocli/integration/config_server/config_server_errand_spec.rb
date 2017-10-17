@@ -3,15 +3,10 @@ require_relative '../../spec_helper'
 describe 'using director with config server and a deployment with errands', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
-  def prepend_namespace(key)
-    "/#{director_name}/#{deployment_name}/#{key}"
-  end
-
-  let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
-  let(:errand_manifest){ Bosh::Spec::Deployments.manifest_errand_with_placeholders }
+  let(:errand_manifest){ Bosh::Spec::NewDeployments.manifest_errand_with_placeholders }
   let(:namespaced_key) { "/#{director_name}/#{errand_manifest["name"]}/placeholder" }
 
   it 'replaces variables in properties' do
@@ -20,6 +15,7 @@ describe 'using director with config server and a deployment with errands', type
     deploy_from_scratch(
       no_login: true,
       manifest_hash: errand_manifest,
+      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       include_credentials: false,
       env: client_env
     )
@@ -34,6 +30,7 @@ describe 'using director with config server and a deployment with errands', type
     deploy_from_scratch(
       no_login: true,
       manifest_hash: errand_manifest,
+      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       include_credentials: false,
       env: client_env
     )
@@ -47,7 +44,7 @@ describe 'using director with config server and a deployment with errands', type
 
   context 'when config server does NOT have the variable' do
     let(:errand_manifest) do
-      manifest = Bosh::Spec::Deployments.manifest_errand_with_placeholders
+      manifest = Bosh::Spec::NewDeployments.manifest_errand_with_placeholders
       manifest['jobs'][1]['properties']['errand1']['gargamel_color'] = '((gargamel_color_variable))'
       manifest
     end
@@ -56,6 +53,7 @@ describe 'using director with config server and a deployment with errands', type
       output, exit_code = deploy_from_scratch(
         no_login: true,
         manifest_hash: errand_manifest,
+        cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
         include_credentials: false,
         env: client_env,
         failure_expected: true,

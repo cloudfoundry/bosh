@@ -10,10 +10,10 @@ module Bosh::Director
         :update_deployment
       end
 
-      def initialize(manifest_text, cloud_config_id, runtime_config_ids, options = {})
+      def initialize(manifest_text, cloud_config_ids, runtime_config_ids, options = {})
         @blobstore = App.instance.blobstores.blobstore
         @manifest_text = manifest_text
-        @cloud_config_id = cloud_config_id
+        @cloud_config_ids = cloud_config_ids
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
@@ -32,13 +32,13 @@ module Bosh::Director
           warning = "Ignoring cloud config. Manifest contains 'networks' section."
           logger.debug(warning)
           @event_log.warn_deprecated(warning)
-          cloud_config_model = nil
+          cloud_config_models = nil
         else
-          cloud_config_model = Bosh::Director::Models::Config[@cloud_config_id]
-          if cloud_config_model.nil?
-            logger.debug("No cloud config uploaded yet.")
+          cloud_config_models = Bosh::Director::Models::Config.find_by_ids(@cloud_config_ids)
+          if cloud_config_models.empty?
+            logger.debug('No cloud config uploaded yet.')
           else
-            logger.debug("Cloud config:\n#{cloud_config_model.raw_manifest}")
+            logger.debug("Cloud config:\n#{Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_config_models).raw_manifest}")
           end
         end
 
@@ -63,7 +63,7 @@ module Bosh::Director
             Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
           end
 
-          deployment_manifest_object = Manifest.load_from_text(@manifest_text, cloud_config_model, runtime_config_models)
+          deployment_manifest_object = Manifest.load_from_text(@manifest_text, cloud_config_models, runtime_config_models)
 
           @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event unless dry_run?
@@ -71,7 +71,7 @@ module Bosh::Director
           event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_models, @options)
+            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
             deployment_assembler.bind_models({:should_bind_new_variable_set => is_deploy_action})

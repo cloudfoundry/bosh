@@ -18,6 +18,14 @@ module Bosh::Director
 
     let(:options) { {} }
 
+    let(:converted_simple_manifest) do
+      manifest = Bosh::Spec::Deployments.simple_manifest
+      old_job = manifest['jobs'].first
+      old_job.delete('resource_pool')
+      old_job['vm_type'] = 'a'
+      manifest
+    end
+
     before do
       fake_locks
       allow(Digest::MultiDigest).to receive(:new).and_return(multi_digest)
@@ -48,7 +56,7 @@ module Bosh::Director
 
     let(:release_name) { deployment_manifest['releases'].first['name'] }
     let(:manifest_release_version) { deployment_manifest['releases'].first['version'] }
-    let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
+    let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
 
     it 'raises an error when the targeted deployment is not found' do
       create_stemcell
@@ -58,7 +66,7 @@ module Bosh::Director
     end
 
     context 'with a valid deployment targeted' do
-      let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+      let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
       let!(:deployment_model) do
         deployment = Models::Deployment.make(
@@ -408,7 +416,7 @@ version: 0.1-dev
         end
 
         context 'when an empty list of jobs are specified' do
-          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
+          let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
           let(:options) {
             {
               'jobs' => []
@@ -438,7 +446,7 @@ version: 0.1-dev
         end
 
         context 'when specific jobs are specified' do
-          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
+          let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
 
           let(:options) {
             {

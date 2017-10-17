@@ -5,17 +5,17 @@ describe 'orphaned disks', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should return orphan disks' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['name'] = 'first-deployment'
-    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1, name: 'first-job')]
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-    disk_pool = Bosh::Spec::Deployments.disk_pool
-    disk_pool['cloud_properties'] = {'my' => 'property'}
-    cloud_config['disk_pools'] = [disk_pool]
+    manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job')]
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+    disk_type = Bosh::Spec::Deployments.disk_type
+    disk_type['cloud_properties'] = {'my' => 'property'}
+    cloud_config['disk_types'] = [disk_type]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
     manifest_hash['name'] = 'second-deployment'
-    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1, name: 'second-job')]
+    manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(persistent_disk_type: 'disk_a', instances: 1, name: 'second-job')]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
     bosh_runner.run('delete-deployment', deployment_name: 'first-deployment')
@@ -56,10 +56,10 @@ describe 'orphaned disks', type: :integration do
   end
 
   it 'should delete an orphaned disk' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a')]
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(persistent_disk_type: 'disk_a')]
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config['disk_types'] = [Bosh::Spec::Deployments.disk_type]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
     bosh_runner.run('delete-deployment', deployment_name: 'simple')
 
@@ -75,8 +75,8 @@ describe 'orphaned disks', type: :integration do
   end
 
   it 'does not detach and reattach disks unnecessarily' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['persistent_disk'] = 3000
     manifest_hash['jobs'].first['instances'] = 1
 
@@ -85,7 +85,7 @@ describe 'orphaned disks', type: :integration do
 
     disk_cids = director.instances.first.disk_cids
 
-    cloud_config_hash['resource_pools'].first['cloud_properties']['foo'] = 'bar'
+    cloud_config_hash['vm_types'].first['cloud_properties']['foo'] = 'bar'
     manifest_hash['jobs'].first.delete('persistent_disk')
 
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -103,10 +103,10 @@ describe 'orphaned disks', type: :integration do
   end
 
   it 'should orhpan disk' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['persistent_disk'] = 3000
     manifest_hash['jobs'].first['instances'] = 1
-    deploy_from_scratch(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     disk_cid = director.instances.first.disk_cids.first
 
     result = bosh_runner.run('disks --orphaned')

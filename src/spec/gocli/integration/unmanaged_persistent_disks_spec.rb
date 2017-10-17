@@ -10,7 +10,7 @@ describe 'multiple persistent disks', type: :integration do
   with_reset_sandbox_before_each
 
   let(:cloud_config_hash) do
-    hash = Bosh::Spec::Deployments.simple_cloud_config
+    hash = Bosh::Spec::NewDeployments.simple_cloud_config
     hash['disk_types'] = [
       {
         'name' => 'low-performance-disk-type',
@@ -40,7 +40,12 @@ describe 'multiple persistent disks', type: :integration do
         'max_in_flight' =>1,
         'update_watch_time' =>20
       },
-      'instance_groups' => [instance_group]
+      'instance_groups' => [instance_group],
+      'stemcells' => [{
+        'name' => 'ubuntu-stemcell',
+        'version' => '1',
+        'alias' => 'default'
+      }],
     }
   end
 
@@ -56,7 +61,8 @@ describe 'multiple persistent disks', type: :integration do
           }
         }
       ],
-      'resource_pool' => 'a',
+      'vm_type' => 'a',
+      'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{'name' => 'a'}],
       'properties' => {},

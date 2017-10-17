@@ -6,7 +6,7 @@ module Bosh
           migrate_releases(manifest.raw_manifest_hash)
           migrate_releases(manifest.hybrid_manifest_hash)
 
-          if cloud_config.nil?
+          if cloud_config.nil? || cloud_config.empty?
             cloud_config = cloud_manifest_from_deployment_manifest(manifest.hybrid_manifest_hash)
           end
 

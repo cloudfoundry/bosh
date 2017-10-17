@@ -52,7 +52,7 @@ module IntegrationExampleGroup
   end
 
   def upload_cloud_config(options={})
-    cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::Deployments.simple_cloud_config)
+    cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::NewDeployments.simple_cloud_config)
     cloud_config_manifest = yaml_file('simple', cloud_config_hash)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", options)
   end

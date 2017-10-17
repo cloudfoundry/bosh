@@ -2,13 +2,14 @@ require_relative '../spec_helper'
 
 describe 'deploy job update', type: :integration do
   with_reset_sandbox_before_each
+  let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
+  let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
 
   it 'updates a job with multiple instances in parallel and obeys max_in_flight' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['update']['canaries'] = 0
     manifest_hash['update']['max_in_flight'] = 2
     manifest_hash['properties'] = { 'test_property' => 2 }
-    deploy_from_scratch(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     task_id = bosh_runner.get_most_recent_task_id
     updating_job_events = events(task_id).select { |e| e['stage'] == 'Updating instance' }
@@ -18,10 +19,9 @@ describe 'deploy job update', type: :integration do
   end
 
   it 'updates a job taking into account max_in_flight and canaries as percents' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['update']['canaries'] = '40%'
     manifest_hash['update']['max_in_flight'] = '70%'
-    deploy_from_scratch(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     task_id = bosh_runner.get_most_recent_task_id
     updating_job_events = events(task_id).select { |e| e['stage'] == 'Updating instance' }
@@ -47,16 +47,14 @@ describe 'deploy job update', type: :integration do
   end
 
   describe 'Displaying manifest diffs' do
-    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:runtime_config_hash) { Bosh::Spec::Deployments.runtime_config_with_addon }
-    let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
 
     it 'accurately reports deployment configuration changes, cloud configuration changes and runtime config changes' do
-      deploy_from_scratch
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
-      cloud_config_hash['resource_pools'][0]['size'] = 2
+      cloud_config_hash['vm_types'][0]['properties'] = {'prop1' => 'val1'}
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       upload_runtime_config(runtime_config_hash: runtime_config_hash)
@@ -66,7 +64,7 @@ describe 'deploy job update', type: :integration do
 
       deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: true, redact_diff: true)
 
-      expect(deploy_output).to match(/resource_pools:/)
+      expect(deploy_output).to match(/vm_types:/)
       expect(deploy_output).to match(/update:/)
       expect(deploy_output).to match(/jobs:/)
       expect(deploy_output).to match(/addons:/)
@@ -75,7 +73,7 @@ describe 'deploy job update', type: :integration do
       # ensure it doesn't show the diff the second time
       deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: true, redact_diff: true)
 
-      expect(deploy_output).to_not match(/resource_pools:/)
+      expect(deploy_output).to_not match(/vm_types:/)
       expect(deploy_output).to_not match(/update:/)
       expect(deploy_output).to_not match(/jobs:/)
       expect(deploy_output).to_not match(/addons:/)
@@ -83,9 +81,9 @@ describe 'deploy job update', type: :integration do
     end
 
     context 'when using legacy deployment configuration' do
-      let(:legacy_manifest_hash) { manifest_hash.merge(cloud_config_hash) }
+      let(:legacy_manifest_hash) { Bosh::Spec::Deployments.legacy_manifest }
       let(:modified_legacy_manifest_hash) do
-        modified_legacy_manifest_hash = manifest_hash.merge(cloud_config_hash)
+        modified_legacy_manifest_hash = Bosh::Spec::Deployments.legacy_manifest
         modified_legacy_manifest_hash['resource_pools'][0]['size'] = 2
         modified_legacy_manifest_hash['update']['canary_watch_time'] = 0
         modified_legacy_manifest_hash['jobs'][0]['instances'] = 2
@@ -107,7 +105,9 @@ describe 'deploy job update', type: :integration do
           context 'when new deployment was updated to not contain cloud properties' do
             it 'succeeds and correctly reports changes' do
               deploy_output = deploy(manifest_hash: manifest_hash, redact_diff: true)
-              expect(deploy_output).to_not match(/resource_pools:/)
+
+              expect(deploy_output).to match(/- resource_pools:/)
+              expect(deploy_output).to match(/\+ vm_types:/)
               expect(deploy_output).to_not match(/disk_pools:/)
             end
           end
@@ -132,15 +132,15 @@ describe 'deploy job update', type: :integration do
   end
 
   it 'stops deployment when a job update fails' do
-    deploy_from_scratch
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     director.instance('foobar', '0').fail_job
 
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'][0]['size'] = 2
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash['vm_types'][0]['size'] = 2
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['update']['canary_watch_time'] = 0
     manifest_hash['jobs'][0]['instances'] = 2
 

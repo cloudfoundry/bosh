@@ -10,10 +10,10 @@ describe 'availability zones', type: :integration do
     end
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash['resource_pools'].first['cloud_properties'] = {
-        'a' => 'rp_value_for_a',
-        'e' => 'rp_value_for_e',
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash['vm_types'].first['cloud_properties'] = {
+        'a' => 'vm_value_for_a',
+        'e' => 'vm_value_for_e',
       }
       cloud_config_hash['azs'] = [{
           'name' => 'my-az',
@@ -28,7 +28,7 @@ describe 'availability zones', type: :integration do
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest_hash['jobs'].first['instances'] = 1
       manifest_hash['jobs'].first['azs'] = ['my-az']
       manifest_hash['jobs'].first['networks'] = [{'name' => cloud_config_hash['networks'].first['name']}]
@@ -49,7 +49,7 @@ describe 'availability zones', type: :integration do
       expect(director.instances.count).to eq(1)
     end
 
-    it 'creates VM with properties from both availability zone and resource pool' do
+    it 'creates VM with properties from both availability zone and vm type' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: simple_manifest)
 
@@ -58,9 +58,9 @@ describe 'availability zones', type: :integration do
       vm_cid = instances[0].vm_cid
 
       expect(current_sandbox.cpi.read_cloud_properties(vm_cid)).to eq({
-            'a' => 'rp_value_for_a',
+            'a' => 'vm_value_for_a',
             'd' => 'az_value_for_d',
-            'e' => 'rp_value_for_e',
+            'e' => 'vm_value_for_e',
           })
     end
 
@@ -75,9 +75,9 @@ describe 'availability zones', type: :integration do
         expect(instances.count).to eq(1)
         original_instance = instances.first
         expected_cloud_properties = {
-          'a' => 'rp_value_for_a',
+          'a' => 'vm_value_for_a',
           'd' => 'az_value_for_d',
-          'e' => 'rp_value_for_e',
+          'e' => 'vm_value_for_e',
         }
 
         expect(original_instance.availability_zone).to eq('my-az')
@@ -533,7 +533,7 @@ describe 'availability zones', type: :integration do
             'name' => 'my-az',
             'cloud_properties' => {
               'availability_zone' => 'my-az',
-              'a' => 'should_be_overwritten_from_rp_cloud_properties',
+              'a' => 'should_be_overwritten_from_vm_type_cloud_properties',
               'b' => 'cp_value_for_b'
             }
           }
@@ -559,8 +559,8 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(director.instances[0].vm_cid)).to eq({
               'availability_zone' => 'my-az',
               'b' => 'cp_value_for_b',
-              'a' => 'rp_value_for_a',
-              'e' => 'rp_value_for_e'
+              'a' => 'vm_value_for_a',
+              'e' => 'vm_value_for_e'
             })
 
         cloud_hash['azs'] = [
@@ -579,8 +579,8 @@ describe 'availability zones', type: :integration do
 
         expect(current_sandbox.cpi.read_cloud_properties(director.instances[0].vm_cid)).to eq({
           'availability_zone' => 'my-az',
-          'a' => 'rp_value_for_a',
-          'e' => 'rp_value_for_e',
+          'a' => 'vm_value_for_a',
+          'e' => 'vm_value_for_e',
           'foo' => 'bar'
         })
 

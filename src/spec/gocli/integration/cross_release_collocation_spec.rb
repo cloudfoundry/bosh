@@ -16,9 +16,10 @@ describe 'collocating templates from multiple releases', type: :integration do
             { 'name' => 'dummy_with_package', 'release' => 'dummy' },
             { 'name' => 'dummy',              'release' => 'dummy2' },
           ],
-          'resource_pool' => 'a',
+          'vm_type' => 'a',
           'instances' => 1,
-          'networks' => [{ 'name' => 'a' }]
+          'networks' => [{ 'name' => 'a' }],
+          'stemcell' => 'default'
         }]
       }
     end
@@ -34,9 +35,10 @@ describe 'collocating templates from multiple releases', type: :integration do
             {'name' => 'dummy_with_properties', 'release' => 'dummy'},
             {'name' => 'foobar', 'release' => 'bosh-release'},
           ],
-          'resource_pool' => 'a',
+          'vm_type' => 'a',
           'instances' => 1,
-          'networks' => [{'name' => 'a'}]
+          'networks' => [{'name' => 'a'}],
+          'stemcell' => 'default'
         }]
       }
     end
@@ -46,9 +48,9 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest_for_properties)
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell.merge(manifest_for_properties)
 
       # We manually change the deployment manifest release version, because of weird issue where
       # the uploaded release version is `0+dev.1` and the release version in the deployment manifest
@@ -91,10 +93,10 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell.merge(manifest)
       deployment_name = manifest_hash['name']
       deployment_manifest = yaml_file('simple', manifest_hash)
       bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: deployment_name)
@@ -114,9 +116,10 @@ describe 'collocating templates from multiple releases', type: :integration do
             { 'name' => 'dummy_with_package', 'release' => 'dummy' },
             { 'name' => 'template2',          'release' => 'dummy2' },
           ],
-          'resource_pool' => 'a',
+          'vm_type' => 'a',
           'instances' => 1,
-          'networks' => [{ 'name' => 'a' }]
+          'networks' => [{ 'name' => 'a' }],
+          'stemcell' => 'default'
         }]
       }
     end
@@ -126,10 +129,10 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell.merge(manifest)
       deployment_name = manifest_hash['name']
       deployment_manifest = yaml_file('simple', manifest_hash)
 

@@ -9,17 +9,13 @@ describe 'nats server', type: :integration do
   end
 
   let(:cloud_config_to_enable_legacy_agent) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash.delete('resource_pools')
-
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['vm_types'] = [vm_type]
     cloud_config_hash
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash.delete('resource_pools')
-    manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'] = [simple_job]
     manifest_hash
   end
@@ -64,7 +60,7 @@ describe 'nats server', type: :integration do
 
     context 'and connecting agent is updated' do
       it 'should deploy successfully' do
-        output, exit_code = deploy_from_scratch(return_exit_code: true)
+        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, return_exit_code: true)
 
         expect(exit_code).to eq(0)
         expect(output).to include('Succeeded')
@@ -83,7 +79,7 @@ describe 'nats server', type: :integration do
 
     context 'and connecting agent is updated' do
       it 'should deploy successfully' do
-        output, exit_code = deploy_from_scratch(return_exit_code: true)
+        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, return_exit_code: true)
 
         expect(exit_code).to eq(0)
         expect(output).to include('Succeeded')

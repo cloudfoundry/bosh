@@ -43,7 +43,7 @@ describe 'using director with config server disabled', type: :integration do
         'network' => 'default',
         'workers' => 1
       },
-      'vm_types' => ['name' => 'default'],
+      'vm_types' => [{'name' => 'default'}],
       'disk_types' => [
         {
           'name' => 'default',
@@ -128,9 +128,9 @@ describe 'using director with config server disabled', type: :integration do
 
   context 'when cloud config contains placeholders used by the deployment' do
 
-    context 'when placeholder is in the cloud-properties section' do
+    context 'when placeholder is in the non cloud-properties section' do
       before do
-        cloud_config['vm_types'] = '((/vm_types))'
+        cloud_config['vm_types'] = ['((/vm_types))']
       end
 
       it 'raises an error' do
@@ -140,7 +140,7 @@ describe 'using director with config server disabled', type: :integration do
       end
     end
 
-    context 'when placeholder is in the non cloud-properties section' do
+    context 'when placeholder is in the cloud-properties section' do
       before do
         cloud_config['disk_types'][0]['cloud_properties']['prop'] = '((/prop))'
       end

@@ -4,17 +4,17 @@ module Bosh::Director
   describe DeploymentPlan::GlobalNetworkResolver do
     subject(:global_network_resolver) { DeploymentPlan::GlobalNetworkResolver.new(current_deployment, director_ips, logger) }
     let(:runtime_configs) { [] }
-    let(:cloud_config) { nil }
+    let(:cloud_configs) { [] }
     let(:director_ips) { [] }
     let(:current_deployment) do
       deployment_model = Models::Deployment.make(
         name: 'current-deployment',
       )
-      deployment_model.cloud_config = cloud_config
+      deployment_model.cloud_configs = cloud_configs
       DeploymentPlan::Planner.new(
         {name: 'current-deployment', properties: {}},
         '',
-        cloud_config,
+        cloud_configs,
         runtime_configs,
         deployment_model
       )
@@ -34,7 +34,7 @@ module Bosh::Director
       describe 'when initialized with director ips' do
         let(:director_ips) { ['192.168.1.11', '10.10.0.4'] }
         describe 'when using global networking' do
-          let(:cloud_config) { Models::Config.make(:cloud) }
+          let(:cloud_configs) { [Models::Config.make(:cloud_with_manifest)] }
 
           it 'returns the director IPs as ranges' do
             expect(global_network_resolver.reserved_ranges).to contain_exactly(
@@ -45,7 +45,7 @@ module Bosh::Director
         end
 
         describe 'when not using global networking' do
-          let(:cloud_config) { nil }
+          let(:cloud_configs) { [] }
           it 'returns an empty set' do
             expect(global_network_resolver.reserved_ranges).to be_empty
           end
@@ -53,8 +53,8 @@ module Bosh::Director
       end
 
       context 'when deploying with cloud config after legacy deployments' do
-        let(:cloud_config) do
-          Models::Config.make(:cloud, {
+        let(:cloud_configs) do
+          [Models::Config.make(:cloud, {
             raw_manifest: {
               'networks' => [{
                 'name' => 'manual',
@@ -68,7 +68,7 @@ module Bosh::Director
                 ]
               }]
             }
-          })
+          })]
         end
 
         context 'when two different legacy deployments reserved ranges overlap' do
@@ -133,7 +133,7 @@ module Bosh::Director
       end
 
       context 'when current deployment is using cloud config' do
-        let(:cloud_config) { Models::Config.make(:cloud) }
+        let(:cloud_configs) { [Models::Config.make(:cloud_with_manifest)] }
 
         it 'excludes networks from deployments with cloud config' do
           deployment = Models::Deployment.make(
@@ -148,7 +148,7 @@ module Bosh::Director
                   }],
               })
           )
-          deployment.cloud_config = cloud_config
+          deployment.cloud_configs = cloud_configs
           expect(global_network_resolver.reserved_ranges).to be_empty
         end
 
@@ -216,7 +216,7 @@ module Bosh::Director
                 }],
               })
             )
-            deployment.cloud_config = cloud_config
+            deployment.cloud_configs = cloud_configs
           end
 
           it 'returns manual network ranges from legacy deployments (deployments with no cloud config)' do
@@ -251,7 +251,7 @@ module Bosh::Director
       end
 
       context 'when current deployment is not using cloud config' do
-        let(:cloud_config) { nil }
+        let(:cloud_configs) { [] }
 
         before do
           Models::Deployment.make(

@@ -8,11 +8,11 @@ describe 'variable generation with config server', type: :integration do
   end
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest.merge(
+    Bosh::Spec::NewDeployments.test_release_manifest.merge(
       {
-        'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'our_instance_group',
-          templates: [
+          jobs: [
             {'name' => 'job_1_with_many_properties',
              'properties' => job_properties
             }
@@ -23,7 +23,7 @@ describe 'variable generation with config server', type: :integration do
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:job_properties) do
@@ -213,9 +213,9 @@ describe 'variable generation with config server', type: :integration do
         it 'should show changed variables in the diff lines under instance groups' do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-          manifest_hash['jobs'][0]['instances'] = 2
+          manifest_hash['instance_groups'][0]['instances'] = 2
           manifest_hash['variables'][2] = {'name' => 'var_c', 'type' => 'password'}
-          manifest_hash['jobs'][0]['templates'][0]['properties']['gargamel']['color'] = "((var_c))"
+          manifest_hash['instance_groups'][0]['jobs'][0]['properties']['gargamel']['color'] = "((var_c))"
 
           deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: false, redact_diff: true, include_credentials: false, env: client_env)
 

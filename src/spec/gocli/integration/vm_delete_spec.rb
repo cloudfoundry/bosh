@@ -8,8 +8,8 @@ describe 'vm delete', type: :integration do
   it 'delete the vm by its vm_cid' do
     #reference to instance
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
     manifest_hash['jobs'].first['instances'] = 1
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)

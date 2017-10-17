@@ -95,7 +95,7 @@ module Bosh::Director
               deployment_plan_release_version_same_release,
               deployment_plan_release_version_new_release,
             ])
-            allow(deployment_planner).to receive(:cloud_config).and_return(cloud_config)
+            allow(deployment_planner).to receive(:cloud_configs).and_return([cloud_config])
             allow(deployment_planner).to receive(:runtime_configs).and_return(runtime_configs)
             allow(deployment_planner).to receive(:link_spec).and_return(link_spec)
           end
@@ -117,7 +117,7 @@ module Bosh::Director
           it 'saves cloud config' do
             subject.perform
             reloaded_model = deployment_model.reload
-            expect(reloaded_model.cloud_config).to eq(cloud_config)
+            expect(reloaded_model.cloud_configs).to eq([cloud_config])
           end
 
           it 'saves runtime config' do

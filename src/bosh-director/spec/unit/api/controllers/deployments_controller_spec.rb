@@ -17,13 +17,14 @@ module Bosh::Director
       end
 
       def manifest_with_errand_hash(deployment_name='errand')
-        manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+        manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
         manifest_hash['name'] = deployment_name
         manifest_hash['jobs'] << {
           'name' => 'another-errand',
           'template' => 'errand1',
+          'stemcell' => 'default',
           'lifecycle' => 'errand',
-          'resource_pool' => 'a',
+          'vm_type' => 'a',
           'instances' => 1,
           'networks' => [{'name' => 'a'}]
         }
@@ -123,11 +124,11 @@ module Bosh::Director
                 Models::Config.make(:cloud_with_manifest)
                 Models::Config.make(type: 'runtime')
 
-                deployment_context = [['context', JSON.dump({'cloud_config_id' => 1, 'runtime_config_ids' => [runtime_config_1.id, runtime_config_2.id]})]]
+                deployment_context = [['context', JSON.dump({'cloud_config_ids' => [cloud_config.id], 'runtime_config_ids' => [runtime_config_1.id, runtime_config_2.id]})]]
 
                 allow_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                  .with(anything, anything, cloud_config, [runtime_config_1, runtime_config_2], anything, anything, anything)
+                  .with(anything, anything, [cloud_config], [runtime_config_1, runtime_config_2], anything, anything, anything)
                   .and_return(Models::Task.make)
 
                 post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
@@ -145,7 +146,7 @@ module Bosh::Director
 
                 expect_redirect_to_queued_task(last_response)
                 deployment = Models::Deployment.first
-                expect(deployment.cloud_config).to eq(cloud_config)
+                expect(deployment.cloud_configs).to contain_exactly(cloud_config)
                 expect(deployment.runtime_configs).to contain_exactly(runtime_config)
               end
             end
@@ -590,6 +591,7 @@ module Bosh::Director
 
             old_cloud_config = Models::Config.make(:cloud, raw_manifest: {}, created_at: Time.now - 60)
             new_cloud_config = Models::Config.make(:cloud, raw_manifest: {})
+            new_other_cloud_config = Models::Config.make(:cloud, name: 'other-config', raw_manifest: {})
 
             good_team = Models::Team.create(name: 'dabest')
             bad_team = Models::Team.create(name: 'daworst')
@@ -608,7 +610,7 @@ module Bosh::Director
               deployment.add_release_version(release_1_1)
               deployment.add_release_version(release_2_1)
               deployment.teams = [good_team]
-              deployment.cloud_configs = [new_cloud_config]
+              deployment.cloud_configs = [new_other_cloud_config, new_cloud_config]
             end
 
             deployment_1 = Models::Deployment.create(
@@ -1305,7 +1307,6 @@ module Bosh::Director
         end
 
         describe 'errands' do
-
           describe 'GET', '/:deployment_name/errands' do
             before { Config.base_dir = Dir.mktmpdir }
             after { FileUtils.rm_rf(Config.base_dir) }
@@ -1317,12 +1318,15 @@ module Bosh::Director
               )
             end
 
+            let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::NewDeployments.simple_cloud_config ) }
+
             let(:service_errand) do
               {
                 'name' => 'service_errand_job',
                 'template' => 'job_with_bin_run',
                 'lifecycle' => 'service',
-                'resource_pool' => 'a',
+                'vm_type' => 'a',
+                'stemcell' => 'default',
                 'instances' => 1,
                 'networks' => [{'name' => 'a'}]
               }
@@ -1355,8 +1359,7 @@ module Bosh::Director
               end
 
               it 'returns errands in deployment' do
-                response = perform
-                expect(response.body).to eq('[{"name":"fake-errand-name"},{"name":"another-errand"},{"name":"job_with_bin_run"}]')
+                expect(perform.body).to eq('[{"name":"fake-errand-name"},{"name":"another-errand"},{"name":"job_with_bin_run"}]')
                 expect(last_response.status).to eq(200)
               end
             end
@@ -1491,10 +1494,10 @@ module Bosh::Director
               { 'CONTENT_TYPE' => 'text/yaml' },
             )
           end
-          let(:runtime_config_1) { Models::Config.make(id: 1, type: 'runtime', raw_manifest: {'addons' => []}) }
-          let(:runtime_config_2) { Models::Config.make(id: 2, type: 'runtime', raw_manifest: {'addons' => []}) }
-          let(:runtime_config_3) { Models::Config.make(id: 3, type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
-          let(:cloud_config) { Models::Config.make(:cloud, id: 4, raw_manifest: {'azs' => []}) }
+          let(:runtime_config_1) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
+          let(:runtime_config_2) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
+          let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
+          let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
 
           before do
             deployment = Models::Deployment.create(
@@ -1510,7 +1513,7 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq('{"context":{"cloud_config_id":4,"runtime_config_ids":[2,3]},"diff":[["jobs: []","removed"],["",null],["name: fake-dep-name","added"]]}')
+              expect(last_response.body).to eq("{\"context\":{\"cloud_config_ids\":[#{cloud_config.id}],\"runtime_config_ids\":[#{runtime_config_2.id},#{runtime_config_3.id}]},\"diff\":[[\"jobs: []\",\"removed\"],[\"\",null],[\"name: fake-dep-name\",\"added\"]]}")
             end
 
             it 'gives a nice error when request body is not a valid yml' do
@@ -1640,8 +1643,8 @@ module Bosh::Director
 
         let(:dev_team) { Models::Team.create(:name => 'dev') }
         let(:other_team) { Models::Team.create(:name => 'other') }
-        let!(:owned_deployment) { Models::Deployment.create_with_teams(:name => 'owned_deployment', teams: [dev_team], manifest: manifest_with_errand('owned_deployment'), cloud_config: cloud_config) }
-        let!(:other_deployment) { Models::Deployment.create_with_teams(:name => 'other_deployment', teams: [other_team], manifest: manifest_with_errand('other_deployment'), cloud_config: cloud_config) }
+        let!(:owned_deployment) { Models::Deployment.create_with_teams(:name => 'owned_deployment', teams: [dev_team], manifest: manifest_with_errand('owned_deployment'), cloud_configs: [cloud_config]) }
+        let!(:other_deployment) { Models::Deployment.create_with_teams(:name => 'other_deployment', teams: [other_team], manifest: manifest_with_errand('other_deployment'), cloud_configs: [cloud_config]) }
         describe 'when a user has dev team admin membership' do
 
           before {
@@ -1947,6 +1950,9 @@ module Bosh::Director
           end
 
           context 'GET /:deployment/errands' do
+
+            let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::NewDeployments.simple_cloud_config ) }
+
             it 'allows access to owned deployment' do
               expect(get('/owned_deployment/errands').status).to eq(200)
             end

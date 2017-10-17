@@ -4,11 +4,11 @@ describe 'using director with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest.merge(
+    Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
       {
-        'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'our_instance_group',
-          templates: [
+          jobs: [
             {'name' => 'job_1_with_many_properties',
              'properties' => job_properties
             }
@@ -21,7 +21,7 @@ describe 'using director with config server', type: :integration do
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
   let(:job_properties) do
     {
       'gargamel' => {
@@ -70,7 +70,15 @@ describe 'using director with config server', type: :integration do
         it 'will throw a valid error for the runtime config on deploy' do
           upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
-          output, exit_code =  deploy_from_scratch(failure_expected: true, return_exit_code: true, no_login: true, include_credentials: false,  env: client_env)
+          output, exit_code = deploy_from_scratch(
+            manifest_hash: manifest_hash,
+            cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+            failure_expected: true,
+            return_exit_code: true,
+            no_login: true,
+            include_credentials: false,
+            env: client_env
+          )
 
           expect(exit_code).to_not eq(0)
           expect(output).to include("Failed to find variable '/release_name' from config server: HTTP Code '404', Error: 'Name '/release_name' not found'")
@@ -99,7 +107,7 @@ describe 'using director with config server', type: :integration do
 
             upload_stemcell(include_credentials: false,  env: client_env)
             create_and_upload_test_release(include_credentials: false,  env: client_env)
-            upload_cloud_config(include_credentials: false,  env: client_env)
+            upload_cloud_config(cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
             upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
             output, exit_code = deploy_simple_manifest(
@@ -162,7 +170,7 @@ describe 'using director with config server', type: :integration do
 
           expect(upload_runtime_config(runtime_config_hash: default_runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
           expect(upload_runtime_config(runtime_config_hash: named_runtime_config, include_credentials: false,  env: client_env, name: 'named-rc-1')).to include('Succeeded')
-          manifest_hash['jobs'].first['instances'] = 3
+          manifest_hash['instance_groups'].first['instances'] = 3
         end
 
         it 'interpolates variables in the addons and updates jobs on deploy' do
@@ -226,8 +234,7 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'does variable substitution on the initial creation' do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
-            manifest_hash['jobs'].first['instances'] = 1
+            manifest_hash['instance_groups'].first['instances'] = 1
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
             set_vm_metadata_invocations = current_sandbox.cpi.invocations.select {|invocation| invocation.method_name == 'set_vm_metadata' && invocation.inputs['metadata']['compiling'].nil? }

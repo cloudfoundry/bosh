@@ -5,17 +5,17 @@ describe 'delete arp entries', type: :integration do
   with_reset_sandbox_before_each
 
   before do
-    upload_cloud_config({:cloud_config_hash => Bosh::Spec::Deployments.simple_cloud_config})
+    upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     upload_stemcell
     create_and_upload_test_release
   end
 
   context 'it supports forceful removal of ARP cache entries' do
     it 'calls the delete_arp_entries action on all bosh-agents' do
-      manifest_deployment_1 = Bosh::Spec::Deployments.test_release_manifest
+      manifest_deployment_1 = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell
       manifest_deployment_1.merge!(
         {
-          'jobs' => [Bosh::Spec::Deployments.simple_job(
+          'jobs' => [Bosh::Spec::NewDeployments.simple_job(
               name: 'job_to_test_forceful_arp',
               instances: 1)]
         })
@@ -23,11 +23,11 @@ describe 'delete arp entries', type: :integration do
 
       agent_id_0 = director.instance('job_to_test_forceful_arp', '0').agent_id
 
-      manifest_deployment_2 = Bosh::Spec::Deployments.test_release_manifest
+      manifest_deployment_2 = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell
       manifest_deployment_2.merge!(
         {
           'name' => 'simple2',
-          'jobs' => [Bosh::Spec::Deployments.simple_job(instances: 1)]
+          'jobs' => [Bosh::Spec::NewDeployments.simple_job(instances: 1)]
         })
 
       deploy_simple_manifest(manifest_hash: manifest_deployment_2)

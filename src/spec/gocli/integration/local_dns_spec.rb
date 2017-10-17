@@ -4,7 +4,7 @@ require 'fileutils'
 describe 'local DNS', type: :integration do
   with_reset_sandbox_before_each(dns_enabled: false, local_dns: {'enabled' => true, 'include_index' => false})
 
-  let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs }
+  let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs }
   let(:network_name) { 'local-dns' }
 
   before do
@@ -276,7 +276,7 @@ describe 'local DNS', type: :integration do
   end
 
   def initial_manifest(number_of_instances, max_in_flight)
-    manifest_deployment = Bosh::Spec::Deployments.test_release_manifest
+    manifest_deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell
     manifest_deployment.merge!(
       {
         'update' => {
@@ -287,7 +287,7 @@ describe 'local DNS', type: :integration do
         },
 
         'jobs' => [
-          Bosh::Spec::Deployments.simple_job(
+          Bosh::Spec::NewDeployments.simple_job(
             name: instance_group_name,
             instances: number_of_instances,
             azs: ['z1', 'z2']

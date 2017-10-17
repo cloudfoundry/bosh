@@ -50,26 +50,14 @@ module Bosh::Director::Models
     def self.create_with_teams(attributes)
       teams = attributes.delete(:teams)
       runtime_configs = attributes.delete(:runtime_configs)
-      cloud_config = attributes.delete(:cloud_config)
+      cloud_configs = attributes.delete(:cloud_configs)
 
       deployment = create(attributes)
 
       deployment.teams = teams
       deployment.runtime_configs = runtime_configs
-      deployment.cloud_config = cloud_config
+      deployment.cloud_configs = cloud_configs
       deployment
-    end
-
-    def cloud_config
-      cloud_configs[0]
-    end
-
-    def cloud_config=(cloud_config)
-      if cloud_config.nil?
-        self.cloud_configs = []
-      else
-        self.cloud_configs = [cloud_config]
-      end
     end
 
     def cloud_configs=(cloud_configs)

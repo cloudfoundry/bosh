@@ -20,7 +20,8 @@ module Bosh::Director::DeploymentPlan
       instance_model
     end
     let(:spec) do
-      {'vm_type' =>
+      {
+        'vm_type' =>
         {'name' => 'original_vm_type_name',
           'cloud_properties' => {'old' => 'value'}
         },
@@ -54,10 +55,10 @@ module Bosh::Director::DeploymentPlan
     let(:job_state) { 'running' }
     let(:existing_instance) { instance_model }
 
-    let(:instance_group_spec) { Bosh::Spec::Deployments.simple_manifest['jobs'].first }
+    let(:instance_group_spec) { Bosh::Spec::NewDeployments.simple_instance_group }
     let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
-    let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
-    let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest }
+    let(:cloud_config_manifest) { Bosh::Spec::NewDeployments.simple_cloud_config }
+    let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
     let(:deployment_model) do
       cloud_config = BD::Models::Config.make(:cloud, raw_manifest: cloud_config_manifest)
       deployment = BD::Models::Deployment.make(
@@ -79,7 +80,7 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_app
       fake_locks
-      prepare_deploy(deployment_manifest, cloud_config_manifest)
+      prepare_deploy(deployment_manifest)
       instance.bind_existing_instance_model(instance_model)
       instance_group.add_instance_plans([instance_plan])
     end
@@ -345,6 +346,13 @@ module Bosh::Director::DeploymentPlan
         let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
+
+        let(:instance_group_spec) {
+          instance_group = Bosh::Spec::NewDeployments.simple_instance_group
+          instance_group['env'] =  {'bosh' => {'password' => 'foobar'}}
+          instance_group
+        }
+
         before do
           instance_plan.existing_instance.update(spec: spec.merge({
             'vm_type' => {'name' => 'old', 'cloud_properties' => {'a' => 'b'}}
@@ -436,11 +444,11 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the env has changed' do
-        let(:cloud_config_manifest) do
-          cloud_manifest = Bosh::Spec::Deployments.simple_cloud_config
-          cloud_manifest['resource_pools'].first['env'] = {'key' => 'changed-value'}
-          cloud_manifest
-        end
+        let(:instance_group_spec) {
+          instance_group = Bosh::Spec::NewDeployments.simple_instance_group
+          instance_group['env'] = {'key' => 'changed-value'}
+          instance_group
+        }
 
         before do
           instance_plan.existing_instance.update(spec: {
@@ -567,7 +575,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#persistent_disk_changed?' do
       let(:cloud_config_manifest) do
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config['disk_types'] = [{
           'name' => 'disk_a',
           'disk_size' => 24,
@@ -579,7 +587,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       let(:instance_group_spec) do
-        instance_group_spec = Bosh::Spec::Deployments.simple_manifest['jobs'].first
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell['jobs'].first
         instance_group_spec['persistent_disk_pool'] = 'disk_a'
         instance_group_spec
       end

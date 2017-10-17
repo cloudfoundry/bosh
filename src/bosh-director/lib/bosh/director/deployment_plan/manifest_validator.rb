@@ -10,7 +10,7 @@ module Bosh
           raise_if_has_key(manifest, 'azs')
           raise_if_has_key(manifest, 'disk_types')
 
-          if cloud_config.nil?
+          if cloud_config.nil? || cloud_config.empty?
             if manifest.has_key?('jobs')
               manifest['jobs'].each do |job|
                 if job.has_key?('migrated_from')

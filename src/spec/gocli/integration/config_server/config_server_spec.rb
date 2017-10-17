@@ -4,11 +4,11 @@ describe 'using director with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest.merge(
+    Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
       {
-        'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'our_instance_group',
-          templates: [
+          jobs: [
             {'name' => 'job_1_with_many_properties',
              'properties' => job_properties
             }
@@ -19,7 +19,7 @@ describe 'using director with config server', type: :integration do
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:job_properties) do
@@ -193,26 +193,19 @@ Error: Unable to render instance groups for deployment. Errors are:
         end
 
         context 'with dot syntax' do
-          let(:cloud_config_hash) do
-            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-            cloud_config_hash.delete('resource_pools')
-            cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
-            cloud_config_hash
-          end
+          let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
           let(:manifest_hash) do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
-            manifest_hash.delete('resource_pools')
-            manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
             manifest_hash['jobs'] = [{
-                                       'name' => 'foobar',
-                                       'templates' => ['name' => 'job_1_with_many_properties'],
-                                       'vm_type' => 'vm-type-name',
-                                       'stemcell' => 'default',
-                                       'instances' => 1,
-                                       'networks' => [{ 'name' => 'a' }],
-                                       'properties' => {},
-                                     }]
+              'name' => 'foobar',
+              'templates' => ['name' => 'job_1_with_many_properties'],
+              'vm_type' => 'a',
+              'stemcell' => 'default',
+              'instances' => 1,
+              'networks' => [{ 'name' => 'a' }],
+              'properties' => {},
+            }]
             manifest_hash
           end
 
@@ -333,13 +326,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         describe 'env values in instance groups and resource pools' do
           context 'when instance groups env is using variables' do
-            let(:cloud_config_hash) do
-              cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-              cloud_config_hash.delete('resource_pools')
-
-              cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
-              cloud_config_hash
-            end
+            let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
             let(:env_hash) do
               {
@@ -370,13 +357,11 @@ Error: Unable to render instance groups for deployment. Errors are:
             end
 
             let(:manifest_hash) do
-              manifest_hash = Bosh::Spec::Deployments.simple_manifest
-              manifest_hash.delete('resource_pools')
-              manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+              manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
               manifest_hash['jobs'] = [{
                                          'name' => 'foobar',
                                          'templates' => ['name' => 'job_1_with_many_properties'],
-                                         'vm_type' => 'vm-type-name',
+                                         'vm_type' => 'a',
                                          'stemcell' => 'default',
                                          'instances' => 1,
                                          'networks' => [{ 'name' => 'a' }],
@@ -483,17 +468,13 @@ Error: Unable to render instance groups for deployment. Errors are:
             end
 
             let(:simple_manifest) do
-              manifest_hash = Bosh::Spec::Deployments.simple_manifest
+              manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
               manifest_hash['jobs'][0]['instances'] = 1
               manifest_hash['jobs'][0]['env'] = env_hash
               manifest_hash
             end
 
-            let(:cloud_config) do
-              cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-              cloud_config_hash['resource_pools'][0].delete('env')
-              cloud_config_hash
-            end
+            let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
             before do
               config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
@@ -543,22 +524,14 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         context 'when tags are to be passed to a vm' do
 
-          let(:cloud_config_hash) do
-            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-            cloud_config_hash.delete('resource_pools')
-
-            cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
-            cloud_config_hash
-          end
+          let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
           let(:manifest_hash) do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
-            manifest_hash.delete('resource_pools')
-            manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
             manifest_hash['jobs'] = [{
                 'name' => 'foobar',
                 'templates' => ['name' => 'id_job'],
-                'vm_type' => 'vm-type-name',
+                'vm_type' => 'a',
                 'stemcell' => 'default',
                 'instances' => 1,
                 'networks' => [{ 'name' => 'a' }],
@@ -566,7 +539,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             }, {
                'name' => 'goobar',
                'templates' => ['name' => 'errand_without_package'],
-               'vm_type' => 'vm-type-name',
+               'vm_type' => 'a',
                'stemcell' => 'default',
                'instances' => 1,
                'networks' => [{ 'name' => 'a' }],
@@ -893,8 +866,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               end
 
               let(:cloud_config) {
-                cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-                cloud_config_hash['resource_pools'].first['size'] = 1
+                cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
                 cloud_config_hash['networks'] = [
                   {
                     'name' => 'a',

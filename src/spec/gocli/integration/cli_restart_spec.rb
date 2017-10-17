@@ -4,20 +4,21 @@ describe 'restart job', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) {
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'] << {
         'name' => 'another-job',
         'template' => 'foobar',
-        'resource_pool' => 'a',
+        'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
+        'stemcell' => 'default',
     }
     manifest_hash['jobs'].first['instances'] = 2
     manifest_hash
   }
 
   it 'restarts a job instance / job / all jobs' do
-    deploy_from_scratch(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     instance_before_with_index_1 = director.instances.find{ |instance| instance.index == '1' }
     instance_uuid = instance_before_with_index_1.id

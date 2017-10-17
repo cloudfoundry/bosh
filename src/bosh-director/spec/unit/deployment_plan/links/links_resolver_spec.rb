@@ -5,8 +5,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
   let(:deployment_plan) do
     planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-    manifest = Bosh::Director::Manifest.load_from_text(YAML.dump(deployment_manifest), nil, [], {:resolve_interpolation => false})
-    planner = planner_factory.create_from_manifest(manifest, nil, [], {})
+    manifest = Bosh::Director::Manifest.load_from_text(YAML.dump(deployment_manifest), [], [], {:resolve_interpolation => false})
+    planner = planner_factory.create_from_manifest(manifest, [], [], {})
     Bosh::Director::DeploymentPlan::Assembler.create(planner).bind_models
     planner
   end
@@ -623,9 +623,9 @@ Unable to process links for deployment. Errors are:
     context 'when there is a cloud config' do
       let(:deployment_plan) do
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-        manifest = Bosh::Director::Manifest.load_from_text(YAML.dump(deployment_manifest), cloud_config, [], {:resolve_interpolation => false})
+        manifest = Bosh::Director::Manifest.load_from_text(YAML.dump(deployment_manifest), cloud_configs, [], {:resolve_interpolation => false})
 
-        planner = planner_factory.create_from_manifest(manifest, cloud_config, [], {})
+        planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
         Bosh::Director::DeploymentPlan::Assembler.create(planner).bind_models
         planner
       end
@@ -634,56 +634,53 @@ Unable to process links for deployment. Errors are:
 
       let(:deployment_manifest) { generate_manifest_without_cloud_config('fake-deployment', links, ['127.0.0.3', '127.0.0.4']) }
 
-      let(:cloud_config) do
-        Bosh::Director::Models::Config.make(:cloud, raw_manifest: {
-            'azs' => [
-                {
-                    'name' => 'az1',
-                    'cloud_properties' => {}
-                },
-                {
-                    'name' => 'az2',
-                    'cloud_properties' => {}
-                }
-            ],
-            'networks' => [
-                {
-                    'name' => 'fake-manual-network',
-                    'type' => 'manual',
-                    'subnets' => [
-                        {
-                            'name' => 'fake-subnet',
-                            'range' => '127.0.0.0/20',
-                            'gateway' => '127.0.0.1',
-                            'az' => 'az1',
-                            'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
-                        }
-                    ]
-                },
-                {
-                    'name' => 'fake-dynamic-network',
-                    'type' => 'dynamic',
-                    'subnets' => [
-                        {'az' => 'az1'}
-                    ]
-                }
-            ],
-            'compilation' => {
-                'workers' => 1,
-                'network' => 'fake-manual-network',
-                'az' => 'az1',
-            },
-            'resource_pools' => [
-                {
-                    'name' => 'fake-resource-pool',
-                    'stemcell' => {
-                        'name' => 'fake-stemcell',
-                        'version' => 'fake-stemcell-version',
-                    },
-                    'network' => 'fake-manual-network',
-                }
-            ],
-        })
+      let(:cloud_configs) do
+        [
+          Bosh::Director::Models::Config.make(:cloud, raw_manifest: {
+              'azs' => [
+                  {
+                      'name' => 'az1',
+                      'cloud_properties' => {}
+                  },
+                  {
+                      'name' => 'az2',
+                      'cloud_properties' => {}
+                  }
+              ],
+              'networks' => [
+                  {
+                      'name' => 'fake-manual-network',
+                      'type' => 'manual',
+                      'subnets' => [
+                          {
+                              'name' => 'fake-subnet',
+                              'range' => '127.0.0.0/20',
+                              'gateway' => '127.0.0.1',
+                              'az' => 'az1',
+                              'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
+                          }
+                      ]
+                  },
+                  {
+                      'name' => 'fake-dynamic-network',
+                      'type' => 'dynamic',
+                      'subnets' => [
+                          {'az' => 'az1'}
+                      ]
+                  }
+              ],
+              'compilation' => {
+                  'workers' => 1,
+                  'network' => 'fake-manual-network',
+                  'az' => 'az1',
+              },
+            'vm_types' => [
+              {
+                'name' => 'fake-vm-type',
+              }
+            ]
+          })
+        ]
       end
 
       def generate_manifest_without_cloud_config(name, links, mysql_static_ips)
@@ -704,10 +701,11 @@ Unable to process links for deployment. Errors are:
           'jobs' => [
             {
               'name' => 'api-server',
+              'stemcell' => 'fake-stemcell',
               'templates' => [
                 {'name' => 'api-server-template', 'release' => 'fake-release', 'consumes' => links}
               ],
-              'resource_pool' => 'fake-resource-pool',
+              'vm_type' => 'fake-vm-type',
               'azs' => ['az1'],
               'instances' => 1,
               'networks' => [
@@ -719,6 +717,7 @@ Unable to process links for deployment. Errors are:
             },
             {
               'name' => 'mysql',
+              'stemcell' => 'fake-stemcell',
               'templates' => [
                 {'name' => 'mysql-template',
                   'release' => 'fake-release',
@@ -726,7 +725,7 @@ Unable to process links for deployment. Errors are:
                   'properties' => {'mysql' => nil}
                 }
               ],
-              'resource_pool' => 'fake-resource-pool',
+              'vm_type' => 'fake-vm-type',
               'instances' => 2,
               'azs' => ['az1'],
               'networks' => [
@@ -742,6 +741,13 @@ Unable to process links for deployment. Errors are:
               ],
             },
           ],
+          'stemcells' => [
+            {
+              'alias' => 'fake-stemcell',
+              'version' => 'fake-stemcell-version',
+              'name' => 'fake-stemcell'
+            }
+          ]
         }
       end
 

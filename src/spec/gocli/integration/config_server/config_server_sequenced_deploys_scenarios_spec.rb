@@ -4,11 +4,11 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest.merge(
+    Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
       {
-        'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'our_instance_group',
-          templates: [
+          jobs: [
             {'name' => 'job_1_with_many_properties',
              'properties' => job_properties
             }
@@ -19,7 +19,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:job_properties) do
@@ -38,7 +38,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
     before do
       config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash['instance_groups'].first['instances'] = 1
       deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
       instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
@@ -136,11 +136,11 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
       }
     end
     let(:manifest_hash) do
-      Bosh::Spec::Deployments.test_release_manifest.merge(
+      Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
         {
-          'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+          'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'our_instance_group',
-            templates: [
+            jobs: [
               {
                 'name' => 'job_with_bad_template',
                 'properties' => job_properties

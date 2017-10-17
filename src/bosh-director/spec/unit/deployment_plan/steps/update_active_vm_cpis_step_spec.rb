@@ -31,9 +31,9 @@ module Bosh::Director
       let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: '1') }
       let!(:cloud_config) {
         if prior_az_name.nil?
-          Models::Config.make(:cloud_with_manifest)
+          Models::Config.make(:cloud_with_manifest_v2)
         else
-          raw_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge({
+          raw_manifest = Bosh::Spec::NewDeployments.simple_cloud_config.merge({
             'azs' => [
               {
                 'name' => prior_az_name,
@@ -57,7 +57,8 @@ module Bosh::Director
             {
               'name' => 'fake-instance-group',
               'jobs' => [],
-              'resource_pool' => 'a',
+              'vm_type' => 'a',
+              'stemcell' => 'default',
               'instances' => 1,
               'networks' => [
                 {
@@ -72,6 +73,11 @@ module Bosh::Director
             'canary_watch_time' => 1,
             'update_watch_time' => 1,
           },
+          'stemcells' => [{
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'alias' => 'default'
+          }],
         }
         if !prior_az_name.nil?
           manifest['instance_groups'][0]['azs'] = [ prior_az_name ]
@@ -162,7 +168,8 @@ module Bosh::Director
                       'azs' => ['z2'],
                       'jobs' => [],
                       'lifecycle' => 'errand',
-                      'resource_pool' => 'a',
+                      'vm_type' => 'a',
+                      'stemcell' => 'default',
                       'instances' => 1,
                       'networks' => [
                         {
@@ -177,6 +184,11 @@ module Bosh::Director
                     'canary_watch_time' => 1,
                     'update_watch_time' => 1,
                   },
+                  'stemcells' => [{
+                    'name' => 'ubuntu-stemcell',
+                    'version' => '1',
+                    'alias' => 'default'
+                  }],
                 }
               end
 

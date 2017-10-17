@@ -57,37 +57,10 @@ describe Bosh::Director::Api::CloudConfigManager do
     end
   end
 
-  describe '#latest' do
-    it 'returns the latest' do
-      days = 24*60*60
-
-      older_cloud_config = Bosh::Director::Models::Config.make(
-        :cloud,
-        content: 'config_from_last_year',
-        created_at: Time.now - 2*days,
-      ).save
-      newer_cloud_config = Bosh::Director::Models::Config.make(
-        :cloud,
-        content: "---\nsuper_shiny: new_config",
-        created_at: Time.now - 1*days,
-      ).save
-
-      cloud_config = manager.latest
-
-      expect(cloud_config).to eq(newer_cloud_config)
-    end
-
-    it 'returns nil if there are no cloud configs' do
-      cloud_config = manager.latest
-
-      expect(cloud_config).to be_nil
-    end
-  end
-
   describe '.interpolated_manifest' do
-    let(:cloud_config_model) { Bosh::Director::Models::Config.make(raw_manifest: raw_manifest) }
-    let(:raw_manifest) { {name: '((manifest_name))'} }
-    let(:interpolated_manifest) { {name: 'cloud config manifest'} }
+    let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud_with_manifest_v2, raw_manifest: raw_manifest)] }
+    let(:raw_manifest) { {'azs' => [{name: '((az_name))'}], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => []} }
+    let(:interpolated_manifest) { {'azs' => [{name: 'blah'}], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => []} }
     let(:deployment_name) { 'some_deployment_name' }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
@@ -97,7 +70,7 @@ describe Bosh::Director::Api::CloudConfigManager do
     end
 
     it 'returns interpolated manifest' do
-      result = Bosh::Director::Api::CloudConfigManager.interpolated_manifest(cloud_config_model, deployment_name)
+      result = Bosh::Director::Api::CloudConfigManager.interpolated_manifest(cloud_configs, deployment_name)
       expect(result).to eq(interpolated_manifest)
     end
   end
