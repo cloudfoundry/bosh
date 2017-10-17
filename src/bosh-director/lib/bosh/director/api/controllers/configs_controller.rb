@@ -27,7 +27,7 @@ module Bosh::Director
           manifest = {}
           manifest = validate_manifest_yml(request.body.read, nil)
           validate_create_format(manifest)
-          config = Bosh::Director::Api::ConfigManager.new.create(manifest['type'], manifest['name'], YAML.dump(manifest['content']))
+          config = Bosh::Director::Api::ConfigManager.new.create(manifest['type'], manifest['name'], manifest['content'])
           create_event(manifest['type'], manifest['name'])
         rescue => e
           if manifest.is_a?(Hash) && manifest.key?('type') && manifest.key?('name')
@@ -82,11 +82,16 @@ module Bosh::Director
         end
       end
 
+      def check_name_and_type(manifest, name)
+        check(manifest, name)
+        raise InvalidYamlError, "'#{name}' must be a string" unless manifest[name].is_a?(String)
+      end
+
       def validate_create_format(manifest)
         raise InvalidYamlError, "YAML hash expected" unless manifest.is_a?(Hash)
-        check(manifest, 'type')
-        check(manifest, 'name')
-        check(manifest, 'content')
+        check_name_and_type(manifest, 'type')
+        check_name_and_type(manifest, 'name')
+        check_name_and_type(manifest, 'content')
       end
     end
   end

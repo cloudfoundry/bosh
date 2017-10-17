@@ -186,7 +186,7 @@ module Bosh::Director
     end
 
     describe 'POST', '/' do
-      let(:config_data) { Bosh::Spec::Deployments.simple_runtime_config }
+      let(:config_data) { "fake-config" }
       let(:content) {
         YAML.dump({ 'name' => 'my-name', 'type' => 'my-type', 'content' => config_data })
        }
@@ -206,7 +206,24 @@ module Bosh::Director
               'id' => Bosh::Director::Models::Config.first.id,
               'type' => 'my-type',
               'name' => 'my-name',
-              'content' => YAML.dump(config_data)
+              'content' => config_data
+            }
+          )
+        end
+
+        it 'creates a new config with whitespace preceding content' do
+          expect {
+            post '/', YAML.dump({ 'name' => 'my-name', 'type' => 'my-type', 'content' => '    a: 123' }), {'CONTENT_TYPE' => 'text/yaml'}
+          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+
+          expect(last_response.status).to eq(201)
+
+          expect(JSON.parse(last_response.body)).to eq(
+            {
+              'id' => Bosh::Director::Models::Config.first.id,
+              'type' => 'my-type',
+              'name' => 'my-name',
+              'content' => '    a: 123'
             }
           )
         end
@@ -263,7 +280,7 @@ module Bosh::Director
 
         context 'when using config with missing content' do
          let(:content) {
-          YAML.dump({ 'type' => 'my-type', 'name' => 'my-name', 'content' => {} })
+           YAML.dump({ 'type' => 'my-type', 'name' => 'my-name', 'content' => {} })
          }
 
           it 'creates a new event with error' do
@@ -276,6 +293,18 @@ module Bosh::Director
             expect(event.action).to eq('create')
             expect(event.user).to eq('admin')
             expect(event.error).to eq("'content' is required")
+          end
+        end
+
+        context 'when yaml enclosure is invalid for content' do
+          let(:content) { "---\nname: n\ntype: t\ncontent:\n  a: 1\n" }
+
+          it 'return 400' do
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(710000)
+            expect(JSON.parse(last_response.body)['description']).to eq("'content' must be a string")
           end
         end
 
