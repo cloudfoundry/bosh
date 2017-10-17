@@ -124,5 +124,6 @@
   "20170828174622_add_spec_json_to_templates": "ecd7869cd86c451b0ff134aff944b6e2c22f9b31",
   "20170915205722_create_dns_encoded_networks_and_instance_groups": "8e0832e495000c488d0a100a8b3162e7d82dcaea",
   "20171010144941_add_configs": "04348263d89a61dd1078c9ee4a2c94da5a1ff012",
-  "20171010150659_migrate_runtime_configs": "4b6ee608a317656dd3f4260dd2c554068dbe6968"
+  "20171010150659_migrate_runtime_configs": "4b6ee608a317656dd3f4260dd2c554068dbe6968",
+  "20171010161532_migrate_cloud_configs": "88816313055e4dfeb1816d73831a2e7a1c4b259c"
 }

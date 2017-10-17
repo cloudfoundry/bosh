@@ -34,7 +34,7 @@ module Bosh::Director
           @event_log.warn_deprecated(warning)
           cloud_config_model = nil
         else
-          cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
+          cloud_config_model = Bosh::Director::Models::Config[@cloud_config_id]
           if cloud_config_model.nil?
             logger.debug("No cloud config uploaded yet.")
           else

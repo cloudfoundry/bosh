@@ -170,7 +170,14 @@ module Bosh::Director::Models
     created_at { Time.now }
   end
 
-  CloudConfig.blueprint do
+  Config.blueprint(:cloud) do
+    type { 'cloud' }
+    name { 'default' }
+  end
+
+  Config.blueprint(:cloud_with_manifest) do
+    type { 'cloud' }
+    name { 'default' }
     raw_manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 

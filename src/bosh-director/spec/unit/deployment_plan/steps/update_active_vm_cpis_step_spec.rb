@@ -10,7 +10,11 @@ module Bosh::Director
       let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
 
       let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
-      let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment', manifest: YAML.dump(deployment_manifest), cloud_config: cloud_config) }
+      let(:deployment_model) do
+        deployment = Models::Deployment.make(name: 'fake-deployment', manifest: YAML.dump(deployment_manifest))
+        deployment.cloud_configs = [cloud_config]
+        deployment
+      end
       let(:deployment_plan) do
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
         deployment_plan = planner_factory.create_from_model(deployment_model)
@@ -27,7 +31,7 @@ module Bosh::Director
       let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: '1') }
       let!(:cloud_config) {
         if prior_az_name.nil?
-          Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config)
+          Models::Config.make(:cloud_with_manifest)
         else
           raw_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge({
             'azs' => [
@@ -40,7 +44,7 @@ module Bosh::Director
           raw_manifest['networks'][0]['subnets'][0]['azs'] = [prior_az_name]
           raw_manifest['compilation']['az'] = prior_az_name
 
-          Models::CloudConfig.make(raw_manifest: raw_manifest)
+          Models::Config.make(:cloud, raw_manifest: raw_manifest)
         end
       }
       let(:prior_az_name) { 'z2' }

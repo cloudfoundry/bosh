@@ -9,8 +9,8 @@ module Bosh::Director
     let(:current_deployment) do
       deployment_model = Models::Deployment.make(
         name: 'current-deployment',
-        cloud_config: cloud_config
       )
+      deployment_model.cloud_config = cloud_config
       DeploymentPlan::Planner.new(
         {name: 'current-deployment', properties: {}},
         '',
@@ -24,7 +24,6 @@ module Bosh::Director
       it "ignores deployments that don't have a manifest" do
         Models::Deployment.make(
           name: 'other-deployment',
-          cloud_config: nil,
           manifest: nil
         )
 
@@ -35,7 +34,7 @@ module Bosh::Director
       describe 'when initialized with director ips' do
         let(:director_ips) { ['192.168.1.11', '10.10.0.4'] }
         describe 'when using global networking' do
-          let(:cloud_config) { Models::CloudConfig.make }
+          let(:cloud_config) { Models::Config.make(:cloud) }
 
           it 'returns the director IPs as ranges' do
             expect(global_network_resolver.reserved_ranges).to contain_exactly(
@@ -55,7 +54,7 @@ module Bosh::Director
 
       context 'when deploying with cloud config after legacy deployments' do
         let(:cloud_config) do
-          Models::CloudConfig.make({
+          Models::Config.make(:cloud, {
             raw_manifest: {
               'networks' => [{
                 'name' => 'manual',
@@ -76,7 +75,6 @@ module Bosh::Director
           before do
             Models::Deployment.make(
               name: 'dummy1',
-              cloud_config: nil,
               manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'defaultA',
@@ -91,7 +89,6 @@ module Bosh::Director
             )
             Models::Deployment.make(
               name: 'dummy2',
-              cloud_config: nil,
               manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'defaultB',
@@ -115,7 +112,6 @@ module Bosh::Director
           before do
             Models::Deployment.make(
                 name: 'dummy1',
-                cloud_config: nil,
                 manifest: YAML.dump({
                    'networks' => [{
                         'name' => 'defaultA',
@@ -137,12 +133,11 @@ module Bosh::Director
       end
 
       context 'when current deployment is using cloud config' do
-        let(:cloud_config) { Models::CloudConfig.make }
+        let(:cloud_config) { Models::Config.make(:cloud) }
 
         it 'excludes networks from deployments with cloud config' do
-          Models::Deployment.make(
+          deployment = Models::Deployment.make(
             name: 'other-deployment-1',
-            cloud_config: cloud_config,
             manifest: YAML.dump({
                 'networks' => [{
                     'name' => 'network-a',
@@ -153,6 +148,7 @@ module Bosh::Director
                   }],
               })
           )
+          deployment.cloud_config = cloud_config
           expect(global_network_resolver.reserved_ranges).to be_empty
         end
 
@@ -160,7 +156,6 @@ module Bosh::Director
           before do
             Models::Deployment.make(
               name: 'other-deployment-1',
-              cloud_config: nil,
               manifest: YAML.dump({
                 'networks' => [
                   {
@@ -188,7 +183,6 @@ module Bosh::Director
 
             Models::Deployment.make(
               name: 'other-deployment-2',
-              cloud_config: nil,
               manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'network-a',
@@ -202,7 +196,6 @@ module Bosh::Director
 
             Models::Deployment.make(
               name: 'other-deployment-3',
-              cloud_config: nil,
               manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'network-a',
@@ -211,9 +204,8 @@ module Bosh::Director
               })
             )
 
-            Models::Deployment.make(
+            deployment = Models::Deployment.make(
               name: 'other-deployment-4',
-              cloud_config: cloud_config,
               manifest: YAML.dump({
                 'networks' => [{
                   'name' => 'network-a',
@@ -224,6 +216,7 @@ module Bosh::Director
                 }],
               })
             )
+            deployment.cloud_config = cloud_config
           end
 
           it 'returns manual network ranges from legacy deployments (deployments with no cloud config)' do
@@ -263,7 +256,6 @@ module Bosh::Director
         before do
           Models::Deployment.make(
             name: 'other-deployment',
-            cloud_config: nil,
             manifest: YAML.dump({
                 'networks' => [{
                     'name' => 'network-a',

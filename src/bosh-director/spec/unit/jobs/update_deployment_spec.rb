@@ -322,7 +322,7 @@ module Bosh::Director
           end
 
           context 'when a cloud_config is passed in' do
-            let(:cloud_config_id) { Models::CloudConfig.make.id }
+            let(:cloud_config_id) { Models::Config.make(:cloud).id }
             it 'uses the cloud config' do
               expect(job.perform).to eq('/deployments/deployment-name')
             end

@@ -635,7 +635,7 @@ Unable to process links for deployment. Errors are:
       let(:deployment_manifest) { generate_manifest_without_cloud_config('fake-deployment', links, ['127.0.0.3', '127.0.0.4']) }
 
       let(:cloud_config) do
-        Bosh::Director::Models::CloudConfig.make(raw_manifest: {
+        Bosh::Director::Models::Config.make(:cloud, raw_manifest: {
             'azs' => [
                 {
                     'name' => 'az1',

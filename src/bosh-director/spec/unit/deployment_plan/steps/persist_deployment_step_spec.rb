@@ -37,7 +37,7 @@ module Bosh::Director
           }
         }
       end
-      let(:cloud_config) { Models::CloudConfig.make }
+      let(:cloud_config) { Models::Config.make(:cloud)}
       let(:runtime_configs) { [Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime)] }
       let(:link_spec) {
         {

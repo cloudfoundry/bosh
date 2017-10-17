@@ -13,7 +13,14 @@ module Bosh::Director::Models
     one_to_many  :instances
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
-    many_to_one  :cloud_config
+    many_to_many  :cloud_configs,
+      class: Bosh::Director::Models::Config,
+      join_table: :deployments_configs,
+      right_key: :config_id,
+      conditions: {type: 'cloud'},
+      before_add: Config.check_type('cloud'),
+      before_remove: Config.check_type('cloud'),
+      join_table_block: Deployment.join_table_block('cloud')
     many_to_many :runtime_configs,
       class: Bosh::Director::Models::Config,
       join_table: :deployments_configs,
@@ -43,12 +50,35 @@ module Bosh::Director::Models
     def self.create_with_teams(attributes)
       teams = attributes.delete(:teams)
       runtime_configs = attributes.delete(:runtime_configs)
+      cloud_config = attributes.delete(:cloud_config)
 
       deployment = create(attributes)
 
       deployment.teams = teams
       deployment.runtime_configs = runtime_configs
+      deployment.cloud_config = cloud_config
       deployment
+    end
+
+    def cloud_config
+      cloud_configs[0]
+    end
+
+    def cloud_config=(cloud_config)
+      if cloud_config.nil?
+        self.cloud_configs = []
+      else
+        self.cloud_configs = [cloud_config]
+      end
+    end
+
+    def cloud_configs=(cloud_configs)
+      Bosh::Director::Transactor.new.retryable_transaction(Deployment.db) do
+        self.remove_all_cloud_configs
+        (cloud_configs || []).each do |cc|
+          self.add_cloud_config(cc)
+        end
+      end
     end
 
     def runtime_configs=(runtime_configs)

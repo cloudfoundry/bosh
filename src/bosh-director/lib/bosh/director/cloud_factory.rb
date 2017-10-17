@@ -33,7 +33,7 @@ module Bosh::Director
 
       global_network_resolver = DeploymentPlan::NullGlobalNetworkResolver.new
       parser = DeploymentPlan::CloudManifestParser.new(Config.logger)
-      parser.parse(cloud_config.interpolated_manifest(deployment_name), global_network_resolver, nil)
+      parser.parse(Api::CloudConfigManager.interpolated_manifest(cloud_config, deployment_name), global_network_resolver, nil)
     end
 
     def initialize(cloud_planner, parsed_cpi_config)

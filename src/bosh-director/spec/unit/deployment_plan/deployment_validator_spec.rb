@@ -19,7 +19,7 @@ module Bosh::Director
       let(:deployment) { instance_double(DeploymentPlan::Planner, {manifest_hash: manifest_hash, }) }
       let(:deployment_validator) { DeploymentPlan::DeploymentValidator.new }
 
-      let(:cloud_config) { Models::CloudConfig.make }
+      let(:cloud_config) { Models::Config.make(:cloud) }
 
       context 'when using stemcells and vm_types' do
         let(:deployment) do

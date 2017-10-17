@@ -67,12 +67,13 @@ module Bosh::Director
     end
 
     let(:deployment_model) do
-      cloud_config = Models::CloudConfig.make(raw_manifest: cloud_config_manifest)
-      Models::Deployment.make(
+      cloud_config = Models::Config.make(:cloud, raw_manifest: cloud_config_manifest)
+      deployment = Models::Deployment.make(
         name: deployment_manifest['name'],
         manifest: YAML.dump(deployment_manifest),
-        cloud_config: cloud_config,
       )
+      deployment.cloud_configs = [cloud_config]
+      deployment
     end
 
     let(:deployment_plan) do

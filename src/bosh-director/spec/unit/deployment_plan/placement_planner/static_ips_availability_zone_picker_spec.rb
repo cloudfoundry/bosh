@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
     subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, network_planner, job.networks, 'fake-job', availability_zones, logger) }
 
     let(:availability_zones) { job.availability_zones }
-    let(:cloud_config_model) { Bosh::Director::Models::CloudConfig.make(raw_manifest: cloud_config_hash) }
+    let(:cloud_config_model) { Bosh::Director::Models::Config.make(:cloud, raw_manifest: cloud_config_hash) }
     let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
     let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
     let(:deployment_repo) { DeploymentRepo.new }

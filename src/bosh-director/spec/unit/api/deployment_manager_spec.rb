@@ -16,7 +16,7 @@ module Bosh::Director
       let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
 
       it 'enqueues a DJ job' do
-        cloud_config = Models::CloudConfig.make
+        cloud_config = Models::Config.make(:cloud)
 
         create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_configs, deployment, options)
 
@@ -35,7 +35,7 @@ module Bosh::Director
       end
 
       it 'passes context id' do
-        cloud_config = Models::CloudConfig.make
+        cloud_config = Models::Config.make(:cloud)
         context_id = 'example-context-id'
         create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_configs, deployment, options, context_id)
 

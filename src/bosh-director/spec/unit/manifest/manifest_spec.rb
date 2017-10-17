@@ -39,7 +39,7 @@ module Bosh::Director
 
     describe '.load_from_model' do
       let(:deployment_model) {instance_double(Bosh::Director::Models::Deployment)}
-      let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {'name-2'=>'my-name-2'}) }
+      let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'name-2'=>'my-name-2'}) }
       let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
       let(:manifest_hash) { {"name"=>"a_deployment", "name-1"=>"my-name-1"} }
 
@@ -71,7 +71,7 @@ module Bosh::Director
       end
 
       context 'when empty manifests exist' do
-        let(:cloud_config) { Models::CloudConfig.make(raw_manifest: nil) }
+        let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: nil) }
 
         before do
           allow(deployment_model).to receive(:manifest).and_return(nil)
@@ -94,11 +94,11 @@ module Bosh::Director
       end
 
       context 'when resolving manifest' do
-        let(:cloud_config) { instance_double(Models::CloudConfig)}
+        let(:cloud_config) { instance_double(Models::Config) }
 
         before do
           allow(cloud_config).to receive(:raw_manifest).and_return({})
-          allow(cloud_config).to receive(:interpolated_manifest).and_return({})
+          allow(Api::CloudConfigManager).to receive(:interpolated_manifest).and_return({})
           allow(deployment_model).to receive(:manifest).and_return("{'name': 'surfing_deployment', 'smurf': '((smurf_placeholder))'}")
           allow(deployment_model).to receive(:cloud_config).and_return(cloud_config)
         end
@@ -127,7 +127,7 @@ module Bosh::Director
     end
 
     describe '.load_from_text' do
-      let(:cloud_config) { Models::CloudConfig.make(raw_manifest: {}) }
+      let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {}) }
       let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
 
       let(:raw_runtime_config_hash) { {'raw_runtime' => '((foo))'} }
@@ -157,11 +157,11 @@ module Bosh::Director
 
       context 'when resolving manifest' do
         let(:passed_in_manifest_hash) { {'smurf' => '((smurf_placeholder))'} }
-        let(:cloud_config) { instance_double(Models::CloudConfig)}
+        let(:cloud_config) { instance_double(Models::Config) }
 
         before do
           allow(cloud_config).to receive(:raw_manifest).and_return({})
-          allow(cloud_config).to receive(:interpolated_manifest).and_return({})
+          allow(Api::CloudConfigManager).to receive(:interpolated_manifest).and_return({})
         end
 
         it 'calls the manifest resolver with correct values' do

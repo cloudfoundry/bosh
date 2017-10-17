@@ -79,7 +79,7 @@ module Bosh::Director
         variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
         hybrid_manifest_hash = variables_interpolator.interpolate_deployment_manifest(manifest_hash)
         deployment_name = manifest_hash['name']
-        hybrid_cloud_config_hash = cloud_config.interpolated_manifest(deployment_name) unless cloud_config.nil?
+        hybrid_cloud_config_hash = Bosh::Director::Api::CloudConfigManager.interpolated_manifest(cloud_config, deployment_name) unless cloud_config.nil?
         hybrid_runtime_config_hash = consolidated_runtime_config.interpolate_manifest_for_deployment(deployment_name)
       else
         hybrid_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)

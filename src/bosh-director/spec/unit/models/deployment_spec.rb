@@ -201,6 +201,67 @@ tags:
       end
     end
 
+    describe 'cloud_configs' do
+      let(:manifest) { '---{}' }
+
+      before do
+        cc1 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc1-prop', name: 'cc1')
+        cc2 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc2-prop', name: 'cc2')
+        cc3 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc3-prop', name: 'cc3')
+
+        deployment.add_cloud_config(cc1)
+        deployment.add_cloud_config(cc2)
+        deployment.add_cloud_config(cc3)
+      end
+
+      it '#add_cloud_config rejects adding other config types' do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        expect {
+          deployment.add_cloud_config(config)
+        }.to raise_error Bosh::Director::ConfigTypeMismatch, "Expected config type 'cloud', but was 'fake_type'"
+        expect( Bosh::Director::Config.db[:deployments_configs].map(:config_id)).to_not include(config.id)
+      end
+
+      it '#remove_cloud_config rejects removing other config types' do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        Bosh::Director::Config.db[:deployments_configs].insert({deployment_id:deployment.id, config_id:config.id})
+        expect {
+          deployment.remove_cloud_config(config)
+        }.to raise_error Bosh::Director::ConfigTypeMismatch, "Expected config type 'cloud', but was 'fake_type'"
+        expect( Bosh::Director::Config.db[:deployments_configs].map(:config_id)).to include(config.id)
+      end
+
+      it "#remove_all_cloud_configs removes only configs associations of type 'cloud'" do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        Bosh::Director::Config.db[:deployments_configs].insert({deployment_id:deployment.id, config_id:config.id})
+
+        deployment.remove_all_cloud_configs
+
+        expect(deployment.cloud_configs.size).to eq(0)
+        expect( Bosh::Director::Config.db[:deployments_configs].count).to eq(1)
+        expect( Bosh::Director::Config.db[:deployments_configs].map(:config_id)).to include(config.id)
+        expect(Bosh::Director::Models::Config.where(type: 'fake_type').all.size).to eq 1
+        expect(Bosh::Director::Models::Config.where(type: 'cloud').all.size).to eq 3
+      end
+
+      it '#cloud_configs= removes existing records & assigns the new cloud config records' do
+        cc4 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc4-prop', name: 'cc4')
+        cc5 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc5-prop', name: 'cc5')
+
+        deployment.cloud_configs = [cc4, cc5]
+
+        expect(Bosh::Director::Models::Deployment[id: deployment.id].cloud_configs).to contain_exactly(cc4, cc5)
+      end
+
+      it "#cloud_configs filters configs of type 'cloud'" do
+        config = Bosh::Director::Models::Config.create(type: 'fake_type', content: 'fake_content', name: 'fake_name')
+        Bosh::Director::Config.db[:deployments_configs].insert({deployment_id:deployment.id, config_id: config.id})
+
+        expect(deployment.cloud_configs.size).to eq 3
+        expect(deployment.cloud_configs).not_to include(config)
+      end
+    end
+
     describe 'runtime_configs' do
       let(:manifest) { '---{}' }
 

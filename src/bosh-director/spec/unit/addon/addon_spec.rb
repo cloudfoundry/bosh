@@ -19,14 +19,14 @@ module Bosh::Director
       }
       let(:properties) { {'echo_value' => 'addon_prop_value'} }
 
-      let(:cloud_config) { Models::CloudConfig.make }
+      let(:cloud_config) { Models::Config.make(:cloud) }
 
       let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
 
       let(:deployment_model) do
         deployment_model = Models::Deployment.make
-        deployment_model.cloud_config_id = cloud_config.id
         deployment_model.teams = teams
+        deployment_model.cloud_configs = [cloud_config]
         deployment_model.save
         deployment_model
       end

@@ -11,7 +11,7 @@ module Bosh::Director
 
     context 'factory methods' do
       let(:cpi_config) { instance_double(Models::CpiConfig) }
-      let(:cloud_config) { instance_double(Models::CloudConfig) }
+      let(:cloud_config) { instance_double(Models::Config) }
       let(:deployment) { instance_double(Models::Deployment) }
       let(:cpi_manifest_parser) { instance_double(CpiConfig::CpiManifestParser) }
       let(:cloud_manifest_parser) { instance_double(DeploymentPlan::CloudManifestParser) }
@@ -20,7 +20,7 @@ module Bosh::Director
       before {
         allow(deployment).to receive(:cloud_config).and_return(cloud_config)
         allow(deployment).to receive(:name).and_return('happy')
-        allow(cloud_config).to receive(:interpolated_manifest).with('happy').and_return({})
+        allow(Api::CloudConfigManager).to receive(:interpolated_manifest).with(cloud_config, 'happy').and_return({})
         allow(CpiConfig::CpiManifestParser).to receive(:new).and_return(cpi_manifest_parser)
         allow(cpi_manifest_parser).to receive(:parse).and_return(parsed_cpi_config)
         allow(cpi_config).to receive(:manifest).and_return({})

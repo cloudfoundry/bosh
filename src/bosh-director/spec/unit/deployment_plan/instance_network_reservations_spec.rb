@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
     let(:deployment_model) { Models::Deployment.make(name: 'foo-deployment') }
-    let(:cloud_config) { Models::CloudConfig.make }
+    let(:cloud_config) { Models::Config.make(:cloud) }
     let(:runtime_config) { Models::Config.make(type: 'runtime') }
     let(:deployment) do
       DeploymentPlan::Planner.new(

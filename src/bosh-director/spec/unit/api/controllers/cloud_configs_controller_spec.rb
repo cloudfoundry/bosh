@@ -19,12 +19,12 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         it 'creates a new cloud config' do
-          properties = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
+          content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
           expect {
-            post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Models::CloudConfig, :count).from(0).to(1)
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+          }.to change(Models::Config, :count).from(0).to(1)
 
-          expect(Models::CloudConfig.first.properties).to eq(properties)
+          expect(Models::Config.first.content).to eq(content)
         end
 
         it 'gives a nice error when request body is not a valid yml' do
@@ -71,14 +71,15 @@ module Bosh::Director
       it 'creates a new event' do
         authorize('admin', 'admin')
 
-        properties = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
+        content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
         expect {
-          post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
+          post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
         }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
         event = Bosh::Director::Models::Event.first
-        expect(event.object_type).to eq("cloud-config")
-        expect(event.action).to eq("update")
-        expect(event.user).to eq("admin")
+        expect(event.object_type).to eq('cloud-config')
+        expect(event.object_name).to eq('default')
+        expect(event.action).to eq('update')
+        expect(event.user).to eq('admin')
       end
 
       it 'creates a new event with error' do
@@ -87,10 +88,11 @@ module Bosh::Director
           post '/', {}, {'CONTENT_TYPE' => 'text/yaml'}
         }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
         event = Bosh::Director::Models::Event.first
-        expect(event.object_type).to eq("cloud-config")
-        expect(event.action).to eq("update")
-        expect(event.user).to eq("admin")
-        expect(event.error).to eq("Manifest should not be empty")
+        expect(event.object_type).to eq('cloud-config')
+        expect(event.object_name).to eq('default')
+        expect(event.action).to eq('update')
+        expect(event.user).to eq('admin')
+        expect(event.error).to eq('Manifest should not be empty')
       end
     end
 
@@ -98,26 +100,28 @@ module Bosh::Director
       it 'returns the number of cloud configs specified by ?limit' do
         authorize('admin', 'admin')
 
-        Models::CloudConfig.new(
-          properties: 'config_from_time_immortal',
+        Models::Config.make(
+          :cloud,
+          content: 'config_from_time_immortal',
           created_at: Time.now - 3,
-        ).save
-        Models::CloudConfig.new(
-          properties: 'config_from_last_year',
+        )
+        Models::Config.make(
+          :cloud,
+          content: 'config_from_last_year',
           created_at: Time.now - 2,
-        ).save
-        newer_cloud_config_properties = "---\nsuper_shiny: new_config"
-        Models::CloudConfig.new(
-          properties: newer_cloud_config_properties,
+        )
+        newer_cloud_config_content = "---\nsuper_shiny: new_config"
+        Models::Config.make(
+          :cloud,
+          content: newer_cloud_config_content,
           created_at: Time.now - 1,
-        ).save
-
+        )
 
         get '/?limit=2'
 
         expect(last_response.status).to eq(200)
         expect(JSON.parse(last_response.body).count).to eq(2)
-        expect(JSON.parse(last_response.body).first["properties"]).to eq(newer_cloud_config_properties)
+        expect(JSON.parse(last_response.body).first['properties']).to eq(newer_cloud_config_content)
       end
 
       it 'returns STATUS 400 if limit was not specified or malformed' do
@@ -183,9 +187,7 @@ module Bosh::Director
 
         context 'when there is a previous cloud config' do
           before do
-            Models::CloudConfig.create(
-                :raw_manifest => cloud_config_hash_with_two_azs
-            )
+            Models::Config.make(:cloud, raw_manifest: cloud_config_hash_with_two_azs)
           end
 
           context 'when uploading an empty cloud config' do
@@ -266,9 +268,7 @@ module Bosh::Director
 
           context 'when previous cloud config is nil' do
             before do
-              Models::CloudConfig.create(
-                :raw_manifest => nil
-              )
+              Models::Config.make(:cloud, raw_manifest: nil)
             end
 
             it 'returns the diff' do
