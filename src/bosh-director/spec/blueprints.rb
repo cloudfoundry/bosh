@@ -192,8 +192,15 @@ module Bosh::Director::Models
     name { 'default' }
   end
 
-  CpiConfig.blueprint do
-    manifest { Bosh::Spec::Deployments.simple_cpi_config }
+  Config.blueprint(:cpi) do
+    type { 'cpi' }
+    name { 'default' }
+  end
+
+  CpiConfig.blueprint(:cpi_with_manifest) do
+    type { 'cpi' }
+    name { 'default' }
+    raw_manifest { Bosh::Spec::NewDeployments.simple_cpi_config }
   end
 
   DeploymentProperty.blueprint do

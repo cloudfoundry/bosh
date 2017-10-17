@@ -10,7 +10,7 @@ module Bosh::Director
     let(:logger) { double(:logger, debug: nil) }
 
     context 'factory methods' do
-      let(:cpi_config) { instance_double(Models::CpiConfig) }
+      let(:cpi_config) { instance_double(Models::Config) }
       let(:cloud_config) { instance_double(Models::Config) }
       let(:deployment) { instance_double(Models::Deployment) }
       let(:cpi_manifest_parser) { instance_double(CpiConfig::CpiManifestParser) }
@@ -18,39 +18,37 @@ module Bosh::Director
       let(:planner) { instance_double(DeploymentPlan::CloudPlanner) }
 
       before {
-        allow(deployment).to receive(:cloud_config).and_return(cloud_config)
+        allow(deployment).to receive(:cloud_configs).and_return([cloud_config])
         allow(deployment).to receive(:name).and_return('happy')
-        #TODO: dead code?
-        allow(Api::CloudConfigManager).to receive(:interpolated_manifest).with(cloud_config, 'happy').and_return({})
+        allow(Api::CloudConfigManager).to receive(:interpolated_manifest).with([cloud_config], 'happy').and_return({})
         allow(CpiConfig::CpiManifestParser).to receive(:new).and_return(cpi_manifest_parser)
         allow(cpi_manifest_parser).to receive(:parse).and_return(parsed_cpi_config)
-        allow(cpi_config).to receive(:manifest).and_return({})
+        allow(cpi_config).to receive(:raw_manifest).and_return({})
         allow(DeploymentPlan::CloudManifestParser).to receive(:new).and_return(cloud_manifest_parser)
         allow(cloud_manifest_parser).to receive(:parse).and_return(planner)
       }
 
-      #TODO Should the cloud config manager interpolate variables?
-      # it 'constructs a cloud factory with all its dependencies from a deployment' do
-      #   expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
-      #   described_class.create_from_deployment(deployment, cpi_config)
-      # end
-      #
-      # it 'constructs a cloud factory without planner if no deployment is given' do
-      #   expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
-      #   deployment = nil
-      #   described_class.create_from_deployment(deployment, cpi_config)
-      # end
-      #
-      # it 'constructs a cloud factory without planner if no cloud config is used' do
-      #   expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
-      #   expect(deployment).to receive(:cloud_config).and_return(nil)
-      #   described_class.create_from_deployment(deployment, cpi_config)
-      # end
-      #
-      # it 'constructs a cloud factory without parsed cpis if no cpi config is used' do
-      #     expect(described_class).to receive(:new).with(planner, nil)
-      #     described_class.create_from_deployment(deployment, nil)
-      # end
+      it 'constructs a cloud factory with all its dependencies from a deployment' do
+        expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
+        described_class.create_from_deployment(deployment, cpi_config)
+      end
+
+      it 'constructs a cloud factory without planner if no deployment is given' do
+        expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
+        deployment = nil
+        described_class.create_from_deployment(deployment, cpi_config)
+      end
+
+      it 'constructs a cloud factory without planner if no cloud config is used' do
+        expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
+        expect(deployment).to receive(:cloud_configs).and_return([])
+        described_class.create_from_deployment(deployment, cpi_config)
+      end
+
+      it 'constructs a cloud factory without parsed cpis if no cpi config is used' do
+          expect(described_class).to receive(:new).with(planner, nil)
+          described_class.create_from_deployment(deployment, nil)
+      end
     end
 
     shared_examples_for 'lookup for clouds' do

@@ -25,7 +25,7 @@ module Bosh::Director
 
     def self.parse_cpi_config(cpi_config)
       return nil if cpi_config.nil?
-      Bosh::Director::CpiConfig::CpiManifestParser.new.parse(cpi_config.manifest)
+      Bosh::Director::CpiConfig::CpiManifestParser.new.parse(cpi_config.raw_manifest)
     end
 
     def self.create_cloud_planner(cloud_configs, deployment_name = nil)

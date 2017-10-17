@@ -48,7 +48,7 @@ module Bosh::Director
         end
       }
       let(:prior_az_name) { 'z2' }
-      let!(:cpi_config) { Models::CpiConfig.make }
+      let!(:cpi_config) { Models::Config.make(:cpi_with_manifest) }
       let(:deployment_manifest) do
         manifest = {
           'name' => 'fake-deployment',
