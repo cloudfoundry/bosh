@@ -87,9 +87,8 @@ var _ = Describe("BoshDns", func() {
 
 	AfterEach(stopInnerBosh)
 
-	PContext("having enabled short dns addresses", func() {
+	Context("having enabled short dns addresses", func() {
 		BeforeEach(func() {
-
 			opFilePath, err := filepath.Abs("../assets/op-enable-short-dns-addresses.yml")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -139,6 +138,38 @@ var _ = Describe("BoshDns", func() {
 					Expect(output).To(MatchRegexp(`q-s0\.g-\d+\.bosh\.\s+\d+\s+IN\s+A\s+%s`, ip))
 				}
 			}
+		})
+
+		FIt("can find instances using the address helper with short names by network and instance ID", func() {
+			session, err := gexec.Start(exec.Command(
+				boshBinaryPath, "-n",
+				"-d", deploymentName,
+				"instances",
+				"--column", "instance",
+				"--column", "az",
+				"--column", "ips",
+			), GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+			instanceList := session.Out.Contents()
+
+			matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
+			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
+
+			session, err = gexec.Start(exec.Command(boshBinaryPath,
+				"-d", deploymentName,
+				"run-errand", "query-individual-instance",
+			), GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+			Expect(session.Out).To(gbytes.Say("ANSWER: 1"))
+
+			output := string(session.Out.Contents())
+
+			ip := knownProviders["z1"][0]
+			Expect(output).To(MatchRegexp(`q-n\d+m\d+\.g-\d\.bosh\.\s+\d+\s+IN\s+A\s+%s`, ip))
 		})
 	})
 

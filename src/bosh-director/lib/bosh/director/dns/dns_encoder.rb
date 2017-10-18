@@ -1,9 +1,10 @@
 module Bosh::Director
   class DnsEncoder
-    def initialize(service_groups={}, az_hash={}, short_dns_enabled=false)
+    def initialize(service_groups={}, az_hash={}, network_name_hash={}, short_dns_enabled=false)
       @az_hash = az_hash
       @service_groups = service_groups
       @short_dns_enabled = short_dns_enabled
+      @network_name_hash = network_name_hash
     end
 
     def encode_query(criteria)
@@ -28,6 +29,15 @@ module Bosh::Director
 
       index = @az_hash[az_name]
       raise RuntimeError.new("Unknown AZ: '#{az_name}'") if index.nil?
+      "#{index}"
+    end
+
+    def id_for_network(network_name)
+      if network_name.nil?
+        return nil
+      end
+      index = @network_name_hash[network_name]
+      raise RuntimeError.new("Unknown Network: '#{network_name}'") if index.nil?
       "#{index}"
     end
 

@@ -26,6 +26,28 @@ module Bosh::Director
         expect(Models::LocalDnsEncodedAz.all[1].id).to eq 2
       end
     end
+    describe '.persist_network_names' do
+      it 'saves new Networks' do
+        subject.persist_network_names(['nw1', 'nw2'])
+        expect(Models::LocalDnsEncodedNetwork.all.count).to eq 2
+        expect(Models::LocalDnsEncodedNetwork.all[0].name).to eq 'nw1'
+        expect(Models::LocalDnsEncodedNetwork.all[0].id).to eq 1
+        expect(Models::LocalDnsEncodedNetwork.all[1].name).to eq 'nw2'
+        expect(Models::LocalDnsEncodedNetwork.all[1].id).to eq 2
+      end
+
+      it 'saves new Networks only if unique' do
+        subject.persist_network_names(['nw1', 'nw2', 'nw1'])
+        subject.persist_network_names(['nw1'])
+        subject.persist_network_names(['nw2'])
+
+        expect(Models::LocalDnsEncodedNetwork.all.count).to eq 2
+        expect(Models::LocalDnsEncodedNetwork.all[0].name).to eq 'nw1'
+        expect(Models::LocalDnsEncodedNetwork.all[0].id).to eq 1
+        expect(Models::LocalDnsEncodedNetwork.all[1].name).to eq 'nw2'
+        expect(Models::LocalDnsEncodedNetwork.all[1].id).to eq 2
+      end
+    end
 
     describe '.create_dns_encoder' do
       before do
@@ -69,6 +91,10 @@ module Bosh::Director
           availability_zones: [
             instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'new-az')
           ],
+          networks: [
+            instance_double(Bosh::Director::DeploymentPlan::Network, name: 'nw1'),
+            instance_double(Bosh::Director::DeploymentPlan::Network, name: 'nw2')
+          ],
           instance_groups: [
             instance_double(Bosh::Director::DeploymentPlan::InstanceGroup,
               name: 'some-ig',
@@ -94,6 +120,12 @@ module Bosh::Director
         encoder = subject.new_encoder_with_updated_index(plan)
         expect(encoder.id_for_az('new-az')).to eq('2')
       end
+
+      it 'returns a dns encoder that includes the provided networks' do
+        encoder = subject.new_encoder_with_updated_index(plan)
+        expect(encoder.id_for_network('nw2')).to eq('2')
+      end
+
 
       it 'returns an encoder that includes the provided groups' do
         encoder = subject.new_encoder_with_updated_index(plan)

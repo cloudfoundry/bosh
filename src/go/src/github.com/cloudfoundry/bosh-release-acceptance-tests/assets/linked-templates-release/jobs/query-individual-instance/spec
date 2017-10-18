@@ -1,0 +1,14 @@
+---
+name: query-individual-instance
+
+templates:
+  run.erb: bin/run
+
+packages: []
+
+properties: {}
+
+
+consumes:
+- name: some-service
+  type: whatever

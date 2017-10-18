@@ -6,11 +6,22 @@ module Bosh::Director
       end
     end
 
+    def self.persist_network_names(networks)
+      networks.each do |networkname|
+        self.encode_network(networkname)
+      end
+    end
+
     def self.create_dns_encoder(use_short_dns_names)
       az_hash = {}
+      network_name_hash = {}
 
       Models::LocalDnsEncodedAz.all.each do |item|
         az_hash[item.name] = item.id.to_s
+      end
+
+      Models::LocalDnsEncodedNetwork.all.each do |item|
+        network_name_hash[item.name] = item.id.to_s
       end
 
       service_groups = {}
@@ -21,11 +32,12 @@ module Bosh::Director
         }] = ig.id.to_s
       end
 
-      Bosh::Director::DnsEncoder.new(service_groups, az_hash, use_short_dns_names)
+      Bosh::Director::DnsEncoder.new(service_groups, az_hash, network_name_hash, use_short_dns_names)
     end
 
     def self.new_encoder_with_updated_index(plan)
       persist_az_names(plan.availability_zones.map(&:name))
+      persist_network_names(plan.networks.map(&:name))
       persist_service_groups(plan)
       create_dns_encoder(plan.use_short_dns_addresses?)
     end

@@ -2,8 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsEncoder do
-    subject { described_class.new(service_groups, az_hash, short_dns_enabled) }
+    subject { described_class.new(service_groups, az_hash, network_name_hash, short_dns_enabled) }
     let(:az_hash) {}
+    let(:network_name_hash) {}
     let(:short_dns_enabled) { false }
     let(:instance_group) { 'potato-group' }
     let(:default_network) { 'potato-net' }
@@ -112,6 +113,25 @@ module Bosh::Director
 
       it 'returns nil if az is nil' do
         expect(subject.id_for_az(nil)).to eq(nil)
+      end
+    end
+
+    describe '#id_for_network' do
+      let(:network_name_hash) { { 'nw1' => '1', 'nw2' => '2' } }
+
+      it 'matches if found' do
+        expect(subject.id_for_network('nw1')).to eq('1')
+        expect(subject.id_for_network('nw2')).to eq('2')
+      end
+
+      it 'raises exception if not found' do
+        expect {
+          subject.id_for_network('nw3')
+        }.to raise_error(RuntimeError, "Unknown Network: 'nw3'")
+      end
+
+      it 'returns nil if network name is nil' do
+        expect(subject.id_for_network(nil)).to eq(nil)
       end
     end
   end
