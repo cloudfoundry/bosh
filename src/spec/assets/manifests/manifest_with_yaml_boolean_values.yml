@@ -1,6 +1,8 @@
 director_uuid: deadbeef
-jobs:
+instance_groups:
 - instances: 1
+  jobs:
+  - name: foobar
   name: foobar
   networks:
   - name: a
@@ -8,13 +10,16 @@ jobs:
     quote:
       "n": "yes"
       "y": "no"
-  resource_pool: a
-  templates:
-  - name: foobar
+  stemcell: default
+  vm_type: a
 name: simple
 releases:
 - name: bosh-release
   version: 0.1-dev
+stemcells:
+- alias: default
+  os: toronto-os
+  version: latest
 update:
   canaries: 2
   canary_watch_time: 4000

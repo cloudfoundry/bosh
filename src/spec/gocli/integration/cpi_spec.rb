@@ -235,7 +235,7 @@ describe 'CPI calls', type: :integration do
         ]
         cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
-        cloud_config_hash['disk_types'] = [Bosh::Spec::Deployments.disk_type]
+        cloud_config_hash['disk_types'] = [Bosh::Spec::NewDeployments.disk_type]
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
         first_deploy_invocations = current_sandbox.cpi.invocations
 
@@ -322,12 +322,12 @@ describe 'CPI calls', type: :integration do
         })
 
         manifest_hash['jobs'] = [
-          Bosh::Spec::Deployments.simple_job(
+          Bosh::Spec::NewDeployments.simple_job(
             name: 'first-job',
             static_ips: ['192.168.1.11'],
             instances: 1,
             templates: ['name' => 'foobar'],
-            persistent_disk_pool: Bosh::Spec::Deployments.disk_pool['name']
+            persistent_disk_pool: Bosh::Spec::NewDeployments.disk_type['name']
           )
         ]
 

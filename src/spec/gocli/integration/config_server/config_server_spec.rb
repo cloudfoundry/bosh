@@ -559,13 +559,13 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
 
           it 'does variable substitution on the initial creation' do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest
             manifest_hash['tags'] = {
               'tag-key1' => '((/tag-variable1))',
               'tag-key2' => '((tag-variable2))'
             }
 
-            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+            cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
 
             set_vm_metadata_invocations = current_sandbox.cpi.invocations.select {|invocation| invocation.method_name == 'set_vm_metadata' && invocation.inputs['metadata']['compiling'].nil? }
