@@ -32,6 +32,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:mark_instance_plans_for_deletion)
         allow(deployment_plan).to receive(:deployment_wide_options).and_return({})
         allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)
+        allow(deployment_plan).to receive(:use_short_dns_addresses?).and_return(false)
       end
 
       it 'should bind releases and their templates' do
@@ -89,7 +90,7 @@ module Bosh::Director
         end
 
         it 'passes tags to instance plan factory' do
-          expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}, 'use_dns_addresses' => false}
+          expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}, 'use_short_dns_addresses' => false, 'use_dns_addresses' => false}
           expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
           assembler.bind_models({tags: {'key1' => 'value1'}})
         end
@@ -102,9 +103,21 @@ module Bosh::Director
           end
 
           it 'passes use_dns_addresses to instance plan factory' do
-            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true}
+            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true, 'use_short_dns_addresses' => false}
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
             assembler.bind_models
+          end
+
+          context 'contains deployment use_short_dns_addresses feature as TRUE' do
+            before do
+              allow(deployment_plan).to receive(:use_short_dns_addresses?).and_return(true)
+            end
+
+            it 'passes use_short_dns_addresses to instance plan factory' do
+              expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true, 'use_short_dns_addresses' => true}
+              expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+              assembler.bind_models
+            end
           end
         end
 
@@ -114,7 +127,7 @@ module Bosh::Director
           end
 
           it 'passes use_dns_addresses to instance plan factory' do
-            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => false}
+            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => false, 'use_short_dns_addresses' => false}
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
             assembler.bind_models
           end

@@ -215,7 +215,7 @@ describe 'Links with local_dns enabled', type: :integration do
           it 'uses a short DNS name if manifest so indicates' do
             manifest['features'] = {'use_short_dns_addresses' => true}
             deploy_simple_manifest(manifest_hash: manifest)
-            expect(rendered_template['i_eat_links']['address']).to eq('q-a1s0.g-2.bosh')
+            expect(rendered_template['i_eat_links']['address']).to match(/q-a1n\ds0.g-2.bosh/)
           end
 
           it 'respects address provided in a manual link' do
@@ -423,6 +423,24 @@ describe 'Links with local_dns enabled', type: :integration do
           elem['address']
         end
         expect(addresses).to eq(["#{mysql_instance.id}.mysql.manual-network.simple.bosh"])
+      end
+
+      context 'when deployment manifest features specifies use_short_dns_addresses to TRUE' do
+        before do
+          manifest['features']['use_short_dns_addresses'] = true
+        end
+
+        it 'outputs an abbreviated DNS address when accessing instance.address of the link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+          instances = director.instances
+          api_instance = director.find_instance(instances, 'my_api', '0')
+          template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+          addresses = template['databases']['main'].map do |elem|
+            elem['address']
+          end
+          expect(addresses.length).to eq(1)
+          expect(addresses[0]).to match(/q-m\dn\ds0\.g-\d\.bosh/)
+        end
       end
     end
 

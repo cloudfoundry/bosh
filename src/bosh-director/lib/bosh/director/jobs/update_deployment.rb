@@ -58,6 +58,7 @@ module Bosh::Director
 
         with_deployment_lock(@deployment_name) do
           deployment_plan = nil
+          dns_encoder = nil
 
           if is_deploy_action
             Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
@@ -73,6 +74,7 @@ module Bosh::Director
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_model, runtime_config_models, @options)
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
+            dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
             deployment_assembler.bind_models({:should_bind_new_variable_set => is_deploy_action})
           end
@@ -87,7 +89,6 @@ module Bosh::Director
           begin
             current_variable_set = deployment_plan.model.current_variable_set
 
-            dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
 
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 
