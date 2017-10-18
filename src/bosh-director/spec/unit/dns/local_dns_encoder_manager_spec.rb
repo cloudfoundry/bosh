@@ -54,6 +54,8 @@ module Bosh::Director
         deployment = Models::Deployment.make(name: 'a-deployment')
         Models::LocalDnsEncodedAz.create(name: 'az1')
         Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
+        Models::LocalDnsEncodedNetwork.create(name: 'my-network')
+        Models::Instance.make(deployment: deployment, id: 42, uuid: 'my-uuid')
       end
 
       it 'should create a dns encoder that uses the current index' do
@@ -63,6 +65,7 @@ module Bosh::Director
           'some-ig',
           'a-deployment'
         )).to eq('1')
+        expect(encoder.num_for_uuid('my-uuid')).to eq('42')
       end
 
       it 'respects the option for short names as default' do
@@ -79,7 +82,7 @@ module Bosh::Director
           default_network: 'my-network',
           deployment_name: 'a-deployment',
           root_domain: 'super-bosh'
-        )).to eq 'q-s0.g-1.super-bosh'
+        )).to eq 'q-n1s0.g-1.super-bosh'
       end
     end
 
@@ -92,7 +95,7 @@ module Bosh::Director
             instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'new-az')
           ],
           networks: [
-            instance_double(Bosh::Director::DeploymentPlan::Network, name: 'nw1'),
+            instance_double(Bosh::Director::DeploymentPlan::Network, name: 'my-network'),
             instance_double(Bosh::Director::DeploymentPlan::Network, name: 'nw2')
           ],
           instance_groups: [
@@ -156,7 +159,7 @@ module Bosh::Director
           deployment_name: 'new-deployment',
           default_network: 'my-network',
           root_domain: 'sub.bosh'
-        )).to eq 'q-s0.g-2.sub.bosh'
+        )).to eq 'q-n1s0.g-2.sub.bosh'
       end
     end
   end

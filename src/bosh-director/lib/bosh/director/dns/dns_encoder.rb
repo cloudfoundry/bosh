@@ -1,16 +1,21 @@
 module Bosh::Director
   class DnsEncoder
-    def initialize(service_groups={}, az_hash={}, network_name_hash={}, short_dns_enabled=false)
+    def initialize(service_groups={}, az_hash={}, network_name_hash={}, instance_uuid_num_hash={}, short_dns_enabled=false)
       @az_hash = az_hash
       @service_groups = service_groups
       @short_dns_enabled = short_dns_enabled
       @network_name_hash = network_name_hash
+      @instance_uuid_num_hash = instance_uuid_num_hash
     end
 
     def encode_query(criteria)
       octets = []
 
-      octets << "q-#{query_slug(criteria)}"
+      if criteria[:uuid].nil? || @short_dns_enabled
+        octets << "q-#{query_slug(criteria)}"
+      else
+        octets << criteria[:uuid]
+      end
 
       if @short_dns_enabled
         octets << encode_service_group(criteria)
@@ -29,6 +34,16 @@ module Bosh::Director
 
       index = @az_hash[az_name]
       raise RuntimeError.new("Unknown AZ: '#{az_name}'") if index.nil?
+      "#{index}"
+    end
+
+    def num_for_uuid(uuid)
+      if uuid.nil?
+        return nil
+      end
+
+      index = @instance_uuid_num_hash[uuid]
+      raise RuntimeError.new("Unknown instance UUID: '#{uuid}'") if index.nil?
       "#{index}"
     end
 
@@ -53,9 +68,6 @@ module Bosh::Director
 
     def query_slug(criteria)
       queries = []
-      # these should be parsed in alphabetical order for the resulting encoded query.
-
-      # present the AZs in index-sorted order
       azs = criteria[:azs]
       aznums = []
       unless azs.nil?
@@ -64,16 +76,31 @@ module Bosh::Director
         end
       end
 
-      queries << aznums.sort.map do |item|
+      queries << aznums.map do |item|
         "a#{item}"
       end
 
+      if @short_dns_enabled
+        uuid = criteria[:uuid]
+        unless uuid.nil?
+          instance_num = num_for_uuid(uuid)
+          queries << "m#{instance_num}"
+        end
+
+        network = criteria[:default_network]
+        unless network.nil?
+          network_id = id_for_network(network)
+          queries << "n#{network_id}"
+        end
+      end
+
       queries << 's0' # healthy by default; also prevents empty queries
-      queries.join
+      queries.flatten.sort.join
     end
 
     def encode_long_subdomains(criteria)
-      [ Canonicalizer.canonicalize(criteria[:instance_group]),
+      [
+        Canonicalizer.canonicalize(criteria[:instance_group]),
         Canonicalizer.canonicalize(criteria[:default_network]),
         Canonicalizer.canonicalize(criteria[:deployment_name])
       ]

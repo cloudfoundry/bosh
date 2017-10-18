@@ -32,7 +32,12 @@ module Bosh::Director
         }] = ig.id.to_s
       end
 
-      Bosh::Director::DnsEncoder.new(service_groups, az_hash, network_name_hash, use_short_dns_names)
+      instance_uuids = {}
+      Bosh::Director::Models::Instance.each do |i|
+        instance_uuids[i.uuid] = i.id
+      end
+
+      Bosh::Director::DnsEncoder.new(service_groups, az_hash, network_name_hash, instance_uuids, use_short_dns_names)
     end
 
     def self.new_encoder_with_updated_index(plan)
