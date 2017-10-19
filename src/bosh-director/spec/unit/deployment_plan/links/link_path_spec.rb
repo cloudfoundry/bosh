@@ -31,12 +31,32 @@ module Bosh::Director
         LinkPath.new(deployment_name, instance_groups, 'consumer_instance_group', 'consumer_instance_group_job')
       end
 
+      let(:link_name) {'link_name'}
+      let(:deployment_id) {1}
+
       before do
         release_model = Models::Release.make(name: 'fake-release')
         version = Models::ReleaseVersion.make(version: '1.0.0')
         release_model.add_version(version)
         previous_deployment = Models::Deployment.make(name: 'previous_deployment', link_spec_json: '{"provider_instance_group":{"provider_job":{"link_name":{"link_name":{"instances":[]}}}}}')
+        deployment_id = previous_deployment.id
+        allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment_id: deployment_id, name: link_name ).and_return(
+          [Bosh::Director::Models::LinkProvider.make(
+              link_provider_id: 'previous_deployment.provider_instance_group.provider_job.link_name',
+              name: 'link_name',
+              shared: true,
+              deployment_id: deployment_id,
+              consumable: true,
+              link_provider_definition_type: 'http_endpoint',
+              link_provider_definition_name: 'http_endpoint',
+              owner_object_name: 'provider_job',
+              owner_object_type: 'Job',
+              content: {
+                "instances":[],
+                "instance_group": "provider_instance_group"
+              }.to_json)])
         version.add_deployment(previous_deployment)
+
       end
 
       context 'given a link name' do
@@ -196,14 +216,18 @@ module Bosh::Director
 
       context 'given a different deployment that does not provide the correct link' do
         let(:path) { { 'from' => 'unprovided_link_name', 'deployment' => 'previous_deployment' } }
+        link_name = "unprovided_link_name"
+        before do
+          allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment_id: deployment_id, name: link_name ).and_return([])
+        end
         it 'should raise an exception' do
-          expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
+          expect{link_path.parse(path)}.to raise_error("Can't resolve link '#{link_name}' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
         end
 
         context "when link is optional and 'from' is explicitly set" do
-          let(:path) { { 'from' => 'unprovided_link_name', 'deployment' => 'previous_deployment', 'optional' => true} }
+          let(:path) { { 'from' => link_name, 'deployment' => 'previous_deployment', 'optional' => true} }
           it 'should not throw an error' do
-            expect{link_path.parse(path)}.to raise_error("Can't resolve link 'unprovided_link_name' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
+            expect{link_path.parse(path)}.to raise_error("Can't resolve link '#{link_name}' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
           end
         end
       end

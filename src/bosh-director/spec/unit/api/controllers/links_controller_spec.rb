@@ -70,7 +70,7 @@ module Bosh::Director
               :link_provider_definition_type => 'link_type_1',
               :link_provider_definition_name => 'link_original_name_1',
               :owner_object_type => 'job',
-              :content => '',
+              :content => 'some link content',
               :owner_object_name => 'job_name_1',
             )
           end
@@ -112,7 +112,8 @@ module Bosh::Director
             'type' => model.owner_object_type,
             'name' => model.owner_object_name,
             'info' => model.owner_object_info,
-          }
+          },
+          'content' => model.content
         }
       end
     end

@@ -13,6 +13,7 @@ module Bosh::Director::Models
         :link_provider_definition_type,
         :link_provider_definition_name,
         :owner_object_type,
+        :owner_object_name,
       ]
     end
   end

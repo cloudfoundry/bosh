@@ -12,8 +12,6 @@ module Bosh::Director
         instance_group.jobs.each do |job|
           resolve_consumed_links(instance_group, job)
           ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
-          add_shared_provided_links_to_deployment_plan(instance_group, job)
-
           add_provided_links(instance_group, job)
         end
       end
@@ -22,10 +20,10 @@ module Bosh::Director
 
       def resolve_consumed_links(instance_group, job)
         job.model_consumed_links.each do |consumed_link|
+
           link_name = consumed_link.name
 
           link_path = instance_group.link_path(job.name, link_name)
-
           if link_path.nil?
             # Only raise an exception when the link_path is nil, and it is not optional
             if !consumed_link.optional
@@ -105,16 +103,6 @@ module Bosh::Director
           provider.save
 
           @deployment_plan.add_link_providers(provider)
-        end
-      end
-
-      def add_shared_provided_links_to_deployment_plan(instance_group, job)
-        job.provided_links(instance_group.name).each do |provided_link|
-          if provided_link.shared
-            link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
-            @logger.debug("Saving link spec for instance_group '#{instance_group.name}', job: '#{job.name}', link: '#{provided_link}', spec: '#{link_spec}'")
-            @deployment_plan.add_deployment_link_spec(instance_group.name, job.name, provided_link.name, provided_link.type, link_spec)
-          end
         end
       end
     end

@@ -108,6 +108,52 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     }
   end
 
+  def insert_default_link_provider
+    Bosh::Director::Models::LinkProvider.insert(
+      deployment_id: Bosh::Director::Models::Deployment.find(name: 'other-deployment').id,
+      link_provider_id: "other-deployment.mysql.mysql-template.db",
+      name: 'my_link',
+      shared: false,
+      consumable: true,
+      link_provider_definition_name: 'db',
+      link_provider_definition_type: 'db',
+      owner_object_name: 'job_1',
+      owner_object_type: 'Job',
+      instance_group: 'mysql',
+      content: {
+        "deployment_name" => "other-deployment",
+        "default_network" => "fake-manual-network",
+        "networks" => [
+          "fake-manual-network",
+          "fake-dynamic-network"
+        ],
+        "properties" => {
+          "mysql" => "nil"
+        },
+        'instances' => [
+          {
+            'name' => 'mysql',
+            'index' => 0,
+            'bootstrap' => true,
+            'id' => '7aed7038-0b3f-4dba-ac6a-da8932502c00',
+            'az' => nil,
+            'dns_addresses' => {'fake-manual-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-manual-network.other-deployment.bosh', 'fake-dynamic-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh'},
+            'addresses' => {'fake-manual-network' => '127.0.0.4', 'fake-dynamic-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh'}
+          },
+          {
+            'name' => 'mysql',
+            'index' => 1,
+            'bootstrap' => false,
+            'id' => 'adecbe93-e242-4585-acde-ffbc1dad4b41',
+            'az' => nil,
+            'dns_addresses' => {'fake-manual-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-manual-network.other-deployment.bosh', 'fake-dynamic-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh'},
+            'addresses' => {'fake-manual-network' => '127.0.0.5', 'fake-dynamic-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh'}
+          }
+        ]
+      }.to_json
+    )
+  end
+
   let(:logger) { Logging::Logger.new('TestLogger') }
 
   let(:api_server_instance_group) do
@@ -198,7 +244,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           }
 
           links_hash = {"api-server-template" => {"db" => spec}}
-
           expect(api_server_instance_group.resolved_links).to eq(links_hash)
         end
       end
@@ -249,12 +294,12 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           Bosh::Director::Models::LinkProvider.insert(
             deployment_id: Bosh::Director::Models::Deployment.find(name: 'other-deployment').id,
             link_provider_id: "other-deployment.mysql.mysql-template.db",
-            name: 'my_link',
+            name: 'db',
             shared: false,
             consumable: true,
             link_provider_definition_name: 'db',
             link_provider_definition_type: 'db',
-            owner_object_name: 'job_1',
+            owner_object_name: 'mysql-template',
             owner_object_type: 'Job',
             #'default_network' => 'default'
             content: {
@@ -267,6 +312,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               "properties" => {
                 "mysql" => "nil"
               },
+              'instance_group' => 'mysql',
               'instances' => [
                 {
                   'name' => 'mysql',
@@ -302,6 +348,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             spec = {
               'default_network' => 'fake-manual-network',
               'deployment_name' => provider_dep.name,
+              'instance_group' => 'mysql',
               'instances' => [
                 {
                   'name' => 'mysql',
@@ -342,6 +389,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               'networks' => ['fake-manual-network', 'fake-dynamic-network'],
               'default_network' => 'fake-manual-network',
               "properties" => {"mysql" => "nil"},
+              'instance_group' => 'mysql',
               'instances' => [
                 {
                   'name' => 'mysql',

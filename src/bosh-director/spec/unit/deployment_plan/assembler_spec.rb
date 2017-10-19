@@ -189,7 +189,8 @@ module Bosh::Director
               consumable: true,
               shared: false,
               content: '{"user":"bob","password":"jim"}',
-              owner_object_type: 'Job'
+              owner_object_type: 'Job',
+              owner_object_name: 'oldjob'
             )
             old_provider.save
 

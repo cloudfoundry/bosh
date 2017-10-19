@@ -35,6 +35,7 @@ module Bosh::Director
           :name => model.name,
           :shared => model.shared,
           :deployment => model.deployment.name,
+          :content => model.content,
           :link_provider_definition =>
             {
               :type => model.link_provider_definition_type,
