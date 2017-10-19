@@ -130,25 +130,12 @@ namespace :spec do
 
   task :upgrade => %w(spec:integration:upgrade)
 
-  def unit_exec(build, log_file = nil)
-    command = unit_cmd(build, log_file)
+  def unit_exec(build)
+    command = "rspec --tty --backtrace -c -f p #{unit_files(build)}"
 
-    # inject command name so coverage results for each component don't clobber others
-    if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}") && log_file
-      puts "----- BEGIN #{build}"
-      puts "            #{command}"
-      print File.read(log_file)
-      puts "----- END   #{build}\n\n"
-    else
-      raise("#{build} failed to build unit tests: #{File.read(log_file)}") if log_file
-    end
-  end
-
-  def unit_cmd(build, log_file = nil)
-    "".tap do |cmd|
-      cmd << "rspec --tty --backtrace -c -f p #{unit_files(build)}"
-      cmd << " > #{log_file} 2>&1" if log_file
-    end
+    puts "----- BEGIN #{build}"
+    system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}")
+    puts "----- END   #{build}\n\n"
   end
 
   def unit_files(build)
@@ -157,7 +144,7 @@ namespace :spec do
 
   def unit_builds
     @unit_builds ||= begin
-      builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
+      builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }.sort
       builds -= %w(bat)
     end
   end
@@ -185,16 +172,8 @@ namespace :spec do
       log_dir = Dir.mktmpdir
       puts "Logging spec results in #{log_dir}"
 
-      max_threads = ENV.fetch('BOSH_MAX_THREADS', 10).to_i
-      null_logger = Logging::Logger.new('Ignored')
-      Bosh::ThreadPool.new(max_threads: max_threads, logger: null_logger).wrap do |pool|
-        unit_builds.each do |build|
-          pool.process do
-            unit_exec(build, "#{log_dir}/#{build}.log")
-          end
-        end
-
-        pool.wait
+      unit_builds.each do |build|
+        unit_exec(build)
       end
     end
 
