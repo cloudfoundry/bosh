@@ -47,10 +47,9 @@ result = nil
 error = nil
 
 begin
-  director_config = YAML.load_file(ARGV.shift)
-  cloud_properties = director_config['cloud']['properties']
+  cpi_config = JSON.parse(File.read(ARGV.shift))
   log_buffer = StringIO.new
-  cloud_properties['log_buffer'] = log_buffer
+  cpi_config['log_buffer'] = log_buffer
 
   request = JSON.parse($stdin.readline)
 
@@ -58,7 +57,7 @@ begin
   arguments = request['arguments']
   context = request['context']
 
-  dummy = Bosh::Clouds::Dummy.new(cloud_properties, context)
+  dummy = Bosh::Clouds::Dummy.new(cpi_config, context)
 
   result = dummy.send(command, *arguments)
 rescue => e

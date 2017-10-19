@@ -67,10 +67,6 @@ properties:
   nats.port:
     description: Port of the NATS message bus port to connect to
     default: 4222
-  nats.user:
-    description: User for the NATS message bus connection
-  nats.password:
-    description: Password for NATS message bus connection
   nats.tls.ca:
     description: 'CA cert to trust when communicating with NATS server'
   nats.tls.health_monitor.certificate:

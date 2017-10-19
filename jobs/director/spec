@@ -199,11 +199,6 @@ properties:
     default: vcap
 
   # NATs
-  nats.user:
-    description: Username to connect to nats with
-    default: nats
-  nats.password:
-    description: Password to connect to nats with
   nats.address:
     description: Address of the nats server
   nats.port:

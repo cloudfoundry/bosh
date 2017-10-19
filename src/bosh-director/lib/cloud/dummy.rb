@@ -11,9 +11,11 @@ module Bosh
       class NotImplemented < StandardError; end
 
       attr_reader :commands
+      attr_accessor :options
 
       def initialize(options, context)
         @options = options
+
 
         @base_dir = options['dir']
         if @base_dir.nil?

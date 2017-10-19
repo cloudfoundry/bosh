@@ -74,8 +74,6 @@ module Bosh::Monitor
 
       nats_client_options = {
         :uri       => @mbus.endpoint,
-        :user      => @mbus.user,
-        :pass      => @mbus.password,
         :autostart => false,
         :tls => {
           :ca_file => @mbus.server_ca_path,
