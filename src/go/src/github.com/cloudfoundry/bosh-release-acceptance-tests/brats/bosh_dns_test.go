@@ -140,7 +140,7 @@ var _ = Describe("BoshDns", func() {
 			}
 		})
 
-		FIt("can find instances using the address helper with short names by network and instance ID", func() {
+		PIt("can find instances using the address helper with short names by network and instance ID", func() {
 			session, err := gexec.Start(exec.Command(
 				boshBinaryPath, "-n",
 				"-d", deploymentName,
