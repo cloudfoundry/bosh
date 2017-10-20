@@ -49,7 +49,7 @@ You can also use a [Concourse CI](https://concourse.ci/) instance with the rake 
 bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration_gocli
 ```
 
-You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` as described in the [workstation setup docs](workstation_setup.md).
+You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` and `rake  spec:integration:download_bosh_agent`. More information about the integration test set up can  be found in the [workstation setup docs](workstation_setup.md).
 
 ```
 bosh/src$ bundle exec rspec spec/gocli/integration/cli_env_spec.rb
@@ -91,7 +91,7 @@ Sometimes type of infrastructure does not make a difference for changes made. Fo
 
 ### Build stemcell
 
-The stemcell building process is described in [bosh-stemcell's README](../bosh-stemcell/README.md). One thing to note is that rake tasks were initially created to run tests on BOSH CI. For development purposes there should be some modifications:
+The stemcell building process is described in [bosh-stemcell's README](https://github.com/cloudfoundry/bosh-linux-stemcell-builder). One thing to note is that rake tasks were initially created to run tests on BOSH CI. For development purposes there should be some modifications:
 
 * DO NOT set `CANDIDATE_BUILD_NUMBER` when building stemcell. This will allow you to build stemcell of version `0000` which is understood by rake tasks as a local stemcell.
 * Generated stemcells of version `0000` should be put into the `bosh/tmp` directory before running BATs.

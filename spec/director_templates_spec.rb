@@ -2,7 +2,7 @@ require 'rspec'
 require 'bosh/template/evaluation_context'
 require_relative './template_example_group'
 
-describe 'director tempaltes' do
+describe 'director templates' do
  describe 'director' do
    describe 'nats_client_certificate.pem.erb' do
      it_should_behave_like 'a rendered file' do

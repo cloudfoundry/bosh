@@ -34,6 +34,9 @@ module Bosh::Dev::Sandbox
     EXTERNAL_CPI = 'cpi'
     EXTERNAL_CPI_TEMPLATE = File.join(SANDBOX_ASSETS_DIR, 'cpi.erb')
 
+    EXTERNAL_CPI_CONFIG = 'cpi.json'
+    EXTERNAL_CPI_CONFIG_TEMPLATE = File.join(SANDBOX_ASSETS_DIR, 'cpi_config.json.erb')
+
     UPGRADE_SPEC_ASSETS_DIR = File.expand_path('spec/assets/upgrade', REPO_ROOT)
 
     attr_reader :name
@@ -56,7 +59,7 @@ module Bosh::Dev::Sandbox
     attr_reader :nats_log_path
     attr_reader :nats_host
 
-    attr_reader :nats_user, :nats_password, :nats_allow_legacy_clients
+    attr_reader :nats_url, :nats_user, :nats_password, :nats_allow_legacy_clients
     attr_reader :nats_needs_restart
 
     attr_accessor :trusted_certs
@@ -129,11 +132,23 @@ module Bosh::Dev::Sandbox
 
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
-      @cpi = Bosh::Clouds::Dummy.new({
-        'dir' => cloud_storage_dir,
-        'agent' => {'blobstore' => {}},
-        'nats' => "nats://localhost:#{nats_port}"}, {})
-      reconfigure({})
+      @cpi = Bosh::Clouds::Dummy.new(
+        {
+          'dir' => cloud_storage_dir,
+          'agent' => {
+            'blobstore' => {
+              'provider' => 'local',
+              'options' => {
+                'blobstore_path' => @blobstore_storage_dir,
+              },
+            }
+          },
+          'nats' => @nats_url,
+        },
+        {}
+      )
+
+      reconfigure
     end
 
     def agent_tmp_path
@@ -203,9 +218,6 @@ module Bosh::Dev::Sandbox
         nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
         nats_client_ca_certificate_path: get_nats_client_ca_certificate_path,
         nats_director_tls: nats_certificate_paths['clients']['director'],
-        nats_allow_legacy_clients: @nats_allow_legacy_clients,
-        nats_user: @nats_user,
-        nats_password: @nats_password,
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -299,7 +311,7 @@ module Bosh::Dev::Sandbox
       File.join(Workspace.dir, 'sandbox')
     end
 
-    def reconfigure(options)
+    def reconfigure(options={})
       @user_authentication = options.fetch(:user_authentication, 'local')
       @config_server_enabled = options.fetch(:config_server_enabled, false)
       @drop_database = options.fetch(:drop_database, false)
@@ -324,6 +336,14 @@ module Bosh::Dev::Sandbox
     def check_if_nats_need_reset(allow_legacy_clients)
       @nats_needs_restart = @nats_allow_legacy_clients != allow_legacy_clients
       @nats_allow_legacy_clients = allow_legacy_clients
+
+      if @nats_allow_legacy_clients
+        @nats_url = "nats://#{@nats_user}:#{@nats_password}@127.0.0.1:#{nats_port}"
+      else
+        @nats_url = "nats://127.0.0.1:#{nats_port}"
+      end
+
+      @cpi.options['nats'] = @nats_url
     end
 
     def certificate_path
@@ -357,7 +377,7 @@ module Bosh::Dev::Sandbox
 
     def director_nats_config
       {
-        uri: "nats://localhost:#{nats_port}",
+        uri: "nats://127.0.0.1:#{nats_port}",
         ssl: true,
         tls: {
           :private_key_file => nats_certificate_paths['clients']['test_client']['private_key_path'],
@@ -394,7 +414,7 @@ module Bosh::Dev::Sandbox
         name: 'test-cpi',
         exec_path: File.join(REPO_ROOT, 'bosh-director', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
-        config_path: sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG),
+        config_path: sandbox_path(EXTERNAL_CPI_CONFIG),
         env_path: ENV['PATH'],
         gem_home: ENV['GEM_HOME'],
         gem_path: ENV['GEM_PATH']
@@ -425,6 +445,7 @@ module Bosh::Dev::Sandbox
         @nats_process.stop
         nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
         write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
+        write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
         setup_nats
         @nats_process.start
         @nats_socket_connector.try_to_connect
@@ -444,6 +465,7 @@ module Bosh::Dev::Sandbox
       hm_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
       write_in_sandbox(HM_CONFIG, load_config_template(hm_template_path))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
+      write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
       nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
       write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))

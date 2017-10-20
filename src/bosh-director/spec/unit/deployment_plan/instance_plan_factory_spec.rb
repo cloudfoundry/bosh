@@ -139,9 +139,26 @@ module Bosh::Director
                 instance: anything,
                 skip_drain: anything,
                 recreate_deployment: anything,
-                use_dns_addresses: true
+                use_dns_addresses: true,
+                use_short_dns_addresses: false
               )
               instance_plan_factory.obsolete_instance_plan(existing_instance_model)
+            end
+
+            context 'when also passing use_short_dns_addresses' do
+              let(:options) {{ 'use_short_dns_addresses'=> true, 'use_dns_addresses' => true }}
+              it 'provides the instance_plan with the correct use_dns_addresses' do
+                expect(InstancePlan).to receive(:new).with(
+                  desired_instance: anything,
+                  existing_instance: anything,
+                  instance: anything,
+                  skip_drain: anything,
+                  recreate_deployment: anything,
+                  use_dns_addresses: true,
+                  use_short_dns_addresses: true
+                )
+                instance_plan_factory.obsolete_instance_plan(existing_instance_model)
+              end
             end
           end
 
@@ -156,6 +173,7 @@ module Bosh::Director
                 instance: anything,
                 skip_drain: anything,
                 recreate_deployment: anything,
+                use_short_dns_addresses: false,
                 use_dns_addresses: false
               )
               instance_plan_factory.obsolete_instance_plan(existing_instance_model)
@@ -176,6 +194,7 @@ module Bosh::Director
             skip_drain: anything,
             recreate_deployment: anything,
             use_dns_addresses: anything,
+            use_short_dns_addresses: anything,
             tags: tags
           )
 
@@ -207,9 +226,26 @@ module Bosh::Director
                 skip_drain: anything,
                 recreate_deployment: anything,
                 tags: anything,
-                use_dns_addresses: true
+                use_dns_addresses: true,
+                use_short_dns_addresses: false
               )
               instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
+            end
+
+            context 'when also passing use_short_dns_addresses' do
+              let(:options) {{ 'use_short_dns_addresses'=> true, 'use_dns_addresses' => true }}
+              it 'provides the instance_plan with the correct use_dns_addresses' do
+                expect(InstancePlan).to receive(:new).with(
+                  desired_instance: anything,
+                  existing_instance: anything,
+                  instance: anything,
+                  skip_drain: anything,
+                  recreate_deployment: anything,
+                  use_dns_addresses: true,
+                  use_short_dns_addresses: true
+                )
+                instance_plan_factory.obsolete_instance_plan(existing_instance_model)
+              end
             end
           end
 
@@ -225,6 +261,7 @@ module Bosh::Director
                 skip_drain: anything,
                 recreate_deployment: anything,
                 tags: anything,
+                use_short_dns_addresses: false,
                 use_dns_addresses: false
               )
               instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
@@ -244,6 +281,7 @@ module Bosh::Director
             instance: anything,
             skip_drain: anything,
             recreate_deployment: anything,
+            use_short_dns_addresses: anything,
             use_dns_addresses: anything,
             tags: tags
           )
@@ -276,9 +314,26 @@ module Bosh::Director
                 skip_drain: anything,
                 recreate_deployment: anything,
                 tags: anything,
+                use_short_dns_addresses: false,
                 use_dns_addresses: true
               )
               instance_plan_factory.desired_new_instance_plan(desired_instance)
+            end
+
+            context 'when also passing use_short_dns_addresses' do
+              let(:options) {{ 'use_short_dns_addresses'=> true, 'use_dns_addresses' => true }}
+              it 'provides the instance_plan with the correct use_dns_addresses' do
+                expect(InstancePlan).to receive(:new).with(
+                  desired_instance: anything,
+                  existing_instance: anything,
+                  instance: anything,
+                  skip_drain: anything,
+                  recreate_deployment: anything,
+                  use_dns_addresses: true,
+                  use_short_dns_addresses: true
+                )
+                instance_plan_factory.obsolete_instance_plan(existing_instance_model)
+              end
             end
           end
 
@@ -294,6 +349,7 @@ module Bosh::Director
                 skip_drain: anything,
                 recreate_deployment: anything,
                 tags: anything,
+                use_short_dns_addresses: false,
                 use_dns_addresses: false
               )
               instance_plan_factory.desired_new_instance_plan(desired_instance)

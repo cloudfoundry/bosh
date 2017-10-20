@@ -132,7 +132,7 @@ module Bosh::Director
         @nats_client_ca_certificate_path = config['nats']['client_ca_certificate_path']
         @nats_client_ca_private_key_path = config['nats']['client_ca_private_key_path']
         @nats_server_ca = File.read(@nats_server_ca_path)
-        
+
         @default_ssh_options = config['default_ssh_options']
 
         @cloud_options = config['cloud']

@@ -24,8 +24,6 @@ describe 'director.yml.erb.erb' do
         'provider' => 'dav',
       },
       'nats' => {
-        'user' => 'nats',
-        'password' => '1a0312a24c0a0',
         'address' => '10.10.0.7',
         'port' => 4222
       },

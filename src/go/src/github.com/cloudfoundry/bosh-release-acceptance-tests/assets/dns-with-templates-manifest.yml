@@ -18,6 +18,8 @@ instance_groups:
     release: linked-template-release
   - name: query-all
     release: linked-template-release
+  - name: query-individual-instance
+    release: linked-template-release
   vm_type: default
   stemcell: default
   networks:

@@ -54,7 +54,7 @@ describe 'local DNS', type: :integration do
         (0..9).each do |index|
           records_json = parse_agent_records_json(index)
           expect(records_json['records']).to match_array(generate_instance_records)
-          expect(records_json['record_keys']).to match_array(['id', 'instance_group', 'group_ids', 'az', 'az_id', 'network', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'])
+          expect(records_json['record_keys']).to match_array(['id', 'num_id', 'instance_group', 'group_ids', 'az', 'az_id', 'network', 'network_id', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'])
           expect(records_json['record_infos']).to match_array(generate_instance_record_infos)
           expect(records_json['version']).to eq(10)
         end
@@ -181,11 +181,16 @@ describe 'local DNS', type: :integration do
     end
 
     context 'when flag at deployment level is true' do
-      it 'uses DNS address' do
-        dep_manifest = initial_manifest(1, 1)
-        dep_manifest['features'] = {'use_dns_addresses' => true}
-        deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+      let(:features_hash) {{ 'use_dns_addresses' => true, 'use_short_dns_addresses' => use_short_dns_addresses }}
+      let(:use_short_dns_addresses) { false }
 
+      before do
+        dep_manifest = initial_manifest(1, 1)
+        dep_manifest['features'] = features_hash
+        deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
+      end
+
+      it 'uses DNS address' do
         instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
         template = instance.read_job_template('foobar', 'bin/foobar_ctl')
         expect(template).to include("spec.address=#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh")
@@ -193,10 +198,6 @@ describe 'local DNS', type: :integration do
 
       context 'when instance is recreated' do
         before do
-          dep_manifest = initial_manifest(1, 1)
-          dep_manifest['features'] = {'use_dns_addresses' => true}
-          deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
-
           bosh_runner.run('recreate job_to_test_local_dns/0', deployment_name: deployment_name)
         end
 
@@ -211,10 +212,6 @@ describe 'local DNS', type: :integration do
         with_reset_hm_before_each
 
         before do
-          dep_manifest = initial_manifest(1, 1)
-          dep_manifest['features'] = {'use_dns_addresses' => true}
-          deploy_simple_manifest(manifest_hash: dep_manifest, deployment_name: deployment_name)
-
           vm = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
           director.kill_vm_and_wait_for_resurrection(vm, deployment_name: deployment_name)
         end
@@ -223,6 +220,43 @@ describe 'local DNS', type: :integration do
           instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
           template = instance.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include("spec.address=#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh")
+        end
+      end
+
+      context 'when deployment also specifies use_short_dns_addresses' do
+        let(:use_short_dns_addresses) { true }
+
+        it 'uses DNS address' do
+          instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to match(/spec.address=q-m\dn\ds0\.g-\d\.bosh/)
+        end
+
+        context 'when instance is recreated' do
+          before do
+            bosh_runner.run('recreate job_to_test_local_dns/0', deployment_name: deployment_name)
+          end
+
+          it 'renders with short addresses still' do
+            instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+            template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+            expect(template).to match(/spec.address=q-m\dn\ds0\.g-\d\.bosh/)
+          end
+        end
+
+        context 'when resurrected', hm: true do
+          with_reset_hm_before_each
+
+          before do
+            vm = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+            director.kill_vm_and_wait_for_resurrection(vm, deployment_name: deployment_name)
+          end
+
+          it 'renders with short addresses still' do
+            instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+            template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+            expect(template).to match(/spec.address=q-m\dn\ds0\.g-\d\.bosh/)
+          end
         end
       end
     end
@@ -355,11 +389,13 @@ describe 'local DNS', type: :integration do
       end
       [
         instance.id,
+        Regexp.new(/\d/),
         Bosh::Director::Canonicalizer.canonicalize(instance.job_name),
         ['1'],
         az,
         az_index,
         Bosh::Director::Canonicalizer.canonicalize('local_dns'),
+        Regexp.new(/\d/),
         Bosh::Director::Canonicalizer.canonicalize('simple.local_dns'),
         instance.ips[0],
         'bosh',

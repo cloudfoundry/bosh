@@ -115,9 +115,6 @@ module Bosh::Spec
     end
 
     def start_recording_nats
-      # have to read NATS port on main thread, or the new thread hangs on startup (?!)
-      nats_uri = "nats://localhost:#{@director_nats_port}"
-
       Thread.new do
         EventMachine.run do
           @nats_client = NATS.connect(@director_nats_config) do

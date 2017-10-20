@@ -45,8 +45,6 @@ describe 'health_monitor.yml.erb' do
         'nats' => {
           'address' => '0.0.0.0',
           'port' => 4222,
-          'user' => 'my-user',
-          'password' => 'my-password',
         },
         'director' => {
           'address' => '0.0.0.0',
@@ -67,8 +65,6 @@ describe 'health_monitor.yml.erb' do
     it 'renders' do
       expect(parsed_yaml['http']['port']).to eq(8081)
       expect(parsed_yaml['mbus']['endpoint']).to eq('nats://0.0.0.0:4222')
-      expect(parsed_yaml['mbus']['user']).to eq('my-user')
-      expect(parsed_yaml['mbus']['password']).to eq('my-password')
       expect(parsed_yaml['mbus']['server_ca_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_server_ca.pem')
       expect(parsed_yaml['mbus']['client_certificate_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_client_certificate.pem')
       expect(parsed_yaml['mbus']['client_private_key_path']).to eq('/var/vcap/jobs/health_monitor/config/nats_client_private_key')

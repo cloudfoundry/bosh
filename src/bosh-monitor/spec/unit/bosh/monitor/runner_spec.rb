@@ -9,8 +9,6 @@ describe Bosh::Monitor::Runner do
       runner
       expected_nats_connect_options = {
           :uri       => Bhm.mbus.endpoint,
-          :user      => Bhm.mbus.user,
-          :pass      => Bhm.mbus.password,
           :autostart => false,
           :tls => {
             :ca_file => Bhm.mbus.server_ca_path,
@@ -27,7 +25,7 @@ describe Bosh::Monitor::Runner do
     context 'when NATS errors' do
 
       let (:logger) { instance_double(Logger) }
-      let (:custom_error) { "Some error for nats://nats:#{Bhm.mbus.password}@127.0.0.1:4222. Another error for nats://nats:#{Bhm.mbus.password}@127.0.0.1:4222." }
+      let (:custom_error) { "Some error for nats://127.0.0.1:4222. Another error for nats://127.0.0.1:4222." }
 
       before do
         allow(logger).to receive(:error)
@@ -37,11 +35,6 @@ describe Bosh::Monitor::Runner do
         allow(NATS).to receive(:on_error) do | &clbk |
           clbk.call(custom_error)
         end
-      end
-
-      it 'logs the error with passwords masked' do
-        expect(logger).to receive(:error).with('NATS client error: Some error for nats://nats:*******@127.0.0.1:4222. Another error for nats://nats:*******@127.0.0.1:4222.')
-        runner.connect_to_mbus
       end
 
       context 'when NATS calls error handler with a ConnectError' do

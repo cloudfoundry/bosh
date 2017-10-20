@@ -1,7 +1,7 @@
 module Bosh::Director
   class DeploymentPlan::NetworkSettings
-    def initialize(job_name, deployment_name, default_network, desired_reservations, current_networks, availability_zone, instance_index, instance_id, root_domain)
-      @job_name = job_name
+    def initialize(instance_group_name, deployment_name, default_network, desired_reservations, current_networks, availability_zone, instance_index, instance_id, root_domain, use_short_dns_addresses)
+      @instance_group_name = instance_group_name
       @desired_reservations = desired_reservations
       @default_network = default_network
       @deployment_name = deployment_name
@@ -10,6 +10,7 @@ module Bosh::Director
       @instance_id = instance_id
       @current_networks = current_networks
       @root_domain = root_domain
+      @dns_encoder = LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
     end
 
     def to_hash
@@ -38,9 +39,9 @@ module Bosh::Director
     def dns_record_info
       dns_record_info = {}
       to_hash.each do |network_name, network|
-        index_dns_name = DnsNameGenerator.dns_record_name(@instance_index, @job_name, network_name, @deployment_name, @root_domain)
+        index_dns_name = DnsNameGenerator.dns_record_name(@instance_index, @instance_group_name, network_name, @deployment_name, @root_domain)
         dns_record_info[index_dns_name] = network['ip']
-        id_dns_name =  DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
+        id_dns_name =  DnsNameGenerator.dns_record_name(@instance_id, @instance_group_name, network_name, @deployment_name, @root_domain)
         dns_record_info[id_dns_name] = network['ip']
       end
       dns_record_info
@@ -66,13 +67,21 @@ module Bosh::Director
     private
 
     def get_address(network_name, network, prefer_dns_entry = true)
-      if network['type'] == 'dynamic' # Dynamic networks always return DNS entries
-        return DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
-      elsif prefer_dns_entry && Bosh::Director::Config.local_dns_enabled?
-        return DnsNameGenerator.dns_record_name(@instance_id, @job_name, network_name, @deployment_name, @root_domain)
+      if should_use_dns?(network, prefer_dns_entry)
+        return @dns_encoder.encode_query({
+          root_domain: @root_domain,
+          default_network: network_name,
+          deployment_name: @deployment_name,
+          uuid: @instance_id,
+          instance_group: @instance_group_name,
+        })
       else
         return network['ip']
       end
+    end
+
+    def should_use_dns?(network, prefer_dns_entry)
+      network['type'] == 'dynamic' || (prefer_dns_entry && Bosh::Director::Config.local_dns_enabled?)
     end
   end
 end

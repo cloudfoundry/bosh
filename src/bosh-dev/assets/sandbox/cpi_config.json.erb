@@ -1,0 +1,12 @@
+{
+ "dir": "<%= cloud_storage_dir %>",
+ "nats":  "<%= nats_url %>",
+ "agent": {
+   "blobstore": {
+     "provider": "local",
+       "options": {
+         "blobstore_path": "<%= blobstore_storage_dir %>"
+      }
+    }
+  }
+}

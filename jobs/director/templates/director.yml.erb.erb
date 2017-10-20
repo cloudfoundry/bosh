@@ -12,7 +12,7 @@ params = {
     'level' => 'DEBUG',
     'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
-  'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
+  'mbus' => "nats://#{p('nats.address')}:#{p('nats.port')}",
   'nats' => {
     'server_ca_path' => '/var/vcap/jobs/director/config/nats_server_ca.pem',
     'client_ca_certificate_path' => '/var/vcap/jobs/director/config/nats_client_ca_certificate.pem',
@@ -386,6 +386,7 @@ if_p('director.default_ssh_options.gateway_host',
 end
 
 cpi_job_name = p('director.cpi_job')
+
 params['cloud'] = {
     'provider' => {
       'name' => cpi_job_name,
@@ -395,12 +396,12 @@ params['cloud'] = {
 }
 
 params['cloud']['properties']['agent'] = {
- 'ntp' => p('ntp'),
- 'blobstore' => {'provider' => p('blobstore.provider'), 'options' => {} },
- 'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p(['agent.nats.address', 'nats.address'])}:#{p('nats.port')}"
+  'ntp' => p('ntp'),
+  'blobstore' => {'provider' => p('blobstore.provider'), 'options' => {} },
 }
 
 agent_blobstore_options =  params['cloud']['properties']['agent']['blobstore']['options']
+
 if p('blobstore.provider') == "s3"
   agent_blobstore_options['bucket_name'] = p('blobstore.bucket_name')
   agent_blobstore_options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')

@@ -13,6 +13,7 @@ module Bosh::Director::DeploymentPlan
         3,
         'uuid-1',
         'bosh1.tld',
+        use_short_dns_addresses,
       )
     end
     let(:job) do
@@ -22,9 +23,8 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:az) { AvailabilityZone.new('az-1', {'foo' => 'bar'}) }
-    let(:instance) { Instance.create_from_job(job, 3, 'started', plan, {}, az, logger) }
     let(:reservations) {
-      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, manual_network)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, manual_network)
       reservation.resolve_ip('10.0.0.6')
       [reservation]
     }
@@ -45,7 +45,15 @@ module Bosh::Director::DeploymentPlan
         logger
       )
     }
+
     let(:plan) { instance_double(Planner, using_global_networking?: true, name: 'fake-deployment') }
+    let(:use_short_dns_addresses) { false }
+
+    before do
+      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:num_for_uuid).with('uuid-1').and_return('1')
+      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:id_for_network).with('net_a').and_return('1')
+      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:id_for_group_tuple).with('fake-job', 'fake-deployment').and_return('1')
+    end
 
     describe '#to_hash' do
       context 'dynamic network' do
@@ -54,7 +62,7 @@ module Bosh::Director::DeploymentPlan
           DynamicNetwork.new('net_a', subnets, logger)
         end
 
-        let(:reservations) { [Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network)] }
+        let(:reservations) { [Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)] }
 
         it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
           expect(network_settings.to_hash).to eql(
@@ -106,6 +114,14 @@ module Bosh::Director::DeploymentPlan
             it 'returns the dns record for that network' do
               expect(network_settings.network_address(prefer_dns_entry)).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
             end
+
+            context 'when use_short_dns_addresses is true' do
+              let(:use_short_dns_addresses) { true }
+
+              it 'returns the short dns address' do
+                expect(network_settings.network_address(prefer_dns_entry)).to eq('q-m1n1s0.g-1.bosh1.tld')
+              end
+            end
           end
         end
 
@@ -114,7 +130,7 @@ module Bosh::Director::DeploymentPlan
             subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
             DynamicNetwork.new('net_a', subnets, logger)
           end
-          let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network)]}
+          let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)]}
 
           context 'when local dns is disabled' do
             before do
@@ -133,6 +149,13 @@ module Bosh::Director::DeploymentPlan
 
             it 'returns the dns record name of the instance' do
               expect(network_settings.network_address(prefer_dns_entry)).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
+            end
+          end
+
+          context 'when use_short_dns_addresses is true' do
+            let(:use_short_dns_addresses) { true }
+            it 'returns the short dns address' do
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('q-m1n1s0.g-1.bosh1.tld')
             end
           end
         end
@@ -184,7 +207,7 @@ module Bosh::Director::DeploymentPlan
             subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
             DynamicNetwork.new('net_a', subnets, logger)
           end
-          let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network)]}
+          let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)]}
 
           context 'when local dns is disabled' do
             before do
@@ -225,7 +248,7 @@ module Bosh::Director::DeploymentPlan
           DynamicNetwork.new('net_a', subnets, logger)
         end
 
-        let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, dynamic_network)]}
+        let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)]}
         context 'when DNS entries are requested' do
           it 'includes the network name and domain record' do
             expect(network_settings.network_addresses(true)).to eq({'net_a' => 'uuid-1.fake-job.net-a.fake-deployment.bosh1.tld', })

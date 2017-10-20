@@ -67,6 +67,7 @@ module Bosh::Director
       local_dns_records.each do |dns_record|
         dns_records.add_record(
           dns_record.instance.uuid,
+          dns_record.instance.id,
           dns_record.instance.index,
           dns_record.instance_group,
           dns_record.az,

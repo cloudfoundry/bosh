@@ -113,10 +113,18 @@ describe 'orphaned disks', type: :integration do
     expect(result).to include '0 disks'
 
     result = bosh_runner.run("orphan-disk #{disk_cid}")
+    expect(result).to match /Orphan disk: [0-9a-f]{32}/
     expect(result).to include("Succeeded")
     expect(director.instances.first.disk_cids).to eq([])
 
     orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
     expect(orphaned_output[0]['disk_cid']).to eq(disk_cid)
+
+    #no disk to orphan
+    result = bosh_runner.run("orphan-disk #{disk_cid}")
+
+    expect(result).to match /Orphan disk: [0-9a-f]{32}/
+    expect(result).to match /Disk [0-9a-f]{32} does not exist. Orphaning is skipped/
+    expect(result).to include("Succeeded")
   end
 end
