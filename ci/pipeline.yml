@@ -689,7 +689,7 @@ jobs:
           passed:
           - candidate-release
         - get: bosh-dns-release
-        - get: warden-ubuntu-trusty-3445-11
+        - get: warden-ubuntu-trusty-3363-37
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -700,7 +700,7 @@ jobs:
         tags: ["worker-brats"]
         privileged: true
         input_mapping:
-          warden-ubuntu-trusty-3445-11: stemcell
+          warden-ubuntu-trusty-3363-37: stemcell
 
   - name: finalize-bosh-release
     serial: true
@@ -846,11 +846,11 @@ resources:
       bucket: bosh-core-stemcells-candidate
       regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
 
-  - name: warden-ubuntu-trusty-3445-11
+  - name: warden-ubuntu-trusty-3363-37
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-      version_family: "3445.11"
+      version_family: "3363.37"
 
   - name: warden-ubuntu-trusty
     type: bosh-io-stemcell
