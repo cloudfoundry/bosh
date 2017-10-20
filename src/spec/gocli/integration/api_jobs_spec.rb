@@ -5,7 +5,7 @@ describe 'the jobs api', type: :integration do
   with_reset_sandbox_before_each
   let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
   let(:release_path) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
-  let(:cloud_config_manifest) { yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config) }
+  let(:cloud_config_manifest) { yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config) }
 
   before do
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -13,7 +13,7 @@ describe 'the jobs api', type: :integration do
   end
 
   it 'shows the full spec of the job' do
-    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file://' + release_path, 1))
+    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release_path, 1))
 
     output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
     expect(output).to match(/Using deployment 'minimal'/)

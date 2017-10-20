@@ -36,17 +36,18 @@ module Bosh
 
         def create_from_model(deployment_model, options={})
           manifest = Manifest.load_from_model(deployment_model)
-          create_from_manifest(manifest, deployment_model.cloud_config, deployment_model.runtime_configs, options)
+          create_from_manifest(manifest, deployment_model.cloud_configs, deployment_model.runtime_configs, options)
         end
 
-        def create_from_manifest(manifest, cloud_config, runtime_configs, options)
+        def create_from_manifest(manifest, cloud_configs, runtime_configs, options)
           consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
-          parse_from_manifest(manifest, cloud_config, consolidated_runtime_config, options)
+          consolidated_cloud_config = Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_configs)
+          parse_from_manifest(manifest, consolidated_cloud_config, consolidated_runtime_config, options)
         end
 
         private
 
-        def parse_from_manifest(manifest, cloud_config, runtime_config_consolidator, options)
+        def parse_from_manifest(manifest, cloud_config_consolidator, runtime_config_consolidator, options)
           @manifest_validator.validate(manifest.hybrid_manifest_hash, manifest.hybrid_cloud_config_hash)
 
           migrated_manifest_object, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.hybrid_cloud_config_hash)
@@ -76,7 +77,7 @@ module Bosh
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment = Planner.new(attrs, migrated_manifest_object.raw_manifest_hash, cloud_config, runtime_config_consolidator.runtime_configs, deployment_model, plan_options)
+          deployment = Planner.new(attrs, migrated_manifest_object.raw_manifest_hash, cloud_config_consolidator.cloud_configs, runtime_config_consolidator.runtime_configs, deployment_model, plan_options)
           global_network_resolver = GlobalNetworkResolver.new(deployment, Config.director_ips, @logger)
           ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)

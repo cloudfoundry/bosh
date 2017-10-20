@@ -50,16 +50,8 @@ describe 'upload release', type: :integration do
   end
 
   context 'when uploading a compiled release without "./" prefix in the tarball' do
-    before {
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-
-      cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
-      cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
-      upload_cloud_config(:cloud_config_hash => cloud_config_with_centos)
-    }
-
     it 'should upload successfully and not raise an error' do
+      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001_without_dot_slash_prefix.tgz')}")
     end
   end
@@ -506,10 +498,10 @@ describe 'upload release', type: :integration do
 
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
-        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
 

@@ -74,7 +74,7 @@ module Bosh::Director
 
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)['diff']).to eq([])
-            expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest')
+            expect(JSON.parse(last_response.body)['error']).to include('Unable to diff runtime-config')
           end
         end
 
@@ -93,7 +93,7 @@ module Bosh::Director
             end
           end
 
-          describe 'when single line modfied' do
+          describe 'when single line modified' do
             it 'shows a single line modified' do
               runtime_config['release']['version'] = '0.0.2'
               post '/diff', YAML.dump(runtime_config), {'CONTENT_TYPE' => 'text/yaml'}
@@ -145,7 +145,7 @@ module Bosh::Director
           end
         end
 
-        describe 'when multiple named runtime config exist' do
+        describe 'when multiple named runtime configs exist' do
 
           let (:addons_runtime_config) do
             { addons: runtime_config['addons'] }
@@ -268,10 +268,12 @@ module Bosh::Director
           properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
           expect {
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Bosh::Director::Models::RuntimeConfig, :count).from(0).to(1)
+          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
           expect(last_response.status).to eq(201)
-          expect(Bosh::Director::Models::RuntimeConfig.first.properties).to eq(properties)
+          expect(Bosh::Director::Models::Config.first.content).to eq(properties)
+          expect(Bosh::Director::Models::Config.first.type).to eq('runtime')
+          expect(Bosh::Director::Models::Config.first.name).to eq('default')
         end
 
         it 'gives a nice error when request body is not a valid yml' do
@@ -299,7 +301,7 @@ module Bosh::Director
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
           expect(event.object_type).to eq('runtime-config')
-          expect(event.object_name).to eq('')
+          expect(event.object_name).to eq('default')
           expect(event.action).to eq('update')
           expect(event.user).to eq('admin')
         end
@@ -310,10 +312,23 @@ module Bosh::Director
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
           expect(event.object_type).to eq('runtime-config')
-          expect(event.object_name).to eq('')
+          expect(event.object_name).to eq('default')
           expect(event.action).to eq('update')
           expect(event.user).to eq('admin')
           expect(event.error).to eq('Manifest should not be empty')
+        end
+
+        context 'when name is the empty string' do
+          let(:path) { '/?name=' }
+
+          it "creates a new runtime config with name 'default'" do
+            properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+
+            post path, properties, {'CONTENT_TYPE' => 'text/yaml'}
+
+            expect(last_response.status).to eq(201)
+            expect(Bosh::Director::Models::Config.first.name).to eq('default')
+          end
         end
 
         context 'when a name is passed in via a query param' do
@@ -325,7 +340,7 @@ module Bosh::Director
             post path, properties, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(201)
-            expect(Bosh::Director::Models::RuntimeConfig.first.name).to eq('smurf')
+            expect(Bosh::Director::Models::Config.first.name).to eq('smurf')
           end
 
           it 'creates a new event and add name to event context' do
@@ -356,23 +371,24 @@ module Bosh::Director
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }
 
-        it 'returns the number of runtime configs specified by ?limit' do
-          Bosh::Director::Models::RuntimeConfig.new(properties: 'config_value_1').save
-          Bosh::Director::Models::RuntimeConfig.new(properties: 'config_value_2').save
+        it "returns the number of runtime configs specified by ?limit and only considers 'default' names" do
+          Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_value_1', name: 'default').save
+          Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_value_2', name: 'non-default').save
 
           newer_runtime_config_properties = "---\nsuper_shiny: new_config"
-          Bosh::Director::Models::RuntimeConfig.new(properties: newer_runtime_config_properties).save
+          Bosh::Director::Models::Config.new(type: 'runtime', content: newer_runtime_config_properties, name: 'default').save
 
           get '/?limit=2'
 
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).first['properties']).to eq(newer_runtime_config_properties)
+          expect(JSON.parse(last_response.body)[0]['properties']).to eq(newer_runtime_config_properties)
+          expect(JSON.parse(last_response.body)[1]['properties']).to eq('config_value_1')
         end
 
         it 'returns the config with the specified name' do
-          Bosh::Director::Models::RuntimeConfig.new(properties: 'named_config',name: 'smurf').save
-          Bosh::Director::Models::RuntimeConfig.new(properties: 'unnamed_config').save
+          Bosh::Director::Models::Config.new(type: 'runtime', content: 'named_config', name: 'smurf').save
+          Bosh::Director::Models::Config.new(type: 'runtime', content: 'unnamed_config', name: 'default').save
 
           get '/?name=smurf&limit=1'
 
@@ -399,7 +415,7 @@ module Bosh::Director
       describe 'when user has readonly access' do
         before { basic_authorize 'reader', 'reader' }
         before {
-          Bosh::Director::Models::RuntimeConfig.make(:properties => '{}')
+          Bosh::Director::Models::Config.make(:content => '{}')
         }
 
         it 'allows access' do

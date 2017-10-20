@@ -113,6 +113,7 @@ module Bosh::Director
   JobNotFound = err(70009, NOT_FOUND)
   ContextIdViolatedMax = err(70010)
   VariableSetNotFound = err(70011)
+  ConfigTypeMismatch = err(70012, INTERNAL_SERVER_ERROR)
 
   # Extracting job from a release
   JobInvalidArchive = err(80000)
@@ -273,6 +274,8 @@ module Bosh::Director
   PackageCompilationNotFound = err(430003)
 
   BadManifest = err(440001)
+  BadConfigRequest = err(440010)
+  BadConfig = err(440011)
 
   # RPC
   RpcRemoteException = err(450001)
@@ -317,6 +320,9 @@ module Bosh::Director
   # Spec Parser
   VariablesInvalidFormat = err(560000)
   FeaturesInvalidFormat = err(560001)
+
+  # Cloud config
+  CloudConfigMergeError = err(570000)
 
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)

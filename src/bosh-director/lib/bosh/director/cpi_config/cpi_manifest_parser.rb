@@ -8,6 +8,14 @@ module Bosh::Director
         ParsedCpiConfig.new(parse_cpis(cpi_manifest))
       end
 
+      def merge_configs(cpi_configs)
+        result_hash = {'cpis' => []}
+        cpi_configs.each do |cpi_config|
+          result_hash['cpis'] += safe_property(cpi_config, 'cpis', :class => Array)
+        end
+        result_hash
+      end
+
       private
 
       def parse_cpis(cpi_manifest)

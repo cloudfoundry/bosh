@@ -281,7 +281,12 @@ module Bosh::Director
         let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
 
         let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
-        let(:cloud_config) { Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
+        let(:deployment_model) {
+          deployment = Models::Deployment.make(name: 'mycloud')
+          deployment.cloud_configs = [cloud_config]
+          deployment
+        }
+        let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
         let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
 
         before do

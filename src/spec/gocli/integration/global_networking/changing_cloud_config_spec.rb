@@ -102,8 +102,8 @@ describe 'Changing cloud config', type: :integration do
   describe 'no changes' do
     context 'when redeploying a network after rename' do
       it 'should not recreate vms when there are no changes' do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-        simple_manifest = Bosh::Spec::Deployments.simple_manifest
+        cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+        simple_manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
@@ -128,7 +128,7 @@ describe 'Changing cloud config', type: :integration do
   def upload_a_different_cloud_config
     new_cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 0)
     new_cloud_config['networks'].first['name'] = 'other'
-    new_cloud_config['resource_pools'].first['network'] = 'other'
+    new_cloud_config['vm_types'].first['network'] = 'other'
     new_cloud_config['compilation']['network'] = 'other'
     upload_cloud_config(cloud_config_hash: new_cloud_config)
   end

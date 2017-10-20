@@ -4,7 +4,7 @@ describe 'cli: vms', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should return vm --vitals' do
-    deploy_from_scratch
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
     vitals = director.vms_vitals[0]
 
     expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
@@ -22,7 +22,7 @@ describe 'cli: vms', type: :integration do
   end
 
   it 'should return az with vms' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [
       {'name' => 'zone-1', 'cloud_properties' => {}},
       {'name' => 'zone-2', 'cloud_properties' => {}},
@@ -59,7 +59,7 @@ describe 'cli: vms', type: :integration do
       }
     ]
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 

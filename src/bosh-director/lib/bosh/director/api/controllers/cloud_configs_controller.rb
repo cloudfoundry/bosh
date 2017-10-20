@@ -17,6 +17,22 @@ module Bosh::Director
         status(201)
       end
 
+      post '/diff', :consumes => :yaml do
+        old_config_hash = cloud_config_or_empty(Bosh::Director::Models::Config.latest_set('cloud').first)
+        new_config_hash = validate_manifest_yml(request.body.read, nil) || {}
+
+        result = {}
+        begin
+          diff = Changeset.new(old_config_hash, new_config_hash).diff(false).order
+          result['diff'] = diff.map { |l| [l.to_s, l.status] }
+        rescue => error
+          result['diff'] = []
+          result['error'] = "Unable to diff cloud-config: #{error.inspect}\n#{error.backtrace.join("\n")}"
+        end
+
+        json_encode(result)
+      end
+
       get '/', scope: :read do
         if params['limit'].nil? || params['limit'].empty?
           status(400)
@@ -36,40 +52,26 @@ module Bosh::Director
         json_encode(
           cloud_configs.map do |cloud_config|
             {
-              "properties" => cloud_config.properties,
+              "properties" => cloud_config.content,
               "created_at" => cloud_config.created_at,
             }
-        end
+          end
         )
       end
 
-      post '/diff', :consumes => :yaml do
-        new_config_hash = validate_manifest_yml(request.body.read, nil) || {}
-        cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        old_config_hash = if cloud_config.nil? || cloud_config.raw_manifest.nil?
-          {}
-        else
-          cloud_config.raw_manifest
-        end
+      private
 
-        result = {}
-        begin
-          diff = Changeset.new(old_config_hash, new_config_hash).diff(false).order
-          result['diff'] = diff.map { |l| [l.to_s, l.status] }
-        rescue => error
-          result['diff'] = []
-          result['error'] = "Unable to diff cloud-config: #{error.inspect}\n#{error.backtrace.join("\n")}"
-        end
-
-        json_encode(result)
+      def cloud_config_or_empty(cloud_config_model)
+        return {} if cloud_config_model.nil? || cloud_config_model.raw_manifest.nil?
+        cloud_config_model.raw_manifest
       end
 
-      private
       def create_event(error = nil)
         @event_manager.create_event({
             user:        current_user,
-            action:      "update",
-            object_type: "cloud-config",
+            action:      'update',
+            object_type: 'cloud-config',
+            object_name: 'default',
             error:       error
         })
       end

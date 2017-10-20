@@ -5,7 +5,7 @@ describe 'cli: deploy uploading', type: :integration do
   with_reset_sandbox_before_each
   let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
 
-  let(:cloud_config_manifest) { yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config) }
+  let(:cloud_config_manifest) { yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config) }
 
   before do
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -23,7 +23,7 @@ describe 'cli: deploy uploading', type: :integration do
     let(:release_sha) { '14ab572f7d00333d8e528ab197a513d44c709257' }
 
     it 'uploads the release from the remote url in the manifest' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, release_sha, 1))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.remote_release_manifest(release_url, release_sha, 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
       expect(output).to match /Using deployment 'minimal'/
@@ -34,7 +34,7 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'does not upload the same release twice' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, release_sha, 1))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.remote_release_manifest(release_url, release_sha, 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
       expect(output).to match /Using deployment 'minimal'/
@@ -50,7 +50,7 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'fails when the sha1 does not match' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, 'abcd1234', 1))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.remote_release_manifest(release_url, 'abcd1234', 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
       expect(output).to match /Expected stream to have digest 'abcd1234' but was '#{release_sha}'/
@@ -58,7 +58,7 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'allows multiple digests in the sha1 field' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.remote_release_manifest(release_url, 'sha1:14ab572f7d00333d8e528ab197a513d44c709257', 1))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.remote_release_manifest(release_url, 'sha1:14ab572f7d00333d8e528ab197a513d44c709257', 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
       expect(output).to match /Using deployment 'minimal'/
@@ -71,7 +71,7 @@ describe 'cli: deploy uploading', type: :integration do
     let(:release_path) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
 
     it 'uploads the release from the local file path in the manifest' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file://' + release_path, 1))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release_path, 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
       expect(output).to match /Using deployment 'minimal'/
@@ -86,7 +86,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       it 'does not upload the same release twice' do
         pending('cli2: #130928119 cli2 should not upload release if already on director')
-        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file://' + release_path, 1))
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release_path, 1))
 
         output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
         expect(output).to match /Using deployment 'minimal'/
@@ -102,7 +102,7 @@ describe 'cli: deploy uploading', type: :integration do
 
       it 'ignores the tarball if the director has the same name and version' do
         pending('cli2: #130928119 cli2 should not upload release if already on director')
-        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file://' + release2_path, 1))
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release2_path, 1))
 
         bosh_runner.run("upload-release #{release_path}")
 
@@ -113,7 +113,7 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'fails to deploy when the url is invalid' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('goobers', 1))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('goobers', 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
       expect(output).to match /stat goobers: no such file or directory/
@@ -121,7 +121,7 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'fails to deploy when the path is not a release' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file:///goobers', 1))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file:///goobers', 1))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
       expect(output).to match /stat \/goobers: no such file or directory/
@@ -138,7 +138,7 @@ describe 'cli: deploy uploading', type: :integration do
     }
 
     it 'creates, uploads and deploys release from local folder' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file://' + release_path, 'create'))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release_path, 'create'))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
       expect(output).to match /Using deployment 'minimal'/
@@ -148,7 +148,7 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'requires that the path is to a directory' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('file://' + release_tar, 'create'))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release_tar, 'create'))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
       expect(output).to match /Processing release 'test_release\/create'/
@@ -157,7 +157,7 @@ describe 'cli: deploy uploading', type: :integration do
     end
 
     it 'rejects paths that are not local files' do
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.local_release_manifest('http://goobers.com/zakrulez', 'create'))
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('http://goobers.com/zakrulez', 'create'))
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
       expect(output).to match /Processing release 'test_release\/create'/

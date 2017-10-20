@@ -4,7 +4,7 @@ describe 'attach disk', type: :integration do
   with_reset_sandbox_before_each
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['releases'].first['version'] = 'latest'
     manifest_hash['jobs'][0]['instances'] = 1
     manifest_hash['jobs'][0]['persistent_disk'] = 1000
@@ -16,7 +16,7 @@ describe 'attach disk', type: :integration do
   context 'deployment has disk that does not exist in an orphaned list attached to an instance' do
 
     before do
-      deploy_from_scratch(manifest_hash: simple_manifest)
+      deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     end
 
     it 'attaches the disk to a hard stopped instance' do
@@ -72,11 +72,11 @@ describe 'attach disk', type: :integration do
 
   context 'deployment has disk that exists in an orphaned list not attached to an instance' do
     before do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      deployment_job = Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1)
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      deployment_job = Bosh::Spec::NewDeployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1)
       manifest_hash['jobs'] = [deployment_job]
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config['disk_types'] = [Bosh::Spec::NewDeployments.disk_type]
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
       bosh_runner.run('delete-deployment', deployment_name: deployment_name)

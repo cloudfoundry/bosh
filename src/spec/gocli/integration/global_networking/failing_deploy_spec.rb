@@ -7,7 +7,7 @@ describe 'failing deploy', type: :integration do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
     first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, template: 'foobar_without_packages')
-    deploy_from_scratch(manifest_hash: first_manifest_hash, failure_expected: true)
+    deploy_from_scratch(manifest_hash: first_manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, failure_expected: true)
 
     failing_deploy_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
       invocation.inputs['networks']['a']['ip']
@@ -31,7 +31,7 @@ describe 'failing deploy', type: :integration do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
     first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, template: 'foobar_without_packages', static_ips: ['192.168.1.10'])
-    deploy_from_scratch(manifest_hash: first_manifest_hash, failure_expected: true)
+    deploy_from_scratch(manifest_hash: first_manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, failure_expected: true)
 
     failing_deploy_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
       invocation.inputs['networks']['a']['ip']
@@ -53,7 +53,7 @@ describe 'failing deploy', type: :integration do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
     manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages', static_ips: ['192.168.1.10'])
-    deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, failure_expected: true)
 
     failing_deploy_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
       invocation.inputs['networks']['a']['ip']
@@ -76,7 +76,7 @@ describe 'failing deploy', type: :integration do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
     manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
-    deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, failure_expected: true)
 
     failing_deploy_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
       invocation.inputs['networks']['a']['ip']
@@ -86,7 +86,7 @@ describe 'failing deploy', type: :integration do
 
     current_sandbox.cpi.commands.allow_create_vm_to_succeed
 
-    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'second-job', instances: 1)]
+    manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(name: 'second-job', instances: 1)]
     deploy_simple_manifest(manifest_hash: manifest_hash)
     # IPs are not released within single deployment
     # see https://www.pivotaltracker.com/story/show/98057020

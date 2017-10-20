@@ -21,7 +21,7 @@ describe 'Links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
     cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
@@ -44,7 +44,7 @@ describe 'Links', type: :integration do
 
   context 'when job requires link' do
     let(:implied_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'my_api',
           templates: [{'name' => 'api_server'}],
           instances: 1
@@ -54,7 +54,7 @@ describe 'Links', type: :integration do
     end
 
     let(:api_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
         name: 'my_api',
         templates: [{'name' => 'api_server', 'consumes' => links}],
         instances: 1
@@ -64,7 +64,7 @@ describe 'Links', type: :integration do
     end
 
     let(:mysql_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
         name: 'mysql',
         templates: [{'name' => 'database'}],
         instances: 2,
@@ -79,7 +79,7 @@ describe 'Links', type: :integration do
     end
 
     let(:postgres_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
         name: 'postgres',
         templates: [{'name' => 'backup_database'}],
         instances: 1,
@@ -90,7 +90,7 @@ describe 'Links', type: :integration do
     end
 
     let(:aliased_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'aliased_postgres',
           templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
           instances: 1,
@@ -100,7 +100,7 @@ describe 'Links', type: :integration do
     end
 
     let(:mongo_db_spec)do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
         name: 'mongo',
         templates: [{'name' => 'mongo_db'}],
         instances: 1,
@@ -120,7 +120,7 @@ describe 'Links', type: :integration do
 
     context 'properties with aliased links' do
       let(:db3_job) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'db3',
             templates: [
                 {'name' => 'http_server_with_provides', 'provides' => {'http_endpoint' => {'as' => 'http_endpoint2', 'shared' => true}}},
@@ -134,7 +134,7 @@ describe 'Links', type: :integration do
       end
 
       let(:other2_job) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'other2',
             templates: [
                 {'name' => 'http_proxy_with_requires', 'properties' => {'http_proxy_with_requires.listen_port' => 21}, 'consumes' => {'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, 'logs_http_endpoint' => nil}},
@@ -147,7 +147,7 @@ describe 'Links', type: :integration do
       end
 
       let(:new_job) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'new_job',
             templates: [
                 {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'new_provides', 'shared' => true}, 'logs_http_endpoint' => nil}},
@@ -181,7 +181,7 @@ describe 'Links', type: :integration do
 
     context 'when link is not defined in provides spec but specified in manifest' do
       let(:consume_job) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'consume_job',
           templates: [
             {'name' => 'consumer', 'provides'=>{'consumer_resource' => {'from' => 'consumer'}}}
@@ -251,7 +251,7 @@ describe 'Links', type: :integration do
     context 'when dealing with optional links' do
 
       let(:api_job_with_optional_links_spec_1) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'my_api',
             templates: [{'name' => 'api_server_with_optional_links_1', 'consumes' => links}],
             instances: 1
@@ -261,7 +261,7 @@ describe 'Links', type: :integration do
       end
 
       let(:api_job_with_optional_links_spec_2) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'my_api',
             templates: [{'name' => 'api_server_with_optional_links_2', 'consumes' => links}],
             instances: 1
@@ -406,7 +406,7 @@ describe 'Links', type: :integration do
 
       context 'when the optional link is used without if_link in templates' do
         let(:api_job_with_bad_optional_links) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
               name: 'my_api',
               templates: [{'name' => 'api_server_with_bad_optional_links'}],
               instances: 1
@@ -434,7 +434,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when multiple links with same type being provided' do
         let(:api_server_with_optional_db_links)do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
               name: 'optional_db',
               templates: [{'name' => 'api_server_with_optional_db_link'}],
               instances: 1,
@@ -583,7 +583,7 @@ Error: Unable to process links for deployment. Errors are:
 
     context 'deployment job does not have templates' do
       let(:first_node_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'first_node',
             templates: [],
             instances: 1,
@@ -607,7 +607,7 @@ Error: Unable to process links for deployment. Errors are:
 
     context 'when release job requires and provides same link' do
       let(:first_node_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'first_node',
           templates: [{'name' => 'node', 'consumes' => first_node_links}],
           instances: 1,
@@ -625,7 +625,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:second_node_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'second_node',
           templates: [{'name' => 'node', 'consumes' => second_node_links}],
           instances: 1,
@@ -709,7 +709,7 @@ Error: Unable to process links for deployment. Errors are:
 
       context 'when both provided links are in same template' do
         let(:job_with_same_type_links) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
               name: 'duplicate_link_type_job',
               templates: [{'name' => 'database_with_two_provided_link_of_same_type'}],
               instances: 1
@@ -774,7 +774,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'provider_instance_group',
             templates: [{
                           'name' => 'http_server_with_provides',
@@ -805,7 +805,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:consumer_instance_group) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'consumer_instance_group',
             templates: [
               {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_alias'}}},
@@ -842,7 +842,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:provider1_http) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'provider1_http_instance_group',
             templates: [{
                           'name' => 'http_server_with_provides',
@@ -861,7 +861,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:provider2_http) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'provider2_http_instance_group',
             templates: [{
                           'name' => 'http_server_with_provides',
@@ -880,7 +880,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:consumer_instance_group) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'consumer_instance_group',
             templates: [
               {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_1'}}},
@@ -917,7 +917,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:provider_1_db) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'provider_1_db',
             templates: [{
                           'name' => 'backup_database',
@@ -933,7 +933,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:provider_2_db) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'provider_2_db',
             templates: [{
                           'name' => 'backup_database',
@@ -949,7 +949,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         let(:consumer_instance_group) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'consumer_instance_group',
             templates: [
               {'name' => 'api_server', 'consumes' => {'db' => {'from' => 'db_1'}, 'backup_db' => {'from' => 'db_2'}}},
@@ -1010,7 +1010,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:new_api_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'new_api_job',
             templates: [{'name' => 'api_server', 'consumes' => links}],
             instances: 1,
@@ -1021,7 +1021,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:new_aliased_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'new_aliased_job',
             templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
             instances: 1,
@@ -1062,7 +1062,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:first_node_job_spec) do
-        Bosh::Spec::Deployments.simple_job(
+        Bosh::Spec::NewDeployments.simple_job(
           name: 'first_node',
           templates: [{'name' => 'node', 'consumes' => first_node_links,'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
@@ -1079,7 +1079,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:second_node_job_spec) do
-        Bosh::Spec::Deployments.simple_job(
+        Bosh::Spec::NewDeployments.simple_job(
           name: 'second_node',
           templates: [{'name' => 'node', 'consumes' => second_node_links, 'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
@@ -1116,7 +1116,7 @@ Error: Unable to process links for deployment. Errors are:
      end
 
      let(:first_deployment_job_spec) do
-       job_spec = Bosh::Spec::Deployments.simple_job(
+       job_spec = Bosh::Spec::NewDeployments.simple_job(
            name: 'first_deployment_node',
            templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
            instances: 1,
@@ -1139,7 +1139,7 @@ Error: Unable to process links for deployment. Errors are:
      end
 
      let(:second_deployment_job_spec) do
-       job_spec = Bosh::Spec::Deployments.simple_job(
+       job_spec = Bosh::Spec::NewDeployments.simple_job(
            name: 'second_deployment_node',
            templates: [{'name' => 'node', 'consumes' => second_deployment_consumed_links}],
            instances: 1,
@@ -1267,7 +1267,7 @@ Error: Unable to process links for deployment. Errors are:
 
          context 'when provider job has 0 instances' do
            let(:first_deployment_job_spec) do
-             job_spec = Bosh::Spec::Deployments.simple_job(
+             job_spec = Bosh::Spec::NewDeployments.simple_job(
                  name: 'first_deployment_node',
                  templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
                  instances: 0,
@@ -1369,7 +1369,7 @@ Error: Unable to process links for deployment. Errors are:
         context 'user has duplicate implicit links provided in two jobs over separate networks' do
 
           let(:mysql_job_spec) do
-            job_spec = Bosh::Spec::Deployments.simple_job(
+            job_spec = Bosh::Spec::NewDeployments.simple_job(
                 name: 'mysql',
                 templates: [{'name' => 'database'}],
                 instances: 2,
@@ -1409,7 +1409,7 @@ Error: Unable to process links for deployment. Errors are:
 
         it 'uses the network from link when only one network is available' do
 
-          mysql_job_spec = Bosh::Spec::Deployments.simple_job(
+          mysql_job_spec = Bosh::Spec::NewDeployments.simple_job(
               name: 'mysql',
               templates: [{'name' => 'database'}],
               instances: 1,
@@ -1437,7 +1437,7 @@ Error: Unable to process links for deployment. Errors are:
 
     context 'when link provider specifies properties from job spec' do
       let(:mysql_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'mysql',
             templates: [{'name' => 'database', 'properties' => {'test' => 'test value' }}],
             instances: 2,
@@ -1464,7 +1464,7 @@ Error: Unable to process links for deployment. Errors are:
 
     context 'when link provider specifies properties not listed in job spec properties' do
       let(:mysql_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'mysql',
             templates: [{'name' => 'provider_fail'}],
             instances: 2,
@@ -1492,7 +1492,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:job_consumes_link_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'deployment-job',
             templates: [{'name' => 'api_server', 'consumes' => links}],
             instances: 1
@@ -1502,7 +1502,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:job_not_consuming_links_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'deployment-job',
             templates: [{'name' => 'api_server'}],
             instances: 1
@@ -1673,7 +1673,7 @@ Error: Unable to process links for deployment. Errors are:
 
       context 'when the co-located job has implicit links' do
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
               name: 'provider_instance_group',
               templates: [
                   { 'name' => 'provider' },
@@ -1701,7 +1701,7 @@ Error: Unable to process links for deployment. Errors are:
 
       context 'when the co-located job has explicit links' do
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
               name: 'provider_instance_group',
               templates: [
                   {
@@ -1732,7 +1732,7 @@ Error: Unable to process links for deployment. Errors are:
 
       context 'when the co-located job uses links from adjacent jobs' do
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::Deployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_job(
               name: 'provider_instance_group',
               templates: [
                   { 'name' => 'provider' },
@@ -1762,7 +1762,7 @@ Error: Unable to process links for deployment. Errors are:
 
     context 'when the job consumes multiple links of the same type' do
       let(:provider_instance_group) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'provider_instance_group',
             templates: [{
                             'name' => 'database',
@@ -1786,7 +1786,7 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       let(:consumer_instance_group) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'consumer_instance_group',
             templates: [
                 {
@@ -1823,7 +1823,7 @@ Error: Unable to process links for deployment. Errors are:
   context 'when addon job requires link' do
 
     let(:mysql_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'mysql',
           templates: [{'name' => 'database'}],
           instances: 1,
@@ -1862,7 +1862,7 @@ Error: Unable to process links for deployment. Errors are:
 
   context 'checking link properties' do
     let(:job_with_nil_properties) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'property_job',
           templates: [{'name' => 'provider', 'properties' => {'a' => 'deployment_a'}}, {'name' => 'consumer'}],
           instances: 1,
@@ -1878,7 +1878,7 @@ Error: Unable to process links for deployment. Errors are:
     end
 
     let (:job_with_manual_consumes_link) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'property_job',
           templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}],
           instances: 1,
@@ -1894,7 +1894,7 @@ Error: Unable to process links for deployment. Errors are:
     end
 
     let(:job_with_link_properties_not_defined_in_release_properties) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'jobby',
           templates: [{'name' => 'provider', 'properties' => {'doesntExist' => 'someValue'}}],
           instances: 1,
@@ -1948,7 +1948,7 @@ Error: Unable to process links for deployment. Errors are:
 
   context 'when link is not satisfied in deployment' do
     let(:bad_properties_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'api_server_with_bad_link_types',
           templates: [{'name' => 'api_server_with_bad_link_types'}],
           instances: 1,

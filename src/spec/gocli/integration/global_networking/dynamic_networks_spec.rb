@@ -11,7 +11,7 @@ describe 'dynamic networks', type: :integration do
   end
 
   let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['networks'] = [{
       'name' => 'a',
       'type' => 'dynamic',
@@ -20,7 +20,7 @@ describe 'dynamic networks', type: :integration do
   end
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['instances'] = 1
 
     manifest_hash

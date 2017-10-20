@@ -15,9 +15,9 @@ describe 'deploy_fix', type: :integration do
   end
 
   def doTest
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'][0]['persistent_disk'] = 1
-    deploy_from_scratch({manifest_hash: manifest_hash})
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     current_sandbox.cpi.commands.make_delete_vm_to_raise_vmnotfound
     current_sandbox.cpi.kill_agents
 

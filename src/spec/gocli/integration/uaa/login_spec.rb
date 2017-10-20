@@ -43,7 +43,15 @@ describe 'Logging into a director with UAA authentication', type: :integration d
 
     it 'refreshes the token when running long command' do
       client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
-      _, exit_code = deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false, return_exit_code: true)
+      _, exit_code = deploy_from_scratch(
+        environment_name: current_sandbox.director_url,
+        no_login: true,
+        env: client_env,
+        include_credentials: false,
+        return_exit_code: true,
+        manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+        cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+       )
       expect(exit_code).to eq(0)
     end
 
@@ -114,7 +122,15 @@ CERT
         _, exit_code = create_and_upload_test_release(environment_name: current_sandbox.director_url, env: client_env, include_credentials: false, force: true)
         expect(exit_code).to_not eq(0)
 
-        output = deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false, failure_expected: true)
+        output = deploy_from_scratch(
+          environment_name: current_sandbox.director_url,
+          no_login: true,
+          env: client_env,
+          include_credentials: false,
+          failure_expected: true,
+          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+        )
         expect(output).to include("one of the scopes: bosh.admin, bosh.deadbeef.admin")
 
         output = bosh_runner.run('deployments', include_credentials: false, env: client_env, failure_expected: true)
@@ -123,7 +139,14 @@ CERT
 
       it 'can see list of vms' do
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, include_credentials: false, env: client_env)
+        deploy_from_scratch(
+          environment_name: current_sandbox.director_url,
+          no_login: true,
+          include_credentials: false,
+          env: client_env,
+          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+        )
 
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         instances = director.instances(deployment_name: 'simple', environment_name: current_sandbox.director_url, include_credentials: false, env: client_env)
@@ -167,7 +190,7 @@ CERT
       it 'can not access the resource for which the user does not have permission, even though the team membership grants some level of access to the controller' do
         pending("#132016911 bosh cli should not report success when user does not have correct permissions")
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
+        deploy_from_scratch(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
 
         client_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = bosh_runner.run('delete-deployment', environment_name: current_sandbox.director_url, deployment_name: 'simple', include_credentials: false, env: client_env, failure_expected: true)
@@ -180,7 +203,14 @@ CERT
 
       it 'resurrects vm' do
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        deploy_from_scratch(environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
+        deploy_from_scratch(
+          environment_name: current_sandbox.director_url,
+          no_login: true,
+          include_credentials: false,
+          env: client_env,
+          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+        )
 
         original_instance = director.instance('foobar', '0', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
         original_instance.kill_agent
@@ -194,7 +224,6 @@ CERT
 
   context 'when UAA is configured with asymmetric key' do
     with_reset_sandbox_before_each(user_authentication: 'uaa', uaa_encryption: 'asymmetric')
-
 
     it 'logs in successfully' do
       client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}

@@ -6,7 +6,7 @@ module Bosh::Director
     let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, cloud_config, deployment_model, planner_options) }
     let(:planner_options) { {} }
     let(:event_log) { Config.event_log }
-    let(:cloud_config) { Models::CloudConfig.make }
+    let(:cloud_config) { Models::Config.make(:cloud) }
 
     describe '#parse' do
       let(:options) { {} }

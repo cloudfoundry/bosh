@@ -6,10 +6,10 @@ module Bosh
       subject { DeploymentPlan::ManifestMigrator.new }
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
       let(:manifest) { Manifest.new(manifest_hash, manifest_hash, nil, nil, nil, nil)}
-      let(:cloud_config) { nil }
-      let(:migrated_manifest) { subject.migrate(manifest, cloud_config)[0] }
+      let(:cloud_configs) { [] }
+      let(:migrated_manifest) { subject.migrate(manifest, cloud_configs)[0] }
       let(:migrated_manifest_hash) { migrated_manifest.hybrid_manifest_hash }
-      let(:migrated_cloud_config) { subject.migrate(manifest, cloud_config)[1] }
+      let(:migrated_cloud_config) { subject.migrate(manifest, cloud_configs)[1] }
 
       describe '#migrate' do
         context 'when a "release" key is not found' do
@@ -47,7 +47,7 @@ module Bosh
             manifest_hash['releases'] = [{other: :stuff}]
 
             expect {
-              subject.migrate(manifest, cloud_config)
+              subject.migrate(manifest, cloud_configs)
             }.to raise_error(
               DeploymentAmbiguousReleaseSpec,
               "Deployment manifest contains both 'release' and 'releases' sections, please use one of the two."
@@ -75,10 +75,10 @@ module Bosh
           end
 
           context 'when cloud config is set' do
-            let(:cloud_config) { 'fake-cloud-config' }
+            let(:cloud_configs) { ['fake-cloud-config'] }
 
             it 'returns passed cloud config' do
-              expect(migrated_cloud_config).to eq('fake-cloud-config')
+              expect(migrated_cloud_config).to eq(['fake-cloud-config'])
             end
           end
         end

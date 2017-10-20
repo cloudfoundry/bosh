@@ -33,7 +33,8 @@ module Bosh::Director
       def reserved_legacy_ranges
         @cache ||= begin
           reserved_ranges = Set.new
-          other_deployments = Models::Deployment.where(cloud_config_id: nil).
+          other_deployments = Models::Deployment.
+            exclude(cloud_configs: Models::Config.where(type: 'cloud')).
             exclude(name: @current_deployment.name).
             exclude(manifest: nil).all
 
