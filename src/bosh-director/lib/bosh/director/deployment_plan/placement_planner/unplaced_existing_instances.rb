@@ -40,7 +40,7 @@ module Bosh
           end
 
           def azs
-            @az_name_to_existing_instances.keys
+            @instances.map(&:availability_zone)
           end
 
           private

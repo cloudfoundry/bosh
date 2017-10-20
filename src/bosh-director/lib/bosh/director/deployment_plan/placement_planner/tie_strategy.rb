@@ -10,7 +10,8 @@ module Bosh
 
             def call(azs)
               azs.find { |az|
-                @preferred_az_names.any? {|i| i == az.name }
+                i = @preferred_az_names.find_index {|az_name| az_name == az.name }
+                @preferred_az_names.delete_at(i) if i
               } || azs.min
             end
           end
@@ -23,7 +24,8 @@ module Bosh
 
             def call(azs)
               azs.find { |az|
-                @preferred_az_names.any? {|i| i == az.name }
+                i = @preferred_az_names.find_index {|az_name| az_name == az.name }
+                @preferred_az_names.delete_at(i) if i
               } || azs.sample(random: @random)
             end
           end

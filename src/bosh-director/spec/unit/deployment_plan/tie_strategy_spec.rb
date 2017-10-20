@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
       let(:az3) { AvailabilityZone.new("3", {}) }
 
       describe TieStrategy::MinWins do
-        subject { described_class.new(%w(3)) }
+        subject { described_class.new(%w(3 3)) }
 
         it 'chooses the minimum' do
           expect(subject.call([az1, az2])).to eq(az1)
@@ -17,10 +17,16 @@ module Bosh::Director::DeploymentPlan
         it 'prioritizes the priority' do
           expect(subject.call([az2, az3])).to eq(az3)
         end
+
+        it 'deletes an item from priority when we match based on priority' do
+          expect(subject.call([az1, az2, az3])).to eq(az3)
+          expect(subject.call([az1, az2, az3])).to eq(az3)
+          expect(subject.call([az1, az2, az3])).to eq(az1)
+        end
       end
 
       describe TieStrategy::RandomWins do
-        subject { described_class.new(%w(3), random: fake_random) }
+        subject { described_class.new(%w(3 3), random: fake_random) }
 
         let(:fake_random) do
           r = Object.new
@@ -35,7 +41,13 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'prioritizes the priority' do
-          expect(subject.call([az2, az3])).to eq(az3)
+          expect(subject.call([az1, az2, az3])).to eq(az3)
+        end
+
+        it 'deletes an item from priority when we match based on priority' do
+          expect(subject.call([az1, az2, az3])).to eq(az3)
+          expect(subject.call([az1, az2, az3])).to eq(az3)
+          expect(subject.call([az1, az2, az3])).to eq(az2)
         end
       end
     end
