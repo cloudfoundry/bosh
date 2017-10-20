@@ -395,6 +395,40 @@ module Bosh::Director
           end
         end
 
+        describe '#randomize_az_placement?' do
+          context 'when deployment randomize_az_placement is defined' do
+            context 'when deployment randomize_az_placement is TRUE' do
+              before do
+                subject.set_features(DeploymentFeatures.new(true, true, true))
+              end
+
+              it 'returns TRUE' do
+                expect(subject.randomize_az_placement?).to eq(true)
+              end
+            end
+
+            context 'when deployment randomize_az_placement is FALSE' do
+              before do
+                subject.set_features(DeploymentFeatures.new(true, false, false))
+              end
+
+              it 'returns FALSE' do
+                expect(subject.randomize_az_placement?).to eq(false)
+              end
+            end
+          end
+
+          context 'when deployment randomize_az_placement is NOT defined' do
+            before do
+              subject.set_features(DeploymentFeatures.new)
+            end
+
+            it 'returns FALSE' do
+              expect(subject.randomize_az_placement?).to eq(false)
+            end
+          end
+        end
+
         describe '#team_names' do
           let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
           before { deployment_model.teams = teams }

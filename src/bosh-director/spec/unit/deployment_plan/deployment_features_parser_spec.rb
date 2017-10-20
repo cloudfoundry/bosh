@@ -52,6 +52,35 @@ module Bosh::Director
             end
           end
 
+          describe 'randomize_az_placement' do
+            context 'when randomize_az_placement is NOT specified' do
+              it 'defaults randomize_az_placement to nil' do
+                features = deployment_features_parser.parse({})
+                expect(features.randomize_az_placement).to be_nil
+              end
+            end
+
+            context 'when randomize_az_placement is specified' do
+              context 'when randomize_az_placement is NOT a boolean' do
+                it 'raises an error' do
+                  expect {
+                    deployment_features_parser.parse({'randomize_az_placement' => 'vroom'})
+                  }.to raise_error FeaturesInvalidFormat, "Key 'randomize_az_placement' in 'features' expected to be a boolean, but received 'String'"
+                end
+              end
+
+              context 'when randomize_az_placement is a boolean' do
+                it 'sets the randomize_az_placement value to the features object' do
+                  features = deployment_features_parser.parse({'randomize_az_placement' => true})
+                  expect(features.randomize_az_placement).to eq(true)
+
+                  features = deployment_features_parser.parse({'randomize_az_placement' => false})
+                  expect(features.randomize_az_placement).to eq(false)
+                end
+              end
+            end
+          end
+
           describe 'use_short_dns_addresses' do
             context 'when use_short_dns_addresses is NOT specified' do
               it 'defaults use_short_dns_addresses value to nil' do

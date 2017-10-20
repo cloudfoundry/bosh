@@ -12,7 +12,7 @@ module Bosh::Director::DeploymentPlan
 
       validate(spec)
 
-      DeploymentFeatures.new(spec['use_dns_addresses'],spec['use_short_dns_addresses'])
+      DeploymentFeatures.new(spec['use_dns_addresses'],spec['use_short_dns_addresses'],spec['randomize_az_placement'])
     end
 
     private
@@ -28,6 +28,7 @@ module Bosh::Director::DeploymentPlan
     def validate_use_dns_addresses(spec)
       validate_bool_or_nil(spec, 'use_dns_addresses')
       validate_bool_or_nil(spec, 'use_short_dns_addresses')
+      validate_bool_or_nil(spec, 'randomize_az_placement')
     end
 
     def validate_bool_or_nil(spec, key)
