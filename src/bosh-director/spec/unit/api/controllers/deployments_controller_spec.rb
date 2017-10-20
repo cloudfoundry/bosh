@@ -575,6 +575,9 @@ module Bosh::Director
         end
 
         describe 'listing deployments' do
+          let(:cloud_config) { Models::CloudConfig.make }
+          let(:deployment) { Models::Deployment.make(name: 'b', cloud_config_id: cloud_config.id) }
+
           before { basic_authorize 'reader', 'reader' }
 
           it 'lists deployment info in deployment name order' do
@@ -661,6 +664,37 @@ module Bosh::Director
                     'teams' => ['daworst'],
                   }
                 ])
+          end
+
+          it 'orders the associations' do
+            release2 = Models::Release.make(name: 'r2')
+            release1 = Models::Release.make(name: 'r1')
+
+            deployment.add_release_version(Models::ReleaseVersion.make(version: '3', release_id: release1.id))
+            deployment.add_release_version(Models::ReleaseVersion.make(version: '2', release_id: release1.id))
+            deployment.add_release_version(Models::ReleaseVersion.make(version: '1', release_id: release2.id))
+
+            deployment.add_team(Models::Team.make(name: 'team2'))
+            deployment.add_team(Models::Team.make(name: 'team3'))
+            deployment.add_team(Models::Team.make(name: 'team1'))
+
+            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell2', version: '4'))
+            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell1', version: '1'))
+            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell2', version: '3'))
+            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell3', version: '2'))
+
+            get '/', {}, {}
+            expect(last_response.status).to eq(200)
+
+            body = JSON.parse(last_response.body)
+
+            expect(body.first['releases']).to eq([{'name' => 'r1', 'version' => '2'}, {'name' => 'r1', 'version' => '3'}, {'name' => 'r2', 'version' => '1'}])
+            expect(body.first['stemcells']).to eq([
+                {'name' => 'stemcell1', 'version' => '1'},
+                {'name' => 'stemcell2', 'version' => '3'},
+                {'name' => 'stemcell2', 'version' => '4'},
+                {'name' => 'stemcell3', 'version' => '2'}])
+            expect(body.first['teams']).to eq(%w(team1 team2 team3))
           end
         end
 

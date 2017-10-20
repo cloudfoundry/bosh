@@ -3,12 +3,14 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class AvailabilityZonePicker
-          def initialize(instance_plan_factory, network_planner, networks, desired_azs)
+          def initialize(instance_plan_factory, network_planner, networks, desired_azs, random_tie_strategy: TieStrategy::RandomWins)
             @instance_plan_factory = instance_plan_factory
             @network_planner = network_planner
             @networks = networks
             @desired_azs = desired_azs
             @logger = Config.logger
+            @randomize_az_placement = instance_plan_factory.randomize_az_placement?
+            @random_tie_strategy = random_tie_strategy
           end
 
           def place_and_match_in(desired_instances, existing_instance_models)
@@ -77,10 +79,15 @@ module Bosh
           end
 
           def balance_across_desired_azs(desired_instances, placed_instances, unplaced_existing_instances)
+            tie_strategy = TieStrategy::MinWins.new(unplaced_existing_instances.azs)
+            tie_strategy = @random_tie_strategy.new(unplaced_existing_instances.azs) if @randomize_az_placement
+            balancer = Balancer.new(
+              initial_weight: placed_instances.az_placement_count,
+              tie_strategy: tie_strategy
+            )
+
             desired_instances.each do |desired_instance|
-              azs_with_fewest_placed = placed_instances.azs_with_fewest_instances
-              @logger.debug("azs with fewest placed: #{azs_with_fewest_placed.inspect}")
-              az = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed).first
+              az = balancer.pop
               @logger.debug("az: #{az.inspect}")
 
               existing_instance = unplaced_existing_instances.claim_instance_for_az(az)

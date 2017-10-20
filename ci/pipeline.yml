@@ -678,7 +678,7 @@ jobs:
         tags: ["worker-brats"]
         privileged: true
         input_mapping:
-          candidate-warden-ubuntu-stemcell: stemcell
+          stemcell: candidate-warden-ubuntu-stemcell
 
   - name: brats-ubuntu-non-tls-agent
     serial: true
@@ -700,7 +700,7 @@ jobs:
         tags: ["worker-brats"]
         privileged: true
         input_mapping:
-          warden-ubuntu-trusty-3363-37: stemcell
+          stemcell: warden-ubuntu-trusty-3363-37
 
   - name: finalize-bosh-release
     serial: true

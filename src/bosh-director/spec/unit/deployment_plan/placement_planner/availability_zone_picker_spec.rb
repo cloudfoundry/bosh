@@ -2,13 +2,16 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::AvailabilityZonePicker do
-    subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory, network_planner, job_networks, desired_azs) }
+    subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory, network_planner, job_networks, desired_azs, random_tie_strategy: test_random_tie_strategy ) }
+
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(instance_double(Bosh::Director::DeploymentPlan::Planner), logger) }
     let(:skip_drain_decider) { SkipDrain.new(true) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository, { 'randomize_az_placement' => randomize_az_placement }) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:test_random_tie_strategy) { PlacementPlanner::TieStrategy::RandomWins }
+    let(:randomize_az_placement) { false }
     let(:deployment_subnets) do
       [
         ManualNetworkSubnet.new(
@@ -88,28 +91,79 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when a job in 2 zones with 3 instances' do
-        let(:desired_azs) { [az1, az2] }
+      context 'with randomize_az_placement turned on, and a fake random tie strategy' do
+        let(:randomize_az_placement) { true }
+        let(:test_random_tie_strategy) {
+          ts = double(:random_tie_strategy)
+          allow(ts).to receive(:new).and_return fake_tie_strategy
+          ts
+        }
 
-        it 'we expect all instances will be new' do
-          unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
-          unmatched_existing_instances = []
+        let(:fake_tie_strategy) { double(:random_tie_strategy_instance) }
 
-          results = zone_picker.place_and_match_in(unmatched_desired_instances, unmatched_existing_instances)
-          expect(results.select(&:existing?)).to eq([])
+        context 'when a job is in 2 zones with 3 instances' do
+          let(:desired_azs) { [az1, az2] }
 
-          new_plans = results.select(&:new?)
-          expect(new_plans.size).to eq(3)
-          expect(new_plans[0].desired_instance).to eq(desired_instance(az1))
-          expect(new_plans[1].desired_instance).to eq(desired_instance(az2))
-          expect(new_plans[2].desired_instance).to eq(desired_instance(az1))
+          it 'we expect all instances will be new, with leftovers assigned to azs at random' do
+            unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
+            unmatched_existing_instances = []
 
-          expect(results.select(&:obsolete?)).to eq([])
+            expect(fake_tie_strategy).to receive(:call).twice.with([az1, az2]).and_return(az1)
+
+            results = zone_picker.place_and_match_in(unmatched_desired_instances, unmatched_existing_instances)
+            expect(results.select(&:existing?)).to eq([])
+
+            new_plans = results.select(&:new?)
+            expect(new_plans.size).to eq(3)
+            expect(new_plans[0].desired_instance).to eq(desired_instance(az1))
+            expect(new_plans[1].desired_instance).to eq(desired_instance(az2))
+            expect(new_plans[2].desired_instance).to eq(desired_instance(az1))
+
+            expect(results.select(&:obsolete?)).to eq([])
+          end
+        end
+
+        context 'when a job is in 3 zones with 5 instances' do
+          let(:desired_azs) { [az1, az2, az3] }
+
+          it 'we expect all instances will be new, with leftovers assigned to azs at random' do
+            unmatched_desired_instances = [desired_instance, desired_instance, desired_instance, desired_instance, desired_instance]
+            unmatched_existing_instances = []
+
+            expect(fake_tie_strategy).to receive(:call).with([az1, az2, az3]).and_return(az2).twice
+            expect(fake_tie_strategy).to receive(:call).with([az1, az3]).and_return(az1).twice
+
+            results = zone_picker.place_and_match_in(unmatched_desired_instances, unmatched_existing_instances)
+            expect(results.select(&:existing?)).to eq([])
+
+            new_plans = results.select(&:new?)
+            expect(new_plans.size).to eq(5)
+            expect(new_plans[0].desired_instance).to eq(desired_instance(az2))
+            expect(new_plans[1].desired_instance).to eq(desired_instance(az1))
+            expect(new_plans[2].desired_instance).to eq(desired_instance(az3))
+            expect(new_plans[3].desired_instance).to eq(desired_instance(az2))
+            expect(new_plans[4].desired_instance).to eq(desired_instance(az1))
+
+            expect(results.select(&:obsolete?)).to eq([])
+          end
+        end
+
+        context 'when the randomize azs feature flag is turned off' do
+          let(:desired_azs) { [az1, az2] }
+          let(:randomize_az_placement) { false }
+
+          it 'should not randomize the az picking' do
+            unmatched_desired_instances = [desired_instance]
+            unmatched_existing_instances = []
+            expect(fake_tie_strategy).not_to receive(:call)
+            results = zone_picker.place_and_match_in(unmatched_desired_instances, unmatched_existing_instances)
+            expect(results.select(&:new?).map(&:desired_instance)).to eq([desired_instance(az1)])
+          end
         end
       end
 
       describe 'scaling down' do
-        it 'prefers lower indexed existing instances' do
+        it 'prefers to preserve lower-indexed existing instances' do
           unmatched_desired_instances = [desired_instance]
           existing_0 = existing_instance_with_az(0, nil)
           existing_1 = existing_instance_with_az(1, nil)
@@ -187,6 +241,36 @@ module Bosh::Director::DeploymentPlan
           expect(existing[3].desired_instance).to eq(unmatched_desired_instances[4])
 
           expect(results.select(&:obsolete?).map(&:existing_instance)).to eq([existing_zone1_2])
+        end
+
+        describe 'when a job is deployed in 2 zones with 4 existing instances in one zone and 1 in the second and then re-deployed into 3 zones' do
+          let(:desired_azs) { [az1, az2, az3] }
+
+          it 'should match the 2 existing instances from the 2 desired zones' do
+            unmatched_desired_instances = [
+              desired_instance,
+              desired_instance,
+              desired_instance,
+              desired_instance,
+              desired_instance,
+            ]
+
+            existing_zone1_0 = existing_instance_with_az(0, '1')
+            existing_zone1_1 = existing_instance_with_az(1, '1')
+            existing_zone1_2 = existing_instance_with_az(2, '1')
+            existing_zone1_3 = existing_instance_with_az(3, '1')
+            existing_zone2_4 = existing_instance_with_az(4, '2')
+
+            unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone1_2, existing_zone1_3, existing_zone2_4]
+
+            results = zone_picker.place_and_match_in(unmatched_desired_instances, unmatched_existing_instances)
+            expect(results.select(&:new?).map(&:desired_instance)).to eq([desired_instance(az3), desired_instance(az2)])
+
+            existing = results.select(&:existing?)
+            expect(existing.size).to eq(3)
+
+            expect(results.select(&:obsolete?).map(&:existing_instance)).to eq([existing_zone1_2, existing_zone1_3])
+          end
         end
       end
 
@@ -327,7 +411,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'where 2 or more existing instances in the same AZ with persistent disk and scale down to 1' do
+        describe 'where 2 or more existing instances are in the same AZ with persistent disk and we scale down to 1' do
           let(:desired_azs) { [az1] }
 
           it 'should eliminate one of the instances' do
@@ -376,7 +460,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'with one additional desired instance' do
+        describe 'with one additional desired instance and one new az' do
           let(:desired_azs) { [az1, az2] }
 
           it 'should add the instance to the additional az' do
@@ -459,7 +543,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'when lowering instance count to the number of ignored instances and all ignored instances are in the same az' do
+        describe 'when scaling down the instance count to the number of ignored instances and all ignored instances are in the same az' do
           let(:desired_azs) { [az1,az2] }
           it 'should not rebalance ignored instances' do
             existing_zone1_0 = existing_instance_with_az(0, '1')
@@ -485,7 +569,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'when lowering instance count to above the number of ignored instances and no az has been provided' do
+        describe 'when scaling down the instance count to above the number of ignored instances and no az has been provided' do
           let(:desired_azs) { nil }
 
           it 'should not delete ignored instances' do
@@ -514,7 +598,6 @@ module Bosh::Director::DeploymentPlan
             expect(obsoletes.map(&:existing_instance)).to match_array([existing_zone1_3, existing_zone1_2])
           end
         end
-
       end
     end
   end

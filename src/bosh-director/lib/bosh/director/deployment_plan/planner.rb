@@ -296,6 +296,10 @@ module Bosh::Director
         @features.use_short_dns_addresses.nil? ? false : @features.use_short_dns_addresses
       end
 
+      def randomize_az_placement?
+        @features.randomize_az_placement.nil? ? false : @features.randomize_az_placement
+      end
+
       def availability_zone_names
         @cloud_planner.availability_zone_names
       end

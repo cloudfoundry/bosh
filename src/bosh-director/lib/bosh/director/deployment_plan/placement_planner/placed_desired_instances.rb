@@ -29,6 +29,12 @@ module Bosh
             end
           end
 
+          def az_placement_count
+            @placed.map do |az, instances|
+              [az, instances.size] unless az.nil?
+            end.compact.to_h
+          end
+
           def azs_with_fewest_instances
             az_with_fewest = @placed.keys.min_by { |az|@placed[az].size }
             @placed.keys.select { |az| (@placed[az].size == @placed[az_with_fewest].size) && az }

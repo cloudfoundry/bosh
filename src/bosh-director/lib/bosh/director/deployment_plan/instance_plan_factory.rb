@@ -11,6 +11,7 @@ module Bosh
           @network_reservation_repository = network_reservation_repository
           @use_dns_addresses = options.fetch('use_dns_addresses', false)
           @use_short_dns_addresses = options.fetch('use_short_dns_addresses', false)
+          @randomize_az_placement = options.fetch('randomize_az_placement', false)
           @tags = options.fetch('tags', {})
         end
 
@@ -62,6 +63,10 @@ module Bosh
             use_short_dns_addresses: @use_short_dns_addresses,
             tags: @tags,
           )
+        end
+
+        def randomize_az_placement?
+          @randomize_az_placement
         end
 
         private
