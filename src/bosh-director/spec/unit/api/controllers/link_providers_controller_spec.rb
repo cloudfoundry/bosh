@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::LinksController do
+    describe Controllers::LinkProvidersController do
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
@@ -23,7 +23,7 @@ module Bosh::Director
         let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
 
         it 'provides list of links in the deployment' do
-          get "/link_provider/#{deployment.name}"
+          get "/#{deployment.name}"
           expect(last_response.status).to eq(200)
         end
 
@@ -39,22 +39,22 @@ module Bosh::Director
           end
 
           it 'allows access to owned deployment' do
-            expect(get("/link_provider/#{owned_deployment.name}").status).to eq(200)
+            expect(get("/#{owned_deployment.name}").status).to eq(200)
           end
 
           it 'denies access to other deployment' do
-            expect(get("/link_provider/#{other_deployment.name}").status).to eq(401)
+            expect(get("/#{other_deployment.name}").status).to eq(401)
           end
         end
 
         it 'with invalid link deployment name' do
-          get '/link_provider/invalid_deployment_name'
+          get '/invalid_deployment_name'
           expect(last_response.status).to eq(404)
           expect(last_response.body).to eq("{\"code\":70000,\"description\":\"Deployment 'invalid_deployment_name' doesn't exist\"}")
         end
 
         it 'returns 400 if deployment name is not provided' do
-          get '/link_provider/'
+          get '/'
           expect(last_response.status).to eq(400)
           expect(last_response.body).to eq('{"code":190024,"description":"Deployment name is required"}')
         end
@@ -91,7 +91,7 @@ module Bosh::Director
           end
 
           it 'should return a list of providers for specified deployment' do
-            get "/link_provider/#{provider_1.deployment.name}"
+            get "/#{provider_1.deployment.name}"
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)).to eq([generate_provider_hash(provider_1),generate_provider_hash(provider_2)])
           end

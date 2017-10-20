@@ -231,7 +231,7 @@ require 'bosh/director/api/controllers/locks_controller'
 require 'bosh/director/api/controllers/restore_controller'
 require 'bosh/director/api/controllers/events_controller'
 require 'bosh/director/api/controllers/vms_controller'
-require 'bosh/director/api/controllers/links_controller'
+require 'bosh/director/api/controllers/link_providers_controller'
 require 'bosh/director/api/route_configuration'
 
 require 'common/common'

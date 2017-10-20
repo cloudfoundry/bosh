@@ -2,7 +2,7 @@ require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
   module Api::Controllers
-    class LinksController < BaseController
+    class LinkProvidersController < BaseController
       register DeploymentsSecurity
 
       def initialize(config)
@@ -10,11 +10,11 @@ module Bosh::Director
         @deployment_manager = Api::DeploymentManager.new
       end
 
-      get '/link_provider/' do
+      get '/' do
         raise DeploymentRequired, 'Deployment name is required'
       end
 
-      get '/link_provider/:deployment', scope: :list_links do
+      get '/:deployment', scope: :list_links do
         deployment = @deployment_manager.find_by_name(params['deployment'])
 
         result = []

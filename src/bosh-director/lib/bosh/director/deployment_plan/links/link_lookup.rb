@@ -55,7 +55,7 @@ module Bosh::Director
       end
 
       def find_link_provider
-        instance_group = @instance_groups.find { |instance_group| instance_group.name == @link_path.job }
+        instance_group = @deployment_plan.instance_groups.find { |instance_group| instance_group.name == @link_path.job }
 
         return nil unless instance_group
 
