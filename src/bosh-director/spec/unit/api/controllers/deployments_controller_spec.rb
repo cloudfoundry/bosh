@@ -7,7 +7,7 @@ module Bosh::Director
       include IpUtil
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(config) }
+      subject(:app) { linted_rack_app(described_class.new(config)) }
 
       let(:config) do
         config = Config.load_hash(SpecHelper.spec_get_director_config)
@@ -307,7 +307,7 @@ module Bosh::Director
                 variable_set: Models::VariableSet.create(deployment: deployment)
               )
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
-              put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+              put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => '0'}
               match = last_response.location.match(%r{/tasks/no_content_length})
               expect(match).to_not be_nil
             end
@@ -380,7 +380,7 @@ module Bosh::Director
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
 
-            put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+            put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => '0'}
 
             expect(last_response.status).to eq(302)
           end

@@ -250,6 +250,13 @@ def check_event_log(task_id)
   end
 end
 
+def linted_rack_app(app)
+  Rack::Builder.new do
+    use Rack::Lint
+    run app
+  end
+end
+
 module ManifestHelper
   class << self
     def default_deployment_manifest(overrides = {})

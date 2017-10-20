@@ -112,6 +112,8 @@ module Bosh::Director
             error:       error,
             context:     context
           })
+
+        status(200)
       end
 
       private
