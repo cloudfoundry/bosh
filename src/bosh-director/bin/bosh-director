@@ -33,6 +33,8 @@ puma_configuration = Puma::Configuration.new do |user_config|
   user_config.port config.port
   user_config.app rack_app
   user_config.preload_app!
+  # this makes sure that all puma workers get their own db connections
+  user_config.before_fork { Bosh::Director::Config.db.disconnect }
 end
 puma_launcher = Puma::Launcher.new(puma_configuration)
 
