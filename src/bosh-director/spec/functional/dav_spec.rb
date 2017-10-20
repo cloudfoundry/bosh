@@ -26,7 +26,14 @@ module Bosh::Blobstore
       path
     end
 
-    class NginxConfig < Struct.new(:port, :root, :read_users_path, :write_users_path)
+    class NginxConfig < Struct.new(
+      :port,
+      :root,
+      :read_users_path,
+      :write_users_path,
+      :certificate_path,
+      :key_path
+    )
       def asset(filename)
         File.expand_path(File.join(File.dirname(__FILE__), '..', 'assets', filename))
       end
@@ -54,7 +61,18 @@ module Bosh::Blobstore
       @write_users = create_user_file('director' => 'directorpass')
       write_users_path = @write_users.to_path
 
-      nginx_config_file = NginxConfig.new(nginx_port, @root_dir, read_users_path, write_users_path).render
+      certificate_path = File.expand_path(File.join(File.dirname(__FILE__), '..', 'assets', "blobstore_certificate.pem"))
+      key_path = File.expand_path(File.join(File.dirname(__FILE__), '..', 'assets', "blobstore_key.pem"))
+
+      nginx_config = NginxConfig.new(
+        nginx_port,
+        @root_dir,
+        read_users_path,
+        write_users_path,
+        certificate_path,
+        key_path
+      )
+      nginx_config_file = nginx_config.render
 
       logger = Logging.logger(STDOUT)
       nginx = Bosh::Dev::Sandbox::Nginx.new
@@ -85,10 +103,14 @@ module Bosh::Blobstore
       FileUtils.rm_rf(@test_blob_path)
     end
 
-    let(:endpoint) { 'http://localhost:20000/' }
+    let(:endpoint) { 'https://127.0.0.1:20000/' }
 
     let(:davcli_path) do
       Dir.glob(File.join(File.dirname(__FILE__), '../../../../blobs/davcli/', 'davcli-*-linux-amd64')).first
+    end
+
+    let(:ca_cert_path) do
+      File.expand_path(File.join(File.dirname(__FILE__), '..', 'assets', "blobstore_ca.pem"))
     end
 
     let(:dav_options) do
@@ -97,6 +119,7 @@ module Bosh::Blobstore
         user: user,
         password: password,
         davcli_path: davcli_path,
+        ca_cert: File.read(ca_cert_path)
       }
     end
 

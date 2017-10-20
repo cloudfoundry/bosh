@@ -5,10 +5,11 @@ module Bosh::Blobstore
     subject { described_class.new(options) }
     let(:options) do
       {
-        :endpoint => 'http://localhost',
+        :endpoint => 'https://localhost',
         :user => 'john',
         :password => 'smith',
-        :davcli_path => davcli_path
+        :davcli_path => davcli_path,
+        :ca_cert => 'FAKE_CA_PEM'
       }
     end
     let!(:base_dir) { Dir.mktmpdir }
@@ -39,7 +40,8 @@ module Bosh::Blobstore
         {
           user:     options[:user],
           password: options[:password],
-          endpoint: options[:endpoint]
+          endpoint: options[:endpoint],
+          ca_cert:  options[:ca_cert]
         }
       end
       let (:stored_config_file) { File.new(expected_config_file).readlines }
