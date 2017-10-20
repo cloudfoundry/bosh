@@ -39,6 +39,10 @@ module Bosh
             @az_name_to_existing_instances.values.flatten
           end
 
+          def azs
+            @az_name_to_existing_instances.keys
+          end
+
           private
 
           def initialize_azs_to_instances

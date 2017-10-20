@@ -77,10 +77,13 @@ module Bosh
           end
 
           def balance_across_desired_azs(desired_instances, placed_instances, unplaced_existing_instances)
+            balancer = Balancer.new(
+              initial_weight: placed_instances.az_placement_count,
+              tie_strategy: TieStrategy::MinWins.new(unplaced_existing_instances.azs)
+            )
+
             desired_instances.each do |desired_instance|
-              azs_with_fewest_placed = placed_instances.azs_with_fewest_instances
-              @logger.debug("azs with fewest placed: #{azs_with_fewest_placed.inspect}")
-              az = unplaced_existing_instances.azs_sorted_by_existing_instance_count_descending(azs_with_fewest_placed).first
+              az = balancer.pop
               @logger.debug("az: #{az.inspect}")
 
               existing_instance = unplaced_existing_instances.claim_instance_for_az(az)

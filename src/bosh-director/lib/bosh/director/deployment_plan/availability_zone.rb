@@ -22,6 +22,10 @@ module Bosh::Director
       def inspect
         "az: #{name}"
       end
+
+      def <=>(other)
+        self.name <=> other.name
+      end
     end
   end
 end

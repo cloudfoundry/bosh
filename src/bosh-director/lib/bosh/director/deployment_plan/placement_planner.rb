@@ -5,4 +5,6 @@ require 'bosh/director/deployment_plan/placement_planner/static_ips_availability
 require 'bosh/director/deployment_plan/placement_planner/networks_to_static_ips'
 require 'bosh/director/deployment_plan/placement_planner/bruteforce_ip_allocation'
 require 'bosh/director/deployment_plan/placement_planner/placed_desired_instances'
+require 'bosh/director/deployment_plan/placement_planner/balancer'
+require 'bosh/director/deployment_plan/placement_planner/tie_strategy'
 require 'bosh/director/deployment_plan/placement_planner/unplaced_existing_instances'

@@ -3,6 +3,7 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::AvailabilityZonePicker do
     subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory, network_planner, job_networks, desired_azs) }
+
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(instance_double(Bosh::Director::DeploymentPlan::Planner), logger) }
     let(:skip_drain_decider) { SkipDrain.new(true) }
@@ -88,7 +89,7 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when a job in 2 zones with 3 instances' do
+      context 'when a job is in 2 zones with 3 instances' do
         let(:desired_azs) { [az1, az2] }
 
         it 'we expect all instances will be new' do
@@ -109,7 +110,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'scaling down' do
-        it 'prefers lower indexed existing instances' do
+        it 'prefers to preserve lower-indexed existing instances' do
           unmatched_desired_instances = [desired_instance]
           existing_0 = existing_instance_with_az(0, nil)
           existing_1 = existing_instance_with_az(1, nil)
@@ -327,7 +328,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'where 2 or more existing instances in the same AZ with persistent disk and scale down to 1' do
+        describe 'where 2 or more existing instances are in the same AZ with persistent disk and we scale down to 1' do
           let(:desired_azs) { [az1] }
 
           it 'should eliminate one of the instances' do
@@ -376,7 +377,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'with one additional desired instance' do
+        describe 'with one additional desired instance and one new az' do
           let(:desired_azs) { [az1, az2] }
 
           it 'should add the instance to the additional az' do
@@ -459,7 +460,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'when lowering instance count to the number of ignored instances and all ignored instances are in the same az' do
+        describe 'when scaling down the instance count to the number of ignored instances and all ignored instances are in the same az' do
           let(:desired_azs) { [az1,az2] }
           it 'should not rebalance ignored instances' do
             existing_zone1_0 = existing_instance_with_az(0, '1')
@@ -485,7 +486,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        describe 'when lowering instance count to above the number of ignored instances and no az has been provided' do
+        describe 'when scaling down the instance count to above the number of ignored instances and no az has been provided' do
           let(:desired_azs) { nil }
 
           it 'should not delete ignored instances' do
@@ -514,7 +515,6 @@ module Bosh::Director::DeploymentPlan
             expect(obsoletes.map(&:existing_instance)).to match_array([existing_zone1_3, existing_zone1_2])
           end
         end
-
       end
     end
   end

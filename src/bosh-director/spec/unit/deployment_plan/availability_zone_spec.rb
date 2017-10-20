@@ -40,6 +40,24 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
+      describe 'comparison' do
+        context 'lesser' do
+          let(:other) { AvailabilityZone.new("z2", {}) }
+
+          it 'compares based on the name' do
+            expect([other, subject].sort).to eql([subject, other])
+          end
+        end
+
+        context 'greater' do
+          let(:other) { AvailabilityZone.new("z0", {}) }
+
+          it 'compares based on the name' do
+            expect([other, subject].sort).to eql([other, subject])
+          end
+        end
+      end
+
       describe 'cloud_properties' do
 
         context 'is not present' do
