@@ -8,11 +8,15 @@ module Bosh
             @tie_strategy = tie_strategy
           end
 
-          def pop
+          def pop(priority=[])
             return nil if @weight.size == 0
             peek_value = peek
+            chosen_value = peek_value.find {|v| priority.include?(v.name) }
+
             if peek_value.length != 1
-              chosen_value = @tie_strategy.call(peek_value)
+              if chosen_value.nil?
+                chosen_value = @tie_strategy.call(peek_value)
+              end
             else
               chosen_value = peek_value.first
             end

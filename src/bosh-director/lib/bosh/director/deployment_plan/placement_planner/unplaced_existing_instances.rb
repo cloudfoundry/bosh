@@ -40,7 +40,7 @@ module Bosh
           end
 
           def azs
-            @instances.map(&:availability_zone)
+            unclaimed.map(&:availability_zone).compact
           end
 
           private
