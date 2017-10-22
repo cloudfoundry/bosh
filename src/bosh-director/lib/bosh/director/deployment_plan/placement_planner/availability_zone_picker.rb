@@ -83,11 +83,12 @@ module Bosh
             tie_strategy = @random_tie_strategy.new if @randomize_az_placement
             balancer = Balancer.new(
               initial_weight: placed_instances.az_placement_count,
-              tie_strategy: tie_strategy
+              tie_strategy: tie_strategy,
+              preferred: unplaced_existing_instances.azs
             )
 
             desired_instances.each do |desired_instance|
-              az = balancer.pop(unplaced_existing_instances.azs)
+              az = balancer.pop
               @logger.debug("az: #{az.inspect}")
 
               existing_instance = unplaced_existing_instances.claim_instance_for_az(az)

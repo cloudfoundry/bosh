@@ -3,25 +3,19 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class Balancer
-          def initialize(initial_weight: {}, tie_strategy: lambda {|n| n.min})
+          def initialize(initial_weight: {}, tie_strategy: lambda {|n| n.min}, preferred:)
             @weight = initial_weight
             @tie_strategy = tie_strategy
+            @preferred = preferred
           end
 
-          def pop(priority=[])
+          def pop
             return nil if @weight.size == 0
             peek_value = peek
-            chosen_value = peek_value.find {|v| priority.include?(v.name) }
-
             if peek_value.length != 1
-              if chosen_value.nil?
-                chosen_value = @tie_strategy.call(peek_value)
-              end
-            else
-              chosen_value = peek_value.first
+              return choose(peek_value.find {|k| @preferred.include?(k.name) } || @tie_strategy.call(peek_value))
             end
-            @weight[chosen_value]+=1
-            chosen_value
+            return choose(peek_value.first)
           end
 
           private
@@ -29,6 +23,14 @@ module Bosh
             @weight.group_by {|_,v| v}
               .min_by {|k,_| k}
               .last.map(&:first)
+          end
+
+          def choose(chosen_value)
+            @weight[chosen_value]+=1
+            if preferred_chosen_index = @preferred.find_index {|v| v == chosen_value.name}
+              @preferred.delete_at(preferred_chosen_index)
+            end
+            chosen_value
           end
         end
       end
