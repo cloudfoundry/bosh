@@ -499,7 +499,7 @@ module Bosh
 
       context 'nats information' do
         context 'is provided' do
-          it 'should include the uri in ENV' do
+          it 'should NOT include the uri in ENV' do
             Config.nats_uri = 'nats://localhost:1234'
 
             expect(cloud).to receive(:create_vm).with(
@@ -507,9 +507,6 @@ module Bosh
               kind_of(Hash), network_settings, ['fake-disk-cid'],
               {
                 'bosh' => {
-                  'mbus' => {
-                    'urls' => [ Config.nats_uri ],
-                  },
                   'group' => kind_of(String),
                   'groups' => kind_of(Array),
                 }
