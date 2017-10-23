@@ -18,7 +18,11 @@ module Bosh::Director
       end
 
       post '/diff', :consumes => :yaml do
-        old_config_hash = cloud_config_or_empty(Bosh::Director::Models::Config.latest_set('cloud').first)
+        old_config_hash = cloud_config_or_empty(
+          Bosh::Director::Models::Config.
+            latest_set('cloud').
+            find{|config| config[:name] == 'default'}
+        )
         new_config_hash = validate_manifest_yml(request.body.read, nil) || {}
 
         result = {}

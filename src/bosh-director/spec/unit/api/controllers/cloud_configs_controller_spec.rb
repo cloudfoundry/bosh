@@ -255,6 +255,21 @@ module Bosh::Director
 
         end
 
+        context 'when there are two previous cloud config ' do
+          before do
+            Models::Config.make(:cloud, name: 'foo',raw_manifest: cloud_config_hash_with_one_az)
+            Models::Config.make(:cloud, raw_manifest: cloud_config_hash_with_two_azs)
+          end
+          it 'always diffs against the default-named cloud config' do
+            post(
+                '/diff',
+                YAML.dump(cloud_config_hash_with_two_azs),
+                {'CONTENT_TYPE' => 'text/yaml'}
+            )
+            expect(last_response.body).to eq('{"diff":[]}')
+          end
+        end
+
         context 'when there is no previous cloud config' do
           it 'returns the diff' do
             post(
