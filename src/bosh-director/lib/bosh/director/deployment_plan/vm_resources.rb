@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class VmRequirements
+    class VmResources
       include ValidationHelper
 
       attr_reader :cpu

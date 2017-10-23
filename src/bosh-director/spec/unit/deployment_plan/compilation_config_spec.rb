@@ -106,10 +106,10 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             [vm_type]
           )
         }.to raise_error BD::CompilationConfigBadVmConfiguration,
-          "Compilation config specifies more than one of 'vm_type', 'vm_requirements', and 'cloud_properties' keys, only one is allowed."
+          "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed."
       end
 
-      context 'when vm_requirements is configured' do
+      context 'when vm_resources is configured' do
         it 'raises an error' do
           expect {
             BD::DeploymentPlan::CompilationConfig.new(
@@ -117,7 +117,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 'workers' => 2,
                 'network' => 'foo',
                 'vm_type' => 'my-foo-compilation',
-                'vm_requirements' => {
+                'vm_resources' => {
                   'cpu' => 4,
                   'ram' => 1024,
                   'ephemeral_disk_size' => 100,
@@ -126,7 +126,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               {},
               [vm_type]
             )
-          }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_requirements', and 'cloud_properties' keys, only one is allowed.")
+          }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed.")
         end
       end
 
@@ -170,7 +170,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     end
 
     context 'when vm_type is not configured' do
-      context 'when vm_requirements are not configured' do
+      context 'when vm_resources are not configured' do
         context 'when vm_extensions are configured' do
           let(:vm_extension_1) {BD::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
           let(:vm_extensions) {[vm_extension_1]}
@@ -188,26 +188,26 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 [],
                 vm_extensions
               )}.to raise_error BD::CompilationConfigBadVmConfiguration,
-              "Compilation config is using vm extension 'my-foo-compilation-extension' and must configure a vm type or vm_requirements block."
+              "Compilation config is using vm extension 'my-foo-compilation-extension' and must configure a vm type or vm_resources block."
           end
         end
       end
 
-      context 'when vm_requirements is configured' do
+      context 'when vm_resources is configured' do
         it 'should parse the property' do
           config = BD::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
-            'vm_requirements' => {
+            'vm_resources' => {
               'cpu' => 4,
               'ram' => 1024,
               'ephemeral_disk_size' => 100,
             }
           }, {})
 
-          expect(config.vm_requirements.cpu).to eq(4)
-          expect(config.vm_requirements.ram).to eq(1024)
-          expect(config.vm_requirements.ephemeral_disk_size).to eq(100)
+          expect(config.vm_resources.cpu).to eq(4)
+          expect(config.vm_resources.ram).to eq(1024)
+          expect(config.vm_resources.ephemeral_disk_size).to eq(100)
         end
 
         context 'when vm_extensions are configured' do
@@ -219,7 +219,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               {
                 'workers' => 2,
                 'network' => 'foo',
-                'vm_requirements' => {
+                'vm_resources' => {
                   'cpu' => 4,
                   'ram' => 1024,
                   'ephemeral_disk_size' => 100,
@@ -242,7 +242,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               BD::DeploymentPlan::CompilationConfig.new({
                 'workers' => 2,
                 'network' => 'foo',
-                'vm_requirements' => {
+                'vm_resources' => {
                   'cpu' => 4,
                   'ram' => 1024,
                   'ephemeral_disk_size' => 100,
@@ -251,7 +251,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                   'some' => 'value'
                 }
               }, {})
-            }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_requirements', and 'cloud_properties' keys, only one is allowed.")
+            }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed.")
           end
         end
       end

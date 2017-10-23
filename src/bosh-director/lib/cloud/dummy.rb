@@ -252,17 +252,17 @@ module Bosh
         validate_and_record_inputs(SET_DISK_METADATA_SCHEMA, __method__, disk_cid, metadata)
       end
 
-      CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA = Membrane::SchemaParser.parse { { vm_requirements: {'ram' => Integer, 'cpu' => Integer, 'ephemeral_disk_size' => Integer} } }
-      def calculate_vm_cloud_properties(vm_requirements)
+      CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA = Membrane::SchemaParser.parse { { vm_resources: {'ram' => Integer, 'cpu' => Integer, 'ephemeral_disk_size' => Integer} } }
+      def calculate_vm_cloud_properties(vm_resources)
         validate_and_record_inputs(
           CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA,
           __method__,
-          vm_requirements
+          vm_resources
         )
         instance_type = @context['cvcpkey'].nil? ? 'dummy' : @context['cvcpkey']
         {
           instance_type: instance_type,
-          ephemeral_disk: { size: vm_requirements['ephemeral_disk_size'] }
+          ephemeral_disk: { size: vm_resources['ephemeral_disk_size'] }
         }
       end
 

@@ -48,7 +48,7 @@ module Bosh::Director
     end
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
     let(:tags) { {'tag1' => 'value1'} }
-    let(:vm_requirements_cache) { instance_double(Bosh::Director::DeploymentPlan::VmRequirementsCache) }
+    let(:vm_resources_cache) { instance_double(Bosh::Director::DeploymentPlan::VmResourcesCache) }
     let(:deployment_plan) do
       instance_double(Bosh::Director::DeploymentPlan::Planner,
         compilation: compilation_config,
@@ -59,7 +59,7 @@ module Bosh::Director
         template_blob_cache: template_blob_cache,
         use_short_dns_addresses?: false,
         tags: tags,
-        vm_requirements_cache: vm_requirements_cache
+        vm_resources_cache: vm_resources_cache
       )
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}
@@ -199,12 +199,12 @@ module Bosh::Director
         expect(event_2.instance).to eq('compilation-deadbeef/instance-uuid-1')
       end
 
-      context 'when vm_requirements are given' do
+      context 'when vm_resources are given' do
         let(:compilation_config) do
           compilation_spec = {
             'workers' => n_workers,
             'network' => 'a',
-            'vm_requirements' => {
+            'vm_resources' => {
               'cpu' => 4,
               'ram' => 2048,
               'ephemeral_disk_size' => 100
@@ -216,15 +216,15 @@ module Bosh::Director
 
         it 'retrieves the vm requirements from the CPI/cache and populates the cloud properties' do
           allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1', 'agent-id')
-          allow(deployment_plan.vm_requirements_cache)
+          allow(deployment_plan.vm_resources_cache)
             .to receive(:get_vm_cloud_properties).with(nil, {
               'cpu' => 4,
               'ram' => 2048,
               'ephemeral_disk_size' => 100
             })
-            .and_return({'vm_requirements' => 'foo'})
+            .and_return({'vm_resources' => 'foo'})
           allow(cloud).to receive(:create_vm) do |_, _, cloud_properties|
-            expect(cloud_properties['vm_requirements']).to eq('foo')
+            expect(cloud_properties['vm_resources']).to eq('foo')
           end
 
           action

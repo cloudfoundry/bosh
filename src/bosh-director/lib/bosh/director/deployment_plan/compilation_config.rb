@@ -23,7 +23,7 @@ module Bosh::Director
 
       attr_reader :vm_type
 
-      attr_reader :vm_requirements
+      attr_reader :vm_resources
 
       attr_reader :vm_extensions
 
@@ -42,7 +42,7 @@ module Bosh::Director
 
         parse_availability_zone(azs_list, compilation_config)
 
-        parse_vm_type_and_vm_requirements(compilation_config, vm_types)
+        parse_vm_type_and_vm_resources(compilation_config, vm_types)
 
         parse_vm_extensions(compilation_config, vm_extensions)
       end
@@ -62,13 +62,13 @@ module Bosh::Director
         end
       end
 
-      def parse_vm_type_and_vm_requirements(compilation_config, vm_types)
+      def parse_vm_type_and_vm_resources(compilation_config, vm_types)
         vm_type_name = safe_property(compilation_config, 'vm_type', class: String, optional: true)
-        vm_requirements = safe_property(compilation_config, 'vm_requirements', class: Hash, optional: true)
+        vm_resources = safe_property(compilation_config, 'vm_resources', class: Hash, optional: true)
 
-        if [vm_type_name, vm_requirements, @cloud_properties].reject { |v| v.nil? || v.empty? }.count > 1
+        if [vm_type_name, vm_resources, @cloud_properties].reject { |v| v.nil? || v.empty? }.count > 1
           raise Bosh::Director::CompilationConfigBadVmConfiguration,
-            "Compilation config specifies more than one of 'vm_type', 'vm_requirements', and 'cloud_properties' keys, only one is allowed."
+            "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed."
         end
 
         if vm_type_name
@@ -79,8 +79,8 @@ module Bosh::Director
             raise Bosh::Director::CompilationConfigInvalidVmType,
               "Compilation config references unknown vm type '#{vm_type_name}'. Known vm types are: #{vm_types_names.join(', ')}"
           end
-        elsif vm_requirements
-          @vm_requirements = Bosh::Director::DeploymentPlan::VmRequirements.new(vm_requirements)
+        elsif vm_resources
+          @vm_resources = Bosh::Director::DeploymentPlan::VmResources.new(vm_resources)
         end
       end
 
@@ -98,9 +98,9 @@ module Bosh::Director
               "Compilation config references unknown vm extension '#{vm_extension_name}'. Known vm extensions are: #{vm_extensions_names.join(', ')}"
           end
 
-          if @vm_type.nil? && @vm_requirements.nil?
+          if @vm_type.nil? && @vm_resources.nil?
             raise Bosh::Director::CompilationConfigBadVmConfiguration,
-              "Compilation config is using vm extension '#{vm_extension.name}' and must configure a vm type or vm_requirements block."
+              "Compilation config is using vm extension '#{vm_extension.name}' and must configure a vm type or vm_resources block."
           end
 
           @vm_extensions.push(vm_extension)

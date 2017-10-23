@@ -109,7 +109,7 @@ module Bosh::Director
         end
 
         it 'creates a vm requirements cache' do
-          expect(planner.vm_requirements_cache).to be_instance_of(VmRequirementsCache)
+          expect(planner.vm_resources_cache).to be_instance_of(VmResourcesCache)
         end
 
         describe '#instance_plans_with_hot_swap_and_needs_shutdown' do

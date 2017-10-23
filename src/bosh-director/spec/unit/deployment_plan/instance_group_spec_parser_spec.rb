@@ -1194,9 +1194,9 @@ module Bosh::Director
         end
 
         describe 'vm requirements' do
-          let(:vm_requirements) do
+          let(:vm_resources) do
             {
-              'vm_requirements' => {
+              'vm_resources' => {
                 'cpu' => 4,
                 'ram' => 2048,
                 'ephemeral_disk_size' => 100
@@ -1226,9 +1226,9 @@ module Bosh::Director
             }
           end
 
-          context 'when vm_requirements are given' do
+          context 'when vm_resources are given' do
             before do
-              instance_group_spec.merge!(vm_requirements)
+              instance_group_spec.merge!(vm_resources)
             end
 
             it 'parses the vm requirements' do
@@ -1236,9 +1236,9 @@ module Bosh::Director
               expect {
                 instance_group = parsed_instance_group
               }.to_not raise_error
-              expect(instance_group.vm_requirements.cpu).to eq(4)
-              expect(instance_group.vm_requirements.ram).to eq(2048)
-              expect(instance_group.vm_requirements.ephemeral_disk_size).to eq(100)
+              expect(instance_group.vm_resources.cpu).to eq(4)
+              expect(instance_group.vm_resources.ram).to eq(2048)
+              expect(instance_group.vm_resources.ephemeral_disk_size).to eq(100)
             end
           end
 
@@ -1247,7 +1247,7 @@ module Bosh::Director
               instance_group_spec.merge!(
                 'vm_type' => 'fake-vm-type',
               ).merge!(
-                vm_requirements
+                vm_resources
               )
 
               allow(deployment_plan).to receive(:vm_type).with('fake-vm-type').and_return(
@@ -1261,7 +1261,7 @@ module Bosh::Director
             it 'raises an error' do
               expect {
                 parsed_instance_group
-              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' specifies both 'vm_type' and 'vm_requirements' keys, only one is allowed.")
+              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' specifies both 'vm_type' and 'vm_resources' keys, only one is allowed.")
             end
           end
 
@@ -1269,7 +1269,7 @@ module Bosh::Director
             it 'raises an error' do
               expect {
                 parsed_instance_group
-              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' is missing either 'vm_type' or 'vm_requirements' or 'resource_pool' section.")
+              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' is missing either 'vm_type' or 'vm_resources' or 'resource_pool' section.")
             end
           end
 

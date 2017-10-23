@@ -36,7 +36,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   let(:tracer_instance) do
     make_instance
   end
-  let(:vm_requirements_cache) { instance_double(BD::DeploymentPlan::VmRequirementsCache) }
+  let(:vm_resources_cache) { instance_double(BD::DeploymentPlan::VmResourcesCache) }
 
   before do
     allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_model)
@@ -64,7 +64,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       it 'should set "skip_drain" on the instance plan' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
         expect(instance_plans.select(&:skip_drain).count).to eq(instance_plans.count)
       end
     end
@@ -75,7 +75,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       it 'should return instance plans with "recreate" option set on them' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
 
         expect(instance_plans.select(&:recreate_deployment).count).to eq(instance_plans.count)
       end
@@ -86,7 +86,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, ignore: true)
         instance_group.instance_states = {'0' => "stopped"}
         expect {
-          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
         }.to raise_error(
           Bosh::Director::JobInstanceIgnored,
           "You are trying to change the state of the ignored instance 'foo-instance_group/#{existing_instance_model.uuid}'. " +
@@ -103,7 +103,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
         allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
 
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
 
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
@@ -135,7 +135,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           existing_instance_model.active_vm = vm
 
           expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with active vm")
-          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
         end
       end
 
@@ -144,7 +144,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
           expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with no active vm")
-          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
         end
       end
     end
@@ -159,7 +159,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         expected_new_instance_index = 2
         allow(instance_repo).to receive(:create).with(desired_instances[0], expected_new_instance_index) { make_instance(2) }
 
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances, vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances, vm_resources_cache)
 
         expect(instance_plans.count).to eq(3)
         obsolete_instance_plans = instance_plans.select(&:obsolete?)
@@ -177,7 +177,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
 
-      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
 
       expect(instance_plans.count).to eq(1)
       existing_instance_plan = instance_plans.first
@@ -205,14 +205,14 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
       expect(tracer_instance).to receive(:update_description)
 
-      instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+      instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
     end
 
     it 'creates instance plans for new instances' do
       existing_instances = []
       allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
 
-      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], existing_instances, vm_requirements_cache)
+      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], existing_instances, vm_resources_cache)
 
       expect(instance_plans.count).to eq(1)
       new_instance_plan = instance_plans.first
@@ -241,7 +241,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       allow(instance_repo).to receive(:create).with(desired_instances[1], 0) { make_instance(auto_picked_index) }
 
-      instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances, vm_requirements_cache)
+      instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances, vm_resources_cache)
       expect(instance_plans.count).to eq(3)
 
       obsolete_instance_plan = instance_plans.find(&:obsolete?)
@@ -265,7 +265,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:instance_group) do
         instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
         instance_group.name = 'foo-instance_group'
-        instance_group.vm_requirements = BD::DeploymentPlan::VmRequirements.new('cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
+        instance_group.vm_resources = BD::DeploymentPlan::VmResources.new('cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
         instance_group.availability_zones << az
         instance_group
       end
@@ -273,24 +273,24 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       it 'updates the cloud properties with the vm requirements retrieved via the CPI' do
         existing_instances = []
         allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
-        allow(vm_requirements_cache).to receive(:get_vm_cloud_properties).and_return({'vm_requirements' => 'foo'})
+        allow(vm_resources_cache).to receive(:get_vm_cloud_properties).and_return({'vm_resources' => 'foo'})
 
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], existing_instances, vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], existing_instances, vm_resources_cache)
 
-        expect(vm_requirements_cache).to have_received(:get_vm_cloud_properties).once
-        expect(instance_plans.first.instance.cloud_properties).to include({'vm_requirements' => 'foo'})
+        expect(vm_resources_cache).to have_received(:get_vm_cloud_properties).once
+        expect(instance_plans.first.instance.cloud_properties).to include({'vm_resources' => 'foo'})
       end
 
       it 'does not update the cloud properties if planned instance is obsolete' do
         existing_instances = [BD::Models::Instance.make(job: 'foo-instance-group', index: 0)]
         desired_instances = []
         allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
-        allow(vm_requirements_cache).to receive(:get_vm_cloud_properties).and_return({'vm_requirements' => 'foo'})
+        allow(vm_resources_cache).to receive(:get_vm_cloud_properties).and_return({'vm_resources' => 'foo'})
 
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances, vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances, vm_resources_cache)
 
-        expect(vm_requirements_cache).to_not have_received(:get_vm_cloud_properties)
-        expect(instance_plans.first.instance.cloud_properties).to_not include({'vm_requirements' => 'foo'})
+        expect(vm_resources_cache).to_not have_received(:get_vm_cloud_properties)
+        expect(instance_plans.first.instance.cloud_properties).to_not include({'vm_resources' => 'foo'})
       end
     end
 
@@ -302,7 +302,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
           allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { existing_tracer_instance }
 
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
 
           expect(instance_plans.count).to eq(1)
           existing_instance_plan = instance_plans.first
@@ -324,7 +324,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           allow(instance_repo).to receive(:fetch_existing).with(another_existing_instance_model, nil, instance_group, another_desired_instance.index, deployment) { existing_tracer_instance }
           allow(instance_repo).to receive(:create).with(desired_instance, 2) { make_instance(2) }
 
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model], vm_requirements_cache)
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model], vm_resources_cache)
 
           expect(instance_plans.count).to eq(3)
           desired_existing_instance_plan = instance_plans.find(&:existing?)
@@ -348,7 +348,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_1, nil, instance_group, desired_instance_1.index, deployment) { make_instance(0) }
           allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model_2, nil, instance_group, desired_instance_2.index, deployment) { make_instance(1) }
 
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance_1, desired_instance_2], [existing_instance_model_1, existing_instance_model_2], vm_requirements_cache)
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance_1, desired_instance_2], [existing_instance_model_1, existing_instance_model_2], vm_resources_cache)
 
           expect(instance_plans.count).to eq(2)
           bootstrap_instance_plans = instance_plans.select { |ip| ip.instance.bootstrap? }
@@ -366,7 +366,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
           allow(instance_repo).to receive(:create).with(another_desired_instance, 1) { make_instance(1) }
 
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance, another_desired_instance], existing_instances, vm_requirements_cache)
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance, another_desired_instance], existing_instances, vm_resources_cache)
 
           expect(instance_plans.count).to eq(2)
           new_instance_plan = instance_plans.first
@@ -384,7 +384,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
           obsolete_instance = instance_double(BD::DeploymentPlan::Instance, update_description: nil)
 
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [], [existing_instance_model], vm_requirements_cache)
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [], [existing_instance_model], vm_resources_cache)
 
           expect(instance_plans.count).to eq(1)
           obsolete_instance_plan = instance_plans.first
@@ -420,7 +420,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
 
       it 'marks undesired existing network reservations as obsolete' do
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
 
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
@@ -434,7 +434,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         end
 
         it 'marks desired existing reservations as existing' do
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_requirements_cache)
+          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
 
           expect(instance_plans.count).to eq(1)
           existing_instance_plan = instance_plans.first
@@ -451,7 +451,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
 
       it 'creates network plan for vip network' do
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [], vm_requirements_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [], vm_resources_cache)
 
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first

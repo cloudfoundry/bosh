@@ -39,7 +39,7 @@ module Bosh::Director
         jobs: [],
         update_spec: update_config.to_hash,
         properties: {},
-        vm_requirements: DeploymentPlan::VmRequirements.new({'cpu' => 1, 'ephemeral_disk_size' => 1, 'ram' => 1}),
+        vm_resources: DeploymentPlan::VmResources.new({'cpu' => 1, 'ephemeral_disk_size' => 1, 'ram' => 1}),
         lifecycle: DeploymentPlan::InstanceGroup::DEFAULT_LIFECYCLE_PROFILE,
       )
     end

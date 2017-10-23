@@ -58,7 +58,7 @@ module Bosh::Director::DeploymentPlan
         update_spec: {},
         properties: properties,
         lifecycle: lifecycle,
-        vm_requirements: nil,
+        vm_resources: nil,
       )
     end
     let(:index) { 0 }

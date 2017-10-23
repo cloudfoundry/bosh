@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 describe 'calculated vm properties', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:vm_requirements) {
+  let(:vm_resources) {
     {
       'cpu' => 2,
       'ram' => 1024,
@@ -15,7 +15,7 @@ describe 'calculated vm properties', type: :integration do
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config.delete('resource_pools')
     cloud_config.delete('vm_types')
-    cloud_config['compilation']['vm_requirements'] = vm_requirements
+    cloud_config['compilation']['vm_resources'] = vm_resources
     cloud_config
   end
 
@@ -25,7 +25,7 @@ describe 'calculated vm properties', type: :integration do
     {
       'name' => 'dummy',
       'instances' => 1,
-      'vm_requirements' => vm_requirements,
+      'vm_resources' => vm_resources,
       'jobs' => [{'name'=> 'foobar', 'release' => 'bosh-release'}],
       'stemcell' => 'default',
       'networks' => [
@@ -51,7 +51,7 @@ describe 'calculated vm properties', type: :integration do
         {
           'name' => 'dummy',
           'instances' => 1,
-          'vm_requirements' => vm_requirements,
+          'vm_resources' => vm_resources,
           'jobs' => [{'name'=> 'foobar', 'release' => 'bosh-release'}],
           'stemcell' => 'default',
           'networks' => [
@@ -94,7 +94,7 @@ describe 'calculated vm properties', type: :integration do
       expect(invocations.select {|inv| inv.method_name == 'calculate_vm_cloud_properties'}.count).to eq(1)
 
       expect(invocations[2].method_name).to eq('calculate_vm_cloud_properties')
-      expect(invocations[2].inputs['vm_requirements']).to eq(vm_requirements)
+      expect(invocations[2].inputs['vm_resources']).to eq(vm_resources)
 
       invocations.select {|inv| inv.method_name == 'create_vm'}.each do |inv|
         expect(inv.inputs['cloud_properties']).to eq({"instance_type"=>"dummy", "ephemeral_disk"=>{"size"=>10}})
@@ -114,7 +114,7 @@ describe 'calculated vm properties', type: :integration do
 
     context 'when deploying again with changes to the vm requirements' do
       it 'uses the CPI again to calculate the vm cloud properties' do
-        vm_requirements['ephemeral_disk_size'] = 20
+        vm_resources['ephemeral_disk_size'] = 20
         deploy_simple_manifest(manifest_hash: deployment_manifest_with_vm_block)
 
         invocations = current_sandbox.cpi.invocations
@@ -126,11 +126,11 @@ describe 'calculated vm properties', type: :integration do
   end
 
   context 'when using vm_type and vm_block in different instance groups' do
-    let(:cloud_config_with_vm_types_and_vm_requirements) do
+    let(:cloud_config_with_vm_types_and_vm_resources) do
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config.delete('resource_pools')
       cloud_config['vm_types'] = [{'name' => 'vm_type_1', 'cloud_properties' => { 'instance_type' => 'from-vm-type'}}]
-      cloud_config['compilation']['vm_requirements'] = vm_requirements
+      cloud_config['compilation']['vm_resources'] = vm_resources
       cloud_config['networks'].first['subnets'].first['static'] << '192.168.1.11'
       cloud_config
     end
@@ -155,7 +155,7 @@ describe 'calculated vm properties', type: :integration do
     before do
       create_and_upload_test_release
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: cloud_config_with_vm_types_and_vm_requirements)
+      upload_cloud_config(cloud_config_hash: cloud_config_with_vm_types_and_vm_resources)
       deploy_simple_manifest(manifest_hash: deployment_manifest_with_vm_block_and_vm_type)
     end
 
@@ -173,7 +173,7 @@ describe 'calculated vm properties', type: :integration do
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis
       cloud_config.delete('resource_pools')
       cloud_config.delete('vm_types')
-      cloud_config['compilation']['vm_requirements'] = vm_requirements
+      cloud_config['compilation']['vm_resources'] = vm_resources
       cloud_config
     end
     let(:cpi_config) do
@@ -204,7 +204,7 @@ describe 'calculated vm properties', type: :integration do
       expect(cvcp_calls.select {|call| call.context['cvcpkey'] == 'dummy2'}.count).to eq(1)
 
       cvcp_calls.each do |inv|
-        expect(inv.inputs['vm_requirements']).to eq(vm_requirements)
+        expect(inv.inputs['vm_resources']).to eq(vm_resources)
       end
 
       create_vm_calls_instance_types = invocations.select {|inv| inv.method_name == 'create_vm'}.map(&:inputs).map { |v| v['cloud_properties']['instance_type'] }
