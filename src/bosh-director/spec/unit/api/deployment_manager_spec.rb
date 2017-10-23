@@ -65,7 +65,6 @@ module Bosh::Director
     end
 
     describe '#all_by_name_asc' do
-
       before do
         release = Models::Release.make
         deployment = Models::Deployment.make(name: 'b')
@@ -74,7 +73,7 @@ module Bosh::Director
         deployment.add_release_version(release_version)
       end
 
-      it 'eagerly loads :stemcells, :release_versions, :teams' do
+      it 'eagerly loads :stemcells, :release_versions, :teams, :cloud_configs' do
         allow(Bosh::Director::Config.db).to receive(:execute).and_call_original
 
         deployments = subject.all_by_name_asc
@@ -83,7 +82,7 @@ module Bosh::Director
         deployments.first.release_versions.map(&:release)
         deployments.first.teams
 
-        expect(Bosh::Director::Config.db).to have_received(:execute).exactly(5).times
+        expect(Bosh::Director::Config.db).to have_received(:execute).exactly(6).times
       end
 
       it 'lists all deployments in alphabetic order' do
