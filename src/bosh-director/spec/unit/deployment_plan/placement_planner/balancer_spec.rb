@@ -7,11 +7,23 @@ module Bosh::Director::DeploymentPlan
     let(:z3) { double(:z3, name: 'z3') }
 
     it 'first chooses the item with the lowest count' do
-      balancer = PlacementPlanner::Balancer.new(initial_weight: { z1 => 0, z2 => 1, z3 => 2 }, preferred: [])
+      balancer = PlacementPlanner::Balancer.new(
+        initial_weight: { z1 => 0, z2 => 1, z3 => 2 },
+        preferred: [],
+        tie_strategy: lambda {|n| n.min }
+      )
       expect(balancer.pop).to eq(z1)
-      balancer = PlacementPlanner::Balancer.new(initial_weight: { z1 => 1, z2 => 0, z3 => 2 }, preferred: [])
+      balancer = PlacementPlanner::Balancer.new(
+        initial_weight: { z1 => 1, z2 => 0, z3 => 2 },
+        preferred: [],
+        tie_strategy: lambda {|n| n.min}
+      )
       expect(balancer.pop).to eq(z2)
-      balancer = PlacementPlanner::Balancer.new(initial_weight: { z1 => 1, z2 => 1, z3 => 0 }, preferred: [])
+      balancer = PlacementPlanner::Balancer.new(
+        initial_weight: { z1 => 1, z2 => 1, z3 => 0 },
+        preferred: [],
+        tie_strategy: lambda {|n| n.min }
+      )
       expect(balancer.pop).to eq(z3)
     end
 

@@ -3,7 +3,7 @@ module Bosh
     module DeploymentPlan
       module PlacementPlanner
         class Balancer
-          def initialize(initial_weight: {}, tie_strategy: lambda {|n| n.min}, preferred:)
+          def initialize(initial_weight: {}, tie_strategy:, preferred:)
             @weight = initial_weight
             @tie_strategy = tie_strategy
             @preferred = preferred
