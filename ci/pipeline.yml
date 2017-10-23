@@ -5,7 +5,7 @@ groups:
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
-      - unit-2.4-rds
+      - unit-2.4-db-migrations-rds
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
@@ -25,13 +25,13 @@ groups:
   - name: mysql
     jobs:
       - unit-2.4-mysql
-      - unit-2.4-rds
+      - unit-2.4-db-migrations-rds
       - integration-mysql-gocli-sha1
 
   - name: postgres
     jobs:
       - unit-2.4-postgres
-      - unit-2.4-rds
+      - unit-2.4-db-migrations-rds
 
   - name: finalize
     jobs:
@@ -240,7 +240,7 @@ jobs:
           on_failure:
             <<: *slack-alert
 
-  - name: unit-2.4-rds
+  - name: unit-2.4-db-migrations-rds
     public: true
     serial: true
     build_logs_to_retain: 250
