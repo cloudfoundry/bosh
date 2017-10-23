@@ -417,9 +417,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance_plan0 = BD::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0})
       instance_plan1 = BD::DeploymentPlan::InstancePlan.new({desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1})
       obsolete_plan = BD::DeploymentPlan::InstancePlan.new({desired_instance: nil, existing_instance: nil, instance: instance1})
@@ -433,9 +433,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 6, 'started', nil, {}, az, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)
@@ -523,12 +523,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:release).with('appcloud').and_return(release)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 1, 'started', deployment, {}, nil, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment, {}, nil, logger)
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
-      instance2 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 2, 'started', deployment, {}, nil, logger)
+      instance2 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 2, 'started', deployment, {}, nil, logger)
       instance2.bind_new_instance_model
-      instance3 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 3, 'started', deployment, {}, nil, logger)
+      instance3 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 3, 'started', deployment, {}, nil, logger)
       instance3.bind_new_instance_model
 
       desired_instance = BD::DeploymentPlan::DesiredInstance.new
@@ -566,10 +566,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:release).with('appcloud').and_return(release)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2')
 
-      instance1 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 1, 'started', deployment, {}, nil, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment, {}, nil, logger)
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
-      instance2 = BD::DeploymentPlan::Instance.create_from_job(instance_group, 2, 'started', deployment, {}, nil, logger)
+      instance2 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 2, 'started', deployment, {}, nil, logger)
       instance2.bind_new_instance_model
 
       instance2.model.update(ignore: true)

@@ -19,7 +19,7 @@ module Bosh::Director
     let(:instance) do
       deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
       availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
-      DeploymentPlan::Instance.create_from_job(instance_group, 5, 'started', deployment, {}, availability_zone, logger)
+      DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, logger)
     end
 
     let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }

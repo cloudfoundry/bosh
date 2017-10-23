@@ -58,6 +58,7 @@ module Bosh
           name = migrated_hybrid_manifest_hash['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name, options)
+          deployment_model.add_variable_set(:created_at => Time.now, :writable => true) if deployment_model.variable_sets.empty?
 
           attrs = {
             name: name,

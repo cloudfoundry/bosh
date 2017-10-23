@@ -142,9 +142,9 @@ module Bosh::Director
   CompilationConfigUnknownNetwork = err(120001)
   CompilationConfigInvalidAvailabilityZone = err(120002)
   CompilationConfigInvalidVmType = err(120003)
-  CompilationConfigCloudPropertiesNotAllowed = err(120004)
   CompilationConfigInvalidVmExtension = err(120005)
-  CompilationConfigVmTypeRequired = err(120004)
+  CompilationConfigVmTypeRequired = err(120006)
+  CompilationConfigBadVmConfiguration = err(120007)
 
   # Manifest parsing: network section
   NetworkReservationInvalidIp = err(130001)
@@ -183,6 +183,7 @@ module Bosh::Director
   InstanceGroupAmbiguousEnv = err(140019)
   JobBothInstanceGroupAndJob = err(140020)
   JobInstanceIgnored = err(140021)
+  InstanceGroupBadVmConfiguration = err(140022)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)

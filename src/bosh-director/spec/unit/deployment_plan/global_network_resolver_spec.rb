@@ -11,6 +11,7 @@ module Bosh::Director
         name: 'current-deployment',
       )
       deployment_model.cloud_configs = cloud_configs
+      Models::VariableSet.make(deployment: deployment_model)
       DeploymentPlan::Planner.new(
         {name: 'current-deployment', properties: {}},
         '',
@@ -22,10 +23,12 @@ module Bosh::Director
 
     describe '#reserved_ranges' do
       it "ignores deployments that don't have a manifest" do
-        Models::Deployment.make(
+        deployment = Models::Deployment.make(
           name: 'other-deployment',
-          manifest: nil
+          manifest: nil,
         )
+
+        Models::VariableSet.make(deployment: deployment)
 
         reserved_ranges = global_network_resolver.reserved_ranges
         expect(reserved_ranges).to be_empty
@@ -66,7 +69,11 @@ module Bosh::Director
                     'reserved' => ['10.10.0.1-10.10.0.10']
                   }
                 ]
-              }]
+              }],
+              'compilation' => {
+                'network' => 'manual',
+                'workers' => 1
+              }
             }
           })]
         end

@@ -31,6 +31,8 @@ module Bosh::Director
         deployment_model
       end
 
+      let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+
       let(:deployment_name) { 'dep1' }
 
       let(:manifest_hash) do
@@ -72,6 +74,7 @@ module Bosh::Director
                                          DeploymentPlan::IpProviderFactory.new(true, logger))
 
           deployment.add_instance_group(instance_group)
+          allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
         end
 
         context 'when addon does not apply to the instance group' do

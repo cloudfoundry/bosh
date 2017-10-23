@@ -23,7 +23,7 @@ module Bosh
           get_state: nil
         )
       end
-      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
+      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
         instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -45,8 +45,8 @@ module Bosh
       let(:dns_encoder) { instance_double(DnsEncoder) }
 
       let(:instance) do
-        instance = DeploymentPlan::Instance.create_from_job(
-          job,
+        instance = DeploymentPlan::Instance.create_from_instance_group(
+          instance_group,
           5,
           'started',
           deployment,
@@ -63,7 +63,7 @@ module Bosh
         reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
       end
       let(:instance_plan) do
-        desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, {}, nil)
+        desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)
         network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
         BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
       end
@@ -74,7 +74,7 @@ module Bosh
         }
       end
 
-      let(:job) do
+      let(:instance_group) do
         template_model = BD::Models::Template.make
         job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name', deployment.name)
         job.bind_existing_model(template_model)
