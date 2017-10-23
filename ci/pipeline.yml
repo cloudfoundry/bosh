@@ -19,7 +19,6 @@ groups:
       - bats-centos
       - bats-ubuntu
       - brats-ubuntu
-      - brats-ubuntu-non-tls-agent
       - upgrade-tests
       - blobstore-performance
 
@@ -680,28 +679,6 @@ jobs:
         input_mapping:
           stemcell: candidate-warden-ubuntu-stemcell
 
-  - name: brats-ubuntu-non-tls-agent
-    serial: true
-    plan:
-    - do:
-      - aggregate:
-        - get: bosh-src
-          passed:
-          - candidate-release
-        - get: bosh-dns-release
-        - get: warden-ubuntu-trusty-3363-37
-        - get: bosh-release
-          resource: bosh-candidate-release-tarballs
-          trigger: true
-          passed:
-            - candidate-release
-      - task: test-brats
-        file: bosh-src/ci/tasks/test-brats.yml
-        tags: ["worker-brats"]
-        privileged: true
-        input_mapping:
-          stemcell: warden-ubuntu-trusty-3363-37
-
   - name: finalize-bosh-release
     serial: true
     plan:
@@ -845,12 +822,6 @@ resources:
     source:
       bucket: bosh-core-stemcells-candidate
       regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
-
-  - name: warden-ubuntu-trusty-3363-37
-    type: bosh-io-stemcell
-    source:
-      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-      version_family: "3363.37"
 
   - name: warden-ubuntu-trusty
     type: bosh-io-stemcell
