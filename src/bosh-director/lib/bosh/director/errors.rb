@@ -236,6 +236,7 @@ module Bosh::Director
   DeploymentIgnoredInstancesModification = err(190020)
   DeploymentIgnoredInstancesDeletion = err(190021)
   DeploymentDuplicateVariableName = err(190022)
+  DeploymentGeneratorCAInvalid = err(190023)
 
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)

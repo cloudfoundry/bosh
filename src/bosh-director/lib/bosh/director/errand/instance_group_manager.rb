@@ -7,7 +7,7 @@ module Bosh::Director
       @disk_manager = DiskManager.new(logger)
       @template_blob_cache = @deployment.template_blob_cache
       agent_broadcaster = AgentBroadcaster.new
-      @dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(@deployment.availability_zones.map(&:name))
+      @dns_encoder = LocalDnsEncoderManager.create_dns_encoder(@deployment.use_short_dns_addresses?)
       @powerdns_manager = PowerDnsManagerProvider.create
       @vm_deleter = Bosh::Director::VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
       @vm_creator = Bosh::Director::VmCreator.new(logger, @vm_deleter, @disk_manager, @template_blob_cache, @dns_encoder, agent_broadcaster)

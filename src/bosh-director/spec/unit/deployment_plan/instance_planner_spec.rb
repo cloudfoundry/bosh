@@ -126,6 +126,28 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
     end
 
+    describe 'logging active vm presence' do
+      context 'when instance has active vm' do
+        it 'logs that theres is a vm' do
+          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+          vm = BD::Models::Vm.make(instance: existing_instance_model)
+          existing_instance_model.active_vm = vm
+
+          expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with active vm")
+          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
+        end
+      end
+
+      context 'when instance has active vm' do
+        it 'logs that theres is no active vm' do
+          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+
+          expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with no active vm")
+          instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model])
+        end
+      end
+    end
+
     describe 'moving an instance to a different az' do
       it "should not attempt to reuse the existing instance's index" do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: undesired_az.name, deployment: deployment_model, :variable_set => variable_set_model)

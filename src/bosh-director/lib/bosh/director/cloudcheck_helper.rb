@@ -64,10 +64,14 @@ module Bosh::Director
       @logger.debug("Recreating Vm: #{instance_model})")
       delete_vm_from_cloud(instance_model)
 
+      deployment_model = instance_model.deployment
+      factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(@logger)
+      planner = factory.create_from_model(deployment_model)
+      dns_encoder = LocalDnsEncoderManager.create_dns_encoder(planner.use_short_dns_addresses?)
+
       instance_plan_to_create = create_instance_plan(instance_model)
 
       Bosh::Director::Core::Templates::TemplateBlobCache.with_fresh_cache do |template_cache|
-        dns_encoder = LocalDnsEncoderManager.create_dns_encoder
         vm_creator(template_cache, dns_encoder).create_for_instance_plan(
           instance_plan_to_create,
           Array(instance_model.managed_persistent_disk_cid),
@@ -76,7 +80,7 @@ module Bosh::Director
         )
 
         powerdns_manager = PowerDnsManagerProvider.create
-        local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
+        local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger, dns_encoder)
         dns_names_to_ip = {}
 
         root_domain = Config.root_domain

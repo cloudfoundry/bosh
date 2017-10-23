@@ -146,6 +146,23 @@ module Bosh::Director
       vm_options = {instance: instance_model, agent_id: agent_id, cpi: cpi}
       options = {}
 
+      if Config.nats_uri
+        env['bosh'] ||= {}
+        env['bosh']['mbus'] ||= {}
+        env['bosh']['mbus']['urls'] = [ Config.nats_uri ]
+      end
+
+      if Config.nats_server_ca
+        env['bosh'] ||= {}
+        env['bosh']['mbus'] ||= {}
+        env['bosh']['mbus']['cert'] ||= {}
+        env['bosh']['mbus']['cert']['ca'] = Config.nats_server_ca
+        cert_generator = NatsClientCertGenerator.new(@logger)
+        agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{agent_id}.agent.bosh-internal"
+        env['bosh']['mbus']['cert']['certificate'] = agent_cert_key_result[:cert].to_pem
+        env['bosh']['mbus']['cert']['private_key'] = agent_cert_key_result[:key].to_pem
+      end
+
       password = env.fetch('bosh', {}).fetch('password', "")
       if Config.generate_vm_passwords && password == ""
         env['bosh'] ||= {}

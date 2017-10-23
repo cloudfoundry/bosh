@@ -66,6 +66,9 @@ module SpecHelper
     def spec_get_director_config
       config = YAML.load_file(File.expand_path('assets/test-director-config.yml', File.dirname(__FILE__)))
 
+      config['nats']['server_ca_path'] = File.expand_path('assets/nats_ca.pem', File.dirname(__FILE__))
+      config['nats']['client_ca_certificate_path'] = File.expand_path('assets/nats_ca_certificate.pem', File.dirname(__FILE__))
+      config['nats']['client_ca_private_key_path'] = File.expand_path('assets/nats_ca_private_key.pem', File.dirname(__FILE__))
       config['db']['adapter'] = @director_db_helper.adapter
       config['db']['host'] = @director_db_helper.host
       config['db']['database'] = @director_db_helper.db_name

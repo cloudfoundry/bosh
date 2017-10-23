@@ -1,8 +1,0 @@
-set -e
-
-cp -a nats/* ${BOSH_INSTALL_TARGET}
-
-cd ${BOSH_INSTALL_TARGET}
-
-source /var/vcap/packages/ruby-2.4/bosh/compile.env
-bundle install --binstubs --local --deployment

@@ -6,7 +6,8 @@ runtime:
   instance: some-name/some-id
 
 port: <%= director_ruby_port %>
-mbus: nats://localhost:<%= nats_port %>
+
+mbus: nats://127.0.0.1:<%= nats_port %>
 
 logging:
   level: DEBUG
@@ -80,15 +81,10 @@ cloud:
     name: <%= external_cpi_config[:name] %>
     path: <%= external_cpi_config[:job_path] %>
   properties:
-    nats: nats://localhost:<%= nats_port %>
     dir: <%= cloud_storage_dir %>
     agent:
       blobstore:
         <<: *director_blobstore
-      server:
-        host: 127.0.0.1
-        host: 127.0.0.1
-        password:
 
 user_management:
   provider: <%= user_authentication %>
@@ -159,3 +155,10 @@ remove_dev_tools: <%= remove_dev_tools %>
 record_events: true
 
 director_ips: <%= director_ips %>
+
+nats:
+  server_ca_path: <%= nats_server_ca_path %>
+  client_certificate_path: <%= nats_director_tls['certificate_path'] %>
+  client_private_key_path: <%= nats_director_tls['private_key_path'] %>
+  client_ca_certificate_path: <%= nats_client_ca_certificate_path %>
+  client_ca_private_key_path: <%= nats_client_ca_private_key_path %>

@@ -24,7 +24,7 @@ module Bosh
         let(:default_network) { 'potato_net' }
         let(:deployment) { 'fake_deployment' }
         let(:root_domain) { 'sub.bosh' }
-        let(:dns_encoder) { Bosh::Director::DnsEncoder.new({'zone1' => '0'}) }
+        let(:dns_encoder) { Bosh::Director::DnsEncoder.new({},{'zone1' => '0'}) }
 
         it 'resolves the link characteristics and query params using the dns resolver' do
           expect(subject.address(azs: ['zone1'])).to eq('q-a0s0.potato-group.potato-net.fake-deployment.sub.bosh')

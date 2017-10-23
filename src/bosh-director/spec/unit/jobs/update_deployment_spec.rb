@@ -28,7 +28,6 @@ module Bosh::Director
         App.new(config)
         allow(job).to receive(:task_id).and_return(task.id)
         allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
-        allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(['zone_1', 'zone_2']).and_return(dns_encoder)
       end
 
       describe '#perform' do
@@ -64,6 +63,7 @@ module Bosh::Director
         end
 
         before do
+          allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
           allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_step)
           allow(DeploymentPlan::Steps::UpdateStep).to receive(:new).and_return(update_step)

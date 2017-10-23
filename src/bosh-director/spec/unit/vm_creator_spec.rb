@@ -23,7 +23,7 @@ module Bosh
           get_state: nil
         )
       end
-      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh').to_hash }
+      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(job.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
         instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -495,6 +495,89 @@ module Bosh
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         }.to raise_error(Bosh::Clouds::VMCreationFailed)
+      end
+
+      context 'nats information' do
+        context 'is provided' do
+          it 'should include the uri in ENV' do
+            Config.nats_uri = 'nats://localhost:1234'
+
+            expect(cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id',
+              kind_of(Hash), network_settings, ['fake-disk-cid'],
+              {
+                'bosh' => {
+                  'mbus' => {
+                    'urls' => [ Config.nats_uri ],
+                  },
+                  'group' => kind_of(String),
+                  'groups' => kind_of(Array),
+                }
+              }
+            ).and_return('new-vm-cid')
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+          end
+
+          context 'when ca is included' do
+            let(:cert_generator) {instance_double 'Bosh::Director::NatsClientCertGenerator'}
+            let(:cert) {instance_double 'OpenSSL::X509::Certificate'}
+            let(:private_key) {instance_double 'OpenSSL::PKey::RSA'}
+
+            before do
+              director_config = SpecHelper.spec_get_director_config
+              allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
+              allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
+            end
+
+            it 'should generate cert with agent ID in ENV' do
+              allow(private_key).to receive(:to_pem).and_return('pkey begin\npkey content\npkey end\n')
+              allow(cert).to receive(:to_pem).and_return('certificate begin\ncertificate content\ncertificate end\n')
+              allow(NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
+              expect(cert_generator).to receive(:generate_nats_client_certificate).with(/^([0-9a-f\-]*)\.agent\.bosh-internal/).and_return({
+                :cert => cert,
+                :key => private_key
+              })
+              allow(Config).to receive(:nats_server_ca).and_return('nats begin\nnats content\nnats end\n')
+
+              expect(cloud).to receive(:create_vm).with(
+                kind_of(String), 'stemcell-id',
+                kind_of(Hash), network_settings, ['fake-disk-cid'],
+                {
+                  'bosh' => {
+                    'mbus' => {
+                      'cert' => {
+                        'ca' => 'nats begin\nnats content\nnats end\n',
+                        'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
+                        'private_key' => 'pkey begin\npkey content\npkey end\n',
+                      }
+                    },
+                    'group' => kind_of(String),
+                    'groups' => kind_of(Array),
+                  }
+                }
+              ).and_return('new-vm-cid')
+              subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+            end
+          end
+        end
+        context 'is NOT provided' do
+          it 'should not have the mbus key in ENV' do
+            Config.nats_server_ca = nil
+            Config.nats_uri = nil
+
+            expect(cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id',
+              kind_of(Hash), network_settings, ['fake-disk-cid'],
+              {
+                'bosh' => {
+                  'group' => kind_of(String),
+                  'groups' => kind_of(Array),
+                }
+              }
+            ).and_return('new-vm-cid')
+            subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+          end
+        end
       end
 
       context 'Config.generate_vm_passwords flag is true' do

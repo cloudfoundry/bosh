@@ -1,11 +1,15 @@
-bosh-gcscli/bosh-gcscli-0.0.2-linux-amd64:
+bosh-gcscli/bosh-gcscli-0.0.3-linux-amd64:
   size: 12777526
-  object_id: 32a1f288-c0ba-4d44-6a18-fc699afa4778
-  sha: a151d3829f53b68bd15edfd3e6a527d187591992
-davcli/davcli-0.0.6-linux-amd64:
-  size: 8705864
-  object_id: fbe6b42b-cd0e-47a6-a0b4-501be4b52426
-  sha: 6b42b9833ad8f4945ce2d7f995f4dbb0e3503b08
+  object_id: e561b18d-0d52-4579-7bd5-9823bdbe7aba
+  sha: a6ca3153856b40c1af6d79da8f11efdde0899b7d
+davcli/davcli-0.0.24-linux-amd64:
+  size: 6165337
+  object_id: aa46e12b-6aa9-4de7-5694-955799bea8ad
+  sha: de7307b184f03caff746ae2ad78bf94ba04c9c71
+gnatsd/gnatsd-0.9.6-bosh.12-linux-amd64:
+  size: 9505349
+  object_id: 54d32ad0-9d4a-4b5d-7431-7f504bd9fb9a
+  sha: a801c9fa84f29f9885d54739a3c284c7f58d56bb
 mysql/mariadb-connector-c-2.2.1-src.tar.gz:
   size: 519628
   object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
@@ -18,30 +22,6 @@ mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
   size: 4639216
   object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
   sha: f00c86bfa13b64e54f2a08551c3fe61d8966fd6e
-nats/vendor/cache/daemons-1.1.9.gem:
-  size: 32768
-  object_id: 688133be-f542-4a6a-b139-cd1290cedcd7
-  sha: e73ba58fe9e948f7edc5017f91f53b8f0a955a37
-nats/vendor/cache/eventmachine-1.0.4.gem:
-  size: 227840
-  object_id: b6a8625f-3e04-41d1-ae69-57841921e254
-  sha: 10fffa2d326e5fedc6aeaf65d2bd01d3c5e6f3ab
-nats/vendor/cache/json_pure-1.8.1.gem:
-  size: 148992
-  object_id: ce934969-81b7-4d2b-a50c-48a9ee54d50b
-  sha: 7b8f08852f734ef287468fe1676c1c4e7a9f678a
-nats/vendor/cache/nats-0.5.0.beta.12.gem:
-  size: 30208
-  object_id: 714da93b-b55f-4adf-a5e5-b11ea991cd1f
-  sha: f39b79844741d0019cd6e277ded2b2025b69bca3
-nats/vendor/cache/rack-1.5.4.gem:
-  size: 216064
-  object_id: 61e5a9ed-2a1a-41d4-5fa8-6ec6a966ff61
-  sha: d71ea9c90d7ef2a0787722f233da8fcbfb5e55d5
-nats/vendor/cache/thin-1.5.1.gem:
-  size: 55296
-  object_id: 5b19908f-9a4c-4b03-a377-29d7b9d00a9b
-  sha: 4280f5a3db7c4d6470c15f6acec9a0dded057ab8
 nginx/headers-more-nginx-module-0.30.tar.gz:
   size: 27793
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
@@ -70,10 +50,10 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-s3cli/s3cli-0.0.55-linux-amd64:
-  size: 10330042
-  object_id: 7131652f-fdc7-4a84-4437-c22c908e0148
-  sha: 2b345d8476970bc9668af6d602e1c3fa65cff89a
+s3cli/s3cli-0.0.64-linux-amd64:
+  size: 10341472
+  object_id: 90012a1c-100d-4d73-56e8-039b88d8ea72
+  sha: 73278ee6dca087f675026a8e4ecbac66b8982b99
 verify-multidigest/verify-multidigest-0.0.29-linux-amd64:
   size: 3277550
   object_id: e5925f0e-d420-4759-4c4e-9b964183efc1

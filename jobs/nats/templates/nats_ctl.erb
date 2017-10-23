@@ -4,11 +4,9 @@
 sysctl -w net.ipv4.neigh.default.gc_thresh3=4096
 sysctl -w net.ipv4.neigh.default.gc_thresh2=2048
 
-source /var/vcap/packages/ruby-2.4/bosh/runtime.env
-export BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
-
 RUN_DIR=/var/vcap/sys/run/nats
 LOG_DIR=/var/vcap/sys/log/nats
+CONFIG_FILE=/var/vcap/jobs/nats/config/nats.cfg
 PIDFILE=$RUN_DIR/nats.pid
 RUNAS=vcap
 
@@ -19,23 +17,19 @@ case $1 in
     echo $$ > $PIDFILE
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR
 
-    ulimit -n 65536
-    exec chpst -u $RUNAS:$RUNAS \
-      bundle exec nats-server \
-      -c /var/vcap/jobs/nats/config/nats.yml \
-      >>$LOG_DIR/nats.stdout.log \
-      2>>$LOG_DIR/nats.stderr.log
+    exec chpst -u $RUNAS:$RUNAS /var/vcap/packages/gonats/bin/gnatsd \
+      -c $CONFIG_FILE \
+      >>  $LOG_DIR/nats.stdout.log \
+      2>> $LOG_DIR/nats.stderr.log
     ;;
 
   stop)
-    PID=$(head -1 $PIDFILE)
-    kill $PID
-    while [ -e /proc/$PID ]; do sleep 0.1; done
-    rm -f $PIDFILE
+    if [ -f $PIDFILE ]; then
+      kill -9 `cat $PIDFILE` || true
+      rm -f $PIDFILE
+    fi
     ;;
 
   *)
-
-  echo "Usage: nats_ctl {start|stop}" ;;
+    echo "Usage: nats_ctl {start|stop}" ;;
 esac
-exit 0

@@ -1,0 +1,66 @@
+# NATS Configuration file
+
+listen: 0.0.0.0:<%= nats_port %> # host/port to listen for client connections
+
+log_file: "<%= nats_log_path %>"
+
+authorization {
+<% if nats_allow_legacy_clients %>
+  username: <%= nats_user %>
+  password: <%= nats_password %>
+<% end %>
+
+  DIRECTOR_PERMISSIONS: {
+    publish: [
+      "agent.*",
+      "hm.director.alert"
+    ]
+    subscribe: ["director.>"]
+  }
+
+  AGENT_PERMISSIONS: {
+    publish: [
+      "hm.agent.heartbeat._CLIENT_ID",
+      "hm.agent.alert._CLIENT_ID",
+      "hm.agent.shutdown._CLIENT_ID",
+      "director.*._CLIENT_ID.*"
+    ]
+    subscribe: ["agent._CLIENT_ID"]
+  }
+
+  HM_PERMISSIONS: {
+    publish: []
+    subscribe: [
+      "hm.agent.heartbeat.*",
+      "hm.agent.alert.*",
+      "hm.agent.shutdown.*",
+      "hm.director.alert"
+    ]
+  }
+
+  FULL_PERMISSIONS: {
+    publish: [">"]
+    subscribe: [">"]
+  }
+
+  certificate_clients: [
+    {client_name: director.bosh-internal, permissions: $DIRECTOR_PERMISSIONS},
+    {client_name: agent.bosh-internal, permissions: $AGENT_PERMISSIONS},
+    {client_name: hm.bosh-internal, permissions: $HM_PERMISSIONS},
+    {client_name: integration.test.bosh-internal, permissions: $FULL_PERMISSIONS},
+  ]
+
+  timeout: 5
+}
+
+tls {
+  cert_file: "<%= nats_certificate_paths['server']['certificate_path'] %>"
+  key_file:  "<%= nats_certificate_paths['server']['private_key_path'] %>"
+  ca_file:   "<%= nats_certificate_paths['ca_path'] %>"
+  verify:    true
+  timeout: 5
+  enable_cert_authorization: true
+<% if nats_allow_legacy_clients %>
+  allow_legacy_clients: true
+<% end %>
+}

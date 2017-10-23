@@ -1,0 +1,39 @@
+variables:
+- name: default_ca
+  type: certificate
+  options:
+    is_ca: true
+- name: nats
+  type: certificate
+  options:
+    ca: default_ca
+    common_name: default.nats.bosh-internal
+    alternative_names:
+    - ((hostname))
+    extended_key_usage:
+      - server_auth
+- name: director_client
+  type: certificate
+  options:
+    ca: default_ca
+    common_name: default.director.bosh-internal
+    alternative_names:
+    - ((hostname))
+    extended_key_usage:
+      - client_auth
+- name: hm_client
+  type: certificate
+  options:
+    ca: default_ca
+    common_name: default.hm.bosh-internal
+    alternative_names:
+    - ((hostname))
+    extended_key_usage:
+      - client_auth
+- name: test_client
+  type: certificate
+  options:
+    ca: default_ca
+    common_name: default.integration.test.bosh-internal
+    extended_key_usage:
+    - client_auth

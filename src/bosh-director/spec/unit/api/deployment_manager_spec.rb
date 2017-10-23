@@ -63,5 +63,35 @@ module Bosh::Director
         expect(subject.find_by_name(deployment.name)).to eq deployment
       end
     end
+
+    describe '#all_by_name_asc' do
+
+      before do
+        cloud_config = Models::CloudConfig.make
+        release = Models::Release.make
+        deployment = Models::Deployment.make(name: 'b', cloud_config_id: cloud_config.id)
+        release_version = Models::ReleaseVersion.make(release_id: release.id)
+        deployment.add_release_version(release_version)
+      end
+
+      it 'eagerly loads :stemcells, :release_versions, :teams' do
+        allow(Bosh::Director::Config.db).to receive(:execute).and_call_original
+
+        deployments = subject.all_by_name_asc
+
+        deployments.first.stemcells
+        deployments.first.release_versions.map(&:release)
+        deployments.first.teams
+
+        expect(Bosh::Director::Config.db).to have_received(:execute).exactly(5).times
+      end
+
+      it 'lists all deployments in alphabetic order' do
+        Models::Deployment.make(name: 'c')
+        Models::Deployment.make(name: 'a')
+
+        expect(subject.all_by_name_asc.map(&:name)).to eq(['a', 'b', 'c'])
+      end
+    end
   end
 end

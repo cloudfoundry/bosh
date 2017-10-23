@@ -88,7 +88,7 @@ module Bosh::Blobstore
     let(:endpoint) { 'http://localhost:20000/' }
 
     let(:davcli_path) do
-      File.expand_path(File.join(File.dirname(__FILE__), '../../../../blobs/davcli/', 'davcli-0.0.6-linux-amd64'))
+      Dir.glob(File.join(File.dirname(__FILE__), '../../../../blobs/davcli/', 'davcli-*-linux-amd64')).first
     end
 
     let(:dav_options) do

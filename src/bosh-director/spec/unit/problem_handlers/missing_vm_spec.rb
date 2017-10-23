@@ -2,8 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemHandlers::MissingVM do
+    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false) }
+    let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
-    let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
+    let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     let!(:instance) do
@@ -42,6 +44,8 @@ module Bosh::Director
     let(:networks) { {'a' => {'ip' => '192.168.1.2'}} }
 
     before do
+      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
+      allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
       fake_app
       allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
     end

@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 module Bosh::Director
+
+  class MyError < StandardError
+  end
+
   describe Jobs::DBJob do
 
     let (:db_job) { Jobs::DBJob.new(job_class, task.id, args) }
@@ -168,25 +172,39 @@ module Bosh::Director
         allow(Process).to receive(:waitpid).with(-1)
       end
 
-      it 'emits exceptions to the logger' do
-        expect(Config.logger).to receive(:error) do |message|
-          expect(message.split("\n")[0]).to eq("Fatal error from event machine: Could not connect to server on http://127.0.0.1:12345")
+      let(:em_event_loop_exception_message) {'EM event loop exception raised OMG'}
+      let(:em_thread_exception_message) {'EM defer thread exception raised OMG'}
 
-          # we should also be including the backtrace
-          expect(message).to match(%r{/gems/nats-})
-          expect(message).to match(%r{/gems/eventmachine-})
+      it 'emits exceptions raised in the EM event loop to the logger' do
+        expect(Config.logger).to receive(:error) do |message|
+          expect(message).to match(em_event_loop_exception_message)
+          expect(message).to_not match(em_thread_exception_message)
         end
 
         expect {
           Bosh::Director::ForkedProcess.run do
-            nats = Bosh::Director::NatsRpc.new('http://127.0.0.1:12345')
-            nats.send_message('topic', {})
-
+            EM.schedule do
+              raise MyError, em_event_loop_exception_message
+            end
             sleep 10
-
-            raise 'we should never raise because eventmachine is expected to raise an error'
+            raise MyError, em_event_loop_exception_message
           end
-        }.to raise_error(NATS::ConnectError)
+        }.to raise_error MyError, em_event_loop_exception_message
+      end
+
+      it 'emits exceptions raised in the EM operation thread to the logger' do
+        expect(Config.logger).to receive(:error) do |message|
+          expect(message).to match(em_thread_exception_message)
+        end
+
+        expect {
+          Bosh::Director::ForkedProcess.run do
+            EM.schedule do
+              puts 'doing complex processing'
+            end
+            raise MyError, em_thread_exception_message
+          end
+        }.to raise_error MyError, em_thread_exception_message
       end
     end
   end

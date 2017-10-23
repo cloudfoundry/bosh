@@ -1,7 +1,0 @@
-name: nats
-dependencies:
-  - ruby-2.4
-
-files:
-  - nats/**/*
-

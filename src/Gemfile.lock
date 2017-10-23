@@ -32,11 +32,11 @@ PATH
       bosh_common (~> 0.0.0)
       bosh_cpi (= 2.4.1)
       cf-uaa-lib (~> 3.2.1)
-      eventmachine (~> 1.0.0)
+      eventmachine (~> 1.2.0)
       httpclient (~> 2.8.3)
       logging (~> 2.2.2)
       membrane (~> 1.1.0)
-      nats (= 0.5.0.beta.12)
+      nats (~> 0.8)
       netaddr (~> 1.5.0)
       puma (~> 3.10)
       rack-test (~> 0.6.2)
@@ -56,10 +56,10 @@ PATH
       cf-uaa-lib (~> 3.2.1)
       dogapi (~> 1.21.0)
       em-http-request (~> 0.3.0)
-      eventmachine (~> 1.0.0)
+      eventmachine (~> 1.2.0)
       httpclient (~> 2.8.3)
       logging (~> 2.2.2)
-      nats (= 0.5.0.beta.12)
+      nats (~> 0.8)
       riemann-client (~> 0.2.6)
       sinatra (~> 1.4.2)
       thin (~> 1.7.0)
@@ -135,7 +135,7 @@ GEM
       escape_utils
       eventmachine (>= 0.12.9)
     escape_utils (1.2.1)
-    eventmachine (1.0.4)
+    eventmachine (1.2.5)
     excon (0.49.0)
     fakefs (0.11.1)
     ffi (1.9.18)
@@ -159,7 +159,6 @@ GEM
     ipaddress (0.8.3)
     jmespath (1.3.1)
     json (2.1.0)
-    json_pure (2.1.0)
     little-plugger (1.1.4)
     logging (2.2.2)
       little-plugger (~> 1.1)
@@ -175,11 +174,8 @@ GEM
     mtrc (0.0.4)
     multi_json (1.12.2)
     mysql2 (0.4.9)
-    nats (0.5.0.beta.12)
-      daemons (>= 1.1.9)
-      eventmachine (>= 1.0.3)
-      json_pure (>= 1.8.0)
-      thin (>= 1.5.0)
+    nats (0.8.2)
+      eventmachine (~> 1.2, >= 1.2)
     net-ssh (4.2.0)
     netaddr (1.5.1)
     netrc (0.11.0)
@@ -276,7 +272,7 @@ DEPENDENCIES
   bosh-template!
   bosh_common!
   bundler (~> 1.15.0)
-  eventmachine (= 1.0.4)
+  eventmachine (~> 1.2)
   fakefs
   httpclient
   json (= 2.1.0)
@@ -284,7 +280,7 @@ DEPENDENCIES
   minitar
   mono_logger
   mysql2
-  nats
+  nats (~> 0.8)
   net-ssh
   parallel_tests (~> 2.0)
   pg

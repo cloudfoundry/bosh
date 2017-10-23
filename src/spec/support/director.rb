@@ -6,15 +6,14 @@ module Bosh::Spec
 
   class Director
     include Support::TableHelpers
-
-    def initialize(runner, waiter, agents_base_dir, director_nats_port, db, logger)
+    def initialize(runner, waiter, agents_base_dir, db, director_nats_config, logger)
       @runner = runner
       @waiter = waiter
       @agents_base_dir = agents_base_dir
-      @director_nats_port = director_nats_port
       @db = db
       @logger = logger
       @nats_recording = []
+      @director_nats_config = director_nats_config
     end
 
     def instances(options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
@@ -34,7 +33,7 @@ module Bosh::Spec
           instance_data[:bootstrap] == 'true',
           instance_data[:disk_cids],
           File.join(@agents_base_dir, "agent-base-dir-#{instance_data[:agent_id]}"),
-          @director_nats_port,
+          @director_nats_config,
           @logger,
         )
       end
@@ -50,7 +49,7 @@ module Bosh::Spec
           vm_data[:az],
           vm_data[:id],
           vm_data[:job_name],
-          @director_nats_port,
+          @director_nats_config,
           @logger,
           File.join(@agents_base_dir, "agent-base-dir-*"),
         )
@@ -116,12 +115,9 @@ module Bosh::Spec
     end
 
     def start_recording_nats
-      # have to read NATS port on main thread, or the new thread hangs on startup (?!)
-      nats_uri = "nats://localhost:#{@director_nats_port}"
-
       Thread.new do
         EventMachine.run do
-          @nats_client = NATS.connect(uri: nats_uri) do
+          @nats_client = NATS.connect(@director_nats_config) do
             @nats_client.subscribe('>') do |msg, reply, sub|
               @nats_recording << [sub, msg]
             end

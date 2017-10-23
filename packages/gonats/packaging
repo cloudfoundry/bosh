@@ -1,0 +1,6 @@
+set -e
+
+mkdir -p ${BOSH_INSTALL_TARGET}/bin
+
+mv gnatsd/gnatsd-*-linux-amd64 ${BOSH_INSTALL_TARGET}/bin/gnatsd
+chmod +x ${BOSH_INSTALL_TARGET}/bin/gnatsd

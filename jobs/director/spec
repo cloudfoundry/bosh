@@ -24,6 +24,11 @@ templates:
   sync_dns_ctl.erb: bin/sync_dns_ctl
   bbr_backup: bin/bbr/backup
   bbr_restore: bin/bbr/restore
+  nats_server_ca.pem.erb: config/nats_server_ca.pem
+  nats_client_certificate.pem.erb: config/nats_client_certificate.pem
+  nats_client_private_key.erb: config/nats_client_private_key
+  nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
+  nats_client_ca_private_key.erb: config/nats_client_ca_private_key
 
 packages:
 - director
@@ -88,7 +93,7 @@ properties:
     description: SSL private key for director (PEM encoded)
   director.max_tasks:
     description: Max number of tasks per each type to keep in disk
-    default: 100
+    default: 2000
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
@@ -193,16 +198,22 @@ properties:
     description: 'Default user to use with bosh ssh command'
     default: vcap
 
-  nats.user:
-    description: Username to connect to nats with
-    default: nats
-  nats.password:
-    description: Password to connect to nats with
+  # NATs
   nats.address:
     description: Address of the nats server
   nats.port:
     description: Port that the nats server listens on
     default: 4222
+  nats.tls.ca:
+    description: 'CA cert to trust when communicating with NATS server'
+  nats.tls.client_ca.certificate:
+    description: Certificate for NATs mutual TLS (Director uses to generate Agent cert)
+  nats.tls.client_ca.private_key:
+    description: Private Key for NATs mutual TLS (Director uses to generate Agent cert)
+  nats.tls.director.certificate:
+    description: Certificate for NATs mutual TLS (Director client)
+  nats.tls.director.private_key:
+    description: Private Key for NATs mutual TLS (Director client)
 
   # Director Database
   director.db.adapter:

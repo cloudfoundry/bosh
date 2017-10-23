@@ -2,6 +2,7 @@ require 'yaml'
 require 'bosh/dev/sandbox/main'
 require 'bosh/dev/legacy_agent_manager'
 require 'bosh/dev/verify_multidigest_manager'
+require 'bosh/dev/gnatsd_manager'
 
 module IntegrationExampleGroup
   def logger
@@ -13,8 +14,8 @@ module IntegrationExampleGroup
       bosh_runner,
       waiter,
       current_sandbox.agent_tmp_path,
-      current_sandbox.nats_port,
       current_sandbox.db,
+      current_sandbox.director_nats_config,
       logger,
     )
   end
@@ -250,6 +251,20 @@ module IntegrationExampleGroup
     end
 
     expect(updated_vms.map(&:last_known_state).uniq).to eq(['running'])
+  end
+
+  def expect_logs_not_to_contain(deployment_name, task_id, list_of_strings, options = {})
+    debug_output = bosh_runner.run("task #{task_id} --debug", options.merge(deployment_name: deployment_name))
+    cpi_output = bosh_runner.run("task #{task_id} --cpi", options.merge(deployment_name: deployment_name))
+    events_output = bosh_runner.run("task #{task_id} --event", options.merge(deployment_name: deployment_name))
+    result_output = bosh_runner.run("task #{task_id} --result", options.merge(deployment_name: deployment_name))
+
+    list_of_strings.each do |token|
+      expect(debug_output).to_not include(token)
+      expect(cpi_output).to_not include(token)
+      expect(events_output).to_not include(token)
+      expect(result_output).to_not include(token)
+    end
   end
 
   def get_legacy_agent_path(legacy_agent_name)

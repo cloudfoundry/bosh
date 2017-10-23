@@ -1,0 +1,7 @@
+---
+name: gonats
+
+dependencies: []
+
+files:
+- gnatsd/gnatsd-0.9.6-bosh.12-linux-amd64

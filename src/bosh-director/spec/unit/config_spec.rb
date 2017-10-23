@@ -24,6 +24,11 @@ describe Bosh::Director::Config do
     config
   end
 
+  before do
+    allow(File).to receive(:read).and_call_original
+    allow(File).to receive(:read).with('/path/to/server_ca_path').and_return('whatever makes you happy')
+  end
+
   describe 'initialization' do
     it 'loads config from a yaml file' do
       config = described_class.load_file(asset('test-director-config.yml'))
@@ -384,6 +389,63 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#nats_rpc' do
+    let(:some_client) { instance_double(Bosh::Director::NatsRpc)}
+
+    before do
+      described_class.configure(test_config)
+    end
+
+    it 'initializes a new nats rpc client with the appropriate params' do
+      expect(Bosh::Director::NatsRpc).to receive(:new)
+                                           .with(test_config['mbus'],
+                                                 test_config['nats']['server_ca_path'],
+                                                 test_config['nats']['client_private_key_path'],
+                                                 test_config['nats']['client_certificate_path'])
+                                           .and_return(some_client)
+      expect(described_class.nats_rpc).to eq(some_client)
+    end
+  end
+
+  describe 'nats' do
+    before do
+      described_class.configure(test_config)
+    end
+
+    it 'should return nats mbus url' do
+      expect(described_class.nats_uri).to eq('nats://some-user:some-pass@some-nats-uri:1234')
+    end
+
+    context 'when nats_ca is specified' do
+      it 'returns non-nil' do
+        expect(described_class.nats_server_ca).to eq("whatever makes you happy")
+      end
+    end
+
+    context 'when nats_tls is specified' do
+      context 'when ca certificate is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_ca_certificate_path).to eq("/path/to/client_ca_certificate_path")
+        end
+      end
+      context 'when ca private_key is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_ca_private_key_path).to eq("/path/to/client_ca_private_key_path")
+        end
+      end
+      context 'when private_key is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_private_key_path).to eq("/path/to/director_private_key_path")
+        end
+      end
+      context 'when certificate is specified' do
+        it 'returns non-nil' do
+          expect(described_class.nats_client_certificate_path).to eq("/path/to/director_certificate_path")
+        end
+      end
+    end
+  end
+
   describe 'log_director_start_event' do
     it 'stores an event' do
       described_class.configure(test_config)
@@ -402,7 +464,7 @@ describe Bosh::Director::Config do
       expect(event.object_name).to eq('custom-name')
       expect(event.context).to eq({'custom' => 'context'})
     end
-  end
+  end  
 
   context 'multiple digest' do
     context 'when verify multidigest is provided' do

@@ -16,8 +16,9 @@ params = {
   },
   'mbus' => {
     'endpoint' => "nats://#{p('nats.address')}:#{p('nats.port')}",
-    'user' => p('nats.user'),
-    'password' => p('nats.password'),
+    'server_ca_path' => '/var/vcap/jobs/health_monitor/config/nats_server_ca.pem',
+    'client_certificate_path' => '/var/vcap/jobs/health_monitor/config/nats_client_certificate.pem',
+    'client_private_key_path' => '/var/vcap/jobs/health_monitor/config/nats_client_private_key'
   },
   'director' => director,
   'intervals' => {
@@ -59,21 +60,6 @@ params = {
     }
   ]
 }
-
-if p('event_nats_enabled')
-  params['plugins'] << {
-    'name' => 'nats',
-    'events' => [
-      'alert',
-      'heartbeat',
-    ],
-    'options' => {
-      'endpoint' => "nats://#{p('event_nats.address')}:#{p('event_nats.port')}",
-      'user' => p('event_nats.user'),
-      'password' => p('event_nats.password'),
-    },
-  }
-end
 
 if p('hm.email_notifications')
   smtp_plugin = {

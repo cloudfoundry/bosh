@@ -110,7 +110,12 @@ module Bosh
 
           instance_plans.select(&:existing?).each do |instance_plan|
             instance = instance_plan.existing_instance
-            @logger.info("Existing desired instance '#{instance.job}/#{instance.index}' in az '#{instance_plan.desired_instance.availability_zone}'")
+            vm_activeness_msg = instance.active_vm ? "active vm" : "no active vm"
+            @logger.info('Existing desired instance ' +
+                         "'#{instance.job}/#{instance.index}' in az " +
+                         "'#{instance_plan.desired_instance.availability_zone}' " +
+                         "with #{vm_activeness_msg}"
+                        )
           end
 
           instance_plans.select(&:obsolete?).each do |instance_plan|

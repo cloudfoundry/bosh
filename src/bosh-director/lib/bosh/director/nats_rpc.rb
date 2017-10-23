@@ -2,32 +2,44 @@ module Bosh::Director
   # Remote procedure call client wrapping NATS
   class NatsRpc
 
-    def initialize(nats_uri)
+    MAX_RECONNECT_ATTEMPTS = 4
+
+    def initialize(nats_uri, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
       @nats_uri = nats_uri
+      @nats_server_ca_path = nats_server_ca_path
+      @nats_client_private_key_path = nats_client_private_key_path
+      @nats_client_certificate_path = nats_client_certificate_path
+
       @logger = Config.logger
       @lock = Mutex.new
       @inbox_name = "director.#{Config.process_uuid}"
       @requests = {}
+      @handled_response = false
     end
 
     # Returns a lazily connected NATS client
     def nats
-      @nats ||= connect
+      begin
+        @nats ||= connect
+      rescue Exception => e
+        raise "An error has occurred while connecting to NATS: #{e}"
+      end
     end
 
     # Publishes a payload (encoded as JSON) without expecting a response
     def send_message(client, payload)
       message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
+
       EM.schedule do
         nats.publish(client, message)
       end
     end
 
     # Sends a request (encoded as JSON) and listens for the response
-    def send_request(client, request, options, &callback)
+    def send_request(subject_name, client_id, request, options, &callback)
       request_id = generate_request_id
-      request["reply_to"] = "#{@inbox_name}.#{request_id}"
+      request["reply_to"] = "#{@inbox_name}.#{client_id}.#{request_id}"
       @lock.synchronize do
         @requests[request_id] = [callback, options]
       end
@@ -35,11 +47,17 @@ module Bosh::Director
       sanitized_log_message = sanitize_log_message(request)
       request_body = JSON.generate(request)
 
-      @logger.debug("SENT: #{client} #{sanitized_log_message}") unless options['logging'] == false
+      @logger.debug("SENT: #{subject_name} #{sanitized_log_message}") unless options['logging'] == false
 
       EM.schedule do
         subscribe_inbox
-        nats.publish(client, request_body)
+        if @handled_response
+          nats.publish(subject_name, request_body)
+        else
+          nats.flush do
+            nats.publish(subject_name, request_body)
+          end
+        end
       end
       request_id
     end
@@ -60,7 +78,32 @@ module Bosh::Director
       if @nats.nil?
         @lock.synchronize do
           if @nats.nil?
-            @nats = NATS.connect(:uri => @nats_uri, :autostart => false)
+            NATS.on_error do |e|
+              password = @nats_uri[/nats:\/\/.*:(.*)@/, 1]
+              redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
+              @logger.error(redacted_message)
+            end
+            options = {
+              # The NATS client library has a built-in reconnection logic.
+              # This logic only works when a cluster of servers is provided, by passing
+              # a list of them (it will not retry a server if it receives an error from it, for
+              # example a timeout). We are getting around the issue by passing the same URI
+              # multiple times so the library will retry the connection. This way we are
+              # adding retry logic to the director NATS connections by relying on the built-in
+              # library logic.
+              :uris => Array.new(MAX_RECONNECT_ATTEMPTS, @nats_uri),
+              :max_reconnect_attempts => MAX_RECONNECT_ATTEMPTS,
+              :reconnect_time_wait => 2,
+              :reconnect => true,
+              :ssl => true,
+              :tls => {
+                :private_key_file => @nats_client_private_key_path,
+                :cert_chain_file  => @nats_client_certificate_path,
+                :verify_peer => true,
+                :ca_file => @nats_server_ca_path
+              }
+            }
+            @nats = NATS.connect(options)
           end
         end
       end
@@ -76,6 +119,7 @@ module Bosh::Director
         @lock.synchronize do
           if @subject_id.nil?
             @subject_id = client.subscribe("#{@inbox_name}.>") do |message, _, subject|
+              @handled_response = true
               handle_response(message, subject)
             end
           end

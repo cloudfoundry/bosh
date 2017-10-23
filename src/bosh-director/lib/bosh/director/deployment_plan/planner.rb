@@ -246,7 +246,7 @@ module Bosh::Director
           if instance_group.is_service?
             instance_groups << instance_group
           elsif instance_group.is_errand?
-            if instance_group.instances.any? { |i| nil != i.model && !i.model.active_vm.nil? }
+            if instance_group.instances.any? { |i| i.vm_created? }
               instance_groups << instance_group
             end
           end
@@ -282,6 +282,14 @@ module Bosh::Director
 
       def use_dns_addresses?
         @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
+      end
+
+      def use_short_dns_addresses?
+        @features.use_short_dns_addresses.nil? ? false : @features.use_short_dns_addresses
+      end
+
+      def randomize_az_placement?
+        @features.randomize_az_placement.nil? ? false : @features.randomize_az_placement
       end
 
       def availability_zone_names

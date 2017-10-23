@@ -2,7 +2,17 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlan do
-    subject(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, use_dns_addresses: use_dns_addresses, logger: logger, tags: tags) }
+    subject(:instance_plan) do
+      InstancePlan.new(
+        existing_instance: existing_instance,
+        desired_instance: desired_instance,
+        instance: instance,
+        network_plans: network_plans,
+        use_dns_addresses: use_dns_addresses,
+        use_short_dns_addresses: use_short_dns_addresses,
+        logger: logger,
+        tags: tags)
+    end
 
     let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
 
@@ -31,6 +41,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:use_dns_addresses) { false }
+    let(:use_short_dns_addresses) { false }
     let(:tags) do
       {'key1' => 'value1'}
     end
@@ -662,8 +673,29 @@ module Bosh::Director::DeploymentPlan
       let(:network_plans) { [NetworkPlanner::Plan.new(reservation: reservation)] }
       let(:network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
 
+      context 'when use_short_dns_addresses is true' do
+        let(:use_short_dns_addresses) { true }
+
+        it 'forwards that option to the settings' do
+          expect(Bosh::Director::DeploymentPlan::NetworkSettings).to receive(:new).with(
+            anything,
+            anything,
+            anything,
+            anything,
+            anything,
+            anything,
+            anything,
+            anything,
+            anything,
+            true
+          )
+
+          instance_plan.network_settings
+        end
+      end
+
       before do
-        allow(instance_plan).to receive(:network_settings).and_return(network_settings)
+        allow(Bosh::Director::DeploymentPlan::NetworkSettings).to receive(:new).and_return(network_settings)
       end
 
       context 'when use_dns_addresses is FALSE' do

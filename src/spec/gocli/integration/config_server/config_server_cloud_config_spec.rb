@@ -38,6 +38,8 @@ describe 'using director with config server', type: :integration do
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
 
+  let(:log_options) { { include_credentials: false, env: client_env } }
+
   def bosh_run_cck_with_resolution(num_errors, option=1, env={})
     env.each do |key, value|
       ENV[key] = value
@@ -60,19 +62,6 @@ describe 'using director with config server', type: :integration do
     output
   end
 
-  def expect_logs_not_to_contain(deployment_name, task_id, list_of_strings)
-    debug_output = bosh_runner.run("task #{task_id} --debug", deployment_name: deployment_name, include_credentials: false, env: client_env)
-    cpi_output = bosh_runner.run("task #{task_id} --cpi", deployment_name: deployment_name, include_credentials: false, env: client_env)
-    events_output = bosh_runner.run("task #{task_id} --event", deployment_name: deployment_name, include_credentials: false, env: client_env)
-    result_output = bosh_runner.run("task #{task_id} --result", deployment_name: deployment_name, include_credentials: false, env: client_env)
-
-    list_of_strings.each do |token|
-      expect(debug_output).to_not include(token)
-      expect(cpi_output).to_not include(token)
-      expect(events_output).to_not include(token)
-      expect(result_output).to_not include(token)
-    end
-  end
 
   context 'cloud config contains placeholders' do
     let(:cloud_config) { Bosh::Spec::Deployments::cloud_config_with_placeholders }
@@ -302,7 +291,7 @@ describe 'using director with config server', type: :integration do
           recreate_vm = 3
           cck_output = bosh_run_cck_with_resolution(1, recreate_vm, client_env)
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(cck_output).task_id, ['super-secret'])
+          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(cck_output).task_id, ['super-secret'], log_options)
         end
       end
     end
@@ -615,7 +604,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'])
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -654,7 +643,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
           expect(variables_names).to match_array(['/smurf_1_variable'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_2'])
+          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_2'], log_options)
         end
       end
     end
@@ -675,7 +664,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'])
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -732,7 +721,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
         expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vm_extension'])
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vm_extension'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -789,7 +778,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_disk'])
+        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_disk'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -868,7 +857,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
           expect(variables_names).to match_array(['/smurf_1_variable_manual_network'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_manual_network'])
+          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_manual_network'], log_options)
         end
 
         it 'does not update deployment when variables values do not change before a second deploy' do
@@ -942,7 +931,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
           expect(variables_names).to match_array(['/smurf_1_variable_dynamic_network'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_dynamic_network'])
+          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_dynamic_network'], log_options)
         end
 
         it 'does not update deployment when variables values do not change before a second deploy' do
@@ -1034,7 +1023,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
           expect(variables_names).to match_array(['/smurf_1_variable_vip_network'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vip_network'])
+          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vip_network'], log_options)
         end
 
         it 'does not update deployment when variables values do not change before a second deploy' do

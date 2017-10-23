@@ -52,3 +52,11 @@ config_server:
   enabled: false
 record_events: true
 version: '0.0.2'
+mbus: 'nats://some-user:some-pass@some-nats-uri:1234'
+
+nats:
+  server_ca_path: '/path/to/server_ca_path'
+  client_certificate_path: '/path/to/director_certificate_path'
+  client_private_key_path: '/path/to/director_private_key_path'
+  client_ca_certificate_path: '/path/to/client_ca_certificate_path'
+  client_ca_private_key_path: '/path/to/client_ca_private_key_path'

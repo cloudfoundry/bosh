@@ -362,6 +362,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                   'color' => 'super_color'
                 },
                 'bosh' => {
+                  'mbus' => Hash,
                   'group' => 'testdirector-simple-foobar',
                   'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
                 },
@@ -393,7 +394,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             it 'should interpolate them correctly' do
               deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
               create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-              expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+              expect(create_vm_invocations.last.inputs['env']).to match(resolved_env_hash)
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
               expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
             end
@@ -434,6 +435,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                   'color' => 'smurf blue'
                 },
                 'bosh' => {
+                  'mbus' => Hash,
                   'group' => 'testdirector-simple-foobar',
                   'password' => 'foobar',
                   'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
@@ -451,7 +453,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               deploy_from_scratch(no_login: true, include_credentials: false, env: client_env, manifest_hash: deployment_manifest)
 
               create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-              expect(create_vm_invocations.last.inputs['env']).to eq(resolved_env_hash)
+              expect(create_vm_invocations.last.inputs['env']).to match(resolved_env_hash)
 
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
               expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1',
@@ -515,6 +517,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                                                             'color' => 'blue'
                                                           },
                                                           'bosh' => {
+                                                            'mbus' => Hash,
                                                             'password' => 'foobar',
                                                             'remove_dev_tools' => true,
                                                             'group' => 'testdirector-simple-foobar',
@@ -580,18 +583,32 @@ Error: Unable to render instance groups for deployment. Errors are:
           before do
             config_server_helper.put_value('/tag-variable1', 'peanuts')
             config_server_helper.put_value(prepend_namespace('tag-variable2'), 'almonds')
-
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
           end
 
           it 'does variable substitution on the initial creation' do
-            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.first
-            inputs = set_vm_metadata_invocation.inputs
-            expect(inputs['metadata']['tag-key1']).to eq('peanuts')
-            expect(inputs['metadata']['tag-key2']).to eq('almonds')
+            manifest_hash = Bosh::Spec::Deployments.simple_manifest
+            manifest_hash['tags'] = {
+              'tag-key1' => '((/tag-variable1))',
+              'tag-key2' => '((tag-variable2))'
+            }
+
+            cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
+
+            set_vm_metadata_invocations = current_sandbox.cpi.invocations.select {|invocation| invocation.method_name == 'set_vm_metadata' && invocation.inputs['metadata']['compiling'].nil? }
+            expect(set_vm_metadata_invocations.count).to eq(5)
+            set_vm_metadata_invocations.each { |set_vm_metadata_invocation|
+              inputs = set_vm_metadata_invocation.inputs
+              unless inputs['metadata']['compiling']
+                expect(inputs['metadata']['tag-key1']).to eq('peanuts')
+                expect(inputs['metadata']['tag-key2']).to eq('almonds')
+              end
+            }
           end
 
           it 'retains the tags with variable substitution on re-deploy' do
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
+
             pre_redeploy_invocations_size = current_sandbox.cpi.invocations.size
 
             manifest_hash['jobs'].first['instances'] = 2
@@ -607,6 +624,8 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
 
           it 'retains the tags with variable substitution on hard stop and start' do
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
+
             instance = director.instance('foobar', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
 
             bosh_runner.run("stop --hard #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
@@ -622,6 +641,8 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
 
           it 'retains the tags with variable substitution on recreate' do
+            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
+
             current_sandbox.cpi.kill_agents
             pre_kill_invocations_size = current_sandbox.cpi.invocations.size
 
@@ -637,6 +658,8 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           context 'and we are running an errand' do
             it 'applies the tags to the errand while it is running' do
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
+
               pre_errand_invocations_size = current_sandbox.cpi.invocations.size
 
               bosh_runner.run('run-errand goobar', deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)

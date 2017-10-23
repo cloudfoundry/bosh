@@ -228,7 +228,7 @@ module Bosh::Director
     def send_nats_request_with_options(method_name, args, options, &callback)
       request = { :protocol => PROTOCOL_VERSION, :method => method_name, :arguments => args }
       recipient = "#{@service_name}.#{@client_id}"
-      @nats_rpc.send_request(recipient, request, options, &callback)
+      @nats_rpc.send_request(recipient, @client_id, request, options, &callback)
     end
 
     def send_nats_request_quietly(method_name, args, &callback)

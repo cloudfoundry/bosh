@@ -7,13 +7,14 @@ module Bosh::Director
     let(:instance_model) { Models::Instance.make }
     let(:local_dns_repo) { instance_double(LocalDnsRepo)}
     let(:blobstore_dns_publisher) { instance_double(BlobstoreDnsPublisher)}
+    let(:encoder) { DnsEncoder.new }
 
     describe '.create' do
       it 'should create a dns repo and blobstore_dns_publisher and make a new dns manager' do
         expect(LocalDnsRepo).to receive(:new).with(logger, Config.root_domain)
-        expect(BlobstoreDnsPublisher).to receive(:new).with(anything, Config.root_domain, anything, anything, logger)
+        expect(BlobstoreDnsPublisher).to receive(:new).with(anything, Config.root_domain, anything, encoder, logger)
 
-        expect(LocalDnsManager.create(Config.root_domain, logger)).to be_a(LocalDnsManager)
+        expect(LocalDnsManager.create(Config.root_domain, logger, encoder)).to be_a(LocalDnsManager)
       end
     end
 

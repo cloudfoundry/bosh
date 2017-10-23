@@ -6,6 +6,9 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 bosh_path="${bosh_release_path:-${script_dir}/../../../}"
 bosh_release_path=""
 
+src_dir="${script_dir}/../../../"
+stemcell="${src_dir}/../stemcell/*.tgz"
+
 pushd "${bosh_path}" > /dev/null
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
     bosh create-release --tarball release.tgz
@@ -29,6 +32,7 @@ mkdir -p ${inner_bosh_dir}
 
 bosh int bosh.yml \
   -o "$script_dir/inner-bosh-ops.yml" \
+  -o ./experimental/nats-tls.yml \
   -o jumpbox-user.yml \
   -v director_name=docker-inner \
   -v internal_cidr=10.245.0.0/16 \
@@ -41,11 +45,7 @@ bosh int bosh.yml \
   -v local_bosh_release="${bosh_release_path}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
-bosh upload-stemcell \
-  --sha1=70c2584a8ad8e2b417c32809c34377728a6d6f86 \
-  --name=bosh-warden-boshlite-ubuntu-trusty-go_agent \
-  --version=3363.20 \
-  https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3363.20
+bosh upload-stemcell ${stemcell}
 
 # point to our outer director and launch the inner director
 source "${local_bosh_dir}/env"

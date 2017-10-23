@@ -5,7 +5,7 @@ module Bosh::Director
     describe LinkLookupFactory do
       let(:consumed_link) {instance_double(Bosh::Director::DeploymentPlan::TemplateLink)}
       let(:link_path) {instance_double(Bosh::Director::DeploymentPlan::LinkPath)}
-      let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
+      let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false)}
       let(:link_network_options) {{:global_use_dns_entry => false}}
 
       describe '#create' do
@@ -56,7 +56,7 @@ module Bosh::Director
     describe PlannerLinkLookup do
       let(:consumed_link) {instance_double(Bosh::Director::DeploymentPlan::TemplateLink)}
       let(:link_path) {instance_double(Bosh::Director::DeploymentPlan::LinkPath)}
-      let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
+      let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false)}
       let(:link_network_options) {{:global_use_dns_entry => false}}
       let(:instance_group) {instance_double(Bosh::Director::DeploymentPlan::InstanceGroup)}
       let(:instance_groups) {[instance_group]}

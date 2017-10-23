@@ -16,7 +16,6 @@ import (
 )
 
 var _ = Describe("Bosh Backup and Restore BBR", func() {
-
 	BeforeEach(startInnerBosh)
 
 	AfterEach(func() {

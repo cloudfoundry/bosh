@@ -45,7 +45,13 @@ module Bosh::Director
         @deployment_plan.skip_drain,
          index_assigner,
         network_reservation_repository,
-        {'recreate' => @deployment_plan.recreate, 'use_dns_addresses' => @deployment_plan.use_dns_addresses? ,'tags' => tags}
+        {
+          'recreate' => @deployment_plan.recreate,
+          'use_dns_addresses' => @deployment_plan.use_dns_addresses?,
+          'use_short_dns_addresses' => @deployment_plan.use_short_dns_addresses?,
+          'randomize_az_placement' => @deployment_plan.randomize_az_placement?,
+          'tags' => tags
+        }
       )
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
       desired_instance_groups = @deployment_plan.instance_groups

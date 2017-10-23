@@ -34,6 +34,7 @@ module Bosh::Director
         name: 'mycloud',
         ip_provider: ip_provider,
         recreate: false,
+        tags: {}
       )
     end
     let(:instance_reuser) { InstanceReuser.new }
@@ -791,7 +792,8 @@ module Bosh::Director
           compilation: compilation_config,
           model: deployment_model,
           name: 'fake-deployment',
-          ip_provider: ip_provider
+          ip_provider: ip_provider,
+          tags: {}
         )
       end
       let(:stemcell) { make_stemcell(cid: 'stemcell-cid') }

@@ -10,7 +10,7 @@ module Bosh::Spec
       availability_zone,
       instance_uuid,
       job_name,
-      nats_port,
+      nats_config,
       logger,
       agent_base_dir
     )
@@ -21,7 +21,7 @@ module Bosh::Spec
       @availability_zone = availability_zone
       @instance_uuid = instance_uuid
       @job_name = job_name
-      @nats_port = nats_port
+      @nats_config = nats_config
       @logger = logger
       @agent_base_dir = agent_base_dir
     end
@@ -52,7 +52,7 @@ module Bosh::Spec
 
     def fail_job
       @logger.info("Failing job #{@cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(@nats_config) do
         msg = JSON.dump(
           method: 'set_dummy_status',
           status: 'failing',
@@ -64,7 +64,7 @@ module Bosh::Spec
 
     def fail_start_task
       @logger.info("Failing task #{@cid}")
-      NATS.start(uri: "nats://localhost:#{@nats_port}") do
+      NATS.start(@nats_config) do
         msg = JSON.dump(
           method: 'set_task_fail',
           status: 'fail_task',
@@ -76,7 +76,6 @@ module Bosh::Spec
 
     def unblock_package
       package_dir = package_path('blocking_package')
-      puts package_dir
       @waiter.wait(300) do
         raise('Must find package dir') unless Dir.glob(package_dir).any?
         FileUtils.touch(File.join(Dir.glob(package_dir).first, 'unblock_packaging'))

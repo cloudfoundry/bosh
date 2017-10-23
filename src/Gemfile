@@ -47,15 +47,14 @@ group :development, :test do
   gem 'sinatra'
   gem 'sinatra-contrib'
 
-  # avoid upgrading until this issue is resolved: https://github.com/eventmachine/eventmachine/issues/633
-  gem 'eventmachine', '1.0.4'
+  gem 'eventmachine', '~>1.2'
 
   # for director
   gem 'machinist', '~>1.0'
 
   # for root level specs
   gem 'rest-client'
-  gem 'nats'
+  gem 'nats', '~>0.8'
 
   gem 'sqlite3'
   gem 'timecop', '~>0.7.1'

@@ -28,7 +28,11 @@ module Bosh::Dev::Sandbox
       :enable_cpi_resize_disk,
       :generate_vm_passwords,
       :remove_dev_tools,
-      :director_ips
+      :director_ips,
+      :nats_server_ca_path,
+      :nats_client_ca_private_key_path,
+      :nats_client_ca_certificate_path,
+      :nats_director_tls
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -71,6 +75,10 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
       @director_ips = attrs.fetch(:director_ips, [])
+      @nats_server_ca_path = attrs.fetch(:nats_server_ca_path)
+      @nats_client_ca_private_key_path = attrs.fetch(:nats_client_ca_private_key_path)
+      @nats_client_ca_certificate_path = attrs.fetch(:nats_client_ca_certificate_path)
+      @nats_director_tls = attrs.fetch(:nats_director_tls)
     end
 
     def render(template_path)

@@ -126,6 +126,7 @@ require 'bosh/director/transactor'
 require 'bosh/director/sequel'
 require 'bosh/director/agent_broadcaster'
 require 'bosh/director/timeout'
+require 'bosh/director/nats_client_cert_generator'
 require 'common/thread_pool'
 
 require 'bosh/director/config_server/deep_hash_replacement'

@@ -4,8 +4,9 @@ http:
 
 mbus:
   endpoint: nats://localhost:<%= nats_port %>
-  user:
-  password:
+  server_ca_path: <%= nats_certificate_paths['ca_path'] %>
+  client_private_key_path: <%= nats_certificate_paths['clients']['health_monitor']['private_key_path'] %>
+  client_certificate_path: <%= nats_certificate_paths['clients']['health_monitor']['certificate_path'] %>
 
 director: &director
   endpoint: <%= director_url %>
@@ -30,14 +31,6 @@ plugins:
     events:
       - alert
       - heartbeat
-  - name: nats
-    events:
-      - alert
-      - heartbeat
-    options:
-      endpoint: nats://localhost:<%= nats_port %>
-      user:
-      password:
   - name: resurrector
     events:
       - alert

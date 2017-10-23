@@ -49,11 +49,11 @@ module Bosh::Director
         super(link_network_options)
         @consumed_link = consumed_link
         @link_path = link_path
-        @instance_groups = deployment_plan.instance_groups
+        @deployment_plan = deployment_plan
       end
 
       def find_link_spec
-        instance_group = @instance_groups.find { |instance_group| instance_group.name == @link_path.job }
+        instance_group = @deployment_plan.instance_groups.find { |instance_group| instance_group.name == @link_path.job }
         return nil unless instance_group
 
         if @link_path.disk?

@@ -22,6 +22,12 @@ module Bosh::Director
           expect(dns_name_generator.dns_record_name('hostname', 'job-name', 'network-name', 'deployment-name', 'bosh1.tld')).to eq('hostname.job-name.network-name.deployment-name.bosh1.tld')
         end
       end
+
+      context 'when use_short_dns_addresses is true' do
+        it 'returns a short dns name' do
+          expect(dns_name_generator.dns_record_name('hostname', 'job-name', 'network-name', 'deployment-name', 'bosh1.tld')).to eq('hostname.job-name.network-name.deployment-name.bosh1.tld')
+        end
+      end
     end
   end
 end

@@ -9,5 +9,6 @@ The contents of docs include:
 * [Hotfix Workflow](hotfix_workflow.md)
 * [Manual Release of BOSH](manual_bosh_release_workflow.md)
 * [Running Tests](running_tests.md)
+* [NATS Server](nats.md)
 * [Director Database Schema Diagram](director_schema/README.md)
 * [Code style](code_style.md)

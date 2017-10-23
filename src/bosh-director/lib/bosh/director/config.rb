@@ -33,6 +33,7 @@ module Bosh::Director
         :max_vm_create_tries,
         :flush_arp,
         :nats_uri,
+        :nats_server_ca,
         :default_ssh_options,
         :keep_unreachable_vms,
         :enable_post_deploy,
@@ -53,6 +54,10 @@ module Bosh::Director
         :config_server_enabled,
         :config_server,
         :enable_nats_delivered_templates,
+        :nats_client_private_key_path,
+        :nats_client_certificate_path,
+        :nats_client_ca_private_key_path,
+        :nats_client_ca_certificate_path,
         :runtime
       )
 
@@ -69,7 +74,6 @@ module Bosh::Director
         @compiled_package_blobstore = nil
         @compiled_package_cache_options = nil
 
-        @nats = nil
         @nats_rpc = nil
         @cloud = nil
       end
@@ -110,8 +114,8 @@ module Bosh::Director
         # the default one does nothing
         @event_log = EventLog::Log.new
 
-        # by default keep only last 100 tasks of each type in disk
-        @max_tasks = config.fetch('max_tasks', 100).to_i
+        # by default keep only last 2000 tasks of each type in disk
+        @max_tasks = config.fetch('max_tasks', 2000).to_i
 
         @max_threads = config.fetch('max_threads', 32).to_i
 
@@ -122,6 +126,12 @@ module Bosh::Director
 
         @process_uuid = SecureRandom.uuid
         @nats_uri = config['mbus']
+        @nats_server_ca_path = config['nats']['server_ca_path']
+        @nats_client_certificate_path = config['nats']['client_certificate_path']
+        @nats_client_private_key_path = config['nats']['client_private_key_path']
+        @nats_client_ca_certificate_path = config['nats']['client_ca_certificate_path']
+        @nats_client_ca_private_key_path = config['nats']['client_ca_private_key_path']
+        @nats_server_ca = File.read(@nats_server_ca_path)
 
         @default_ssh_options = config['default_ssh_options']
 
@@ -332,7 +342,7 @@ module Bosh::Director
         if @nats_rpc.nil?
           @lock.synchronize do
             if @nats_rpc.nil?
-              @nats_rpc = NatsRpc.new(@nats_uri)
+              @nats_rpc = NatsRpc.new(@nats_uri, @nats_server_ca_path, @nats_client_private_key_path, @nats_client_certificate_path)
             end
           end
         end

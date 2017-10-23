@@ -4,8 +4,11 @@ http:
 
 mbus:
   endpoint: nats://127.0.0.1:4222
-  user:
-  password:
+  user: test-user
+  password: test-password
+  server_ca_path: test-ca-path
+  client_certificate_path: test-certificate-path
+  client_private_key_path: test-private_key-path
 
 director: &director
   endpoint: http://127.0.0.1:25555
@@ -27,15 +30,6 @@ plugins:
     events:
       - alert
       - heartbeat
-
-  - name: nats
-    events:
-      - alert
-      - heartbeat
-    options:
-      endpoint: nats://127.0.0.1:4222
-      user:
-      password:
 
   - name: email
     events:

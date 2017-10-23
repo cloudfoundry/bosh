@@ -5,6 +5,9 @@ templates:
   health_monitor_ctl.erb: bin/health_monitor_ctl
   health_monitor.yml.erb: config/health_monitor.yml
   uaa.pem.erb: config/uaa.pem
+  nats_server_ca.pem.erb: config/nats_server_ca.pem
+  nats_client_certificate.pem.erb: config/nats_client_certificate.pem
+  nats_client_private_key.erb: config/nats_client_private_key
 
 packages:
   - health_monitor
@@ -51,6 +54,11 @@ properties:
     description: EM thread pool size
     default: 20
 
+  hm.nats.certs.private_key:
+    description: Private Key for establishing mutual TLS with NATs
+  hm.nats.certs.certificate:
+    description: Certificate for establishing mutual TLS with NATs
+
   #
   # NATS options (to get alerts from agents)
   #
@@ -59,10 +67,12 @@ properties:
   nats.port:
     description: Port of the NATS message bus port to connect to
     default: 4222
-  nats.user:
-    description: User for the NATS message bus connection
-  nats.password:
-    description: Password for NATS message bus connection
+  nats.tls.ca:
+    description: 'CA cert to trust when communicating with NATS server'
+  nats.tls.health_monitor.certificate:
+    description: Certificate for NATs mutual TLS
+  nats.tls.health_monitor.private_key:
+    description: Private Key for NATs mutual TLS
 
   #
   # Bosh Director options (to get the list of managed VMs)
@@ -91,19 +101,6 @@ properties:
   #
   # Health Monitor Plugins options
   #
-
-  # Send events via NATS message bus
-  event_nats_enabled:
-    description: Enable event NATS message bus plugin
-    default: false
-  event_nats.address:
-    description: Address of the event NATS message bus to connect to
-  event_nats.port:
-    description: Port of the event NATS message bus port to connect to
-  event_nats.user:
-    description: User for the event NATS message bus connection
-  event_nats.password:
-    description: Password for event NATS message bus connection
 
   # Send events via Email
   hm.email_notifications:

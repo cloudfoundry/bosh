@@ -19,3 +19,5 @@ services:
         environment:
             - MYSQL_ROOT_PASSWORD=password
             - MYSQL_DB=bosh
+        volumes:
+            - /tmp/mysql:/var/lib/mysql

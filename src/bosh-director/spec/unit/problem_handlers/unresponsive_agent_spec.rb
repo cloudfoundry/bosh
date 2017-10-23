@@ -1,8 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-
   describe ProblemHandlers::UnresponsiveAgent do
+    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false) }
+    let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
 
     def make_handler(instance, cloud, _, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(instance.id, data)
@@ -20,8 +21,8 @@ module Bosh::Director
         blk.call({'value' => 'synced'})
       end.and_return(0)
 
-      deployment_model = Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.legacy_manifest))
-
+      manifest = Bosh::Spec::Deployments.legacy_manifest
+      deployment_model = Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
 
       @instance = Models::Instance.make(
         job: 'mysql_node',
@@ -42,6 +43,9 @@ module Bosh::Director
       @instance.save
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
+
+      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
+      allow(planner_factory).to receive(:create_from_model).with(@instance.deployment).and_return(planner)
     end
 
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
