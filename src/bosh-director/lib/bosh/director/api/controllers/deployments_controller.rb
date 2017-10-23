@@ -199,7 +199,7 @@ module Bosh::Director
           .map do |deployment|
           cloud_config = if deployment.cloud_configs.empty?
                            'none'
-                         elsif deployment.cloud_configs == Models::Config.latest_set('cloud')
+                         elsif deployment.cloud_configs.map(&:id) == Models::Config.latest_set('cloud').map(&:id)
                            'latest'
                          else
                            'outdated'
