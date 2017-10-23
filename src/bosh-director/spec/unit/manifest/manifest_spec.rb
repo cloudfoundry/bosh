@@ -121,7 +121,13 @@ module Bosh::Director
     end
 
     describe '.load_from_hash' do
-      let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {}) }
+      let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {
+        'azs' => ['my-az'],
+        'vm_types' => ['my-vm-type'],
+        'disk_types' => ['my-disk-type'],
+        'networks' => ['my-net'],
+        'vm_extensions' => ['my-extension'],
+      }) }
       let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
 
       let(:raw_runtime_config_hash) { {'raw_runtime' => '((foo))'} }
