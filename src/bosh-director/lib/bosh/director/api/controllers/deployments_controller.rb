@@ -197,9 +197,9 @@ module Bosh::Director
         deployments = @deployment_manager.all_by_name_asc
           .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
           .map do |deployment|
-          cloud_config = if deployment.cloud_configs_ids.empty?
+          cloud_config = if deployment.cloud_configs.empty?
                            'none'
-                         elsif deployment.cloud_configs_ids == Models::Config.latest_set('cloud').map(&:id)
+                         elsif deployment.cloud_configs == Models::Config.latest_set('cloud')
                            'latest'
                          else
                            'outdated'
@@ -399,7 +399,7 @@ module Bosh::Director
           after_cloud_configs = ignore_cc ? nil : Bosh::Director::Models::Config.latest_set('cloud')
           after_runtime_configs = Bosh::Director::Models::Config.latest_set('runtime')
 
-          after_manifest = Manifest.load_from_text(manifest_hash, after_cloud_configs, after_runtime_configs, {:resolve_interpolation => false})
+          after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_configs, after_runtime_configs, {:resolve_interpolation => false})
           after_manifest.resolve_aliases
 
           redact =  params['redact'] != 'false'

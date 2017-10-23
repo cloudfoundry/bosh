@@ -67,9 +67,9 @@ module Bosh::Director
     describe '#all_by_name_asc' do
 
       before do
-        cloud_config = Models::CloudConfig.make
         release = Models::Release.make
-        deployment = Models::Deployment.make(name: 'b', cloud_config_id: cloud_config.id)
+        deployment = Models::Deployment.make(name: 'b')
+        deployment.cloud_configs = [Models::Config.make(:cloud)]
         release_version = Models::ReleaseVersion.make(release_id: release.id)
         deployment.add_release_version(release_version)
       end

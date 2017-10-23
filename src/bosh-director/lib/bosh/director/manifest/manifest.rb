@@ -13,7 +13,7 @@ module Bosh::Director
     def self.load_from_hash(manifest_hash, cloud_configs, runtime_configs, options = {})
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
       consolidated_cloud_config = Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_configs)
-      self.load_manifest(manifest_hash, cloud_config, consolidated_runtime_config, options)
+      self.load_manifest(manifest_hash, consolidated_cloud_config, consolidated_runtime_config, options)
     end
 
     def self.generate_empty_manifest

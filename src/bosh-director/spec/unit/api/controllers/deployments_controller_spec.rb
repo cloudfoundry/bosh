@@ -576,8 +576,7 @@ module Bosh::Director
         end
 
         describe 'listing deployments' do
-          let(:cloud_config) { Models::CloudConfig.make }
-          let(:deployment) { Models::Deployment.make(name: 'b', cloud_config_id: cloud_config.id) }
+          let(:deployment) { Models::Deployment.make(name: 'b') }
 
           before { basic_authorize 'reader', 'reader' }
 
