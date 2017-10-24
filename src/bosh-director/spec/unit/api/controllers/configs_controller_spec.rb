@@ -162,7 +162,7 @@ module Bosh::Director
             expect(result.size).to eq(2)
             expect(result).to include({
                 'content' => config1.content,
-                'id' => config1.id,
+                'id' => "#{config1.id}",
                 'type' => config1.type,
                 'name' => config1.name
             })
@@ -203,7 +203,7 @@ module Bosh::Director
 
           expect(JSON.parse(last_response.body)).to eq(
             {
-              'id' => Bosh::Director::Models::Config.first.id,
+              'id' => "#{Bosh::Director::Models::Config.first.id}",
               'type' => 'my-type',
               'name' => 'my-name',
               'content' => 'a: 1'
@@ -220,7 +220,7 @@ module Bosh::Director
 
           expect(JSON.parse(last_response.body)).to eq(
             {
-              'id' => Bosh::Director::Models::Config.first.id,
+              'id' => "#{Bosh::Director::Models::Config.first.id}",
               'type' => 'my-type',
               'name' => 'my-name',
               'content' => 'a: 123'

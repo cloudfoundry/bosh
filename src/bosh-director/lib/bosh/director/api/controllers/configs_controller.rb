@@ -109,7 +109,7 @@ module Bosh::Director
       def sql_to_hash(config)
         {
             content: config.content,
-            id: config.id,
+            id: config.id.to_s, # id should be opaque to clients (may not be an int)
             type: config.type,
             name: config.name
         }
