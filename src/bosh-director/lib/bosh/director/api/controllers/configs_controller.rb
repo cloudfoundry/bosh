@@ -22,9 +22,9 @@ module Bosh::Director
         return json_encode(result)
       end
 
-      post '/', :consumes => :yaml do
+      post '/', :consumes => :json do
         begin
-          config_hash = load_yml(request.body.read)
+          config_hash = parse_request_body(request.body.read)
           validate_type_and_name(config_hash)
           validate_config_content(config_hash['content'])
           config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
@@ -40,8 +40,8 @@ module Bosh::Director
         return json_encode(sql_to_hash(config))
       end
 
-      post '/diff', :consumes => :yaml do
-        config_request = load_yml(request.body.read)
+      post '/diff', :consumes => :json do
+        config_request = parse_request_body(request.body.read)
         validate_type_and_name(config_request)
 
         begin
@@ -131,13 +131,13 @@ module Bosh::Director
         check_name_and_type(config, 'name', String)
       end
 
-      def load_yml(body)
+      def parse_request_body(body)
         config_request = begin
-          YAML.load(body)
+          JSON.parse(body)
         rescue => e
-          raise InvalidYamlError, "Incorrect YAML structure of the uploaded body: #{e.message}"
+          raise InvalidJsonError, "Invalid JSON request body: #{e.message}"
         end
-        raise BadConfigRequest, 'YAML hash expected' if !config_request.is_a?(Hash) || config_request.nil?
+        raise BadConfigRequest, 'JSON object expected' if !config_request.is_a?(Hash) || config_request.nil?
         config_request
       end
 

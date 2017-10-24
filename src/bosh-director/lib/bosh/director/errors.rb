@@ -333,6 +333,7 @@ module Bosh::Director
 
   # Invalid YAML
   InvalidYamlError = err(710000)
+  InvalidJsonError = err(710001)
 
   # Resolving Links
   LinkLookupError = err(810000)
