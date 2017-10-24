@@ -19,7 +19,6 @@ describe 'CPI calls', type: :integration do
 
     let(:expected_mbus) {
       {
-        'urls' => [ /nats:\/\/127\.0\.0\.1:\d+/ ],
         'cert' => {
           'ca' => ca_cert,
           'certificate' =>  String,
