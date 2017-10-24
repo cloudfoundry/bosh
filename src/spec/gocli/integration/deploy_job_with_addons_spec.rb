@@ -274,6 +274,59 @@ describe 'deploy job with addons', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_hash)
       end
     end
+
+    context 'when availability zones are specified' do
+      it 'allows addons to be added to the runtime config' do
+        runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon
+        runtime_config['addons'][0]['include'] = {'azs' => ['z1']}
+        runtime_config['addons'][0]['exclude'] = {'azs' => ['z2']}
+        runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+
+        bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+        expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+
+        manifest_hash['name'] = 'dep1'
+        manifest_hash['instance_groups'].first['azs'] = ['z1']
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs)
+        foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
+        expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+        template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+        expect(template).to include("echo 'addon_prop_value'")
+
+        manifest_hash['name'] = 'dep2'
+        manifest_hash['instance_groups'].first['azs'] = ['z2']
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs)
+        foobar_instance = director.instance('foobar', '0', deployment_name: 'dep2')
+        expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
+        expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
+      end
+
+      it 'allows addons to be added to the deployment manifest' do
+        bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+        manifest_hash = Bosh::Spec::NewDeployments.manifest_with_addons
+        manifest_hash['addons'][0]['include'] = {'azs' => ['z1']}
+        manifest_hash['addons'][0]['exclude'] = {'azs' => ['z2']}
+
+        manifest_hash['name'] = 'dep1'
+        manifest_hash['instance_groups'].first['azs'] = ['z1']
+
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs)
+        foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
+        expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+        template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+        expect(template).to include("echo 'prop_value'")
+
+        manifest_hash['name'] = 'dep2'
+        manifest_hash['instance_groups'].first['azs'] = ['z2']
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs)
+        foobar_instance = director.instance('foobar', '0', deployment_name: 'dep2')
+        expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
+        expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
+      end
+    end
   end
 
   context 'when deployment' do

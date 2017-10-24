@@ -248,6 +248,28 @@ module Bosh::Director
             end
           end
 
+          context 'when the azs filter is specified' do
+            let(:filter_hash) { {'azs' => ['z5']} }
+
+            context 'in the deployment manifest' do
+              let(:addon_level) { DEPLOYMENT_LEVEL }
+
+              it 'applies' do
+                allow(instance_group).to receive(:has_availability_zone?).with('z5').and_return(true)
+                expect(addon_include.applies?('anything', [], instance_group)).to be(true)
+              end
+            end
+
+            context 'in the runtime config' do
+              let(:addon_level) { RUNTIME_LEVEL }
+
+              it 'applies' do
+                allow(instance_group).to receive(:has_availability_zone?).with('z5').and_return(true)
+                expect(addon_include.applies?('anything', [], instance_group)).to be(true)
+              end
+            end
+          end
+
           it_behaves_like :common_filter_checks
         end
       end
@@ -272,6 +294,28 @@ module Bosh::Director
 
               it 'does not consider' do
                 expect(addon_exclude.applies?('anything', ['team_3'], instance_group)).to be(false)
+              end
+            end
+          end
+
+          context 'when the azs filter is specified' do
+            let(:filter_hash) { {'azs' => ['z1']} }
+
+            context 'in the deployment manifest' do
+              let(:addon_level) { DEPLOYMENT_LEVEL }
+
+              it 'does not apply' do
+                allow(instance_group).to receive(:has_availability_zone?).with('z1').and_return(false)
+                expect(addon_exclude.applies?('anything', [], instance_group)).to be(false)
+              end
+            end
+
+            context 'in the runtime config' do
+              let(:addon_level) { RUNTIME_LEVEL }
+
+              it 'does not apply' do
+                allow(instance_group).to receive(:has_availability_zone?).with('z1').and_return(false)
+                expect(addon_exclude.applies?('anything', [], instance_group)).to be(false)
               end
             end
           end

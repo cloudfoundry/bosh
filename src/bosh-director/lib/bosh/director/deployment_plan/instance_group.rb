@@ -397,6 +397,12 @@ module Bosh::Director
         @default_network['gateway']
       end
 
+      def has_availability_zone?(az_name)
+        availability_zones.any? do |availability_zone|
+          availability_zone.name == az_name
+        end
+      end
+
       private
 
       def run_time_dependencies

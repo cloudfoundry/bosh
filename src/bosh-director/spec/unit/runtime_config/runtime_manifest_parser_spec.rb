@@ -29,8 +29,8 @@ module Bosh::Director
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(Addon::Filter).to receive(:new).with([], [], [], [], [], :include)
-          expect(Addon::Filter).to receive(:new).with([], [], [], [], [], :exclude)
+          expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], :include)
+          expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], :exclude)
 
           result = subject.parse(runtime_manifest)
 
@@ -64,8 +64,8 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], [], [], :include)
-            expect(Addon::Filter).to receive(:new).with([], [], [], [], [], :exclude)
+            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], [], [], [], :include)
+            expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], :exclude)
 
             subject.parse(runtime_manifest)
           end
@@ -88,8 +88,8 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(Addon::Filter).to receive(:new).with([], [], [], [], [], :include)
-            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], [], [], :exclude)
+            expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], :include)
+            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], [], [], [], :exclude)
 
             subject.parse(runtime_manifest)
           end
