@@ -60,7 +60,7 @@ describe 'vm_types and stemcells', type: :integration do
     expect(bosh_runner.run('manifest', deployment_name: 'simple')).to match_output %(
 stemcells:
 - alias: default
-  os: toronto-os
+  name: ubuntu-stemcell
   version: '1'
     )
   end
