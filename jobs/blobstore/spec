@@ -2,16 +2,16 @@
 name: blobstore
 
 templates:
-  nginx_ctl:          bin/nginx_ctl
-  nginx.conf.erb:     config/nginx.conf
-  blobstore.conf.erb: config/sites/blobstore.conf
-  mime.types:         config/mime.types
-  read_users.erb:     config/read_users
-  write_users.erb:    config/write_users
-  bbr_backup:         bin/bbr/backup
-  bbr_restore:        bin/bbr/restore
-  ssl_cert.pem.erb:   config/ssl_cert.pem
-  ssl_cert_key.erb:   config/ssl_cert_key
+  nginx_ctl:           bin/nginx_ctl
+  nginx.conf.erb:      config/nginx.conf
+  blobstore.conf.erb:  config/sites/blobstore.conf
+  mime.types:          config/mime.types
+  read_users.erb:      config/read_users
+  write_users.erb:     config/write_users
+  bbr_backup:          bin/bbr/backup
+  bbr_restore:         bin/bbr/restore
+  ssl_cert.pem.erb:    config/ssl_cert.pem
+  ssl_key.pem.erb:     config/ssl_key.pem
 
 packages:
 - nginx
@@ -48,5 +48,5 @@ properties:
   blobstore.ssl.cert:
       description: SSL cert for blobstore nginx server
 
-  blobstore.ssl.cert_key:
+  blobstore.ssl.key:
       description: SSL cert key for blobstore nginx server
