@@ -786,7 +786,7 @@ resources:
   - name: bosh-dns-release
     type: bosh-io-release
     source:
-      repository: cloudfoundry/dns-release
+      repository: cloudfoundry/bosh-dns-release
 
   #
   # BATS
