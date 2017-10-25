@@ -29,8 +29,7 @@ end
 
 puma_configuration = Puma::Configuration.new do |user_config|
   user_config.workers 3
-  user_config.bind 'tcp://127.0.0.1'
-  user_config.port config.port
+  user_config.bind "tcp://127.0.0.1:#{config.port}"
   user_config.app rack_app
   user_config.preload_app!
   # this makes sure that all puma workers get their own db connections
