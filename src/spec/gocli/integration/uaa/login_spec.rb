@@ -76,7 +76,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(output).to match /not logged in/
     end
 
-    #FIXME: doesn't seem like gobosh requires ca-cert to be provided when doing a log-in command. Maybe makes sense since it's needed for basically everything else.
+    #FIXME: doesn't seem like bosh requires ca-cert to be provided when doing a log-in command. Maybe makes sense since it's needed for basically everything else.
     # it 'fails to log in with a useful message when cli fails to validate server and no cert was specified' do
     #   bosh_runner.run("env #{current_sandbox.director_url}")
     #   bosh_runner.run_interactively('log-in', no_ca_cert: true, include_credentials: false) do |runner|

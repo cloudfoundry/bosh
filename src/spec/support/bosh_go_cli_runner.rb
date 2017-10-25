@@ -152,7 +152,7 @@ module Bosh::Spec
       cli_options += options.fetch(:json, false) ? ' --json' : ''
       cli_options += ' --sha2' if @sha2
 
-      bosh_cli = ENV['BOSH_CLI'] || "gobosh"
+      bosh_cli = ENV['BOSH_CLI'] || "bosh"
       "#{bosh_cli} #{cli_options} #{cmd}"
     end
 
