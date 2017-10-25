@@ -248,6 +248,155 @@ describe 'variable generation with config server', type: :integration do
           end
         end
 
+        context 'when an addon section references a variable to be generated' do
+          let (:variables) do
+            [
+                {
+                    'name' => 'var_a',
+                    'type' => 'password'
+                },
+                {
+                    'name' => '/var_b',
+                    'type' => 'password'
+                },
+                {
+                    'name' => 'var_c',
+                    'type' => 'password'
+                },
+                {
+                    'name' => '/var_d',
+                    'type' => 'password'
+                },
+            ]
+          end
+
+          shared_examples_for 'a deployment manifest that has addons section with variables' do
+            it 'should deploy successfully' do
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+              var_a = config_server_helper.get_value(prepend_namespace('var_a'))
+              var_b = config_server_helper.get_value('/var_b')
+              var_c = config_server_helper.get_value(prepend_namespace('var_c'))
+              var_d = config_server_helper.get_value('/var_d')
+
+              instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+              job_1template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+              expect(job_1template_hash['properties_list']['gargamel_color']).to eq(var_a)
+              expect(job_1template_hash['properties_list']['smurfs_color']).to eq(var_b)
+
+              job_2_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+              expect(job_2_template_hash['properties_list']['gargamel_color']).to eq(var_c)
+              expect(job_2_template_hash['properties_list']['smurfs_color']).to eq(var_d)
+            end
+          end
+
+          context 'when addon properties reference the variables' do
+            before do
+              manifest_hash['addons'] = [{
+               'name' => 'addon1',
+               'jobs' => [
+                   {'name' => 'job_2_with_many_properties', 'release' => 'bosh-release'}
+               ],
+               'properties' => {
+                   'gargamel' => {'color' => '((var_c))'},
+                   'smurfs' => {'color' => '((/var_d))'}
+               },
+              }]
+            end
+
+            it_behaves_like 'a deployment manifest that has addons section with variables'
+          end
+
+          context 'when addon JOB properties reference the variables' do
+            before do
+              manifest_hash['addons'] = [{
+                   'name' => 'addon1',
+                   'jobs' => [
+                       {
+                           'name' => 'job_2_with_many_properties',
+                           'release' => 'bosh-release',
+                           'properties' => {'gargamel' => {'color' => '((var_c))'}, 'smurfs' => {'color' => '((/var_d))'}},
+                       },
+                       {
+                           'name' => 'foobar',
+                           'release' => 'bosh-release',
+                           'properties' => {},
+                       }
+                   ],
+               }]
+            end
+
+            it_behaves_like 'a deployment manifest that has addons section with variables'
+          end
+
+          context 'when runtime config exists as well on the director' do
+            let(:runtime_config) do
+              {
+                  'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+                  'addons' => [
+                    {
+                        'name' => 'foobar_addon',
+                        'jobs' => [
+                            {
+                                'name' => 'foobar',
+                                'release' => 'bosh-release',
+                                'properties' => {
+                                    'test_property' => '((var_e))'
+                                }
+                            }
+                        ],
+
+                  }],
+                  'variables' => [
+                      {
+                          'name' => 'var_e',
+                          'type' => 'password'
+                      }
+                  ]
+              }
+            end
+
+            before do
+              manifest_hash['addons'] = [{
+                   'name' => 'addon1',
+                   'jobs' => [
+                       {
+                           'name' => 'job_2_with_many_properties',
+                           'release' => 'bosh-release',
+                           'properties' => {'gargamel' => {'color' => '((var_c))'}, 'smurfs' => {'color' => '((/var_d))'}},
+                       }
+                   ],
+               }]
+            end
+
+            it 'should deploy successfully with deployment addons and runtime-config addons' do
+              upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
+
+              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+              var_a = config_server_helper.get_value(prepend_namespace('var_a'))
+              var_b = config_server_helper.get_value('/var_b')
+              var_c = config_server_helper.get_value(prepend_namespace('var_c'))
+              var_d = config_server_helper.get_value('/var_d')
+              var_e = config_server_helper.get_value(prepend_namespace('var_e'))
+
+              instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
+
+              job_1_template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+              expect(job_1_template_hash['properties_list']['gargamel_color']).to eq(var_a)
+              expect(job_1_template_hash['properties_list']['smurfs_color']).to eq(var_b)
+
+              job_2_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
+              expect(job_2_template_hash['properties_list']['gargamel_color']).to eq(var_c)
+              expect(job_2_template_hash['properties_list']['smurfs_color']).to eq(var_d)
+
+              foobar_job_template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+              expect(foobar_job_template).to include("test_property=#{var_e}")
+            end
+          end
+        end
+
         xcontext 'when variable is referenced by a property that has a type in release spec' do
           let(:manifest_hash) do
             Bosh::Spec::Deployments.test_release_manifest.merge(
