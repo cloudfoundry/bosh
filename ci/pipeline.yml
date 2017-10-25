@@ -601,7 +601,6 @@ jobs:
       - integration-2.3-postgres
       - integration-postgres-gocli-sha2
       - blobstore-client-integration
-      - fuzz-tests
       - upgrade-tests
       - blobstore-performance
     - get: bosh-cli
