@@ -474,6 +474,8 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       ignored_subtrees << ['instance_groups', index_type, 'env']
       ignored_subtrees << ['jobs', index_type, 'env']
       ignored_subtrees << ['resource_pools', index_type, 'env']
+      ignored_subtrees << ['addons', index_type, 'properties']
+      ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'properties']
       ignored_subtrees
     end
     let(:current_deployment) { instance_double(Bosh::Director::Models::Deployment)}

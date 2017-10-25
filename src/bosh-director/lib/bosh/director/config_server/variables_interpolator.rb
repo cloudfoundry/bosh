@@ -89,6 +89,8 @@ module Bosh::Director::ConfigServer
         ['instance_groups', Integer, 'env'],
         ['jobs', Integer, 'env'],
         ['resource_pools', Integer, 'env'],
+        ['addons', Integer, 'properties'],
+        ['addons', Integer, 'jobs', Integer, 'properties'],
       ]
 
       deployment_model = get_deployment_by_name(deployment_manifest['name'])
