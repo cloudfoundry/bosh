@@ -19,7 +19,7 @@ module Bosh::Director
       }
       let(:properties) { {'echo_value' => 'addon_prop_value'} }
 
-      let(:cloud_configs) { [Models::Config.make(:cloud)] }
+      let(:cloud_configs) { [Models::Config.make(:cloud_with_manifest_v2)] }
 
       let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
 

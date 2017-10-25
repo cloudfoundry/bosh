@@ -16,7 +16,7 @@ module Bosh::Director::DeploymentPlan
         'ephemeral_disk_size' => 100
     }}
 
-    let(:cpi_config) { Bosh::Director::Models::CpiConfig.make }
+    let(:cpi_config) { Bosh::Director::Models::Config.make(:cpi_with_manifest) }
 
     let(:vm_cloud_properties1) {
       {vm_cloud_properties: 1}
@@ -27,18 +27,18 @@ module Bosh::Director::DeploymentPlan
     }
 
     before do
-      Bosh::Director::Models::CloudConfig.make(raw_manifest: cloud_config)
+      Bosh::Director::Models::Config.make(type: 'cloud', name: 'default', raw_manifest: cloud_config)
 
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(
         '/var/vcap/jobs/cpi-type_cpi/bin/cpi',
         Bosh::Director::Config.uuid,
-        YAML.load(cpi_config.properties)['cpis'][0]['properties']
+        cpi_config.raw_manifest['cpis'][0]['properties']
       ).and_return(fake_cpi1)
 
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(
         '/var/vcap/jobs/cpi-type2_cpi/bin/cpi',
         Bosh::Director::Config.uuid,
-        YAML.load(cpi_config.properties)['cpis'][1]['properties']
+        cpi_config.raw_manifest['cpis'][1]['properties']
       ).and_return(fake_cpi2)
 
       allow(fake_cpi1).to receive(:calculate_vm_cloud_properties).with(vm_resources).and_return(vm_cloud_properties1)
