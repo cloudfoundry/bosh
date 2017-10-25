@@ -215,6 +215,17 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
         expect(output).to_not match /job=second_service_with_errand index=1/
         expect(output).to_not match /job=fake-errand-name/
       end
+
+      it 'can proceed even if an instance outside of the selection is unresponsive' do
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+        original_instance = director.instance('service_with_errand', '0', deployment_name: deployment_name)
+        original_instance.kill_agent
+
+        output = bosh_runner.run('run-errand errand1 --instance service_with_errand/1', deployment_name: deployment_name)
+
+        expect(output).to match /job=service_with_errand index=1/
+      end
     end
   end
 
