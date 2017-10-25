@@ -23,6 +23,9 @@ properties:
   blobstore.ipv6_listen:
     description: Enable binding to IPv6 addresses
     default: false
+  blobstore.allow_http:
+    description: Enable http connections to blobstore, in addition to https
+    default: true
 
   blobstore.director.user:
     description: Username director must use to access blobstore via HTTP Basic
