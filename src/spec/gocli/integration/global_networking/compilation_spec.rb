@@ -30,7 +30,7 @@ describe 'global networking', type: :integration do
       end
 
       it 'allocates new IP addresses without race conditions' do
-        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'job_with_many_packages')
+        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(manifest: Bosh::Spec::Deployments.legacy_manifest, legacy_job: true, instances: 1, template: 'job_with_many_packages')
         legacy_manifest_hash = manifest_hash.merge(cloud_config_hash)
 
         deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
@@ -47,7 +47,7 @@ describe 'global networking', type: :integration do
   context 'when compilation pool configuration contains az information' do
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config_hash['azs'] = [{
           'name' => 'z2',
           'cloud_properties' => {
@@ -176,8 +176,7 @@ describe 'global networking', type: :integration do
 
   context 'when vm_type is specified for compilation' do
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash.delete('resource_pools')
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config_hash['vm_types'] = [{
           'name' => 'foo-compilation',
           'cloud_properties' => {
@@ -194,12 +193,10 @@ describe 'global networking', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-      manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
 
       job_hash = manifest_hash['jobs'].first
       job_hash['vm_type'] = 'foo-compilation'
       job_hash['stemcell'] = 'default'
-      job_hash.delete('resource_pool')
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm')[0]
@@ -211,17 +208,9 @@ describe 'global networking', type: :integration do
   end
 
   context 'when reuse_compilation_vms is set to true' do
-    let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash['networks'].first['subnets'].first.delete('static')
-      cloud_config_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.5-192.168.1.255'] # 3 available ips
-      cloud_config_hash['compilation']['reuse_compilation_vms'] = true
-      cloud_config_hash['compilation']['workers'] = 1
-      cloud_config_hash
-    end
-
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'job_with_many_packages')
+      legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(manifest: legacy_manifest, instances: 1, template: 'job_with_many_packages', legacy_job: true)
       manifest_hash['jobs'].first['networks'].first.delete('static_ips')
       manifest_hash['jobs'] << {
         'name' => 'consul',
@@ -230,17 +219,20 @@ describe 'global networking', type: :integration do
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
       }
+      manifest_hash['networks'].first['subnets'].first.delete('static')
+      manifest_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.5-192.168.1.255'] # 3 available ips
+      manifest_hash['compilation']['reuse_compilation_vms'] = true
+      manifest_hash['compilation']['workers'] = 1
       manifest_hash
     end
 
     context 'when two jobs use two resource pools which refer to the same stemcell' do
       before do
-        cloud_config_hash['resource_pools'] << {'name' => 'b', 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}}
+        manifest_hash['resource_pools'] << {'name' => 'b', 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}}
       end
 
       it 'honors the worker property to limits the number of vms' do
-        expect(cloud_config_hash['resource_pools'][0]['stemcell']).to eq(cloud_config_hash['resource_pools'][1]['stemcell'])
-        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        expect(manifest_hash['resource_pools'][0]['stemcell']).to eq(manifest_hash['resource_pools'][1]['stemcell'])
         deploy_simple_manifest(manifest_hash: manifest_hash)
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(3)
       end
@@ -249,12 +241,11 @@ describe 'global networking', type: :integration do
     context 'when two jobs use different resource pools which refer to different stemcells' do
       before do
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_2.tgz')}")
-        cloud_config_hash['resource_pools'] << {'name' => 'b', 'stemcell' => {'name' => 'centos-stemcell', 'version' => '2'}}
+        manifest_hash['resource_pools'] << {'name' => 'b', 'stemcell' => {'name' => 'centos-stemcell', 'version' => '2'}}
       end
 
       it 'honors the worker property to limits the number of vms' do
-        expect(cloud_config_hash['resource_pools'][0]['stemcell']).to_not eq(cloud_config_hash['resource_pools'][1]['stemcell'])
-        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        expect(manifest_hash['resource_pools'][0]['stemcell']).to_not eq(manifest_hash['resource_pools'][1]['stemcell'])
         deploy_simple_manifest(manifest_hash: manifest_hash)
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(5)
       end

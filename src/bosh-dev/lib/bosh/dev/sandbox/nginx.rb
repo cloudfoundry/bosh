@@ -44,7 +44,7 @@ module Bosh::Dev::Sandbox
     end
 
     def sync_release_blobs
-      Dir.chdir(RELEASE_ROOT) { @runner.run('gobosh sync-blobs') }
+      Dir.chdir(RELEASE_ROOT) { @runner.run('bosh sync-blobs') }
     end
 
     def compile

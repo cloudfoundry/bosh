@@ -12,13 +12,12 @@ describe 'deleting deployment', type: :integration do
 
     expect(bosh_runner.run('deployments', failure_expected: true)).to match /0 deployments/
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['instances'] = 1
 
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'].first.delete('size')
-    cloud_config_hash['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
-    manifest_hash['jobs'].first['persistent_disk_pool'] = 'disk_a'
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash['disk_types'] = [{'name' => 'disk_a', 'disk_size' => 123}]
+    manifest_hash['jobs'].first['persistent_disk_type'] = 'disk_a'
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
     expect(bosh_runner.run('take-snapshot foobar/0', deployment_name: 'simple')).to include('Succeeded')
@@ -63,13 +62,12 @@ describe 'deleting deployment', type: :integration do
 
     expect(bosh_runner.run('deployments', failure_expected: true)).to match /0 deployments/
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['instances'] = 1
 
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'].first.delete('size')
-    cloud_config_hash['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
-    manifest_hash['jobs'].first['persistent_disk_pool'] = 'disk_a'
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash['disk_types'] = [{'name' => 'disk_a', 'disk_size' => 123}]
+    manifest_hash['jobs'].first['persistent_disk_type'] = 'disk_a'
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, failure_expected: true)
 

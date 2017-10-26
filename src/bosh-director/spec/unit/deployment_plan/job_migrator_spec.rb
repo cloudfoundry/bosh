@@ -11,13 +11,13 @@ module Bosh::Director
     end
 
     let(:etcd_job_spec) do
-      spec = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+      spec = Bosh::Spec::NewDeployments.simple_job(name: 'etcd', instances: 4)
       spec['azs'] = ['z1', 'z2']
       spec
     end
 
     let(:deployment_manifest) do
-      manifest = Bosh::Spec::Deployments.simple_manifest
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest['jobs'] = [etcd_job_spec]
       manifest
     end
@@ -27,7 +27,7 @@ module Bosh::Director
     end
 
     let(:cloud_config_manifest) do
-      manifest = Bosh::Spec::Deployments.simple_cloud_config
+      manifest = Bosh::Spec::NewDeployments.simple_cloud_config
       manifest['azs'] = [
         { 'name' => 'z1' },
         { 'name' => 'z2' },
@@ -67,12 +67,13 @@ module Bosh::Director
     end
 
     let(:deployment_model) do
-      cloud_config = Models::CloudConfig.make(raw_manifest: cloud_config_manifest)
-      Models::Deployment.make(
+      cloud_config = Models::Config.make(:cloud, raw_manifest: cloud_config_manifest)
+      deployment = Models::Deployment.make(
         name: deployment_manifest['name'],
         manifest: YAML.dump(deployment_manifest),
-        cloud_config: cloud_config,
       )
+      deployment.cloud_configs = [cloud_config]
+      deployment
     end
 
     let(:deployment_plan) do
@@ -85,14 +86,14 @@ module Bosh::Director
       Models::VariableSet.make(deployment: deployment_model)
 
       fake_locks
-      prepare_deploy(deployment_manifest, cloud_config_manifest)
+      prepare_deploy(deployment_manifest)
       allow(logger).to receive(:debug)
     end
 
     describe 'find_existing_instances' do
       context 'when instance group needs to be migrated from' do
         let(:etcd_job_spec) do
-          job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+          job = Bosh::Spec::NewDeployments.simple_job(name: 'etcd', instances: 4)
           job['azs'] = ['z1', 'z2']
           job['migrated_from'] = [
             {'name' => 'etcd_z1', 'az' => 'z1'},
@@ -182,11 +183,11 @@ module Bosh::Director
 
         context 'when migrated_from instance group is still referenced in new deployment' do
           let(:deployment_manifest) do
-            manifest = Bosh::Spec::Deployments.simple_manifest
+            manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
             manifest['jobs'] = [
               etcd_job_spec,
-              Bosh::Spec::Deployments.simple_job(name: 'etcd_z1').merge({'azs' => ['z1']}),
-              Bosh::Spec::Deployments.simple_job(name: 'etcd_z2').merge({'azs' => ['z2']}),
+              Bosh::Spec::NewDeployments.simple_job(name: 'etcd_z1').merge({'azs' => ['z1']}),
+              Bosh::Spec::NewDeployments.simple_job(name: 'etcd_z2').merge({'azs' => ['z2']}),
             ]
             manifest
           end
@@ -203,7 +204,7 @@ module Bosh::Director
 
         context 'when the referenced instance group was the original instance group' do
           let(:etcd_job_spec) do
-            job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+            job = Bosh::Spec::NewDeployments.simple_job(name: 'etcd', instances: 4)
             job['azs'] = ['z1']
             job['migrated_from'] = [
               {'name' => 'etcd', 'az' => 'z1'},
@@ -225,8 +226,8 @@ module Bosh::Director
 
         context 'when two instance groups migrate from the same job' do
           let(:deployment_manifest) do
-            manifest = Bosh::Spec::Deployments.simple_manifest
-            another_job_spec = Bosh::Spec::Deployments.simple_job(name: 'another')
+            manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+            another_job_spec = Bosh::Spec::NewDeployments.simple_job(name: 'another')
             another_job_spec['migrated_from'] = etcd_job_spec['migrated_from']
             another_job_spec['azs'] = etcd_job_spec['azs']
             manifest['jobs'] = [
@@ -276,7 +277,7 @@ module Bosh::Director
         context 'when migrated_from section does not contain availability zone and instance models do not have az (legacy instances)' do
           context 'and the desired job has azs' do
             let(:etcd_job_spec) do
-              job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+              job = Bosh::Spec::NewDeployments.simple_job(name: 'etcd', instances: 4)
               job['migrated_from'] = [
                 {'name' => 'etcd_z1'},
               ]
@@ -300,7 +301,7 @@ module Bosh::Director
 
           context 'and the desired instance group does not have azs' do
             let(:etcd_job_spec) do
-              job = Bosh::Spec::Deployments.simple_job(name: 'etcd', instances: 4)
+              job = Bosh::Spec::NewDeployments.simple_job(name: 'etcd', instances: 4)
               job['migrated_from'] = [{'name' => 'etcd_z1'}]
               job['networks'] = [{'name' => 'no-az'}]
               job

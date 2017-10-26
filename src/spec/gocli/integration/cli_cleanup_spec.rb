@@ -28,13 +28,13 @@ describe 'cli: cleanup', type: :integration do
     let(:clean_command) { 'clean-up' }
 
     it 'should remove releases and stemcells and dns blobs, leaving recent versions. Also leaves orphaned disks.' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest_hash['name'] = 'deployment-a'
-      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1, name: 'first-job')]
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      disk_pool = Bosh::Spec::Deployments.disk_pool
-      disk_pool['cloud_properties'] = {'my' => 'property'}
-      cloud_config['disk_pools'] = [disk_pool]
+      manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job')]
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+      disk_type = Bosh::Spec::NewDeployments.disk_type
+      disk_type['cloud_properties'] = {'my' => 'property'}
+      cloud_config['disk_types'] = [disk_type]
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
       upload_new_release_version('file-1.txt')
       upload_new_release_version('file-2.txt')
@@ -68,13 +68,13 @@ describe 'cli: cleanup', type: :integration do
     let(:clean_command) { 'clean-up --all' }
 
     it 'should remove orphaned disks, releases, stemcells, and all unused dns blobs' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest_hash['name'] = 'deployment-a'
-      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1, name: 'first-job')]
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      disk_pool = Bosh::Spec::Deployments.disk_pool
-      disk_pool['cloud_properties'] = {'my' => 'property'}
-      cloud_config['disk_pools'] = [disk_pool]
+      manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job')]
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+      disk_type = Bosh::Spec::NewDeployments.disk_type
+      disk_type['cloud_properties'] = {'my' => 'property'}
+      cloud_config['disk_types'] = [disk_type]
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
       bosh_runner.run('delete-deployment', deployment_name: 'deployment-a')

@@ -94,7 +94,7 @@ module Bosh::Director
 
       def expect_vm_to_be_created
         Bosh::Director::Models::Task.make(:id => 42, :username => 'user')
-        prepare_deploy(manifest, manifest)
+        prepare_deploy(manifest)
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
         allow(AgentClient).to receive(:with_agent_id).and_return(fake_new_agent)

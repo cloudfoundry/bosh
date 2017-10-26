@@ -5,11 +5,11 @@ describe 'simultaneous deploys', type: :integration do
   with_reset_sandbox_before_each
 
   let(:first_manifest_hash) do
-    Bosh::Spec::Deployments.simple_manifest
+    Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
   end
 
   let(:second_manifest_hash) do
-    Bosh::Spec::Deployments.simple_manifest.merge('name' => 'second')
+    Bosh::Spec::NewDeployments.simple_manifest_with_stemcell.merge('name' => 'second')
   end
 
   before do

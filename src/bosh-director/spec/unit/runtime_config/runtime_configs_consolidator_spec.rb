@@ -3,22 +3,22 @@ require 'spec_helper'
 module Bosh::Director
   describe RuntimeConfig::RuntimeConfigsConsolidator do
     subject(:consolidator) { described_class.new(runtime_configs) }
-    let(:rc_model_1) { instance_double(Bosh::Director::Models::RuntimeConfig)}
-    let(:rc_model_2) { instance_double(Bosh::Director::Models::RuntimeConfig)}
-    let(:rc_model_3) { instance_double(Bosh::Director::Models::RuntimeConfig)}
+    let(:rc_model_1) { instance_double(Bosh::Director::Models::Config)}
+    let(:rc_model_2) { instance_double(Bosh::Director::Models::Config)}
+    let(:rc_model_3) { instance_double(Bosh::Director::Models::Config)}
     let(:runtime_configs) { [ rc_model_1, rc_model_2, rc_model_3] }
 
     describe '#create_from_model_ids' do
       let(:runtime_configs) { [
-        instance_double(Bosh::Director::Models::RuntimeConfig),
-        instance_double(Bosh::Director::Models::RuntimeConfig),
+        instance_double(Bosh::Director::Models::Config),
+        instance_double(Bosh::Director::Models::Config),
       ]}
 
       let(:runtime_config_ids) {
         [1,21,65]
       }
       before do
-        allow(Bosh::Director::Models::RuntimeConfig).to receive(:find_by_ids).with(runtime_config_ids).and_return(runtime_configs)
+        allow(Bosh::Director::Models::Config).to receive(:find_by_ids).with(runtime_config_ids).and_return(runtime_configs)
       end
 
       it 'calls initialize with the models' do

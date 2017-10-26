@@ -165,6 +165,8 @@ module Bosh::Director
           allow(instance_group_2).to receive(:networks).and_return([instance_group_network])
 
           allow(deployment_plan).to receive(:instance_groups).and_return([instance_group_1, instance_group_2])
+          allow(deployment_plan).to receive(:vm_resources_cache)
+
           allow(deployment_plan).to receive(:name).and_return([instance_group_1, instance_group_2])
         end
 

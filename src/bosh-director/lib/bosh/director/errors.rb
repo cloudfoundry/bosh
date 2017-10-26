@@ -113,6 +113,7 @@ module Bosh::Director
   JobNotFound = err(70009, NOT_FOUND)
   ContextIdViolatedMax = err(70010)
   VariableSetNotFound = err(70011)
+  ConfigTypeMismatch = err(70012, INTERNAL_SERVER_ERROR)
 
   # Extracting job from a release
   JobInvalidArchive = err(80000)
@@ -141,9 +142,9 @@ module Bosh::Director
   CompilationConfigUnknownNetwork = err(120001)
   CompilationConfigInvalidAvailabilityZone = err(120002)
   CompilationConfigInvalidVmType = err(120003)
-  CompilationConfigCloudPropertiesNotAllowed = err(120004)
   CompilationConfigInvalidVmExtension = err(120005)
-  CompilationConfigVmTypeRequired = err(120004)
+  CompilationConfigVmTypeRequired = err(120006)
+  CompilationConfigBadVmConfiguration = err(120007)
 
   # Manifest parsing: network section
   NetworkReservationInvalidIp = err(130001)
@@ -182,6 +183,7 @@ module Bosh::Director
   InstanceGroupAmbiguousEnv = err(140019)
   JobBothInstanceGroupAndJob = err(140020)
   JobInstanceIgnored = err(140021)
+  InstanceGroupBadVmConfiguration = err(140022)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)
@@ -274,6 +276,8 @@ module Bosh::Director
   PackageCompilationNotFound = err(430003)
 
   BadManifest = err(440001)
+  BadConfigRequest = err(440010)
+  BadConfig = err(440011)
 
   # RPC
   RpcRemoteException = err(450001)
@@ -319,6 +323,9 @@ module Bosh::Director
   VariablesInvalidFormat = err(560000)
   FeaturesInvalidFormat = err(560001)
 
+  # Cloud config
+  CloudConfigMergeError = err(570000)
+
   # Authorization errors
   UnauthorizedToAccessDeployment = err(600000, UNAUTHORIZED)
 
@@ -327,6 +334,7 @@ module Bosh::Director
 
   # Invalid YAML
   InvalidYamlError = err(710000)
+  InvalidJsonError = err(710001)
 
   # Resolving Links
   LinkLookupError = err(810000)

@@ -37,7 +37,7 @@ module Bosh
       let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
       let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
       let(:instance) do
-        instance = DeploymentPlan::Instance.create_from_job(
+        instance = DeploymentPlan::Instance.create_from_instance_group(
             instance_group,
             5,
             'started',

@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe Instance do
     include Support::StemcellHelpers
 
-    subject(:instance) { Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger) }
+    subject(:instance) { Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, availability_zone, logger) }
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:network_resolver) { GlobalNetworkResolver.new(plan, [], logger) }
-    let(:job) do
+    let(:instance_group) do
       instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         vm_type: vm_type,
         stemcell: stemcell,
@@ -48,7 +48,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, availability_zone, 1)}
 
     describe '#bind_existing_instance_model' do
-      let(:job) { InstanceGroup.new(logger) }
+      let(:instance_group) { InstanceGroup.new(logger) }
 
       let(:network) do
         instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network', reserve: nil)
@@ -102,7 +102,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'applying state' do
-      let(:job) { InstanceGroup.new(logger) }
+      let(:instance_group) { InstanceGroup.new(logger) }
 
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
@@ -412,7 +412,7 @@ module Bosh::Director::DeploymentPlan
         allow(availability_zone).to receive(:cloud_properties).and_return({'foo' => 'az-foo', 'zone' => 'the-right-one'})
         allow(vm_type).to receive(:cloud_properties).and_return({'foo' => 'rp-foo', 'resources' => 'the-good-stuff'})
 
-        instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!
@@ -439,7 +439,7 @@ module Bosh::Director::DeploymentPlan
         selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
         Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
 
-        instance = Instance.create_from_job(job, index, state, deployment, current_state, availability_zone, logger)
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, availability_zone, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.desired_variable_set = selected_variable_set

@@ -4,20 +4,21 @@ describe 'template', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can access exposed attributes of an instance' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'] = [
       {
         'name' => 'id_job',
         'templates' => ['name' => 'id_job'],
-        'resource_pool' => 'a',
+        'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{
             'name' => 'a',
           }],
         'properties' => {},
+        'stemcell' => 'default'
       }
     ]
-    deploy_from_scratch(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     id_instance = director.instance('id_job', '0')
     template = YAML.load(id_instance.read_job_template('id_job', 'config.yml'))
@@ -27,21 +28,22 @@ describe 'template', type: :integration do
 
 
   it 'gives VMs the same id on `deploy --recreate`' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'] = [
       {
         'name' => 'id_job',
         'templates' => ['name' => 'id_job'],
-        'resource_pool' => 'a',
+        'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{
             'name' => 'a',
           }],
         'properties' => {},
+        'stemcell' => 'default'
       }
     ]
 
-    deploy_from_scratch(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     id_instance = director.instance('id_job', '0')
     template = YAML.load(id_instance.read_job_template('id_job', 'config.yml'))
@@ -69,7 +71,7 @@ describe 'template', type: :integration do
   end
 
   it 'prints all template evaluation errors when there are errors in multiple job deployment templates' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'] = [
         {
             'name' => 'foobar',
@@ -77,16 +79,17 @@ describe 'template', type: :integration do
                 {'name' => 'foobar_with_bad_properties'},
                 {'name' => 'foobar_with_bad_properties_2'}
             ],
-            'resource_pool' => 'a',
+            'vm_type' => 'a',
             'instances' => 1,
             'networks' => [{
                                'name' => 'a',
                            }],
             'properties' => {},
+            'stemcell' => 'default'
         }
     ]
 
-    output = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true)
+    output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, failure_expected: true)
 
     expect(output).to include <<-EOF
 Error: Unable to render instance groups for deployment. Errors are:

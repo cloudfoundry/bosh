@@ -181,6 +181,30 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
+      describe 'scaling down azs' do
+        let(:desired_azs) { [az1, az2] }
+
+        it 'rebalances obsolete instances' do
+          unmatched_desired_instances = [desired_instance, desired_instance, desired_instance]
+          existing_0 = existing_instance_with_az(0, '1')
+          existing_1 = existing_instance_with_az(1, '2')
+          existing_2 = existing_instance_with_az(2, '3')
+          unmatched_existing_instances = [existing_1, existing_0, existing_2]
+
+          results = zone_picker.place_and_match_in(unmatched_desired_instances, unmatched_existing_instances)
+          expect(results.select(&:new?).map(&:desired_instance)).to eq([desired_instance(az1)])
+
+          existing = results.select(&:existing?)
+          expect(existing.size).to eq(2)
+          expect(existing[0].existing_instance).to eq(existing_0)
+          expect(existing[0].desired_instance).to eq(unmatched_desired_instances[0])
+          expect(existing[1].existing_instance).to eq(existing_1)
+          expect(existing[1].desired_instance).to eq(unmatched_desired_instances[1])
+
+          expect(results.select(&:obsolete?).map(&:existing_instance)).to eq([existing_2])
+        end
+      end
+
       describe 'when a job is deployed in 2 zones with 3 existing instances, and re-deployed into one zone' do
         let(:desired_azs) { [az1] }
 

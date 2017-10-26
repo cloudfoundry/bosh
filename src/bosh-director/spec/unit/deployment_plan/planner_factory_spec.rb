@@ -11,8 +11,8 @@ module Bosh
         let(:raw_manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-        let(:cloud_config_model) { Models::CloudConfig.make(raw_manifest: cloud_config_hash) }
-        let(:runtime_config_models) { [instance_double(Bosh::Director::Models::RuntimeConfig)] }
+        let(:cloud_configs) { [Models::Config.make(:cloud, raw_manifest: cloud_config_hash)] }
+        let(:runtime_config_models) { [instance_double(Bosh::Director::Models::Config)] }
         let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator)}
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
@@ -49,7 +49,7 @@ module Bosh
 
         describe '#create_from_manifest' do
           let(:planner) do
-            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
+            subject.create_from_manifest(manifest, cloud_configs, runtime_config_models, plan_options)
           end
 
           it 'returns a planner' do
@@ -113,23 +113,22 @@ LOGMESSAGE
           it 'raises error when manifest has cloud_config properties' do
             hybrid_manifest_hash['vm_types'] = 'foo'
             expect{
-              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
+              subject.create_from_manifest(manifest, cloud_configs, runtime_config_models, plan_options)
             }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
           end
 
           context 'Planner.new' do
-            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+            let(:deployment_model) { Models::Deployment.make(name: 'simple') }
             let(:expected_attrs) { {:name=>"simple", :properties=>{}} }
             let(:expected_plan_options) { {"recreate"=>false, "fix"=>false, "skip_drain"=>nil, "job_states"=>{}, "max_in_flight"=>nil, "canaries"=>nil, "tags"=>{}} }
 
             before do
               allow(deployment_repo).to receive(:find_or_create_by_name).with(deployment_name, plan_options).and_return(deployment_model)
-              allow(deployment_model).to receive(:name).and_return(deployment_name)
               allow(runtime_config_consolidator).to receive(:runtime_configs).and_return(runtime_config_models)
             end
 
             it 'calls planner new with appropriate arguments' do
-              expect(Planner).to receive(:new).with(expected_attrs, raw_manifest_hash,cloud_config_model, runtime_config_models, deployment_model, expected_plan_options).and_call_original
+              expect(Planner).to receive(:new).with(expected_attrs, raw_manifest_hash, cloud_configs, runtime_config_models, deployment_model, expected_plan_options).and_call_original
               planner
             end
           end
@@ -492,7 +491,7 @@ LOGMESSAGE
         end
 
         def upload_stemcell
-          stemcell_entry = cloud_config_model.raw_manifest['resource_pools'].first['stemcell']
+          stemcell_entry = cloud_config_hash['resource_pools'].first['stemcell']
           Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'])
         end
       end

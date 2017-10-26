@@ -4,10 +4,10 @@ describe 'Using multiple CPIs', type: :integration do
   with_reset_sandbox_before_each
 
   let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
-  let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis }
+  let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis }
   let(:cpi_config) { Bosh::Spec::Deployments.simple_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)) }
-  let(:job) { Bosh::Spec::Deployments.simple_job(:azs => ['z1', 'z2']) }
-  let(:deployment) { Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job]) }
+  let(:job) { Bosh::Spec::NewDeployments.simple_job(:azs => ['z1', 'z2']) }
+  let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job]) }
   let(:cloud_config_manifest) { yaml_file('cloud_manifest', cloud_config) }
   let(:cpi_config_manifest) { yaml_file('cpi_manifest', cpi_config) }
   let(:deployment_manifest) { yaml_file('deployment_manifest', deployment) }
@@ -204,9 +204,9 @@ describe 'Using multiple CPIs', type: :integration do
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
       # Remove z2 from new deploy
-      job = Bosh::Spec::Deployments.simple_job(:azs => ['z1'])
+      job = Bosh::Spec::NewDeployments.simple_job(:azs => ['z1'])
 
-      deployment = Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job])
+      deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job])
       deployment_manifest = yaml_file('deployment_manifest', deployment)
 
       bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')

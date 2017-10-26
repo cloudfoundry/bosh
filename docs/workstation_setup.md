@@ -77,7 +77,7 @@ If you have trouble bundling, you may have to install pg gem manually by specify
 
 ### Custom bosh-cli
 
-To use a custom go-cli in integration tests change `gobosh` in  `src/spec/gocli/support/bosh_go_cli_runner.rb`.
+To use a custom go-cli in integration tests change `bosh` in  `src/spec/gocli/support/bosh_go_cli_runner.rb`.
 
 ### Special instructions for nginx on  Mac
 

@@ -19,12 +19,12 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'creates a new cpi config' do
-          properties = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
+          cpi_config = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
           expect {
-            post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Bosh::Director::Models::CpiConfig, :count).from(0).to(1)
+            post '/', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
+          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
-          expect(Bosh::Director::Models::CpiConfig.first.properties).to eq(properties)
+          expect(Bosh::Director::Models::Config.first.content).to eq(cpi_config)
         end
 
         it 'gives a nice error when request body is not a valid yml' do
@@ -108,9 +108,7 @@ module Bosh::Director
 
         describe 'when previous cpi config is nil' do
           before do
-            cpi_config = Bosh::Director::Models::CpiConfig.new
-            cpi_config.manifest = nil
-            cpi_config.save
+            cpi_config = Bosh::Director::Models::Config.make(:cpi, raw_manifest: nil)
           end
 
           it "shows a full 'added' diff" do
@@ -157,19 +155,19 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'returns the number of cpi configs specified by ?limit' do
-          oldest_cpi_config = Bosh::Director::Models::CpiConfig.new(
-              properties: 'config_from_time_immortal',
+          Bosh::Director::Models::Config.make(:cpi,
+              content: 'config_from_time_immortal',
               created_at: Time.now - 3,
-          ).save
-          older_cpi_config = Bosh::Director::Models::CpiConfig.new(
-              properties: 'config_from_last_year',
+          )
+           Bosh::Director::Models::Config.make(:cpi,
+              content: 'config_from_last_year',
               created_at: Time.now - 2,
-          ).save
+          )
           newer_cpi_config_properties = "---\nsuper_shiny: new_config"
-          newer_cpi_config = Bosh::Director::Models::CpiConfig.new(
-              properties: newer_cpi_config_properties,
+          Bosh::Director::Models::Config.make(:cpi,
+              content: newer_cpi_config_properties,
               created_at: Time.now - 1,
-          ).save
+          )
 
           get '/?limit=2'
 
@@ -196,7 +194,7 @@ module Bosh::Director
       describe 'when user has readonly access' do
         before { basic_authorize 'reader', 'reader' }
         before {
-          Bosh::Director::Models::CpiConfig.make(:properties => '{}')
+          Bosh::Director::Models::Config.make(content: '{}')
         }
 
         it 'denies access' do
@@ -274,10 +272,10 @@ module Bosh::Director
             }
 
             it 'returns the delta' do
-              Bosh::Director::Models::CpiConfig.new(
-                properties: YAML.dump(old_cpi_config),
+              Bosh::Director::Models::Config.make(:cpi,
+                raw_manifest: old_cpi_config,
                 created_at: Time.now - 3,
-              ).save
+              )
 
               post '/diff', YAML.dump(new_cpi_config), {'CONTENT_TYPE' => 'text/yaml'}
               diff = JSON.parse(last_response.body)['diff']

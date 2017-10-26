@@ -42,13 +42,13 @@ module Bosh
           it 'accepts a manifest without jobs' do
             manifest_hash.delete('jobs')
 
-            expect { manifest_validator.validate(manifest_hash, nil) }.not_to raise_error
+            expect { manifest_validator.validate(manifest_hash, {}) }.not_to raise_error
           end
 
           it 'raises error when migrated_from is present' do
             manifest_hash['jobs'].first['migrated_from'] = [{'name' => 'old'}]
             expect {
-              manifest_validator.validate(manifest_hash, nil)
+              manifest_validator.validate(manifest_hash, {})
             }.to raise_error(
                 Bosh::Director::DeploymentInvalidProperty,
                 "Deployment manifest instance groups contain 'migrated_from', but it can only be used with cloud-config."

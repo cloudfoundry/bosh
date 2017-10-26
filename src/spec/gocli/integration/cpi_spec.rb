@@ -19,7 +19,6 @@ describe 'CPI calls', type: :integration do
 
     let(:expected_mbus) {
       {
-        'urls' => [ /nats:\/\/127\.0\.0\.1:\d+/ ],
         'cert' => {
           'ca' => ca_cert,
           'certificate' =>  String,
@@ -30,7 +29,8 @@ describe 'CPI calls', type: :integration do
 
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      manifest_hash['jobs'].first['env'] = {'bosh' => {'password' => 'foobar'}}
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       invocations = current_sandbox.cpi.invocations
 
@@ -224,17 +224,17 @@ describe 'CPI calls', type: :integration do
       it 'recreates VM with correct CPI requests' do
         manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest
         manifest_hash['jobs'] = [
-          Bosh::Spec::Deployments.simple_job(
+          Bosh::Spec::NewDeployments.simple_job(
             name: 'first-job',
             static_ips: ['192.168.1.10'],
             instances: 1,
             templates: ['name' => 'foobar_without_packages'],
-            persistent_disk_pool: Bosh::Spec::Deployments.disk_pool['name']
+            persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name']
           )
         ]
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
-        cloud_config_hash['disk_pools'] = [Bosh::Spec::Deployments.disk_pool]
+        cloud_config_hash['disk_types'] = [Bosh::Spec::NewDeployments.disk_type]
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
         first_deploy_invocations = current_sandbox.cpi.invocations
 
@@ -269,7 +269,6 @@ describe 'CPI calls', type: :integration do
           'disk_cids' => [],
           'env' => {
             'bosh' => {
-              'password' => 'foobar',
               'mbus' => expected_mbus,
               'group' => expected_group,
               'groups' => expected_groups,
@@ -322,12 +321,12 @@ describe 'CPI calls', type: :integration do
         })
 
         manifest_hash['jobs'] = [
-          Bosh::Spec::Deployments.simple_job(
+          Bosh::Spec::NewDeployments.simple_job(
             name: 'first-job',
             static_ips: ['192.168.1.11'],
             instances: 1,
             templates: ['name' => 'foobar'],
-            persistent_disk_pool: Bosh::Spec::Deployments.disk_pool['name']
+            persistent_disk_pool: Bosh::Spec::NewDeployments.disk_type['name']
           )
         ]
 
@@ -502,7 +501,6 @@ describe 'CPI calls', type: :integration do
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
-              'password' => 'foobar',
               'group' => expected_group,
               'groups' => expected_groups
             }
@@ -570,7 +568,7 @@ describe 'CPI calls', type: :integration do
 
     before do
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
       cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
 
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")

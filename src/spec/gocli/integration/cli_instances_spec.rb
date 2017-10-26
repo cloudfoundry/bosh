@@ -5,7 +5,7 @@ describe 'cli: deployment process', type: :integration do
   with_reset_sandbox_before_each
 
   it 'displays instances in a deployment' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [
       {'name' => 'zone-1', 'cloud_properties' => {}},
       {'name' => 'zone-2', 'cloud_properties' => {}},
@@ -42,7 +42,7 @@ describe 'cli: deployment process', type: :integration do
       }
     ]
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
@@ -98,7 +98,7 @@ describe 'cli: deployment process', type: :integration do
   end
 
   it 'should return instances --vitals' do
-    deploy_from_scratch
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     vitals = director.instances_ps_vitals[0]
 
     print vitals

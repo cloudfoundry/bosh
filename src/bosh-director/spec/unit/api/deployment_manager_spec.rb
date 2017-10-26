@@ -13,31 +13,31 @@ module Bosh::Director
     end
 
     describe '#create_deployment' do
-      let(:runtime_configs) { [Models::RuntimeConfig.make, Models::RuntimeConfig.make] }
+      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
 
       it 'enqueues a DJ job' do
-        cloud_config = Models::CloudConfig.make
+        cloud_configs = [Models::Config.make(:cloud)]
 
-        create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_configs, deployment, options)
+        create_task = subject.create_deployment(username, 'manifest', cloud_configs, runtime_configs, deployment, options)
 
         expect(create_task.description).to eq('create deployment')
         expect(create_task.deployment_name).to eq('DEPLOYMENT_NAME')
         expect(create_task.context_id).to eq('')
       end
 
-      it 'passes a nil cloud config id and an empty runtime config id array if there is no cloud config or runtime configs' do
+      it 'passes empty cloud config id array and an empty runtime config id array if there are no cloud configs or runtime configs' do
         expect(JobQueue).to receive_message_chain(:new, :enqueue) do |_, job_class, _, params, _|
           expect(job_class).to eq(Jobs::UpdateDeployment)
-          expect(params).to eq(['manifest', nil, [], options])
+          expect(params).to eq(['manifest', [], [], options])
         end
 
-        subject.create_deployment(username, 'manifest', nil, [], deployment, options)
+        subject.create_deployment(username, 'manifest', [], [], deployment, options)
       end
 
       it 'passes context id' do
-        cloud_config = Models::CloudConfig.make
+        cloud_configs = [Models::Config.make(:cloud)]
         context_id = 'example-context-id'
-        create_task = subject.create_deployment(username, 'manifest', cloud_config, runtime_configs, deployment, options, context_id)
+        create_task = subject.create_deployment(username, 'manifest', cloud_configs, runtime_configs, deployment, options, context_id)
 
         expect(create_task.context_id).to eq context_id
       end
@@ -65,16 +65,15 @@ module Bosh::Director
     end
 
     describe '#all_by_name_asc' do
-
       before do
-        cloud_config = Models::CloudConfig.make
         release = Models::Release.make
-        deployment = Models::Deployment.make(name: 'b', cloud_config_id: cloud_config.id)
+        deployment = Models::Deployment.make(name: 'b')
+        deployment.cloud_configs = [Models::Config.make(:cloud)]
         release_version = Models::ReleaseVersion.make(release_id: release.id)
         deployment.add_release_version(release_version)
       end
 
-      it 'eagerly loads :stemcells, :release_versions, :teams' do
+      it 'eagerly loads :stemcells, :release_versions, :teams, :cloud_configs' do
         allow(Bosh::Director::Config.db).to receive(:execute).and_call_original
 
         deployments = subject.all_by_name_asc
@@ -83,7 +82,7 @@ module Bosh::Director
         deployments.first.release_versions.map(&:release)
         deployments.first.teams
 
-        expect(Bosh::Director::Config.db).to have_received(:execute).exactly(5).times
+        expect(Bosh::Director::Config.db).to have_received(:execute).exactly(6).times
       end
 
       it 'lists all deployments in alphabetic order' do

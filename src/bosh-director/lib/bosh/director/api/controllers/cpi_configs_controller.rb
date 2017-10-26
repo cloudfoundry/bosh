@@ -36,7 +36,7 @@ module Bosh::Director
         json_encode(
             cpi_configs.map do |cpi_config|
               {
-                  "properties" => cpi_config.properties,
+                  "properties" => cpi_config.content,
                   "created_at" => cpi_config.created_at,
               }
             end
@@ -47,12 +47,7 @@ module Bosh::Director
         new_cpi_configs_hash = validate_manifest_yml(request.body.read, nil) || {}
         old_cpi_configs = Bosh::Director::Api::CpiConfigManager.new.latest
 
-        old_cpi_configs_hash = if old_cpi_configs && old_cpi_configs.manifest
-                                 old_cpi_configs.manifest
-                               else
-                                 {}
-                               end
-
+        old_cpi_configs_hash = old_cpi_configs&.raw_manifest || {}
 
         result = {}
         redact =  params['redact'] != 'false'

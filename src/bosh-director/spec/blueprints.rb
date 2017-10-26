@@ -164,16 +164,43 @@ module Bosh::Director::Models
     created_at   { Time.now }
   end
 
-  CloudConfig.blueprint do
+  Config.blueprint do
+    type { 'my-type' }
+    name { 'some-name' }
+    created_at { Time.now }
+  end
+
+  Config.blueprint(:cloud) do
+    type { 'cloud' }
+    name { 'default' }
+  end
+
+  Config.blueprint(:cloud_with_manifest) do
+    type { 'cloud' }
+    name { 'default' }
     raw_manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
-  RuntimeConfig.blueprint do
-    raw_manifest { Bosh::Spec::Deployments.simple_runtime_config }
+  Config.blueprint(:cloud_with_manifest_v2) do
+    type { 'cloud' }
+    name { 'default' }
+    raw_manifest { Bosh::Spec::NewDeployments.simple_cloud_config }
   end
 
-  CpiConfig.blueprint do
-    manifest { Bosh::Spec::Deployments.simple_cpi_config }
+  Config.blueprint(:runtime) do
+    type { 'runtime' }
+    name { 'default' }
+  end
+
+  Config.blueprint(:cpi) do
+    type { 'cpi' }
+    name { 'default' }
+  end
+
+  Config.blueprint(:cpi_with_manifest) do
+    type { 'cpi' }
+    name { 'default' }
+    raw_manifest { Bosh::Spec::NewDeployments.simple_cpi_config }
   end
 
   DeploymentProperty.blueprint do

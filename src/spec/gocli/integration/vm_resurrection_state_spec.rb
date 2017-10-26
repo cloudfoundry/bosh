@@ -4,7 +4,7 @@ describe 'vm resurrection', type: :integration do
   with_reset_sandbox_before_each
 
   it 'changes the resurrection state of vms by either index or vm uuid ' do
-    skip("gobosh cannot turn off resurrection for specific vms - ask DK")
+    skip("go CLI cannot turn off resurrection for specific vms - ask DK")
     deploy_from_scratch
 
     instances_before_state_switch = director.instances

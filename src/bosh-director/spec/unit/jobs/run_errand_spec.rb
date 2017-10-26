@@ -70,11 +70,12 @@ module Bosh::Director
 
       describe '#perform' do
         let!(:deployment_model) do
-          Models::Deployment.make(
+          deployment = Models::Deployment.make(
             name: 'fake-dep-name',
             manifest: YAML.dump(service_errand_manifest_hash),
-            cloud_config: cloud_config
           )
+          deployment.cloud_configs = [cloud_config]
+          deployment
         end
 
         let(:deployment_planner_factory) { instance_double('Bosh::Director::DeploymentPlan::PlannerFactory', create_from_model: planner) }
@@ -120,8 +121,7 @@ module Bosh::Director
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
         let(:errand_job){ instance_double('Bosh::Director::DeploymentPlan::Job', name: 'errand1', runs_as_errand?: true )}
-
-        let(:cloud_config) { Models::CloudConfig.make }
+        let(:cloud_config) { Models::Config.make(:cloud) }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
         let(:errand_result) { Errand::Result.new(instance, errand_name, 0, nil, nil, nil) }
 
@@ -141,11 +141,12 @@ module Bosh::Director
       describe '#perform' do
         context 'when deployment exists' do
           let!(:deployment_model) do
-            Models::Deployment.make(
+            deployment = Models::Deployment.make(
               name: 'fake-dep-name',
               manifest: YAML.dump(manifest_hash),
-              cloud_config: cloud_config
             )
+            deployment.cloud_configs = [cloud_config]
+            deployment
           end
 
           before do
@@ -176,7 +177,7 @@ module Bosh::Director
           )
         end
         let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
-        let(:cloud_config) { Models::CloudConfig.make }
+        let(:cloud_config) { Models::Config.make(:cloud) }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
 
         before do

@@ -3,16 +3,13 @@ require_relative '../spec_helper'
 describe "Director deprecating the 'template' syntax", type: :integration do
   with_reset_sandbox_before_each
   let(:manifest_hash) {
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['releases'].first['version'] = 'latest'
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'][0]['instances'] = 1
     manifest_hash
   }
 
   let(:cloud_config_hash) {
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'].first['size'] = 1
-    cloud_config_hash
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
   }
 
   context 'when the manifest uses template with an array' do

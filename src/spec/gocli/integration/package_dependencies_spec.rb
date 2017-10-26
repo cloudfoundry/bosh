@@ -5,29 +5,24 @@ describe 'package dependencies', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['releases'].first['version'] = 'latest'
     manifest_hash['jobs'] = [
       {
         'name'          => 'transitive_deps',
         'template'      => 'transitive_deps',
-        'resource_pool' => 'a',
+        'vm_type' => 'a',
         'instances'     => 1,
         'networks'      => [{ 'name' => 'a' }],
+        'stemcell' => 'default',
       }
     ]
     manifest_hash
   end
 
-  let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['resource_pools'].first.delete('size')
-    cloud_config_hash
-  end
-
   it 'recompiles packages when a transitive dependency changes' do
     Dir.chdir(ClientSandbox.test_release_dir) do
-      output = deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+      output = deploy_from_scratch(manifest_hash: manifest_hash)
       expect(output).to include('Compiling packages: c/')
       expect(output).to include('Compiling packages: b/')
       expect(output).to include('Compiling packages: a/')
@@ -56,7 +51,7 @@ describe 'package dependencies', type: :integration do
         bosh_runner.run_in_current_dir('create-release')
         bosh_runner.run_in_current_dir('upload-release')
         upload_stemcell
-        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        upload_cloud_config
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
         # update 'b' spec to remove dependency on 'c'

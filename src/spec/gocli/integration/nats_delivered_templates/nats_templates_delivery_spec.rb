@@ -11,16 +11,13 @@ describe 'deliver rendered templates through nats', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash.delete('resource_pools')
-
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['vm_types'] = [vm_type]
     cloud_config_hash
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash.delete('resource_pools')
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
     manifest_hash['jobs'] = [{
        'name' => 'our_instance_group',
@@ -94,9 +91,7 @@ describe 'deliver rendered templates through nats', type: :integration do
     end
 
     let(:big_manifest_hash) do
-      big_manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      big_manifest_hash.delete('resource_pools')
-      big_manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+      big_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       big_manifest_hash['jobs'] = [{
                                  'name' => 'instance_group_1',
                                  'templates' => [{

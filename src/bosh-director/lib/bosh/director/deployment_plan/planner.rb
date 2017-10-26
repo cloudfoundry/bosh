@@ -58,24 +58,25 @@ module Bosh::Director
       attr_reader :features
 
       attr_reader :template_blob_cache
+      attr_reader :vm_resources_cache
 
       attr_accessor :addons
 
       # @return [Hash] Returns the shared links
       attr_reader :link_spec
 
-      attr_reader :cloud_config
+      attr_reader :cloud_configs
       attr_reader :runtime_configs
 
       attr_reader :link_providers
 
-      def initialize(attrs, uninterpolated_manifest_text, cloud_config, runtime_configs, deployment_model, options = {})
+      def initialize(attrs, uninterpolated_manifest_text, cloud_configs, runtime_configs, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}
 
         @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
-        @cloud_config = cloud_config
+        @cloud_configs = cloud_configs
         @runtime_configs = runtime_configs
         @model = deployment_model
 
@@ -103,6 +104,7 @@ module Bosh::Director
 
         @logger = Config.logger
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
+        @vm_resources_cache = VmResourcesCache.new(CloudFactory.create_with_latest_configs(@model), @logger)
       end
 
       def_delegators :@cloud_planner,
@@ -265,7 +267,7 @@ module Bosh::Director
       end
 
       def using_global_networking?
-        !@cloud_config.nil?
+        !@cloud_configs.empty?
       end
 
       def add_link_providers(link_provider)

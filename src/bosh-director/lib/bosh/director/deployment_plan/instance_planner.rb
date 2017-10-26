@@ -7,7 +7,7 @@ module Bosh
           @logger = logger
         end
 
-        def plan_instance_group_instances(instance_group, desired_instances, existing_instance_models)
+        def plan_instance_group_instances(instance_group, desired_instances, existing_instance_models, vm_resources_cache)
           if existing_instance_models.count(&:ignore) > 0
             fail_if_specifically_changing_state_of_ignored_vms(instance_group, existing_instance_models)
           end
@@ -25,6 +25,8 @@ module Bosh
           reconcile_network_plans(desired_instance_plans)
 
           elect_bootstrap_instance(desired_instance_plans)
+
+          update_instance_cloud_properties(vm_resources_cache, desired_instance_plans, instance_group.vm_resources.spec) if instance_group.vm_resources
 
           instance_plans
         end
@@ -50,6 +52,13 @@ module Bosh
         end
 
         private
+
+        def update_instance_cloud_properties(vm_resources_cache, instance_plans, vm_resources)
+          instance_plans.each do |instance_plan|
+            vm_cloud_properties = vm_resources_cache.get_vm_cloud_properties(instance_plan.instance.availability_zone&.cpi, vm_resources)
+            instance_plan.instance.update_vm_cloud_properties(vm_cloud_properties)
+          end
+        end
 
         def elect_bootstrap_instance(desired_instance_plans)
           bootstrap_instance_plans = desired_instance_plans.select { |i| i.instance.bootstrap? }

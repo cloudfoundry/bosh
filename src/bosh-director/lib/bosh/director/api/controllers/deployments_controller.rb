@@ -89,9 +89,9 @@ module Bosh::Director
           manifest =  YAML.dump(manifest_hash)
         end
 
-        latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        latest_runtime_configs = Models::RuntimeConfig.latest_set
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_configs, deployment, options)
+        latest_cloud_configs = Models::Config.latest_set('cloud')
+        latest_runtime_configs = Models::Config.latest_set('runtime')
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -122,9 +122,9 @@ module Bosh::Director
           manifest =  YAML.dump(manifest_hash)
         end
 
-        latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        latest_runtime_configs = Models::RuntimeConfig.latest_set
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, latest_runtime_configs, deployment, options)
+        latest_cloud_configs = Models::Config.latest_set('cloud')
+        latest_runtime_configs = Models::Config.latest_set('runtime')
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -194,13 +194,12 @@ module Bosh::Director
       end
 
       get '/', authorization: :list_deployments do
-        latest_cloud_config = Api::CloudConfigManager.new.latest
         deployments = @deployment_manager.all_by_name_asc
           .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
           .map do |deployment|
-          cloud_config = if deployment.cloud_config_id.nil?
+          cloud_config = if deployment.cloud_configs.empty?
                            'none'
-                         elsif deployment.cloud_config_id == latest_cloud_config.id
+                         elsif deployment.cloud_configs.map(&:id) == Models::Config.latest_set('cloud').map(&:id)
                            'latest'
                          else
                            'outdated'
@@ -364,14 +363,14 @@ module Bosh::Director
         if params['context']
           @logger.debug("Deploying with context #{params['context']}")
           context = JSON.parse(params['context'])
-          cloud_config = Api::CloudConfigManager.new.find_by_id(context['cloud_config_id'])
-          runtime_configs = Models::RuntimeConfig.find_by_ids(context['runtime_config_ids'])
+          cloud_configs = Models::Config.find_by_ids(context['cloud_config_ids'])
+          runtime_configs = Models::Config.find_by_ids(context['runtime_config_ids'])
         else
-          cloud_config = Api::CloudConfigManager.new.latest
-          runtime_configs = Models::RuntimeConfig.latest_set
+          cloud_configs = Models::Config.latest_set('cloud')
+          runtime_configs = Models::Config.latest_set('runtime')
         end
 
-        options['cloud_config'] = cloud_config
+        options['cloud_configs'] = cloud_configs
         options['runtime_configs'] = runtime_configs
         options['deploy'] = true
 
@@ -379,7 +378,7 @@ module Bosh::Director
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_configs, deployment_model, options, @current_context_id)
+        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_configs, runtime_configs, deployment_model, options, @current_context_id)
 
         redirect "/tasks/#{task.id}"
       end
@@ -397,17 +396,17 @@ module Bosh::Director
             before_manifest = Manifest.generate_empty_manifest
           end
 
-          after_cloud_config = ignore_cc ? nil : Bosh::Director::Api::CloudConfigManager.new.latest
-          after_runtime_configs = Bosh::Director::Models::RuntimeConfig.latest_set
+          after_cloud_configs = ignore_cc ? nil : Bosh::Director::Models::Config.latest_set('cloud')
+          after_runtime_configs = Bosh::Director::Models::Config.latest_set('runtime')
 
-          after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_config, after_runtime_configs, {:resolve_interpolation => false})
+          after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_configs, after_runtime_configs, {:resolve_interpolation => false})
           after_manifest.resolve_aliases
 
           redact =  params['redact'] != 'false'
 
           result = {
             'context' => {
-              'cloud_config_id' => after_cloud_config ? after_cloud_config.id : nil,
+              'cloud_config_ids' => after_cloud_configs ? after_cloud_configs.map(&:id) : nil,
               'runtime_config_ids' => after_runtime_configs.map(&:id)
             }
           }

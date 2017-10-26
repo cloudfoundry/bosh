@@ -48,6 +48,7 @@ module Bosh::Director
     end
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
     let(:tags) { {'tag1' => 'value1'} }
+    let(:vm_resources_cache) { instance_double(Bosh::Director::DeploymentPlan::VmResourcesCache) }
     let(:deployment_plan) do
       instance_double(Bosh::Director::DeploymentPlan::Planner,
         compilation: compilation_config,
@@ -57,7 +58,8 @@ module Bosh::Director
         recreate: false,
         template_blob_cache: template_blob_cache,
         use_short_dns_addresses?: false,
-        tags: tags
+        tags: tags,
+        vm_resources_cache: vm_resources_cache
       )
     end
     let(:subnet) {instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))}
@@ -197,6 +199,38 @@ module Bosh::Director
         expect(event_2.instance).to eq('compilation-deadbeef/instance-uuid-1')
       end
 
+      context 'when vm_resources are given' do
+        let(:compilation_config) do
+          compilation_spec = {
+            'workers' => n_workers,
+            'network' => 'a',
+            'vm_resources' => {
+              'cpu' => 4,
+              'ram' => 2048,
+              'ephemeral_disk_size' => 100
+            }
+          }
+
+          DeploymentPlan::CompilationConfig.new(compilation_spec, {}, [])
+        end
+
+        it 'retrieves the vm requirements from the CPI/cache and populates the cloud properties' do
+          allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1', 'agent-id')
+          allow(deployment_plan.vm_resources_cache)
+            .to receive(:get_vm_cloud_properties).with(nil, {
+              'cpu' => 4,
+              'ram' => 2048,
+              'ephemeral_disk_size' => 100
+            })
+            .and_return({'vm_resources' => 'foo'})
+          allow(cloud).to receive(:create_vm) do |_, _, cloud_properties|
+            expect(cloud_properties['vm_resources']).to eq('foo')
+          end
+
+          action
+        end
+      end
+
       context 'when instance creation fails' do
         context 'when keep_unreachable_vms is set' do
           before { Config.keep_unreachable_vms = true }
@@ -281,7 +315,12 @@ module Bosh::Director
         let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
 
         let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
-        let(:cloud_config) { Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
+        let(:deployment_model) {
+          deployment = Models::Deployment.make(name: 'mycloud')
+          deployment.cloud_configs = [cloud_config]
+          deployment
+        }
+        let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge('azs' => [{'name' => 'foo-az'}])) }
         let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
 
         before do
@@ -447,9 +486,9 @@ module Bosh::Director
     end
   end
 
-  describe DeploymentPlan::CompilationJob do
+  describe DeploymentPlan::CompilationInstanceGroup do
     it "has no 'lifecycle'" do
-      expect(DeploymentPlan::CompilationJob.new(nil, nil, nil, nil, nil, nil).lifecycle).to be_nil
+      expect(DeploymentPlan::CompilationInstanceGroup.new(nil, nil, nil, nil, nil, nil, nil).lifecycle).to be_nil
     end
   end
 end

@@ -40,8 +40,8 @@ case "$DB" in
     exit 1
 esac
 
-mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/gobosh
-chmod +x /usr/local/bin/gobosh
+mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
+chmod +x /usr/local/bin/bosh
 
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION

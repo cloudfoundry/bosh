@@ -24,7 +24,7 @@ describe 'Agent', type: :integration do
     context 'when director calls stop' do
       before do
         manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
-        deploy_from_scratch(manifest_hash: manifest_hash)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       end
 
       it 'should call these methods in order' do
@@ -45,7 +45,7 @@ describe 'Agent', type: :integration do
 
         before do
           manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
-          deploy_from_scratch(manifest_hash: manifest_hash)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
         end
 
         it 'sends upload_blob action to agent' do
@@ -81,7 +81,7 @@ describe 'Agent', type: :integration do
     context 'when director calls start' do
       before do
         manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-        deploy_from_scratch(manifest_hash: manifest_hash)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       end
 
       context 'starting a new instance' do
@@ -129,7 +129,7 @@ describe 'Agent', type: :integration do
 
           before do
             manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-            deploy_from_scratch(manifest_hash: manifest_hash)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
           end
 
           it 'should call these methods in the following order, including upload blob action' do
@@ -200,7 +200,7 @@ describe 'Agent', type: :integration do
 
           before do
             manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-            deploy_from_scratch(manifest_hash: manifest_hash)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
           end
 
           it 'should call these methods in the following order, including upload blob action' do
@@ -239,7 +239,7 @@ describe 'Agent', type: :integration do
 
     context 'updating the deployment with a property change' do
       it 'should call these methods in the following order' do
-        deploy_from_scratch(manifest_hash: manifest_hash)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
         manifest_hash['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
         sent_messages = get_messages_sent_to_agent(output)
@@ -264,7 +264,7 @@ describe 'Agent', type: :integration do
         with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
         before do
-          deploy_from_scratch(manifest_hash: manifest_hash)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
         end
 
         it 'should call these methods in the following order' do
@@ -297,7 +297,7 @@ describe 'Agent', type: :integration do
       with_reset_sandbox_before_each(enable_post_deploy: true)
 
       it 'calls post-deploy' do
-        deploy_from_scratch(manifest_hash: manifest_hash)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
         manifest_hash['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -326,7 +326,7 @@ describe 'Agent', type: :integration do
         with_reset_sandbox_before_each(enable_post_deploy: true, enable_nats_delivered_templates: true)
 
         before do
-          deploy_from_scratch(manifest_hash: manifest_hash)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
         end
 
         it 'calls post-deploy with upload_blobs' do

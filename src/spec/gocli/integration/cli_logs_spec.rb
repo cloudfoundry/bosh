@@ -4,25 +4,27 @@ describe 'cli: logs', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can fetch logs' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(instances: 2, name: 'first-job')]
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'first-job')]
     manifest_hash['jobs']<< {
         'name' => 'another-job',
         'template' => 'foobar',
-        'resource_pool' => 'a',
+        'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
+        'stemcell' => 'default'
     }
 
     manifest_hash['jobs']<< {
       'name' => 'fake-errand-name',
       'template' => 'errand_without_package',
-      'resource_pool' => 'a',
+      'vm_type' => 'a',
       'instances' => 1,
       'lifecycle' => 'errand',
-      'networks' => [{'name' => 'a'}]
+      'networks' => [{'name' => 'a'}],
+      'stemcell' => 'default'
     }
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
     instances = director.instances

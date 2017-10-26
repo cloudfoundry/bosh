@@ -13,19 +13,19 @@ module Bosh::Director
 
       def all_by_name_asc
         Bosh::Director::Models::Deployment
-          .eager(:teams, :stemcells, release_versions: :release)
+          .eager(:teams, :stemcells, :cloud_configs, release_versions: :release)
           .order_by(Sequel.asc(:name))
           .all
       end
 
-      def create_deployment(username, manifest_text, cloud_config, runtime_configs, deployment, options = {}, context_id = '')
-        cloud_config_id = cloud_config.nil? ? nil : cloud_config.id
+      def create_deployment(username, manifest_text, cloud_configs, runtime_configs, deployment, options = {}, context_id = '')
+        cloud_config_ids = cloud_configs.map(&:id)
         runtime_config_ids = runtime_configs.map(&:id)
 
         description = 'create deployment'
         description += ' (dry run)' if options['dry_run']
 
-        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [manifest_text, cloud_config_id, runtime_config_ids, options], deployment, context_id)
+        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [manifest_text, cloud_config_ids, runtime_config_ids, options], deployment, context_id)
       end
 
       def delete_deployment(username, deployment, options = {}, context_id = '')

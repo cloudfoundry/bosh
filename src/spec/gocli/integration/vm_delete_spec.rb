@@ -6,8 +6,8 @@ describe 'vm delete', type: :integration do
   with_reset_hm_before_each
 
   before do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
     manifest_hash['jobs'].first['instances'] = 1
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)

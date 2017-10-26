@@ -21,7 +21,7 @@ module Bosh::Director
           attributes.merge!(teams: team_scopes)
         end
 
-        attributes.merge!(cloud_config: options['cloud_config'], runtime_configs: options['runtime_configs'])
+        attributes.merge!(cloud_configs: options['cloud_configs'], runtime_configs: options['runtime_configs'])
         create_for_attributes(attributes)
       end
 
