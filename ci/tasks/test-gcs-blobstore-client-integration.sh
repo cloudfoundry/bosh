@@ -5,7 +5,7 @@ set -e
 source bosh-src/ci/tasks/utils.sh
 
 source /etc/profile.d/chruby.sh
-chruby 2.1.2
+chruby 2.4.2
 
 check_param google_project
 check_param google_json_key_data
