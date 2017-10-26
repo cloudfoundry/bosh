@@ -12,8 +12,8 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   it 'changes the ignore value of vms correctly' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -39,11 +39,11 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   it 'fails when deleting deployment that has ignored instances even when using force flag' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
     manifest_hash['jobs'].clear
-    manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+    manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2})
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -60,11 +60,11 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   it 'fails when trying to attach a disk to an ignored instance' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
     manifest_hash['jobs'].clear
-    manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+    manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2})
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -85,13 +85,13 @@ describe 'ignore/unignore-instance', type: :integration do
       with_reset_sandbox_before_each(enable_post_deploy: true)
 
       it 'does not run them on the ignored vms' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'foobar1',
-            templates: [
+            jobs: [
                 {'name' => 'job_1_with_pre_start_script'},
                 {'name' => 'job_with_post_start_script'},
                 {'name' => 'job_1_with_post_deploy_script'}
@@ -190,13 +190,13 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when the number of instances in an instance group did not change between deployments' do
       it 'leaves ignored instances alone when instance count is 1' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 1})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar3', :instances => 1})
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 1})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar3', :instances => 1})
 
         output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -210,16 +210,16 @@ describe 'ignore/unignore-instance', type: :integration do
 
         bosh_runner.run("ignore #{foobar1_instance1.job_name}/#{foobar1_instance1.id}", deployment_name: 'simple')
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'foobar1',
-            templates: [
+            jobs: [
                 {'name' => 'job_1_with_pre_start_script'},
                 {'name' => 'job_2_with_pre_start_script'}
             ],
             instances: 1)
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar3', :instances => 1})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar3', :instances => 1})
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -232,12 +232,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
 
       it 'leaves ignored instances alone when count of the instance groups is larger than 1' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 3})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 3})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 3})
 
         output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -250,15 +250,15 @@ describe 'ignore/unignore-instance', type: :integration do
         instance3 = initial_instances[2]
         bosh_runner.run("ignore #{instance1.job_name}/#{instance1.id}", deployment_name: 'simple')
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'foobar1',
-            templates: [
+            jobs: [
                 {'name' => 'job_1_with_pre_start_script'},
                 {'name' => 'job_2_with_pre_start_script'}
             ],
             instances: 3)
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 3})
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -271,12 +271,12 @@ describe 'ignore/unignore-instance', type: :integration do
     context 'when the existing instances is less than the desired ones' do
 
       it 'should handle ignored instances' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 1})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 1})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
 
         output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
         expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(2)
@@ -288,12 +288,12 @@ describe 'ignore/unignore-instance', type: :integration do
         bosh_runner.run("ignore #{foobar1_instance1.job_name}/#{foobar1_instance1.id}", deployment_name: 'simple')
 
         # redeploy with different foobar1 templates
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'foobar1',
-            templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+            jobs: [ {'name' => 'job_1_with_pre_start_script'} ],
             instances: 2)
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -309,14 +309,14 @@ describe 'ignore/unignore-instance', type: :integration do
         bosh_runner.run("ignore #{foobar2_instance1.job_name}/#{foobar2_instance1.id}", deployment_name: 'simple')
 
         # Redeploy with different numbers
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'foobar1',
-            templates: [ {'name' => 'job_2_with_pre_start_script'} ],
+            jobs: [ {'name' => 'job_2_with_pre_start_script'} ],
             instances: 4)
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'foobar2',
-            templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+            jobs: [ {'name' => 'job_1_with_pre_start_script'} ],
             instances: 3)
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
@@ -345,12 +345,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
       context 'when the ignored instances is larger than the desired ones' do
         it "should fail to deploy" do
-          manifest_hash = Bosh::Spec::Deployments.simple_manifest
-          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4})
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 4})
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
 
           output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -368,13 +368,13 @@ describe 'ignore/unignore-instance', type: :integration do
           bosh_runner.run("ignore #{foobar1_instance3.job_name}/#{foobar1_instance3.id}", deployment_name: 'simple')
 
           # redeploy with different foobar1 templates
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'foobar1',
-              templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+              jobs: [ {'name' => 'job_1_with_pre_start_script'} ],
               instances: 2
           )
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
 
           output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
@@ -385,12 +385,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
       context 'when the ignored instances is equal to desired ones' do
         it 'deletes all non-ignored vms and leaves the ignored alone without updating them' do
-          manifest_hash = Bosh::Spec::Deployments.simple_manifest
-          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4})
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 4})
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar2', :instances => 1})
 
           output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
           expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(5)
@@ -407,13 +407,13 @@ describe 'ignore/unignore-instance', type: :integration do
 
           # ===================================================
           # redeploy with different foobar1 templates
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'foobar1',
-              templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+              jobs: [ {'name' => 'job_1_with_pre_start_script'} ],
               instances: 2
           )
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
 
           output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
           expect(output).to include("Deleting unneeded instances foobar1: foobar1/#{foobar1_instance3.id}")
@@ -439,12 +439,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
         it 'should keep the ignored instances untouched and adjust the number of remaining functional instances' do
 
-          manifest_hash = Bosh::Spec::Deployments.simple_manifest
-          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 5})
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 5})
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
 
           output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -459,13 +459,13 @@ describe 'ignore/unignore-instance', type: :integration do
 
           # ===================================================
           # redeploy with different foobar1 templates
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'foobar1',
-              templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+              jobs: [ {'name' => 'job_1_with_pre_start_script'} ],
               instances: 3
           )
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 1})
 
           output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -494,12 +494,12 @@ describe 'ignore/unignore-instance', type: :integration do
     context 'when --recreate flag is passed' do
       it 'should recreate needed vms but leave the ignored ones alone' do
 
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 3})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 3})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 3})
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -515,15 +515,15 @@ describe 'ignore/unignore-instance', type: :integration do
 
         bosh_runner.run("ignore #{foobar1_instance1.job_name}/#{foobar1_instance1.id}", deployment_name: 'simple')
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'foobar1',
-            templates: [
+            jobs: [
                 {'name' => 'job_1_with_pre_start_script'},
                 {'name' => 'job_2_with_pre_start_script'}
             ],
             instances: 3)
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 3})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 3})
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, recreate: true)
 
@@ -557,12 +557,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when an attempt is made to delete an instance group from deployment' do
       it 'fails if the instance group contains ignored vms' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 2})
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 2})
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 2})
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -570,8 +570,8 @@ describe 'ignore/unignore-instance', type: :integration do
         foobar1_instance1 = initial_instances.select{ |instance| instance.job_name == 'foobar1' && instance.index == '0'}.first
         bosh_runner.run("ignore #{foobar1_instance1.job_name}/#{foobar1_instance1.id}", deployment_name: 'simple')
 
-        manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 2})
+        manifest_hash['instance_groups'].clear
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 2})
 
         output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
 
@@ -603,7 +603,7 @@ describe 'ignore/unignore-instance', type: :integration do
               templates: [ {'name' => 'job_1_with_pre_start_script'} ],
               instances: 2)
 
-          output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+          output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true, legacy: true)
           expect(exit_code).to_not eq(0)
           expect(output).to include("Timed out sending 'get_state'")
 
@@ -618,11 +618,11 @@ describe 'ignore/unignore-instance', type: :integration do
 
       context 'when using v2 manifest' do
         it 'should not contact the VM and deploys successfully' do
-          manifest_hash = Bosh::Spec::Deployments.simple_manifest
-          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+          manifest_hash = Bosh::Spec::NewDeployments.simple_v2_manifest_with_stemcell
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 2})
 
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -633,10 +633,10 @@ describe 'ignore/unignore-instance', type: :integration do
 
           foobar1_instance1.kill_agent
 
-          manifest_hash['jobs'].clear
-          manifest_hash['jobs'] << Bosh::Spec::Deployments.job_with_many_templates(
+          manifest_hash['instance_groups'].clear
+          manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'foobar1',
-              templates: [ {'name' => 'job_1_with_pre_start_script'} ],
+              jobs: [ {'name' => 'job_1_with_pre_start_script'} ],
               instances: 2)
 
           output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
@@ -659,12 +659,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when not specifying an instance group name' do
       it 'should change the state of all instances except the ignored ones' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 3})
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 1})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 3})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar2', :instances => 1})
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -832,12 +832,12 @@ describe 'ignore/unignore-instance', type: :integration do
     with_reset_hm_before_each
 
     it 'should not scan & fix the ignored VM' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
 
       manifest_hash['jobs'].clear
-      manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})
-      manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 2})
+      manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2})
+      manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar2', :instances => 2})
 
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -874,11 +874,11 @@ describe 'ignore/unignore-instance', type: :integration do
   context 'when ignoring all of the instances in a zone' do
     context 'when not using static ips' do
       it 'does not rebalance the ignored vms, and it selects a new bootstrap node from ignored instances if needed, and it errors if removing an az containing ignored vms.' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
 
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config['azs'] = [
             {
                 'name' => 'my-az1'
@@ -923,7 +923,7 @@ describe 'ignore/unignore-instance', type: :integration do
         bosh_runner.run("ignore #{az2_instances[1].job_name}/#{az2_instances[1].id}", deployment_name: 'simple')
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1', 'my-az2']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1', 'my-az2']})
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
         new_state_instances = director.instances
@@ -936,17 +936,17 @@ describe 'ignore/unignore-instance', type: :integration do
         expect(new_state_instances.select(&:bootstrap).count).to eq(1)
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
         expect(output).to include("Instance Group 'foobar1' no longer contains AZs [\"my-az2\"] where ignored instance(s) exist.")
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1']})
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
         expect(exit_code).to_not eq(0)
         expect(output).to include("Instance Group 'foobar1' no longer contains AZs [\"my-az2\"] where ignored instance(s) exist.")
@@ -955,12 +955,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when using static IPs' do
       it 'balances the vms correctly, and it errors if removing an az containing ignored vms, and it errors if removing static IP assigned to an ignored VM' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.1.10', '192.168.1.11', '192.168.2.10', '192.168.2.11']}]
 
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config['azs'] = [
             {
                 'name' => 'my-az1'
@@ -1011,7 +1011,7 @@ describe 'ignore/unignore-instance', type: :integration do
         # =======================================================
         # remove IPs used by non-ignored vms, should be good
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1', 'my-az2']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1', 'my-az2']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.2.10', '192.168.2.11']}]
 
         output_2 = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
@@ -1028,7 +1028,7 @@ describe 'ignore/unignore-instance', type: :integration do
         # =======================================================
         # remove an ignored vm static IP, should error
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 1, :azs => ['my-az1', 'my-az2']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 1, :azs => ['my-az1', 'my-az2']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.2.10']}]
 
         output_3, exit_code_3 = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
@@ -1038,12 +1038,12 @@ describe 'ignore/unignore-instance', type: :integration do
         # =======================================================
         # remove an az that has ignored VMs, should error
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1', 'my-az2']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.1.10', '192.168.1.11', '192.168.2.10', '192.168.2.11']}]
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 4, :azs => ['my-az1']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']}]
 
         output_4, exit_code_4 = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
@@ -1056,11 +1056,11 @@ describe 'ignore/unignore-instance', type: :integration do
   context 'when changing networks configuration for instance groups containing ignored VMs' do
     context 'when not using static ips' do
       it 'fails when adding/removing networks from instance groups with ignored VMs' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
 
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config['azs'] = [{'name' => 'my-az1'}]
         cloud_config['compilation']['az'] = 'my-az1'
 
@@ -1099,7 +1099,7 @@ describe 'ignore/unignore-instance', type: :integration do
         }
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a', 'default' => ['dns', 'gateway']}]
         manifest_hash['jobs'].first['networks'] << { 'name' => 'b'}
 
@@ -1110,7 +1110,7 @@ describe 'ignore/unignore-instance', type: :integration do
         # =================================================
         # remove a network from the instance group that has ignored VM, should fail
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'b', 'default' => ['dns', 'gateway']}]
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
@@ -1121,12 +1121,12 @@ describe 'ignore/unignore-instance', type: :integration do
 
     context 'when using static IPs' do
       it 'does not re-assign static IPs for ignored VM, and fails when adding/removing static networks from instance groups with ignored VMs' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.1.10', '192.168.1.11']}]
 
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config['azs'] = [
             {
                 'name' => 'my-az1'
@@ -1166,9 +1166,9 @@ describe 'ignore/unignore-instance', type: :integration do
 
         # =================================================
         # switch a static IP address used by an ignored VM, should fail
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.1.10', '192.168.1.12']}]
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)
@@ -1193,7 +1193,7 @@ describe 'ignore/unignore-instance', type: :integration do
         }
 
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'a',  'static_ips' => ['192.168.1.10', '192.168.1.11'], 'default' => ['dns', 'gateway']}]
         manifest_hash['jobs'].first['networks'] << { 'name' => 'b'}
 
@@ -1204,7 +1204,7 @@ describe 'ignore/unignore-instance', type: :integration do
         # =================================================
         # remove a network from the instance group that has ignored VM, should fail
         manifest_hash['jobs'].clear
-        manifest_hash['jobs'] << Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
+        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job({:name => 'foobar1', :instances => 2, :azs => ['my-az1']})
         manifest_hash['jobs'].first['networks'] = [{ 'name' => 'b', 'static_ips' => ['192.168.1.10', '192.168.1.11'], 'default' => ['dns', 'gateway']}]
 
         output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, failure_expected: true, return_exit_code: true)

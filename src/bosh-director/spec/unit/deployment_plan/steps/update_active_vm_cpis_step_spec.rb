@@ -10,7 +10,11 @@ module Bosh::Director
       let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
 
       let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
-      let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment', manifest: YAML.dump(deployment_manifest), cloud_config: cloud_config) }
+      let(:deployment_model) do
+        deployment = Models::Deployment.make(name: 'fake-deployment', manifest: YAML.dump(deployment_manifest))
+        deployment.cloud_configs = [cloud_config]
+        deployment
+      end
       let(:deployment_plan) do
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
         deployment_plan = planner_factory.create_from_model(deployment_model)
@@ -27,9 +31,9 @@ module Bosh::Director
       let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: '1') }
       let!(:cloud_config) {
         if prior_az_name.nil?
-          Models::CloudConfig.make(raw_manifest: Bosh::Spec::Deployments.simple_cloud_config)
+          Models::Config.make(:cloud_with_manifest_v2)
         else
-          raw_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge({
+          raw_manifest = Bosh::Spec::NewDeployments.simple_cloud_config.merge({
             'azs' => [
               {
                 'name' => prior_az_name,
@@ -40,11 +44,11 @@ module Bosh::Director
           raw_manifest['networks'][0]['subnets'][0]['azs'] = [prior_az_name]
           raw_manifest['compilation']['az'] = prior_az_name
 
-          Models::CloudConfig.make(raw_manifest: raw_manifest)
+          Models::Config.make(:cloud, raw_manifest: raw_manifest)
         end
       }
       let(:prior_az_name) { 'z2' }
-      let!(:cpi_config) { Models::CpiConfig.make }
+      let!(:cpi_config) { Models::Config.make(:cpi_with_manifest) }
       let(:deployment_manifest) do
         manifest = {
           'name' => 'fake-deployment',
@@ -53,7 +57,8 @@ module Bosh::Director
             {
               'name' => 'fake-instance-group',
               'jobs' => [],
-              'resource_pool' => 'a',
+              'vm_type' => 'a',
+              'stemcell' => 'default',
               'instances' => 1,
               'networks' => [
                 {
@@ -68,6 +73,11 @@ module Bosh::Director
             'canary_watch_time' => 1,
             'update_watch_time' => 1,
           },
+          'stemcells' => [{
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'alias' => 'default'
+          }],
         }
         if !prior_az_name.nil?
           manifest['instance_groups'][0]['azs'] = [ prior_az_name ]
@@ -158,7 +168,8 @@ module Bosh::Director
                       'azs' => ['z2'],
                       'jobs' => [],
                       'lifecycle' => 'errand',
-                      'resource_pool' => 'a',
+                      'vm_type' => 'a',
+                      'stemcell' => 'default',
                       'instances' => 1,
                       'networks' => [
                         {
@@ -173,6 +184,11 @@ module Bosh::Director
                     'canary_watch_time' => 1,
                     'update_watch_time' => 1,
                   },
+                  'stemcells' => [{
+                    'name' => 'ubuntu-stemcell',
+                    'version' => '1',
+                    'alias' => 'default'
+                  }],
                 }
               end
 

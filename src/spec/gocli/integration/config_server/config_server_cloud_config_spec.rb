@@ -64,7 +64,7 @@ describe 'using director with config server', type: :integration do
 
 
   context 'cloud config contains placeholders' do
-    let(:cloud_config) { Bosh::Spec::Deployments::cloud_config_with_placeholders }
+    let(:cloud_config) { Bosh::Spec::Deployments.cloud_config_with_placeholders }
 
     context 'all placeholders are set in config server' do
       before do
@@ -307,13 +307,16 @@ describe 'using director with config server', type: :integration do
           "instances"=>1,
           "name"=>"hjMOn",
           "networks"=>[{"name"=>"j6XUS1M", "static_ips"=>["192.168.3.246"]}],
-          "resource_pool"=>"dMF8vIexnI",
-          "templates"=>[{"name"=>"foobar", "release"=>"bosh-release"}]}],
+          "vm_type"=>"dMF8vIexnI",
+          "templates"=>[{"name"=>"foobar", "release"=>"bosh-release"}],
+          'stemcell'=>'default'}],
        "update"=>
         {"canaries"=>1,
          "canary_watch_time"=>4000,
          "max_in_flight"=>100,
-         "update_watch_time"=>20}}
+         "update_watch_time"=>20},
+      'stemcells'=> [{"os"=>"toronto-os", "version"=>1, 'alias'=>'default'}]
+      }
     }
 
     let(:cloud_config_hash) {
@@ -336,10 +339,7 @@ describe 'using director with config server', type: :integration do
             {"name"=>"cAknaSb",
              "subnets"=>[{"cloud_properties"=>{}, "dns"=>["8.8.8.8"]}],
              "type"=>"dynamic"}],
-       "resource_pools"=>
-           [{"cloud_properties"=>{},
-             "name"=>"dMF8vIexnI",
-             "stemcell"=>{"os"=>"toronto-os", "version"=>1}}]}
+       "vm_types"=>[{"cloud_properties"=>{}, "name"=>"dMF8vIexnI"}]}
     }
 
     before do

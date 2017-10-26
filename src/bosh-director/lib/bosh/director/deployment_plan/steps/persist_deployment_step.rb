@@ -19,7 +19,7 @@ module Bosh::Director
           # end
 
           @deployment_plan.model.manifest = YAML.dump(@deployment_plan.uninterpolated_manifest_text)
-          @deployment_plan.model.cloud_config = @deployment_plan.cloud_config
+          @deployment_plan.model.cloud_configs = @deployment_plan.cloud_configs
           @deployment_plan.model.runtime_configs = @deployment_plan.runtime_configs
           @deployment_plan.model.link_spec = @deployment_plan.link_spec
           @deployment_plan.model.save

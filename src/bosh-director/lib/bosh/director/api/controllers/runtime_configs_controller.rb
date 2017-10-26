@@ -4,7 +4,7 @@ module Bosh::Director
   module Api::Controllers
     class RuntimeConfigsController < BaseController
       post '/', :consumes => :yaml do
-        config_name = params['name'].nil? ? '' : params['name']
+        config_name = name_from_params(params)
         manifest_text = request.body.read
         begin
           validate_manifest_yml(manifest_text, nil)
@@ -19,7 +19,7 @@ module Bosh::Director
       end
 
       post '/diff', :consumes => :yaml do
-        old_runtime_config = runtime_config_or_empty(runtime_config_by_name(params['name']))
+        old_runtime_config = runtime_config_or_empty(runtime_config_by_name(name_from_params(params)))
         new_runtime_config = validate_manifest_yml(request.body.read, nil) || {}
 
         result = {}
@@ -29,7 +29,7 @@ module Bosh::Director
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue => error
           result['diff'] = []
-          result['error'] = "Unable to diff manifest: #{error.inspect}\n#{error.backtrace.join("\n")}"
+          result['error'] = "Unable to diff runtime-config: #{error.inspect}\n#{error.backtrace.join("\n")}"
         end
 
         json_encode(result)
@@ -50,14 +50,14 @@ module Bosh::Director
           return
         end
 
-        config_name = params['name'].nil? ? '' : params['name']
+        config_name = name_from_params(params)
 
         runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(limit, config_name)
 
         json_encode(
             runtime_configs.map do |runtime_config|
             {
-              'properties' => runtime_config.properties,
+              'properties' => runtime_config.content,
               'created_at' => runtime_config.created_at,
             }
         end
@@ -66,9 +66,13 @@ module Bosh::Director
 
       private
 
-      def runtime_config_by_name(name)
-        config_name = name.nil? ? '' : name
-        Bosh::Director::Models::RuntimeConfig.latest_set.find do |runtime_config|
+      def name_from_params(params)
+        name = params['name']
+        name.nil? || name.empty? ? 'default' : name
+      end
+
+      def runtime_config_by_name(config_name)
+        Bosh::Director::Models::Config.latest_set('runtime').find do |runtime_config|
           runtime_config.name == config_name
         end
       end

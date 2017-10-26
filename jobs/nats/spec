@@ -32,11 +32,11 @@ properties:
     description: Timeout (in seconds) for clients to send auth credentials
     default: 30
   nats.tls.ca:
-    description: CA cert to trust when communicating with NATS server
+    description: CA cert used by NATS server to verify clients certificates (For Mutual TLS Connections)
   nats.tls.server.certificate:
-    description: Certificate for NATs mutual TLS
+    description: Certificate used by the NATS server to serve TLS connections
   nats.tls.server.private_key:
-    description: Private Key for NATs mutual TLS
+    description: Private Key used by the NATS server to serve TLS connections
   nats.tls.timeout:
     description: Timeout (in seconds) for TLS handshake
     default: 30

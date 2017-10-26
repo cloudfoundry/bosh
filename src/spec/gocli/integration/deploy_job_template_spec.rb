@@ -4,9 +4,9 @@ describe 'deploy job template', type: :integration do
   with_reset_sandbox_before_each
 
   it 're-evaluates job templates with new manifest job properties' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['properties'] = { 'test_property' => 1 }
-    deploy_from_scratch(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     foobar_instance = director.instance('foobar', '0')
 
@@ -21,15 +21,14 @@ describe 'deploy job template', type: :integration do
   end
 
   it 're-evaluates job templates with new dynamic network configuration' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'].first['instances'] = 1
     manifest_hash['jobs'].first['properties'] = { 'network_name' => 'a' }
 
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['networks'].first['type'] = 'dynamic'
     cloud_config_hash['networks'].first['cloud_properties'] = {}
     cloud_config_hash['networks'].first.delete('subnets')
-    cloud_config_hash['resource_pools'].first['size'] = 1
 
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
@@ -41,7 +40,7 @@ describe 'deploy job template', type: :integration do
     expect(template).to include("spec.address=#{instance.id}.foobar.a.simple.bosh")
 
     # Force VM recreation
-    cloud_config_hash['resource_pools'].first['cloud_properties'] = {'changed' => true}
+    cloud_config_hash['vm_types'].first['cloud_properties'] = {'changed' => true}
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
@@ -55,7 +54,7 @@ describe 'deploy job template', type: :integration do
   end
 
   it 'does not redeploy if the order of properties get changed' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest_hash['jobs'].first['properties'] = {
         'test_property' =>
         {
@@ -70,7 +69,7 @@ describe 'deploy job template', type: :integration do
       }
       manifest_hash['jobs'].first['instances'] = 1
 
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       expect(director.instances.count).to eq(1)
 
       instance = director.instance('foobar', '0')
@@ -90,10 +89,10 @@ describe 'deploy job template', type: :integration do
     with_reset_hm_before_each
 
     it 'creates alerts to mark the start and end of an update deployment' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       manifest_hash['jobs'].first['instances'] = 1
 
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       waiter.wait(60) do
         expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for 'simple'/)

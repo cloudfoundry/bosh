@@ -3,8 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
     let(:deployment_model) { Models::Deployment.make(name: 'foo-deployment') }
-    let(:cloud_config) { Models::CloudConfig.make }
-    let(:runtime_config) { Models::RuntimeConfig.make }
+    let(:cloud_config) { Models::Config.make(:cloud_with_manifest_v2) }
+    let(:runtime_config) { Models::Config.make(type: 'runtime') }
     let(:deployment) do
       DeploymentPlan::Planner.new(
         {name: 'foo-deployment', properties: {}},
@@ -18,6 +18,7 @@ module Bosh::Director
       DeploymentPlan::ManualNetwork.new('fake-network', [], logger)
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+    let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(DeploymentPlan::InMemoryIpRepo.new(logger), {'fake-network' => network}, logger) }
     before do
       allow(deployment).to receive(:network).with('fake-network').and_return(network)

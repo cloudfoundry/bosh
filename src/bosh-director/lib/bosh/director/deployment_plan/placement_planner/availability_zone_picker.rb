@@ -79,11 +79,12 @@ module Bosh
           end
 
           def balance_across_desired_azs(desired_instances, placed_instances, unplaced_existing_instances)
-            tie_strategy = TieStrategy::MinWins.new(unplaced_existing_instances.azs)
-            tie_strategy = @random_tie_strategy.new(unplaced_existing_instances.azs) if @randomize_az_placement
+            tie_strategy = TieStrategy::MinWins.new
+            tie_strategy = @random_tie_strategy.new if @randomize_az_placement
             balancer = Balancer.new(
               initial_weight: placed_instances.az_placement_count,
-              tie_strategy: tie_strategy
+              tie_strategy: tie_strategy,
+              preferred: unplaced_existing_instances.azs
             )
 
             desired_instances.each do |desired_instance|

@@ -1,0 +1,1 @@
+require 'bosh/director/cloud_config/cloud_configs_consolidator'

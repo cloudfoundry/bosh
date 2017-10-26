@@ -6,11 +6,18 @@ module Bosh
           migrate_releases(manifest.raw_manifest_hash)
           migrate_releases(manifest.hybrid_manifest_hash)
 
-          if cloud_config.nil?
+          if cloud_config.nil? || cloud_config.empty? || cc_is_empty(cloud_config)
             cloud_config = cloud_manifest_from_deployment_manifest(manifest.hybrid_manifest_hash)
           end
 
           [manifest, cloud_config]
+        end
+
+        def cc_is_empty(cc)
+          cc.each_pair do |_,v|
+            return false if !v.nil? && !v.empty?
+          end
+          return true
         end
 
         private

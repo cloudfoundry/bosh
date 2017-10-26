@@ -37,7 +37,6 @@ CREATE TABLE `cloud_configs` (
 
 LOCK TABLES `cloud_configs` WRITE;
 /*!40000 ALTER TABLE `cloud_configs` DISABLE KEYS */;
-INSERT INTO `cloud_configs` VALUES (1,'---\nnetworks:\n- name: a\n  subnets:\n  - range: 192.168.1.0/24\n    gateway: 192.168.1.1\n    dns:\n    - 192.168.1.1\n    - 192.168.1.2\n    static:\n    - 192.168.1.10\n    reserved: []\n    cloud_properties: {}\ncompilation:\n  workers: 1\n  network: a\n  cloud_properties: {}\nresource_pools:\n- name: a\n  cloud_properties: {}\n  stemcell:\n    name: ubuntu-stemcell\n    version: \'1\'\n  env:\n    bosh:\n      password: foobar\n','2017-02-15 15:55:27');
 /*!40000 ALTER TABLE `cloud_configs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -196,7 +195,7 @@ CREATE TABLE `deployments` (
 
 LOCK TABLES `deployments` WRITE;
 /*!40000 ALTER TABLE `deployments` DISABLE KEYS */;
-INSERT INTO `deployments` VALUES (1,'simple','---\nname: simple\ndirector_uuid: deadbeef\nreleases:\n- name: bosh-release\n  version: 0.1-dev\nupdate:\n  canaries: 2\n  canary_watch_time: 4000\n  max_in_flight: 1\n  update_watch_time: 20\njobs:\n- name: foobar1\n  templates:\n  - name: foobar\n  resource_pool: a\n  instances: 2\n  networks:\n  - name: a\n  properties: {}\n',1,'{}',NULL);
+INSERT INTO `deployments` VALUES (1,'simple','---\nname: simple\ndirector_uuid: deadbeef\nreleases:\n- name: bosh-release\n  version: 0.1-dev\nupdate:\n  canaries: 2\n  canary_watch_time: 4000\n  max_in_flight: 1\n  update_watch_time: 20\njobs:\n- name: foobar1\n  templates:\n  - name: foobar\n  resource_pool: a\n  instances: 2\n  networks:\n  - name: a\n  properties: {}\nnetworks:\n- name: a\n  subnets:\n  - range: 192.168.1.0/24\n    gateway: 192.168.1.1\n    dns:\n    - 192.168.1.1\n    - 192.168.1.2\n    static:\n    - 192.168.1.10\n    reserved: []\n    cloud_properties: {}\ncompilation:\n  workers: 1\n  network: a\n  cloud_properties: {}\nresource_pools:\n- name: a\n  cloud_properties: {}\n  stemcell:\n    name: ubuntu-stemcell\n    version: \'1\'\n  env:\n    bosh:\n      password: foobar\n',1,'{}',NULL);
 /*!40000 ALTER TABLE `deployments` ENABLE KEYS */;
 UNLOCK TABLES;
 

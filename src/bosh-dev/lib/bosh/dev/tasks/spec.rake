@@ -11,6 +11,7 @@ require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/legacy_agent_manager'
 require 'bosh/dev/verify_multidigest_manager'
 require 'bosh/dev/gnatsd_manager'
+require 'bosh/dev/test_runner'
 require 'parallel_tests/tasks'
 
 namespace :spec do
@@ -130,29 +131,6 @@ namespace :spec do
 
   task :upgrade => %w(spec:integration:upgrade)
 
-  def unit_exec(build)
-    command = "rspec --tty --backtrace -c -f p #{unit_files(build)}"
-
-    puts "----- BEGIN #{build}"
-    system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}")
-    puts "----- END   #{build}\n\n"
-  end
-
-  def unit_files(build)
-    cpi_builds.include?(build) ? 'spec/unit/' : 'spec/'
-  end
-
-  def unit_builds
-    @unit_builds ||= begin
-      builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }.sort
-      builds -= %w(bat)
-    end
-  end
-
-  def cpi_builds
-    @cpi_builds ||= unit_builds.select { |f| File.directory?(f) && f.end_with?("_cpi") }
-  end
-
   desc 'Run all release unit tests (ERB templates)'
   task :release_unit do
     puts "Release unit tests (ERB templates)"
@@ -166,22 +144,19 @@ namespace :spec do
   end
 
   namespace :unit do
+    runner = Bosh::Dev::TestRunner.new
+
     desc 'Run all unit tests for ruby components'
     task :ruby do
       trap('INT') { exit }
-      log_dir = Dir.mktmpdir
-      puts "Logging spec results in #{log_dir}"
-
-      unit_builds.each do |build|
-        unit_exec(build)
-      end
+      runner.ruby
     end
 
-    (unit_builds - cpi_builds).each do |build|
+    runner.unit_builds.each do |build|
       desc "Run unit tests for the #{build} component"
       task build.sub(/^bosh[_-]/, '').intern do
         trap('INT') { exit }
-        unit_exec(build)
+        runner.unit_exec(build)
       end
     end
 

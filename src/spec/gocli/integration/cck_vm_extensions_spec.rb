@@ -1,26 +1,17 @@
 require_relative '../spec_helper'
 
 describe 'cck vm extensions', type: :integration do
-  let(:manifest) {Bosh::Spec::Deployments.simple_manifest}
+  let(:manifest) {Bosh::Spec::NewDeployments.simple_manifest_with_stemcell}
   let(:deployment_name) {manifest['name']}
 
   context 'when cloud config is updated after deploying' do
     with_reset_sandbox_before_each
-    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
     before do
-      manifest['stemcells'] = [Bosh::Spec::Deployments.stemcell]
       manifest['jobs'][0]['instances'] = 1
-      manifest['jobs'][0]['vm_type'] = 'vm-type-name'
       manifest['jobs'][0]['vm_extensions'] = ['vm-extension-name']
-      manifest['jobs'][0].delete('resource_pool')
-      manifest['jobs'][0]['stemcell'] = 'default'
 
-      cloud_config_hash.delete('resource_pools')
-      cloud_config_hash['vm_types'] = [{
-        'name' => 'vm-type-name',
-        'cloud_properties' => {'my' => 'vm_type_cloud_property'},
-      }]
       cloud_config_hash['vm_extensions'] = [{
         'name' => 'vm-extension-name',
         'cloud_properties' => {'my' => 'vm_extension_cloud_property'},

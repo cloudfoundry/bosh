@@ -3,13 +3,7 @@ require_relative '../spec_helper'
 describe 'vm_types and stemcells', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash.delete('resource_pools')
-
-    cloud_config_hash['vm_types'] = [Bosh::Spec::Deployments.vm_type]
-    cloud_config_hash
-  end
+  let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
   let(:env_hash) do
     {
@@ -29,13 +23,11 @@ describe 'vm_types and stemcells', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash.delete('resource_pools')
-    manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     manifest_hash['jobs'] = [{
       'name' => 'foobar',
       'templates' => ['name' => 'foobar'],
-      'vm_type' => 'vm-type-name',
+      'vm_type' => 'a',
       'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
@@ -68,7 +60,7 @@ describe 'vm_types and stemcells', type: :integration do
     expect(bosh_runner.run('manifest', deployment_name: 'simple')).to match_output %(
 stemcells:
 - alias: default
-  os: toronto-os
+  name: ubuntu-stemcell
   version: '1'
     )
   end
@@ -95,21 +87,14 @@ stemcells:
 
   context 'when instance is deployed originally with stemcell specified with name' do
     it 'should not re-deploy if the stemcell is the same one' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(create_vm_invocations.count).to be > 0
 
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      vm_type1 = Bosh::Spec::Deployments.vm_type
-      vm_type1['name'] = 'a'
-      cloud_config_hash['vm_types'] = [vm_type1]
-      cloud_config_hash.delete('resource_pools')
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
-
-      manifest_hash.delete('resource_pools')
-      manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
 
       manifest_hash['jobs'] = [{
         'name' => 'foobar',
@@ -119,7 +104,6 @@ stemcells:
         'instances' => 3,
         'networks' => [{ 'name' => 'a' }],
         'properties' => {},
-        'env' => {"bosh"=>{"password"=>"foobar"}}
       }]
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -130,8 +114,7 @@ stemcells:
   end
 
   it 'recreates instance when with vm_type changes' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash.delete('resource_pools')
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
     vm_type1 = Bosh::Spec::Deployments.vm_type
     vm_type2 = Bosh::Spec::Deployments.vm_type
@@ -141,9 +124,7 @@ stemcells:
     vm_type3['cloud_properties']['blarg'] = ['ful']
     cloud_config_hash['vm_types'] = [vm_type1, vm_type2, vm_type3]
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash.delete('resource_pools')
-    manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
 
     manifest_hash['jobs'] = [{
         'name' => 'foobar',
@@ -178,32 +159,30 @@ stemcells:
 
   #TODO Remove this test when backward compatibility of resource pool is no longer required
   context 'when migrating from resource pool to vm_type and stemcell' do
-    let(:env_hash) {{
-      'env1' => 'env_value1',
-      'env2' => 'env_value2',
-      'bosh' => {
-        'group' => 'testdirector-simple-foobar',
-        'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
-      },
-    }}
     it 'should not recreate instance when with vm_type and stemcell do not change' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      env_hash = {
+        'env1' => 'env_value1',
+        'env2' => 'env_value2',
+        'bosh' => {
+          'group' => 'testdirector-simple-foobar',
+          'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+        },
+      }
 
-      cloud_config_hash['resource_pools'].first['env'] = env_hash
+      manifest_hash = Bosh::Spec::Deployments.legacy_manifest
+      manifest_hash['resource_pools'].first['env'] = env_hash
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-
-      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash)
 
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(create_vm_invocations.count).to be > 0
       expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
 
-      stemcell_hash = cloud_config_hash['resource_pools'].first['stemcell']
+      stemcell_hash = manifest_hash['resource_pools'].first['stemcell']
       stemcell_hash['alias'] = 'default'
       manifest_hash['stemcells'] = [stemcell_hash]
 
-      cloud_config_hash.delete('resource_pools')
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       vm_type1 = Bosh::Spec::Deployments.vm_type
       vm_type2 = Bosh::Spec::Deployments.vm_type
       vm_type2['name'] = 'a'
@@ -211,6 +190,8 @@ stemcells:
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       manifest_hash.delete('resource_pools')
+      manifest_hash.delete('networks')
+      manifest_hash.delete('compilation')
 
       manifest_hash['jobs'] = [{
           'name' => 'foobar',
@@ -258,8 +239,7 @@ stemcells:
     } end
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_hash.delete('resource_pools')
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config_hash['vm_extensions'] = [vm_extension_1, vm_extension_2, vm_extension_3]
       cloud_config_hash['vm_types'] = [vm_type_1]
       cloud_config_hash['azs'] = [az_1]
@@ -272,9 +252,7 @@ stemcells:
 
     context 'deployment instance group uses other vm_extensions' do
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        manifest_hash.delete('resource_pools')
-        manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         manifest_hash['jobs'] = [{
             'name' => 'foobar',
             'templates' => ['name' => 'foobar'],

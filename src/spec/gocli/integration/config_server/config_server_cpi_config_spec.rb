@@ -9,7 +9,7 @@ describe 'cpi config', type: :integration do
   let(:valid_cpi_config_file) {yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config_with_variables(cpi_path)) }
 
   before do
-    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis)
+    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", include_credentials: false,  env: client_env)
   end
 
@@ -57,8 +57,8 @@ describe 'cpi config', type: :integration do
         end
 
         describe 'when a release is deployed' do
-          let(:job) { Bosh::Spec::Deployments.simple_job(:azs => ['z1', 'z2']) }
-          let(:deployment) { Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job]) }
+          let(:job) { Bosh::Spec::NewDeployments.simple_job(:azs => ['z1', 'z2']) }
+          let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job]) }
           let(:deployment_manifest) { yaml_file('deployment_manifest', deployment) }
           before do
             create_and_upload_test_release(include_credentials: false,  env: client_env)

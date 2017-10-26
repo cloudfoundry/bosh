@@ -1,27 +1,27 @@
 module Bosh::Spec
   class NetworkingManifest
     def self.deployment_manifest(opts={})
-      manifest = opts.fetch(:manifest, Bosh::Spec::Deployments.simple_manifest)
+      manifest = opts.fetch(:manifest, Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
       manifest['name'] = opts.fetch(:name, 'simple')
 
       job_opts = {}
       job_opts[:templates] = [{'name' => opts[:template]}] if opts[:template]
       job_opts[:instances] = opts[:instances] if opts[:instances]
       job_opts[:static_ips] =opts[:static_ips] if opts[:static_ips]
-      manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(job_opts)]
+      manifest['jobs'] = opts[:legacy_job] ? [Bosh::Spec::Deployments.simple_job(job_opts)] : [Bosh::Spec::NewDeployments.simple_job(job_opts)]
 
       manifest
     end
 
     def self.legacy_deployment_manifest(opts)
-      manifest = deployment_manifest(opts.merge(manifest: Bosh::Spec::Deployments.legacy_manifest))
+      manifest = deployment_manifest(opts.merge(manifest: Bosh::Spec::Deployments.legacy_manifest, legacy_job: true))
       manifest['networks'].first['subnets'] = [make_subnet(opts)]
       manifest['networks'].first['subnets'].first['static'] = opts.fetch(:static_ips, [])
       manifest
     end
 
     def self.cloud_config(opts)
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config['networks'].first['subnets'] = [make_subnet(opts)]
       cloud_config
     end
@@ -52,7 +52,7 @@ module Bosh::Spec
     def self.errand_manifest(opts)
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: opts.fetch(:name, 'errand'))
       manifest['jobs'] = [
-        Bosh::Spec::Deployments.simple_errand_job.merge(
+        Bosh::Spec::NewDeployments.simple_errand_job.merge(
           'instances' => opts.fetch(:instances),
           'name' => 'errand_job'
         )

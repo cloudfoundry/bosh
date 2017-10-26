@@ -15,7 +15,7 @@ module Bosh
 
       def initialize(options, context)
         @options = options
-
+        @context = context
 
         @base_dir = options['dir']
         if @base_dir.nil?
@@ -34,7 +34,7 @@ module Bosh
           ))
 
         @commands = CommandTransport.new(@base_dir, @logger)
-        @inputs_recorder = InputsRecorder.new(@base_dir, @logger, context)
+        @inputs_recorder = InputsRecorder.new(@base_dir, @logger, @context)
 
         prepare
       rescue Errno::EACCES
@@ -252,6 +252,20 @@ module Bosh
         validate_and_record_inputs(SET_DISK_METADATA_SCHEMA, __method__, disk_cid, metadata)
       end
 
+      CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA = Membrane::SchemaParser.parse { { vm_resources: {'ram' => Integer, 'cpu' => Integer, 'ephemeral_disk_size' => Integer} } }
+      def calculate_vm_cloud_properties(vm_resources)
+        validate_and_record_inputs(
+          CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA,
+          __method__,
+          vm_resources
+        )
+        instance_type = @context['cvcpkey'].nil? ? 'dummy' : @context['cvcpkey']
+        {
+          instance_type: instance_type,
+          ephemeral_disk: { size: vm_resources['ephemeral_disk_size'] }
+        }
+      end
+
       # Additional Dummy test helpers
 
       def prepare
@@ -382,7 +396,6 @@ module Bosh
         )
 
         begin
-          sleep 0.1
           Process.getpgid(agent_pid)
         rescue => e
           raise RuntimeError, "Expected agent to be running: #{e}"

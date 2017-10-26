@@ -4,36 +4,40 @@
 module Bosh::Director
   class CloudFactory
     def self.create_with_latest_configs(deployment = nil)
-      cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest
-      cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
+      cpi_configs = Bosh::Director::Models::Config.latest_set('cpi')
+      cloud_configs = Bosh::Director::Models::Config.latest_set('cloud')
 
       if deployment.nil?
-        planner = create_cloud_planner(cloud_config)
+        planner = create_cloud_planner(cloud_configs)
       else
-        planner = create_cloud_planner(cloud_config, deployment.name)
+        planner = create_cloud_planner(cloud_configs, deployment.name)
       end
 
-      new(planner, parse_cpi_config(cpi_config))
+      new(planner, parse_cpi_configs(cpi_configs))
     end
 
     def self.create_from_deployment(deployment,
-      cpi_config = Bosh::Director::Api::CpiConfigManager.new.latest)
-      planner = create_cloud_planner(deployment.cloud_config, deployment.name) unless deployment.nil?
+      cpi_configs = Bosh::Director::Models::Config.latest_set('cpi'))
+      planner = create_cloud_planner(deployment.cloud_configs, deployment.name) unless deployment.nil?
 
-      new(planner, parse_cpi_config(cpi_config))
+      new(planner, parse_cpi_configs(cpi_configs))
     end
 
-    def self.parse_cpi_config(cpi_config)
-      return nil if cpi_config.nil?
-      Bosh::Director::CpiConfig::CpiManifestParser.new.parse(cpi_config.manifest)
+    def self.parse_cpi_configs(cpi_configs)
+      return nil if cpi_configs.nil? || cpi_configs.empty?
+
+      cpi_configs_raw_manifests = cpi_configs.map {|config| config.raw_manifest}
+      manifest_parser = Bosh::Director::CpiConfig::CpiManifestParser.new
+      merged_cpi_configs_hash = manifest_parser.merge_configs(cpi_configs_raw_manifests)
+      manifest_parser.parse(merged_cpi_configs_hash)
     end
 
-    def self.create_cloud_planner(cloud_config, deployment_name = nil)
-      return nil if cloud_config.nil?
+    def self.create_cloud_planner(cloud_configs, deployment_name = nil)
+      return nil if cloud_configs.empty?
 
       global_network_resolver = DeploymentPlan::NullGlobalNetworkResolver.new
       parser = DeploymentPlan::CloudManifestParser.new(Config.logger)
-      parser.parse(cloud_config.interpolated_manifest(deployment_name), global_network_resolver, nil)
+      parser.parse(Api::CloudConfigManager.interpolated_manifest(cloud_configs, deployment_name), global_network_resolver, nil)
     end
 
     def initialize(cloud_planner, parsed_cpi_config)

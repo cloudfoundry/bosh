@@ -3,7 +3,7 @@ require_relative '../../spec_helper'
 #Errand failure/success were split up so that they can be run on different rspec:parallel threads
 describe 'run-errand failure', type: :integration, with_tmp_dir: true do
 
-  let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
+  let(:manifest_hash) { Bosh::Spec::NewDeployments.manifest_with_errand }
   let(:deployment_name) { manifest_hash['name'] }
 
   context 'when errand script exits with non-0 exit code' do
@@ -21,7 +21,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
         },
       }
 
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     end
 
     context 'with the keep-alive option set' do
@@ -57,7 +57,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
 
       # Sleep so we have time to cancel it
       manifest_hash['jobs'].last['properties']['errand1']['blocking_errand'] = true
@@ -66,7 +66,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     end
 
     it 'successfully cancels the errand and returns exit code' do
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       errand_result = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
       task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('*')
@@ -101,7 +101,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
 
       # Mark foobar as an errand even though it does not have bin/run
       manifest_hash['jobs'].first['lifecycle'] = 'errand'
@@ -110,7 +110,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     end
 
     it 'returns 1 as exit code and mentions absence of bin/run' do
-      deploy_from_scratch(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       output, exit_code = bosh_runner.run('run-errand foobar',
         {failure_expected: true, return_exit_code: true, deployment_name: deployment_name}
@@ -130,7 +130,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     it 'returns 1 as exit code and mentions not found errand' do
-      deploy_from_scratch
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
 
       output, exit_code = bosh_runner.run('run-errand unknown-errand-name',
         {failure_expected: true, return_exit_code: true, deployment_name: deployment_name}

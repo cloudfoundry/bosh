@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'cli: cloudcheck', type: :integration do
-  let(:manifest) {Bosh::Spec::Deployments.simple_manifest}
+  let(:manifest) {Bosh::Spec::NewDeployments.simple_manifest_with_stemcell}
   let(:director_name) {current_sandbox.director_name}
   let(:deployment_name) {manifest['name']}
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
@@ -15,12 +15,11 @@ describe 'cli: cloudcheck', type: :integration do
 
     let(:num_instances) { 3 }
 
-
     before do
       manifest['jobs'][0]['persistent_disk'] = 100
       manifest['jobs'][0]['instances'] = num_instances
 
-      deploy_from_scratch(manifest_hash: manifest)
+      deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
     end
@@ -103,21 +102,21 @@ describe 'cli: cloudcheck', type: :integration do
 
     context 'when deployment uses an old cloud config' do
       let(:initial_cloud_config) {
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
-        cloud_config['resource_pools'][0]['cloud_properties']['stage'] = 'before'
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs
+        cloud_config['vm_types'][0]['cloud_properties']['stage'] = 'before'
         cloud_config
       }
 
       let(:new_cloud_config) do
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs
         cloud_config['azs'].pop
         cloud_config['networks'][0]['subnets'].pop
-        cloud_config['resource_pools'][0]['cloud_properties']['stage'] = 'after'
+        cloud_config['vm_types'][0]['cloud_properties']['stage'] = 'after'
         cloud_config
       end
 
       let(:deployment_manifest) do
-        manifest = Bosh::Spec::Deployments::simple_manifest
+        manifest = Bosh::Spec::NewDeployments::simple_manifest_with_stemcell
         manifest['jobs'][0]['azs'] = ['z1', 'z2']
         manifest['jobs'][0]['instances'] = 2
         manifest
@@ -231,7 +230,7 @@ describe 'cli: cloudcheck', type: :integration do
 
     before do
       manifest['jobs'][0]['persistent_disk'] = 100
-      deploy_from_scratch(manifest_hash: manifest)
+      deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
     end
@@ -251,7 +250,7 @@ describe 'cli: cloudcheck', type: :integration do
 
   context 'when cloud config is updated after deploying' do
     with_reset_sandbox_before_each
-    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
     before do
       manifest['jobs'][0]['instances'] = 1
@@ -288,7 +287,7 @@ describe 'cli: cloudcheck', type: :integration do
 
       manifest['jobs'][0]['persistent_disk'] = 100
       manifest['jobs'].first['properties'] = {'test_property' => '((test_property))'}
-      deploy_from_scratch(manifest_hash: manifest, include_credentials: false, env: client_env)
+      deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, include_credentials: false, env: client_env)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple', env: client_env)).to match(regexp('0 problems'))
     end

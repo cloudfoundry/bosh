@@ -16,8 +16,8 @@ describe 'cli: deployment process', type: :integration do
         bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
       end
 
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
+      deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
 
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("upload-stemcell #{stemcell_filename}")
@@ -29,14 +29,32 @@ describe 'cli: deployment process', type: :integration do
   end
 
   describe 'bosh deploy' do
+    let(:old_cloud_config) do
+      Bosh::Spec::NewDeployments.simple_cloud_config
+    end
+
+    let(:new_cloud_config) do
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config['vm_types'] = [
+        {
+          'name' => 'a',
+          'cloud_properties' => {
+            'my-property' => 'foo'
+          }
+        }
+      ]
+      cloud_config
+    end
+
+
+
     context 'given two deployments from one release' do
       it 'is successful' do
         release_filename = spec_asset('test_release.tgz')
-        minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
+        minimal_manifest = Bosh::Spec::NewDeployments.minimal_manifest_with_stemcell
         deployment_manifest = yaml_file('minimal_deployment', minimal_manifest)
 
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-        cloud_config['resource_pools'][0].delete('size')
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
 
         bosh_runner.run("upload-release #{release_filename}")
@@ -54,10 +72,10 @@ describe 'cli: deployment process', type: :integration do
 
       context 'properties from first deployment are modified in second deployment' do
         let(:old_manifest) do
-          old_manifest = Bosh::Spec::Deployments.simple_manifest
+          old_manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
           old_manifest['releases'].first['version'] = '0+dev.1' # latest is converted to release version in new format
 
-          old_job_spec = Bosh::Spec::Deployments.simple_job(
+          old_job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'job1',
             templates: [{'name' => 'foobar_without_packages'}]
           )
@@ -73,9 +91,9 @@ describe 'cli: deployment process', type: :integration do
         end
 
         let(:new_manifest) do
-          new_manifest = Bosh::Spec::Deployments.simple_manifest
+          new_manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
 
-          new_job_spec = Bosh::Spec::Deployments.simple_job(
+          new_job_spec = Bosh::Spec::NewDeployments.simple_job(
             name: 'job1',
             templates: [{'name' => 'foobar_without_packages'}]
           )
@@ -94,23 +112,8 @@ lines'}
           new_manifest
         end
 
-        let(:new_cloud_config) do
-          new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-          new_cloud_config['resource_pools'] = [
-            {
-              'name' => 'a',
-              'cloud_properties' => {'name' => 'new_property', 'size' => 'large'},
-              'stemcell' => {
-                'name' => 'ubuntu-stemcell',
-                'version' => 'latest',
-              },
-            }
-          ]
-          new_cloud_config
-        end
-
         it 'shows a diff of the manifest with cloud config changes and redacted properties' do
-          deploy_from_scratch(manifest_hash: old_manifest)
+          deploy_from_scratch(manifest_hash: old_manifest, cloud_config_hash: old_cloud_config)
           upload_cloud_config(cloud_config_hash: new_cloud_config)
           output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true)
 
@@ -120,14 +123,10 @@ lines'}
           expect(output).to_not include('stemcell')
           expect(output).to_not include('releases')
 
-          expect(output).to include('  resource_pools:
+          expect(output).to include('  vm_types:
   - name: a
     cloud_properties:
-+     name: new_property
-+     size: large
--   env:
--     bosh:
--       password: "<redacted>"
++     my-property: foo
 
   jobs:
   - name: job1
@@ -157,7 +156,7 @@ lines'}
 
         context 'option --no-redact' do
           it 'shows a diff of the manifest with cloud config changes and not redacted properties' do
-            deploy_from_scratch(manifest_hash: old_manifest)
+            deploy_from_scratch(manifest_hash: old_manifest, cloud_config_hash: old_cloud_config)
             upload_cloud_config(cloud_config_hash: new_cloud_config)
             output = deploy_simple_manifest(manifest_hash: new_manifest, no_color: true, no_redact: true)
 
@@ -171,35 +170,23 @@ lines'}
 
     context 'when cloud config is updated during deploy' do
       it 'deploys with cloud config shown in diff' do
-        prepare_for_deploy
-        deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
+        prepare_for_deploy(cloud_config_hash: old_cloud_config)
+        deployment_manifest = yaml_file('simple', Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
         bosh_runner.run_interactively("deploy #{deployment_manifest.path}", deployment_name: 'simple', no_color: true) do |runner|
           expect(runner).to have_output 'Continue?'
 
-          new_cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-          new_cloud_config['resource_pools'] = [
-            {
-              'name' => 'a',
-              'cloud_properties' => {'name' => 'new_property'},
-              'stemcell' => {
-                'name' => 'ubuntu-stemcell',
-                'version' => 'latest',
-              },
-            }
-          ]
           upload_cloud_config(cloud_config_hash: new_cloud_config)
-
 
           runner.send_keys 'yes'
           expect(runner).to have_output "Succeeded"
         end
 
-        output = deploy_simple_manifest
+        output = deploy_simple_manifest(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
         expect(output).to include(<<-DIFF
-  resource_pools:
+  vm_types:
   - name: a
     cloud_properties:
-+     name: new_property
++     my-property: foo
         DIFF
         )
       end
@@ -209,11 +196,11 @@ lines'}
       it 'deploys to multiple cpis' do
         cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
 
-        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis)
-        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
+        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.simple_cpi_config(cpi_path))
 
-        job = Bosh::Spec::Deployments.simple_job(:azs => ['z1', 'z2'])
-        deployment = Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job])
+        job = Bosh::Spec::NewDeployments.simple_job(:azs => ['z1', 'z2'])
+        deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job])
         deployment_manifest = yaml_file('deployment_manifest', deployment)
 
         create_and_upload_test_release
@@ -249,8 +236,8 @@ lines'}
         create_and_upload_test_release
 
         # deploy without cpi config
-        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
 
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
         bosh_runner.run("upload-stemcell #{stemcell_filename}")
@@ -271,11 +258,11 @@ lines'}
 
         # now deploy with cpi config
         cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
-        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis)
-        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config(cpi_path))
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
+        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.simple_cpi_config(cpi_path))
 
-        job = Bosh::Spec::Deployments.simple_job(:azs => ['z1', 'z2'])
-        deployment = Bosh::Spec::Deployments.test_release_manifest.merge('jobs' => [job])
+        job = Bosh::Spec::NewDeployments.simple_job(:azs => ['z1', 'z2'])
+        deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job])
         deployment_manifest = yaml_file('deployment_manifest', deployment)
 
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -322,8 +309,8 @@ lines'}
   describe 'bosh deployments' do
     it 'lists deployment details' do
       release_filename = spec_asset('test_release.tgz')
-      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('minimal', Bosh::Spec::NewDeployments.minimal_manifest_with_stemcell)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
 
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("upload-stemcell #{stemcell_filename}")
@@ -337,9 +324,9 @@ lines'}
 
     context 'when cloud config is updated and deploying has failed' do
       it 'shows cloud config as still outdated' do
-        deployment_manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        deployment_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         deployment_manifest = yaml_file('simple', deployment_manifest_hash)
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config_manifest = yaml_file('cloud_manifest', cloud_config_hash)
 
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -375,8 +362,8 @@ lines'}
   describe 'bosh delete deployment' do
     it 'deletes an existing deployment' do
       release_filename = spec_asset('test_release.tgz')
-      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      deployment_manifest = yaml_file('minimal', Bosh::Spec::NewDeployments.minimal_manifest_with_stemcell)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
 
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("upload-stemcell #{stemcell_filename}")

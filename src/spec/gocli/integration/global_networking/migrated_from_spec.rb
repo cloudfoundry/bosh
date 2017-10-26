@@ -4,20 +4,20 @@ describe 'migrated from', type: :integration do
   with_reset_sandbox_before_each
 
   let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['networks'].first['subnets'] = [subnet1, subnet2]
-    cloud_config_hash['disk_pools'] = [disk_pool_spec]
+    cloud_config_hash['disk_types'] = [disk_type_spec]
     cloud_config_hash
   end
 
   let(:cloud_config_hash_with_azs) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [
       {'name' => 'my-az-1'},
       {'name' => 'my-az-2'}
     ]
     cloud_config_hash['networks'].first['subnets'] = [subnet_with_az1, subnet_with_az2]
-    cloud_config_hash['disk_pools'] = [disk_pool_spec]
+    cloud_config_hash['disk_types'] = [disk_type_spec]
     cloud_config_hash['compilation']['az'] = 'my-az-1'
 
     cloud_config_hash
@@ -80,7 +80,7 @@ describe 'migrated from', type: :integration do
   end
 
   let(:manifest_with_azs) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
     job_spec = etcd_job
     job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
     job_spec['azs'] = ['my-az-1', 'my-az-2']
@@ -89,7 +89,7 @@ describe 'migrated from', type: :integration do
     manifest_hash
   end
 
-  let(:disk_pool_spec) do
+  let(:disk_type_spec) do
     {
       'name' => 'fast_disks',
       'disk_size' => 1024,
@@ -104,12 +104,12 @@ describe 'migrated from', type: :integration do
     Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z2', persistent_disk_pool: 'fast_disks')
   end
   let(:etcd_job) do
-    Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks')
+    Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd', persistent_disk_type: 'fast_disks', env: {'bosh' => {'password' => 'foobar'}})
   end
 
   let(:manifest_with_etcd_z1_in_az1) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    job_spec = etcd_z1_job
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    job_spec =  Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'etcd_z1', persistent_disk_type: 'fast_disks')
     job_spec['azs'] = ['my-az-1']
     job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
     manifest_hash['jobs'] = [job_spec]
@@ -117,8 +117,8 @@ describe 'migrated from', type: :integration do
   end
 
   let(:manifest_with_etcd_z2_in_az2_migrated_from_etcd_z1) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    job_spec = etcd_z2_job
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    job_spec = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'etcd_z2', persistent_disk_type: 'fast_disks')
     job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
     job_spec['azs'] = ['my-az-2']
     job_spec['migrated_from'] = [{'name' => 'etcd_z1'}]
@@ -127,11 +127,11 @@ describe 'migrated from', type: :integration do
   end
 
   let(:manifest_with_etcd_z1_in_az1_and_etcd_z2_in_az2) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    job_spec_1 = etcd_z1_job
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    job_spec_1 = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'etcd_z1', persistent_disk_type: 'fast_disks')
     job_spec_1['azs'] = ['my-az-1']
     job_spec_1['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-    job_spec_2 = etcd_z2_job
+    job_spec_2 = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'etcd_z2', persistent_disk_type: 'fast_disks')
     job_spec_2['azs'] = ['my-az-2']
     job_spec_2['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
     manifest_hash['jobs'] = [job_spec_1, job_spec_2]
@@ -139,6 +139,14 @@ describe 'migrated from', type: :integration do
   end
 
   context 'when migrating to availability zones' do
+    let(:disk_pool_spec) do
+      {
+        'name' => 'fast_disks',
+        'disk_size' => 1024,
+        'cloud_properties' => {}
+      }
+    end
+
     let(:legacy_manifest) do
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
       legacy_manifest['networks'].first['subnets'] = [subnet1, subnet2]
@@ -170,7 +178,7 @@ describe 'migrated from', type: :integration do
         Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z2', static_ips: ['192.168.2.10'], persistent_disk_pool: 'fast_disks')
       end
       let(:etcd_job) do
-        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_pool: 'fast_disks')
+        Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_type: 'fast_disks', env: {'bosh' => {'password' => 'foobar'}})
       end
 
       it 'keeps VM, disk and IPs and updates AZs' do
@@ -199,7 +207,7 @@ describe 'migrated from', type: :integration do
         Bosh::Spec::Deployments.simple_job(instances: 1, name: 'etcd_z2', persistent_disk_pool: 'fast_disks')
       end
       let(:etcd_job) do
-        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks')
+        Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd', persistent_disk_type: 'fast_disks', env: {'bosh' => {'password' => 'foobar'}})
       end
 
       it 'keeps VM, disk and IPs and updates AZs' do
@@ -219,7 +227,7 @@ describe 'migrated from', type: :integration do
 
     context 'when templates of migrated jobs are different from desired job' do
       let(:etcd_job) do
-        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', persistent_disk_pool: 'fast_disks', templates: [{'name' => 'foobar_without_packages'}])
+        Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd', persistent_disk_type: 'fast_disks', templates: [{'name' => 'foobar_without_packages'}], env: {'bosh' => {'password' => 'foobar'}})
       end
 
       it 'updates job instances with new desired job templates keeping persistent disk' do
@@ -241,7 +249,7 @@ describe 'migrated from', type: :integration do
 
     context 'when instance network configuration changed (from dynamic to static)' do
       let(:etcd_job) do
-        Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_pool: 'fast_disks')
+        Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd', static_ips: ['192.168.1.10', '192.168.2.10'], persistent_disk_type: 'fast_disks', env: {'bosh' => {'password' => 'foobar'}})
       end
 
       it 'recreates VM keeping persistent disk' do
@@ -258,9 +266,9 @@ describe 'migrated from', type: :integration do
       end
     end
 
-    context 'when instance resource pool configuration changed' do
+    context 'when instance vm type configuration changed' do
       before do
-        cloud_config_hash_with_azs['resource_pools'].first['cloud_properties'] = {
+        cloud_config_hash_with_azs['vm_types'].first['cloud_properties'] = {
           'new-cloud-property-key' => 'new-cloud-property-value'
         }
       end
@@ -293,11 +301,11 @@ describe 'migrated from', type: :integration do
 
       it 'deletes extra instances' do
         deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
-        original_instnaces = director.instances
+        original_instances = director.instances
         original_disks = current_sandbox.cpi.disk_cids
-        expect(original_instnaces.size).to eq(3)
+        expect(original_instances.size).to eq(3)
         expect(original_disks.size).to eq(3)
-        expect(original_instnaces.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z1', 'etcd_z2'])
+        expect(original_instances.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z1', 'etcd_z2'])
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
         deploy_simple_manifest(manifest_hash: manifest_with_azs)
@@ -306,7 +314,7 @@ describe 'migrated from', type: :integration do
         expect(new_instances.size).to eq(2)
         expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd'])
 
-        expect(original_instnaces.map(&:vm_cid)).to include(*new_instances.map(&:vm_cid))
+        expect(original_instances.map(&:vm_cid)).to include(*new_instances.map(&:vm_cid))
 
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks.size).to eq(3)
@@ -316,7 +324,7 @@ describe 'migrated from', type: :integration do
 
     context 'when the number of original instances is less than the number of new instances' do
       let(:etcd_job) do
-        Bosh::Spec::Deployments.simple_job(instances: 3, name: 'etcd', persistent_disk_pool: 'fast_disks')
+        Bosh::Spec::NewDeployments.simple_job(instances: 3, name: 'etcd', persistent_disk_type: 'fast_disks', env: {'bosh' => {'password' => 'foobar'}})
       end
       # make it use 2nd subnet for etcd_z2 instance
       let(:subnet1) { subnet_with_1_available_ip }
@@ -340,11 +348,11 @@ describe 'migrated from', type: :integration do
     end
 
     context 'when migrating without persistent disks' do
-      let(:etcd_z1_job) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd_z1') }
-      let(:etcd_job) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'etcd') }
+      let(:etcd_z1_job) { Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd_z1', env: {'bosh' => {'password' => 'foobar'}}) }
+      let(:etcd_job) { Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd', env: {'bosh' => {'password' => 'foobar'}}) }
 
       it 'balances vms across azs' do
-        manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
+        manifest_with_azs = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         job_spec_z1_1 = etcd_z1_job
         job_spec_z1_1['azs'] = ['my-az-1']
         job_spec_z1_1['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
@@ -357,7 +365,7 @@ describe 'migrated from', type: :integration do
         expect(original_instances.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z1'])
         expect(original_instances.map(&:availability_zone)).to match_array(['my-az-1', 'my-az-1'])
 
-        new_manifest_hash = Bosh::Spec::Deployments.simple_manifest
+        new_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
         job_spec = etcd_job
         job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         job_spec['azs'] = ['my-az-1', 'my-az-2']
@@ -383,7 +391,7 @@ describe 'migrated from', type: :integration do
 
         # this is done until our bosh instances will show all instances
         # even those that don't have vms
-        failing_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'failing')
+        failing_job_spec = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'failing', env: {'bosh' => {'password' => 'foobar'}})
         failing_job_spec['azs'] = ['my-az-1']
         manifest['jobs'].unshift(failing_job_spec)
 
@@ -406,11 +414,11 @@ describe 'migrated from', type: :integration do
   end
 
   context 'when migrating without azs' do
-    let(:job1) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'job1') }
-    let(:job2) { Bosh::Spec::Deployments.simple_job(instances: 2, name: 'job2') }
+    let(:job1) { Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'job1') }
+    let(:job2) { Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'job2') }
 
     let(:manifest_1) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       job_spec = job1
       job_spec['networks'].first['name'] = cloud_config_hash['networks'].first['name']
       manifest_hash['jobs'] = [job_spec]
@@ -418,7 +426,7 @@ describe 'migrated from', type: :integration do
     end
 
     let(:manifest_2) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       job_spec = job2
       job_spec['networks'].first['name'] = cloud_config_hash['networks'].first['name']
       job_spec['migrated_from'] = [{'name' => 'job1'}]
@@ -455,12 +463,12 @@ describe 'migrated from', type: :integration do
 
     context 'when migrating into existing job' do
       it 'preserves existing job instances and migrated job instances keeping disks' do
-        manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
-        job_spec_1 = etcd_job
+        manifest_with_azs = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        job_spec_1 = Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'etcd')
         job_spec_1['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         job_spec_1['instances'] = 1
         job_spec_1['azs'] = ['my-az-1']
-        job_spec_2 = etcd_z1_job
+        job_spec_2 = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'etcd_z1')
         job_spec_2['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         job_spec_2['instances'] = 1
         job_spec_2['azs'] = ['my-az-2']
@@ -487,16 +495,16 @@ describe 'migrated from', type: :integration do
       end
 
       it 'assigns indexes correctly' do
-        manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
-        db1_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z1', persistent_disk_pool: 'fast_disks')
+        manifest_with_azs = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        db1_job_spec = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'db_z1', persistent_disk_type: 'fast_disks')
         db1_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         db1_job_spec['instances'] = 1
         db1_job_spec['azs'] = ['my-az-1']
-        db2_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z2', persistent_disk_pool: 'fast_disks')
+        db2_job_spec = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'db_z2', persistent_disk_type: 'fast_disks')
         db2_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         db2_job_spec['instances'] = 1
         db2_job_spec['azs'] = ['my-az-2']
-        db3_job_spec = Bosh::Spec::Deployments.simple_job(instances: 1, name: 'db_z3', persistent_disk_pool: 'fast_disks')
+        db3_job_spec = Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'db_z3', persistent_disk_type: 'fast_disks')
         db3_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         db3_job_spec['instances'] = 2
         db3_job_spec['azs'] = ['my-az-3']
@@ -512,8 +520,8 @@ describe 'migrated from', type: :integration do
 
         deploy_from_scratch(manifest_hash: manifest_with_azs, cloud_config_hash: cloud_config_hash)
 
-        new_manifest_hash = Bosh::Spec::Deployments.simple_manifest
-        db_job_spec = Bosh::Spec::Deployments.simple_job(instances: 4, name: 'db')
+        new_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        db_job_spec = Bosh::Spec::NewDeployments.simple_job(instances: 4, name: 'db')
         db_job_spec['instances'] = 4
         db_job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
         db_job_spec['azs'] = ['my-az-1', 'my-az-2', 'my-az-3']
@@ -529,8 +537,8 @@ describe 'migrated from', type: :integration do
   end
 
   it 'updates dns records' do
-    original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest
-    job_spec = etcd_z1_job
+    original_manifest_with_azs = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    job_spec =  Bosh::Spec::NewDeployments.simple_job(instances: 1, name: 'etcd_z1', persistent_disk_type: 'fast_disks')
     job_spec['azs'] = ['my-az-1']
     job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
     original_manifest_with_azs['jobs'] = [job_spec]
@@ -560,7 +568,7 @@ describe 'migrated from', type: :integration do
 
   context 'when migrating job that does not exist in previous deployment' do
     let(:manifest_with_unknown_migrated_from_job) do
-      new_manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      new_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
       job_spec = etcd_job
       job_spec['instances'] = 1
       job_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']

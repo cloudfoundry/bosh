@@ -9,7 +9,7 @@ describe "When an errand's az is changed on a re-deploy", type: :integration do
   end
 
   let(:manifest) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
 
     job = manifest_hash['jobs'].first
     job['networks'] = [
@@ -25,7 +25,7 @@ describe "When an errand's az is changed on a re-deploy", type: :integration do
   end
 
   let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
     cloud_config_hash['compilation']['az'] = 'my-az'
     network_a = cloud_config_hash['networks'].first
@@ -47,7 +47,7 @@ describe "When an errand's az is changed on a re-deploy", type: :integration do
     deploy_simple_manifest(manifest_hash: manifest)
     manifest['jobs'].first['azs'] = ['my-az2']
 
-    output, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
+    _, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
     expect(exit_code).to eq(0)
   end
 end

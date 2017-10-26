@@ -108,6 +108,10 @@ module Bosh::Director
           expect(plan.recreate).to eq(true)
         end
 
+        it 'creates a vm requirements cache' do
+          expect(planner.vm_resources_cache).to be_instance_of(VmResourcesCache)
+        end
+
         describe '#instance_plans_with_hot_swap_and_needs_shutdown' do
           before { subject.add_instance_group(instance_group) }
           let(:update_config) { instance_double(UpdateConfig, strategy: 'hot-swap') }

@@ -18,7 +18,7 @@ describe 'using director with config server and deployments having links', type:
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
     cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
@@ -42,7 +42,7 @@ describe 'using director with config server and deployments having links', type:
 
   let(:provider_job_name) { 'http_server_with_provides' }
   let(:my_instance_group) do
-    job_spec = Bosh::Spec::Deployments.simple_job(
+    job_spec = Bosh::Spec::NewDeployments.simple_job(
       name: 'my_instance_group',
       templates: [
         {
@@ -102,7 +102,7 @@ describe 'using director with config server and deployments having links', type:
 
     context "when the consumer's job render fails on a subsequent deploy" do
       let(:consumer_instance_group) do
-        Bosh::Spec::Deployments.simple_job(
+        Bosh::Spec::NewDeployments.simple_job(
           name: 'consumer_instance_group',
           templates: [
             {
@@ -115,7 +115,7 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:provider_instance_group) do
-        Bosh::Spec::Deployments.simple_job(
+        Bosh::Spec::NewDeployments.simple_job(
           name: 'provider_instance_group',
           templates: [
             {
@@ -176,7 +176,7 @@ describe 'using director with config server and deployments having links', type:
 
     context 'when manual links are involved' do
       let (:job_with_manual_consumes_link) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'property_job',
           templates: [{
                         'name' => 'consumer',
@@ -248,7 +248,7 @@ describe 'using director with config server and deployments having links', type:
     end
 
     let(:provider_deployment_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
         name: 'provider_deployment_node',
         templates: [
           {
@@ -282,7 +282,7 @@ describe 'using director with config server and deployments having links', type:
     end
 
     let(:consumer_deployment_job_spec) do
-      job_spec = Bosh::Spec::Deployments.simple_job(
+      job_spec = Bosh::Spec::NewDeployments.simple_job(
         name: 'consumer_deployment_node',
         templates: [
           {
@@ -421,7 +421,7 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:consumer_deployment_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'consumer_deployment_node',
           templates: [
             {
@@ -505,7 +505,7 @@ describe 'using director with config server and deployments having links', type:
 
     context 'given a successful provider deployment with ' do
       let(:provider_deployment_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'provider_deployment_node',
           templates: [
             {
@@ -530,7 +530,7 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:consumer_deployment_job_spec) do
-        job_spec = Bosh::Spec::Deployments.simple_job(
+        job_spec = Bosh::Spec::NewDeployments.simple_job(
           name: 'consumer_deployment_node',
           templates: [
             {

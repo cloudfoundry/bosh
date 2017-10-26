@@ -19,28 +19,30 @@ module Bosh::Director
       }
       let(:properties) { {'echo_value' => 'addon_prop_value'} }
 
-      let(:cloud_config) { Models::CloudConfig.make }
+      let(:cloud_configs) { [Models::Config.make(:cloud_with_manifest_v2)] }
 
       let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
 
       let(:deployment_model) do
         deployment_model = Models::Deployment.make
-        deployment_model.cloud_config_id = cloud_config.id
         deployment_model.teams = teams
+        deployment_model.cloud_configs = cloud_configs
         deployment_model.save
         deployment_model
       end
 
+      let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+
       let(:deployment_name) { 'dep1' }
 
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.minimal_manifest
+        manifest_hash = Bosh::Spec::NewDeployments.minimal_manifest_with_stemcell
         manifest_hash['name'] = deployment_name
         manifest_hash
       end
 
       let(:deployment) do
-        planner = DeploymentPlan::Planner.new({name: deployment_name, properties: {}}, manifest_hash, cloud_config, {}, deployment_model)
+        planner = DeploymentPlan::Planner.new({name: deployment_name, properties: {}}, manifest_hash, cloud_configs, {}, deployment_model)
         planner.update = DeploymentPlan::UpdateConfig.new(manifest_hash['update'])
         planner
       end
@@ -72,6 +74,7 @@ module Bosh::Director
                                          DeploymentPlan::IpProviderFactory.new(true, logger))
 
           deployment.add_instance_group(instance_group)
+          allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
         end
 
         context 'when addon does not apply to the instance group' do
@@ -300,13 +303,15 @@ module Bosh::Director
 
               release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
               deployment.add_release(release)
+              stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
+              deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger)
-                .parse(Bosh::Spec::Deployments.simple_cloud_config,
+                .parse(Bosh::Spec::NewDeployments.simple_cloud_config,
                        DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
                        DeploymentPlan::IpProviderFactory.new(true, logger))
-              instance_group1 = instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: [{'name' => 'dummy', 'release' => 'dummy'}]), {})
+              instance_group1 = instance_group_parser.parse(Bosh::Spec::NewDeployments.simple_instance_group(jobs: [{'name' => 'dummy', 'release' => 'dummy'}]), {})
               deployment.add_instance_group(instance_group1)
-              instance_group2 = instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: [{'name' => 'dummy_with_properties', 'release' => 'dummy'}], name: 'foobar1'), {})
+              instance_group2 = instance_group_parser.parse(Bosh::Spec::NewDeployments.simple_instance_group(jobs: [{'name' => 'dummy_with_properties', 'release' => 'dummy'}], name: 'foobar1'), {})
               deployment.add_instance_group(instance_group2)
             end
 

@@ -6,7 +6,7 @@ module Bosh
       subject { DeploymentPlan::ManifestMigrator.new }
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
       let(:manifest) { Manifest.new(manifest_hash, manifest_hash, nil, nil, nil, nil)}
-      let(:cloud_config) { nil }
+      let(:cloud_config) { {} }
       let(:migrated_manifest) { subject.migrate(manifest, cloud_config)[0] }
       let(:migrated_manifest_hash) { migrated_manifest.hybrid_manifest_hash }
       let(:migrated_cloud_config) { subject.migrate(manifest, cloud_config)[1] }
@@ -75,10 +75,10 @@ module Bosh
           end
 
           context 'when cloud config is set' do
-            let(:cloud_config) { 'fake-cloud-config' }
+            let(:cloud_config) { {'vm_types'=>'fake-cloud-config'} }
 
             it 'returns passed cloud config' do
-              expect(migrated_cloud_config).to eq('fake-cloud-config')
+              expect(migrated_cloud_config).to eq(cloud_config)
             end
           end
         end

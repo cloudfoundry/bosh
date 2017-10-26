@@ -135,7 +135,7 @@ var _ = Describe("BoshDns", func() {
 
 			for _, ips := range knownProviders {
 				for _, ip := range ips {
-					Expect(output).To(MatchRegexp(`q-s0\.g-\d+\.bosh\.\s+\d+\s+IN\s+A\s+%s`, ip))
+					Expect(output).To(MatchRegexp(`q-n\d+s0\.g-\d+\.bosh\.\s+\d+\s+IN\s+A\s+%s`, ip))
 				}
 			}
 		})

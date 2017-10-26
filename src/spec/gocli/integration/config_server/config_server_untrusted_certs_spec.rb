@@ -4,11 +4,11 @@ describe 'using director with config server and the certs are not trusted', type
   with_reset_sandbox_before_each(config_server_enabled: true, with_config_server_trusted_certs: false, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest.merge(
+    Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
       {
-        'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
+        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'our_instance_group',
-          templates: [
+          jobs: [
             {'name' => 'job_1_with_many_properties',
              'properties' => {
                'gargamel' => {
@@ -25,7 +25,7 @@ describe 'using director with config server and the certs are not trusted', type
       })
   end
 
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
 
   it 'throws certificate validator error' do

@@ -33,15 +33,15 @@ module Bosh::Director
 
       attr_reader :existing_network_reservations
 
-      def self.create_from_job(job, index, virtual_state, deployment_model, instance_state, availability_zone, logger)
+      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, availability_zone, logger)
         new(
-          job.name,
+          instance_group.name,
           index,
           virtual_state,
-          MergedCloudProperties.new(availability_zone, job.vm_type, job.vm_extensions).get,
-          job.stemcell,
-          job.env,
-          job.compilation?,
+          MergedCloudProperties.new(availability_zone, instance_group.vm_type, instance_group.vm_extensions).get,
+          instance_group.stemcell,
+          instance_group.env,
+          instance_group.compilation?,
           deployment_model,
           instance_state,
           availability_zone,
@@ -309,6 +309,11 @@ module Bosh::Director
             @model.add_template(template_model)
           end
         end
+      end
+
+      def update_vm_cloud_properties(vm_cloud_properties)
+        @merged_cloud_properties ||= {}
+        @merged_cloud_properties.merge!(vm_cloud_properties)
       end
 
       private

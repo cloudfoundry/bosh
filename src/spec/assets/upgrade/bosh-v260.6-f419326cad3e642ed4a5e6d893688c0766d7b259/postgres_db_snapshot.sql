@@ -1710,15 +1710,6 @@ ALTER TABLE ONLY vms ALTER COLUMN id SET DEFAULT nextval('vms_id_seq'::regclass)
 
 
 --
--- Data for Name: cloud_configs; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY cloud_configs (id, properties, created_at) FROM stdin;
-1	---\nnetworks:\n- name: a\n  subnets:\n  - range: 192.168.1.0/24\n    gateway: 192.168.1.1\n    dns:\n    - 192.168.1.1\n    - 192.168.1.2\n    static:\n    - 192.168.1.10\n    reserved: []\n    cloud_properties: {}\ncompilation:\n  workers: 1\n  network: a\n  cloud_properties: {}\nresource_pools:\n- name: a\n  cloud_properties: {}\n  stemcell:\n    name: ubuntu-stemcell\n    version: '1'\n  env:\n    bosh:\n      password: foobar\n	2017-02-14 21:02:59.161981
-\.
-
-
---
 -- Name: cloud_configs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -1792,7 +1783,7 @@ SELECT pg_catalog.setval('deployment_properties_id_seq', 1, false);
 --
 
 COPY deployments (id, name, manifest, cloud_config_id, link_spec_json, runtime_config_id) FROM stdin;
-1	simple	---\nname: simple\ndirector_uuid: deadbeef\nreleases:\n- name: bosh-release\n  version: 0.1-dev\nupdate:\n  canaries: 2\n  canary_watch_time: 4000\n  max_in_flight: 1\n  update_watch_time: 20\njobs:\n- name: foobar1\n  templates:\n  - name: foobar\n  resource_pool: a\n  instances: 2\n  networks:\n  - name: a\n  properties: {}\n	1	{}	\N
+1	simple	---\nname: simple\ndirector_uuid: deadbeef\nreleases:\n- name: bosh-release\n  version: 0.1-dev\nupdate:\n  canaries: 2\n  canary_watch_time: 4000\n  max_in_flight: 1\n  update_watch_time: 20\njobs:\n- name: foobar1\n  templates:\n  - name: foobar\n  resource_pool: a\n  instances: 2\n  networks:\n  - name: a\n  properties: {}\nnetworks:\n- name: a\n  subnets:\n  - range: 192.168.1.0/24\n    gateway: 192.168.1.1\n    dns:\n    - 192.168.1.1\n    - 192.168.1.2\n    static:\n    - 192.168.1.10\n    reserved: []\n    cloud_properties: {}\ncompilation:\n  workers: 1\n  network: a\n  cloud_properties: {}\nresource_pools:\n- name: a\n  cloud_properties: {}\n  stemcell:\n    name: ubuntu-stemcell\n    version: '1'\n  env:\n    bosh:\n      password: foobar\n	\N	{}	\N
 \.
 
 

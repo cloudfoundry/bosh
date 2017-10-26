@@ -10,7 +10,7 @@ module Bosh::Director
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new({
           existing_instance: instance_model,
-          desired_instance: DeploymentPlan::DesiredInstance.new(job),
+          desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
           instance: instance,
         })
     end
@@ -20,8 +20,8 @@ module Bosh::Director
     end
     let(:network) { DeploymentPlan::DynamicNetwork.parse(network_spec, [availability_zone], logger) }
 
-    let(:job) do
-      job = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+    let(:instance_group) do
+      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'fake-job',
         spec: {'name' => 'job'},
         canonical_name: 'job',
@@ -39,6 +39,7 @@ module Bosh::Director
         jobs: [],
         update_spec: update_config.to_hash,
         properties: {},
+        vm_resources: DeploymentPlan::VmResources.new({'cpu' => 1, 'ephemeral_disk_size' => 1, 'ram' => 1}),
         lifecycle: DeploymentPlan::InstanceGroup::DEFAULT_LIFECYCLE_PROFILE,
       )
     end
@@ -53,7 +54,7 @@ module Bosh::Director
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:instance) { DeploymentPlan::Instance.create_from_job(job, 0, instance_state, plan, {}, availability_zone, logger) }
+    let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 0, instance_state, plan, {}, availability_zone, logger) }
     let(:instance_model) { Models::Instance.make(deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }

@@ -92,7 +92,7 @@ module Bosh::Director
       end
 
       def validate_manifest_yml(yml_string, context)
-        raise BadManifest, 'Manifest should not be empty' unless yml_string.to_s != ''
+        raise BadManifest, 'Manifest should not be empty' if yml_string.to_s == ''
 
         begin
           YAML.load(yml_string, context)
