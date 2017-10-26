@@ -66,21 +66,21 @@ module Bosh::Director
       describe 'short DNS names enabled by providing service groups' do
         let(:short_dns_enabled) { true }
         it 'produces an abbreviated address with three octets and a network' do
-          expect(subject.encode_query(criteria)).to eq('q-n1s0.g-3.sub.bosh')
+          expect(subject.encode_query(criteria)).to eq('q-n1s0.q-g3.sub.bosh')
         end
 
         context 'when desired group is not default' do
           let(:instance_group) { 'lemon-group' }
 
           it 'chooses chooses correct service groups' do
-            expect(subject.encode_query(criteria)).to eq('q-n1s0.g-7.sub.bosh')
+            expect(subject.encode_query(criteria)).to eq('q-n1s0.q-g7.sub.bosh')
           end
         end
 
         context 'when including a UUID in the criteria' do
           let(:specific_query) {{uuid: 'uuid-1'}}
           it 'includes the m# code in the query' do
-            expect(subject.encode_query(criteria)).to eq('q-m1n1s0.g-3.sub.bosh')
+            expect(subject.encode_query(criteria)).to eq('q-m1n1s0.q-g3.sub.bosh')
           end
         end
 
@@ -89,7 +89,7 @@ module Bosh::Director
           let(:default_network) { 'network1' }
           context 'default_network is set' do
             it 'includes an n# code' do
-              expect(subject.encode_query(criteria)).to eq('q-n4s0.g-3.sub.bosh')
+              expect(subject.encode_query(criteria)).to eq('q-n4s0.q-g3.sub.bosh')
             end
           end
         end

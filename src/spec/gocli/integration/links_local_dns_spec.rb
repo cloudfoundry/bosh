@@ -215,7 +215,7 @@ describe 'Links with local_dns enabled', type: :integration do
           it 'uses a short DNS name if manifest so indicates' do
             manifest['features'] = {'use_short_dns_addresses' => true}
             deploy_simple_manifest(manifest_hash: manifest)
-            expect(rendered_template['i_eat_links']['address']).to match(/q-a1n\ds0.g-2.bosh/)
+            expect(rendered_template['i_eat_links']['address']).to match(/q-a1n\ds0.q-g2.bosh/)
           end
 
           it 'respects address provided in a manual link' do
@@ -439,7 +439,7 @@ describe 'Links with local_dns enabled', type: :integration do
             elem['address']
           end
           expect(addresses.length).to eq(1)
-          expect(addresses[0]).to match(/q-m\dn\ds0\.g-\d\.bosh/)
+          expect(addresses[0]).to match(/q-m\dn\ds0\.q-g\d\.bosh/)
         end
       end
     end

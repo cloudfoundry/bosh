@@ -107,7 +107,7 @@ module Bosh::Director
     end
 
     def encode_service_group(criteria)
-      "g-#{id_for_group_tuple(
+      "q-g#{id_for_group_tuple(
         criteria[:instance_group],
         criteria[:deployment_name])}"
     end

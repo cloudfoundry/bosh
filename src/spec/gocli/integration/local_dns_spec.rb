@@ -229,7 +229,7 @@ describe 'local DNS', type: :integration do
         it 'uses DNS address' do
           instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
           template = instance.read_job_template('foobar', 'bin/foobar_ctl')
-          expect(template).to match(/spec.address=q-m\dn\ds0\.g-\d\.bosh/)
+          expect(template).to match(/spec.address=q-m\dn\ds0\.q-g\d\.bosh/)
         end
 
         context 'when instance is recreated' do
@@ -240,7 +240,7 @@ describe 'local DNS', type: :integration do
           it 'renders with short addresses still' do
             instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
             template = instance.read_job_template('foobar', 'bin/foobar_ctl')
-            expect(template).to match(/spec.address=q-m\dn\ds0\.g-\d\.bosh/)
+            expect(template).to match(/spec.address=q-m\dn\ds0\.q-g\d\.bosh/)
           end
         end
 
@@ -255,7 +255,7 @@ describe 'local DNS', type: :integration do
           it 'renders with short addresses still' do
             instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
             template = instance.read_job_template('foobar', 'bin/foobar_ctl')
-            expect(template).to match(/spec.address=q-m\dn\ds0\.g-\d\.bosh/)
+            expect(template).to match(/spec.address=q-m\dn\ds0\.q-g\d\.bosh/)
           end
         end
       end
