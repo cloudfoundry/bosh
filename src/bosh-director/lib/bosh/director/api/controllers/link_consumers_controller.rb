@@ -2,7 +2,7 @@ require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
   module Api::Controllers
-    class LinkProvidersController < BaseController
+    class LinkConsumersController < BaseController
       register DeploymentsSecurity
 
       def initialize(config)
@@ -10,7 +10,7 @@ module Bosh::Director
         @deployment_manager = Api::DeploymentManager.new
       end
 
-      get '/', scope: :list_links do
+      get '/' do
         if params['deployment'].nil?
           raise DeploymentRequired, 'Deployment name is required'
         end
@@ -19,9 +19,9 @@ module Bosh::Director
 
         result = []
 
-        link_providers = Bosh::Director::Models::LinkProvider.where(deployment: deployment)
-        link_providers.each do |link_provider|
-          result << generate_provider_hash(link_provider)
+        link_consumers = Bosh::Director::Models::LinkConsumer.where(deployment: deployment)
+        link_consumers.each do |link_consumer|
+          result << generate_consumer_hash(link_consumer)
         end
 
         body(json_encode(result))
@@ -29,18 +29,10 @@ module Bosh::Director
 
       private
 
-      def generate_provider_hash(model)
+      def generate_consumer_hash(model)
         {
-          :id => model.id,
-          :name => model.name,
-          :shared => model.shared,
+          :id => model.link_consumer_id,
           :deployment => model.deployment.name,
-          :content => model.content,
-          :link_provider_definition =>
-            {
-              :type => model.link_provider_definition_type,
-              :name => model.link_provider_definition_name,
-            },
           :owner_object => {
             :type => model.owner_object_type,
             :name => model.owner_object_name,

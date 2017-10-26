@@ -10,7 +10,7 @@ Sequel.migration do
       String :content, :null => false
       String :link_provider_definition_type, :null => false
       String :link_provider_definition_name, :null => false # Original name. Only for debugging. If we don't have it. Meh~
-      String :owner_object_name
+      String :owner_object_name, :null => false
       String :owner_object_type, :null => false
       String :owner_object_info
     end
@@ -40,6 +40,36 @@ Sequel.migration do
                 content: content.to_json,
               }
             end
+          end
+        end
+      end
+    end
+
+    create_table :link_consumers do
+      primary_key :id
+      String :link_consumer_id, :null => false
+      foreign_key :deployment_id, :deployments, :on_delete => :cascade
+      String :owner_object_name, :null => false
+      String :owner_object_type, :null => false
+      String :owner_object_info
+    end
+
+    self[:instances].each do |instance|
+      spec_json = JSON.parse(instance[:spec_json] || '{}')
+      links = spec_json['links']
+      links.each do |job_name, consumed_links|
+        consumed_links.each do |link_name, link_data|
+          full_id = "#{spec_json['deployment']}.#{spec_json['name']}.#{job_name}.#{link_name}"
+          if self[:link_consumers].where(link_consumer_id: full_id).all.count == 0
+            self[:link_consumers] << {
+              link_consumer_id: full_id,
+              deployment_id: instance[:deployment_id],
+              owner_object_name: job_name,
+              owner_object_type: 'Job',
+              owner_object_info: {
+                instance_group_name: spec_json['name']
+              }.to_json
+            }
           end
         end
       end

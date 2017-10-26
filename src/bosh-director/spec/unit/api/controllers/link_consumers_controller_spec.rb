@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::LinkProvidersController do
+    describe Controllers::LinkConsumersController do
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
@@ -19,10 +19,10 @@ module Bosh::Director
         basic_authorize 'admin', 'admin'
       end
 
-      context 'when checking link provider' do
+      context 'when checking link consumer' do
         let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
 
-        it 'list providers endpoint exists' do
+        it 'list consumers endpoint exists' do
           get "/?deployment=#{deployment.name}"
           expect(last_response.status).to eq(200)
         end
@@ -59,61 +59,43 @@ module Bosh::Director
           expect(last_response.body).to eq('{"code":190024,"description":"Deployment name is required"}')
         end
 
-        context 'and there are providers in the database' do
-          let!(:provider_1) do
-            Models::LinkProvider.create(
-              :name => 'link_name_1',
-              :link_provider_id => "#{deployment.name}.instance_group.job_name_1.link_name_1",
+        context 'and there are consumers in the database' do
+          let!(:consumer_1) do
+            Models::LinkConsumer.create(
+              :link_consumer_id => "#{deployment.name}.instance_group.job_name_1.link_name_1",
               :deployment => deployment,
-              :shared => true,
-              :consumable => true,
-              :link_provider_definition_type => 'link_type_1',
-              :link_provider_definition_name => 'link_original_name_1',
               :owner_object_type => 'job',
-              :content => 'some link content',
               :owner_object_name => 'job_name_1',
+              :owner_object_info => 'some link content',
             )
           end
-          let!(:provider_2) do
-            Models::LinkProvider.create(
-              :name => 'link_name_2',
-              :link_provider_id => "#{deployment.name}.instance_group.job_name_2.link_name_2",
+          let!(:consumer_2) do
+            Models::LinkConsumer.create(
+              :link_consumer_id => "#{deployment.name}.instance_group.job_name_2.link_name_2",
               :deployment => deployment,
-              :shared => false,
-              :consumable => true,
-              :link_provider_definition_type => 'link_type_2',
-              :link_provider_definition_name => 'link_original_name_2',
               :owner_object_type => 'job',
-              :content => 'I have content',
               :owner_object_name => 'job_name_2',
               :owner_object_info => '{"data":"datavalue"}',
             )
           end
 
-          it 'should return a list of providers for specified deployment' do
-            get "/?deployment=#{provider_1.deployment.name}"
+          it 'should return a list of consumers for specified deployment' do
+            get "/?deployment=#{consumer_1.deployment.name}"
             expect(last_response.status).to eq(200)
-            expect(JSON.parse(last_response.body)).to eq([generate_provider_hash(provider_1),generate_provider_hash(provider_2)])
+            expect(JSON.parse(last_response.body)).to eq([generate_consumer_hash(consumer_1), generate_consumer_hash(consumer_2)])
           end
         end
       end
 
-      def generate_provider_hash(model)
+      def generate_consumer_hash(model)
         {
-          'id' => model.id,
-          'name' => model.name,
-          'shared' => model.shared,
+          'id' => model.link_consumer_id,
           'deployment' => model.deployment.name,
-          'link_provider_definition' => {
-            'type' => model.link_provider_definition_type,
-            'name' => model.link_provider_definition_name
-          },
           'owner_object' => {
             'type' => model.owner_object_type,
             'name' => model.owner_object_name,
             'info' => model.owner_object_info,
-          },
-          'content' => model.content
+          }
         }
       end
     end
