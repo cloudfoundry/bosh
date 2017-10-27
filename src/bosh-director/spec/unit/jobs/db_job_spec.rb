@@ -21,7 +21,7 @@ module Bosh::Director
         @queue = :normal
       end
     end
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { Models::Task.make(id: 42, checkpoint_time: '2017-01-01 00:00:00') }
     let(:process_status) { instance_double(Process::Status, :signaled? => signaled) }
     let(:signaled) { false }
     let(:task_dataset) { instance_double(Sequel::Dataset) }
@@ -68,6 +68,11 @@ module Bosh::Director
         it 'always updates state' do
           db_job.perform
           expect(Models::Task.where(id: task.id ).first.state).to eq('processing')
+        end
+
+        it 'always updates checkpoint_time' do
+          db_job.perform
+          expect(Models::Task.where(id: task.id).first.checkpoint_time).to be > Time.new('2017-06-01 00:00:00')
         end
 
         it 'safely updates the task once and only once (to avoid two jobs separately trying to claim the task)' do

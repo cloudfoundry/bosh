@@ -21,7 +21,7 @@ module Bosh::Director
 
       def perform
         Config.db.transaction(:retry_on => [Sequel::DatabaseConnectionError]) do
-          if Models::Task.where(id: @task_id, state: 'queued').update(state: 'processing') != 1
+          if Models::Task.where(id: @task_id, state: 'queued').update(state: 'processing', checkpoint_time: Time.now) != 1
             raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
           end
         end
