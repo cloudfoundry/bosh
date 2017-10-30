@@ -262,6 +262,17 @@ module Bosh::Director
         end
       end
 
+      context 'with an empty cloud config (previously supported before generic configs)' do
+        let(:cloud_config_1) { {'networks' => ['fooba']} }
+        let(:cloud_config_2) { nil }
+        let(:cloud_config_3) { nil }
+
+        it 'assumes an empty hash for that manifest' do
+          result = consolidator.raw_manifest
+          expect(result).to eq({"azs"=>[], "vm_types"=>[], "disk_types"=>[], "networks"=>["fooba"], "vm_extensions"=>[]})
+        end
+      end
+
 
       context 'when a given key is not an array' do
         ['azs', 'vm_types', 'disk_types', 'networks', 'vm_extensions'].each do |key|

@@ -43,7 +43,7 @@ module Bosh::Director
         end
 
         @cloud_configs.each do |cloud_config|
-          manifest_hash = cloud_config.raw_manifest
+          manifest_hash = cloud_config.raw_manifest || {}
           keys.each do |key|
             if ConfigServer::ConfigServerHelper.is_full_variable? manifest_hash[key]
               result_hash[key] << manifest_hash[key]
