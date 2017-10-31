@@ -95,34 +95,6 @@ module Bosh
         raise UnknownProperty.new(names)
       end
 
-      def link(name)
-        link_spec = lookup_property(@links, name)
-        raise UnknownLink.new(name) if link_spec.nil?
-
-        if link_spec.has_key?('instances')
-          link_instances = link_spec['instances'].map do |instance_link_spec|
-            EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec['index'], instance_link_spec['id'], instance_link_spec['az'], instance_link_spec['address'], instance_link_spec['properties'], instance_link_spec['bootstrap'])
-          end
-
-          if link_spec.has_key?('address')
-            encoder_to_inject = ManualLinkDnsEncoder.new(link_spec['address'])
-          else
-            encoder_to_inject = @dns_encoder
-          end
-
-          return EvaluationLink.new(
-            link_instances,
-            link_spec['properties'],
-            link_spec['instance_group'],
-            link_spec['default_network'],
-            link_spec['deployment_name'],
-            link_spec['domain'],
-            encoder_to_inject,
-          )
-        end
-        raise UnknownLink.new(name)
-      end
-
       # Run a block of code if all given properties are defined
       # @param [Array<String>] names Property names
       # @yield [Object] property values
@@ -137,6 +109,17 @@ module Bosh
         InactiveElseBlock.new
       end
 
+      def link(name)
+        link_spec = lookup_property(@links, name)
+        raise UnknownLink.new(name) if link_spec.nil?
+
+        if link_spec.has_key?('instances')
+          return create_evaluation_link(link_spec)
+        end
+
+        raise UnknownLink.new(name)
+      end
+
       # Run a block of code if the link given exists
       # @param [String] name of the link
       # @yield [Object] link, which is an array of instances
@@ -145,16 +128,42 @@ module Bosh
         if link_spec.nil? || !link_spec.has_key?('instances')
           return ActiveElseBlock.new(self)
         else
-          link_instances = link_spec['instances'].map do |instance_link_spec|
-            EvaluationLinkInstance.new(instance_link_spec['name'], instance_link_spec['index'], instance_link_spec['id'], instance_link_spec['az'], instance_link_spec['address'], instance_link_spec['properties'], instance_link_spec['bootstrap'])
-          end
-
-          yield EvaluationLink.new(link_instances, link_spec['properties'], link_spec['instance_group'], link_spec['default_network'], link_spec['deployment_name'], link_spec['domain'], @dns_encoder)
+          yield create_evaluation_link(link_spec)
           InactiveElseBlock.new
         end
       end
 
       private
+
+      def create_evaluation_link(link_spec)
+        link_instances = link_spec['instances'].map do |instance_link_spec|
+          EvaluationLinkInstance.new(
+            instance_link_spec['name'],
+            instance_link_spec['index'],
+            instance_link_spec['id'],
+            instance_link_spec['az'],
+            instance_link_spec['address'],
+            instance_link_spec['properties'],
+            instance_link_spec['bootstrap'],
+          )
+        end
+
+        if link_spec.has_key?('address')
+          encoder_to_inject = ManualLinkDnsEncoder.new(link_spec['address'])
+        else
+          encoder_to_inject = @dns_encoder
+        end
+
+        return EvaluationLink.new(
+          link_instances,
+          link_spec['properties'],
+          link_spec['instance_group'],
+          link_spec['default_network'],
+          link_spec['deployment_name'],
+          link_spec['domain'],
+          encoder_to_inject,
+        )
+      end
 
       # @return [Object] Object representation where all hashes are unrolled
       #   into OpenStruct objects. This exists mostly for backward

@@ -223,6 +223,7 @@ describe 'Links with local_dns enabled', type: :integration do
             manifest['jobs'] = [job_link_overrided_spec]
             deploy_simple_manifest(manifest_hash: manifest)
             expect(rendered_template['db_az_link']['address']).to eq('broker.external-db.com')
+            expect(rendered_template['optional_backup_link'][0]['address']).to eq('nothing')
           end
         end
       end
