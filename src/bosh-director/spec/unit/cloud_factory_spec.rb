@@ -226,9 +226,9 @@ module Bosh::Director
       let(:cpi_config1) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name1') }
       let(:cpi_config2) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name2') }
       let(:cpi_config3) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name3') }
-      let(:cpi1) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi1', :raw_manifest => cpi_config1)}
-      let(:cpi2) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi2', :raw_manifest => cpi_config2)}
-      let(:cpi3) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi3', :raw_manifest => cpi_config3)}
+      let(:cpi1) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi1', :content => YAML.dump(cpi_config1))}
+      let(:cpi2) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi2', :content => YAML.dump(cpi_config2))}
+      let(:cpi3) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi3', :content => YAML.dump(cpi_config3))}
 
       it 'returns all known cpis' do
         parsed_cpis = CloudFactory.parse_cpi_configs([cpi1, cpi2, cpi3])

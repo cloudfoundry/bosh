@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
     }
 
     before do
-      Bosh::Director::Models::Config.make(type: 'cloud', name: 'default', raw_manifest: cloud_config)
+      Bosh::Director::Models::Config.make(type: 'cloud', name: 'default', content: YAML.dump(cloud_config))
 
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(
         '/var/vcap/jobs/cpi-type_cpi/bin/cpi',

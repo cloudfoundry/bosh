@@ -187,14 +187,14 @@ module Bosh::Director
 
         context 'when there is a previous cloud config' do
           before do
-            Models::Config.make(:cloud, raw_manifest: cloud_config_hash_with_two_azs)
+            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
           end
 
           context 'when uploading an empty cloud config' do
             it 'returns the diff' do
               post(
                 '/diff',
-                "---\n",
+                "--- \n {}",
                 { 'CONTENT_TYPE' => 'text/yaml' }
               )
               expect(last_response.status).to eq(200)
@@ -257,8 +257,8 @@ module Bosh::Director
 
         context 'when there are two previous cloud config ' do
           before do
-            Models::Config.make(:cloud, name: 'foo',raw_manifest: cloud_config_hash_with_one_az)
-            Models::Config.make(:cloud, raw_manifest: cloud_config_hash_with_two_azs)
+            Models::Config.make(:cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
+            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
           end
           it 'always diffs against the default-named cloud config' do
             post(
@@ -283,7 +283,7 @@ module Bosh::Director
 
           context 'when previous cloud config is nil' do
             before do
-              Models::Config.make(:cloud, raw_manifest: nil)
+              Models::Config.make(:cloud)
             end
 
             it 'returns the diff' do

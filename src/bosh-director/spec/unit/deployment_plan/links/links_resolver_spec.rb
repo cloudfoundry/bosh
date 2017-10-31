@@ -636,7 +636,7 @@ Unable to process links for deployment. Errors are:
 
       let(:cloud_configs) do
         [
-          Bosh::Director::Models::Config.make(:cloud, raw_manifest: {
+          Bosh::Director::Models::Config.make(:cloud, content: YAML.dump({
               'azs' => [
                   {
                       'name' => 'az1',
@@ -679,7 +679,7 @@ Unable to process links for deployment. Errors are:
                 'name' => 'fake-vm-type',
               }
             ]
-          })
+          }))
         ]
       end
 

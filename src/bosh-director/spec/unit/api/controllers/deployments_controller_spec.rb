@@ -110,8 +110,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)).to eq(
-                'code' => 40000,
-                'description' => 'Deployment manifest must be a hash',
+                'code' => 440001,
+                'description' => 'Manifest should be a hash',
               )
             end
 
@@ -1351,7 +1351,7 @@ module Bosh::Director
               )
             end
 
-            let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::NewDeployments.simple_cloud_config ) }
+            let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)) }
 
             let(:service_errand) do
               {
@@ -1701,21 +1701,21 @@ module Bosh::Director
 
           context 'PUT /:deployment/jobs/:job' do
             it 'allows access to owned deployment' do
-              expect(put('/owned_deployment/jobs/dea', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+              expect(put('/owned_deployment/jobs/dea?state=running', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
             end
 
             it 'denies access to other deployment' do
-              expect(put('/other_deployment/jobs/dea', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
+              expect(put('/other_deployment/jobs/dea?state=running', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
             end
           end
 
           context 'PUT /:deployment/jobs/:job/:index_or_id' do
             it 'allows access to owned deployment' do
-              expect(put('/owned_deployment/jobs/dea/0', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+              expect(put('/owned_deployment/jobs/dea/0', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
             end
 
             it 'denies access to other deployment' do
-              expect(put('/other_deployment/jobs/dea/0', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
+              expect(put('/other_deployment/jobs/dea/0', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
             end
           end
 
@@ -1984,7 +1984,7 @@ module Bosh::Director
 
           context 'GET /:deployment/errands' do
 
-            let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::NewDeployments.simple_cloud_config ) }
+            let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)) }
 
             it 'allows access to owned deployment' do
               expect(get('/owned_deployment/errands').status).to eq(200)

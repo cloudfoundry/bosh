@@ -58,7 +58,7 @@ module Bosh::Director
       context 'when deploying with cloud config after legacy deployments' do
         let(:cloud_configs) do
           [Models::Config.make(:cloud, {
-            raw_manifest: {
+            content: YAML.dump({
               'networks' => [{
                 'name' => 'manual',
                 'type' => 'manual',
@@ -74,7 +74,7 @@ module Bosh::Director
                 'network' => 'manual',
                 'workers' => 1
               }
-            }
+            })
           })]
         end
 

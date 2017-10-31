@@ -345,9 +345,6 @@ module Bosh::Director
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
         deployment = validate_manifest_yml(request.body.read, nil)
-        unless deployment.kind_of?(Hash)
-          raise ValidationInvalidType, 'Deployment manifest must be a hash'
-        end
 
         unless deployment['name']
           raise ValidationMissingField, "Deployment manifest must have a 'name' key"
