@@ -15,7 +15,11 @@ module Bosh::Blobstore
         user: @options[:user],
         password: @options[:password],
         endpoint: @options[:endpoint],
-        ca_cert: @options[:ca_cert]
+        tls: {
+          cert: {
+            ca: @options[:ca_cert]
+          }
+        }
       }
       @davcli_config_path = @options.fetch(:davcli_config_path, nil)
       @config_file_path = write_config_file(@davcli_config_path)
