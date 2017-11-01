@@ -194,12 +194,9 @@ elsif p('blobstore.provider') == 'gcs'
   end
 else
   blobstore_options = {
-    'endpoint' => "https://#{p('blobstore.address')}:#{p('blobstore.port')}",
+    'endpoint' => "http://#{p('blobstore.address')}:#{p('blobstore.port')}",
     'user' => p('blobstore.director.user'),
-    'password' => p('blobstore.director.password'),
-    'ca_cert' => p('blobstore.ssl.ca_cert'),
-    'cert' => p('blobstore.ssl.cert'),
-    'key' => p('blobstore.ssl.key')
+    'password' => p('blobstore.director.password')
   }
 end
 
@@ -461,12 +458,9 @@ elsif p('blobstore.provider') == 'gcs'
     agent_blobstore_options['encryption_key'] = encryption_key
   end
 else
-  agent_blobstore_options['endpoint'] = "https://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
+  agent_blobstore_options['endpoint'] = "http://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
   agent_blobstore_options['user'] = p('blobstore.agent.user')
   agent_blobstore_options['password'] = p('blobstore.agent.password')
-  agent_blobstore_options['ca_cert'] = p('blobstore.ssl.ca_cert')
-  agent_blobstore_options['cert'] = p('blobstore.ssl.cert')
-  agent_blobstore_options['key'] = p('blobstore.ssl.key')
 end
 
 JSON.dump(params)

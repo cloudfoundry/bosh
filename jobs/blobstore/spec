@@ -10,8 +10,6 @@ templates:
   write_users.erb:    config/write_users
   bbr_backup:         bin/bbr/backup
   bbr_restore:        bin/bbr/restore
-  ssl_cert.pem.erb:   config/ssl_cert.pem
-  ssl_cert_key.erb:   config/ssl_cert_key
 
 packages:
 - nginx
@@ -23,6 +21,9 @@ properties:
   blobstore.ipv6_listen:
     description: Enable binding to IPv6 addresses
     default: false
+  blobstore.backend_port:
+    description: TCP port backend blobstore server (simple blobstore) listens on
+    default: 25251
 
   blobstore.director.user:
     description: Username director must use to access blobstore via HTTP Basic
@@ -41,12 +42,3 @@ properties:
   blobstore.nginx.workers:
     description: Number of nginx workers for blobstore
     default: 2
-
-  blobstore.ssl.ca_cert:
-      description: SSL CA cert for blobstore nginx server
-
-  blobstore.ssl.cert:
-      description: SSL cert for blobstore nginx server
-
-  blobstore.ssl.cert_key:
-      description: SSL cert key for blobstore nginx server
