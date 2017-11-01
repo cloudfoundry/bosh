@@ -2,10 +2,10 @@ bosh-gcscli/bosh-gcscli-0.0.3-linux-amd64:
   size: 12777526
   object_id: e561b18d-0d52-4579-7bd5-9823bdbe7aba
   sha: a6ca3153856b40c1af6d79da8f11efdde0899b7d
-davcli/davcli-0.0.25-linux-amd64:
-  size: 6179207
-  object_id: 42a21263-4854-4cd0-69f0-84fde314a0bd
-  sha: e94211712a74af0c35f9b96d74073de5abeb6313
+davcli/davcli-0.0.24-linux-amd64:
+  size: 6165337
+  object_id: aa46e12b-6aa9-4de7-5694-955799bea8ad
+  sha: de7307b184f03caff746ae2ad78bf94ba04c9c71
 gnatsd/gnatsd-0.9.6-bosh.12-linux-amd64:
   size: 9505349
   object_id: 54d32ad0-9d4a-4b5d-7431-7f504bd9fb9a
