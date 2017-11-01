@@ -164,6 +164,7 @@ function main() {
         -o docker/cpi.yml \
         -o jumpbox-user.yml \
         -o experimental/nats-tls.yml \
+        -o experimental/blobstore-https.yml \
         -v director_name=docker \
         -v internal_cidr=10.245.0.0/16 \
         -v internal_gw=10.245.0.1 \
