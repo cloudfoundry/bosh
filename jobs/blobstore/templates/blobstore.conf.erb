@@ -14,7 +14,7 @@ server {
   error_page 497 = @handler;
 
   ssl_certificate /var/vcap/jobs/blobstore/config/ssl_cert.pem;
-  ssl_certificate_key /var/vcap/jobs/blobstore/config/ssl_key.pem;
+  ssl_certificate_key /var/vcap/jobs/blobstore/config/ssl_cert_key;
 
   location / {
     root /var/vcap/store/blobstore/store/;

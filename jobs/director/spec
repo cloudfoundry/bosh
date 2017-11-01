@@ -29,7 +29,6 @@ templates:
   nats_client_private_key.erb: config/nats_client_private_key
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
-  blobstore_ca_cert.pem.erb: config/blobstore_ca_cert.pem
 
 packages:
 - director
@@ -333,8 +332,6 @@ properties:
     description: Username agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.agent.password:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
-  blobstore.ssl.ca_cert:
-    description: CA Cert for TLS communcation with blobstore  
 
   # Blobstore destination for backups
   director.backup_destination:
