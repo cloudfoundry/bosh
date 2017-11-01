@@ -11,9 +11,7 @@ server {
 
   client_max_body_size <%= p("blobstore.max_upload_size") %>;
 
-  <% if p('blobstore.allow_http') %>
   error_page 497 = @handler;
-  <% end %>
 
   ssl_certificate /var/vcap/jobs/blobstore/config/ssl_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/ssl_key.pem;
