@@ -392,21 +392,14 @@ params['cloud'] = {
     'provider' => {
       'name' => cpi_job_name,
       'path' => "/var/vcap/jobs/#{cpi_job_name}/bin/cpi",
-    },
-    'properties' => {}
-}
-
-params['agent'] = {
-  'env' => {
-    'bosh' => p('agent.env.bosh')
-  }
+  },
+  'properties' => {}
 }
 
 params['cloud']['properties']['agent'] = {
   'ntp' => p('ntp'),
   'blobstore' => {'provider' => p('blobstore.provider'), 'options' => {} },
 }
-
 
 agent_blobstore_options =  params['cloud']['properties']['agent']['blobstore']['options']
 

@@ -197,34 +197,6 @@ describe Bosh::Director::Config do
       end
     end
 
-    context 'when agent env specified' do
-      let(:expected_agent_env) do
-        {
-          'bosh' => {
-            'blobstores' => [
-              {
-                'provider' => 'local',
-                'options' => {
-                  'blobstore_path' => '/path/to/blobstore'
-                }
-              },
-              {
-                'provider' => 'local',
-                'options' => {
-                  'blobstore_path' => '/path/to/blobstore'
-                }
-              }
-            ]
-          }
-        }
-      end
-
-      it 'parses agent env correctly' do
-        described_class.configure(base_config)
-        expect(described_class.agent_env).to eq(expected_agent_env)
-      end
-    end
-
     context 'config server' do
       context 'when enabled' do
         before {
