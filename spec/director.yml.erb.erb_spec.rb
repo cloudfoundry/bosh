@@ -29,9 +29,6 @@ describe 'director.yml.erb.erb' do
           'password' => 'password'
         },
         'provider' => 'dav',
-        'ssl' => {
-          'ca_cert' => 'some-cert'
-        },
       },
       'nats' => {
         'address' => '10.10.0.7',
@@ -100,10 +97,6 @@ describe 'director.yml.erb.erb' do
           expect(parsed_yaml['blobstore']['provider']).to eq('davcli')
           expect(parsed_yaml['blobstore']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
           expect(parsed_yaml['blobstore']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
-        end
-
-        it 'should configure ca cert' do
-          expect(parsed_yaml['blobstore']['options']['ca_cert']).to eq('some-cert')
         end
       end
 
@@ -254,10 +247,6 @@ describe 'director.yml.erb.erb' do
 
             expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
             expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
-          end
-
-          it 'should configure tls ca cert' do
-            expect(parsed_yaml['blobstore']['options']['ca_cert']).to eq('some-cert')
           end
         end
       end

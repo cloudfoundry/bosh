@@ -41,11 +41,7 @@ module Bosh::Blobstore
           user:     options[:user],
           password: options[:password],
           endpoint: options[:endpoint],
-          tls:  {
-            cert: {
-              ca: options[:ca_cert]
-            }
-          }
+          ca_cert:  options[:ca_cert]
         }
       end
       let (:stored_config_file) { File.new(expected_config_file).readlines }
