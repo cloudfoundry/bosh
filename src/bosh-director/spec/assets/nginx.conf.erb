@@ -6,18 +6,10 @@ events {
 
 http {
   server {
-    listen unix:/<%= root %>/tmp/backend.sock;
-    listen <%= port %> ssl;
+    listen <%= port %>;
     server_name "";
 
     client_max_body_size 1G;
-
-    error_page 497 = @handler;
-
-    #ssl_certificate <%= root %>/config/blobstore_certificate.pem;
-    #ssl_certificate_key <%= root %>/config/blobstore_key.pem;
-    ssl_certificate <%= certificate_path %>;
-    ssl_certificate_key <%= key_path %>;
 
     location / {
       root <%= root %>;
@@ -33,10 +25,6 @@ http {
         auth_basic "Blobstore Write";
         auth_basic_user_file <%= write_users_path %>;
       }
-    }
-
-    location @handler {
-      proxy_pass http://unix:/<%= root %>/tmp/backend.sock:$request_uri;
     }
   }
 }
