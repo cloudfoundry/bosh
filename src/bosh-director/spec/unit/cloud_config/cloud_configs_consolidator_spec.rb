@@ -221,14 +221,14 @@ module Bosh::Director
 
     describe '#have_cloud_configs?' do
       it 'returns true when cloud configs exist' do
-        expect(consolidator.have_cloud_configs?).to be_truthy
+        expect(described_class.have_cloud_configs?(cloud_configs)).to be_truthy
       end
 
       context 'when NO cloud configs exist' do
         let(:cloud_configs) { [] }
 
         it 'returns false' do
-          expect(consolidator.have_cloud_configs?).to be_falsy
+          expect(described_class.have_cloud_configs?(cloud_configs)).to be_falsy
         end
       end
 
@@ -236,7 +236,7 @@ module Bosh::Director
         let(:cloud_configs) { [Bosh::Director::Models::Config.make] }
 
         it 'returns false' do
-          expect(consolidator.have_cloud_configs?).to be_falsy
+          expect(described_class.have_cloud_configs?(cloud_configs)).to be_falsy
         end
       end
     end

@@ -18,10 +18,10 @@ module Bosh::Director
         @consolidated_raw_manifest ||= merge_manifests
       end
 
-      def have_cloud_configs?
-        return false if @cloud_configs.empty?
+      def self.have_cloud_configs?(cloud_configs)
+        return false if cloud_configs.empty?
 
-        @cloud_configs.each do |cc|
+        cloud_configs.each do |cc|
           return true unless cc.raw_manifest.empty?
         end
 
@@ -40,7 +40,7 @@ module Bosh::Director
       private
 
       def merge_manifests
-        return {} unless have_cloud_configs?
+        return {} unless self.class.have_cloud_configs?(@cloud_configs)
 
         result_hash = {}
         keys = ['azs', 'vm_types', 'disk_types', 'networks', 'vm_extensions']
