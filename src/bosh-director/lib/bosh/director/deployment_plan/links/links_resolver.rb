@@ -13,6 +13,7 @@ module Bosh::Director
           resolve_consumed_links(instance_group, job)
           ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
           add_provided_links(instance_group, job)
+          add_consumed_links(instance_group, job)
         end
       end
 
@@ -73,36 +74,63 @@ module Bosh::Director
 
       def add_provided_links(instance_group, job)
         job.provided_links(instance_group.name).each do |provided_link|
+          link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
 
-         link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
+          provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, instance_group: instance_group.name, name: provided_link.name, owner_object_name: job.name)
 
-          provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, name: provided_link.name, owner_object_name: job.name)
+          if provided_link.original_name.nil?
+            link_definition_name = provided_link.name
+          else
+            link_definition_name = provided_link.original_name
+          end
+
           if provider.nil?
-            if provided_link.original_name.nil?
-              definition_name = provided_link.name
-            else
-              definition_name = provided_link.original_name
-            end
-
             provider = Bosh::Director::Models::LinkProvider.new(
-              link_provider_id: "#{@deployment_plan.model.name}.#{instance_group.name}.#{job.name}.#{provided_link.name}",
               deployment: @deployment_plan.model,
+              instance_group: instance_group.name,
               name: provided_link.name,
-              shared: provided_link.shared,
               consumable: true,
-              content: link_spec.to_json,
-              link_provider_definition_type: provided_link.type,
-              link_provider_definition_name: definition_name,
+              shared: provided_link.shared,
               owner_object_name: job.name,
               owner_object_type: 'Job',
-              owner_object_info: "{\"instance_group\":\"#{instance_group.name}\"}"
+              link_provider_definition_name: link_definition_name,
             )
-          else
-            provider.content = link_spec.to_json
           end
+          provider.content = link_spec.to_json
+          provider.shared = provided_link.shared
+          provider.link_provider_definition_type = provided_link.type
+          provider.link_provider_definition_name = link_definition_name
           provider.save
 
-          @deployment_plan.add_link_providers(provider)
+          @deployment_plan.add_link_provider(provider)
+        end
+      end
+
+      def add_consumed_links(instance_group, job)
+        job.consumed_links(instance_group.name).each do |consumed_link|
+
+          consumer = Bosh::Director::Models::LinkConsumer.find(
+            deployment: @deployment_plan.model,
+            instance_group: instance_group.name,
+            owner_object_name: job.name)
+
+          if consumer.nil?
+            if consumed_link.original_name.nil?
+              link_definition_name = consumed_link.name
+            else
+              link_definition_name = consumed_link.original_name
+            end
+
+            consumer = Bosh::Director::Models::LinkConsumer.new(
+              deployment: @deployment_plan.model,
+              instance_group: instance_group.name,
+              owner_object_name: job.name,
+              owner_object_type: 'Job',
+            )
+          end
+          consumer.save
+
+          @deployment_plan.add_link_consumer(consumer)
         end
       end
     end

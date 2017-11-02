@@ -46,10 +46,10 @@ module Bosh::Director
         before do
           allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment_id: deployment_id, name: link_name ).and_return(
             [Bosh::Director::Models::LinkProvider.make(
-              link_provider_id: 'previous_deployment.provider_instance_group.provider_job.link_name',
               name: 'link_name',
               shared: true,
               deployment_id: deployment_id,
+              instance_group: 'provider_instance_group',
               consumable: link_shared,
               link_provider_definition_type: 'http_endpoint',
               link_provider_definition_name: 'http_endpoint',
@@ -301,10 +301,10 @@ module Bosh::Director
         before do
           allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment_id: deployment_id, name: link_name ).and_return(
             [Bosh::Director::Models::LinkProvider.make(
-              link_provider_id: 'previous_deployment.provider_instance_group.provider_job.link_name',
               name: 'link_name',
               shared: link_shared,
               deployment_id: deployment_id,
+              instance_group: 'provider_instance_group',
               consumable: true,
               link_provider_definition_type: 'http_endpoint',
               link_provider_definition_name: 'http_endpoint',

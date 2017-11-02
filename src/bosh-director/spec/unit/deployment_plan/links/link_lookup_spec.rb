@@ -9,9 +9,9 @@ module Bosh::Director
       let(:link_network_options) {{:global_use_dns_entry => false}}
       let(:link_providers) do
         [
-          Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-            link_provider_id: "my_deployment.ig_1.job_1.my_link",
+          Models::LinkProvider.new(
             name: 'my_link',
+            instance_group: "ig_1",
             link_provider_definition_type: 'my_type',
             owner_object_name: 'job_1',
             #'default_network' => 'default',
@@ -531,9 +531,9 @@ module Bosh::Director
         context 'when link provider does NOT have default_network key' do
           let(:link_providers) do
             [
-              Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-              link_provider_id: "my_deployment.ig_1.job_1.my_link",
+              Models::LinkProvider.new(
               name: 'my_link',
+              instance_group: 'ig_1',
               link_provider_definition_type: 'my_type',
               owner_object_name: 'job_1',
               #'default_network' => 'default',
@@ -702,9 +702,9 @@ module Bosh::Director
         context 'when provided link spec has default_network key' do
           let(:link_providers) do
             [
-              Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-               link_provider_id: "my_deployment.ig_1.job_1.my_link",
+              Models::LinkProvider.new(
                name: 'my_link',
+               instance_group: "ig_1",
                link_provider_definition_type: 'my_type',
                owner_object_name: 'job_1',
                content: {
@@ -758,9 +758,9 @@ module Bosh::Director
                 let(:event_log) { double(:event_logger) }
                 let(:link_providers) do
                   [
-                    Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-                     link_provider_id: "my_deployment.ig_1.job_1.my_link",
+                    Models::LinkProvider.new(
                      name: 'my_link',
+                     instance_group: "ig_1",
                      link_provider_definition_type: 'my_type',
                      owner_object_name: 'job_1',
                      content: {
@@ -831,9 +831,9 @@ module Bosh::Director
                 let(:event_log) { double(:event_logger) }
                 let(:link_providers) do
                   [
-                    Models::LinkProvider.new(#provider_deployment_name.provider_deployment_node.http_server_with_provides.vroom
-                      link_provider_id: "my_deployment.ig_1.job_1.my_link",
+                    Models::LinkProvider.new(
                       name: 'my_link',
+                      instance_group: "ig_1",
                       link_provider_definition_type: 'my_type',
                       owner_object_name: 'job_1',
                       content: {

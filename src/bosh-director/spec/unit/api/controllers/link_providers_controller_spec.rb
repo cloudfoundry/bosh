@@ -63,8 +63,8 @@ module Bosh::Director
           let!(:provider_1) do
             Models::LinkProvider.create(
               :name => 'link_name_1',
-              :link_provider_id => "#{deployment.name}.instance_group.job_name_1.link_name_1",
               :deployment => deployment,
+              :instance_group => 'instance_group',
               :shared => true,
               :consumable => true,
               :link_provider_definition_type => 'link_type_1',
@@ -77,8 +77,8 @@ module Bosh::Director
           let!(:provider_2) do
             Models::LinkProvider.create(
               :name => 'link_name_2',
-              :link_provider_id => "#{deployment.name}.instance_group.job_name_2.link_name_2",
               :deployment => deployment,
+              :instance_group => 'instance_group',
               :shared => false,
               :consumable => true,
               :link_provider_definition_type => 'link_type_2',
@@ -86,7 +86,6 @@ module Bosh::Director
               :owner_object_type => 'job',
               :content => 'I have content',
               :owner_object_name => 'job_name_2',
-              :owner_object_info => '{"data":"datavalue"}',
             )
           end
 
@@ -104,6 +103,7 @@ module Bosh::Director
           'name' => model.name,
           'shared' => model.shared,
           'deployment' => model.deployment.name,
+          'instance_group' => model.instance_group,
           'link_provider_definition' => {
             'type' => model.link_provider_definition_type,
             'name' => model.link_provider_definition_name
@@ -111,7 +111,6 @@ module Bosh::Director
           'owner_object' => {
             'type' => model.owner_object_type,
             'name' => model.owner_object_name,
-            'info' => model.owner_object_info,
           },
           'content' => model.content
         }

@@ -35,6 +35,7 @@ module Bosh::Director
           :name => model.name,
           :shared => model.shared,
           :deployment => model.deployment.name,
+          :instance_group => model.instance_group,
           :content => model.content,
           :link_provider_definition =>
             {
@@ -44,7 +45,6 @@ module Bosh::Director
           :owner_object => {
             :type => model.owner_object_type,
             :name => model.owner_object_name,
-            :info => model.owner_object_info,
           }
         }
       end

@@ -198,10 +198,10 @@ module Bosh::Director
           end
 
           it 'should clean up unreferenced link_providers after binding' do
-            old_provider = Models::LinkProvider.new(
-              link_provider_id: 'simple.ig-1.oldjob.creds',
+            Models::LinkProvider.create(
               name: 'old',
               deployment: deployment_plan.model,
+              instance_group: 'ig-1',
               link_provider_definition_type: 'creds',
               link_provider_definition_name: 'login',
               consumable: true,
@@ -210,14 +210,76 @@ module Bosh::Director
               owner_object_type: 'Job',
               owner_object_name: 'oldjob'
             )
-            old_provider.save
 
             expect(links_resolver).to receive(:resolve).with(instance_group_1)
             expect(links_resolver).to receive(:resolve).with(instance_group_2)
             allow(deployment_plan).to receive(:link_providers).and_return([])
 
+            expect(Models::LinkProvider.count).to eq(1)
             assembler.bind_models
             expect(Models::LinkProvider.all).to be_empty
+          end
+
+          it 'should clean up unreferenced link_consumers after binding' do
+            Models::LinkConsumer.create(
+              deployment: deployment_plan.model,
+              instance_group: 'ig-1',
+              owner_object_type: 'Job',
+              owner_object_name: 'oldjob'
+            )
+
+            new_consumer = Models::LinkConsumer.create(
+              deployment: deployment_plan.model,
+              instance_group: 'ig-1',
+              owner_object_type: 'Job',
+              owner_object_name: 'newjob'
+            )
+
+            expect(links_resolver).to receive(:resolve).with(instance_group_1)
+            expect(links_resolver).to receive(:resolve).with(instance_group_2)
+            allow(deployment_plan).to receive(:link_consumers).and_return([new_consumer])
+
+            expect(Models::LinkConsumer.count).to eq(2)
+            assembler.bind_models
+            expect(Models::LinkConsumer.count).to eq(1)
+            expect(Models::LinkConsumer.first[:id]).to eq(new_consumer[:id])
+          end
+
+          it 'should only preserve link_providers referenced after binding' do
+            Models::LinkProvider.create(
+              name: 'old',
+              deployment: deployment_plan.model,
+              instance_group: 'ig-1',
+              link_provider_definition_type: 'creds',
+              link_provider_definition_name: 'login',
+              consumable: true,
+              shared: false,
+              content: '{"user":"bob","password":"jim"}',
+              owner_object_type: 'Job',
+              owner_object_name: 'oldjob'
+            )
+
+            new_provider = Models::LinkProvider.create(
+              name: 'new',
+              deployment: deployment_plan.model,
+              instance_group: 'ig-1',
+              link_provider_definition_type: 'creds',
+              link_provider_definition_name: 'login',
+              consumable: true,
+              shared: false,
+              content: '{"user":"jim","password":"bob"}',
+              owner_object_type: 'Job',
+              owner_object_name: 'newjob'
+            )
+
+            expect(links_resolver).to receive(:resolve).with(instance_group_1)
+            expect(links_resolver).to receive(:resolve).with(instance_group_2)
+            allow(deployment_plan).to receive(:link_providers).and_return([new_provider])
+
+            expect(Models::LinkProvider.count).to eq(2)
+            assembler.bind_models
+            expect(Models::LinkProvider.count).to eq(1)
+            expect(Models::LinkProvider.first[:id]).to eq(new_provider[:id])
           end
         end
 

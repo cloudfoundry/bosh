@@ -31,12 +31,12 @@ module Bosh::Director
 
       def generate_consumer_hash(model)
         {
-          :id => model.link_consumer_id,
+          :id => model.id,
           :deployment => model.deployment.name,
+          :instance_group => model.instance_group,
           :owner_object => {
             :type => model.owner_object_type,
             :name => model.owner_object_name,
-            :info => model.owner_object_info,
           }
         }
       end

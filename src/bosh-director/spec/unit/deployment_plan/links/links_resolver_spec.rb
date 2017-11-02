@@ -15,17 +15,17 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     generate_deployment_manifest('fake-deployment', links, ['127.0.0.3', '127.0.0.4'])
   end
 
-  let(:job_provides) do
+  let(:manifest_job_provides) do
     {'db' => {'as' => 'db'}}
   end
 
   def generate_deployment_manifest(name, links, mysql_static_ips)
     {
       'name' => name,
-      'jobs' => [
+      'instance_groups' => [
         {
           'name' => 'api-server',
-          'templates' => [
+          'jobs' => [
             {'name' => 'api-server-template', 'release' => 'fake-release', 'consumes' => links},
             {'name' => 'template-without-links', 'release' => 'fake-release'}
           ],
@@ -40,10 +40,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         },
         {
           'name' => 'mysql',
-          'templates' => [
+          'jobs' => [
             {'name' => 'mysql-template',
               'release' => 'fake-release',
-              'provides' => job_provides,
+              'provides' => manifest_job_provides,
               'properties' => {'mysql' => nil}
             }
           ],
@@ -92,7 +92,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       'releases' => [
         {
           'name' => 'fake-release',
-          'version' => '1.0.0',
+          'version' => 'latest',
         }
       ],
       'compilation' => {
@@ -114,23 +114,16 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     deployment_plan.instance_group('api-server')
   end
 
-  before do
-    Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
-    fake_locks
-
-    Bosh::Director::Models::Stemcell.make(name: 'fake-stemcell', version: 'fake-stemcell-version')
-
-    Bosh::Director::Config.dns = {'address' => 'fake-dns-address'}
-
-    release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
-    version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
+  def create_new_release(version, api_server_template_consumes_links, mysql_template_provides_links)
+    release_model = Bosh::Director::Models::Release.find_or_create(name: 'fake-release')
+    version = Bosh::Director::Models::ReleaseVersion.make(version: version)
     release_id = version.release_id
     release_model.add_version(version)
 
     template_model = Bosh::Director::Models::Template.make(
       name: 'api-server-template',
-      spec: {consumes: consumes_links},
-      release_id: 1)
+      spec: {consumes: api_server_template_consumes_links},
+      release_id: release_model.id)
     version.add_template(template_model)
 
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
@@ -139,11 +132,24 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     template_model = Bosh::Director::Models::Template.make(
       name: 'mysql-template',
       spec: {
-        provides: provided_links,
+        provides: mysql_template_provides_links,
         properties: {mysql: {description: 'some description'}, oranges: {description: 'shades of orange'}, pineapples: {description: 'types of the tasty fruit'}},
       },
-      release_id: 1)
+      release_id: release_model.id)
     version.add_template(template_model)
+
+    version
+  end
+
+  before do
+    Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+    fake_locks
+
+    Bosh::Director::Models::Stemcell.make(name: 'fake-stemcell', version: 'fake-stemcell-version')
+
+    Bosh::Director::Config.dns = {'address' => 'fake-dns-address'}
+
+    version = create_new_release('1.0.0', template_consumes_links, template_provides_links)
 
     deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment',
       link_spec_json: '{"mysql":{"mysql-template":{"db":{"name":"db","type":"db"}}}}')
@@ -157,8 +163,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     version.add_deployment(deployment_model)
   end
 
-  let(:consumes_links) { [{name: "db", type: "db"}] }
-  let(:provided_links) { [{name: "db", type: "db", shared: true, properties: ['mysql']}] }
+  let(:template_consumes_links) { [{name: "db", type: "db"}] }
+  let(:template_provides_links) { [{name: "db", type: "db", shared: true, properties: ['mysql']}] }
 
   describe '#resolve' do
     context 'when job consumes link from the same deployment' do
@@ -199,6 +205,17 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
           links_hash = {"api-server-template" => {"db" => spec}}
           expect(api_server_instance_group.resolved_links).to eq(links_hash)
+        end
+
+        it 'adds consumer to deployment_plan.link_consumers' do
+          links_resolver.resolve(api_server_instance_group)
+
+          expect(deployment_plan.link_consumers.size).to eq(1)
+          consumer = deployment_plan.link_consumers[0]
+          expect(consumer.deployment.name).to eq(api_server_instance_group.deployment_name)
+          expect(consumer.instance_group).to eq(api_server_instance_group.name)
+          expect(consumer.owner_object_name).to eq('api-server-template')
+          expect(consumer.owner_object_type).to eq('Job')
         end
       end
     end
@@ -247,7 +264,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
           Bosh::Director::Models::LinkProvider.insert(
             deployment_id: Bosh::Director::Models::Deployment.find(name: 'other-deployment').id,
-            link_provider_id: "other-deployment.mysql.mysql-template.db",
+            instance_group: 'mysql',
             name: 'db',
             shared: true,
             consumable: true,
@@ -390,8 +407,8 @@ Unable to process links for deployment. Errors are:
     context 'when provided link type does not match required link type' do
       let(:links) { {'db' => {"from" => 'db', 'deployment' => 'fake-deployment'}} }
 
-      let(:consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
-      let(:provided_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
+      let(:template_consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
+      let(:template_provides_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
 
       it 'fails to find link' do
         expect {
@@ -405,8 +422,8 @@ Unable to process links for deployment. Errors are:
     context 'when provided link name matches links name' do
       let (:links) { {'backup_db' => {"from" => 'db'}} }
 
-      let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-      let(:provided_links) { [{name: "db", type: "db", properties: ['mysql']}] }
+      let(:template_consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
+      let(:template_provides_links) { [{name: "db", type: "db", properties: ['mysql']}] }
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_instance_group)
@@ -506,8 +523,8 @@ Unable to process links for deployment. Errors are:
 
         expect(deployment_plan.link_providers.size).to eq(1)
         prov = deployment_plan.link_providers[0]
-        expect(prov.link_provider_id).to eq("#{api_server_instance_group.deployment_name}.mysql.mysql-template.db")
         expect(prov.deployment.name).to eq(api_server_instance_group.deployment_name)
+        expect(prov.instance_group).to eq('mysql')
         expect(prov.name).to eq('db')
         expect(prov.shared).to be_falsey
         expect(prov.consumable).to be_truthy
@@ -516,7 +533,6 @@ Unable to process links for deployment. Errors are:
         expect(prov.link_provider_definition_type).to eq('db')
         expect(prov.owner_object_name).to eq('mysql-template')
         expect(prov.owner_object_type).to eq('Job')
-        expect(prov.owner_object_info).to eq({instance_group: 'mysql'}.to_json)
       end
 
       it 'checks for existing provider in link_provider table' do
@@ -542,31 +558,57 @@ Unable to process links for deployment. Errors are:
         end
 
         let(:deployment_manifest2) do
+          manifest_job_provides.delete 'db'
+          manifest_job_provides['my_db'] = {}
+          manifest_job_provides['my_db']['shared'] = true
+          manifest_job_provides['my_db']['as'] = 'db'
+          links['backup_db']['from'] = 'db'
           manifest = generate_deployment_manifest('fake-deployment', links, ['127.0.0.5', '127.0.0.6'])
-          manifest['jobs'][1]['templates'][0]['properties']['mysql']={'happy' => true, 'sad' => false}
+          manifest['instance_groups'][1]['jobs'][0]['properties']['mysql']={'happy' => true, 'sad' => false}
           manifest
         end
 
-        it 'checks for existing provider in link_provider table and update the contents' do
+        before do
           links_resolver.resolve(api_server_instance_group)
+          expect(deployment_plan.link_consumers.size).to eq(1)
           expect(deployment_plan.link_providers.size).to eq(1)
 
-          original_id = deployment_plan.link_providers[0].id
+          @original_consumer_id = deployment_plan.link_consumers[0].id
+          @original_provider_id = deployment_plan.link_providers[0].id
 
+          create_new_release(
+            '2.0.0',
+            [{'name' => 'backup_db', 'type' => 'db2'}],
+            [{name: "my_db", type: "db2", properties: ['mysql']}]
+          )
+        end
+
+        it 'checks for existing provider in link_provider table and update the properties' do
+          links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(deployment_plan2, logger)
           links_resolver.resolve(api_server_instance_group2)
           expect(deployment_plan2.link_providers.size).to eq(1)
+          provider = deployment_plan2.link_providers[0]
           content = JSON.parse(deployment_plan2.link_providers[0].content)
 
-          expect(deployment_plan2.link_providers[0].id).to eq(original_id)
+          expect(deployment_plan2.link_providers[0].id).to eq(@original_provider_id)
           expect(content['properties']['mysql']).to eq({'happy' => true, 'sad' => false})
-          expect(content['instances'][0]['address']).to eq("127.0.0.5")
-          expect(content['instances'][1]['address']).to eq("127.0.0.6")
+          expect(provider.shared).to eq(true)
+          expect(provider.link_provider_definition_type).to eq("db2")
+          expect(provider.link_provider_definition_name).to eq("my_db")
+        end
+
+        it 'consumer stays the same' do
+          links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(deployment_plan2, logger)
+          links_resolver.resolve(api_server_instance_group2)
+
+          expect(deployment_plan2.link_consumers.size).to eq(1)
+          expect(deployment_plan2.link_consumers[0].id).to eq(@original_consumer_id)
         end
       end
 
       context 'when provider name is renamed' do
         let (:links) { {'backup_db' => {"from" => 'source_db'} } }
-        let(:job_provides) do
+        let(:manifest_job_provides) do
           {'db' => {'as' => 'source_db'}}
         end
 
@@ -582,15 +624,15 @@ Unable to process links for deployment. Errors are:
       xcontext 'if the the alias is nil' do
         let (:links) { {'backup_db' => {"from" => 'db'}} }
 
-        let(:consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-        let(:provided_links) do
+        let(:template_consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
+        let(:template_provides_links) do
           [
             {name: "db", type: "db", properties: ['mysql']},
             {name: "unconsumable", type: "key", properties: ["oranges","pineapples"]}
           ]
         end
 
-        let(:job_provides) do
+        let(:manifest_job_provides) do
           {'db' => {'as' => 'db'}, 'unconsumable' => nil}
         end
 
@@ -796,7 +838,7 @@ Unable to process links for deployment. Errors are:
 
     context 'when required link is not specified in manifest' do
       let(:links) { {'other' => {"from" => 'c'}} }
-      let(:consumes_links) { [{'name' => 'other', 'type' => 'db'}] }
+      let(:template_consumes_links) { [{'name' => 'other', 'type' => 'db'}] }
 
       it 'fails' do
         expected_error_msg = <<-EXPECTED.strip
@@ -814,8 +856,8 @@ Unable to process links for deployment. Errors are:
 
       let(:links) { {'db' => {"from" => 'db'}} }
 
-      let(:consumes_links) { [] }
-      let(:provided_links) { [{'name' => 'db', 'type' => 'db'}] }
+      let(:template_consumes_links) { [] }
+      let(:template_provides_links) { [{'name' => 'db', 'type' => 'db'}] }
 
       it 'raises unused link error' do
         expect {

@@ -69,6 +69,7 @@ module Bosh::Director
       attr_reader :runtime_configs
 
       attr_reader :link_providers
+      attr_reader :link_consumers
 
       def initialize(attrs, uninterpolated_manifest_text, cloud_configs, runtime_configs, deployment_model, options = {})
         @name = attrs.fetch(:name)
@@ -101,6 +102,7 @@ module Bosh::Director
         @addons = []
 
         @link_providers = []
+        @link_consumers = []
 
         @logger = Config.logger
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
@@ -270,8 +272,12 @@ module Bosh::Director
         !@cloud_configs.empty?
       end
 
-      def add_link_providers(link_provider)
-        @link_providers << link_provider
+      def add_link_provider(link_provider)
+        @link_providers << link_provider unless @link_providers.include?(link_provider)
+      end
+
+      def add_link_consumer(link_consumer)
+        @link_consumers << link_consumer unless @link_consumers.include?(link_consumer)
       end
 
       # If we don't want to do what we are doing in this method, then link_spec should be an object

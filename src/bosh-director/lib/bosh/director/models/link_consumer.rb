@@ -4,7 +4,6 @@ module Bosh::Director::Models
 
     def validate
       validates_presence [
-        :link_consumer_id,
         :deployment_id,
         :owner_object_name,
         :owner_object_type

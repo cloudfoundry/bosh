@@ -62,9 +62,9 @@ module Bosh::Director
           idx = 0
           db[:link_providers].order(:id).each do |provider|
             output = expected_outputs[idx]
-            expect(provider[:link_provider_id]).to eq("fake-deployment.#{output[:instance_group]}.#{output[:owner_name]}.#{output[:link_name]}")
             expect(provider[:name]).to eq(output[:link_name])
             expect(provider[:deployment_id]).to eq(output[:deployment_id])
+            expect(provider[:instance_group]).to eq(output[:instance_group])
             expect(provider[:owner_object_type]).to eq(output[:owner_type])
             expect(provider[:owner_object_name]).to eq(output[:owner_name])
             expect(provider[:link_provider_definition_type]).to eq(output[:link_def_type])
@@ -155,24 +155,14 @@ module Bosh::Director
           }
         end
 
-        it 'will create a consumer for every link' do
+        it 'will create one consumer per consuming job' do
           DBSpecHelper.migrate(migration_file)
-          expect(db[:link_consumers].count).to eq(2)
+          expect(db[:link_consumers].count).to eq(1)
 
-          expected_outputs = [
-            {deployment_id: 42, link_consumer_id: 'fake-deployment.provider_instance_group_1.http_proxy_with_requires.proxied_http_endpoint', owner_object_name: 'http_proxy_with_requires', owner_object_type: 'Job', owner_object_info: expected_owner_object_info},
-            {deployment_id: 42, link_consumer_id: 'fake-deployment.provider_instance_group_1.http_proxy_with_requires.proxied_http_endpoint2', owner_object_name: 'http_proxy_with_requires', owner_object_type: 'Job', owner_object_info: expected_owner_object_info},
-          ]
-
-          idx = 0
-          db[:link_consumers].order(:id).each do |consumer|
-            output = expected_outputs[idx]
-            expect(consumer[:deployment_id]).to eq(output[:deployment_id])
-            expect(consumer[:owner_object_name]).to eq(output[:owner_object_name])
-            expect(consumer[:owner_object_type]).to eq(output[:owner_object_type])
-            expect(consumer[:owner_object_info]).to eq(output[:owner_object_info].to_json)
-            idx += 1
-          end
+          expect(db[:link_consumers].first[:deployment_id]).to eq(42)
+          expect(db[:link_consumers].first[:instance_group]).to eq('provider_instance_group_1')
+          expect(db[:link_consumers].first[:owner_object_name]).to eq('http_proxy_with_requires')
+          expect(db[:link_consumers].first[:owner_object_type]).to eq('Job')
         end
 
         context 'multiple instances consume same link' do
@@ -191,21 +181,12 @@ module Bosh::Director
           it 'will not create duplicate consumers' do
             expect(db[:instances].count).to eq(2)
             DBSpecHelper.migrate(migration_file)
-            expect(db[:link_consumers].count).to eq(2)
-            expected_outputs = [
-              {deployment_id: 42, link_consumer_id: 'fake-deployment.provider_instance_group_1.http_proxy_with_requires.proxied_http_endpoint', owner_object_name: 'http_proxy_with_requires', owner_object_type: 'Job', owner_object_info: expected_owner_object_info},
-              {deployment_id: 42, link_consumer_id: 'fake-deployment.provider_instance_group_1.http_proxy_with_requires.proxied_http_endpoint2', owner_object_name: 'http_proxy_with_requires', owner_object_type: 'Job', owner_object_info: expected_owner_object_info},
-            ]
+            expect(db[:link_consumers].count).to eq(1)
 
-            idx = 0
-            db[:link_consumers].order(:id).each do |consumer|
-              output = expected_outputs[idx]
-              expect(consumer[:deployment_id]).to eq(output[:deployment_id])
-              expect(consumer[:owner_object_name]).to eq(output[:owner_object_name])
-              expect(consumer[:owner_object_type]).to eq(output[:owner_object_type])
-              expect(consumer[:owner_object_info]).to eq(output[:owner_object_info].to_json)
-              idx += 1
-            end
+            expect(db[:link_consumers].first[:deployment_id]).to eq(42)
+            expect(db[:link_consumers].first[:instance_group]).to eq('provider_instance_group_1')
+            expect(db[:link_consumers].first[:owner_object_name]).to eq('http_proxy_with_requires')
+            expect(db[:link_consumers].first[:owner_object_type]).to eq('Job')
           end
         end
       end

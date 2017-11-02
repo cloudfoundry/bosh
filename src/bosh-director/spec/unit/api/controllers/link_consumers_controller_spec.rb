@@ -62,20 +62,18 @@ module Bosh::Director
         context 'and there are consumers in the database' do
           let!(:consumer_1) do
             Models::LinkConsumer.create(
-              :link_consumer_id => "#{deployment.name}.instance_group.job_name_1.link_name_1",
               :deployment => deployment,
+              :instance_group => 'instance_group',
               :owner_object_type => 'job',
               :owner_object_name => 'job_name_1',
-              :owner_object_info => 'some link content',
             )
           end
           let!(:consumer_2) do
             Models::LinkConsumer.create(
-              :link_consumer_id => "#{deployment.name}.instance_group.job_name_2.link_name_2",
               :deployment => deployment,
+              :instance_group => 'instance_group',
               :owner_object_type => 'job',
               :owner_object_name => 'job_name_2',
-              :owner_object_info => '{"data":"datavalue"}',
             )
           end
 
@@ -89,12 +87,12 @@ module Bosh::Director
 
       def generate_consumer_hash(model)
         {
-          'id' => model.link_consumer_id,
+          'id' => model.id,
           'deployment' => model.deployment.name,
+          'instance_group' => model.instance_group,
           'owner_object' => {
             'type' => model.owner_object_type,
             'name' => model.owner_object_name,
-            'info' => model.owner_object_info,
           }
         }
       end

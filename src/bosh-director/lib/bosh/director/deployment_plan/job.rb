@@ -93,7 +93,6 @@ module Bosh::Director
         present_model.logs
       end
 
-
       # return [Array]
       def model_consumed_links
         present_model.consumes.to_a.map { |l| TemplateLink.parse('consumes', l) }

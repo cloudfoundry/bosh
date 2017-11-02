@@ -148,7 +148,16 @@ module Bosh::Director
         result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
         if result.empty?
           link_provider.destroy
-          # TODO: orphaning any links refering to them.
+          # TODO: orphaning any links referring to them.
+        end
+      end
+
+      link_consumers = Bosh::Director::Models::LinkConsumer.where(deployment: @deployment_plan.model)
+      link_consumers.each do |link_consumer|
+        result = @deployment_plan.link_consumers.select{ |lp| lp.id == link_consumer.id }
+        if result.empty?
+          link_consumer.destroy
+          # TODO: deleting any links referring to them.
         end
       end
 

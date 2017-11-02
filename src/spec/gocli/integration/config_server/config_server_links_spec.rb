@@ -13,6 +13,18 @@ describe 'using director with config server and deployments having links', type:
     "/#{director_name}/#{deployment_name}/#{key}"
   end
 
+  def send_director_api_request(url_path, query, method)
+    director_url = URI(current_sandbox.director_url)
+    director_url.path = URI.escape(url_path)
+    director_url.query = URI.escape(query)
+
+    http = Net::HTTP.new(director_url.host, director_url.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+    http.ca_file = current_sandbox.certificate_path
+    http.send_request(method, director_url.request_uri, nil, {'Authorization' => config_server_helper.auth_header, 'Content-Type' => 'application/json'})
+  end
+
   let(:director_name) { current_sandbox.director_name }
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
@@ -305,21 +317,52 @@ describe 'using director with config server and deployments having links', type:
 
     let(:deployment_name) {provider_manifest['name']}
 
+    let(:expected_links_api_provider_id) {1}
+
     context 'given a successful provider deployment' do
       before do
         config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_1')
         deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
       end
 
+      it 'links api lists link provider' do
+        response = send_director_api_request("/link_providers", "deployment=#{deployment_name}", 'GET')
+        expect(response).not_to eq(nil)
+        response_body = JSON.parse(response.read_body)
+        expect(response_body.count).to eq(1)
+        expect(response_body[0]).to_not eq({}.to_json)
+        expect(response_body[0]['id']).to eq(expected_links_api_provider_id)
+        expect(response_body[0]['deployment']).to eq(deployment_name)
+        expect(response_body[0]['link_provider_definition']).to eq({"type" => 'http_endpoint', "name" => 'http_endpoint'})
+        expect(response_body[0]['instance_group']).to eq('provider_deployment_node')
+        expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_server_with_provides'})
+        expect(response_body[0]['content']).to_not eq({}.to_json)
+        expect(response_body[0]['shared']).to eq(true)
+      end
+
       context 'when deploying the consumer deployment' do
+        let(:expected_consumer_id) {1}
+
         before do
-          deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+          deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
         end
 
         it 'should successfully use the shared links' do
           link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
           template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
           expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_1')
+        end
+
+        it 'links api lists link consumer' do
+          response = send_director_api_request("/link_consumers", "deployment=#{consumer_manifest['name']}", 'GET')
+          expect(response).not_to eq(nil)
+          response_body = JSON.parse(response.read_body)
+          expect(response_body.count).to eq(1)
+          expect(response_body[0]).to_not eq({}.to_json)
+          expect(response_body[0]['id']).to eq(expected_consumer_id)
+          expect(response_body[0]['deployment']).to eq(consumer_manifest['name'])
+          expect(response_body[0]['instance_group']).to eq('consumer_deployment_node')
+          expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_proxy_with_requires'})
         end
 
         context 'when updating config server values' do
@@ -330,6 +373,21 @@ describe 'using director with config server and deployments having links', type:
           context 'when re-deploying the provider deployment' do
             before do
               deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+            end
+
+            it 'links api still lists the same provider' do
+              response = send_director_api_request("/link_providers", "deployment=#{deployment_name}", 'GET')
+              expect(response).not_to eq(nil)
+              response_body = JSON.parse(response.read_body)
+              expect(response_body.count).to eq(1)
+              expect(response_body[0]).to_not eq({}.to_json)
+              expect(response_body[0]['id']).to eq(expected_links_api_provider_id)
+              expect(response_body[0]['deployment']).to eq(deployment_name)
+              expect(response_body[0]['link_provider_definition']).to eq({"type" => 'http_endpoint', "name" => 'http_endpoint'})
+              expect(response_body[0]['instance_group']).to eq('provider_deployment_node')
+              expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_server_with_provides'})
+              expect(response_body[0]['content']).to_not eq({}.to_json)
+              expect(response_body[0]['shared']).to eq(true)
             end
 
             context 'and then updating config server values one more time' do
@@ -346,6 +404,18 @@ describe 'using director with config server and deployments having links', type:
                   link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
                   template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
                   expect(template['links']['properties']['fibonacci']).to eq('fibonacci_value_2')
+                end
+
+                it 'links api still lists the same consumer' do
+                  response = send_director_api_request("/link_consumers", "deployment=#{consumer_manifest['name']}", 'GET')
+                  expect(response).not_to eq(nil)
+                  response_body = JSON.parse(response.read_body)
+                  expect(response_body.count).to eq(expected_consumer_id)
+                  expect(response_body[0]).to_not eq({}.to_json)
+                  expect(response_body[0]['id']).to eq(expected_consumer_id)
+                  expect(response_body[0]['deployment']).to eq(consumer_manifest['name'])
+                  expect(response_body[0]['instance_group']).to eq('consumer_deployment_node')
+                  expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_proxy_with_requires'})
                 end
               end
 
