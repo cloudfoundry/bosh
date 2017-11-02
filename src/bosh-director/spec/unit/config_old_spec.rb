@@ -108,6 +108,13 @@ describe Bosh::Director::Config do
   end
 
   context 'database' do
+    let(:base_dir) { Dir.mktmpdir }
+    let(:db_filepath_option_dir) { File.join(base_dir, 'db_config') }
+
+    after(:each) do
+      FileUtils.rm_rf(base_dir)
+    end
+
     let(:database_options) do
       {
           'adapter' => 'sqlite',
@@ -128,7 +135,7 @@ describe Bosh::Director::Config do
     end
 
     it 'configures a new database connection' do
-      expect(described_class.configure_db(database_options)).to eq database_connection
+      expect(described_class.configure_db(database_options, db_filepath_option_dir)).to eq database_connection
     end
 
     it 'merges connection options together with the rest of the database options' do
@@ -137,19 +144,46 @@ describe Bosh::Director::Config do
           'max_connections' => 32
       }
       expect(Sequel).to receive(:connect).with(expected_options).and_return(database_connection)
-      described_class.configure_db(database_options)
+      described_class.configure_db(database_options, db_filepath_option_dir)
     end
 
     it 'ignores empty and nil options' do
       expect(Sequel).to receive(:connect).with('baz' => 'baz').and_return(database_connection)
-      described_class.configure_db('foo' => nil, 'bar' => '', 'baz' => 'baz')
+      described_class.configure_db({'foo' => nil, 'bar' => '', 'baz' => 'baz'}, db_filepath_option_dir)
+    end
+
+    context 'when connection options requiring paths to files are passed' do
+      let(:database_options) do
+        {
+            'adapter' => 'sqlite',
+            'connection_options' => {
+                'max_connections' => 32,
+                'sslca' => 'an example certificate',
+            }
+        }
+      end
+
+      it 'writes the contents to disk and passes the path to the db client' do
+        expected_path = File.join(db_filepath_option_dir, 'sslca')
+        expected_options = {
+          'adapter' => 'sqlite',
+          'max_connections' => 32,
+          'sslca' => expected_path,
+        }
+
+        expect(Sequel).to receive(:connect).with(expected_options).and_return(database_connection)
+
+        described_class.configure_db(database_options, db_filepath_option_dir)
+
+        expect(File.read(expected_path)).to eq('an example certificate')
+      end
     end
 
     context 'when logger is available' do
       it 'sets the database logger' do
         expect(database_connection).to receive(:logger=)
         expect(database_connection).to receive(:sql_log_level=)
-        described_class.configure_db(database_options)
+        described_class.configure_db(database_options, db_filepath_option_dir)
       end
     end
 
@@ -161,14 +195,14 @@ describe Bosh::Director::Config do
       it 'does not sets the database logger' do
         expect(database_connection).not_to receive(:logger=)
         expect(database_connection).not_to receive(:sql_log_level=)
-        described_class.configure_db(database_options)
+        described_class.configure_db(database_options, db_filepath_option_dir)
       end
     end
 
     context 'database backup' do
       it 'configured a database backup adapter' do
-        described_class.configure_db(database_options)
-        expect(described_class.configure_db(database_options)).to eq database_connection
+        described_class.configure_db(database_options, db_filepath_option_dir)
+        expect(described_class.configure_db(database_options, db_filepath_option_dir)).to eq database_connection
       end
     end
   end

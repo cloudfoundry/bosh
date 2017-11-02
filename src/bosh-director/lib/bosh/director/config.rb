@@ -146,10 +146,10 @@ module Bosh::Director
         @compiled_package_cache = nil
 
         @db_config = config['db']
-        @db = configure_db(config['db'])
+        @db = configure_db(config['db'], File.join(@base_dir, 'db_config'))
         @dns = config['dns']
         if @dns && @dns['db']
-          @dns_db = configure_db(@dns['db'])
+          @dns_db = configure_db(@dns['db'], File.join(@base_dir, 'dns_db_config'))
           if @dns_db
             # Load these constants early.
             # These constants are not 'require'd, they are 'autoload'ed
@@ -262,11 +262,13 @@ module Bosh::Director
         `#{revision_command}`.strip
       end
 
-      def configure_db(db_config)
+      def configure_db(db_config, db_filepath_option_dir)
         connection_config = db_config.dup
         connection_options = connection_config.delete('connection_options') {{}}
         connection_config.delete_if { |_, v| v.to_s.empty? }
         connection_config = connection_config.merge(connection_options)
+
+        connection_config = transform_db_filepath_options(connection_config, db_filepath_option_dir)
 
         Sequel.default_timezone = :utc
         db = Sequel.connect(connection_config)
@@ -283,6 +285,23 @@ module Bosh::Director
         end
 
         db
+      end
+
+      # Sequel expects certain options to be passed in as paths to files.
+      # This transforms file contents to file paths
+      def transform_db_filepath_options(connection_config, db_filepath_option_dir)
+        known_filepath_options = %w(sslcert sslca sslkey sslrootcert)
+
+        (connection_config.keys & known_filepath_options).each do |file_option|
+          FileUtils.mkdir_p(db_filepath_option_dir)
+
+          contents = connection_config[file_option]
+          path = File.join(db_filepath_option_dir, file_option)
+          File.write(path, contents)
+          connection_config[file_option] = path
+        end
+
+        connection_config
       end
 
       def compiled_package_cache_blobstore
@@ -439,7 +458,7 @@ module Bosh::Director
     end
 
     def db
-      Config.configure_db(hash['db'])
+      Config.configure_db(hash['db'], File.join(hash['dir'], 'db_config'))
     end
 
     def blobstore_config
