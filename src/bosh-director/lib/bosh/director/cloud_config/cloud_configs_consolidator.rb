@@ -19,7 +19,13 @@ module Bosh::Director
       end
 
       def have_cloud_configs?
-        !@cloud_configs.empty?
+        return false if @cloud_configs.empty?
+
+        @cloud_configs.each do |cc|
+          return true unless cc.raw_manifest.empty?
+        end
+
+        return false
       end
 
       def interpolate_manifest_for_deployment(deployment_name)
@@ -34,7 +40,7 @@ module Bosh::Director
       private
 
       def merge_manifests
-        return {} if @cloud_configs.empty?
+        return {} unless have_cloud_configs?
 
         result_hash = {}
         keys = ['azs', 'vm_types', 'disk_types', 'networks', 'vm_extensions']
