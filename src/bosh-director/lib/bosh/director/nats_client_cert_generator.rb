@@ -48,7 +48,7 @@ module Bosh::Director
       cert.add_extension(ef.create_extension('extendedKeyUsage', 'clientAuth', true))
       cert.sign(@root_key, OpenSSL::Digest::SHA256.new)
 
-      {:cert => cert, :key => key, :ca_key => @root_key.public_key}
+      {:cert => cert, :key => key}
     end
 
     private

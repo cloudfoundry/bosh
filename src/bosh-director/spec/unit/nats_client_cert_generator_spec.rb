@@ -12,7 +12,7 @@ module Bosh
       shared_examples_for 'agents nats certificates generation' do
         it 'generates a valid certificate signed by the root ca' do
           result = subject.generate_nats_client_certificate 'test.123'
-          expect(result[:cert].verify result[:ca_key]).to be_truthy
+          expect(result[:cert].verify(root_public_key)).to be_truthy
         end
 
         it 'generates a valid certificate for client auth usage' do
@@ -116,6 +116,11 @@ module Bosh
       end
 
       context 'when the CA used to sign the agent NATS certificates is a ROOT CA' do
+        let(:root_public_key) do
+          priv_key = OpenSSL::PKey::RSA.new(File.read(asset('nats/nats_ca_private_key.pem')))
+          priv_key.public_key
+        end
+
         before do
           allow(Config).to receive(:nats_client_ca_certificate_path).and_return(asset('nats/nats_ca_certificate.pem'))
           allow(Config).to receive(:nats_client_ca_private_key_path).and_return(asset('nats/nats_ca_private_key.pem'))
@@ -126,6 +131,11 @@ module Bosh
 
 
       context 'when the CA used to sign the agent certificates is an Intermediate CA' do
+        let(:root_public_key) do
+          priv_key = OpenSSL::PKey::RSA.new(File.read(asset('nats/one_off_intermediate_certificate_private_key.pem')))
+          priv_key.public_key
+        end
+
         before do
           allow(Config).to receive(:nats_client_ca_certificate_path).and_return(asset('nats/one_off_intermediate_certificate.pem'))
           allow(Config).to receive(:nats_client_ca_private_key_path).and_return(asset('nats/one_off_intermediate_certificate_private_key.pem'))
