@@ -13,6 +13,7 @@ module Bosh::Director
           {'name' => 'fake-process-1', 'state' => 'running'},
           {'name' => 'fake-process-2', 'state' => 'failing'},
         ],
+        'cloud_properties' => {},
         'vitals' => {
           'load' => ['1', '5', '15'],
           'cpu' => {'user' => 'u', 'sys' => 's', 'wait' => 'w'},
