@@ -673,11 +673,11 @@ jobs:
     serial: true
     plan:
       - aggregate:
-        - get: bosh-src-master
-          resource: bosh-src
+        - get: bosh-src
           passed:
             - bats-centos
             - bats-ubuntu
+        - get: bosh-master
         - get: bosh-dev-release
           resource: bosh-candidate-release-tarballs
           passed:
@@ -686,20 +686,23 @@ jobs:
         - get: bosh-cli
         - get: candidate-version
           params:
-            bump: major
+            bump: minor
       - task: promote-release
-        file: bosh-src-master/ci/tasks/finalize-bosh-release.yml
+        file: bosh-src/ci/tasks/finalize-bosh-release.yml
         params:
           BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
           BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
       - put: candidate-version
         params:
-          file: bumped-candidate-version/number
+          file: bumped-candidate-version/version
       - put: bosh-master
         params:
-          repository: bosh-src-with-final
-          tag: /tmp/build/put/bosh-src-with-final-tag/tag-name
-          annotate: /tmp/build/put/bosh-src-with-final-tag/annotate-msg
+          repository: bosh-master-with-final
+          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
+          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
+      - put: bosh-src
+        params:
+          repository: bosh-src-with-bumped-version
 
 resources:
   - name: bosh-src
