@@ -562,7 +562,7 @@ jobs:
     - get: bosh-cli
     - get: candidate-version
       params:
-        bump: major
+        bump: minor
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
     - put: bosh-candidate-release-tarballs
@@ -709,24 +709,25 @@ resources:
     type: git
     source:
       uri: ((bosh_src_url))
-      branch: master
+      branch: 264.x
       private_key: ((github_deployment_key))
 
   - name: candidate-version
     type: semver
     source:
-      bucket: ((candidate_release_bucket))
-      key: version
-      access_key_id: ((candidate_release_access_key_id))
-      secret_access_key: ((candidate_release_secret_access_key))
+      bucket: {{candidate_release_bucket}}
+      key: 264.x/version
+      initial_version: 264.0.0
+      access_key_id: {{candidate_release_access_key_id}}
+      secret_access_key: {{candidate_release_secret_access_key}}
 
   - name: bosh-candidate-release-tarballs
     type: s3
     source:
-      bucket: ((candidate_release_bucket))
-      access_key_id: ((candidate_release_access_key_id))
-      secret_access_key: ((candidate_release_secret_access_key))
-      versioned_file: "bosh-dev-release.tgz"
+      bucket: {{candidate_release_bucket}}
+      access_key_id: {{candidate_release_access_key_id}}
+      secret_access_key: {{candidate_release_secret_access_key}}
+      versioned_file: "264.x/bosh-dev-release.tgz"
 
   - name: davcli
     type: s3
