@@ -55,7 +55,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sequel',           '~>4.49.0'
   spec.add_dependency 'sinatra',          '~>1.4.2'
   spec.add_dependency 'sys-filesystem',   '~>1.1.0'
-  spec.add_dependency 'thin',             '~>1.7.0'
+  spec.add_dependency 'puma',             '~>3.10'
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'

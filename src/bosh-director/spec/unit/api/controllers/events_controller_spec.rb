@@ -8,7 +8,8 @@ module Bosh::Director
     describe Controllers::EventsController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(config) }
+      subject(:app) { linted_rack_app(described_class.new(config)) }
+
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:timestamp) { Time.now }
 
@@ -502,6 +503,8 @@ module Bosh::Director
 
           it 'stores event' do
             expect { perform }.not_to raise_exception
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('')
             event = Models::Event.first
             expect(event.id).to eq(1)
             expect(event.parent_id).to eq(nil)

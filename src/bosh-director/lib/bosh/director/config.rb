@@ -280,6 +280,7 @@ module Bosh::Director
         if logger
           db.logger = logger
           db.sql_log_level = :debug
+          db.log_connection_info = true
         end
 
         db

@@ -12,7 +12,7 @@ module Bosh::Director
 
       let(:blobstore) { double('client') }
       let(:resource_manager) { ResourceManager.new(blobstore) }
-      subject(:app) { described_class.new(config, resource_manager) }
+      subject(:app) { linted_rack_app(described_class.new(config, resource_manager)) }
 
       let(:config) do
         config = SpecHelper.spec_get_director_config
