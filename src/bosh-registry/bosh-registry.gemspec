@@ -18,13 +18,13 @@ Gem::Specification.new do |spec|
   spec.bindir       = 'bin'
   spec.executables  = %w(bosh-registry bosh-registry-migrate)
 
-  spec.add_dependency 'sequel',    '~>4.36.0'
-  spec.add_dependency 'sinatra',   '~>1.4.2'
-  spec.add_dependency 'thin',      '~>1.7.0'
-  spec.add_dependency 'fog-openstack'
-  spec.add_dependency 'aws-sdk'
-  spec.add_dependency 'fog-core',   '~>1.40.1'
-  spec.add_dependency 'builder',    '~>3.1.4'
-  spec.add_dependency 'excon',      '~>0.49.0'
+  spec.add_dependency 'sequel',        '~>4.49.0'
+  spec.add_dependency 'sinatra',       '~>1.4.2'
+  spec.add_dependency 'thin',          '~>1.7.0'
+  spec.add_dependency 'fog-openstack', '~>0.1.21'
+  spec.add_dependency 'aws-sdk',       '~>2.10' # Locking to ~>2.10 versions for now. Not 100% sure on API changes for >3.0
+  spec.add_dependency 'fog-core',      '~>1.40'
+  spec.add_dependency 'builder',       '~>3.1.4'
+  spec.add_dependency 'excon',         '~>0.49.0'
   spec.add_dependency 'bosh_cpi'
 end

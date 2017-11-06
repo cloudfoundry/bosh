@@ -42,7 +42,7 @@ PATH
       rake (~> 10.0)
       rufus-scheduler (~> 2.0.18)
       semi_semantic (~> 1.2.0)
-      sequel (~> 4.36.0)
+      sequel (~> 4.49.0)
       sinatra (~> 1.4.2)
       sys-filesystem (~> 1.1.0)
       talentbox-delayed_job_sequel (~> 4.1.0)
@@ -68,13 +68,13 @@ PATH
   remote: bosh-registry
   specs:
     bosh-registry (0.0.0)
-      aws-sdk
+      aws-sdk (~> 2.10)
       bosh_cpi
       builder (~> 3.1.4)
       excon (~> 0.49.0)
-      fog-core (~> 1.40.1)
-      fog-openstack
-      sequel (~> 4.36.0)
+      fog-core (~> 1.40)
+      fog-openstack (~> 0.1.21)
+      sequel (~> 4.49.0)
       sinatra (~> 1.4.2)
       thin (~> 1.7.0)
 
@@ -146,7 +146,7 @@ GEM
     fog-json (1.0.2)
       fog-core (~> 1.0)
       multi_json (~> 1.10)
-    fog-openstack (0.1.21)
+    fog-openstack (0.1.22)
       fog-core (>= 1.40)
       fog-json (>= 1.0)
       ipaddress (>= 0.8)
@@ -219,7 +219,7 @@ GEM
       tzinfo (>= 0.3.22)
     safe_yaml (1.0.4)
     semi_semantic (1.2.0)
-    sequel (4.36.0)
+    sequel (4.49.0)
     sinatra (1.4.8)
       rack (~> 1.5)
       rack-protection (~> 1.4)
