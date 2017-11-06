@@ -236,7 +236,7 @@ properties:
     description: Name of the director database
     default: bosh
   director.db.connection_options:
-    description: Additional options for the database
+    description: Additional options for the database. Note that 'sslcert', 'sslca', 'sslkey' and 'sslrootcert' can be passed as strings and will be converted to files before being passed to the database client
     default:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
@@ -265,7 +265,7 @@ properties:
     description: Name of the powerdns database
     default: bosh
   dns.db.connection_options:
-    description: Additional options for the powerdns database
+    description: Additional options for the powerdns database. Note that 'sslcert', 'sslca', 'sslkey' and 'sslrootcert' will be converted to files before being passed to the database client
     default:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error

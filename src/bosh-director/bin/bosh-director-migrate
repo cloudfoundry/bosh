@@ -25,7 +25,8 @@ unless config['db'] && config['db']['database']
   abort ('Director database config missing from config file')
 end
 
-db = Bosh::Director::Config.configure_db(config['db'])
+db_filepath_option_dir = File.join(config['dir'], 'db_config')
+db = Bosh::Director::Config.configure_db(config['db'], db_filepath_option_dir)
 
 def migrate(database, schema_table, dir, target = nil)
   options = {}
