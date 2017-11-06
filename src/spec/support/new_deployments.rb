@@ -114,6 +114,11 @@ module Bosh::Spec
         instance_group_hash['properties'] = opts[:properties]
       end
 
+      if opts.has_key?(:vm_resources)
+        instance_group_hash.delete(:vm_type)
+        instance_group_hash['vm_resources'] = opts[:vm_resources]
+      end
+
       instance_group_hash
     end
 
@@ -177,6 +182,16 @@ module Bosh::Spec
     def self.simple_manifest_with_instance_groups
       test_release_manifest_with_stemcell.merge({
         'instance_groups' => [simple_instance_group]
+      })
+    end
+
+    def self.simple_manifest_with_instance_groups_and_vm_resources
+      test_release_manifest_with_stemcell.merge({
+        'instance_groups' => [simple_instance_group({
+          'cpu' => 2,
+          'ram' => 1024,
+          'ephemeral_disk_size' => 10
+        })]
       })
     end
 
