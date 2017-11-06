@@ -201,7 +201,7 @@ module Bosh::Director
           .map do |deployment|
           cloud_config = if deployment.cloud_configs.empty?
                            'none'
-                         elsif deployment.cloud_configs.map(&:id) == Models::Config.latest_set('cloud').map(&:id)
+                         elsif deployment.cloud_configs.map(&:id).sort == Models::Config.latest_set('cloud').map(&:id).sort
                            'latest'
                          else
                            'outdated'
@@ -347,9 +347,6 @@ module Bosh::Director
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
         deployment = validate_manifest_yml(request.body.read, nil)
-        unless deployment.kind_of?(Hash)
-          raise ValidationInvalidType, 'Deployment manifest must be a hash'
-        end
 
         unless deployment['name']
           raise ValidationMissingField, "Deployment manifest must have a 'name' key"

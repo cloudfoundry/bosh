@@ -15,15 +15,15 @@ describe 'nats server', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] = [simple_job]
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] = [simple_instance_group]
     manifest_hash
   end
 
-  let(:simple_job) do
+  let(:simple_instance_group) do
     {
       'name' => 'our_instance_group',
-      'templates' => [
+      'jobs' => [
         {
           'name' => 'job_1_with_many_properties',
           'properties' => job_properties,
@@ -60,7 +60,7 @@ describe 'nats server', type: :integration do
 
     context 'and connecting agent is updated' do
       it 'should deploy successfully' do
-        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, return_exit_code: true)
+        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, return_exit_code: true)
 
         expect(exit_code).to eq(0)
         expect(output).to include('Succeeded')
@@ -80,7 +80,7 @@ describe 'nats server', type: :integration do
 
     context 'and connecting agent is updated' do
       it 'should deploy successfully' do
-        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, return_exit_code: true)
+        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, return_exit_code: true)
 
         expect(exit_code).to eq(0)
         expect(output).to include('Succeeded')

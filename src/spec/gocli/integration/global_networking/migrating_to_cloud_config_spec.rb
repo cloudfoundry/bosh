@@ -15,21 +15,21 @@ describe 'migrating to cloud config', type: :integration do
   end
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['instances'] = 1
     manifest_hash
   end
 
   let(:second_deployment_manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['instances'] = 1
     manifest_hash['name'] = 'second_deployment'
     manifest_hash
   end
 
   def deploy_with_ip(manifest, ip, options={})
-    manifest['jobs'].first['networks'].first['static_ips'] = [ip]
-    manifest['jobs'].first['instances'] = 1
+    manifest['instance_groups'].first['networks'].first['static_ips'] = [ip]
+    manifest['instance_groups'].first['instances'] = 1
     options.merge!(manifest_hash: manifest)
     deploy_simple_manifest(options)
   end
@@ -84,7 +84,7 @@ describe 'migrating to cloud config', type: :integration do
         cloud_config_hash['compilation']['az'] = 'zone_1'
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        simple_manifest['jobs'].first['azs'] = ['zone_1']
+        simple_manifest['instance_groups'].first['azs'] = ['zone_1']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         expect(director.instances.map(&:ips).flatten).to eq(['192.168.1.3'])

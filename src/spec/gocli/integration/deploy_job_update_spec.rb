@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 describe 'deploy job update', type: :integration do
   with_reset_sandbox_before_each
   let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
-  let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
+  let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
 
   it 'updates a job with multiple instances in parallel and obeys max_in_flight' do
     manifest_hash['update']['canaries'] = 0
@@ -34,7 +34,7 @@ describe 'deploy job update', type: :integration do
     expect(updating_job_events[4]['state']).to eq('finished')
     expect(updating_job_events[5]['state']).to eq('finished')
 
-    manifest_hash['jobs'][0]['instances'] = 1
+    manifest_hash['instance_groups'][0]['instances'] = 1
     manifest_hash['update']['max_in_flight'] = '40%'
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -60,7 +60,7 @@ describe 'deploy job update', type: :integration do
       upload_runtime_config(runtime_config_hash: runtime_config_hash)
 
       manifest_hash['update']['canary_watch_time'] = 0
-      manifest_hash['jobs'][0]['instances'] = 2
+      manifest_hash['instance_groups'][0]['instances'] = 2
 
       deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: true, redact_diff: true)
 
@@ -140,9 +140,9 @@ describe 'deploy job update', type: :integration do
     cloud_config_hash['vm_types'][0]['size'] = 2
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['update']['canary_watch_time'] = 0
-    manifest_hash['jobs'][0]['instances'] = 2
+    manifest_hash['instance_groups'][0]['instances'] = 2
 
     deploy_output, exit_code = deploy(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)

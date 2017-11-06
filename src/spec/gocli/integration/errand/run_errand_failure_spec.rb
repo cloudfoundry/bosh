@@ -11,9 +11,9 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     with_tmp_dir_before_all
 
     before do
-      jobs = manifest_hash['jobs']
+      instance_groups = manifest_hash['instance_groups']
 
-      jobs.find { |job| job['name'] == 'fake-errand-name'}['properties'] = {
+      instance_groups.find { |instance_group| instance_group['name'] == 'fake-errand-name'}['jobs'].first['properties'] = {
         'errand1' => {
           'exit_code' => 23, # non-0 (and non-1) exit code
           'stdout'    => '', # No output
@@ -60,7 +60,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
       manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
 
       # Sleep so we have time to cancel it
-      manifest_hash['jobs'].last['properties']['errand1']['blocking_errand'] = true
+      manifest_hash['instance_groups'].last['jobs'].last['properties']['errand1']['blocking_errand'] = true
 
       manifest_hash
     end
@@ -101,10 +101,10 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
       # Mark foobar as an errand even though it does not have bin/run
-      manifest_hash['jobs'].first['lifecycle'] = 'errand'
+      manifest_hash['instance_groups'].first['lifecycle'] = 'errand'
 
       manifest_hash
     end
@@ -130,7 +130,7 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     it 'returns 1 as exit code and mentions not found errand' do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
 
       output, exit_code = bosh_runner.run('run-errand unknown-errand-name',
         {failure_expected: true, return_exit_code: true, deployment_name: deployment_name}

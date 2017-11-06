@@ -17,5 +17,10 @@ databases:
 <% end %>
   backup_properties: <%= link('backup_db').p('foo') %>
 
-i_eat_links:
+db_az_link:
   address: <%= link('db').address(azs: ['z1']) %>
+
+optional_backup_link:
+<% if_link('backup_db') do |link| %>
+  - address: <%= link.address %>
+<% end %>

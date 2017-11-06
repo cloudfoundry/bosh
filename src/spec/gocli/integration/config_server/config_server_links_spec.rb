@@ -32,19 +32,11 @@ describe 'using director with config server and deployments having links', type:
     cloud_config_hash
   end
 
-  let(:job_properties) do
-    {
-      'gargamel' => {
-        'color' => '((my_placeholder))'
-      }
-    }
-  end
-
   let(:provider_job_name) { 'http_server_with_provides' }
   let(:my_instance_group) do
-    job_spec = Bosh::Spec::NewDeployments.simple_job(
+    instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'my_instance_group',
-      templates: [
+      jobs: [
         {
           'name' => provider_job_name,
           'properties' => {'name_space' => {'fibonacci' => '((fibonacci_placeholder))'}},
@@ -53,12 +45,12 @@ describe 'using director with config server and deployments having links', type:
       ],
       instances: 1
     )
-    job_spec['azs'] = ['z1']
-    job_spec
+    instance_group_spec['azs'] = ['z1']
+    instance_group_spec
   end
   let(:manifest) do
     manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-    manifest['jobs'] = [my_instance_group]
+    manifest['instance_groups'] = [my_instance_group]
     manifest['properties'] = {'listen_port' => 9999}
     manifest
   end
@@ -102,9 +94,9 @@ describe 'using director with config server and deployments having links', type:
 
     context "when the consumer's job render fails on a subsequent deploy" do
       let(:consumer_instance_group) do
-        Bosh::Spec::NewDeployments.simple_job(
+        Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'consumer_instance_group',
-          templates: [
+          jobs: [
             {
               'name' => 'http_proxy_with_requires',
             },
@@ -115,9 +107,9 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:provider_instance_group) do
-        Bosh::Spec::NewDeployments.simple_job(
+        Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group',
-          templates: [
+          jobs: [
             {
               'name' => provider_job_name,
               'properties' => {'name_space' => {'fibonacci' => '((fibonacci_placeholder))'}},
@@ -129,7 +121,7 @@ describe 'using director with config server and deployments having links', type:
       end
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+        manifest['instance_groups'] = [provider_instance_group, consumer_instance_group]
         manifest
       end
 
@@ -175,10 +167,10 @@ describe 'using director with config server and deployments having links', type:
     end
 
     context 'when manual links are involved' do
-      let (:job_with_manual_consumes_link) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let (:instance_group_with_manual_consumes_link) do
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'property_job',
-          templates: [{
+          jobs: [{
                         'name' => 'consumer',
                         'consumes' => {
                           'provider' => {
@@ -192,12 +184,12 @@ describe 'using director with config server and deployments having links', type:
           static_ips: ['192.168.1.10'],
           properties: {}
         )
-        job_spec['azs'] = ['z1']
-        job_spec['networks'] << {
+        instance_group_spec['azs'] = ['z1']
+        instance_group_spec['networks'] << {
           'name' => 'dynamic-network',
           'default' => ['dns', 'gateway']
         }
-        job_spec
+        instance_group_spec
       end
 
       let(:deployment_name) {manifest['name']}
@@ -207,7 +199,7 @@ describe 'using director with config server and deployments having links', type:
         config_server_helper.put_value(prepend_namespace('b_placeholder'), 'b_value')
         config_server_helper.put_value(prepend_namespace('c_placeholder'), 'c_value')
 
-        manifest['jobs'] = [job_with_manual_consumes_link]
+        manifest['instance_groups'] = [instance_group_with_manual_consumes_link]
       end
 
       it 'resolves the properties defined inside the links section of the deployment manifest' do
@@ -243,14 +235,14 @@ describe 'using director with config server and deployments having links', type:
     let(:provider_manifest) do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['name'] = 'provider_deployment_name'
-      manifest['jobs'] = [provider_deployment_job_spec]
+      manifest['instance_groups'] = [provider_deployment_instance_group_spec]
       manifest
     end
 
-    let(:provider_deployment_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:provider_deployment_instance_group_spec) do
+      instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'provider_deployment_node',
-        templates: [
+        jobs: [
           {
             'name' => provider_job_name,
             'properties' => {
@@ -270,21 +262,21 @@ describe 'using director with config server and deployments having links', type:
         instances: 1,
         static_ips: ['192.168.1.10'],
       )
-      job_spec['azs'] = ['z1']
-      job_spec
+      instance_group_spec['azs'] = ['z1']
+      instance_group_spec
     end
 
     let(:consumer_manifest) do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['name'] = 'consumer_deployment_name'
-      manifest['jobs'] = [consumer_deployment_job_spec]
+      manifest['instance_groups'] = [consumer_deployment_instance_group_spec]
       manifest
     end
 
-    let(:consumer_deployment_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:consumer_deployment_instance_group_spec) do
+      instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'consumer_deployment_node',
-        templates: [
+        jobs: [
           {
             'name' => 'http_proxy_with_requires',
             'release' => 'bosh-release',
@@ -299,8 +291,8 @@ describe 'using director with config server and deployments having links', type:
         instances: 1,
         static_ips: ['192.168.1.11']
       )
-      job_spec['azs'] = ['z1']
-      job_spec
+      instance_group_spec['azs'] = ['z1']
+      instance_group_spec
     end
 
     let(:deployment_name) {provider_manifest['name']}
@@ -420,10 +412,10 @@ describe 'using director with config server and deployments having links', type:
         }
       end
 
-      let(:consumer_deployment_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:consumer_deployment_instance_group_spec) do
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'consumer_deployment_node',
-          templates: [
+          jobs: [
             {
               'name' => 'provider',
               'release' => 'bosh-release'
@@ -432,8 +424,8 @@ describe 'using director with config server and deployments having links', type:
           instances: 1,
           static_ips: ['192.168.1.11']
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        instance_group_spec['azs'] = ['z1']
+        instance_group_spec
       end
 
       before do
@@ -454,14 +446,14 @@ describe 'using director with config server and deployments having links', type:
     context 'handling of absolute variables being defined in the consumer deployment and provider deployment' do
       context 'given provider deployment providing a property with value as an absolute variable' do
         before do
-          provider_deployment_job_spec['templates'][0]['properties']['name_space']['fibonacci'] = '((/fibonacci_variable))'
+          provider_deployment_instance_group_spec['jobs'][0]['properties']['name_space']['fibonacci'] = '((/fibonacci_variable))'
           config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_1')
           deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
         end
 
         context 'given a consumer deployment which defines a property value with same absolute variable' do
           before do
-            consumer_deployment_job_spec['templates'][0]['properties'] = {
+            consumer_deployment_instance_group_spec['jobs'][0]['properties'] = {
               'http_proxy_with_requires' => {
                 'listen_port' => '((/fibonacci_variable))'
               }
@@ -504,10 +496,10 @@ describe 'using director with config server and deployments having links', type:
     end
 
     context 'given a successful provider deployment with ' do
-      let(:provider_deployment_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:provider_deployment_instance_group_spec) do
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_deployment_node',
-          templates: [
+          jobs: [
             {
               'name' => 'database',
               'properties' => {
@@ -525,14 +517,14 @@ describe 'using director with config server and deployments having links', type:
           instances: 1,
           static_ips: ['192.168.1.10'],
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        instance_group_spec['azs'] = ['z1']
+        instance_group_spec
       end
 
-      let(:consumer_deployment_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:consumer_deployment_instance_group_spec) do
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'consumer_deployment_node',
-          templates: [
+          jobs: [
             {
               'name' => 'errand_with_links',
               'release' => 'bosh-release',
@@ -551,9 +543,9 @@ describe 'using director with config server and deployments having links', type:
           instances: 1,
           static_ips: ['192.168.1.11']
         )
-        job_spec['azs'] = ['z1']
-        job_spec['lifecycle'] = 'errand'
-        job_spec
+        instance_group_spec['azs'] = ['z1']
+        instance_group_spec['lifecycle'] = 'errand'
+        instance_group_spec
       end
 
       it 'replaces variables in properties from a cross deployment link' do

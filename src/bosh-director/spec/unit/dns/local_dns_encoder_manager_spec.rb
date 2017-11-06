@@ -82,7 +82,7 @@ module Bosh::Director
           default_network: 'my-network',
           deployment_name: 'a-deployment',
           root_domain: 'super-bosh'
-        )).to eq 'q-n1s0.g-1.super-bosh'
+        )).to eq 'q-n1s0.q-g1.super-bosh'
       end
     end
 
@@ -159,7 +159,7 @@ module Bosh::Director
           deployment_name: 'new-deployment',
           default_network: 'my-network',
           root_domain: 'sub.bosh'
-        )).to eq 'q-n1s0.g-2.sub.bosh'
+        )).to eq 'q-n1s0.q-g2.sub.bosh'
       end
     end
   end

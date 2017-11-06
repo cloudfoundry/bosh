@@ -4,10 +4,10 @@ describe 'stop command', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] << {
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] << {
       'name' => 'another-job',
-      'template' => 'foobar',
+      'jobs' => [{'name' => 'foobar'}],
       'vm_type' => 'a',
       'instances' => 1,
       'networks' => [{'name' => 'a'}],
@@ -134,7 +134,7 @@ describe 'stop command', type: :integration do
 
   describe 'hard-stopping a job with persistent disk, followed by a re-deploy' do
     before do
-      manifest_hash['jobs'].first['persistent_disk'] = 1024
+      manifest_hash['instance_groups'].first['persistent_disk'] = 1024
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     end
 

@@ -10,17 +10,17 @@ describe 'networks spanning multiple azs', type: :integration do
   end
 
   let(:manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
-    job = manifest_hash['jobs'].first
-    job['networks'] = [
+    instance_group = manifest_hash['instance_groups'].first
+    instance_group['networks'] = [
       {
         'name' => 'a',
         'default' => ['dns', 'gateway']
       },
     ]
-    job['instances'] = 2
-    job['azs'] = ['my-az', 'my-az2']
+    instance_group['instances'] = 2
+    instance_group['azs'] = ['my-az', 'my-az2']
     manifest_hash
   end
 

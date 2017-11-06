@@ -8,7 +8,7 @@ describe 'variable generation with config server', type: :integration do
   end
 
   let(:manifest_hash) do
-    Bosh::Spec::NewDeployments.test_release_manifest.merge(
+    Bosh::Spec::NewDeployments.manifest_with_release.merge(
       {
         'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'our_instance_group',

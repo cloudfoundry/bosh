@@ -94,6 +94,10 @@ module Bosh::Spec
       parse_table_with_ips(@runner.run('vms --vitals', options))
     end
 
+    def vms_cloud_properties
+      parse_table(@runner.run('vms --cloud-properties', { json: true }))
+    end
+
     def instances_vitals(options = {})
       options = add_defaults(options)
       parse_table(@runner.run('instances --vitals', options))

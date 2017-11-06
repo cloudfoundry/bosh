@@ -20,8 +20,8 @@ describe 'dynamic networks', type: :integration do
   end
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['instances'] = 1
 
     manifest_hash
   end

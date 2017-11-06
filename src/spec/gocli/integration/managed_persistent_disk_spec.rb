@@ -16,10 +16,8 @@ describe 'Managed persistent disk', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-
-    manifest['jobs'][0]['persistent_disk_type'] = 'my-disk'
-
+    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest['instance_groups'][0]['persistent_disk_type'] = 'my-disk'
     manifest
   end
 

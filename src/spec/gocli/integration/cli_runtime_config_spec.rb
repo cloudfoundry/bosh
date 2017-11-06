@@ -104,7 +104,7 @@ describe 'cli runtime config', type: :integration do
     runtime_config = Bosh::Spec::Deployments.runtime_config_latest_release
     upload_runtime_config(runtime_config_hash: runtime_config)
     output, exit_code = deploy_from_scratch(
-      manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+      manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
       cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       failure_expected: true,
       return_exit_code: true
@@ -120,7 +120,7 @@ describe 'cli runtime config', type: :integration do
 
     upload_runtime_config(runtime_config_hash: runtime_config)
     output, exit_code = deploy_from_scratch(
-      manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+      manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
       cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       failure_expected: true,
       return_exit_code: true

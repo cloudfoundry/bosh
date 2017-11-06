@@ -319,7 +319,7 @@ Can't use release 'test_release/1'. It references packages without source code a
         upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
         bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
-        deployment_manifest = Bosh::Spec::NewDeployments.minimal_manifest_with_stemcell
+        deployment_manifest = Bosh::Spec::NewDeployments.minimal_manifest_with_ubuntu_stemcell
         deployment_manifest['jobs'] = [{
             'name'          => 'job_using_pkg_5',
             'templates'     => [],

@@ -4,8 +4,8 @@ describe 'template', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can access exposed attributes of an instance' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] = [
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
         'templates' => ['name' => 'id_job'],
@@ -28,8 +28,8 @@ describe 'template', type: :integration do
 
 
   it 'gives VMs the same id on `deploy --recreate`' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] = [
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
         'templates' => ['name' => 'id_job'],
@@ -71,11 +71,11 @@ describe 'template', type: :integration do
   end
 
   it 'prints all template evaluation errors when there are errors in multiple job deployment templates' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] = [
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] = [
         {
             'name' => 'foobar',
-            'templates' => [
+            'jobs' => [
                 {'name' => 'foobar_with_bad_properties'},
                 {'name' => 'foobar_with_bad_properties_2'}
             ],

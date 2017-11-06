@@ -13,8 +13,8 @@ describe 'disk types', type: :integration do
       }
     ]
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['persistent_disk_type'] = 'fast_disks'
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['persistent_disk_type'] = 'fast_disks'
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
   end
@@ -28,8 +28,8 @@ describe 'disk types', type: :integration do
   end
 
   it 'allows specifying persistent_disk size on a job' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['persistent_disk'] = 3000
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['persistent_disk'] = 3000
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
@@ -40,8 +40,8 @@ describe 'disk types', type: :integration do
   end
 
   it 'allows NOT specifying a persistent_disk' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first.delete('persistent_disk')
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first.delete('persistent_disk')
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)

@@ -44,7 +44,7 @@ describe Bosh::Director::Api::ConfigManager do
 
           expect(configs[2].content).to eq('newer-content2')
           expect(configs[3].content).to eq('newer-content')
-          expect(configs[4].content).to eq(nil)
+          expect(configs[4].content).to eq('--- {}')
         end
       end
 

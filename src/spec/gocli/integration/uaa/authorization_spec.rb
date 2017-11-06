@@ -8,8 +8,8 @@ describe 'User authorization with UAA', type: :integration do
     prepare_for_deploy(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, environment_name: current_sandbox.director_url, include_credentials: false, no_login: true, env: client_env)
 
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['name'] = 'fake-name1'
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     deploy_simple_manifest(environment_name: current_sandbox.director_url, include_credentials: false, no_login: true, env: client_env, manifest_hash: manifest_hash)
 
     output = bosh_runner.run('deployments', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
@@ -28,8 +28,8 @@ describe 'User authorization with UAA', type: :integration do
     prepare_for_deploy(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, no_login: true, include_credentials: false, environment_name: current_sandbox.director_url, env: client_env )
 
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['name'] = 'fake-name1'
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     deploy_simple_manifest(no_login: true, environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
 
     output = bosh_runner.run('delete-deployment', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
@@ -43,8 +43,8 @@ describe 'User authorization with UAA', type: :integration do
     prepare_for_deploy(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, no_login: true, environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
 
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['name'] = 'fake-name1'
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     deploy_simple_manifest(no_login: true, environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
 
     output = bosh_runner.run('delete-deployment', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)

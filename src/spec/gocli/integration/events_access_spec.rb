@@ -10,8 +10,8 @@ describe 'events endpoint access', type: :integration do
 
   before do
 
-    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    deployment_hash['jobs'][0]['instances'] = 1
+    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    deployment_hash['instance_groups'][0]['instances'] = 1
 
     deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, client: director_client_env['BOSH_CLIENT'], client_secret: director_client_env['BOSH_CLIENT_SECRET'])
   end

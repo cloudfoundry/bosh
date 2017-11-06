@@ -7,9 +7,9 @@ describe 'health_monitor: 2', type: :integration, hm: true do
 
     # ~6m
     it 'does not resurrect stateful nodes' do
-      deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      deployment_hash['jobs'][0]['instances'] = 1
-      deployment_hash['jobs'][0]['persistent_disk'] = 20_480
+      deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      deployment_hash['instance_groups'][0]['instances'] = 1
+      deployment_hash['instance_groups'][0]['persistent_disk'] = 20_480
       deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       # wait_for_vm will wait here maximum amount of time!
@@ -24,9 +24,9 @@ describe 'health_monitor: 2', type: :integration, hm: true do
     with_reset_hm_before_each
 
     it 'resurrects stateful nodes ' do
-      deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      deployment_hash['jobs'][0]['instances'] = 1
-      deployment_hash['jobs'][0]['persistent_disk'] = 20_480
+      deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      deployment_hash['instance_groups'][0]['instances'] = 1
+      deployment_hash['instance_groups'][0]['persistent_disk'] = 20_480
       deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       original_instance = director.instance('foobar', '0', deployment_name: 'simple')

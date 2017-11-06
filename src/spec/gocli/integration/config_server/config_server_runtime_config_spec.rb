@@ -234,8 +234,8 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'does variable substitution on the initial creation' do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest
-            manifest_hash['jobs'].first['instances'] = 1
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+            manifest_hash['instance_groups'].first['instances'] = 1
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
             set_vm_metadata_invocations = current_sandbox.cpi.invocations.select {|invocation| invocation.method_name == 'set_vm_metadata' && invocation.inputs['metadata']['compiling'].nil? }

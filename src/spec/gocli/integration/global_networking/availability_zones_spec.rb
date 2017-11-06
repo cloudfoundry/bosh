@@ -28,10 +28,10 @@ describe 'availability zones', type: :integration do
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
-      manifest_hash['jobs'].first['azs'] = ['my-az']
-      manifest_hash['jobs'].first['networks'] = [{'name' => cloud_config_hash['networks'].first['name']}]
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
+      manifest_hash['instance_groups'].first['azs'] = ['my-az']
+      manifest_hash['instance_groups'].first['networks'] = [{'name' => cloud_config_hash['networks'].first['name']}]
       manifest_hash
     end
 
@@ -39,7 +39,7 @@ describe 'availability zones', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       current_sandbox.cpi.commands.make_create_vm_always_fail
       manifest = simple_manifest
-      manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']
+      manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.10']
 
       deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
 
@@ -100,8 +100,8 @@ describe 'availability zones', type: :integration do
     end
 
     it 'places the job instance in the correct subnet in manual network based on the availability zone' do
-      simple_manifest['jobs'].first['instances'] = 2
-      simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+      simple_manifest['instance_groups'].first['instances'] = 2
+      simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
 
       cloud_config_hash['azs'] = [
         {
@@ -140,9 +140,9 @@ describe 'availability zones', type: :integration do
     end
 
     it 'places the job instance in the correct subnet in dynamic network based on the availability zone' do
-      simple_manifest['jobs'].first['instances'] = 2
-      simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
-      simple_manifest['jobs'].first['templates'] =[{'name' => 'foobar_without_packages'}]
+      simple_manifest['instance_groups'].first['instances'] = 2
+      simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
+      simple_manifest['instance_groups'].first['jobs'] =[{'name' => 'foobar_without_packages'}]
 
       cloud_config_hash['azs'] = [
         {
@@ -234,9 +234,9 @@ describe 'availability zones', type: :integration do
 
       it 'places the instances in the availability zone of the subnet where the static ip is' do
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.1.52']
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+        simple_manifest['instance_groups'].first['instances'] = 2
+        simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.1.52']
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
 
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
@@ -250,7 +250,7 @@ describe 'availability zones', type: :integration do
         cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.51', '192.168.2.52']
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.52']
+        simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.52']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         instances = director.instances
@@ -267,17 +267,17 @@ describe 'availability zones', type: :integration do
         it 'it keeps instances with left static IP and deletes instances with removed IPs' do
           cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          simple_manifest['jobs'].first['instances'] = 2
-          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.52']
-          simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+          simple_manifest['instance_groups'].first['instances'] = 2
+          simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.52']
+          simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
           instances = director.instances
           instance_that_should_remain = instances.find { |instance| instance.ips.include?('192.168.2.52') }
 
-          simple_manifest['jobs'].first['instances'] = 1
-          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
-          simple_manifest['jobs'].first['azs'] = ['my-az2']
+          simple_manifest['instance_groups'].first['instances'] = 1
+          simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.2.52']
+          simple_manifest['instance_groups'].first['azs'] = ['my-az2']
           deploy_simple_manifest(manifest_hash: simple_manifest)
           instances = director.instances
           expect(instances.size).to eq(1)
@@ -291,17 +291,17 @@ describe 'availability zones', type: :integration do
         it 'it keeps instances with original static IPs and creates instances for new IPs' do
           cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          simple_manifest['jobs'].first['instances'] = 1
-          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
-          simple_manifest['jobs'].first['azs'] = ['my-az2']
+          simple_manifest['instance_groups'].first['instances'] = 1
+          simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.2.52']
+          simple_manifest['instance_groups'].first['azs'] = ['my-az2']
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
           instances = director.instances
           instance_that_should_remain = instances[0]
 
-          simple_manifest['jobs'].first['instances'] = 2
-          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.52', '192.168.2.52']
-          simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+          simple_manifest['instance_groups'].first['instances'] = 2
+          simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.52', '192.168.2.52']
+          simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
           deploy_simple_manifest(manifest_hash: simple_manifest)
           instances = director.instances
           expect(instances.size).to eq(2)
@@ -322,16 +322,16 @@ describe 'availability zones', type: :integration do
           cloud_config_hash['networks'].first['subnets'][1]['static'] = ['192.168.2.52']
 
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          simple_manifest['jobs'].first['instances'] = 1
-          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.52']
-          simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+          simple_manifest['instance_groups'].first['instances'] = 1
+          simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.2.52']
+          simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
 
           original_instance = director.instances[0]
           expect(original_instance.availability_zone).to eq('my-az2')
 
-          simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.1.51']
+          simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.51']
 
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
           deploy_simple_manifest(manifest_hash: simple_manifest)
@@ -391,9 +391,9 @@ describe 'availability zones', type: :integration do
         })
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        simple_manifest['jobs'].first['instances'] = 3
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
-        simple_manifest['jobs'].first['networks'].first['static_ips'] = ['192.168.2.51', '192.168.2.52', '192.168.1.2']
+        simple_manifest['instance_groups'].first['instances'] = 3
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
+        simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.2.51', '192.168.2.52', '192.168.1.2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(5)
@@ -446,9 +446,9 @@ describe 'availability zones', type: :integration do
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['azs'] = ['my-az']
-        simple_manifest['jobs'].first['persistent_disk'] = 1024
+        simple_manifest['instance_groups'].first['instances'] = 2
+        simple_manifest['instance_groups'].first['azs'] = ['my-az']
+        simple_manifest['instance_groups'].first['persistent_disk'] = 1024
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         instances = director.instances
@@ -456,7 +456,7 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(instances[0].vm_cid)['availability_zone']).to eq('my-az')
         expect(current_sandbox.cpi.read_cloud_properties(instances[1].vm_cid)['availability_zone']).to eq('my-az')
 
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         instances = director.instances
@@ -503,9 +503,9 @@ describe 'availability zones', type: :integration do
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['azs'] = ['my-az']
-        simple_manifest['jobs'].first['persistent_disk'] = 1024
+        simple_manifest['instance_groups'].first['instances'] = 2
+        simple_manifest['instance_groups'].first['azs'] = ['my-az']
+        simple_manifest['instance_groups'].first['persistent_disk'] = 1024
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         instances = director.instances
@@ -514,8 +514,8 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.read_cloud_properties(instances[0].vm_cid)['availability_zone']).to eq('my-az')
         expect(current_sandbox.cpi.read_cloud_properties(instances[1].vm_cid)['availability_zone']).to eq('my-az')
 
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
-        simple_manifest['jobs'].first['instances'] = 3
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
+        simple_manifest['instance_groups'].first['instances'] = 3
         deploy_simple_manifest(manifest_hash: simple_manifest)
         instances = director.instances
         original_instances = instances.select { |instance| original_vm_cids.include?(instance.vm_cid) }
@@ -551,8 +551,8 @@ describe 'availability zones', type: :integration do
         ]
         upload_cloud_config(cloud_config_hash: cloud_hash)
 
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
-        manifest['jobs'].first['azs'] = ['my-az']
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
+        manifest['instance_groups'].first['azs'] = ['my-az']
 
         deploy_simple_manifest(manifest_hash: manifest)
 
@@ -627,18 +627,18 @@ describe 'availability zones', type: :integration do
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+        simple_manifest['instance_groups'].first['instances'] = 2
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
         bootstrap_node = director.instances.find { |instance| instance.bootstrap }
 
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2'] - [bootstrap_node.availability_zone]
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2'] - [bootstrap_node.availability_zone]
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         new_bootstrap_node = director.instances.find { |instance| instance.bootstrap }
         expect(bootstrap_node.id).not_to eq(new_bootstrap_node.id)
 
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
 
         current_bootstrap_node = director.instances.find { |instance| instance.bootstrap }
@@ -674,8 +674,8 @@ describe 'availability zones', type: :integration do
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        simple_manifest['jobs'].first['instances'] = 2
-        simple_manifest['jobs'].first['azs'] = ['my-az', 'my-az2']
+        simple_manifest['instance_groups'].first['instances'] = 2
+        simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
         deploy_simple_manifest(manifest_hash: simple_manifest)
         expect(director.instances.map(&:ips).flatten).to match_array(['192.168.1.2', '192.168.1.3'])
 
@@ -720,7 +720,7 @@ describe 'availability zones', type: :integration do
             }
           ]
 
-          simple_manifest['jobs'].first['networks']= [
+          simple_manifest['instance_groups'].first['networks']= [
             {
               'name' => 'a',
               'default' => [ 'dns', 'gateway' ],
@@ -735,7 +735,7 @@ describe 'availability zones', type: :integration do
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
           deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config_hash)
 
-          simple_manifest['jobs'].first['networks']= [
+          simple_manifest['instance_groups'].first['networks']= [
             {
               'name' => 'a',
               'default' => [ 'dns', 'gateway' ],
@@ -748,7 +748,7 @@ describe 'availability zones', type: :integration do
           ]
 
           cloud_config_hash['networks']
-          simple_manifest['jobs'].first['instances'] = 2
+          simple_manifest['instance_groups'].first['instances'] = 2
 
           deploy_simple_manifest(manifest_hash: simple_manifest)
         end

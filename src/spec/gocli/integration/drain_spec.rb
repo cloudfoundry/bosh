@@ -9,15 +9,15 @@ describe 'drain', type: :integration do
     before do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       manifest_hash['releases'].first['version'] = 'latest'
-      manifest_hash['jobs'][0]['instances'] = 1
+      manifest_hash['instance_groups'][0]['instances'] = 1
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-      manifest_hash['jobs'][0]['persistent_disk'] = 100
-      manifest_hash['properties'] ||= {}
-      manifest_hash['properties']['test_property'] = 0
+      manifest_hash['instance_groups'][0]['persistent_disk'] = 100
+      manifest_hash['instance_groups'].first['jobs'].first['properties'] ||= {}
+      manifest_hash['instance_groups'].first['jobs'].first['properties']['test_property'] = 0
       deploy_simple_manifest(manifest_hash: manifest_hash)
     end
 
@@ -37,15 +37,15 @@ describe 'drain', type: :integration do
     before do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       manifest_hash['releases'].first['version'] = 'latest'
-      manifest_hash['jobs'][0]['instances'] = 1
-      manifest_hash['properties'] ||= {}
-      manifest_hash['properties']['drain_type'] = 'dynamic'
+      manifest_hash['instance_groups'][0]['instances'] = 1
+      manifest_hash['instance_groups'].first['jobs'].first['properties'] ||= {}
+      manifest_hash['instance_groups'].first['jobs'].first['properties']['drain_type'] = 'dynamic'
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-      manifest_hash['properties']['test_property'] = 0
+      manifest_hash['instance_groups'].first['jobs'].first['properties']['test_property'] = 0
       deploy_simple_manifest(manifest_hash: manifest_hash)
     end
 
@@ -60,7 +60,7 @@ describe 'drain', type: :integration do
 
   context 'when skip-drain flag is not provided' do
     before do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       director.instances.each do |instance|
         expect(File).not_to exist( instance.file_path('drain-test.log'))
       end
@@ -103,9 +103,9 @@ describe 'drain', type: :integration do
 
   context 'when skip-drain flag is provided' do
     let(:manifest_with_drain) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'][0]['instances'] = 1
-      manifest_hash['properties'] = { 'test_property' => 'drained' }
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'][0]['instances'] = 1
+      manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'test_property' => 'drained' }
       manifest_hash
     end
 
@@ -133,17 +133,17 @@ describe 'drain', type: :integration do
       expect(File).not_to exist(drain_file)
     end
 
-    context 'with multiple deployment jobs' do
+    context 'with multiple deployment instance groups' do
       let(:manifest_with_drain) do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-        manifest_hash['jobs'][0]['instances'] = 1
-        manifest_hash['properties'] = { 'test_property' => 'drained' }
-        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job(name: 'second', instances: 1)
-        manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job(name: 'third', instances: 1)
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'][0]['instances'] = 1
+        manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'test_property' => 'drained' }
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'second', instances: 1)
+        manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'third', instances: 1)
         manifest_hash
       end
 
-      it 'skips drain for specified jobs' do
+      it 'skips drain for specified instance_groups' do
         foobar_drain_file = director.instance('foobar', '0').file_path('drain-test.log')
         second_drain_file = director.instance('second', '0').file_path('drain-test.log')
         third_drain_file = director.instance('third', '0').file_path('drain-test.log')
@@ -154,7 +154,7 @@ describe 'drain', type: :integration do
         expect(File.read(foobar_drain_file)).to include('drained')
       end
 
-      it 'skips drain for all jobs' do
+      it 'skips drain for all instance_groups' do
         foobar_drain_file = director.instance('foobar', '0').file_path('drain-test.log')
         second_drain_file = director.instance('second', '0').file_path('drain-test.log')
 
@@ -178,7 +178,7 @@ describe 'drain', type: :integration do
     end
   end
 
-  context 'with one deployment job having colocated job templates, some of which have drain scripts' do
+  context 'with one deployment instance group having colocated jobs, some of which have drain scripts' do
     let(:manifest_with_colocated_drainable_release_jobs) do
       Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
           'instance_groups' => [
@@ -199,7 +199,7 @@ describe 'drain', type: :integration do
       )
     end
 
-    it 'runs drain for job templates that have drain script' do
+    it 'runs drain for jobs that have drain script' do
       deploy_from_scratch(manifest_hash: manifest_with_colocated_drainable_release_jobs, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       foobar_drain_log = director.instance('colocated', '0').file_path('drain-test.log')

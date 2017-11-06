@@ -263,7 +263,7 @@ module Bosh::Director
       end
 
       def using_global_networking?
-        !@cloud_configs.empty?
+        CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(@cloud_configs)
       end
 
       # If we don't want to do what we are doing in this method, then link_spec should be an object

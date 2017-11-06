@@ -57,8 +57,8 @@ describe 'cpi config', type: :integration do
         end
 
         describe 'when a release is deployed' do
-          let(:job) { Bosh::Spec::NewDeployments.simple_job(:azs => ['z1', 'z2']) }
-          let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job]) }
+          let(:instance_group) { Bosh::Spec::NewDeployments.simple_instance_group(:azs => ['z1', 'z2']) }
+          let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group]) }
           let(:deployment_manifest) { yaml_file('deployment_manifest', deployment) }
           before do
             create_and_upload_test_release(include_credentials: false,  env: client_env)

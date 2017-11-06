@@ -4,7 +4,7 @@ describe 'recreate instance', type: :integration do
   with_reset_sandbox_before_each
 
   it 'recreates an instance only when using index' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     initial_instances = director.instances
     instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
@@ -17,7 +17,7 @@ describe 'recreate instance', type: :integration do
   end
 
   it 'recreates an instance only when using instance uuid' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     initial_instances = director.instances
     instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
@@ -41,16 +41,16 @@ describe 'recreate instance', type: :integration do
   end
 
   it 'recreates vms for a given instance group or the whole deployment' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs']<< {
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups']<< {
         'name' => 'another-job',
-        'template' => 'foobar',
+        'jobs' => [{'name' => 'foobar'}],
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
         'stemcell' => 'default'
     }
-    manifest_hash['jobs'].first['instances']= 2
+    manifest_hash['instance_groups'].first['instances']= 2
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     #only vms for one job should be recreated
@@ -75,7 +75,7 @@ describe 'recreate instance', type: :integration do
   context 'with dry run flag' do
     context 'when a vm has been deleted' do
       it 'does not try to recreate that vm' do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -91,7 +91,7 @@ describe 'recreate instance', type: :integration do
 
     context 'when there are no errors' do
       it 'returns some encouraging message but does not recreate vms' do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 

@@ -196,10 +196,10 @@ Error: Unable to render instance groups for deployment. Errors are:
           let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
           let(:manifest_hash) do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-            manifest_hash['jobs'] = [{
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+            manifest_hash['instance_groups'] = [{
               'name' => 'foobar',
-              'templates' => ['name' => 'job_1_with_many_properties'],
+              'jobs' => ['name' => 'job_1_with_many_properties'],
               'vm_type' => 'a',
               'stemcell' => 'default',
               'instances' => 1,
@@ -212,7 +212,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           it 'replaces the variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'text'=>'cats are angry'})
 
-            manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.text))'}}
+            manifest_hash['instance_groups'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.text))'}}
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
 
             instance = director.instance('foobar', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
@@ -225,7 +225,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             config_server_helper.put_value(prepend_namespace('my_placeholder_2'), { 'cat'=> {'color' => {'value' => 'black'}}})
             config_server_helper.put_value(prepend_namespace('my_placeholder_3'), { 'cat'=> {'color' => {'value' => 'white'}}})
 
-            manifest_hash['jobs'][0]['properties'] = {
+            manifest_hash['instance_groups'][0]['properties'] = {
               'smurfs' => {
                 'color' => 'I am a ((my_placeholder_2.cat.color.value)) cat. My kitten is ((my_placeholder_3.cat.color.value))'
               },
@@ -245,7 +245,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           it 'errors if all parts of nested variable is not found' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), { 'cat'=> {'color' => {'value' => 'orange'}}})
 
-            manifest_hash['jobs'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.dog.color.value))'}}
+            manifest_hash['instance_groups'][0]['properties'] = {'gargamel' => {'color' => '((my_placeholder.cat.dog.color.value))'}}
 
             output, exit_code =  deploy_from_scratch(
               no_login: true,
@@ -357,10 +357,10 @@ Error: Unable to render instance groups for deployment. Errors are:
             end
 
             let(:manifest_hash) do
-              manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-              manifest_hash['jobs'] = [{
+              manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+              manifest_hash['instance_groups'] = [{
                                          'name' => 'foobar',
-                                         'templates' => ['name' => 'job_1_with_many_properties'],
+                                         'jobs' => ['name' => 'job_1_with_many_properties'],
                                          'vm_type' => 'a',
                                          'stemcell' => 'default',
                                          'instances' => 1,
@@ -468,9 +468,9 @@ Error: Unable to render instance groups for deployment. Errors are:
             end
 
             let(:simple_manifest) do
-              manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-              manifest_hash['jobs'][0]['instances'] = 1
-              manifest_hash['jobs'][0]['env'] = env_hash
+              manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+              manifest_hash['instance_groups'][0]['instances'] = 1
+              manifest_hash['instance_groups'][0]['env'] = env_hash
               manifest_hash
             end
 
@@ -527,10 +527,10 @@ Error: Unable to render instance groups for deployment. Errors are:
           let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
           let(:manifest_hash) do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-            manifest_hash['jobs'] = [{
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+            manifest_hash['instance_groups'] = [{
                 'name' => 'foobar',
-                'templates' => ['name' => 'id_job'],
+                'jobs' => ['name' => 'id_job'],
                 'vm_type' => 'a',
                 'stemcell' => 'default',
                 'instances' => 1,
@@ -538,7 +538,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                 'properties' => {}
             }, {
                'name' => 'goobar',
-               'templates' => ['name' => 'errand_without_package'],
+               'jobs' => ['name' => 'errand_without_package'],
                'vm_type' => 'a',
                'stemcell' => 'default',
                'instances' => 1,
@@ -559,7 +559,7 @@ Error: Unable to render instance groups for deployment. Errors are:
           end
 
           it 'does variable substitution on the initial creation' do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
             manifest_hash['tags'] = {
               'tag-key1' => '((/tag-variable1))',
               'tag-key2' => '((tag-variable2))'
@@ -584,7 +584,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
             pre_redeploy_invocations_size = current_sandbox.cpi.invocations.size
 
-            manifest_hash['jobs'].first['instances'] = 2
+            manifest_hash['instance_groups'].first['instances'] = 2
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false,  env: client_env)
 
             invocations = current_sandbox.cpi.invocations.drop(pre_redeploy_invocations_size)
@@ -899,7 +899,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               }
 
               before do
-                manifest_hash['jobs'].first['networks'] = [
+                manifest_hash['instance_groups'].first['networks'] = [
                   {
                     'name' => 'a',
                     'static_ips' => %w(192.168.1.10 192.168.1.11 192.168.1.12),

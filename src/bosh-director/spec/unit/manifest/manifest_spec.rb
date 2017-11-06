@@ -18,7 +18,7 @@ module Bosh::Director
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator)}
 
     let(:consolidated_runtime_config) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
-    let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => [], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => []}) }
+    let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump({'azs' => [], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => []})) }
 
     before do
       release_1 = Models::Release.make(name: 'simple')
@@ -121,13 +121,13 @@ module Bosh::Director
     end
 
     describe '.load_from_hash' do
-      let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {
+      let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump({
         'azs' => ['my-az'],
         'vm_types' => ['my-vm-type'],
         'disk_types' => ['my-disk-type'],
         'networks' => ['my-net'],
         'vm_extensions' => ['my-extension'],
-      }) }
+      })) }
       let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
 
       let(:raw_runtime_config_hash) { {'raw_runtime' => '((foo))'} }

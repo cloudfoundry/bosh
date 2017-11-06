@@ -230,7 +230,7 @@ describe 'Agent', type: :integration do
 
   describe 'deploy' do
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: true)
       manifest_hash['properties'] = {
         'test_property' => 5,
       }
@@ -238,8 +238,40 @@ describe 'Agent', type: :integration do
     end
 
     context 'updating the deployment with a property change' do
+      context 'when using manifest v2' do
+        let(:manifest_hash) do
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = {
+            'test_property' => 5,
+          }
+          manifest_hash
+        end
+
+        it 'should call these methods in the following order' do
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
+          output = deploy_simple_manifest(manifest_hash: manifest_hash)
+          sent_messages = get_messages_sent_to_agent(output)
+
+          agent_messages = sent_messages.values[0]
+          expect(agent_messages[0]['method']).to eq('get_state')
+          expect(agent_messages[1]['method']).to eq('prepare')
+          expect(agent_messages[2]['method']).to eq('drain')
+          expect(agent_messages[3]['method']).to eq('stop')
+          expect(agent_messages[4]['method']).to eq('update_settings')
+          expect(agent_messages[5]['method']).to eq('apply')
+          expect(agent_messages[6]['method']).to eq('run_script')
+          expect(agent_messages[6]['arguments'][0]).to eq('pre-start')
+          expect(agent_messages[7]['method']).to eq('start')
+          expect(agent_messages[8]['method']).to eq('get_state')
+          expect(agent_messages[9]['method']).to eq('run_script')
+          expect(agent_messages[9]['arguments'][0]).to eq('post-start')
+          expect(agent_messages.length).to eq(10)
+        end
+      end
+
       it 'should call these methods in the following order' do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest_hash)
         manifest_hash['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
         sent_messages = get_messages_sent_to_agent(output)

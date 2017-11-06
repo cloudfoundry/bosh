@@ -1,14 +1,21 @@
 module Bosh::Spec
   class NetworkingManifest
     def self.deployment_manifest(opts={})
-      manifest = opts.fetch(:manifest, Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
-      manifest['name'] = opts.fetch(:name, 'simple')
-
       job_opts = {}
-      job_opts[:templates] = [{'name' => opts[:template]}] if opts[:template]
       job_opts[:instances] = opts[:instances] if opts[:instances]
-      job_opts[:static_ips] =opts[:static_ips] if opts[:static_ips]
-      manifest['jobs'] = opts[:legacy_job] ? [Bosh::Spec::Deployments.simple_job(job_opts)] : [Bosh::Spec::NewDeployments.simple_job(job_opts)]
+      job_opts[:static_ips] = opts[:static_ips] if opts[:static_ips]
+
+      if opts[:legacy_job]
+        job_opts[:templates] = [{'name' => opts[:template]}] if opts[:template]
+        manifest = opts.fetch(:manifest, Bosh::Spec::Deployments.legacy_manifest)
+        manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(job_opts)]
+      else
+        job_opts[:jobs] = [{'name' => opts[:job]}] if opts[:job]
+        manifest = opts.fetch(:manifest, Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
+        manifest['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(job_opts)]
+      end
+
+      manifest['name'] = opts.fetch(:name, 'simple')
 
       manifest
     end
@@ -51,8 +58,8 @@ module Bosh::Spec
 
     def self.errand_manifest(opts)
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: opts.fetch(:name, 'errand'))
-      manifest['jobs'] = [
-        Bosh::Spec::NewDeployments.simple_errand_job.merge(
+      manifest['instance_groups'] = [
+        Bosh::Spec::NewDeployments.simple_errand_instance_group.merge(
           'instances' => opts.fetch(:instances),
           'name' => 'errand_job'
         )

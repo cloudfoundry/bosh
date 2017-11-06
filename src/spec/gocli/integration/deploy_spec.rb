@@ -7,11 +7,11 @@ describe 'deploy', type: :integration do
 
     context 'when there are template errors' do
       it 'prints all template evaluation errors and does not register an event' do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-        manifest_hash['jobs'] = [
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'] = [
           {
             'name' => 'foobar',
-            'templates' => ['name' => 'foobar_with_bad_properties'],
+            'jobs' => ['name' => 'foobar_with_bad_properties'],
             'vm_type' => 'a',
             'instances' => 1,
             'networks' => [{
@@ -43,7 +43,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'when there are no errors' do
       it 'returns some encouraging message but does not alter deployment' do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, dry_run: true)
 
@@ -56,7 +56,7 @@ Error: Unable to render instance groups for deployment. Errors are:
     with_reset_sandbox_before_each
 
     before do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     end
 
     it 'should contain the worker name in the debug log' do
@@ -86,8 +86,8 @@ Error: Unable to render instance groups for deployment. Errors are:
       yaml_file('second-cloud-config', cloud_config_hash)
     end
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'] << Bosh::Spec::NewDeployments.simple_job(name: 'second-foobar', vm_type: 'b')
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'second-foobar', vm_type: 'b')
       manifest_hash
     end
 
@@ -113,16 +113,16 @@ Error: Unable to render instance groups for deployment. Errors are:
     with_reset_sandbox_before_each
 
     it 'allows removing deployed jobs and adding new jobs at the same time' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['name'] = 'fake-name1'
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['name'] = 'fake-name1'
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       expect_running_vms_with_names_and_count('fake-name1' => 3)
 
-      manifest_hash['jobs'].first['name'] = 'fake-name2'
+      manifest_hash['instance_groups'].first['name'] = 'fake-name2'
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('fake-name2' => 3)
 
-      manifest_hash['jobs'].first['name'] = 'fake-name1'
+      manifest_hash['instance_groups'].first['name'] = 'fake-name1'
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('fake-name1' => 3)
     end
@@ -140,11 +140,11 @@ Error: Unable to render instance groups for deployment. Errors are:
 
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}")
 
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
         manifest_hash['stemcells'].first.delete('name')
         manifest_hash['stemcells'].first['os'] = 'toronto-os'
         manifest_hash['stemcells'].first['version'] = '1'
-        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash['instance_groups'].first['instances'] = 1
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
@@ -160,9 +160,9 @@ Error: Unable to render instance groups for deployment. Errors are:
     context 'when stemcell is using latest version' do
       it 'redeploys with latest version of stemcell' do
         cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
         manifest_hash['stemcells'].first['version'] = 'latest'
-        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash['instance_groups'].first['instances'] = 1
 
         create_and_upload_test_release
         upload_cloud_config(cloud_config_hash: cloud_config)
@@ -189,7 +189,7 @@ Error: Unable to render instance groups for deployment. Errors are:
     end
 
     it 'deployment fails when starting task fails' do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
       director.instance('foobar', '0').fail_start_task
       _, exit_code = deploy(failure_expected: true, return_exit_code: true)
       expect(exit_code).to_not eq(0)
@@ -228,7 +228,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
 
       context 'when deploying v1 after uploaded cloud config and having one stale deployment' do
-        let!(:test_release_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
+        let!(:test_release_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
 
         it 'ignores cloud config, fails to allocate already taken ips' do
           deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
@@ -274,7 +274,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when the pre-start scripts are valid' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                 name: 'job_with_templates_having_prestart_scripts',
@@ -309,7 +309,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       end
 
       it 'should append the logs to the previous pre-start logs' do
-        manifest = Bosh::Spec::NewDeployments.test_release_manifest.merge(
+        manifest = Bosh::Spec::NewDeployments.manifest_with_release.merge(
           {
             'releases' => [{
               'name' => 'release_with_prestart_script',
@@ -349,7 +349,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when the pre-start scripts are corrupted' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'releases' => [{
                 'name' => 'release_with_corrupted_pre_start',
@@ -399,7 +399,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when the post-deploy scripts are valid' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                 name: 'job_with_post_deploy_script',
@@ -487,7 +487,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when the post-deploy scripts exit with error' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                 name: 'job_with_post_deploy_script',
@@ -526,7 +526,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when nothing has changed in the deployment it does not run the post-deploy script' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                 name: 'job_with_post_deploy_script',
@@ -582,7 +582,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'it does not support running post-deploy scripts' do
       let(:manifest) do
-        Bosh::Spec::NewDeployments.test_release_manifest.merge(
+        Bosh::Spec::NewDeployments.manifest_with_release.merge(
           {
             'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'job_with_post_deploy_script',
@@ -625,7 +625,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'when deployment manifest has local templates properties defined' do
       let(:manifest) do
-        Bosh::Spec::NewDeployments.test_release_manifest.merge(
+        Bosh::Spec::NewDeployments.manifest_with_release.merge(
           {
             'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'job_with_templates_having_properties',
@@ -677,7 +677,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       it 'should update the job when template properties change' do
         deploy(manifest_hash: manifest)
 
-        manifest = Bosh::Spec::NewDeployments.test_release_manifest.merge(
+        manifest = Bosh::Spec::NewDeployments.manifest_with_release.merge(
           {
             'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'job_with_templates_having_properties',
@@ -719,7 +719,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when the template has local properties defined but missing some of them' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                 name: 'job_with_templates_having_properties',
@@ -761,7 +761,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when multiple templates has local properties' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                 name: 'job_with_templates_having_properties',
@@ -816,7 +816,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when same template is referenced in multiple deployment jobs' do
         let (:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
               'instance_groups' => [
                 Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
@@ -914,18 +914,18 @@ Error: Unable to render instance groups for deployment. Errors are:
     end
 
     it 'supports scaling down and then scaling up' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
-      manifest_hash['jobs'].first['instances'] = 3
+      manifest_hash['instance_groups'].first['instances'] = 3
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('foobar' => 3)
 
-      manifest_hash['jobs'].first['instances'] = 2
+      manifest_hash['instance_groups'].first['instances'] = 2
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('foobar' => 2)
 
-      manifest_hash['jobs'].first['instances'] = 4
+      manifest_hash['instance_groups'].first['instances'] = 4
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('foobar' => 4)
     end
@@ -933,24 +933,24 @@ Error: Unable to render instance groups for deployment. Errors are:
     it 'supports dynamically sized resource pools' do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 3
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 3
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('foobar' => 3)
 
       # scale down
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash['instance_groups'].first['instances'] = 1
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('foobar' => 1)
 
       # scale up, below original size
-      manifest_hash['jobs'].first['instances'] = 2
+      manifest_hash['instance_groups'].first['instances'] = 2
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('foobar' => 2)
 
       # scale up, above original size
-      manifest_hash['jobs'].first['instances'] = 4
+      manifest_hash['instance_groups'].first['instances'] = 4
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('foobar' => 4)
     end
@@ -959,8 +959,8 @@ Error: Unable to render instance groups for deployment. Errors are:
       # We need to keep this test since the output is not tested and
       # keeps breaking.
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
 
       output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -1114,9 +1114,9 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'it exercises the entire compiled release lifecycle' do
         let(:manifest) do
-          Bosh::Spec::NewDeployments.test_release_manifest.merge(
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
             {
-              'jobs' => [
+              'instance_groups' => [
                 {
                   'name' => 'job_with_many_packages',
                   'templates' => [
@@ -1196,7 +1196,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     context 'when errand jobs are used' do
       let(:manifest) {
-        Bosh::Spec::NewDeployments.test_release_manifest.merge({
+        Bosh::Spec::NewDeployments.manifest_with_release.merge({
           'instance_groups' => [
             Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
               name: 'job_with_post_deploy_script',
@@ -1249,9 +1249,9 @@ Error: Unable to render instance groups for deployment. Errors are:
     end
 
     it 'saves instance name, deployment name, az, and id to the file system on the instance' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['name'] = 'fake-name1'
-      manifest_hash['jobs'].first['azs'] = ['zone-1']
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['name'] = 'fake-name1'
+      manifest_hash['instance_groups'].first['azs'] = ['zone-1']
 
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config_hash['azs'] = [
@@ -1280,8 +1280,8 @@ Error: Unable to render instance groups for deployment. Errors are:
       context 'deployment manifest specifies VM password' do
         context 'director deployment does not set generate_vm_passwords' do
           it 'uses specified VM password' do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-            manifest_hash['jobs'].first['env'] = {'bosh' => {'password' => 'foobar'}}
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+            manifest_hash['instance_groups'].first['env'] = {'bosh' => {'password' => 'foobar'}}
             deploy_from_scratch(manifest_hash: manifest_hash)
 
             instance = director.instances.first
@@ -1297,8 +1297,8 @@ Error: Unable to render instance groups for deployment. Errors are:
         context 'director deployment sets generate_vm_passwords as true' do
           with_reset_sandbox_before_each(generate_vm_passwords: true)
           it 'does not generate a random password and instead uses specified VM password' do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-            manifest_hash['jobs'].first['env'] = {'bosh' => {'password' => 'foobar'}}
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+            manifest_hash['instance_groups'].first['env'] = {'bosh' => {'password' => 'foobar'}}
             deploy_from_scratch(manifest_hash: manifest_hash)
 
             instance = director.instances.first
@@ -1321,8 +1321,8 @@ Error: Unable to render instance groups for deployment. Errors are:
         context 'director deployment sets generate_vm_passwords as true' do
           with_reset_sandbox_before_each(generate_vm_passwords: true)
           it 'generates a random unique password for each vm' do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-            manifest_hash['jobs'].first['instances'] = 2
+            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+            manifest_hash['instance_groups'].first['instances'] = 2
             deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
             first_instance = director.instances[0]
@@ -1352,7 +1352,7 @@ Error: Unable to render instance groups for deployment. Errors are:
       include Bosh::Spec::CreateReleaseOutputParsers
 
       let(:deployment_manifest) do
-        minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.test_release_manifest)
+        minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.manifest_with_release)
 
         minimal_manifest['properties'] = {'some_namespace' => {'test_property' => 'initial value'}}
         minimal_manifest['instance_groups'] = [{'name' => 'test_group',
@@ -1406,16 +1406,16 @@ Error: Unable to render instance groups for deployment. Errors are:
     with_reset_sandbox_before_each(dns_enabled: false)
 
     it 'allows removing deployed jobs and adding new jobs at the same time' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['name'] = 'fake-name1'
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['name'] = 'fake-name1'
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       expect_running_vms_with_names_and_count('fake-name1' => 3)
 
-      manifest_hash['jobs'].first['name'] = 'fake-name2'
+      manifest_hash['instance_groups'].first['name'] = 'fake-name2'
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('fake-name2' => 3)
 
-      manifest_hash['jobs'].first['name'] = 'fake-name1'
+      manifest_hash['instance_groups'].first['name'] = 'fake-name1'
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect_running_vms_with_names_and_count('fake-name1' => 3)
     end

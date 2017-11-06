@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'cli: cloudcheck', type: :integration do
-  let(:manifest) {Bosh::Spec::NewDeployments.simple_manifest_with_stemcell}
+  let(:manifest) {Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups}
   let(:director_name) {current_sandbox.director_name}
   let(:deployment_name) {manifest['name']}
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
@@ -16,8 +16,8 @@ describe 'cli: cloudcheck', type: :integration do
     let(:num_instances) { 3 }
 
     before do
-      manifest['jobs'][0]['persistent_disk'] = 100
-      manifest['jobs'][0]['instances'] = num_instances
+      manifest['instance_groups'][0]['persistent_disk'] = 100
+      manifest['instance_groups'][0]['instances'] = num_instances
 
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -116,9 +116,9 @@ describe 'cli: cloudcheck', type: :integration do
       end
 
       let(:deployment_manifest) do
-        manifest = Bosh::Spec::NewDeployments::simple_manifest_with_stemcell
-        manifest['jobs'][0]['azs'] = ['z1', 'z2']
-        manifest['jobs'][0]['instances'] = 2
+        manifest = Bosh::Spec::NewDeployments::simple_manifest_with_instance_groups
+        manifest['instance_groups'][0]['azs'] = ['z1', 'z2']
+        manifest['instance_groups'][0]['instances'] = 2
         manifest
       end
 
@@ -229,7 +229,7 @@ describe 'cli: cloudcheck', type: :integration do
     with_reset_sandbox_before_each(dns_enabled: false)
 
     before do
-      manifest['jobs'][0]['persistent_disk'] = 100
+      manifest['instance_groups'][0]['persistent_disk'] = 100
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
@@ -253,8 +253,8 @@ describe 'cli: cloudcheck', type: :integration do
     let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
     before do
-      manifest['jobs'][0]['instances'] = 1
-      manifest['jobs'][0]['networks'].first['static_ips'] = ['192.168.1.10']
+      manifest['instance_groups'][0]['instances'] = 1
+      manifest['instance_groups'][0]['networks'].first['static_ips'] = ['192.168.1.10']
       create_and_upload_test_release
       upload_stemcell
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -285,8 +285,8 @@ describe 'cli: cloudcheck', type: :integration do
 
       config_server_helper.put_value(prepend_namespace('test_property'), 'cats are happy')
 
-      manifest['jobs'][0]['persistent_disk'] = 100
-      manifest['jobs'].first['properties'] = {'test_property' => '((test_property))'}
+      manifest['instance_groups'][0]['persistent_disk'] = 100
+      manifest['instance_groups'].first['properties'] = {'test_property' => '((test_property))'}
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, include_credentials: false, env: client_env)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple', env: client_env)).to match(regexp('0 problems'))

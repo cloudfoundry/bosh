@@ -15,7 +15,7 @@ describe 'delete arp entries', type: :integration do
       manifest_deployment_1 = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell
       manifest_deployment_1.merge!(
         {
-          'jobs' => [Bosh::Spec::NewDeployments.simple_job(
+          'instance_groups' => [Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'job_to_test_forceful_arp',
               instances: 1)]
         })
@@ -27,7 +27,7 @@ describe 'delete arp entries', type: :integration do
       manifest_deployment_2.merge!(
         {
           'name' => 'simple2',
-          'jobs' => [Bosh::Spec::NewDeployments.simple_job(instances: 1)]
+          'instance_groups' => [Bosh::Spec::NewDeployments.simple_instance_group(instances: 1)]
         })
 
       deploy_simple_manifest(manifest_hash: manifest_deployment_2)

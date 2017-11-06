@@ -4,7 +4,7 @@ describe 'cli: vms', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should return vm --vitals' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
     vitals = director.vms_vitals[0]
 
     expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
@@ -19,6 +19,28 @@ describe 'cli: vms', type: :integration do
 
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to eq('')
+  end
+
+  it 'should return cloud_properties with vm_type cloud properties' do
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash['vm_types'].first['cloud_properties']['flavor'] = 'some-flavor'
+
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
+
+    vms = director.vms_cloud_properties
+    expect(vms.map { |vm| vm[:cloud_properties]}).to eq(['flavor: some-flavor', 'flavor: some-flavor', 'flavor: some-flavor'])
+  end
+
+  it 'should return cloud_properties with calculated vm cloud properties' do
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups_and_vm_resources
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
+
+    vms = director.vms_cloud_properties
+    cloud_props_from_dummy_cpi = "ephemeral_disk:\n  size: 10\ninstance_type: dummy"
+    expect(vms.map { |vm| vm[:cloud_properties]}).to eq([cloud_props_from_dummy_cpi, cloud_props_from_dummy_cpi, cloud_props_from_dummy_cpi])
   end
 
   it 'should return az with vms' do
@@ -59,8 +81,8 @@ describe 'cli: vms', type: :integration do
       }
     ]
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(

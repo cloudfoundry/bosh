@@ -69,7 +69,7 @@ describe "cli cpi config", type: :integration do
     # empty cpi config file
     Dir.mktmpdir do |tmpdir|
       empty_cpi_config_filename = File.join(tmpdir, 'empty_cpi_config.yml')
-      File.write(empty_cpi_config_filename, '')
+      File.write(empty_cpi_config_filename, '--- {}')
       expect(bosh_runner.run("update-cpi-config #{empty_cpi_config_filename}", failure_expected: true)).to include("Required property 'cpis' was not specified in object")
     end
   end

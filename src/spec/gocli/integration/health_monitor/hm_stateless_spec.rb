@@ -6,7 +6,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~1m20s
   it 'resurrects stateless nodes if agent is not responding' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     original_instance = director.instance('foobar', '0', deployment_name: 'simple')
     original_instance.kill_agent
@@ -16,7 +16,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~5m
   it 'resurrects stateless nodes if vm is missing for instance' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
@@ -34,7 +34,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   it 'runs the pre-start scripts when the VM is resurrected' do
     manifest_hash = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge({
-                        'jobs' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+                        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                                        name: 'ig_with_jobs_having_prestart_scripts',
                                        jobs: [
                                            {'name' => 'job_1_with_pre_start_script'},
@@ -88,7 +88,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   it 'only resurrects stateless nodes that are configured to be resurrected' do
     skip 'The interaction of a resurrected node and a non-resurrected node are important but broken. See #69728124'
 
-    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     deployment_hash['jobs'][0]['instances'] = 2
     deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -116,8 +116,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     # Turn resurrector off
     current_sandbox.reconfigure_health_monitor('health_monitor_without_resurrector.yml.erb')
 
-    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    deployment_hash['jobs'][0]['instances'] = 2
+    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    deployment_hash['instance_groups'][0]['instances'] = 2
     deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     director.instance('foobar', '0', deployment_name: 'simple').kill_agent
@@ -142,8 +142,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
       current_sandbox.reconfigure_health_monitor('health_monitor_with_json_logging.yml.erb')
 
-      deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      deployment_hash['jobs'][0]['instances'] = 1
+      deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      deployment_hash['instance_groups'][0]['instances'] = 1
 
       prepare_for_deploy(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, no_login: true, env: director_client_env, include_credentials: false)
       deploy_simple_manifest(manifest_hash: deployment_hash, no_login: true, env: team_client_env, include_credentials: false)
@@ -192,8 +192,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~50s
   it 'notifies health monitor about job failures' do
-    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    deployment_hash['jobs'][0]['instances'] = 1
+    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    deployment_hash['instance_groups'][0]['instances'] = 1
     deploy_from_scratch(manifest_hash: deployment_hash,  cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     director.instance('foobar', '0').fail_job
@@ -201,10 +201,10 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   end
 
   it 're-renders templates with new dynamic network IPs' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['instances'] = 1
-    manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'default' => ['dns', 'gateway']}
-    manifest_hash['jobs'].first['properties'] = { 'networks' => ['a', 'b'] }
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['instances'] = 1
+    manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'default' => ['dns', 'gateway']}
+    manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'networks' => ['a', 'b'] }
 
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config['networks'] << {

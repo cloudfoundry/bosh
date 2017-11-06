@@ -58,7 +58,7 @@ describe Bosh::Director::Api::CloudConfigManager do
   end
 
   describe '.interpolated_manifest' do
-    let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud_with_manifest_v2, raw_manifest: raw_manifest)] }
+    let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud_with_manifest_v2, content: YAML.dump(raw_manifest))] }
     let(:raw_manifest) { {'azs' => [{name: '((az_name))'}], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => []} }
     let(:interpolated_manifest) { {'azs' => [{name: 'blah'}], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => []} }
     let(:deployment_name) { 'some_deployment_name' }

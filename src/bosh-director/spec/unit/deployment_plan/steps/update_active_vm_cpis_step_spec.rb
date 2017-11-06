@@ -44,7 +44,7 @@ module Bosh::Director
           raw_manifest['networks'][0]['subnets'][0]['azs'] = [prior_az_name]
           raw_manifest['compilation']['az'] = prior_az_name
 
-          Models::Config.make(:cloud, raw_manifest: raw_manifest)
+          Models::Config.make(:cloud, content: YAML.dump(raw_manifest))
         end
       }
       let(:prior_az_name) { 'z2' }
