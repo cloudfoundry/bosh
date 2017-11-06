@@ -83,15 +83,16 @@ module Bosh::Director
         options['dry_run'] = true if params['dry_run'] == 'true'
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
-          manifest = deployment.manifest
+          manifest_text = deployment.manifest
+          options['raw_manifest_text'] = deployment.raw_manifest
         else
-          manifest_hash = validate_manifest_yml(request.body.read, nil)
-          manifest =  YAML.dump(manifest_hash)
+          manifest_text = request.body.read
+          validate_manifest_yml(manifest_text, nil)
         end
 
         latest_cloud_configs = Models::Config.latest_set('cloud')
         latest_runtime_configs = Models::Config.latest_set('runtime')
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_text, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -116,15 +117,16 @@ module Bosh::Director
         options['dry_run'] = true if params['dry_run'] == 'true'
 
         if request.content_length.nil? || request.content_length.to_i == 0
-          manifest = deployment.manifest
+          manifest_text = deployment.manifest
+          options['raw_manifest_text'] = deployment.raw_manifest
         else
-          manifest_hash = validate_manifest_yml(request.body.read, nil)
-          manifest =  YAML.dump(manifest_hash)
+          manifest_text = request.body.read
+          validate_manifest_yml(manifest_text, nil)
         end
 
         latest_cloud_configs = Models::Config.latest_set('cloud')
         latest_runtime_configs = Models::Config.latest_set('runtime')
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
+        task = @deployment_manager.create_deployment(current_user, manifest_text, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -228,7 +230,7 @@ module Bosh::Director
       end
 
       get '/:deployment', authorization: :read do
-        JSON.generate({'manifest' => deployment.manifest})
+        JSON.generate({'manifest' => deployment.raw_manifest})
       end
 
       get '/:deployment/vms', authorization: :read do
@@ -344,9 +346,10 @@ module Bosh::Director
       end
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
-        deployment = validate_manifest_yml(request.body.read, nil)
+        manifest_text = request.body.read
+        manifest_hash = validate_manifest_yml(manifest_text, nil)
 
-        unless deployment['name']
+        unless manifest_hash['name']
           raise ValidationMissingField, "Deployment manifest must have a 'name' key"
         end
 
@@ -371,18 +374,19 @@ module Bosh::Director
         options['runtime_configs'] = runtime_configs
         options['deploy'] = true
 
-        deployment_name = deployment['name']
+        deployment_name = manifest_hash['name']
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_configs, runtime_configs, deployment_model, options, @current_context_id)
+        task = @deployment_manager.create_deployment(current_user, manifest_text, cloud_configs, runtime_configs, deployment_model, options, @current_context_id)
 
         redirect "/tasks/#{task.id}"
       end
 
       post '/:deployment/diff', authorization: :diff, :consumes => :yaml do
         begin
-          manifest_hash = validate_manifest_yml(request.body.read, nil)
+          manifest_text = request.body.read
+          manifest_hash = validate_manifest_yml(manifest_text, nil)
 
           ignore_cc = ignore_cloud_config?(manifest_hash)
 
@@ -396,7 +400,7 @@ module Bosh::Director
           after_cloud_configs = ignore_cc ? nil : Bosh::Director::Models::Config.latest_set('cloud')
           after_runtime_configs = Bosh::Director::Models::Config.latest_set('runtime')
 
-          after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_configs, after_runtime_configs, {:resolve_interpolation => false})
+          after_manifest = Manifest.load_from_hash(manifest_hash, manifest_text, after_cloud_configs, after_runtime_configs, {:resolve_interpolation => false})
           after_manifest.resolve_aliases
 
           redact =  params['redact'] != 'false'

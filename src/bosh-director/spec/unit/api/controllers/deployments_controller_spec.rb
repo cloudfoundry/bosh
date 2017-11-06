@@ -705,7 +705,7 @@ module Bosh::Director
           it 'returns manifest' do
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
-                       :manifest => YAML.dump({'foo' => 'bar'}))
+                       :raw_manifest => YAML.dump({'foo' => 'bar'}))
             get '/test_deployment'
 
             expect(last_response.status).to eq(200)

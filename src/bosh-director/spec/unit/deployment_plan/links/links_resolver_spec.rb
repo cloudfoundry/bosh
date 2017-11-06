@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
   let(:deployment_plan) do
     planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-    manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, [], [], {:resolve_interpolation => false})
+    manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, YAML.dump(deployment_manifest), [], [], {:resolve_interpolation => false})
     planner = planner_factory.create_from_manifest(manifest, [], [], {})
     Bosh::Director::DeploymentPlan::Assembler.create(planner).bind_models
     planner
@@ -623,7 +623,7 @@ Unable to process links for deployment. Errors are:
     context 'when there is a cloud config' do
       let(:deployment_plan) do
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-        manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, cloud_configs, [], {:resolve_interpolation => false})
+        manifest = Bosh::Director::Manifest.load_from_hash(deployment_manifest, YAML.dump(deployment_manifest), cloud_configs, [], {:resolve_interpolation => false})
 
         planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
         Bosh::Director::DeploymentPlan::Assembler.create(planner).bind_models

@@ -54,14 +54,16 @@ describe 'vm_types and stemcells', type: :integration do
     ])
   end
 
-  it 'saves manifest with resolved latest stemcell versions' do
+  it 'resolves latest stemcell versions' do
     manifest_hash['stemcells'].first['version'] = 'latest'
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect(bosh_runner.run('manifest', deployment_name: 'simple')).to match_output %(
-stemcells:
-- alias: default
-  name: ubuntu-stemcell
-  version: '1'
+    manifest_hash['stemcells'].first['version'] = '3'
+    deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: true, redact_diff: true)
+    expect(deploy_output).to match_output %(
+  stemcells:
+  - name: ubuntu-stemcell
+-   version: '1'
++   version: '3'
     )
   end
 
