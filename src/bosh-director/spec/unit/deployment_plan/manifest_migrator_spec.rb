@@ -5,10 +5,10 @@ module Bosh
     describe DeploymentPlan::ManifestMigrator do
       subject { DeploymentPlan::ManifestMigrator.new }
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
-      let(:manifest) { Manifest.new(manifest_hash, manifest_hash, nil, nil, nil, nil)}
+      let(:manifest) { Manifest.new(manifest_hash, nil, nil) }
       let(:cloud_config) { {} }
       let(:migrated_manifest) { subject.migrate(manifest, cloud_config)[0] }
-      let(:migrated_manifest_hash) { migrated_manifest.hybrid_manifest_hash }
+      let(:migrated_manifest_hash) { migrated_manifest.manifest_hash }
       let(:migrated_cloud_config) { subject.migrate(manifest, cloud_config)[1] }
 
       describe '#migrate' do
@@ -43,14 +43,15 @@ module Bosh
           end
 
           it 'blows up if both release and releases keys are present' do
-            manifest_hash['release'] = {some: :stuff}
-            manifest_hash['releases'] = [{other: :stuff}]
+            manifest_hash['release'] = { some: :stuff }
+            manifest_hash['releases'] = [{ other: :stuff }]
 
-            expect {
+            expect do
               subject.migrate(manifest, cloud_config)
-            }.to raise_error(
+            end.to raise_error(
               DeploymentAmbiguousReleaseSpec,
-              "Deployment manifest contains both 'release' and 'releases' sections, please use one of the two."
+              "Deployment manifest contains both 'release' and 'releases' " \
+              'sections, please use one of the two.'
             )
           end
         end
@@ -59,23 +60,23 @@ module Bosh
           context 'when cloud config is not set' do
             let(:manifest_hash) do
               {
-                'resource_pools' => ['fake-resource-pool'],
-                'compilation' => ['fake-compilation'],
-                'disk_pools' => ['fake-disk-pools'],
-                'networks' => ['fake-networks']
+                'resource_pools' => ['pool'],
+                'compilation' => ['comp'],
+                'disk_pools' => ['disk-pools'],
+                'networks' => ['networks']
               }
             end
 
             it 'constructs cloud config from deployment manifest' do
-              expect(migrated_cloud_config['resource_pools']).to eq(['fake-resource-pool'])
-              expect(migrated_cloud_config['compilation']).to eq(['fake-compilation'])
-              expect(migrated_cloud_config['disk_pools']).to eq(['fake-disk-pools'])
-              expect(migrated_cloud_config['networks']).to eq(['fake-networks'])
+              expect(migrated_cloud_config['resource_pools']).to eq(['pool'])
+              expect(migrated_cloud_config['compilation']).to eq(['comp'])
+              expect(migrated_cloud_config['disk_pools']).to eq(['disk-pools'])
+              expect(migrated_cloud_config['networks']).to eq(['networks'])
             end
           end
 
           context 'when cloud config is set' do
-            let(:cloud_config) { {'vm_types'=>'fake-cloud-config'} }
+            let(:cloud_config) { { 'vm_types' => 'cloud-config' } }
 
             it 'returns passed cloud config' do
               expect(migrated_cloud_config).to eq(cloud_config)

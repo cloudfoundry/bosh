@@ -2,19 +2,25 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:manifest_hash) do
-   manifest_hash = Bosh::Spec::Deployments.legacy_manifest
-   manifest_hash['networks'].first['subnets'].first['range'] = network_range
-   manifest_hash['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
-   manifest_hash['networks'].first['subnets'].first['static'] = static_ips
-   manifest_hash
+    manifest_hash = Bosh::Spec::Deployments.legacy_manifest
+    manifest_hash['networks'].first['subnets'].first['range'] = network_range
+    manifest_hash['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
+    manifest_hash['networks'].first['subnets'].first['static'] = static_ips
+    manifest_hash
   end
-  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, manifest_hash, {}, {}, nil, nil) }
+  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, {}, nil) }
   let(:network_range) { '192.168.1.0/24' }
   let(:static_ips) { [] }
   let(:network_spec) { manifest_hash['networks'].first }
-  let(:planner_factory) { BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger) }
-  let(:deployment_plan) { planner_factory.create_from_manifest(manifest, [], [], {}) }
-  let(:global_network_resolver) { BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan, [], logger) }
+  let(:planner_factory) do
+    BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger)
+  end
+  let(:deployment_plan) do
+    planner_factory.create_from_manifest(manifest, [], [], {})
+  end
+  let(:global_network_resolver) do
+    BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan, [], logger)
+  end
   let(:instance_model) { BD::Models::Instance.make }
 
   subject(:manual_network) do
@@ -29,18 +35,31 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     )
   end
 
-  let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
-  let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+  let(:mock_client) do
+    instance_double(Bosh::Director::ConfigServer::ConfigServerClient)
+  end
+  let(:mock_client_factory) do
+    double(Bosh::Director::ConfigServer::ClientFactory)
+  end
   let(:interpolated_tags) { {} }
 
   before do
-    allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
-    allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
-    allow(mock_client).to receive(:interpolate_with_versioning).and_return(interpolated_tags)
+    allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create)
+      .and_return(mock_client_factory)
+    allow(mock_client_factory).to receive(:create_client)
+      .and_return(mock_client)
+    allow(mock_client).to receive(:interpolate_with_versioning)
+      .and_return(interpolated_tags)
 
     release = Bosh::Director::Models::Release.make(name: 'bosh-release')
-    template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
-    release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+    template = Bosh::Director::Models::Template.make(
+      name: 'foobar',
+      release: release
+    )
+    release_version = Bosh::Director::Models::ReleaseVersion.make(
+      version: '0.1-dev',
+      release: release
+    )
     release_version.add_template(template)
   end
 
@@ -56,55 +75,65 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     context 'when there are overlapping subnets' do
       let(:manifest) do
         manifest = Bosh::Spec::Deployments.legacy_manifest
-        manifest['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet({
-            'range' => '192.168.1.0/28',
-          })
-        Bosh::Director::Manifest.new(manifest, manifest, {}, {}, nil, nil)
+        manifest['networks'].first['subnets'] << Bosh::Spec::Deployments
+          .subnet('range' => '192.168.1.0/28')
+        Bosh::Director::Manifest.new(manifest, {}, nil)
       end
 
       it 'should raise an error' do
-        expect {
+        expect do
           manual_network
-        }.to raise_error(Bosh::Director::NetworkOverlappingSubnets)
+        end.to raise_error(Bosh::Director::NetworkOverlappingSubnets)
       end
     end
   end
 
   describe :network_settings do
     it 'should provide the network settings from the subnet' do
-      reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
+      reservation = BD::DesiredNetworkReservation.new_static(
+        instance_model,
+        manual_network,
+        '192.168.1.2'
+      )
 
-      expect(manual_network.network_settings(reservation, [])).to eq({
-            'type' => 'manual',
-            'ip' => '192.168.1.2',
-            'netmask' => '255.255.255.0',
-            'cloud_properties' => {},
-            'gateway' => '192.168.1.1',
-            'dns' => ['192.168.1.1', '192.168.1.2'],
-            'default' => []
-          })
+      expect(manual_network.network_settings(reservation, [])).to eq(
+        'type' => 'manual',
+        'ip' => '192.168.1.2',
+        'netmask' => '255.255.255.0',
+        'cloud_properties' => {},
+        'gateway' => '192.168.1.1',
+        'dns' => ['192.168.1.1', '192.168.1.2'],
+        'default' => []
+      )
     end
 
     it 'should set the defaults' do
-      reservation = BD::DesiredNetworkReservation.new_static(instance_model, manual_network, '192.168.1.2')
+      reservation = BD::DesiredNetworkReservation.new_static(
+        instance_model,
+        manual_network,
+        '192.168.1.2'
+      )
 
-      expect(manual_network.network_settings(reservation)).to eq({
-            'type' => 'manual',
-            'ip' => '192.168.1.2',
-            'netmask' => '255.255.255.0',
-            'cloud_properties' => {},
-            'gateway' => '192.168.1.1',
-            'dns' => ['192.168.1.1', '192.168.1.2'],
-            'default' => ['dns', 'gateway']
-          })
+      expect(manual_network.network_settings(reservation)).to eq(
+        'type' => 'manual',
+        'ip' => '192.168.1.2',
+        'netmask' => '255.255.255.0',
+        'cloud_properties' => {},
+        'gateway' => '192.168.1.1',
+        'dns' => ['192.168.1.1', '192.168.1.2'],
+        'default' => %w[dns gateway]
+      )
     end
 
     it 'should fail when there is no IP' do
-      reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, manual_network)
+      reservation = BD::DesiredNetworkReservation.new_dynamic(
+        instance_model,
+        manual_network
+      )
 
-      expect {
+      expect do
         manual_network.network_settings(reservation)
-      }.to raise_error(/without an IP/)
+      end.to raise_error(/without an IP/)
     end
   end
 
@@ -115,7 +144,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           {
             'range' => '10.1.0.0/24',
             'gateway' => '10.1.0.1',
-            'az' => 'zone_1',
+            'az' => 'zone_1'
           },
           {
             'range' => '10.2.0.0/24',
@@ -126,13 +155,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
             'range' => '10.4.0.0/24',
             'gateway' => '10.4.0.1',
             'az' => 'zone_1'
-          },
+          }
         ]
       )
     end
 
     it 'returns availability zones specified by subnets' do
-      expect(manual_network.availability_zones).to eq (['zone_1', 'zone_2'])
+      expect(manual_network.availability_zones).to eq %w[zone_1 zone_2]
     end
   end
 
@@ -143,26 +172,27 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           {
             'range' => '10.1.0.0/24',
             'gateway' => '10.1.0.1',
-            'az' => 'zone_1',
+            'az' => 'zone_1'
           },
           {
             'range' => '10.2.0.0/24',
             'gateway' => '10.2.0.1',
             'az' => 'zone_2'
-          },
+          }
         ]
       )
     end
 
-    it 'returns true when all availability zone names are contained by subnets' do
+    it 'is true when all availability zone names are contained by subnets' do
       expect(manual_network.has_azs?([])).to eq(true)
       expect(manual_network.has_azs?(['zone_1'])).to eq(true)
       expect(manual_network.has_azs?(['zone_2'])).to eq(true)
-      expect(manual_network.has_azs?(['zone_1', 'zone_2'])).to eq(true)
+      expect(manual_network.has_azs?(%w[zone_1 zone_2])).to eq(true)
     end
 
-    it 'returns false when any availability zone are not contained by a subnet' do
-      expect(manual_network.has_azs?(['zone_1', 'zone_3', 'zone_2', 'zone_4'])).to eq(false)
+    it 'is false when any availability zone are not contained by a subnet' do
+      azs = %w[zone_1 zone_3 zone_2 zone_4]
+      expect(manual_network.has_azs?(azs)).to eq(false)
     end
 
     it 'returns false when there are no subnets without az' do
@@ -197,19 +227,18 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           },
           {
             'range' => '10.10.2.0/24',
-            'gateway' => '10.10.2.1',
+            'gateway' => '10.10.2.1'
           }
         ]
       )
     end
 
     it 'raises an error' do
-      expect {
-        manual_network
-      }.to raise_error(
-          Bosh::Director::JobInvalidAvailabilityZone,
-          "Subnets on network 'a' must all either specify availability zone or not"
-        )
+      expect { manual_network }.to raise_error(
+        Bosh::Director::JobInvalidAvailabilityZone,
+        "Subnets on network 'a' must all either specify availability " \
+        'zone or not'
+      )
     end
   end
 end
