@@ -9,18 +9,18 @@ describe "When an errand's az is changed on a re-deploy", type: :integration do
   end
 
   let(:manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
-    job = manifest_hash['jobs'].first
-    job['networks'] = [
+    instance_group = manifest_hash['instance_groups'].first
+    instance_group['networks'] = [
       {
         'name' => 'a',
         'default' => ['dns', 'gateway']
       },
     ]
-    job['instances'] = 1
-    job['lifecycle'] = 'errand'
-    job['azs'] = ['my-az']
+    instance_group['instances'] = 1
+    instance_group['lifecycle'] = 'errand'
+    instance_group['azs'] = ['my-az']
     manifest_hash
   end
 
@@ -45,7 +45,7 @@ describe "When an errand's az is changed on a re-deploy", type: :integration do
 
   it 'should deploy successfully even when variable_sets cleanup fails' do
     deploy_simple_manifest(manifest_hash: manifest)
-    manifest['jobs'].first['azs'] = ['my-az2']
+    manifest['instance_groups'].first['azs'] = ['my-az2']
 
     _, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
     expect(exit_code).to eq(0)

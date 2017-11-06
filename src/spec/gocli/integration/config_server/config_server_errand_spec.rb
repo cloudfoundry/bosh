@@ -45,7 +45,7 @@ describe 'using director with config server and a deployment with errands', type
   context 'when config server does NOT have the variable' do
     let(:errand_manifest) do
       manifest = Bosh::Spec::NewDeployments.manifest_errand_with_placeholders
-      manifest['jobs'][1]['properties']['errand1']['gargamel_color'] = '((gargamel_color_variable))'
+      manifest['instance_groups'][1]['jobs'].first['properties']['errand1']['gargamel_color'] = '((gargamel_color_variable))'
       manifest
     end
 

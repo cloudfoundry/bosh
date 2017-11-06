@@ -42,8 +42,8 @@ describe 'cli: deployment process', type: :integration do
       }
     ]
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     output = bosh_runner.run('instances --details', json: true, deployment_name: 'simple')
@@ -98,7 +98,7 @@ describe 'cli: deployment process', type: :integration do
   end
 
   it 'should return instances --vitals' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     vitals = director.instances_ps_vitals[0]
 
     print vitals

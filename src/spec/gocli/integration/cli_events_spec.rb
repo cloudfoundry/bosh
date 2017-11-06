@@ -4,9 +4,9 @@ describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each
 
   it 'displays deployment events' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'][0]['persistent_disk_pool'] = 'disk_a'
-    manifest_hash['jobs'][0]['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'][0]['persistent_disk_pool'] = 'disk_a'
+    manifest_hash['instance_groups'][0]['instances'] = 1
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     disk_type = Bosh::Spec::NewDeployments.disk_type
     cloud_config['disk_types'] = [disk_type]

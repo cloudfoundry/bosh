@@ -8,8 +8,8 @@ describe 'migrating networks', type: :integration do
   end
 
   def deploy_with_ips(manifest, ips, options={})
-    manifest['jobs'].first['networks'].first['static_ips'] = ips
-    manifest['jobs'].first['instances'] = ips.size
+    manifest['instance_groups'].first['networks'].first['static_ips'] = ips
+    manifest['instance_groups'].first['instances'] = ips.size
     options.merge!(manifest_hash: manifest)
     deploy_simple_manifest(options)
   end
@@ -35,17 +35,17 @@ describe 'migrating networks', type: :integration do
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 2
-      manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.11', '192.168.1.10']
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 2
+      manifest_hash['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.11', '192.168.1.10']
       manifest_hash
     end
 
     let(:renamed_network_simple_manifest) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 2
-      manifest_hash['jobs'].first['networks'] = [{'name' => 'b'}]
-      manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10', '192.168.1.11']
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 2
+      manifest_hash['instance_groups'].first['networks'] = [{'name' => 'b'}]
+      manifest_hash['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.10', '192.168.1.11']
       manifest_hash
     end
 

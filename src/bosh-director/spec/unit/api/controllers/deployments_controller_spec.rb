@@ -19,9 +19,9 @@ module Bosh::Director
       def manifest_with_errand_hash(deployment_name='errand')
         manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
         manifest_hash['name'] = deployment_name
-        manifest_hash['jobs'] << {
+        manifest_hash['instance_groups'] << {
           'name' => 'another-errand',
-          'template' => 'errand1',
+          'jobs' => [{'name' => 'errand1'}],
           'stemcell' => 'default',
           'lifecycle' => 'errand',
           'vm_type' => 'a',
@@ -1356,7 +1356,7 @@ module Bosh::Director
             let(:service_errand) do
               {
                 'name' => 'service_errand_job',
-                'template' => 'job_with_bin_run',
+                'jobs' => [{'name' => 'job_with_bin_run'}],
                 'lifecycle' => 'service',
                 'vm_type' => 'a',
                 'stemcell' => 'default',
@@ -1367,7 +1367,7 @@ module Bosh::Director
 
             let!(:deployment_model) do
               manifest_hash = manifest_with_errand_hash
-              manifest_hash['jobs'] << service_errand
+              manifest_hash['instance_groups'] << service_errand
               model = Models::Deployment.make(
                 name: 'fake-dep-name',
                 manifest: YAML.dump(manifest_hash)
@@ -1535,7 +1535,7 @@ module Bosh::Director
           before do
             deployment = Models::Deployment.create(
               :name => 'fake-dep-name',
-              :manifest => YAML.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]})
+              :manifest => YAML.dump({'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]})
             )
             deployment.cloud_configs = [cloud_config]
             deployment.runtime_configs = [runtime_config_1, runtime_config_2, runtime_config_3]
@@ -1546,7 +1546,7 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq("{\"context\":{\"cloud_config_ids\":[#{cloud_config.id}],\"runtime_config_ids\":[#{runtime_config_2.id},#{runtime_config_3.id}]},\"diff\":[[\"jobs: []\",\"removed\"],[\"\",null],[\"name: fake-dep-name\",\"added\"]]}")
+              expect(last_response.body).to eq("{\"context\":{\"cloud_config_ids\":[#{cloud_config.id}],\"runtime_config_ids\":[#{runtime_config_2.id},#{runtime_config_3.id}]},\"diff\":[[\"instance_groups: []\",\"removed\"],[\"\",null],[\"name: fake-dep-name\",\"added\"]]}")
             end
 
             it 'gives a nice error when request body is not a valid yml' do
@@ -1577,7 +1577,7 @@ module Bosh::Director
             end
 
             context 'when cloud config exists' do
-              let(:manifest_hash) { {'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
+              let(:manifest_hash) { {'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
 
               it 'ignores cloud config if network section exists' do
                 Models::Deployment.create(

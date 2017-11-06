@@ -49,7 +49,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         env: client_env,
         include_credentials: false,
         return_exit_code: true,
-        manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+        manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
         cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
        )
       expect(exit_code).to eq(0)
@@ -128,7 +128,7 @@ CERT
           env: client_env,
           include_credentials: false,
           failure_expected: true,
-          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
           cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
         )
         expect(output).to include("one of the scopes: bosh.admin, bosh.deadbeef.admin")
@@ -144,7 +144,7 @@ CERT
           no_login: true,
           include_credentials: false,
           env: client_env,
-          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
           cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
         )
 
@@ -208,7 +208,7 @@ CERT
           no_login: true,
           include_credentials: false,
           env: client_env,
-          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell,
+          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
           cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
         )
 

@@ -5,9 +5,9 @@ describe "#146961875 When an errand's az is changed on a re-deploy", type: :inte
 
   let(:number_of_instances) { 1 }
   let(:manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
-    job = manifest_hash['jobs'].first
+    job = manifest_hash['instance_groups'].first
     job['networks'] = [
       {
         'name' => 'a',
@@ -52,7 +52,7 @@ describe "#146961875 When an errand's az is changed on a re-deploy", type: :inte
       expect(instance.availability_zone).to eq('my-az1')
     end
 
-    manifest['jobs'].first['azs'] = ['my-az2']
+    manifest['instance_groups'].first['azs'] = ['my-az2']
 
     deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
   end

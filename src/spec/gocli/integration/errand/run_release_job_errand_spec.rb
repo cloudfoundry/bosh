@@ -4,7 +4,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
   let(:deployment_name) { manifest_hash['name'] }
 
   let(:service_instance_group_with_errand) do
-    instance_group = Bosh::Spec::NewDeployments.service_job_with_errand
+    instance_group = Bosh::Spec::NewDeployments.service_instance_group_with_errand
     instance_group['instances'] = 2
     instance_group
   end
@@ -14,7 +14,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
   shared_examples_for 'a config that works with the --when-changed flag' do
     let(:manifest_hash) do
       hash = Bosh::Spec::NewDeployments.manifest_with_errand
-      hash['jobs'] << service_instance_group_with_errand
+      hash['instance_groups'] << service_instance_group_with_errand
       hash
     end
 
@@ -50,7 +50,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       expect(output).to match(/job=service_with_errand index=1/)
       expect(output).to match(/job=fake-errand-name index=0/)
 
-      manifest_hash['jobs'][1]['templates'] << emoji_errand_job
+      manifest_hash['instance_groups'][1]['jobs'] << emoji_errand_job
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       output = bosh_runner.run('run-errand errand1 --when-changed', deployment_name: deployment_name)
@@ -60,7 +60,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
     end
 
     it 'runs the errand if the errand failed on any of the selected instances' do
-      manifest_hash['jobs'][1]['properties']['errand1']['exit_code'] = 1
+      manifest_hash['instance_groups'][1]['jobs'][0]['properties']['errand1']['exit_code'] = 1
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name, failure_expected: true)
@@ -81,7 +81,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
     it_behaves_like 'a config that works with the --when-changed flag'
 
     context 'when running errands on service instances' do
-      let(:manifest_hash) { Bosh::Spec::NewDeployments.manifest_with_errand_job_on_service_instance }
+      let(:manifest_hash) { Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance }
 
       it 'runs the errand referenced by the job name on a service lifecycle instance' do
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
@@ -93,7 +93,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
       end
 
       it 'runs the errand referenced by the job name on multiple service lifecycle instances' do
-        manifest_hash['jobs'][0]['instances'] = 2
+        manifest_hash['instance_groups'][0]['instances'] = 2
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -110,8 +110,8 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
 
     context 'when there are multiple errand jobs on the instance group' do
       let(:manifest_hash) do
-        hash = Bosh::Spec::NewDeployments.manifest_with_errand_job_on_service_instance
-        hash['jobs'][0]['templates'] << emoji_errand_job
+        hash = Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance
+        hash['instance_groups'][0]['jobs'] << emoji_errand_job
         hash
       end
 
@@ -136,13 +136,13 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
     context 'when lifecycle service instance groups and lifecycle errand instance groups have the errand job' do
       let(:manifest_hash) do
         hash = Bosh::Spec::NewDeployments.manifest_with_errand
-        hash['jobs'] << service_instance_group_with_errand
-        hash['jobs'] << second_service_instance_group_with_errand
+        hash['instance_groups'] << service_instance_group_with_errand
+        hash['instance_groups'] << second_service_instance_group_with_errand
         hash
       end
 
       let(:second_service_instance_group_with_errand) do
-        instance_group = Bosh::Spec::NewDeployments.service_job_with_errand
+        instance_group = Bosh::Spec::NewDeployments.service_instance_group_with_errand
         instance_group['name'] = 'second_service_with_errand'
         instance_group
       end
@@ -165,8 +165,8 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
 
     context 'when starting a vm for an errand lifecycle group fails' do
       let(:manifest_hash) do
-        hash = Bosh::Spec::NewDeployments.manifest_with_errand_job_on_service_instance
-        hash['jobs'] << Bosh::Spec::NewDeployments.simple_errand_job
+        hash = Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance
+        hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_errand_instance_group
         hash
       end
 
@@ -183,13 +183,13 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
     context 'when filtering to a particular set of instances' do
       let(:manifest_hash) do
         hash = Bosh::Spec::NewDeployments.manifest_with_errand
-        hash['jobs'] << service_instance_group_with_errand
-        hash['jobs'] << second_service_instance_group_with_errand
+        hash['instance_groups'] << service_instance_group_with_errand
+        hash['instance_groups'] << second_service_instance_group_with_errand
         hash
       end
 
       let(:second_service_instance_group_with_errand) do
-        instance_group = Bosh::Spec::NewDeployments.service_job_with_errand
+        instance_group = Bosh::Spec::NewDeployments.service_instance_group_with_errand
         instance_group['instances'] = 2
         instance_group['name'] = 'second_service_with_errand'
         instance_group

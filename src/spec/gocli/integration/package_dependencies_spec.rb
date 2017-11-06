@@ -5,12 +5,12 @@ describe 'package dependencies', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['releases'].first['version'] = 'latest'
-    manifest_hash['jobs'] = [
+    manifest_hash['instance_groups'] = [
       {
         'name'          => 'transitive_deps',
-        'template'      => 'transitive_deps',
+        'jobs'          => ['name' => 'transitive_deps'],
         'vm_type' => 'a',
         'instances'     => 1,
         'networks'      => [{ 'name' => 'a' }],

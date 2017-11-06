@@ -69,7 +69,7 @@ module Bosh::Director::DeploymentPlan
     let(:instance_group_spec) { Bosh::Spec::NewDeployments.simple_instance_group }
     let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
     let(:cloud_config_manifest) { Bosh::Spec::NewDeployments.simple_cloud_config }
-    let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
+    let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
     let(:deployment_model) do
       cloud_config = BD::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
       deployment = BD::Models::Deployment.make(
@@ -598,7 +598,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       let(:instance_group_spec) do
-        instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell['jobs'].first
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
         instance_group_spec['persistent_disk_pool'] = 'disk_a'
         instance_group_spec
       end

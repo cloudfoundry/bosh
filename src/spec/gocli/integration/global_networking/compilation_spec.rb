@@ -131,7 +131,7 @@ describe 'global networking', type: :integration do
   context 'when compilation fails' do
     it 'releases its IP for next deploy' do
       upload_cloud_config
-      failing_compilation_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'fails_with_too_much_output')
+      failing_compilation_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'fails_with_too_much_output')
       deploy_simple_manifest(manifest_hash: failing_compilation_manifest, failure_expected: true)
 
       compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
@@ -194,9 +194,9 @@ describe 'global networking', type: :integration do
 
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
 
-      job_hash = manifest_hash['jobs'].first
-      job_hash['vm_type'] = 'foo-compilation'
-      job_hash['stemcell'] = 'default'
+      instance_group_hash = manifest_hash['instance_groups'].first
+      instance_group_hash['vm_type'] = 'foo-compilation'
+      instance_group_hash['stemcell'] = 'default'
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm')[0]

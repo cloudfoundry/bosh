@@ -7,7 +7,7 @@ describe 'cli: variables', type: :integration do
   let(:director_name) { current_sandbox.director_name }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:manifest_hash) do
-    Bosh::Spec::NewDeployments.test_release_manifest.merge(
+    Bosh::Spec::NewDeployments.manifest_with_release.merge(
       {
         'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: '((ig_placeholder))',
@@ -106,7 +106,7 @@ describe 'cli: variables', type: :integration do
 
   context 'when dealing with multiple deploys' do
     let(:manifest_hash) do
-      Bosh::Spec::NewDeployments.test_release_manifest.merge(
+      Bosh::Spec::NewDeployments.manifest_with_release.merge(
         {
           'releases'=>[{'name'=>'bosh-release', 'version'=>'0.1-dev'}],
           'instance_groups' => [
@@ -216,7 +216,7 @@ describe 'cli: variables', type: :integration do
 
     context 'when you have failed deploys' do
       let(:manifest_hash) do
-        Bosh::Spec::NewDeployments.test_release_manifest.merge(
+        Bosh::Spec::NewDeployments.manifest_with_release.merge(
           {
             'releases'=>[{'name'=>'bosh-release', 'version'=>'0.1-dev'}],
             'instance_groups' => [

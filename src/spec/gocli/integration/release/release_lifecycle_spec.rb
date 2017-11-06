@@ -55,7 +55,7 @@ describe 'release lifecycle', type: :integration do
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
-    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest['releases'].first['version'] = 'latest'
 
     deployment_manifest = yaml_file('deployment_manifest', manifest)

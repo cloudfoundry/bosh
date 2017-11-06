@@ -20,8 +20,8 @@ describe 'network configuration', type: :integration do
         'cloud_properties' => {},
       }
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 3
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 3
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
@@ -38,12 +38,12 @@ describe 'network configuration', type: :integration do
       cloud_config_hash['networks'].first['subnets'].first['static'] = %w(192.168.1.100)
       cloud_config_hash['vm_types'].first['size'] = 1
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
-      manifest_hash['jobs'].first['networks'].first['static_ips'] = '192.168.1.100'
+      manifest_hash['instance_groups'].first['networks'].first['static_ips'] = '192.168.1.100'
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
@@ -52,7 +52,7 @@ describe 'network configuration', type: :integration do
 
     context 'Network settings are changed' do
       let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
-      let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_stemcell }
+      let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
 
       it 'recreates VM when DNS nameservers are changed' do
         cloud_config_hash['networks'].first['subnets'].first['dns'] = ['8.8.8.8']
@@ -100,8 +100,8 @@ describe 'network configuration', type: :integration do
       cloud_config_hash['networks'].first['subnets'][0] = subnet
       cloud_config_hash['vm_types'].first['size'] = 4
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 4
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 4
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
       deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
@@ -121,10 +121,10 @@ describe 'network configuration', type: :integration do
         }
       ]
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
-      manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
-      manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
+      manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
+      manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
 
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
       legacy_manifest['networks'] = cloud_config_hash['networks']
@@ -154,10 +154,10 @@ describe 'network configuration', type: :integration do
         }
       ]
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
-      manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
-      manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
+      manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
+      manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
 
       current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
 
@@ -170,7 +170,7 @@ describe 'network configuration', type: :integration do
 
     it 'does not recreate VMs when switching between networks with the exact same configuration' do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
       before_ips = director.instances.first.ips
@@ -178,7 +178,7 @@ describe 'network configuration', type: :integration do
       cloud_config_hash['networks'] << cloud_config_hash['networks'][0].merge({'name' => 'b'})
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      manifest_hash['jobs'].first['networks'] = [{'name' => 'b'}]
+      manifest_hash['instance_groups'].first['networks'] = [{'name' => 'b'}]
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       after_ips = director.instances.first.ips
@@ -204,10 +204,10 @@ describe 'network configuration', type: :integration do
         }
       ]
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
-      manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
-      manifest_hash['jobs'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
+      manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
+      manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
 
       current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
 
@@ -227,15 +227,15 @@ describe 'network configuration', type: :integration do
       end
 
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash
       end
 
       context 'when the manifest requests NIC in both networks for instance' do
         it 'does not recreate VM' do
-          manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
-          manifest_hash['jobs'].first['networks'] << {'name' => 'b'}
+          manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
+          manifest_hash['instance_groups'].first['networks'] << {'name' => 'b'}
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
           agent_id = director.instances.first.agent_id
           deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -313,14 +313,14 @@ describe 'network configuration', type: :integration do
       }
 
       let(:manifest_hash) {
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-        manifest_hash['jobs'].first['instances'] = 1
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash
       }
 
       context 'default "addressable" network is specified' do
         it 'uses ip from default "addressable" network' do
-          manifest_hash['jobs'].first['networks'] = [
+          manifest_hash['instance_groups'].first['networks'] = [
             {
               'name' => 'a',
               'static_ips' => '192.168.1.10',
@@ -339,7 +339,7 @@ describe 'network configuration', type: :integration do
         end
 
         it 'ignores default "gateway" network' do
-          manifest_hash['jobs'].first['networks'] = [
+          manifest_hash['instance_groups'].first['networks'] = [
             {
               'name' => 'a',
               'static_ips' => '192.168.1.10',
@@ -359,7 +359,7 @@ describe 'network configuration', type: :integration do
         end
 
         it 'errors if specified on multiple networks' do
-          manifest_hash['jobs'].first['networks'] = [
+          manifest_hash['instance_groups'].first['networks'] = [
             {
               'name' => 'a',
               'static_ips' => '192.168.1.10',
@@ -379,7 +379,7 @@ describe 'network configuration', type: :integration do
 
       context 'default "addressable" network not specified' do
         it 'uses ip from default "gateway" network' do
-          manifest_hash['jobs'].first['networks'] = [
+          manifest_hash['instance_groups'].first['networks'] = [
             {
               'name' => 'a',
               'static_ips' => '192.168.1.10',
@@ -405,9 +405,9 @@ describe 'network configuration', type: :integration do
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.100']
         cloud_config_hash['vm_types'].first['size'] = 1
 
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-        manifest_hash['jobs'].first['instances'] = 1
-        manifest_hash['jobs'].first['networks'].first['static_ips'] = '192.168.1.100'
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'].first['instances'] = 1
+        manifest_hash['instance_groups'].first['networks'].first['static_ips'] = '192.168.1.100'
 
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
@@ -429,9 +429,9 @@ describe 'network configuration', type: :integration do
           }
         ]
 
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-        manifest_hash['jobs'].first['instances'] = 1
-        manifest_hash['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'].first['instances'] = 1
+        manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
 
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
         instance = director.instance('foobar','0', deployment_name: 'simple', env: client_env)

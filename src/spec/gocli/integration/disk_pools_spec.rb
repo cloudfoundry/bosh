@@ -26,8 +26,8 @@ describe 'disk pools', type: :integration do
   end
 
   it 'allows specifying persistent_disk size on a job' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['persistent_disk'] = 3000
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['persistent_disk'] = 3000
 
     deploy_from_scratch(manifest_hash: manifest_hash)
 
@@ -37,8 +37,8 @@ describe 'disk pools', type: :integration do
   end
 
   it 'allows NOT specifying a persistent_disk' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first.delete('persistent_disk')
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first.delete('persistent_disk')
     deploy_from_scratch(manifest_hash: manifest_hash)
 
     director.instances.each do |instance|

@@ -6,8 +6,8 @@ describe 'Using multiple CPIs', type: :integration do
   let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
   let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis }
   let(:cpi_config) { Bosh::Spec::Deployments.simple_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)) }
-  let(:job) { Bosh::Spec::NewDeployments.simple_job(:azs => ['z1', 'z2']) }
-  let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job]) }
+  let(:instance_group) { Bosh::Spec::NewDeployments.simple_instance_group(:azs => ['z1', 'z2']) }
+  let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group]) }
   let(:cloud_config_manifest) { yaml_file('cloud_manifest', cloud_config) }
   let(:cpi_config_manifest) { yaml_file('cpi_manifest', cpi_config) }
   let(:deployment_manifest) { yaml_file('deployment_manifest', deployment) }
@@ -62,7 +62,7 @@ describe 'Using multiple CPIs', type: :integration do
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
         # reduce instance count, just to verify we can delete a vm during a live cpi transition
-        deployment['jobs'][0]['instances'] = 2
+        deployment['instance_groups'][0]['instances'] = 2
         deployment_manifest = yaml_file('deployment_manifest', deployment)
 
         # deploy so we get onto the latest cloud-config/cpi names
@@ -204,9 +204,9 @@ describe 'Using multiple CPIs', type: :integration do
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
       # Remove z2 from new deploy
-      job = Bosh::Spec::NewDeployments.simple_job(:azs => ['z1'])
+      instance_group = Bosh::Spec::NewDeployments.simple_instance_group(:azs => ['z1'])
 
-      deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job])
+      deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group])
       deployment_manifest = yaml_file('deployment_manifest', deployment)
 
       bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')

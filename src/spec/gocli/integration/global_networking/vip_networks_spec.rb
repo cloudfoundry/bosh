@@ -19,9 +19,9 @@ describe 'vip networks', type: :integration do
   end
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['instances'] = 1
-    manifest_hash['jobs'].first['networks'] = [
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['instances'] = 1
+    manifest_hash['instance_groups'].first['networks'] = [
       {'name' => cloud_config_hash['networks'].first['name'], 'default' => ['dns', 'gateway']},
       {'name' => 'vip-network', 'static_ips' => ['69.69.69.69']}
     ]
@@ -29,9 +29,9 @@ describe 'vip networks', type: :integration do
   end
 
   let(:updated_simple_manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['instances'] = 2
-    manifest_hash['jobs'].first['networks'] = [
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['instances'] = 2
+    manifest_hash['instance_groups'].first['networks'] = [
       {'name' => cloud_config_hash['networks'].first['name'], 'default' => ['dns', 'gateway']},
       {'name' => 'vip-network', 'static_ips' => ['68.68.68.68', '69.69.69.69']}
     ]

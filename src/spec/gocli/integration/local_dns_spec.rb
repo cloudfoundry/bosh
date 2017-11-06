@@ -30,7 +30,7 @@ describe 'local DNS', type: :integration do
 
   it 'sends records for vms that have not yet been created' do
     initial_manifest = initial_manifest(2, 1)
-    initial_manifest['jobs'][0]['templates'] = ['name' => 'local_dns_records_json']
+    initial_manifest['instance_groups'][0]['jobs'] = ['name' => 'local_dns_records_json']
     deploy_simple_manifest(manifest_hash: initial_manifest)
 
     instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
@@ -43,7 +43,7 @@ describe 'local DNS', type: :integration do
     context 'upgrade deployment from 1 to 10 instances' do
       it 'sends sync_dns action to all agents and updates agent dns config' do
         manifest_deployment = initial_deployment(1, 5)
-        manifest_deployment['jobs'][0]['instances'] = 10
+        manifest_deployment['instance_groups'][0]['instances'] = 10
         deploy_simple_manifest(manifest_hash: manifest_deployment)
 
         etc_hosts = parse_agent_etc_hosts(9)
@@ -65,13 +65,13 @@ describe 'local DNS', type: :integration do
       let(:manifest_deployment) { initial_deployment(10, 5) }
 
       it 'deploys and downgrades with max_in_flight' do
-        manifest_deployment['jobs'][0]['instances'] = 5
+        manifest_deployment['instance_groups'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         etc_hosts = parse_agent_etc_hosts(4)
         expect(etc_hosts.size).to eq(5), "expected etc_hosts to have 5 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
         expect(etc_hosts).to match_array(generate_instance_dns)
 
-        manifest_deployment['jobs'][0]['instances'] = 6
+        manifest_deployment['instance_groups'][0]['instances'] = 6
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         etc_hosts = parse_agent_etc_hosts(5)
         expect(etc_hosts.size).to eq(6), "expected etc_hosts to have 6 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
@@ -153,7 +153,7 @@ describe 'local DNS', type: :integration do
     let(:manifest_deployment) { initial_deployment(2, 1) }
 
     it 'deploys and downgrades with max_in_flight' do
-      manifest_deployment['jobs'][0]['instances'] = 1
+      manifest_deployment['instance_groups'][0]['instances'] = 1
       deploy_simple_manifest(manifest_hash: manifest_deployment)
 
       output = bosh_runner.run('task --debug 5')
@@ -320,8 +320,8 @@ describe 'local DNS', type: :integration do
           'update_watch_time' => 20
         },
 
-        'jobs' => [
-          Bosh::Spec::NewDeployments.simple_job(
+        'instance_groups' => [
+          Bosh::Spec::NewDeployments.simple_instance_group(
             name: instance_group_name,
             instances: number_of_instances,
             azs: ['z1', 'z2']
@@ -329,7 +329,7 @@ describe 'local DNS', type: :integration do
         ]
       })
     manifest_deployment['name'] = deployment_name
-    manifest_deployment['jobs'][0]['networks'][0]['name'] = network_name
+    manifest_deployment['instance_groups'][0]['networks'][0]['name'] = network_name
     manifest_deployment
   end
 

@@ -4,16 +4,16 @@ describe 'restart job', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) {
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] << {
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] << {
         'name' => 'another-job',
-        'template' => 'foobar',
+        'jobs' => [{'name' => 'foobar'}],
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
         'stemcell' => 'default',
     }
-    manifest_hash['jobs'].first['instances'] = 2
+    manifest_hash['instance_groups'].first['instances'] = 2
     manifest_hash
   }
 

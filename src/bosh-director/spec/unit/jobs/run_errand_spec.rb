@@ -41,7 +41,7 @@ module Bosh::Director
       manifest_hash
     end
     let(:service_errand_manifest_hash) do
-      service_errand_manifest_hash = Bosh::Spec::Deployments.manifest_with_errand_job_on_service_instance
+      service_errand_manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance
       service_errand_manifest_hash['name'] = 'fake-dep-name'
       service_errand_manifest_hash
     end
