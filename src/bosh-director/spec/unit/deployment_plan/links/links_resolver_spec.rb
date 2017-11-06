@@ -151,14 +151,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
     version = create_new_release('1.0.0', template_consumes_links, template_provides_links)
 
-    deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment',
-      link_spec_json: '{"mysql":{"mysql-template":{"db":{"name":"db","type":"db"}}}}')
+    deployment_model = Bosh::Director::Models::Deployment.make(name: 'fake-deployment')
     Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
     version.add_deployment(deployment_model)
 
     deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment',
       manifest: deployment_manifest.to_json,
-      link_spec_json: '{"mysql":{"mysql-template":{"db":{"name":"db","type":"db"}}}}')
+      link_spec_json: '{"mysql":{"mysql-template":{"db":{"db":{}}}}}')
     Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
     version.add_deployment(deployment_model)
   end
@@ -386,9 +385,38 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             expect(api_server_instance_group.resolved_links).to eq(links_hash)
           end
         end
+
+        context 'when other deployment link type does not match' do
+          let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment'}} }
+
+          let(:template_consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
+          let(:template_provides_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
+
+          it 'fails' do
+            expect {
+              links_resolver.resolve(api_server_instance_group)
+            }.to raise_error Bosh::Director::DeploymentInvalidLink, "Cannot resolve link path 'other-deployment.mysql.mysql-template.db' required for link 'db' in instance group 'api-server' on job 'api-server-template'"
+          end
+        end
       end
 
+
       context 'when another deployment does not have link source' do
+        let(:links) { {'db' => {"from" => 'bad_alias', 'deployment' => 'other-deployment'}} }
+
+        it 'fails' do
+          expected_error_msg = <<-EXPECTED.strip
+Unable to process links for deployment. Errors are:
+  - Can't resolve link 'bad_alias' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'. Please make sure the link was provided and shared.
+          EXPECTED
+
+          expect {
+            links_resolver.resolve(api_server_instance_group)
+          }.to raise_error(expected_error_msg)
+        end
+      end
+
+      context 'when requested deployment does not exist' do
         let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existent'}} }
 
         it 'fails' do
@@ -405,7 +433,7 @@ Unable to process links for deployment. Errors are:
     end
 
     context 'when provided link type does not match required link type' do
-      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'fake-deployment'}} }
+      let(:links) { {'db' => {"from" => 'db'}} }
 
       let(:template_consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
       let(:template_provides_links) { [{name: "db", type: "db"}] } # name and type is implicitly db

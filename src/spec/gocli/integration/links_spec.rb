@@ -2114,6 +2114,133 @@ Error: Unable to process links for deployment. Errors are:
         expect(template['databases']['backup_properties']).to eq('props_backup_db_bar')
       end
     end
+
+    context 'when consumer and provider has different types' do
+      let(:cloud_config) {Bosh::Spec::NewDeployments.simple_cloud_config}
+
+      let(:provider_alias) {'provider_login'}
+      let(:provides_definition) do
+        {
+          'admin' => {
+            'as' => provider_alias
+          }
+        }
+      end
+
+      let(:consumes_definition) do
+        {
+          'login' => {
+            'from' => provider_alias
+          }
+        }
+      end
+
+      let(:new_provides_definition) do
+        {
+          'credentials' => {
+            'as' => provider_alias
+          }
+        }
+      end
+
+      def get_provider_instance_group(provides_definition)
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'provider_ig',
+          jobs: [
+            {
+              'name' => 'provider_job',
+              'provides' => provides_definition
+            }
+          ],
+          instances: 2
+        )
+        instance_group_spec
+      end
+
+      let(:consumer_instance_group) do
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'consumer_ig',
+          jobs: [
+            {
+              'name' => 'consumer_job',
+              'consumes' => consumes_definition
+            }
+          ],
+          instances: 1
+        )
+        instance_group_spec
+      end
+
+      let(:releases) do
+        [
+          {
+            'name' => 'changing_job_with_stable_links',
+            'version' => 'latest',
+          }
+        ]
+      end
+
+      context 'but the alias is same' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NewDeployments.minimal_manifest
+          manifest['releases'] = releases
+          manifest['instance_groups'] = [get_provider_instance_group(provides_definition), consumer_instance_group]
+          manifest
+        end
+
+        it 'should fail to create the link' do
+          bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
+          output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+          expect(output).to include(%Q{Error: Cannot resolve link path 'minimal.provider_ig.provider_job.provider_login' required for link 'login' in instance group 'consumer_ig' on job 'consumer_job'})
+        end
+
+        context 'and the link is shared from another deployment' do
+          let(:provider_manifest) do
+            manifest = Bosh::Spec::NewDeployments.minimal_manifest
+            manifest['name'] = 'provider_deployment'
+            manifest['releases'] = releases
+            manifest['instance_groups'] = [get_provider_instance_group(provides_definition)]
+            manifest
+          end
+
+          let(:consumer_manifest) do
+            manifest = Bosh::Spec::NewDeployments.minimal_manifest
+            manifest['name'] = 'consumer_deployment'
+            manifest['releases'] = releases
+            manifest['instance_groups'] = [consumer_instance_group]
+            manifest
+          end
+
+          let(:provides_definition) do
+            {
+              'admin' => {
+                'shared' => true,
+                'as' => provider_alias
+              }
+            }
+          end
+
+          let(:consumes_definition) do
+            {
+              'login' => {
+                'deployment' => provider_manifest['name'],
+                'from' => provider_alias
+              }
+            }
+          end
+
+          before do
+            bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
+            deploy_simple_manifest(manifest_hash: provider_manifest)
+          end
+
+          it 'should fail to create the link' do
+            output = deploy_simple_manifest(manifest_hash: consumer_manifest, failure_expected: true)
+            expect(output).to include(%Q{Error: Cannot resolve link path 'provider_deployment.provider_ig.provider_job.provider_login' required for link 'login' in instance group 'consumer_ig' on job 'consumer_job'})
+          end
+        end
+      end
+    end
   end
 
   context 'when addon job requires link' do
@@ -2239,6 +2366,23 @@ Error: Unable to process links for deployment. Errors are:
       expect(template['a']).to eq(2)
       expect(template['b']).to eq(3)
       expect(template['c']).to eq(4)
+    end
+
+    it 'should only have one consumer and no providers' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['jobs'] = [job_with_manual_consumes_link]
+
+      deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
+
+      response = send_director_api_request("/link_providers", "deployment=#{manifest['name']}", 'GET')
+      expect(response).not_to eq(nil)
+      response_body = JSON.parse(response.read_body)
+      expect(response_body.count).to eq(0)
+
+      response = send_director_api_request("/link_consumers", "deployment=#{manifest['name']}", 'GET')
+      expect(response).not_to eq(nil)
+      response_body = JSON.parse(response.read_body)
+      expect(response_body.count).to eq(1)
     end
   end
 
