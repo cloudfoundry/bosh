@@ -6,7 +6,7 @@ module Bosh::Director
       manifest_text = deployment_model.manifest || '{}'
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(deployment_model.runtime_configs)
       consolidated_cloud_config = Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(deployment_model.cloud_configs)
-      load_manifest(YAML.safe_load(manifest_text), consolidated_cloud_config, consolidated_runtime_config, options)
+      load_manifest(YAML.safe_load(manifest_text, [], [], true), consolidated_cloud_config, consolidated_runtime_config, options)
     end
 
     def self.load_from_hash(manifest_hash, cloud_configs, runtime_configs, options = {})
