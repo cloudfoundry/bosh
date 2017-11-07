@@ -462,6 +462,74 @@ module Bosh::Director
             end
           end
 
+        describe 'recreating' do
+          shared_examples_for "recreates with configs" do
+            it 'recreates with the latest configs if you send a manifest' do
+              cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
+              cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
+              runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
+              runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+
+              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
+              deployment.cloud_configs = [cc_old]
+              deployment.runtime_configs = [runtime_old]
+
+              instance = Models::Instance.create(
+                deployment: deployment,
+                job: 'dea',
+                index: '2',
+                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                state: 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
+              )
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), [cc_new], [runtime_new], deployment, hash_including(options))
+                          .and_return(OpenStruct.new(:id => 1))
+              put "#{path}", JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
+              expect(last_response).to be_redirect
+            end
+
+            it 'recreates with the previous configs rather than the latest' do
+              cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
+              cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
+              runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
+              runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+
+              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
+              deployment.cloud_configs = [cc_old]
+              deployment.runtime_configs = [runtime_old]
+
+              instance = Models::Instance.create(
+                deployment: deployment,
+                job: 'dea',
+                index: '2',
+                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                state: 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
+              )
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), [cc_old], [runtime_old], deployment, hash_including(options))
+                          .and_return(OpenStruct.new(:id => 1))
+              put "#{path}", '', {'CONTENT_TYPE' => 'text/yaml'}
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with an instance_group' do
+            let(:path) {'/foo/jobs/dea?state=recreate'}
+            let(:options) { {"job_states" => {"dea" => {"state" => "recreate"}}} }
+            it_behaves_like 'recreates with configs'
+          end
+
+          context 'with an index or ID' do
+            let(:path) {'/foo/jobs/dea/2?state=recreate'}
+            let(:options) { {"job_states" => {"dea" => {"instance_states" => {2 => "recreate"}}}} }
+            it_behaves_like 'recreates with configs'
+          end
+        end
+
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
             let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started', :variable_set => Models::VariableSet.create(deployment: deployment)) }

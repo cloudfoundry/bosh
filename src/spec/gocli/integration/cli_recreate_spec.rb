@@ -3,8 +3,9 @@ require_relative '../spec_helper'
 describe 'recreate instance', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'recreates an instance only when using index' do
+  it 'recreates an instance only when using index with the original config' do
     deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: {})
 
     initial_instances = director.instances
     instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
@@ -16,8 +17,9 @@ describe 'recreate instance', type: :integration do
     expect((initial_instances-[instance_to_be_recreated]).map(&:vm_cid)).to match_array((instances_after_instance_recreate-[instance_was_recreated]).map(&:vm_cid))
   end
 
-  it 'recreates an instance only when using instance uuid' do
+  it 'recreates an instance only when using instance uuid with the original config' do
     deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: {})
 
     initial_instances = director.instances
     instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
@@ -40,7 +42,7 @@ describe 'recreate instance', type: :integration do
     )
   end
 
-  it 'recreates vms for a given instance group or the whole deployment' do
+  it 'recreates vms for a given instance group or the whole deployment with the original config' do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups']<< {
         'name' => 'another-job',
@@ -52,6 +54,7 @@ describe 'recreate instance', type: :integration do
     }
     manifest_hash['instance_groups'].first['instances']= 2
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: {})
 
     #only vms for one job should be recreated
     initial_instances = director.instances
