@@ -200,12 +200,13 @@ module Bosh::Director
       end
 
       get '/', authorization: :list_deployments do
+        latest_cloud_configs = Models::Config.latest_set('cloud').map(&:id).sort
         deployments = @deployment_manager.all_by_name_asc
           .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
           .map do |deployment|
           cloud_config = if deployment.cloud_configs.empty?
                            'none'
-                         elsif deployment.cloud_configs.map(&:id).sort == Models::Config.latest_set('cloud').map(&:id).sort
+                         elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
                            'latest'
                          else
                            'outdated'
