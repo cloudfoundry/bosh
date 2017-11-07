@@ -84,13 +84,15 @@ module Bosh::Director
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest = deployment.manifest
+          latest_cloud_configs = deployment.cloud_configs
+          latest_runtime_configs = deployment.runtime_configs
         else
           manifest_hash = validate_manifest_yml(request.body.read, nil)
           manifest =  YAML.dump(manifest_hash)
+          latest_cloud_configs = Models::Config.latest_set('cloud')
+          latest_runtime_configs = Models::Config.latest_set('runtime')
         end
 
-        latest_cloud_configs = Models::Config.latest_set('cloud')
-        latest_runtime_configs = Models::Config.latest_set('runtime')
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
@@ -117,13 +119,15 @@ module Bosh::Director
 
         if request.content_length.nil? || request.content_length.to_i == 0
           manifest = deployment.manifest
+          latest_cloud_configs = deployment.cloud_configs
+          latest_runtime_configs = deployment.runtime_configs
         else
           manifest_hash = validate_manifest_yml(request.body.read, nil)
           manifest =  YAML.dump(manifest_hash)
+          latest_cloud_configs = Models::Config.latest_set('cloud')
+          latest_runtime_configs = Models::Config.latest_set('runtime')
         end
 
-        latest_cloud_configs = Models::Config.latest_set('cloud')
-        latest_runtime_configs = Models::Config.latest_set('runtime')
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
