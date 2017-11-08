@@ -198,8 +198,6 @@ else
     'user' => p('blobstore.director.user'),
     'password' => p('blobstore.director.password'),
     'ca_cert' => p('blobstore.ssl.ca_cert'),
-    'cert' => p('blobstore.ssl.cert'),
-    'key' => p('blobstore.ssl.key')
   }
 end
 
@@ -472,8 +470,6 @@ else
   agent_blobstore_options['user'] = p('blobstore.agent.user')
   agent_blobstore_options['password'] = p('blobstore.agent.password')
   agent_blobstore_options['ca_cert'] = p('blobstore.ssl.ca_cert')
-  agent_blobstore_options['cert'] = p('blobstore.ssl.cert')
-  agent_blobstore_options['key'] = p('blobstore.ssl.key')
 end
 
 JSON.dump(params)
