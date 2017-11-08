@@ -59,7 +59,6 @@ module Bosh::Director
         :nats_client_ca_private_key_path,
         :nats_client_ca_certificate_path,
         :runtime,
-        :agent_env
       )
 
       def clear
@@ -137,7 +136,7 @@ module Bosh::Director
         @default_ssh_options = config['default_ssh_options']
 
         @cloud_options = config['cloud']
-        @agent_env = config.fetch('agent',{}).fetch('env', {})
+        @agent_env = config.fetch('agent',{}).fetch('env', {}).fetch('bosh', {})
 
         @compiled_package_cache_options = config['compiled_package_cache']
         @name = config['name'] || ''

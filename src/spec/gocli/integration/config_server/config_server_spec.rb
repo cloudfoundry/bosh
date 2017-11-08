@@ -341,7 +341,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               }
             end
 
-            let(:resolved_env_hash) do
+            let(:expected_env_hash) do
               {
                 'env1' => 'lazy smurf',
                 'env2' => 'env_value2',
@@ -350,8 +350,10 @@ Error: Unable to render instance groups for deployment. Errors are:
                 },
                 'bosh' => {
                   'mbus' => Hash,
+                  'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
                   'group' => 'testdirector-simple-foobar',
-                  'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                  'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar'],
+
                 },
               }
             end
@@ -379,7 +381,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             it 'should interpolate them correctly' do
               deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
               create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-              expect(create_vm_invocations.last.inputs['env']).to match(resolved_env_hash)
+              expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
               expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
             end
@@ -412,7 +414,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               }
             end
 
-            let(:resolved_env_hash) do
+            let(:expected_env_hash) do
               {
                 'env1' => 'lazy cat',
                 'env2' => 'env_value2',
@@ -420,6 +422,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                   'color' => 'smurf blue'
                 },
                 'bosh' => {
+                  'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
                   'mbus' => Hash,
                   'group' => 'testdirector-simple-foobar',
                   'password' => 'foobar',
@@ -438,7 +441,7 @@ Error: Unable to render instance groups for deployment. Errors are:
               deploy_from_scratch(no_login: true, include_credentials: false, env: client_env, manifest_hash: deployment_manifest)
 
               create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-              expect(create_vm_invocations.last.inputs['env']).to match(resolved_env_hash)
+              expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
 
               deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
               expect(deployments).to eq([{'name' => 'simple', 'release_s' => 'bosh-release/0+dev.1', 'stemcell_s' => 'ubuntu-stemcell/1',
@@ -499,6 +502,7 @@ Error: Unable to render instance groups for deployment. Errors are:
                                                           },
                                                           'bosh' => {
                                                             'mbus' => Hash,
+                                                            'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
                                                             'password' => 'foobar',
                                                             'remove_dev_tools' => true,
                                                             'group' => 'testdirector-simple-foobar',

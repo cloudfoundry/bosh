@@ -63,6 +63,7 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' => {
             'mbus' => expected_mbus,
+            'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
             'group' => String,
             'groups' => Array
           }
@@ -131,6 +132,7 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' => {
             'mbus' => expected_mbus,
+            'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
             'group' => String,
             'groups' => Array,
           }
@@ -194,6 +196,7 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' =>{
             'mbus' => expected_mbus,
+            'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
             'password' => 'foobar',
             'group' => 'testdirector-simple-foobar',
             'groups' => ['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
@@ -270,6 +273,7 @@ describe 'CPI calls', type: :integration do
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
               'group' => expected_group,
               'groups' => expected_groups,
             }
@@ -501,6 +505,7 @@ describe 'CPI calls', type: :integration do
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
               'group' => expected_group,
               'groups' => expected_groups
             }

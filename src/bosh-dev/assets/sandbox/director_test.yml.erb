@@ -162,3 +162,8 @@ nats:
   client_private_key_path: <%= nats_director_tls['private_key_path'] %>
   client_ca_certificate_path: <%= nats_client_ca_certificate_path %>
   client_ca_private_key_path: <%= nats_client_ca_private_key_path %>
+
+agent:
+  env:
+    bosh:
+      dummy_agent_key_merged: "This key must be sent to agent"

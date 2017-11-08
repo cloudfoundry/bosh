@@ -200,22 +200,20 @@ describe Bosh::Director::Config do
     context 'when agent env specified' do
       let(:expected_agent_env) do
         {
-          'bosh' => {
-            'blobstores' => [
-              {
-                'provider' => 'local',
-                'options' => {
-                  'blobstore_path' => '/path/to/blobstore'
-                }
-              },
-              {
-                'provider' => 'local',
-                'options' => {
-                  'blobstore_path' => '/path/to/blobstore'
-                }
+          'blobstores' => [
+            {
+              'provider' => 'local',
+              'options' => {
+                'blobstore_path' => '/path/to/blobstore'
               }
-            ]
-          }
+            },
+            {
+              'provider' => 'local',
+              'options' => {
+                'blobstore_path' => '/path/to/blobstore'
+              }
+            }
+          ]
         }
       end
 

@@ -19,6 +19,7 @@ describe 'vm_types and stemcells', type: :integration do
   let(:expected_env_hash) do
     hash_copy = Marshal.load(Marshal.dump(env_hash))
     hash_copy['bosh']['mbus'] = Hash
+    hash_copy['bosh']['dummy_agent_key_merged'] = 'This key must be sent to agent' # merged from the director yaml configuration (agent.env.bosh key)
     hash_copy
   end
 
