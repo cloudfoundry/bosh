@@ -1,6 +1,8 @@
 server {
-  listen <%= p("blobstore.port") %>;
-  <% if p('blobstore.ipv6_listen') %>listen [::]:<%= p('blobstore.port') %>;<% end %>
+  listen unix:/var/vcap/sys/run/blobstore/backend.sock;
+  listen <%= p("blobstore.port") %> ssl;
+  <% if p('blobstore.ipv6_listen') %>listen [::]:<%= p('blobstore.port') %> ssl;<% end %>
+
 
   server_name "";
 
@@ -8,6 +10,11 @@ server {
   error_log   /var/vcap/sys/log/blobstore/blobstore_error.log;
 
   client_max_body_size <%= p("blobstore.max_upload_size") %>;
+
+  error_page 497 = @handler;
+
+  ssl_certificate /var/vcap/jobs/blobstore/config/ssl_cert.pem;
+  ssl_certificate_key /var/vcap/jobs/blobstore/config/ssl_cert_key;
 
   location / {
     root /var/vcap/store/blobstore/store/;
@@ -24,4 +31,7 @@ server {
     }
   }
 
+  location @handler {
+    proxy_pass http://unix:/var/vcap/sys/run/blobstore/backend.sock:$request_uri;
+  }
 }
