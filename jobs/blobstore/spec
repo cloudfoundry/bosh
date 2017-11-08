@@ -10,8 +10,8 @@ templates:
   write_users.erb:     config/write_users
   bbr_backup:          bin/bbr/backup
   bbr_restore:         bin/bbr/restore
-  ssl_cert.pem.erb:    config/ssl_cert.pem
-  ssl_key.pem.erb:     config/ssl_key.pem
+  server_tls_cert.pem.erb: config/server_tls_cert.pem
+  server_tls_private_key.pem.erb: config/server_tls_private_key.pem
 
 packages:
 - nginx
@@ -45,11 +45,8 @@ properties:
     description: Number of nginx workers for blobstore
     default: 2
 
-  blobstore.ssl.ca_cert:
-      description: SSL CA cert for blobstore nginx server
-
-  blobstore.ssl.cert:
+  blobstore.tls.cert.certificate:
       description: SSL cert for blobstore nginx server
 
-  blobstore.ssl.key:
+  blobstore.tls.cert.private_key:
       description: SSL cert key for blobstore nginx server

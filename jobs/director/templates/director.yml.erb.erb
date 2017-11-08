@@ -197,7 +197,11 @@ else
     'endpoint' => "https://#{p('blobstore.address')}:#{p('blobstore.port')}",
     'user' => p('blobstore.director.user'),
     'password' => p('blobstore.director.password'),
-    'ca_cert' => p('blobstore.ssl.ca_cert'),
+    'tls' => {
+        'cert' => {
+            'ca' => p('blobstore.tls.cert.ca')
+        }
+    }
   }
 end
 
@@ -401,76 +405,6 @@ params['agent'] = {
     'bosh' => p('agent.env.bosh')
   }
 }
-
-params['cloud']['properties']['agent'] = {
-  'ntp' => p('ntp'),
-  'blobstore' => {'provider' => p('blobstore.provider'), 'options' => {} },
-}
-
-
-agent_blobstore_options =  params['cloud']['properties']['agent']['blobstore']['options']
-
-if p('blobstore.provider') == "s3"
-  agent_blobstore_options['bucket_name'] = p('blobstore.bucket_name')
-  agent_blobstore_options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
-  agent_blobstore_options['access_key_id'] = p(['agent.blobstore.access_key_id', 'blobstore.access_key_id'], nil)
-  agent_blobstore_options['secret_access_key'] = p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key'], nil)
-  agent_blobstore_options['region'] = p(['agent.blobstore.s3_region', 'blobstore.s3_region'], nil)
-
-  port = p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil)
-  unless port.nil?
-      agent_blobstore_options['port'] = port
-  end
-
-  host = p(['agent.blobstore.host', 'blobstore.host'], nil)
-  unless host.nil?
-    agent_blobstore_options['host'] = host
-  end
-
-  use_ssl = p(['agent.blobstore.use_ssl', 'blobstore.use_ssl'], nil)
-  unless use_ssl.nil?
-    agent_blobstore_options['use_ssl'] = use_ssl
-  end
-
-  ssl_verify_peer = p(['agent.blobstore.ssl_verify_peer', 'blobstore.ssl_verify_peer'], nil)
-  unless ssl_verify_peer.nil?
-    agent_blobstore_options['ssl_verify_peer'] = ssl_verify_peer
-  end
-
-  s3_signature_version = p(['agent.blobstore.s3_signature_version', 'blobstore.s3_signature_version'], nil)
-  unless s3_signature_version.nil?
-    agent_blobstore_options['s3_signature_version'] = s3_signature_version
-  end
-
-  server_side_encryption = p(['agent.blobstore.server_side_encryption', 'blobstore.server_side_encryption'], nil)
-  unless server_side_encryption.nil?
-    agent_blobstore_options['server_side_encryption'] = server_side_encryption
-  end
-
-  sse_kms_key_id = p(['agent.blobstore.sse_kms_key_id', 'blobstore.sse_kms_key_id'], nil)
-  unless sse_kms_key_id.nil?
-    agent_blobstore_options['sse_kms_key_id'] = sse_kms_key_id
-  end
-elsif p('blobstore.provider') == 'gcs'
-  agent_blobstore_options['bucket_name'] = p('blobstore.bucket_name')
-  agent_blobstore_options['credentials_source'] = p(['agent.blobstore.credentials_source', 'blobstore.credentials_source'], 'static')
-  agent_blobstore_options['json_key'] = p(['agent.blobstore.json_key', 'blobstore.json_key'], nil)
-
-  storage_class = p(['agent.blobstore.storage_class', 'blobstore.storage_class'], nil)
-  unless storage_class.nil?
-    agent_blobstore_options['storage_class'] = storage_class
-  end
-
-  encryption_key = p(['agent.blobstore.encryption_key', 'blobstore.encryption_key'], nil)
-  unless encryption_key.nil?
-    agent_blobstore_options['encryption_key'] = encryption_key
-  end
-else
-  agent_blobstore_options['endpoint'] = "https://#{p(['agent.blobstore.address', 'blobstore.address'])}:#{p('blobstore.port')}"
-  agent_blobstore_options['user'] = p('blobstore.agent.user')
-  agent_blobstore_options['password'] = p('blobstore.agent.password')
-  agent_blobstore_options['ca_cert'] = p('blobstore.ssl.ca_cert')
-end
 
 JSON.dump(params)
 %>
