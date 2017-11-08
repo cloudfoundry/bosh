@@ -53,6 +53,16 @@ config_server:
 record_events: true
 version: '0.0.2'
 mbus: 'nats://some-user:some-pass@some-nats-uri:1234'
+agent:
+  env:
+    bosh:
+      blobstores:
+      - provider: 'local'
+        options:
+          'blobstore_path': /path/to/blobstore
+      - provider: 'local'
+        options:
+          'blobstore_path': /path/to/blobstore
 
 nats:
   server_ca_path: '/path/to/server_ca_path'

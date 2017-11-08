@@ -146,6 +146,8 @@ module Bosh::Director
       vm_options = {instance: instance_model, agent_id: agent_id, cpi: cpi}
       options = {}
 
+      env = Config.agent_env.merge(env)
+
       if Config.nats_server_ca
         env['bosh'] ||= {}
         env['bosh']['mbus'] ||= {}
