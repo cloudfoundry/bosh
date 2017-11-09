@@ -75,7 +75,7 @@ module Bosh::Director
         allow(lock_b).to receive(:current_lock).and_return(nil)
         expect do
           lock_b.lock { something }
-        end.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Locking task id is gone/)
+        end.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Lock is gone/)
       end
     end
 
