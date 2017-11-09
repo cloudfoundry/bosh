@@ -37,6 +37,7 @@ module Bosh
           controllers['/jobs'] = Bosh::Director::Api::Controllers::JobsController.new(@config)
           controllers['/link_providers'] = Bosh::Director::Api::Controllers::LinkProvidersController.new(@config)
           controllers['/link_consumers'] = Bosh::Director::Api::Controllers::LinkConsumersController.new(@config)
+          controllers['/links'] = Bosh::Director::Api::Controllers::LinksController.new(@config)
           controllers
         end
       end

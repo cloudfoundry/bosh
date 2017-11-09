@@ -2,7 +2,7 @@ require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
   module Api::Controllers
-    class LinkConsumersController < BaseController
+    class LinksController < BaseController
       register DeploymentsSecurity
 
       def initialize(config)
@@ -19,9 +19,11 @@ module Bosh::Director
 
         result = []
 
-        link_consumers = Bosh::Director::Models::LinkConsumer.where(deployment: deployment)
-        link_consumers.each do |link_consumer|
-          result << generate_consumer_hash(link_consumer)
+        Models::LinkConsumer.where(deployment: deployment).each do |consumer|
+          links = Models::Link.where(link_consumer: consumer)
+          links.each do |link|
+            result << generate_link_hash(link)
+          end
         end
 
         body(json_encode(result))
@@ -29,15 +31,13 @@ module Bosh::Director
 
       private
 
-      def generate_consumer_hash(model)
+      def generate_link_hash(model)
         {
           :id => model.id,
-          :deployment => model.deployment.name,
-          :instance_group => model.instance_group,
-          :owner_object => {
-            :type => model.owner_object_type,
-            :name => model.owner_object_name,
-          }
+          :name => model.name,
+          :link_consumer_id => model.link_consumer_id,
+          :link_provider_id => model.link_provider_id,
+          :created_at => model.created_at,
         }
       end
     end

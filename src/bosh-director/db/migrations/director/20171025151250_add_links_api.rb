@@ -51,6 +51,20 @@ Sequel.migration do
       String :owner_object_type, :null => false
     end
 
+    create_table :links do
+      primary_key :id
+      foreign_key :link_provider_id, :link_providers, :on_delete => :set_null
+      foreign_key :link_consumer_id, :link_consumers, :on_delete => :cascade, :null => false
+      String :name, :null => false
+      String :link_content
+      Time :created_at
+    end
+
+    links_to_migrate = {}
+
+    Struct.new('LinkKey', :deployment_id, :instance_group, :job, :link_name) unless defined?(Struct::LinkKey)
+    Struct.new('LinkDetail', :content, :consumer) unless defined?(Struct::LinkDetail)
+
     self[:instances].each do |instance|
       spec_json = JSON.parse(instance[:spec_json] || '{}')
       links = spec_json['links']
@@ -64,10 +78,37 @@ Sequel.migration do
               owner_object_type: 'Job'
             }
           end
+
+          link_key = Struct::LinkKey.new(instance[:deployment_id], instance[:job], job_name, link_name)
+
+          link_details = links_to_migrate[link_key] || []
+          content = link_details.find do |link_detail|
+            link_detail.content == link_data
+          end
+
+          unless content
+            consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).first
+            raise "Could not find an appropriate consumer for this instance." unless consumer
+            link_detail = Struct::LinkDetail.new(link_data, consumer)
+
+            link_details << link_detail
+            links_to_migrate[link_key] = link_details
+          end
         end
       end
     end
 
-    #TODO: Migrate instance.spec_json's link spec to links table.
+    links_to_migrate.each do |link_key, link_details|
+      link_name = link_key.link_name
+      link_details.each do |link_detail|
+        self[:links] << {
+          name: link_name,
+          link_provider_id: nil,
+          link_consumer_id: link_detail.consumer[:id],
+          link_content: link_detail.content.to_json,
+          created_at: Time.now,
+        }
+      end
+    end
   end
 end

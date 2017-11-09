@@ -10,7 +10,7 @@ module Bosh::Director
         @deployment_manager = Api::DeploymentManager.new
       end
 
-      get '/', scope: :list_links do
+      get '/', scope: :list_links, authorization: :read do
         if params['deployment'].nil?
           raise DeploymentRequired, 'Deployment name is required'
         end

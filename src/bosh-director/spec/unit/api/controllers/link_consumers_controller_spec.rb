@@ -47,6 +47,17 @@ module Bosh::Director
           end
         end
 
+        context 'when user has read access' do
+          before do
+            basic_authorize 'reader', 'reader'
+          end
+
+          it 'returns the links' do
+            get "/?deployment=#{deployment.name}"
+            expect(last_response.status).to eq(200)
+          end
+        end
+
         it 'with invalid link deployment name' do
           get '/?deployment=invalid_deployment_name'
           expect(last_response.status).to eq(404)

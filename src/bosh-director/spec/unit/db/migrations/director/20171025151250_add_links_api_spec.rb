@@ -13,6 +13,7 @@ module Bosh::Director
       DBSpecHelper.migrate(migration_file)
       expect(db.table_exists? :link_providers).to be_truthy
       expect(db.table_exists? :link_consumers).to be_truthy
+      expect(db.table_exists? :links).to be_truthy
     end
 
     context 'providers migration' do
@@ -187,6 +188,290 @@ module Bosh::Director
             expect(db[:link_consumers].first[:instance_group]).to eq('provider_instance_group_1')
             expect(db[:link_consumers].first[:owner_object_name]).to eq('http_proxy_with_requires')
             expect(db[:link_consumers].first[:owner_object_type]).to eq('Job')
+          end
+        end
+      end
+    end
+
+    context 'link migration' do
+      context 'when spec_json is populated with consumed links in the instances table' do
+        let(:instance_spec_json) do
+          {
+            "deployment": "fake-deployment",
+            "name": "provider_instance_group_1",
+            "job": {
+              "name": "provider_instance_group_1",
+              "templates": [
+                {
+                  "name": "http_proxy_with_requires",
+                  "version": "760680c4a796a2ffca24026c561c06dd5bdef6b3",
+                  "sha1": "fdf0d8acd01055f32fb28caee3b5a2d383848e53",
+                  "blobstore_id": "e6a084ab-541c-4f9e-8132-573627bded5a",
+                  "logs": []
+                }
+              ]
+            },
+            "links": {
+              "http_proxy_with_requires": {
+                "proxied_http_endpoint": {
+                  "instance_group": "provider_deployment_node",
+                  "instances": [
+                    {
+                      "name": "provider_deployment_node",
+                      "id": "19dea4c6-c25f-478c-893e-db29ba7042b5",
+                      "index": 0,
+                      "bootstrap": true,
+                      "az": "z1",
+                      "address": "192.168.1.10"
+                    }
+                  ],
+                  "properties": {
+                    "listen_port": 15672,
+                    "name_space": {
+                      "fibonacci": "((fibonacci_placeholder))",
+                      "prop_a": "default"
+                    }
+                  }
+                },
+                "proxied_http_endpoint2": {
+                  "instance_group": "provider_deployment_node",
+                  "instances": [
+                    {
+                      "name": "provider_deployment_node",
+                      "id": "19dea4c6-c25f-478c-893e-db29ba7042b5",
+                      "index": 0,
+                      "bootstrap": true,
+                      "az": "z1",
+                      "address": "192.168.1.10"
+                    }
+                  ],
+                  "properties": {
+                    "a": 1,
+                    "name_space": {
+                      "asdf": "((fibonacci_placeholder))",
+                      "dbxcv": "default"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        end
+
+        before do
+          db[:deployments] << {name: 'fake-deployment', id: 42, link_spec_json: "{}"}
+          db[:variable_sets] << {id: 1, deployment_id: 42, created_at: Time.now}
+          db[:instances] << {
+            job: 'provider_instance_group_1',
+            id: 22,
+            index: 0,
+            deployment_id: 42,
+            state: "started",
+            variable_set_id: 1,
+            spec_json: instance_spec_json.to_json
+          }
+        end
+
+        it 'will create one link per consuming instance group/job/link name' do
+          expect(db[:instances].count).to eq(1)
+          before = Time.now
+          DBSpecHelper.migrate(migration_file)
+          after = Time.now
+
+          expect(db[:links].count).to eq(2)
+
+          expected_content = {
+            "instance_group": "provider_deployment_node",
+            "instances": [
+              {
+                "name": "provider_deployment_node",
+                "id": "19dea4c6-c25f-478c-893e-db29ba7042b5",
+                "index": 0,
+                "bootstrap": true,
+                "az": "z1",
+                "address": "192.168.1.10"
+              }
+            ],
+            "properties": {
+              "listen_port": 15672,
+              "name_space": {
+                "fibonacci": "((fibonacci_placeholder))",
+                "prop_a": "default"
+              }
+            }
+          }.to_json
+
+          expect(db[:links].first[:name]).to eq('proxied_http_endpoint')
+          expect(db[:links].first[:link_provider_id]).to be_nil
+          expect(db[:links].first[:link_consumer_id]).to eq(1)
+          expect(db[:links].first[:link_content]).to eq(expected_content)
+          expect(db[:links].first[:created_at] > before).to be_truthy
+          expect(db[:links].first[:created_at] < after).to be_truthy
+        end
+      end
+
+      context 'when multiple instances contain the same link key' do
+        let(:instance_spec_json) do
+          {
+            "deployment": "fake-deployment",
+            "name": "provider_instance_group_1",
+            "job": {
+              "name": "provider_instance_group_1",
+              "templates": [
+                {
+                  "name": "http_proxy_with_requires",
+                  "version": "760680c4a796a2ffca24026c561c06dd5bdef6b3",
+                  "sha1": "fdf0d8acd01055f32fb28caee3b5a2d383848e53",
+                  "blobstore_id": "e6a084ab-541c-4f9e-8132-573627bded5a",
+                  "logs": []
+                }
+              ]
+            },
+            "links": {
+              "http_proxy_with_requires": {
+                "proxied_http_endpoint": link_content
+              }
+            }
+          }
+        end
+
+        let(:link_content) do
+          {
+            "instance_group": "provider_deployment_node",
+            "instances": [
+              {
+                "name": "provider_deployment_node",
+                "id": "19dea4c6-c25f-478c-893e-db29ba7042b5",
+                "index": 0,
+                "bootstrap": true,
+                "az": "z1",
+                "address": "192.168.1.10"
+              }
+            ],
+            "properties": {
+              "listen_port": 15672,
+              "name_space": {
+                "fibonacci": "((fibonacci_placeholder))",
+                "prop_a": "default"
+              }
+            }
+          }
+        end
+
+        before do
+          db[:deployments] << {name: 'fake-deployment', id: 42, link_spec_json: "{}"}
+          db[:variable_sets] << {id: 1, deployment_id: 42, created_at: Time.now}
+          db[:instances] << {
+            job: 'provider_instance_group_1',
+            id: 22,
+            index: 0,
+            deployment_id: 42,
+            state: "started",
+            variable_set_id: 1,
+            spec_json: instance_spec_json.to_json
+          }
+        end
+
+        context 'and contents are the same' do
+          it 'should merge them and create only one link row' do
+            before = Time.now
+            DBSpecHelper.migrate(migration_file)
+            after = Time.now
+
+            expect(db[:links].count).to eq(1)
+
+            expect(db[:links].first[:name]).to eq('proxied_http_endpoint')
+            expect(db[:links].first[:link_provider_id]).to be_nil
+            expect(db[:links].first[:link_consumer_id]).to eq(1)
+            expect(db[:links].first[:link_content]).to eq(link_content.to_json)
+            expect(db[:links].first[:created_at] > before).to be_truthy
+            expect(db[:links].first[:created_at] < after).to be_truthy
+          end
+        end
+
+        context 'and contents are different' do
+          let(:instance_spec_json2) do
+            {
+              "deployment": "fake-deployment",
+              "name": "provider_instance_group_1",
+              "job": {
+                "name": "provider_instance_group_1",
+                "templates": [
+                  {
+                    "name": "http_proxy_with_requires",
+                    "version": "760680c4a796a2ffca24026c561c06dd5bdef6b3",
+                    "sha1": "fdf0d8acd01055f32fb28caee3b5a2d383848e53",
+                    "blobstore_id": "e6a084ab-541c-4f9e-8132-573627bded5a",
+                    "logs": []
+                  }
+                ]
+              },
+              "links": {
+                "http_proxy_with_requires": {
+                  "proxied_http_endpoint": link_content2
+                }
+              }
+            }
+          end
+
+          let(:link_content2) do
+            {
+              "instance_group": "provider_deployment_node",
+              "instances": [
+                {
+                  "name": "provider_deployment_node",
+                  "id": "19dea4c6-c25f-478c-893e-db29ba7042b5",
+                  "index": 0,
+                  "bootstrap": true,
+                  "az": "z1",
+                  "address": "192.168.1.10"
+                }
+              ],
+              "properties": {
+                "listen_port": 1111,
+                "name_space": {
+                  "fibonacci": "1 2 3 5 8 13 21 34 55 89 144",
+                  "prop_a": "ALPHABET!"
+                }
+              }
+            }
+          end
+
+          before do
+            db[:instances] << {
+              job: 'provider_instance_group_1',
+              id: 23,
+              index: 1,
+              deployment_id: 42,
+              state: "started",
+              variable_set_id: 1,
+              spec_json: instance_spec_json2.to_json
+            }
+          end
+
+          it 'should create two distinct link rows' do
+            before = Time.now
+            DBSpecHelper.migrate(migration_file)
+            after = Time.now
+
+            links_dataset = db[:links]
+            expect(links_dataset.count).to eq(2)
+
+            link_rows = links_dataset.all
+
+            expect(link_rows[0][:name]).to eq('proxied_http_endpoint')
+            expect(link_rows[0][:link_provider_id]).to be_nil
+            expect(link_rows[0][:link_consumer_id]).to eq(1)
+            expect(link_rows[0][:link_content]).to eq(link_content.to_json)
+            expect(link_rows[0][:created_at] > before).to be_truthy
+            expect(link_rows[0][:created_at] < after).to be_truthy
+
+            expect(link_rows[1][:name]).to eq('proxied_http_endpoint')
+            expect(link_rows[1][:link_provider_id]).to be_nil
+            expect(link_rows[1][:link_consumer_id]).to eq(1)
+            expect(link_rows[1][:link_content]).to eq(link_content2.to_json)
+            expect(link_rows[1][:created_at] > before).to be_truthy
+            expect(link_rows[1][:created_at] < after).to be_truthy
           end
         end
       end
