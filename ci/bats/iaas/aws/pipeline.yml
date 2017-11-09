@@ -116,8 +116,8 @@ resources:
   - name: bosh-cli
     type: s3
     source:
-      regexp: bosh-cli-([0-9.]+)-linux-amd64
-      bucket: bosh-cli-artifacts
+      bucket: bosh-cli-alpha-artifacts
+      regexp: alpha-bosh-cli-(.*)-linux-amd64
       region_name: us-east-1
   - name: ubuntu-stemcell
     type: bosh-io-stemcell
