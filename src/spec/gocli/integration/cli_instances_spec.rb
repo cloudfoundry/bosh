@@ -121,14 +121,14 @@ describe 'cli: deployment process', type: :integration do
   end
 
   it "retrieves instances from deployments in parallel" do
-    manifest1 = Bosh::Spec::Deployments.simple_manifest
+    manifest1 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest1['name'] = 'simple1'
-    manifest1['jobs'] = [Bosh::Spec::Deployments.simple_job({:name => 'foobar1', :instances => 2})]
+    manifest1['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 2})]
     deploy_from_scratch(manifest_hash: manifest1)
 
-    manifest2 = Bosh::Spec::Deployments.simple_manifest
+    manifest2 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest2['name'] = 'simple2'
-    manifest2['jobs'] = [Bosh::Spec::Deployments.simple_job({:name => 'foobar2', :instances => 4})]
+    manifest2['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 4})]
     deploy_from_scratch(manifest_hash: manifest2)
 
     output = bosh_runner.run('instances --parallel 5')
