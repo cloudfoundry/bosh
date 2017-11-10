@@ -3,6 +3,7 @@ require 'logging'
 require 'socket'
 require 'uri'
 require 'common/logging/filters'
+require 'tmpdir'
 
 module Bosh::Director
 
