@@ -33,19 +33,23 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     {'dea_max_memory' => {'default' => 2048}}
   end
 
-  let(:foo_job) { instance_double(
-    'Bosh::Director::DeploymentPlan::Job',
-    name: 'foo',
-    release: release,
-  ) }
+  let(:foo_job) do
+    r = Bosh::Director::DeploymentPlan::Job.new(release, 'foo', 'story-152729032')
+    r.bind_existing_model(foo_job_model)
+    r
+  end
+  let(:foo_job_model) { Bosh::Director::Models::Template.make(name: 'foo', release: release_model) }
 
-  let(:bar_job) { instance_double(
-    'Bosh::Director::DeploymentPlan::Job',
-    name: 'bar',
-    release: release,
-  ) }
+  let(:bar_job) do
+    r = Bosh::Director::DeploymentPlan::Job.new(release, 'bar', 'story-152729032')
+    r.bind_existing_model(bar_job_model)
+    r
+  end
+  let(:bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release_model) }
 
   let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+  let(:release_model) { Bosh::Director::Models::Release.make(name: 'release1') }
+  let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release_model) }
   let(:logger) { double(:logger).as_null_object }
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
@@ -64,6 +68,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     allow(foo_job).to receive(:add_properties)
     allow(bar_job).to receive(:add_properties)
     allow(deployment).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make)
+
+    release_version_model.add_template(foo_job_model)
+    release_version_model.add_template(bar_job_model)
   end
 
   describe '#parse' do
@@ -218,15 +225,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     before { allow(plan).to receive(:release).with('release1').and_return(release) }
 
     context 'when the templates are from the same release' do
-      before do
-        release = Bosh::Director::Models::Release.make(name: 'release1')
-        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release)
-        template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release)
-        release_version = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release)
-        release_version.add_template(template1)
-        release_version.add_template(template2)
-      end
-
       let(:spec) do
         {
           'name' => 'foobar',
@@ -256,11 +254,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when the templates are from different releases' do
       before do
-        release1 = Bosh::Director::Models::Release.make(name: 'release1')
-        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release1)
-        release_version1 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1)
-        release_version1.add_template(template1)
-
         release2 = Bosh::Director::Models::Release.make(name: 'bar_release')
         template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release2)
         release_version2 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release2)
@@ -587,14 +580,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   describe '#add_job' do
     subject { described_class.new(logger) }
 
-    let(:job_to_add) do
-      release = Bosh::Director::Models::Release.make(name: 'release1')
-      Bosh::Director::Models::Template.make(name: 'foo', release: release)
-    end
-
     context 'when job does not exist in instance group' do
       it 'adds job' do
-        subject.add_job(job_to_add)
+        subject.add_job(foo_job_model)
         expect(subject.jobs.count).to eq(1)
 
         expect(subject.jobs.first.name).to eq('foo')
@@ -604,8 +592,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when job does exists in instance group' do
       it 'throws an exception' do
-        subject.add_job(job_to_add)
-        expect { subject.add_job(job_to_add) }.to raise_error "Colocated job '#{job_to_add.name}' is already added to the instance group '#{subject.name}'."
+        subject.add_job(foo_job_model)
+        expect { subject.add_job(foo_job_model) }.to raise_error "Colocated job '#{foo_job_model.name}' is already added to the instance group '#{subject.name}'."
       end
     end
   end
