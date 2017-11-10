@@ -118,6 +118,44 @@ describe 'Links', type: :integration do
 
     let(:links) {{}}
 
+    context 'when job consumes link with nested properties' do
+
+      let(:link_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'my_links',
+          jobs: [
+            {'name' => 'provider', 'properties' => {'b' => 'value_b', 'nested' => {'three' => 'bar'}}},
+            {'name' => 'consumer'}],
+          instances: 1
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'respects default properties' do
+        manifest['instance_groups'] = [link_instance_group_spec]
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.find_instance(director.instances, 'my_links', '0')
+
+        template = YAML.load(link_instance.read_job_template('consumer', 'config.yml'))
+
+
+        expect(template['a']).to eq('default_a')
+        expect(template['b']).to eq('value_b')
+        expect(template['c']).to eq('default_c')
+
+        expect(template['nested'].size).to eq(3)
+        expect(template['nested']).to eq(
+          {
+            'one' => 'default_nested.one',
+            'two' => 'default_nested.two',
+            'three' => 'bar',
+          }
+        )
+      end
+    end
+
     context 'properties with aliased links' do
       let(:db3_instance_group) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
@@ -1880,7 +1918,7 @@ Error: Unable to process links for deployment. Errors are:
     let (:instance_group_with_manual_consumes_link) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'property_job',
-          jobs: [{'name' => 'consumer', 'consumes' => {'provider' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}],
+          jobs: [{'name' => 'consumer', 'consumes' => {'provider' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4, 'nested' => {'one' => 'three', 'two' => 'four'}}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           properties: {}
@@ -1943,6 +1981,8 @@ Error: Unable to process links for deployment. Errors are:
       expect(template['a']).to eq(2)
       expect(template['b']).to eq(3)
       expect(template['c']).to eq(4)
+      expect(template['nested']['one']).to eq('three')
+      expect(template['nested']['two']).to eq('four')
     end
   end
 
