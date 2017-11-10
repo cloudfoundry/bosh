@@ -59,10 +59,10 @@ pushd $PROMOTED_SRC
 
 popd
 
-cat <<EOF >bosh-master-with-final-tag/tag-name
+cat <<EOF >bosh-src-with-bumped-version-tag/tag-name
 v${FULL_VERSION}
 EOF
 
-cat <<EOF >bosh-master-with-final-tag/annotate-msg
+cat <<EOF >bosh-src-with-bumped-version-tag/annotate-msg
 Final release $FULL_VERSION tagged via concourse
 EOF
