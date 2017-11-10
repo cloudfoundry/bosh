@@ -174,9 +174,18 @@ describe 'using director with config server and deployments having links', type:
                         'name' => 'consumer',
                         'consumes' => {
                           'provider' => {
-                            'properties' => {'a' => '((a_placeholder))', 'b' => '((b_placeholder))', 'c' => '((c_placeholder))'},
+                            'properties' => {
+                              'a' => '((a_placeholder))',
+                              'b' => '((b_placeholder))',
+                              'c' => '((c_placeholder))',
+                              'nested' => {
+                                'one' => 'nest1',
+                                'two' => 'nest2',
+                                'three' => 'nest3',
+                              },
+                            },
                             'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}],
-                            'networks' => {'network_1' => 2, 'network_2' => 3}
+                            'networks' => {'network_1' => 2, 'network_2' => 3},
                           }
                         }
                       }],
