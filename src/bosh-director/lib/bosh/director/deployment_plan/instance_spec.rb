@@ -59,6 +59,13 @@ module Bosh::Director
         ApplySpec.new(full_spec).spec
       end
 
+      def as_jobless_apply_spec
+        spec = full_spec
+        spec['job'] = {}
+
+        ApplySpec.new(spec).spec
+      end
+
       def full_spec
         # re-generate spec with rendered templates info
         # since job renderer sets it directly on instance

@@ -6,6 +6,7 @@ module Bosh::Director
 end
 
 require 'bosh/director/deployment_plan/steps/cleanup_stemcell_references_step'
+require 'bosh/director/deployment_plan/steps/download_packages_step'
 require 'bosh/director/deployment_plan/steps/package_compile_step'
 require 'bosh/director/deployment_plan/steps/persist_deployment_step'
 require 'bosh/director/deployment_plan/steps/pre_cleanup_step'
