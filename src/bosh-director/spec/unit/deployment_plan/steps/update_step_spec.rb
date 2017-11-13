@@ -11,6 +11,7 @@ module Bosh::Director
       let(:pre_cleanup) { instance_double('Bosh::Director::DeploymentPlan::Steps::PreCleanupStep') }
       let(:update_active_vm_cpis) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateActiveVmCpisStep') }
       let(:setup) { instance_double('Bosh::Director::DeploymentPlan::Steps::SetupStep') }
+      let(:download_packages_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::DownloadPackagesStep')}
       let(:update_jobs) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateJobsStep') }
       let(:update_errands) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateErrandsStep') }
       let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -30,6 +31,7 @@ module Bosh::Director
         allow(PreCleanupStep).to receive(:new).with(base_job.logger, deployment_plan).and_return(pre_cleanup)
         allow(UpdateActiveVmCpisStep).to receive(:new).with(base_job.logger, deployment_plan).and_return(update_active_vm_cpis)
         allow(SetupStep).to receive(:new).with(base_job, deployment_plan, vm_creator, anything, anything).and_return(setup)
+        allow(DownloadPackagesStep).to receive(:new).with(base_job, deployment_plan).and_return(download_packages_step)
         allow(UpdateJobsStep).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
         allow(UpdateErrandsStep).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
@@ -45,6 +47,7 @@ module Bosh::Director
           expect(update_active_vm_cpis).to receive(:perform).ordered
           expect(setup).to receive(:perform).ordered
           allow(deployment_plan).to receive(:availability_zones).and_return([]).ordered
+          expect(download_packages_step).to receive(:perform).ordered
           expect(update_jobs).to receive(:perform).ordered
           expect(update_errands).to receive(:perform).ordered
           expect(logger).to receive(:info).with('Committing updates').ordered

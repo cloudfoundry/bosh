@@ -9,7 +9,9 @@ provides:
     - a
     - b
     - c
-
+    - nested.one
+    - nested.two
+    - nested.three
 properties:
   a:
     description: "description for a"
@@ -19,3 +21,11 @@ properties:
   c:
     description: "description for c"
     default: "default_c"
+  nested.one:
+    description: "description for nested.one"
+    default: "default_nested.one"
+  nested.two:
+    description: "description for nested.two"
+    default: "default_nested.two"
+  nested.three:
+    description: "description for nested.three"

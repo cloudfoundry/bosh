@@ -91,11 +91,11 @@ index 66d708ec1..047a237a6 100644
 +      - put: bosh-master
 +        params:
 +          repository: bosh-master-with-final
-+          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
-+          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
 +      - put: bosh-src
 +        params:
 +          repository: bosh-src-with-bumped-version
++          tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
++          annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
  
  resources:
    - name: bosh-src

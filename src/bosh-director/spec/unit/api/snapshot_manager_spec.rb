@@ -202,7 +202,7 @@ module Bosh::Director
           it 'adds the custom tags to the snapshot metadata' do
             expect(@instance.deployment).to receive(:tags).and_return(custom_tags)
 
-            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata.merge({:custom_tags => custom_tags})).and_return('snap0c')
+            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata.merge(custom_tags)).and_return('snap0c')
 
             described_class.take_snapshot(@instance)
           end

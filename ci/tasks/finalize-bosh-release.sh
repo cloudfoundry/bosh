@@ -3,7 +3,6 @@
 set -eux
 
 export FULL_VERSION=$(cat candidate-version/version)
-STRIPPED_VERSION=$( sed 's/\.0$//;s/\.0$//' candidate-version/version )
 cp candidate-version/version bumped-candidate-version/version
 
 export ROOT_PATH=$PWD
@@ -30,7 +29,7 @@ blobstore:
     secret_access_key: "$BLOBSTORE_SECRET_ACCESS_KEY"
 EOF
 
-  $GO_CLI_PATH finalize-release --version $STRIPPED_VERSION $DEV_RELEASE_PATH
+  $GO_CLI_PATH finalize-release --version $FULL_VERSION $DEV_RELEASE_PATH
 
   git add -A
   git status
@@ -38,7 +37,7 @@ EOF
   git config --global user.email "ci@localhost"
   git config --global user.name "CI Bot"
 
-  git commit -m "Adding final release $STRIPPED_VERSION via concourse"
+  git commit -m "Adding final release $FULL_VERSION via concourse"
 
 popd
 
@@ -60,10 +59,10 @@ pushd $PROMOTED_SRC
 
 popd
 
-cat <<EOF >bosh-master-with-final-tag/tag-name
-v${STRIPPED_VERSION}
+cat <<EOF >bosh-src-with-bumped-version-tag/tag-name
+v${FULL_VERSION}
 EOF
 
-cat <<EOF >bosh-master-with-final-tag/annotate-msg
-Final release $STRIPPED_VERSION tagged via concourse
+cat <<EOF >bosh-src-with-bumped-version-tag/annotate-msg
+Final release $FULL_VERSION tagged via concourse
 EOF

@@ -179,9 +179,9 @@ module Bosh::Spec
       )
     end
 
-    def self.simple_manifest_with_instance_groups
+    def self.simple_manifest_with_instance_groups(opts={})
       test_release_manifest_with_stemcell.merge({
-        'instance_groups' => [simple_instance_group]
+        'instance_groups' => [simple_instance_group(opts)]
       })
     end
 
@@ -350,7 +350,7 @@ module Bosh::Spec
           'canaries'          => 2,
           'canary_watch_time' => 4000,
           'max_in_flight'     => 1,
-          'update_watch_time' => 20
+          'update_watch_time' => 20,
         },
 
         'stemcells' => [{

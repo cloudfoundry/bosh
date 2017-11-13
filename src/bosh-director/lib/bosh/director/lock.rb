@@ -129,7 +129,13 @@ module Bosh::Director
         end
 
         unless acquired
-          raise TimeoutError, "Failed to acquire lock for #{@name} uid: #{@uid}" if Time.now - started > @timeout
+          if Time.now - started > @timeout
+            lock_message = ""
+            current_lock.tap do |lock|
+              lock_message = lock ? "Locking task id is #{lock.task_id}" : "Lock is gone"
+            end
+            raise TimeoutError, "Failed to acquire lock for #{@name} uid: #{@uid}. #{lock_message}"
+          end
           sleep(0.5)
           lock_expiration = Time.now.to_f + @expiration + 1
         end
@@ -150,7 +156,6 @@ module Bosh::Director
       )
     end
 
-
     def delete
       if Models::Lock.where(name: @name, uid: @uid).delete > 0
         @logger.debug("Deleted lock: #{@name} uid: #{@uid}")
@@ -161,6 +166,10 @@ module Bosh::Director
 
     def lock_expired?(lock_record)
       lock_record.expired_at < Time.now
+    end
+
+    def current_lock
+      Models::Lock.where(name: @name).first
     end
   end
 end

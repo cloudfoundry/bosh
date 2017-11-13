@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceGroup do
-  subject(:instance_group)    { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
+  subject(:instance_group) { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
   let(:parse_options) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
@@ -33,20 +33,33 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     {'dea_max_memory' => {'default' => 2048}}
   end
 
-  let(:foo_job) { instance_double(
-    'Bosh::Director::DeploymentPlan::Job',
-    name: 'foo',
-    release: release,
-  ) }
+  let(:release1_foo_job) do
+    r = Bosh::Director::DeploymentPlan::Job.new(release1, 'foo', 'story-152729032')
+    r.bind_existing_model(release1_foo_job_model)
+    r
+  end
+  let(:release1_foo_job_model) { Bosh::Director::Models::Template.make(name: 'foo', release: release1_model) }
 
-  let(:bar_job) { instance_double(
-    'Bosh::Director::DeploymentPlan::Job',
-    name: 'bar',
-    release: release,
-  ) }
+  let(:release1_bar_job) do
+    r = Bosh::Director::DeploymentPlan::Job.new(release1, 'bar', 'story-152729032')
+    r.bind_existing_model(release1_bar_job_model)
+    r
+  end
+  let(:release1_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_model) }
 
-  let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+  let(:release1_package1_model) { Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'abc123') }
+
+  let(:release1) do
+    Bosh::Director::DeploymentPlan::ReleaseVersion.new(deployment, {
+      'name' => 'release1',
+      'version' => '1',
+    })
+  end
+
+  let(:release1_model) { Bosh::Director::Models::Release.make(name: 'release1') }
+  let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
   let(:logger) { double(:logger).as_null_object }
+
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
@@ -55,15 +68,19 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     allow(plan).to receive(:stemcell).with('dea').and_return stemcell
     allow(plan).to receive(:update)
 
-    allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_job)
-    allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_job)
+    allow(release1).to receive(:get_or_create_template).with('foo').and_return(release1_foo_job)
+    allow(release1).to receive(:get_or_create_template).with('bar').and_return(release1_bar_job)
 
-    allow(foo_job).to receive(:properties)
-    allow(bar_job).to receive(:properties)
+    allow(release1_foo_job).to receive(:properties)
+    allow(release1_bar_job).to receive(:properties)
 
-    allow(foo_job).to receive(:add_properties)
-    allow(bar_job).to receive(:add_properties)
+    allow(release1_foo_job).to receive(:add_properties)
+    allow(release1_bar_job).to receive(:add_properties)
     allow(deployment).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make)
+
+    release1_version_model.add_template(release1_foo_job_model)
+    release1_version_model.add_template(release1_bar_job_model)
+    release1_version_model.add_package(release1_package1_model)
   end
 
   describe '#parse' do
@@ -95,7 +112,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return(props)
-      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      allow(plan).to receive(:release).with('appcloud').and_return(release1)
     end
 
     context 'when parse_options contain canaries' do
@@ -174,14 +191,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:networks).and_return([network, network2])
 
       allow(plan).to receive(:properties).and_return({})
-      allow(plan).to receive(:release).with('appcloud').and_return(release)
-      allow(foo_job).to receive(:properties).and_return(foo_properties)
-      allow(bar_job).to receive(:properties).and_return(bar_properties)
+      allow(plan).to receive(:release).with('appcloud').and_return(release1)
+      allow(release1_foo_job).to receive(:properties).and_return(foo_properties)
+      allow(release1_bar_job).to receive(:properties).and_return(bar_properties)
     end
 
     it 'binds all job properties with correct parameters' do
-      expect(foo_job).to receive(:bind_properties).with('foobar', deployment.name, options)
-      expect(bar_job).to receive(:bind_properties).with('foobar', deployment.name, options)
+      expect(release1_foo_job).to receive(:bind_properties).with('foobar', deployment.name, options)
+      expect(release1_bar_job).to receive(:bind_properties).with('foobar', deployment.name, options)
 
       instance_group.bind_properties
 
@@ -204,29 +221,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#validate_package_names_do_not_collide!' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1', version: '1') }
     before do
       allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('release1').and_return(release1)
     end
 
-    before { allow(foo_job).to receive(:model).and_return(foo_template_model) }
-    let(:foo_template_model) { instance_double('Bosh::Director::Models::Template') }
-
-    before { allow(bar_job).to receive(:model).and_return(bar_template_model) }
-    let(:bar_template_model) { instance_double('Bosh::Director::Models::Template') }
-
-    before { allow(plan).to receive(:release).with('release1').and_return(release) }
-
     context 'when the templates are from the same release' do
-      before do
-        release = Bosh::Director::Models::Release.make(name: 'release1')
-        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release)
-        template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release)
-        release_version = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release)
-        release_version.add_template(template1)
-        release_version.add_template(template2)
-      end
-
       let(:spec) do
         {
           'name' => 'foobar',
@@ -243,10 +243,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       context 'when templates depend on packages with the same name (i.e. same package)' do
-        before { allow(foo_template_model).to receive(:package_names).and_return(['same-name']) }
-        before { allow(bar_template_model).to receive(:package_names).and_return(['same-name']) }
-
-        before { allow(plan).to receive(:releases).with(no_args).and_return([release]) }
+        before do
+          release1_foo_job_model.package_names = ['same-name']
+          release1_foo_job_model.save
+          release1_bar_job_model.package_names = ['same-name']
+          release1_bar_job_model.save
+          allow(plan).to receive(:releases).with(no_args).and_return([release1])
+        end
 
         it 'does not raise an error' do
           expect { instance_group.validate_package_names_do_not_collide! }.to_not raise_error
@@ -255,16 +258,37 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     context 'when the templates are from different releases' do
-      before do
-        release1 = Bosh::Director::Models::Release.make(name: 'release1')
-        template1 = Bosh::Director::Models::Template.make(name: 'foo', release: release1)
-        release_version1 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1)
-        release_version1.add_template(template1)
+      let(:release2) do
+        Bosh::Director::DeploymentPlan::ReleaseVersion.new(deployment, {
+          'name' => 'release2',
+          'version' => '1',
+        })
+      end
+      let(:release2_bar_job) do
+        r = Bosh::Director::DeploymentPlan::Job.new(release2, 'bar', 'story-152729032')
+        r.bind_existing_model(release2_bar_job_model)
+        r
+      end
+      let(:release2_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release2_model) }
+      let(:release2_model) { Bosh::Director::Models::Release.make(name: 'release2') }
+      let(:release2_version_model) { Bosh::Director::Models::ReleaseVersion.make(release: release2_model, version: 1) }
+      let(:release2_package1_model) { Bosh::Director::Models::Package.make(name: release2_package1_name, release: release2_model, fingerprint: release2_package1_fingerprint) }
+      let(:release2_package1_fingerprint) { '987asd' }
+      let(:release2_package1_name) { 'another-name' }
 
-        release2 = Bosh::Director::Models::Release.make(name: 'bar_release')
-        template2 = Bosh::Director::Models::Template.make(name: 'bar', release: release2)
-        release_version2 = Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release2)
-        release_version2.add_template(template2)
+      before do
+        release2_version_model.add_template(release2_bar_job_model)
+        release2_version_model.add_package(release2_package1_model)
+
+        release1_foo_job_model.package_names = [release1_package1_model.name]
+        release1_foo_job_model.save
+        release2_bar_job_model.package_names = [release2_package1_model.name]
+        release2_bar_job_model.save
+
+        allow(plan).to receive(:releases).with(no_args).and_return([release1, release2])
+        allow(plan).to receive(:release).with('release2').and_return(release2)
+
+        allow(release2).to receive(:get_or_create_template).with('bar').and_return(release2_bar_job)
       end
 
       let(:spec) do
@@ -272,7 +296,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
           'name' => 'foobar',
           'templates' => [
             { 'name' => 'foo', 'release' => 'release1' },
-            { 'name' => 'bar', 'release' => 'bar_release', 'links' => {'a' => 'x.y.z.zz'}},
+            { 'name' => 'bar', 'release' => 'release2', 'links' => {'a' => 'x.y.z.zz'}},
           ],
           'vm_type' => 'dea',
           'stemcell' => 'dea',
@@ -282,41 +306,36 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         }
       end
 
-      before { allow(plan).to receive(:releases).with(no_args).and_return([release, bar_release]) }
-
-      before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
-      let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release', version: '1') }
-
-      before { allow(bar_release).to receive(:get_or_create_template).with('bar').and_return(bar_job) }
-      let(:bar_job) do
-        instance_double('Bosh::Director::DeploymentPlan::Job', {
-          name: 'bar',
-          release: bar_release,
-        })
-      end
-
       context 'when templates do not depend on packages with the same name' do
-        before { allow(foo_template_model).to receive(:package_names).and_return(['one-name']) }
-        before { allow(bar_template_model).to receive(:package_names).and_return(['another-name']) }
-
         it 'does not raise an exception' do
           expect { instance_group.validate_package_names_do_not_collide! }.to_not raise_error
         end
       end
 
       context 'when templates depend on packages with the same name' do
-        before { allow(foo_template_model).to receive(:package_names).and_return(['same-name']) }
-        before { allow(bar_template_model).to receive(:package_names).and_return(['same-name']) }
+        let(:release2_package1_name) { 'same-name' }
 
-        it 'raises an exception because agent currently cannot collocate similarly named packages from multiple releases' do
-          expect {
+        context 'fingerprints are different' do
+          let(:release2_package1_fingerprint) { '987asd' }
+
+          it 'raises an exception because agent currently cannot collocate similarly named packages from multiple releases' do
+            expect {
+              instance_group.validate_package_names_do_not_collide!
+            }.to raise_error(
+              Bosh::Director::JobPackageCollision,
+              "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
+              " job 'release2/bar' depends on 'release2/same-name'. " +
+                'BOSH cannot currently collocate two packages with identical names from separate releases.',
+            )
+          end
+        end
+
+        context 'fingerprints are the same' do
+          let(:release2_package1_fingerprint) { 'abc123' }
+
+          it 'does not raise an exception' do
             instance_group.validate_package_names_do_not_collide!
-          }.to raise_error(
-            Bosh::Director::JobPackageCollision,
-            "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
-            " job 'bar_release/bar' depends on 'bar_release/same-name'. " +
-              'BOSH cannot currently collocate two packages with identical names from separate releases.',
-          )
+          end
         end
       end
     end
@@ -337,21 +356,21 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     before do
-      allow(release).to receive(:name).and_return('cf')
+      allow(release1).to receive(:name).and_return('cf')
 
-      allow(foo_job).to receive(:version).and_return('200')
-      allow(foo_job).to receive(:sha1).and_return('fake_sha1')
-      allow(foo_job).to receive(:blobstore_id).and_return('blobstore_id_for_foo_job')
-      allow(foo_job).to receive(:properties).and_return({})
+      allow(release1_foo_job).to receive(:version).and_return('200')
+      allow(release1_foo_job).to receive(:sha1).and_return('fake_sha1')
+      allow(release1_foo_job).to receive(:blobstore_id).and_return('blobstore_id_for_foo_job')
+      allow(release1_foo_job).to receive(:properties).and_return({})
 
-      allow(plan).to receive(:releases).with(no_args).and_return([release])
-      allow(plan).to receive(:release).with('release1').and_return(release)
+      allow(plan).to receive(:releases).with(no_args).and_return([release1])
+      allow(plan).to receive(:release).with('release1').and_return(release1)
       allow(plan).to receive(:properties).with(no_args).and_return({})
     end
 
     context "when a template has 'logs'" do
       before do
-        allow(foo_job).to receive(:logs).and_return(
+        allow(release1_foo_job).to receive(:logs).and_return(
           {
             'filter_name1' => 'foo/*',
           }
@@ -387,7 +406,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context "when a template does not have 'logs'" do
       before do
-        allow(foo_job).to receive(:logs)
+        allow(release1_foo_job).to receive(:logs)
       end
 
       it 'contains name, release and information for each template' do
@@ -520,7 +539,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'should sort instance plans on adding them' do
       allow(plan).to receive(:properties).and_return({})
-      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      allow(plan).to receive(:release).with('appcloud').and_return(release1)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 
       instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment, {}, nil, logger)
@@ -563,7 +582,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'should NOT return instance plans for ignored and detached instances' do
       allow(plan).to receive(:properties).and_return({})
-      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      allow(plan).to receive(:release).with('appcloud').and_return(release1)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2')
 
       instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment, {}, nil, logger)
@@ -587,14 +606,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   describe '#add_job' do
     subject { described_class.new(logger) }
 
-    let(:job_to_add) do
-      release = Bosh::Director::Models::Release.make(name: 'release1')
-      Bosh::Director::Models::Template.make(name: 'foo', release: release)
-    end
-
     context 'when job does not exist in instance group' do
       it 'adds job' do
-        subject.add_job(job_to_add)
+        subject.add_job(release1_foo_job_model)
         expect(subject.jobs.count).to eq(1)
 
         expect(subject.jobs.first.name).to eq('foo')
@@ -604,8 +618,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when job does exists in instance group' do
       it 'throws an exception' do
-        subject.add_job(job_to_add)
-        expect { subject.add_job(job_to_add) }.to raise_error "Colocated job '#{job_to_add.name}' is already added to the instance group '#{subject.name}'."
+        subject.add_job(release1_foo_job_model)
+        expect { subject.add_job(release1_foo_job_model) }.to raise_error "Colocated job '#{release1_foo_job_model.name}' is already added to the instance group '#{subject.name}'."
       end
     end
   end
@@ -726,7 +740,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return({})
-      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      allow(plan).to receive(:release).with('appcloud').and_return(release1)
 
       allow(instance1).to receive(:desired_variable_set).and_return(variable_set1)
       allow(instance2).to receive(:desired_variable_set).and_return(variable_set2)
@@ -774,7 +788,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:properties).and_return({})
-      allow(plan).to receive(:release).with('appcloud').and_return(release)
+      allow(plan).to receive(:release).with('appcloud').and_return(release1)
 
       allow(instance_model_1).to receive(:variable_set).and_return(variable_set_model_1)
       allow(instance_model_2).to receive(:variable_set).and_return(variable_set_model_2)

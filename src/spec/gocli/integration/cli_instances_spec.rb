@@ -119,4 +119,22 @@ describe 'cli: deployment process', type: :integration do
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to eq('')
   end
+
+  it "retrieves instances from deployments in parallel" do
+    manifest1 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest1['name'] = 'simple1'
+    manifest1['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 2})]
+    deploy_from_scratch(manifest_hash: manifest1)
+
+    manifest2 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest2['name'] = 'simple2'
+    manifest2['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 4})]
+    deploy_from_scratch(manifest_hash: manifest2)
+
+    output = bosh_runner.run('instances --parallel 5')
+    expect(output).to include('Succeeded')
+    # 2 deployments must not be mixed in the output, but they can be printed in any order
+    expect(output).to match(/Deployment 'simple1'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s*\n(foobar1\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s*\n){2}\n2 instances/)
+    expect(output).to match(/Deployment 'simple2'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s*\n(foobar2\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s*\n){4}\n4 instances/)
+  end
 end
