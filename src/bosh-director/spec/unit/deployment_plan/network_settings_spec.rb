@@ -119,7 +119,7 @@ module Bosh::Director::DeploymentPlan
               let(:use_short_dns_addresses) { true }
 
               it 'returns the short dns address' do
-                expect(network_settings.network_address(prefer_dns_entry)).to eq('q-m1n1s0.g-1.bosh1.tld')
+                expect(network_settings.network_address(prefer_dns_entry)).to eq('q-m1n1s0.q-g1.bosh1.tld')
               end
             end
           end
@@ -155,7 +155,7 @@ module Bosh::Director::DeploymentPlan
           context 'when use_short_dns_addresses is true' do
             let(:use_short_dns_addresses) { true }
             it 'returns the short dns address' do
-              expect(network_settings.network_address(prefer_dns_entry)).to eq('q-m1n1s0.g-1.bosh1.tld')
+              expect(network_settings.network_address(prefer_dns_entry)).to eq('q-m1n1s0.q-g1.bosh1.tld')
             end
           end
         end

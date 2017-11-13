@@ -6,7 +6,7 @@ module Bosh::Director
   describe Api::Controllers::RuntimeConfigsController do
     include Rack::Test::Methods
 
-    subject(:app) { Api::Controllers::RuntimeConfigsController.new(config) }
+    subject(:app) { linted_rack_app(described_class.new(config)) }
     let(:config) do
       config = Config.load_hash(SpecHelper.spec_get_director_config)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
@@ -232,7 +232,7 @@ module Bosh::Director
           end
 
           it 'shows a full "removed" diff' do
-            post '/diff', '---', { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/diff', '--- {}', { 'CONTENT_TYPE' => 'text/yaml' }
 
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq(

@@ -11,7 +11,7 @@ describe 'Changing ip ranges', type: :integration do
   describe 'shifting the IP range for a job' do
     it 'should recreate VMs outside of the range in the new range, but not touch VMs that are ok' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2, template: 'foobar_without_packages')
+      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2, job: 'foobar_without_packages')
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 

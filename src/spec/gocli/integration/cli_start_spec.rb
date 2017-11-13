@@ -4,7 +4,7 @@ describe 'start job', type: :integration do
   with_reset_sandbox_before_each
 
   it 'starts a job instance only' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
 
     instance_before_with_index_1 = director.instances.find{ |instance| instance.index == '1'}
     instance_uuid = instance_before_with_index_1.id
@@ -27,17 +27,17 @@ describe 'start job', type: :integration do
   end
 
   it 'starts vms for a given job / the whole deployment' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs']<< {
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups']<< {
       'name' => 'another-job',
-      'template' => 'foobar',
+      'jobs' => [{'name'=> 'foobar'}],
       'vm_type' => 'a',
       'instances' => 1,
       'networks' => [{'name' => 'a'}],
       'stemcell' => 'default',
     }
 
-    manifest_hash['jobs'].first['instances'] = 2
+    manifest_hash['instance_groups'].first['instances'] = 2
     deploy_from_scratch(manifest_hash: manifest_hash)
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])
@@ -59,10 +59,10 @@ describe 'start job', type: :integration do
   end
 
   it 'respects --canaries' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs']<< {
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups']<< {
       'name' => 'another-job',
-      'template' => 'foobar',
+      'jobs' => [{'name' => 'foobar'}],
       'vm_type' => 'a',
       'instances' => 1,
       'networks' => [{'name' => 'a'}],
@@ -70,7 +70,7 @@ describe 'start job', type: :integration do
     }
 
     manifest_hash['update']['canaries'] = 0
-    manifest_hash['jobs'].first['instances']= 5
+    manifest_hash['instance_groups'].first['instances']= 5
     deploy_from_scratch(manifest_hash: manifest_hash)
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])
@@ -97,10 +97,10 @@ describe 'start job', type: :integration do
   end
 
   it 'respects --max-in-flight' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs']<< {
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups']<< {
       'name' => 'another-job',
-      'template' => 'foobar',
+      'jobs' => [{'name' => 'foobar'}],
       'vm_type' => 'a',
       'instances' => 1,
       'networks' => [{'name' => 'a'}],
@@ -109,7 +109,7 @@ describe 'start job', type: :integration do
 
     manifest_hash['update']['max_in_flight'] = 20
     manifest_hash['update']['canaries'] = 0
-    manifest_hash['jobs'].first['instances']= 10
+    manifest_hash['instance_groups'].first['instances']= 10
     deploy_from_scratch(manifest_hash: manifest_hash)
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])

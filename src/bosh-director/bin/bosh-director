@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'bosh/director'
-require 'thin'
+require 'puma'
+require 'puma/configuration'
 
 config_file = nil
 
@@ -18,7 +19,7 @@ config = Bosh::Director::Config.load_file(config_file)
 
 route_configuration = Bosh::Director::Api::RouteConfiguration.new(config)
 
-thin_server = Thin::Server.new('127.0.0.1', config.port, signals: false) do
+rack_app = Puma::Rack::Builder.app do
   use Rack::CommonLogger
 
   route_configuration.controllers.each do |route, controller|
@@ -26,13 +27,16 @@ thin_server = Thin::Server.new('127.0.0.1', config.port, signals: false) do
   end
 end
 
-%w(TERM INT QUIT).each do |signal|
-  trap(signal) do
-    Bosh::Director::Config.logger.info('Shutting down Director')
-    thin_server.stop!
-  end
+puma_configuration = Puma::Configuration.new do |user_config|
+  user_config.workers 3
+  user_config.bind "tcp://127.0.0.1:#{config.port}"
+  user_config.app rack_app
+  user_config.preload_app!
+  # this makes sure that all puma workers get their own db connections
+  user_config.before_fork { Bosh::Director::Config.db.disconnect }
 end
+puma_launcher = Puma::Launcher.new(puma_configuration)
 
 Bosh::Director::Config.logger.info("Listening on port #{config.port}")
 Bosh::Director::Config.log_director_start
-thin_server.start!
+puma_launcher.run

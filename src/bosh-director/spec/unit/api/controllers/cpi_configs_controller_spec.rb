@@ -6,7 +6,7 @@ module Bosh::Director
   describe Api::Controllers::CpiConfigsController do
     include Rack::Test::Methods
 
-    subject(:app) { Api::Controllers::CpiConfigsController.new(config) }
+    subject(:app) { linted_rack_app(described_class.new(config)) }
     let(:config) do
       config = Config.load_hash(SpecHelper.spec_get_director_config)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
@@ -126,7 +126,7 @@ module Bosh::Director
           let(:expected_diff) { '{"diff":[["cpis:","removed"],["- name: cpi-name1","removed"],["  type: cpi-type","removed"],["  properties:","removed"],["    somekey: \"<redacted>\"","removed"],["- name: cpi-name2","removed"],["  type: cpi-type2","removed"],["  properties:","removed"],["    somekey2: \"<redacted>\"","removed"]]}' }
 
           it 'shows a full "removed" diff for nil' do
-            post '/diff', '---', { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/diff', '--- {}', { 'CONTENT_TYPE' => 'text/yaml' }
 
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq(expected_diff)
@@ -273,7 +273,7 @@ module Bosh::Director
 
             it 'returns the delta' do
               Bosh::Director::Models::Config.make(:cpi,
-                raw_manifest: old_cpi_config,
+                content: YAML.dump(old_cpi_config),
                 created_at: Time.now - 3,
               )
 

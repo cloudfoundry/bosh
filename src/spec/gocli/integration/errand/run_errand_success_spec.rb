@@ -43,19 +43,22 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     let(:errand_requiring_2_instances) do
       {
         'name' => 'second-errand-name',
-        'template' => 'errand1',
+        'jobs' => [{
+          'release' => 'bosh-release',
+          'name' => 'errand1',
+          'properties' => {
+            'errand1' => {
+              'exit_code' => 0,
+              'stdout' => 'second-errand-stdout',
+              'stderr' => 'second-errand-stderr',
+              'run_package_file' => true,
+            },
+          },
+        }],
         'lifecycle' => 'errand',
         'vm_type' => 'a',
         'instances' => 2,
         'networks' => [{'name' => 'a'}],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout' => 'second-errand-stdout',
-            'stderr' => 'second-errand-stderr',
-            'run_package_file' => true,
-          },
-        },
         'stemcell' => 'default',
       }
     end
@@ -69,7 +72,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
       it "reuses vms when keep-alive is set and cleans them up when it's not" do
         manifest_with_second_errand = manifest_hash
-        manifest_with_second_errand['jobs'] << errand_requiring_2_instances
+        manifest_with_second_errand['instance_groups'] << errand_requiring_2_instances
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
         expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
         expect_errands('fake-errand-name', 'second-errand-name')
@@ -107,7 +110,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
       it 'allocates and de-allocates errand vms for each errand run' do
         manifest_with_second_errand = manifest_hash
-        manifest_with_second_errand['jobs'] << errand_requiring_2_instances
+        manifest_with_second_errand['instance_groups'] << errand_requiring_2_instances
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
         expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
 
@@ -157,7 +160,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'when the errand configuration has changed' do
       it 'reruns the errand' do
-        manifest_hash['jobs'].find { |job| job['name'] == 'fake-errand-name' }['properties'] = {
+        manifest_hash['instance_groups'].find { |instance_group| instance_group['name'] == 'fake-errand-name' }['jobs'].first['properties'] = {
           'errand1' => {
             'exit_code' => 0,
             'stdout' => "new-stdout\nadditional-stdout",
@@ -194,8 +197,8 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
 
         # get rid of the non-errand job, it's not important
-        manifest_hash['jobs'].delete(manifest_hash['jobs'].find { |i| i['name'] == 'foobar' })
-        errand_job = manifest_hash['jobs'].find { |i| i['name'] == 'fake-errand-name' }
+        manifest_hash['instance_groups'].delete(manifest_hash['instance_groups'].find { |i| i['name'] == 'foobar' })
+        errand_job = manifest_hash['instance_groups'].find { |i| i['name'] == 'fake-errand-name' }
         errand_job_network_a = errand_job['networks'].find { |i| i['name'] == 'a' }
         errand_job_network_a['static_ips'] = [static_ip]
 
@@ -233,10 +236,13 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'when the number of dynamic IPs is equal to the total number of vms' do
       let(:manifest_hash) do
-        Bosh::Spec::NewDeployments.test_release_manifest.merge({
-          'jobs' => [{
+        Bosh::Spec::NewDeployments.manifest_with_release.merge({
+          'instance_groups' => [{
             'name' => 'fake-errand-name',
-            'template' => 'errand_without_package',
+            'jobs' => [{
+              'release' => 'bosh-release',
+              'name' => 'errand_without_package'
+            }],
             'vm_type' => 'fake-vm-type',
             'instances' => 1,
             'lifecycle' => 'errand',
@@ -350,9 +356,9 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       context 'utf8 errand output' do
         before do
           manifest = Bosh::Spec::NewDeployments.manifest_with_errand
-          manifest['jobs'] = [{
+          manifest['instance_groups'] = [{
             'name' => 'fake-errand-name',
-            'templates' => [
+            'jobs' => [
               {
                 'release' => 'bosh-release',
                 'name' => 'emoji-errand'
@@ -412,7 +418,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     let(:manifest_with_errand) do
       errand = Bosh::Spec::NewDeployments.manifest_with_errand
-      errand['jobs'][1]['templates'] << {
+      errand['instance_groups'][1]['jobs'] << {
         'release' => 'bosh-release',
         'name' => 'foobar_without_packages',
       }
@@ -443,8 +449,8 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
   context 'errand name != first job' do
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand_job_on_service_instance
-      manifest_hash['jobs'][0]['templates'].unshift(
+      manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance
+      manifest_hash['instance_groups'][0]['jobs'].unshift(
         {'release' => 'bosh-release', 'name' => 'foobar'}
       )
       manifest_hash
@@ -465,40 +471,47 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      Bosh::Spec::NewDeployments.simple_manifest_with_stemcell.merge({'jobs' => [
+      Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups.merge({'instance_groups' => [
         {
           'name' => 'service-with-errand',
-          'template' => 'errand1',
+          'jobs' => [{
+            'release' => 'bosh-release',
+            'name' => 'errand1',
+            'properties' => {
+              'errand1' => {
+                'exit_code' => 0,
+                'stdout' => 'service-errand-stdout',
+                'stderr' => 'service-errand-stderr',
+                'run_package_file' => true,
+              },
+            },
+
+          }],
           'lifecycle' => 'service',
           'vm_type' => 'a',
           'stemcell' => 'default',
           'instances' => 2,
           'networks' => [{'name' => 'a'}],
-          'properties' => {
-            'errand1' => {
-              'exit_code' => 0,
-              'stdout' => 'service-errand-stdout',
-              'stderr' => 'service-errand-stderr',
-              'run_package_file' => true,
-            },
-          },
         },
         {
           'name' => 'errand-with-same-errand-and-multiple-instances',
-          'template' => 'errand1',
+          'jobs' => [{
+            'release' => 'bosh-release',
+            'name' => 'errand1',
+            'properties' => {
+              'errand1' => {
+                'exit_code' => 0,
+                'stdout' => 'service-errand-stdout',
+                'stderr' => 'service-errand-stderr',
+                'run_package_file' => true,
+              },
+            },
+          }],
           'lifecycle' => 'errand',
           'vm_type' => 'a',
           'stemcell' => 'default',
           'instances' => 2,
           'networks' => [{'name' => 'a'}],
-          'properties' => {
-            'errand1' => {
-              'exit_code' => 0,
-              'stdout' => 'service-errand-stdout',
-              'stderr' => 'service-errand-stderr',
-              'run_package_file' => true,
-            },
-          },
         }
       ]})
     end
@@ -521,7 +534,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     let(:cloud_properties) { {'legacy_agent_path' => get_legacy_agent_path('before-info-endpoint-20170719')} }
 
     let(:manifest_hash) do
-      Bosh::Spec::NewDeployments.manifest_with_errand_job_on_service_instance
+      Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance
     end
 
     let(:cloud_config_hash) do
@@ -546,7 +559,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'errand name != first job' do
       let(:manifest_hash_with_later_errand) do
-        manifest_hash['jobs'][0]['templates'].unshift(
+        manifest_hash['instance_groups'][0]['jobs'].unshift(
           {'release' => 'bosh-release', 'name' => 'foobar'}
         )
         manifest_hash

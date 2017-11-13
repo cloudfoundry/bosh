@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::TasksController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(config) }
+      subject(:app) { linted_rack_app(described_class.new(config)) }
 
       let(:temp_dir) { Dir.mktmpdir }
 

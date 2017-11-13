@@ -48,7 +48,7 @@ describe 'delete release', type: :integration do
     bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
 
     upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-    deploy_simple_manifest(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, deployment_name: 'simple')
+    deploy_simple_manifest(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, deployment_name: 'simple')
 
     out = bosh_runner.run('delete-release bosh-release', failure_expected: true)
     expect(out).to match /Error: Release 'bosh-release' is still in use/

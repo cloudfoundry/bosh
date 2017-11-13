@@ -42,8 +42,8 @@ describe 'cli: deployment process', type: :integration do
       }
     ]
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     output = bosh_runner.run('instances --details', json: true, deployment_name: 'simple')
@@ -98,7 +98,7 @@ describe 'cli: deployment process', type: :integration do
   end
 
   it 'should return instances --vitals' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     vitals = director.instances_ps_vitals[0]
 
     print vitals
@@ -118,5 +118,23 @@ describe 'cli: deployment process', type: :integration do
 
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to eq('')
+  end
+
+  it "retrieves instances from deployments in parallel" do
+    manifest1 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest1['name'] = 'simple1'
+    manifest1['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 2})]
+    deploy_from_scratch(manifest_hash: manifest1)
+
+    manifest2 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest2['name'] = 'simple2'
+    manifest2['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 4})]
+    deploy_from_scratch(manifest_hash: manifest2)
+
+    output = bosh_runner.run('instances --parallel 5')
+    expect(output).to include('Succeeded')
+    # 2 deployments must not be mixed in the output, but they can be printed in any order
+    expect(output).to match(/Deployment 'simple1'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s*\n(foobar1\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s*\n){2}\n2 instances/)
+    expect(output).to match(/Deployment 'simple2'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s*\n(foobar2\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s*\n){4}\n4 instances/)
   end
 end

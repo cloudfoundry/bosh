@@ -1,82 +1,19 @@
 AllCops:
-  TargetRubyVersion: 1.9
+  TargetRubyVersion: 2.4
   Include:
   - Rakefile
   Exclude:
-  - bat/**/*
+  - tmp/**/*
 
-# This one we might always want.
-Lint/AmbiguousRegexpLiteral:
+Style/FrozenStringLiteralComment:
   Enabled: false
 
-Lint/UselessAssignment:
-  Enabled: false
+Metrics/LineLength:
+  Max: 120
 
-Lint/UnusedBlockArgument:
-  Enabled: false
+Metrics/MethodLength:
+  Max: 25
 
-Lint/ShadowingOuterLocalVariable:
-  Enabled: false
-
-Lint/ParenthesesAsGroupedExpression:
-  Enabled: false
-
-Lint/NestedMethodDefinition:
-  Enabled: false
-
-Lint/BlockAlignment:
-  Enabled: false
-
-Lint/UnusedMethodArgument:
-  Enabled: false
-
-Lint/HandleExceptions:
-  Enabled: false
-
-Lint/RescueException:
-  Enabled: false
-
-Lint/Void:
-  Enabled: false
-
-Lint/DeprecatedClassMethods:
-  Enabled: false
-
-Lint/DuplicatedKey:
-  Enabled: false
-
-Lint/AmbiguousOperator:
-  Enabled: false
-
-Lint/AssignmentInCondition:
-  Enabled: false
-
-Lint/EndAlignment:
-  Enabled: false
-
-Lint/StringConversionInInterpolation:
-  Enabled: false
-
-Lint/IneffectiveAccessModifier:
-  Enabled: false
-
-Lint/UselessAccessModifier:
-  Enabled: false
-
-Lint/NonLocalExitFromIterator:
-  Enabled: false
-
-Lint/UnderscorePrefixedVariableName:
-  Enabled: false
-
-Lint/FormatParameterMismatch:
-  Enabled: false
-
-Lint/ImplicitStringConcatenation:
-  Enabled: false
-
-Lint/LiteralInCondition:
-  Enabled: false
-
-Lint/DefEndAlignment:
-  Enabled: false
+Metrics/BlockLength:
+  Max: 25
+  ExcludedMethods: ['describe', 'context']

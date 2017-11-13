@@ -6,7 +6,7 @@ module Bosh::Director
   describe Api::Controllers::CloudConfigsController do
     include Rack::Test::Methods
 
-    subject(:app) { Api::Controllers::CloudConfigsController.new(config) }
+    subject(:app) { linted_rack_app(described_class.new(config)) }
     let(:config) do
       config = Config.load_hash(SpecHelper.spec_get_director_config)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
@@ -187,14 +187,14 @@ module Bosh::Director
 
         context 'when there is a previous cloud config' do
           before do
-            Models::Config.make(:cloud, raw_manifest: cloud_config_hash_with_two_azs)
+            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
           end
 
           context 'when uploading an empty cloud config' do
             it 'returns the diff' do
               post(
                 '/diff',
-                "---\n",
+                "--- \n {}",
                 { 'CONTENT_TYPE' => 'text/yaml' }
               )
               expect(last_response.status).to eq(200)
@@ -257,8 +257,8 @@ module Bosh::Director
 
         context 'when there are two previous cloud config ' do
           before do
-            Models::Config.make(:cloud, name: 'foo',raw_manifest: cloud_config_hash_with_one_az)
-            Models::Config.make(:cloud, raw_manifest: cloud_config_hash_with_two_azs)
+            Models::Config.make(:cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
+            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
           end
           it 'always diffs against the default-named cloud config' do
             post(
@@ -283,7 +283,7 @@ module Bosh::Director
 
           context 'when previous cloud config is nil' do
             before do
-              Models::Config.make(:cloud, raw_manifest: nil)
+              Models::Config.make(:cloud)
             end
 
             it 'returns the diff' do

@@ -56,23 +56,30 @@ describe Bhm::Plugins::ProcessManager do
   end
 
   it "detects and starts new processes" do
-    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return([], ['/plugin'])
-    expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).with('/plugin')
+    process = double('some-process', errback: nil)
+    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return([]).once.ordered
+    expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/plugin']).at_least(1).times.ordered
+    expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).with('/plugin').and_return(process)
 
-    EM.run do
-      process_manager.start
+    succeeded = true
+    begin
+      EM.run do
+        process_manager.start
 
-      EM.add_timer(5) do
-        # By this time the test is failing
-        puts("Timeout canceling the event machine")
-        EM.stop
-      end
-
-      EM.add_periodic_timer(0.5) do
-        if process_manager.instance_variable_get(:@processes).size == 1
+        EM.add_timer(5) do
+          # By this time the test is failing
+          succeeded = false
           EM.stop
         end
+
+        EM.add_periodic_timer(0.5) do
+          if process_manager.instance_variable_get(:@processes).size == 1
+            EM.stop
+          end
+        end
       end
+    ensure
+      raise 'timeout canceling the event machine' unless succeeded
     end
   end
 

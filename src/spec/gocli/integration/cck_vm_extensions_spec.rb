@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'cck vm extensions', type: :integration do
-  let(:manifest) {Bosh::Spec::NewDeployments.simple_manifest_with_stemcell}
+  let(:manifest) {Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups}
   let(:deployment_name) {manifest['name']}
 
   context 'when cloud config is updated after deploying' do
@@ -9,8 +9,8 @@ describe 'cck vm extensions', type: :integration do
     let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
     before do
-      manifest['jobs'][0]['instances'] = 1
-      manifest['jobs'][0]['vm_extensions'] = ['vm-extension-name']
+      manifest['instance_groups'][0]['instances'] = 1
+      manifest['instance_groups'][0]['vm_extensions'] = ['vm-extension-name']
 
       cloud_config_hash['vm_extensions'] = [{
         'name' => 'vm-extension-name',

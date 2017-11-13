@@ -4,7 +4,7 @@ describe 'cli: tasks', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should return task list' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
     bosh_runner.run('delete-deployment', deployment_name: 'simple')
     output = bosh_runner.run('tasks --recent', deployment_name: 'simple')
 

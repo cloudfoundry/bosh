@@ -11,7 +11,7 @@ module Bosh::Director
 
     context 'factory methods' do
       let(:cpi_config) { instance_double(Models::Config) }
-      let(:cloud_config) { instance_double(Models::Config) }
+      let(:cloud_config) { Models::Config.make(:cloud, content: '--- {"key": "value"}') }
       let(:deployment) { instance_double(Models::Deployment) }
       let(:cpi_manifest_parser) { instance_double(CpiConfig::CpiManifestParser) }
       let(:cloud_manifest_parser) { instance_double(DeploymentPlan::CloudManifestParser) }
@@ -41,15 +41,18 @@ module Bosh::Director
           described_class.create_from_deployment(deployment, [cpi_config])
         end
 
-        it 'constructs a cloud factory without planner if no cloud config is used' do
-          expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
-          expect(deployment).to receive(:cloud_configs).and_return([])
-          described_class.create_from_deployment(deployment, [cpi_config])
-        end
-
         it 'constructs a cloud factory without parsed cpis if no cpi config is used' do
           expect(described_class).to receive(:new).with(planner, nil)
           described_class.create_from_deployment(deployment, nil)
+        end
+
+        context 'when no cloud config is provided' do
+          let(:cloud_config) { Models::Config.make(:cloud, content: '--- {}') }
+
+          it 'constructs a cloud factory without planner' do
+            expect(described_class).to receive(:new).with(nil, parsed_cpi_config)
+            described_class.create_from_deployment(deployment, [cpi_config])
+          end
         end
       end
 
@@ -226,9 +229,9 @@ module Bosh::Director
       let(:cpi_config1) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name1') }
       let(:cpi_config2) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name2') }
       let(:cpi_config3) { Bosh::Spec::NewDeployments.single_cpi_config('cpi-name3') }
-      let(:cpi1) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi1', :raw_manifest => cpi_config1)}
-      let(:cpi2) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi2', :raw_manifest => cpi_config2)}
-      let(:cpi3) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi3', :raw_manifest => cpi_config3)}
+      let(:cpi1) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi1', :content => YAML.dump(cpi_config1))}
+      let(:cpi2) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi2', :content => YAML.dump(cpi_config2))}
+      let(:cpi3) {Bosh::Director::Models::Config.make(:type => 'cpi', :name => 'cpi3', :content => YAML.dump(cpi_config3))}
 
       it 'returns all known cpis' do
         parsed_cpis = CloudFactory.parse_cpi_configs([cpi1, cpi2, cpi3])

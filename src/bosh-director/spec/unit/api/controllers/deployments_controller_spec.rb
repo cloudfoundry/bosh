@@ -7,7 +7,7 @@ module Bosh::Director
       include IpUtil
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(config) }
+      subject(:app) { linted_rack_app(described_class.new(config)) }
 
       let(:config) do
         config = Config.load_hash(SpecHelper.spec_get_director_config)
@@ -19,9 +19,9 @@ module Bosh::Director
       def manifest_with_errand_hash(deployment_name='errand')
         manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
         manifest_hash['name'] = deployment_name
-        manifest_hash['jobs'] << {
+        manifest_hash['instance_groups'] << {
           'name' => 'another-errand',
-          'template' => 'errand1',
+          'jobs' => [{'name' => 'errand1'}],
           'stemcell' => 'default',
           'lifecycle' => 'errand',
           'vm_type' => 'a',
@@ -110,8 +110,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)).to eq(
-                'code' => 40000,
-                'description' => 'Deployment manifest must be a hash',
+                'code' => 440001,
+                'description' => 'Manifest should be a hash',
               )
             end
 
@@ -308,7 +308,7 @@ module Bosh::Director
                 variable_set: Models::VariableSet.create(deployment: deployment)
               )
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
-              put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+              put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => '0'}
               match = last_response.location.match(%r{/tasks/no_content_length})
               expect(match).to_not be_nil
             end
@@ -381,7 +381,7 @@ module Bosh::Director
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
 
-            put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => 0}
+            put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => '0'}
 
             expect(last_response.status).to eq(302)
           end
@@ -461,6 +461,74 @@ module Bosh::Director
               expect(last_response).to be_redirect
             end
           end
+
+        describe 'recreating' do
+          shared_examples_for "recreates with configs" do
+            it 'recreates with the latest configs if you send a manifest' do
+              cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
+              cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
+              runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
+              runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+
+              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
+              deployment.cloud_configs = [cc_old]
+              deployment.runtime_configs = [runtime_old]
+
+              instance = Models::Instance.create(
+                deployment: deployment,
+                job: 'dea',
+                index: '2',
+                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                state: 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
+              )
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), [cc_new], [runtime_new], deployment, hash_including(options))
+                          .and_return(OpenStruct.new(:id => 1))
+              put "#{path}", JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
+              expect(last_response).to be_redirect
+            end
+
+            it 'recreates with the previous configs rather than the latest' do
+              cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
+              cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
+              runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
+              runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+
+              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
+              deployment.cloud_configs = [cc_old]
+              deployment.runtime_configs = [runtime_old]
+
+              instance = Models::Instance.create(
+                deployment: deployment,
+                job: 'dea',
+                index: '2',
+                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                state: 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
+              )
+              expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                          .with(anything(), anything(), [cc_old], [runtime_old], deployment, hash_including(options))
+                          .and_return(OpenStruct.new(:id => 1))
+              put "#{path}", '', {'CONTENT_TYPE' => 'text/yaml'}
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with an instance_group' do
+            let(:path) {'/foo/jobs/dea?state=recreate'}
+            let(:options) { {"job_states" => {"dea" => {"state" => "recreate"}}} }
+            it_behaves_like 'recreates with configs'
+          end
+
+          context 'with an index or ID' do
+            let(:path) {'/foo/jobs/dea/2?state=recreate'}
+            let(:options) { {"job_states" => {"dea" => {"instance_states" => {2 => "recreate"}}}} }
+            it_behaves_like 'recreates with configs'
+          end
+        end
 
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
@@ -1351,12 +1419,12 @@ module Bosh::Director
               )
             end
 
-            let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::NewDeployments.simple_cloud_config ) }
+            let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)) }
 
             let(:service_errand) do
               {
                 'name' => 'service_errand_job',
-                'template' => 'job_with_bin_run',
+                'jobs' => [{'name' => 'job_with_bin_run'}],
                 'lifecycle' => 'service',
                 'vm_type' => 'a',
                 'stemcell' => 'default',
@@ -1367,7 +1435,7 @@ module Bosh::Director
 
             let!(:deployment_model) do
               manifest_hash = manifest_with_errand_hash
-              manifest_hash['jobs'] << service_errand
+              manifest_hash['instance_groups'] << service_errand
               model = Models::Deployment.make(
                 name: 'fake-dep-name',
                 manifest: YAML.dump(manifest_hash)
@@ -1535,7 +1603,7 @@ module Bosh::Director
           before do
             deployment = Models::Deployment.create(
               :name => 'fake-dep-name',
-              :manifest => YAML.dump({'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]})
+              :manifest => YAML.dump({'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]})
             )
             deployment.cloud_configs = [cloud_config]
             deployment.runtime_configs = [runtime_config_1, runtime_config_2, runtime_config_3]
@@ -1546,7 +1614,7 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq("{\"context\":{\"cloud_config_ids\":[#{cloud_config.id}],\"runtime_config_ids\":[#{runtime_config_2.id},#{runtime_config_3.id}]},\"diff\":[[\"jobs: []\",\"removed\"],[\"\",null],[\"name: fake-dep-name\",\"added\"]]}")
+              expect(last_response.body).to eq("{\"context\":{\"cloud_config_ids\":[#{cloud_config.id}],\"runtime_config_ids\":[#{runtime_config_2.id},#{runtime_config_3.id}]},\"diff\":[[\"instance_groups: []\",\"removed\"],[\"\",null],[\"name: fake-dep-name\",\"added\"]]}")
             end
 
             it 'gives a nice error when request body is not a valid yml' do
@@ -1577,7 +1645,7 @@ module Bosh::Director
             end
 
             context 'when cloud config exists' do
-              let(:manifest_hash) { {'jobs' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
+              let(:manifest_hash) { {'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
 
               it 'ignores cloud config if network section exists' do
                 Models::Deployment.create(
@@ -1701,21 +1769,21 @@ module Bosh::Director
 
           context 'PUT /:deployment/jobs/:job' do
             it 'allows access to owned deployment' do
-              expect(put('/owned_deployment/jobs/dea', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+              expect(put('/owned_deployment/jobs/dea?state=running', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
             end
 
             it 'denies access to other deployment' do
-              expect(put('/other_deployment/jobs/dea', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
+              expect(put('/other_deployment/jobs/dea?state=running', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
             end
           end
 
           context 'PUT /:deployment/jobs/:job/:index_or_id' do
             it 'allows access to owned deployment' do
-              expect(put('/owned_deployment/jobs/dea/0', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
+              expect(put('/owned_deployment/jobs/dea/0', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(302)
             end
 
             it 'denies access to other deployment' do
-              expect(put('/other_deployment/jobs/dea/0', '---', { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
+              expect(put('/other_deployment/jobs/dea/0', nil, { 'CONTENT_TYPE' => 'text/yaml' }).status).to eq(401)
             end
           end
 
@@ -1984,7 +2052,7 @@ module Bosh::Director
 
           context 'GET /:deployment/errands' do
 
-            let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: Bosh::Spec::NewDeployments.simple_cloud_config ) }
+            let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)) }
 
             it 'allows access to owned deployment' do
               expect(get('/owned_deployment/errands').status).to eq(200)

@@ -6,9 +6,9 @@ describe 'post start script', type: :integration do
   let(:manifest) do
     Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
       {
-        'jobs' => [Bosh::Spec::NewDeployments.simple_job(
+        'instance_groups' => [Bosh::Spec::NewDeployments.simple_instance_group(
                      name: 'job_with_templates_having_post_start_scripts',
-                     templates: [{'name' => 'job_with_post_start_script'}],
+                     jobs: [{'name' => 'job_with_post_start_script'}],
                      instances: 1,
                      properties: {:exit_code => exit_code})]
       })
@@ -31,11 +31,11 @@ describe 'post start script', type: :integration do
     end
 
     it 'runs post-start script on subsequent deploys only when previous post-start scripts have failed' do
-      manifest = Bosh::Spec::NewDeployments.test_release_manifest.merge(
+      manifest = Bosh::Spec::NewDeployments.manifest_with_release.merge(
           {
-              'jobs' => [Bosh::Spec::NewDeployments.simple_job(
+              'instance_groups' => [Bosh::Spec::NewDeployments.simple_instance_group(
                              name: 'job_with_templates_having_post_start_scripts',
-                             templates: [{'name' => 'job_with_post_start_script'}],
+                             jobs: [{'name' => 'job_with_post_start_script'}],
                              instances: 1,
                              properties: {'exit_code' => 1})]
           })
@@ -52,11 +52,11 @@ describe 'post start script', type: :integration do
       # We expect the script to run again, even though nothing has changed, just because it failed last time
       expect(agent_log.scan("/jobs/job_with_post_start_script/bin/post-start' script has failed with error").size).to eq(2)
 
-      manifest = Bosh::Spec::NewDeployments.test_release_manifest.merge(
+      manifest = Bosh::Spec::NewDeployments.manifest_with_release.merge(
           {
-              'jobs' => [Bosh::Spec::NewDeployments.simple_job(
+              'instance_groups' => [Bosh::Spec::NewDeployments.simple_instance_group(
                              name: 'job_with_templates_having_post_start_scripts',
-                             templates: [{'name' => 'job_with_post_start_script'}],
+                             jobs: [{'name' => 'job_with_post_start_script'}],
                              instances: 1,
                              properties: {'exit_code' => 0})]
           })

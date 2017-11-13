@@ -95,7 +95,7 @@ module Bosh::Director::DeploymentPlan
       instance.bind_existing_instance_model(instance_model)
     end
 
-    describe '#apply_spec' do
+    describe '#as_apply_spec' do
       it 'returns a valid instance apply_spec' do
         network_name = network_spec['name']
         spec = instance_spec.as_apply_spec
@@ -131,6 +131,45 @@ module Bosh::Director::DeploymentPlan
 
       it 'does not include rendered_templates_archive key before rendered templates were archived' do
         expect(instance_spec.as_apply_spec).to_not have_key('rendered_templates_archive')
+      end
+    end
+
+    describe '#as_jobless_apply_spec' do
+      it 'returns a valid instance apply_spec' do
+        network_name = network_spec['name']
+        spec = instance_spec.as_jobless_apply_spec
+        expect(spec['deployment']).to eq('fake-deployment')
+        expect(spec['name']).to eq('fake-job')
+        expect(spec['job']).to eq({})
+        expect(spec['az']).to eq('foo-az')
+        expect(spec['index']) .to eq(index)
+        expect(spec['networks']).to include(network_name)
+
+        expect(spec['networks'][network_name]).to eq({
+          'type' => 'dynamic',
+          'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
+          'default' => ['gateway']
+        })
+
+        expect(spec['packages']).to eq(packages)
+        expect(spec['persistent_disk']).to eq(0)
+        expect(spec['configuration_hash']).to be_nil
+        expect(spec['dns_domain_name']).to eq('bosh')
+        expect(spec['id']).to eq('uuid-1')
+      end
+
+      it 'includes rendered_templates_archive key after rendered templates were archived' do
+        instance.rendered_templates_archive =
+          Bosh::Director::Core::Templates::RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
+
+        expect(instance_spec.as_jobless_apply_spec['rendered_templates_archive']).to eq(
+          'blobstore_id' => 'fake-blobstore-id',
+          'sha1' => 'fake-sha1',
+        )
+      end
+
+      it 'does not include rendered_templates_archive key before rendered templates were archived' do
+        expect(instance_spec.as_jobless_apply_spec).to_not have_key('rendered_templates_archive')
       end
     end
 

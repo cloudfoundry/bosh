@@ -32,7 +32,6 @@ mkdir -p ${inner_bosh_dir}
 
 bosh int bosh.yml \
   -o "$script_dir/inner-bosh-ops.yml" \
-  -o ./experimental/nats-tls.yml \
   -o jumpbox-user.yml \
   -v director_name=docker-inner \
   -v internal_cidr=10.245.0.0/16 \

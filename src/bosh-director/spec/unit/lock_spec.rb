@@ -38,7 +38,7 @@ module Bosh::Director
     end
 
     it 'should not let two clients to acquire the same lock at the same time' do
-      lock_a = Lock.new('foo')
+      lock_a = Lock.new('foo', task_id: 1)
       lock_b = Lock.new('foo', timeout: 0.1)
 
       lock_a_block_run = false
@@ -47,7 +47,7 @@ module Bosh::Director
         lock_a_block_run = true
         expect do
           lock_b.lock { lock_b_block_run = true }
-        end.to raise_exception(Lock::TimeoutError)
+        end.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Locking task id is 1/)
       end
 
       expect(lock_a_block_run).to be(true)
@@ -55,16 +55,28 @@ module Bosh::Director
     end
 
     it 'should return immediately with lock busy if try lock fails to get lock' do
-      lock_a = Lock.new('foo', timeout: 0)
+      lock_a = Lock.new('foo', { timeout: 0, task_id: 1 })
       lock_b = Lock.new('foo', timeout: 0)
 
       ran_once = false
       lock_a.lock do
         ran_once = true
-        expect { lock_b.lock {} }.to raise_exception(Lock::TimeoutError)
+        expect { lock_b.lock {} }.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Locking task id is 1/)
       end
 
       expect(ran_once).to be(true)
+    end
+
+    it 'should return info about gone task' do
+      lock_a = Lock.new('foo')
+      lock_b = Lock.new('foo')
+
+      lock_a.lock do
+        allow(lock_b).to receive(:current_lock).and_return(nil)
+        expect do
+          lock_b.lock { something }
+        end.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Lock is gone/)
+      end
     end
 
     it 'should record task id' do

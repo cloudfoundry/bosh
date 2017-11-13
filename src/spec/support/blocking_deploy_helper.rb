@@ -6,7 +6,7 @@ module Bosh::Spec
     extend IntegrationSandboxHelpers
 
     def with_blocking_deploy(options={})
-      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 1, template: 'job_with_blocking_compilation')
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'blocking', instances: 1, job: 'job_with_blocking_compilation')
       task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
 
       director.wait_for_first_available_vm

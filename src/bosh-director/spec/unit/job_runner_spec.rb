@@ -107,6 +107,18 @@ module Bosh::Director
       expect(log_contents).not_to include('SELECT NULL')
     end
 
+    it 'should generate timestamp with milliseconds' do
+      Timecop.freeze do
+        make_runner(sample_job_class, 42)
+        Config.logger.debug('test')
+
+        time = Time.new
+        time_format = time.strftime("%Y-%m-%dT%H:%M:%S.") << "%06d " % time.usec
+        log_contents = File.read(task_dir+'/debug')
+        expect(log_contents).to match /D, \[#{time_format}.*\] \[\] DEBUG -- DirectorJobRunner: test/
+      end
+    end
+
     it 'handles task cancellation' do
       job = Class.new(Jobs::BaseJob) do
         define_method(:perform) do |*args|

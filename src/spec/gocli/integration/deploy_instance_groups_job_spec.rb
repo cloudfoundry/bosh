@@ -1,11 +1,11 @@
 require_relative '../spec_helper'
 
-describe 'deploy job template', type: :integration do
+describe 'deploy instance_groups job', type: :integration do
   with_reset_sandbox_before_each
 
-  it 're-evaluates job templates with new manifest job properties' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['properties'] = { 'test_property' => 1 }
+  it 're-evaluates job with new manifest job properties' do
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'test_property' => 1 }
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     foobar_instance = director.instance('foobar', '0')
@@ -13,17 +13,17 @@ describe 'deploy job template', type: :integration do
     template = foobar_instance.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('test_property=1')
 
-    manifest_hash['properties'] = { 'test_property' => 2 }
+    manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'test_property' => 2 }
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     template = foobar_instance.read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('test_property=2')
   end
 
-  it 're-evaluates job templates with new dynamic network configuration' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'].first['instances'] = 1
-    manifest_hash['jobs'].first['properties'] = { 'network_name' => 'a' }
+  it 're-evaluates job with new dynamic network configuration' do
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['instances'] = 1
+    manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'network_name' => 'a' }
 
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['networks'].first['type'] = 'dynamic'
@@ -54,8 +54,8 @@ describe 'deploy job template', type: :integration do
   end
 
   it 'does not redeploy if the order of properties get changed' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['properties'] = {
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['jobs'].first['properties'] = {
         'test_property' =>
         {
             'q2GB' => 'foo',
@@ -67,7 +67,7 @@ describe 'deploy job template', type: :integration do
             'q428GB' => 'foo',
         }
       }
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash['instance_groups'].first['instances'] = 1
 
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       expect(director.instances.count).to eq(1)
@@ -89,8 +89,8 @@ describe 'deploy job template', type: :integration do
     with_reset_hm_before_each
 
     it 'creates alerts to mark the start and end of an update deployment' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
 
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 

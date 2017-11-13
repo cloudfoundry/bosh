@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::InfoController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(config) }
+      subject(:app) { linted_rack_app(described_class.new(config)) }
       let(:config) { Config.load_hash(test_config) }
       let(:base_config) { SpecHelper.spec_get_director_config }
       let(:test_config) { base_config }

@@ -84,13 +84,15 @@ module Bosh::Director
 
         if (request.content_length.nil?  || request.content_length.to_i == 0) && (params['state'])
           manifest = deployment.manifest
+          latest_cloud_configs = deployment.cloud_configs
+          latest_runtime_configs = deployment.runtime_configs
         else
           manifest_hash = validate_manifest_yml(request.body.read, nil)
           manifest =  YAML.dump(manifest_hash)
+          latest_cloud_configs = Models::Config.latest_set('cloud')
+          latest_runtime_configs = Models::Config.latest_set('runtime')
         end
 
-        latest_cloud_configs = Models::Config.latest_set('cloud')
-        latest_runtime_configs = Models::Config.latest_set('runtime')
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
@@ -117,13 +119,15 @@ module Bosh::Director
 
         if request.content_length.nil? || request.content_length.to_i == 0
           manifest = deployment.manifest
+          latest_cloud_configs = deployment.cloud_configs
+          latest_runtime_configs = deployment.runtime_configs
         else
           manifest_hash = validate_manifest_yml(request.body.read, nil)
           manifest =  YAML.dump(manifest_hash)
+          latest_cloud_configs = Models::Config.latest_set('cloud')
+          latest_runtime_configs = Models::Config.latest_set('runtime')
         end
 
-        latest_cloud_configs = Models::Config.latest_set('cloud')
-        latest_runtime_configs = Models::Config.latest_set('runtime')
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
         redirect "/tasks/#{task.id}"
       end
@@ -161,11 +165,13 @@ module Bosh::Director
 
         payload = json_decode(request.body.read)
         @resurrector_manager.set_pause_for_instance(deployment, params[:job], params[:index_or_id], payload['resurrection_paused'])
+        status(200)
       end
 
       put '/:deployment/instance_groups/:instancegroup/:id/ignore', consumes: :json do
         payload = json_decode(request.body.read)
         @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignore'])
+        status(200)
       end
 
       post '/:deployment/jobs/:job/:index_or_id/snapshots' do
@@ -194,12 +200,13 @@ module Bosh::Director
       end
 
       get '/', authorization: :list_deployments do
+        latest_cloud_configs = Models::Config.latest_set('cloud').map(&:id).sort
         deployments = @deployment_manager.all_by_name_asc
           .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
           .map do |deployment|
           cloud_config = if deployment.cloud_configs.empty?
                            'none'
-                         elsif deployment.cloud_configs.map(&:id) == Models::Config.latest_set('cloud').map(&:id)
+                         elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
                            'latest'
                          else
                            'outdated'
@@ -345,9 +352,6 @@ module Bosh::Director
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
         deployment = validate_manifest_yml(request.body.read, nil)
-        unless deployment.kind_of?(Hash)
-          raise ValidationInvalidType, 'Deployment manifest must be a hash'
-        end
 
         unless deployment['name']
           raise ValidationMissingField, "Deployment manifest must have a 'name' key"

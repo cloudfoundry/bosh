@@ -269,7 +269,7 @@ module Bosh::Director
       end
 
       def using_global_networking?
-        !@cloud_configs.empty?
+        CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(@cloud_configs)
       end
 
       def add_link_provider(link_provider)

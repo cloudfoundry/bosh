@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::OrphanDisksController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(config) }
+      subject(:app) { linted_rack_app(described_class.new(config)) }
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
 
       let(:orphaned_at) { Time.now.utc }

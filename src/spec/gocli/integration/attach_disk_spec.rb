@@ -4,10 +4,10 @@ describe 'attach disk', type: :integration do
   with_reset_sandbox_before_each
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['releases'].first['version'] = 'latest'
-    manifest_hash['jobs'][0]['instances'] = 1
-    manifest_hash['jobs'][0]['persistent_disk'] = 1000
+    manifest_hash['instance_groups'][0]['instances'] = 1
+    manifest_hash['instance_groups'][0]['persistent_disk'] = 1000
     manifest_hash
   end
 
@@ -72,9 +72,9 @@ describe 'attach disk', type: :integration do
 
   context 'deployment has disk that exists in an orphaned list not attached to an instance' do
     before do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      deployment_job = Bosh::Spec::NewDeployments.simple_job(persistent_disk_pool: 'disk_a', instances: 1)
-      manifest_hash['jobs'] = [deployment_job]
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      instance_group = Bosh::Spec::NewDeployments.simple_instance_group(persistent_disk_pool: 'disk_a', instances: 1)
+      manifest_hash['instance_groups'] = [instance_group]
       cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config['disk_types'] = [Bosh::Spec::NewDeployments.disk_type]
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)

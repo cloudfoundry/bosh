@@ -50,14 +50,14 @@ describe 'cli cloud config', type: :integration do
     end
 
     let(:initial_manifest) do
-      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest['jobs'][0]['azs'] = ['z1', 'z2']
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest['instance_groups'][0]['azs'] = ['z1', 'z2']
       manifest
     end
 
     let(:new_manifest) do
-      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest['jobs'][0]['azs'] = ['z1']
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest['instance_groups'][0]['azs'] = ['z1']
       manifest
     end
 

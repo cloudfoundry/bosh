@@ -33,7 +33,7 @@ module Bosh::Director
     end
 
     def self.create_cloud_planner(cloud_configs, deployment_name = nil)
-      return nil if cloud_configs.empty?
+      return nil unless CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(cloud_configs)
 
       global_network_resolver = DeploymentPlan::NullGlobalNetworkResolver.new
       parser = DeploymentPlan::CloudManifestParser.new(Config.logger)

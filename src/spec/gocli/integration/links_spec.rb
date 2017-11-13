@@ -59,113 +59,151 @@ describe 'Links', type: :integration do
   end
 
   context 'when job requires link' do
-    let(:implied_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
-          name: 'my_api',
-          templates: [{'name' => 'api_server'}],
-          instances: 1
-      )
-      job_spec['azs'] = ['z1']
-      job_spec
-    end
-
-    let(:api_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:implied_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'my_api',
-        templates: [{'name' => 'api_server', 'consumes' => links}],
+        jobs: [{'name' => 'api_server'}],
         instances: 1
       )
-      job_spec['azs'] = ['z1']
-      job_spec
+      spec['azs'] = ['z1']
+      spec
     end
 
-    let(:mysql_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:api_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_api',
+        jobs: [{'name' => 'api_server', 'consumes' => links}],
+        instances: 1
+      )
+      spec['azs'] = ['z1']
+      spec
+    end
+
+    let(:mysql_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'mysql',
-        templates: [{'name' => 'database'}],
+        jobs: [{'name' => 'database'}],
         instances: 2,
         static_ips: ['192.168.1.10', '192.168.1.11']
       )
-      job_spec['azs'] = ['z1']
-      job_spec['networks'] << {
+      spec['azs'] = ['z1']
+      spec['networks'] << {
         'name' => 'dynamic-network',
         'default' => ['dns', 'gateway']
       }
-      job_spec
+      spec
     end
 
-    let(:postgres_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:postgres_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'postgres',
-        templates: [{'name' => 'backup_database'}],
+        jobs: [{'name' => 'backup_database'}],
         instances: 1,
         static_ips: ['192.168.1.12']
       )
-      job_spec['azs'] = ['z1']
-      job_spec
+      spec['azs'] = ['z1']
+      spec
     end
 
-    let(:aliased_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:aliased_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'aliased_postgres',
-        templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+        jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
         instances: 1,
       )
-      job_spec['azs'] = ['z1']
-      job_spec
+      spec['azs'] = ['z1']
+      spec
     end
 
     let(:mongo_db_spec)do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'mongo',
-        templates: [{'name' => 'mongo_db'}],
+        jobs: [{'name' => 'mongo_db'}],
         instances: 1,
         static_ips: ['192.168.1.13'],
       )
-      job_spec['azs'] = ['z1']
-      job_spec
+      spec['azs'] = ['z1']
+      spec
     end
 
     let(:manifest) do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['jobs'] = [api_job_spec, mysql_job_spec, postgres_job_spec]
+      manifest['instance_groups'] = [api_instance_group_spec, mysql_instance_group_spec, postgres_instance_group_spec]
       manifest
     end
 
     let(:links) {{}}
 
+    context 'when job consumes link with nested properties' do
+
+      let(:link_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'my_links',
+          jobs: [
+            {'name' => 'provider', 'properties' => {'b' => 'value_b', 'nested' => {'three' => 'bar'}}},
+            {'name' => 'consumer'}],
+          instances: 1
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'respects default properties' do
+        manifest['instance_groups'] = [link_instance_group_spec]
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.find_instance(director.instances, 'my_links', '0')
+
+        template = YAML.load(link_instance.read_job_template('consumer', 'config.yml'))
+
+
+        expect(template['a']).to eq('default_a')
+        expect(template['b']).to eq('value_b')
+        expect(template['c']).to eq('default_c')
+
+        expect(template['nested'].size).to eq(3)
+        expect(template['nested']).to eq(
+          {
+            'one' => 'default_nested.one',
+            'two' => 'default_nested.two',
+            'three' => 'bar',
+          }
+        )
+      end
+    end
+
     context 'properties with aliased links' do
-      let(:db3_job) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:db3_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'db3',
-            templates: [
+            jobs: [
                 {'name' => 'http_server_with_provides', 'provides' => {'http_endpoint' => {'as' => 'http_endpoint2', 'shared' => true}}},
                 {'name' => 'kv_http_server'}
             ],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, 'name_space' => {'prop_a' => 'job_value', 'fibonacci' => 1}}
-        job_spec
+        spec['azs'] = ['z1']
+        spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, 'name_space' => {'prop_a' => 'job_value', 'fibonacci' => 1}}
+        spec
       end
 
-      let(:other2_job) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:other2_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'other2',
-            templates: [
+            jobs: [
                 {'name' => 'http_proxy_with_requires', 'properties' => {'http_proxy_with_requires.listen_port' => 21}, 'consumes' => {'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, 'logs_http_endpoint' => nil}},
                 {'name' => 'http_server_with_provides', 'properties' => {'listen_port' => 8446}}
             ],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
-      let(:new_job) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:new_instance_group) do
+        job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'new_job',
-            templates: [
+            jobs: [
                 {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'new_provides', 'shared' => true}, 'logs_http_endpoint' => nil}},
                 {'name' => 'http_server_with_provides', 'provides'=>{'http_endpoint' => {'as' =>'new_provides'}}}
             ],
@@ -177,7 +215,7 @@ describe 'Links', type: :integration do
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [db3_job, other2_job, new_job]
+        manifest['instance_groups'] = [db3_instance_group, other2_instance_group, new_instance_group]
         manifest['properties'] = {'listen_port' => 9999}
         manifest
       end
@@ -196,21 +234,21 @@ describe 'Links', type: :integration do
     end
 
     context 'when link is not defined in provides spec but specified in manifest' do
-      let(:consume_job) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:consume_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'consume_job',
-          templates: [
+          jobs: [
             {'name' => 'consumer', 'provides'=>{'consumer_resource' => {'from' => 'consumer'}}}
           ],
           instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [consume_job]
+        manifest['instance_groups'] = [consume_instance_group]
         manifest
       end
 
@@ -526,29 +564,29 @@ describe 'Links', type: :integration do
 
     context 'when dealing with optional links' do
 
-      let(:api_job_with_optional_links_spec_1) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:api_instance_group_with_optional_links_spec_1) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'my_api',
-            templates: [{'name' => 'api_server_with_optional_links_1', 'consumes' => links}],
+            jobs: [{'name' => 'api_server_with_optional_links_1', 'consumes' => links}],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
-      let(:api_job_with_optional_links_spec_2) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:api_instance_group_with_optional_links_spec_2) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'my_api',
-            templates: [{'name' => 'api_server_with_optional_links_2', 'consumes' => links}],
+            jobs: [{'name' => 'api_server_with_optional_links_2', 'consumes' => links}],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [api_job_with_optional_links_spec_1, mysql_job_spec, postgres_job_spec]
+        manifest['instance_groups'] = [api_instance_group_with_optional_links_spec_1, mysql_instance_group_spec, postgres_instance_group_spec]
         manifest
       end
 
@@ -621,7 +659,7 @@ describe 'Links', type: :integration do
 
           let(:manifest) do
             manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-            manifest['jobs'] = [api_job_with_optional_links_spec_2, mysql_job_spec, postgres_job_spec]
+            manifest['instance_groups'] = [api_instance_group_with_optional_links_spec_2, mysql_instance_group_spec, postgres_instance_group_spec]
             manifest
           end
 
@@ -662,7 +700,7 @@ describe 'Links', type: :integration do
 
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [api_job_with_optional_links_spec_2, mysql_job_spec, postgres_job_spec]
+          manifest['instance_groups'] = [api_instance_group_with_optional_links_spec_2, mysql_instance_group_spec, postgres_instance_group_spec]
           manifest
         end
 
@@ -681,19 +719,19 @@ describe 'Links', type: :integration do
       end
 
       context 'when the optional link is used without if_link in templates' do
-        let(:api_job_with_bad_optional_links) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+        let(:api_instance_group_with_bad_optional_links) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'my_api',
-              templates: [{'name' => 'api_server_with_bad_optional_links'}],
+              jobs: [{'name' => 'api_server_with_bad_optional_links'}],
               instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [api_job_with_bad_optional_links]
+          manifest['instance_groups'] = [api_instance_group_with_bad_optional_links]
           manifest
         end
 
@@ -710,19 +748,19 @@ Error: Unable to render instance groups for deployment. Errors are:
 
       context 'when multiple links with same type being provided' do
         let(:api_server_with_optional_db_links)do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'optional_db',
-              templates: [{'name' => 'api_server_with_optional_db_link'}],
+              jobs: [{'name' => 'api_server_with_optional_db_link'}],
               instances: 1,
               static_ips: ['192.168.1.13']
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [api_server_with_optional_db_links, mysql_job_spec, postgres_job_spec]
+          manifest['instance_groups'] = [api_server_with_optional_db_links, mysql_instance_group_spec, postgres_instance_group_spec]
           manifest
         end
 
@@ -745,7 +783,7 @@ Error: Unable to process links for deployment. Errors are:
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [mongo_db_spec]
+        manifest['instance_groups'] = [mongo_db_spec]
 
         # We manually change the deployment manifest release version, beacuse of w weird issue where
         # the uploaded release version is `0+dev.1` and the release version in the deployment manifest
@@ -828,7 +866,7 @@ Error: Unable to process links for deployment. Errors are:
     context 'when consumes link is renamed by from key' do
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [api_job_spec, mongo_db_spec, mysql_job_spec]
+        manifest['instance_groups'] = [api_instance_group_spec, mongo_db_spec, mysql_instance_group_spec]
         manifest
       end
 
@@ -875,24 +913,22 @@ Error: Unable to process links for deployment. Errors are:
 
     end
 
-    #TODO: Redeploy test to see provider/consumer removed.
-
     context 'deployment job does not have templates' do
-      let(:first_node_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:first_node_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'first_node',
-            templates: [],
+            jobs: [],
             instances: 1,
             static_ips: ['192.168.1.10']
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [first_node_job_spec]
+        manifest['instance_groups'] = [first_node_instance_group_spec]
         manifest
       end
 
@@ -902,15 +938,15 @@ Error: Unable to process links for deployment. Errors are:
     end
 
     context 'when release job requires and provides same link' do
-      let(:first_node_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:first_node_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'first_node',
-          templates: [{'name' => 'node', 'consumes' => first_node_links}],
+          jobs: [{'name' => 'node', 'consumes' => first_node_links}],
           instances: 1,
           static_ips: ['192.168.1.10']
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
       let(:first_node_links) do
@@ -920,15 +956,15 @@ Error: Unable to process links for deployment. Errors are:
         }
       end
 
-      let(:second_node_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:second_node_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'second_node',
-          templates: [{'name' => 'node', 'consumes' => second_node_links}],
+          jobs: [{'name' => 'node', 'consumes' => second_node_links}],
           instances: 1,
           static_ips: ['192.168.1.11']
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
       let(:second_node_links) do
         {
@@ -939,7 +975,7 @@ Error: Unable to process links for deployment. Errors are:
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [first_node_job_spec, second_node_job_spec]
+        manifest['instance_groups'] = [first_node_instance_group_spec, second_node_instance_group_spec]
         manifest
       end
 
@@ -952,7 +988,7 @@ Error: Unable to process links for deployment. Errors are:
     context 'when provide and consume links are set in spec, but only implied by deployment manifest' do
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [implied_job_spec, postgres_job_spec]
+        manifest['instance_groups'] = [implied_instance_group_spec, postgres_instance_group_spec]
         manifest
       end
 
@@ -991,7 +1027,7 @@ Error: Unable to process links for deployment. Errors are:
       context 'when both provided links are on separate templates' do
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [implied_job_spec, postgres_job_spec, mysql_job_spec]
+          manifest['instance_groups'] = [implied_instance_group_spec, postgres_instance_group_spec, mysql_instance_group_spec]
           manifest
         end
 
@@ -1004,19 +1040,19 @@ Error: Unable to process links for deployment. Errors are:
       end
 
       context 'when both provided links are in same template' do
-        let(:job_with_same_type_links) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+        let(:instance_group_with_same_type_links) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'duplicate_link_type_job',
-              templates: [{'name' => 'database_with_two_provided_link_of_same_type'}],
+              jobs: [{'name' => 'database_with_two_provided_link_of_same_type'}],
               instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [implied_job_spec, job_with_same_type_links]
+          manifest['instance_groups'] = [implied_instance_group_spec, instance_group_with_same_type_links]
           manifest
         end
 
@@ -1032,7 +1068,7 @@ Error: Unable to process links for deployment. Errors are:
     context 'when provide link is aliased using "as", and the consume link references the new alias' do
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [api_job_spec, aliased_job_spec]
+        manifest['instance_groups'] = [api_instance_group_spec, aliased_instance_group_spec]
         manifest
       end
 
@@ -1065,14 +1101,14 @@ Error: Unable to process links for deployment. Errors are:
       context 'when two co-located jobs consume two links with the same name, where each is provided by a different job on the same instance group' do
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+          manifest['instance_groups'] = [provider_instance_group, consumer_instance_group]
           manifest
         end
 
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'provider_instance_group',
-            templates: [{
+            jobs: [{
                           'name' => 'http_server_with_provides',
                           'properties' => {
                             'listen_port' => 11111,
@@ -1096,21 +1132,21 @@ Error: Unable to process links for deployment. Errors are:
             ],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:consumer_instance_group) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'consumer_instance_group',
-            templates: [
+            jobs: [
               {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_alias'}}},
               {'name' => 'tcp_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_tcp_alias'}}},
             ],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         it 'each job should get the correct link' do
@@ -1133,14 +1169,14 @@ Error: Unable to process links for deployment. Errors are:
       context 'when two co-located jobs consume two links with the same name, where each is provided by the same job on different instance groups' do
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [provider1_http, provider2_http, consumer_instance_group]
+          manifest['instance_groups'] = [provider1_http, provider2_http, consumer_instance_group]
           manifest
         end
 
         let(:provider1_http) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'provider1_http_instance_group',
-            templates: [{
+            jobs: [{
                           'name' => 'http_server_with_provides',
                           'properties' => {
                             'listen_port' => 11111,
@@ -1152,14 +1188,14 @@ Error: Unable to process links for deployment. Errors are:
                         }],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:provider2_http) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'provider2_http_instance_group',
-            templates: [{
+            jobs: [{
                           'name' => 'http_server_with_provides',
                           'properties' => {
                             'listen_port' => 1234,
@@ -1171,21 +1207,21 @@ Error: Unable to process links for deployment. Errors are:
                         }],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:consumer_instance_group) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'consumer_instance_group',
-            templates: [
+            jobs: [
               {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_1'}}},
               {'name' => 'tcp_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'link_http_2'}}},
             ],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         it 'each job should get the correct link' do
@@ -1208,14 +1244,14 @@ Error: Unable to process links for deployment. Errors are:
       context 'when one job consumes two links of the same type, where each is provided by the same job on different instance groups' do
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [provider_1_db, provider_2_db, consumer_instance_group]
+          manifest['instance_groups'] = [provider_1_db, provider_2_db, consumer_instance_group]
           manifest
         end
 
         let(:provider_1_db) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'provider_1_db',
-            templates: [{
+            jobs: [{
                           'name' => 'backup_database',
                           'properties' => {
                             'foo' => 'wow',
@@ -1224,14 +1260,14 @@ Error: Unable to process links for deployment. Errors are:
                         }],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:provider_2_db) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'provider_2_db',
-            templates: [{
+            jobs: [{
                           'name' => 'backup_database',
                           'properties' => {
                             'foo' => 'omg_no_keyboard',
@@ -1240,20 +1276,20 @@ Error: Unable to process links for deployment. Errors are:
                         }],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         let(:consumer_instance_group) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'consumer_instance_group',
-            templates: [
+            jobs: [
               {'name' => 'api_server', 'consumes' => {'db' => {'from' => 'db_1'}, 'backup_db' => {'from' => 'db_2'}}},
             ],
             instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
 
         it 'each job should get the correct link' do
@@ -1274,7 +1310,7 @@ Error: Unable to process links for deployment. Errors are:
     context 'when provide link is aliased using "as", and the consume link references the old name' do
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [api_job_spec, aliased_job_spec]
+        manifest['instance_groups'] = [api_instance_group_spec, aliased_instance_group_spec]
         manifest
       end
 
@@ -1301,35 +1337,35 @@ Error: Unable to process links for deployment. Errors are:
       end
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [api_job_spec, aliased_job_spec]
+        manifest['instance_groups'] = [api_instance_group_spec, aliased_instance_group_spec]
         manifest
       end
 
-      let(:new_api_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:new_api_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'new_api_job',
-            templates: [{'name' => 'api_server', 'consumes' => links}],
+            jobs: [{'name' => 'api_server', 'consumes' => links}],
             instances: 1,
             migrated_from: ['name' => 'my_api']
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
-      let(:new_aliased_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:new_aliased_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'new_aliased_job',
-            templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+            jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
             instances: 1,
             migrated_from: ['name' => 'aliased_postgres']
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
       it 'deploys migrated_from jobs' do
         deploy_simple_manifest(manifest_hash: manifest)
-        manifest['jobs'] = [new_api_job_spec, new_aliased_job_spec]
+        manifest['instance_groups'] = [new_api_instance_group_spec, new_aliased_instance_group_spec]
         deploy_simple_manifest(manifest_hash: manifest)
 
         link_instance = director.instance('new_api_job', '0')
@@ -1353,14 +1389,14 @@ Error: Unable to process links for deployment. Errors are:
     context 'when link is broken' do
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [first_node_job_spec, second_node_job_spec]
+        manifest['instance_groups'] = [first_node_instance_group_spec, second_node_instance_group_spec]
         manifest
       end
 
-      let(:first_node_job_spec) do
-        Bosh::Spec::NewDeployments.simple_job(
+      let(:first_node_instance_group_spec) do
+        Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'first_node',
-          templates: [{'name' => 'node', 'consumes' => first_node_links,'provides' => {'node2' => {'as' => 'alias2'}}}],
+          jobs: [{'name' => 'node', 'consumes' => first_node_links,'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           azs: ['z1']
@@ -1374,10 +1410,10 @@ Error: Unable to process links for deployment. Errors are:
         }
       end
 
-      let(:second_node_job_spec) do
-        Bosh::Spec::NewDeployments.simple_job(
+      let(:second_node_instance_group_spec) do
+        Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'second_node',
-          templates: [{'name' => 'node', 'consumes' => second_node_links, 'provides' => {'node2' => {'as' => 'alias2'}}}],
+          jobs: [{'name' => 'node', 'consumes' => second_node_links, 'provides' => {'node2' => {'as' => 'alias2'}}}],
           instances: 1,
           static_ips: ['192.168.1.11'],
           azs: ['z1']
@@ -1407,19 +1443,19 @@ Error: Unable to process links for deployment. Errors are:
      let(:first_manifest) do
        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
        manifest['name'] = 'first'
-       manifest['jobs'] = [first_deployment_job_spec]
+       manifest['instance_groups'] = [first_deployment_instance_group_spec]
        manifest
      end
 
-     let(:first_deployment_job_spec) do
-       job_spec = Bosh::Spec::NewDeployments.simple_job(
+     let(:first_deployment_instance_group_spec) do
+       spec = Bosh::Spec::NewDeployments.simple_instance_group(
            name: 'first_deployment_node',
-           templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
+           jobs: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
            instances: 1,
            static_ips: ['192.168.1.10'],
        )
-       job_spec['azs'] = ['z1']
-       job_spec
+       spec['azs'] = ['z1']
+       spec
      end
 
      let(:first_deployment_consumed_links) do
@@ -1434,21 +1470,21 @@ Error: Unable to process links for deployment. Errors are:
          'node2' => {'shared' => true}}
      end
 
-     let(:second_deployment_job_spec) do
-       job_spec = Bosh::Spec::NewDeployments.simple_job(
+     let(:second_deployment_instance_group_spec) do
+       spec = Bosh::Spec::NewDeployments.simple_instance_group(
            name: 'second_deployment_node',
-           templates: [{'name' => 'node', 'consumes' => second_deployment_consumed_links}],
+           jobs: [{'name' => 'node', 'consumes' => second_deployment_consumed_links}],
            instances: 1,
            static_ips: ['192.168.1.11']
        )
-       job_spec['azs'] = ['z1']
-       job_spec
+       spec['azs'] = ['z1']
+       spec
      end
 
      let(:second_manifest) do
        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
        manifest['name'] = 'second'
-       manifest['jobs'] = [second_deployment_job_spec]
+       manifest['instance_groups'] = [second_deployment_instance_group_spec]
        manifest
      end
 
@@ -1474,9 +1510,9 @@ Error: Unable to process links for deployment. Errors are:
          first_deployment_instance = director.instance('first_deployment_node', '0', deployment_name: 'first')
          first_deployment_template = YAML.load(first_deployment_instance.read_job_template('node', 'config.yml'))
 
-         second_manifest['jobs'][0]['instances'] = 2
-         second_manifest['jobs'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
-         second_manifest['jobs'][0]['networks'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
+         second_manifest['instance_groups'][0]['instances'] = 2
+         second_manifest['instance_groups'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
+         second_manifest['instance_groups'][0]['networks'][0]['static_ips'] = ['192.168.1.12', '192.168.1.13']
 
          deploy_simple_manifest(manifest_hash: second_manifest)
 
@@ -1514,12 +1550,12 @@ Error: Unable to process links for deployment. Errors are:
                'subnets' => [{'az' => 'z1'}]
            }
 
-           first_deployment_job_spec['networks'] << {
+           first_deployment_instance_group_spec['networks'] << {
                'name' => 'dynamic-network',
                'default' => ['dns', 'gateway']
            }
 
-           first_deployment_job_spec['networks'] << {
+           first_deployment_instance_group_spec['networks'] << {
                'name' => 'test'
            }
 
@@ -1562,15 +1598,15 @@ Error: Unable to process links for deployment. Errors are:
          end
 
          context 'when provider job has 0 instances' do
-           let(:first_deployment_job_spec) do
-             job_spec = Bosh::Spec::NewDeployments.simple_job(
+           let(:first_deployment_instance_group_spec) do
+             spec = Bosh::Spec::NewDeployments.simple_instance_group(
                  name: 'first_deployment_node',
-                 templates: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
+                 jobs: [{'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links}],
                  instances: 0,
                  static_ips: [],
              )
-             job_spec['azs'] = ['z1']
-             job_spec
+             spec['azs'] = ['z1']
+             spec
            end
 
            it 'raises the error' do
@@ -1619,16 +1655,16 @@ Error: Unable to process links for deployment. Errors are:
               'subnets' => [{'az' => 'z1'}]
           }
 
-          mysql_job_spec['networks'] << {
+          mysql_instance_group_spec['networks'] << {
               'name' => 'b'
           }
 
-          postgres_job_spec['networks'] << {
+          postgres_instance_group_spec['networks'] << {
               'name' => 'dynamic-network',
               'default' => ['dns', 'gateway']
           }
 
-          postgres_job_spec['networks'] << {
+          postgres_instance_group_spec['networks'] << {
               'name' => 'b'
           }
 
@@ -1638,7 +1674,7 @@ Error: Unable to process links for deployment. Errors are:
         end
 
         it 'raises an error if network name specified is not one of the networks on the link' do
-          manifest['jobs'].first['templates'].first['consumes'] = {
+          manifest['instance_groups'].first['jobs'].first['consumes'] = {
               'db' => {'from' => 'db', 'network' => 'invalid_network'},
               'backup_db' => {'from' => 'backup_db', 'network' => 'a'}
           }
@@ -1653,7 +1689,7 @@ Error: Unable to process links for deployment. Errors are:
               'subnets' => [{'az' => 'z1'}]
           }
 
-          manifest['jobs'].first['templates'].first['consumes'] = {
+          manifest['instance_groups'].first['jobs'].first['consumes'] = {
               'db' => {'from' => 'db', 'network' => 'global_network'},
               'backup_db' => {'from' => 'backup_db', 'network' => 'a'}
           }
@@ -1664,19 +1700,19 @@ Error: Unable to process links for deployment. Errors are:
 
         context 'user has duplicate implicit links provided in two jobs over separate networks' do
 
-          let(:mysql_job_spec) do
-            job_spec = Bosh::Spec::NewDeployments.simple_job(
+          let(:mysql_instance_group_spec) do
+            spec = Bosh::Spec::NewDeployments.simple_instance_group(
                 name: 'mysql',
-                templates: [{'name' => 'database'}],
+                jobs: [{'name' => 'database'}],
                 instances: 2,
                 static_ips: ['192.168.1.10', '192.168.1.11']
             )
-            job_spec['azs'] = ['z1']
-            job_spec['networks'] = [{
+            spec['azs'] = ['z1']
+            spec['networks'] = [{
                 'name' => 'dynamic-network',
                 'default' => ['dns', 'gateway']
             }]
-            job_spec
+            spec
           end
 
           let(:links) do
@@ -1705,22 +1741,22 @@ Error: Unable to process links for deployment. Errors are:
 
         it 'uses the network from link when only one network is available' do
 
-          mysql_job_spec = Bosh::Spec::NewDeployments.simple_job(
+          mysql_instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'mysql',
-              templates: [{'name' => 'database'}],
+              jobs: [{'name' => 'database'}],
               instances: 1,
               static_ips: ['192.168.1.10']
           )
-          mysql_job_spec['azs'] = ['z1']
+          mysql_instance_group_spec['azs'] = ['z1']
 
-          manifest['jobs'] = [api_job_spec, mysql_job_spec, postgres_job_spec]
+          manifest['instance_groups'] = [api_instance_group_spec, mysql_instance_group_spec, postgres_instance_group_spec]
 
           deploy_simple_manifest(manifest_hash: manifest)
           should_contain_network_for_job('my_api', 'api_server', /192.168.1.1(0|2)/)
         end
 
         it 'uses the default network when multiple networks are available from link' do
-          postgres_job_spec['networks'] << {
+          postgres_instance_group_spec['networks'] << {
               'name' => 'dynamic-network',
               'default' => ['dns', 'gateway']
           }
@@ -1732,24 +1768,24 @@ Error: Unable to process links for deployment. Errors are:
     end
 
     context 'when link provider specifies properties from job spec' do
-      let(:mysql_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:mysql_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'mysql',
-            templates: [{'name' => 'database', 'properties' => {'test' => 'test value' }}],
+            jobs: [{'name' => 'database', 'properties' => {'test' => 'test value' }}],
             instances: 2,
             static_ips: ['192.168.1.10', '192.168.1.11']
         )
-        job_spec['azs'] = ['z1']
-        job_spec['networks'] << {
+        spec['azs'] = ['z1']
+        spec['networks'] << {
             'name' => 'dynamic-network',
             'default' => ['dns', 'gateway']
         }
-        job_spec
+        spec
       end
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [mysql_job_spec]
+        manifest['instance_groups'] = [mysql_instance_group_spec]
         manifest
       end
 
@@ -1759,19 +1795,19 @@ Error: Unable to process links for deployment. Errors are:
     end
 
     context 'when link provider specifies properties not listed in job spec properties' do
-      let(:mysql_job_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:mysql_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'mysql',
-            templates: [{'name' => 'provider_fail'}],
+            jobs: [{'name' => 'provider_fail'}],
             instances: 2,
             static_ips: ['192.168.1.10', '192.168.1.11']
         )
-        job_spec['azs'] = ['z1']
-        job_spec['networks'] << {
+        spec['azs'] = ['z1']
+        spec['networks'] << {
             'name' => 'dynamic-network',
             'default' => ['dns', 'gateway']
         }
-        job_spec
+        spec
       end
 
       it 'fails if the property specified for links is not provided by job template' do
@@ -1787,24 +1823,24 @@ Error: Unable to process links for deployment. Errors are:
         }
       end
 
-      let(:job_consumes_link_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:instance_group_consumes_link_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'deployment-job',
-            templates: [{'name' => 'api_server', 'consumes' => links}],
+            jobs: [{'name' => 'api_server', 'consumes' => links}],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
-      let(:job_not_consuming_links_spec) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+      let(:instance_group_not_consuming_links_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'deployment-job',
-            templates: [{'name' => 'api_server'}],
+            jobs: [{'name' => 'api_server'}],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
       it 'should only look at the specific release version templates when getting links' do
@@ -1817,7 +1853,7 @@ Error: Unable to process links for deployment. Errors are:
             'name' => 'release_with_minimal_links',
             'version' => '0+dev.1'
         }
-        manifest['jobs'] = [job_consumes_link_spec, mysql_job_spec, postgres_job_spec]
+        manifest['instance_groups'] = [instance_group_consumes_link_spec, mysql_instance_group_spec, postgres_instance_group_spec]
 
         output_1, exit_code_1 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_1).to eq(0)
@@ -1841,8 +1877,8 @@ Error: Unable to process links for deployment. Errors are:
             'name' => 'release_with_minimal_links',
             'version' => 'latest'
         }
-        manifest['jobs'].clear
-        manifest['jobs'] = [job_not_consuming_links_spec, mysql_job_spec, postgres_job_spec]
+        manifest['instance_groups'].clear
+        manifest['instance_groups'] = [instance_group_not_consuming_links_spec, mysql_instance_group_spec, postgres_instance_group_spec]
 
         output_2, exit_code_2 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_2).to eq(0)
@@ -1868,7 +1904,7 @@ Error: Unable to process links for deployment. Errors are:
             'name' => 'release_with_minimal_links',
             'version' => '0+dev.1'
         }
-        manifest['jobs'] = [job_consumes_link_spec, mysql_job_spec, postgres_job_spec]
+        manifest['instance_groups'] = [instance_group_consumes_link_spec, mysql_instance_group_spec, postgres_instance_group_spec]
 
         output_3, exit_code_3 = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code_3).to eq(0)
@@ -1969,20 +2005,20 @@ Error: Unable to process links for deployment. Errors are:
 
       context 'when the co-located job has implicit links' do
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'provider_instance_group',
-              templates: [
+              jobs: [
                   { 'name' => 'provider' },
                   { 'name' => 'app_server' }
               ],
               instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [provider_instance_group]
+          manifest['instance_groups'] = [provider_instance_group]
           manifest
         end
         it 'should NOT be able to reach the links from the co-located job' do
@@ -1997,9 +2033,9 @@ Error: Unable to process links for deployment. Errors are:
 
       context 'when the co-located job has explicit links' do
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'provider_instance_group',
-              templates: [
+              jobs: [
                   {
                       'name' => 'provider',
                       'provides' => {'provider' => {'as' => 'link_provider'} }
@@ -2008,12 +2044,12 @@ Error: Unable to process links for deployment. Errors are:
               ],
               instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [provider_instance_group]
+          manifest['instance_groups'] = [provider_instance_group]
           manifest
         end
         it 'should NOT be able to reach the links from the co-located job' do
@@ -2028,21 +2064,21 @@ Error: Unable to process links for deployment. Errors are:
 
       context 'when the co-located job uses links from adjacent jobs' do
         let(:provider_instance_group) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'provider_instance_group',
-              templates: [
+              jobs: [
                   { 'name' => 'provider' },
                   { 'name' => 'consumer' },
                   { 'name' => 'app_server' }
               ],
               instances: 1
           )
-          job_spec['azs'] = ['z1']
-          job_spec
+          spec['azs'] = ['z1']
+          spec
         end
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [provider_instance_group]
+          manifest['instance_groups'] = [provider_instance_group]
           manifest
         end
         it 'should NOT be able to reach the links from the co-located jobs' do
@@ -2058,9 +2094,9 @@ Error: Unable to process links for deployment. Errors are:
 
     context 'when the job consumes multiple links of the same type' do
       let(:provider_instance_group) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'provider_instance_group',
-            templates: [{
+            jobs: [{
                             'name' => 'database',
                             'provides' => {'db' => {'as' => 'link_db_alias'}},
                             'properties' => {
@@ -2077,14 +2113,14 @@ Error: Unable to process links for deployment. Errors are:
             ],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
       let(:consumer_instance_group) do
-        job_spec = Bosh::Spec::NewDeployments.simple_job(
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'consumer_instance_group',
-            templates: [
+            jobs: [
                 {
                     'name' => 'api_server',
                     'consumes' => {
@@ -2095,13 +2131,13 @@ Error: Unable to process links for deployment. Errors are:
             ],
             instances: 1
         )
-        job_spec['azs'] = ['z1']
-        job_spec
+        spec['azs'] = ['z1']
+        spec
       end
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['jobs'] = [provider_instance_group, consumer_instance_group]
+        manifest['instance_groups'] = [provider_instance_group, consumer_instance_group]
         manifest
       end
 
@@ -2245,19 +2281,19 @@ Error: Unable to process links for deployment. Errors are:
 
   context 'when addon job requires link' do
 
-    let(:mysql_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:mysql_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'mysql',
-          templates: [{'name' => 'database'}],
+          jobs: [{'name' => 'database'}],
           instances: 1,
           static_ips: ['192.168.1.10']
       )
-      job_spec['azs'] = ['z1']
-      job_spec['networks'] << {
+      spec['azs'] = ['z1']
+      spec['networks'] << {
           'name' => 'dynamic-network',
           'default' => ['dns', 'gateway']
       }
-      job_spec
+      spec
     end
 
     before do
@@ -2268,7 +2304,7 @@ Error: Unable to process links for deployment. Errors are:
     it 'should resolve links for addons' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['jobs'] = [mysql_job_spec]
+      manifest['instance_groups'] = [mysql_instance_group_spec]
 
       deploy_simple_manifest(manifest_hash: manifest)
 
@@ -2284,58 +2320,58 @@ Error: Unable to process links for deployment. Errors are:
   end
 
   context 'checking link properties' do
-    let(:job_with_nil_properties) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:instance_group_with_nil_properties) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'property_job',
-          templates: [{'name' => 'provider', 'properties' => {'a' => 'deployment_a'}}, {'name' => 'consumer'}],
+          jobs: [{'name' => 'provider', 'properties' => {'a' => 'deployment_a'}}, {'name' => 'consumer'}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           properties: {}
       )
-      job_spec['azs'] = ['z1']
-      job_spec['networks'] << {
+      spec['azs'] = ['z1']
+      spec['networks'] << {
           'name' => 'dynamic-network',
           'default' => ['dns', 'gateway']
       }
-      job_spec
+      spec
     end
 
-    let (:job_with_manual_consumes_link) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let (:instance_group_with_manual_consumes_link) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'property_job',
-          templates: [{'name' => 'consumer', 'consumes' => {'provider' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}],
+          jobs: [{'name' => 'consumer', 'consumes' => {'provider' => {'properties' => {'a' => 2, 'b' => 3, 'c' => 4, 'nested' => {'one' => 'three', 'two' => 'four'}}, 'instances' => [{'name' => 'external_db', 'address' => '192.168.15.4'}], 'networks' => {'a' => 2, 'b' => 3}}}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           properties: {}
       )
-      job_spec['azs'] = ['z1']
-      job_spec['networks'] << {
+      spec['azs'] = ['z1']
+      spec['networks'] << {
           'name' => 'dynamic-network',
           'default' => ['dns', 'gateway']
       }
-      job_spec
+      spec
     end
 
-    let(:job_with_link_properties_not_defined_in_release_properties) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:instance_group_with_link_properties_not_defined_in_release_properties) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'jobby',
-          templates: [{'name' => 'provider', 'properties' => {'doesntExist' => 'someValue'}}],
+          jobs: [{'name' => 'provider', 'properties' => {'doesntExist' => 'someValue'}}],
           instances: 1,
           static_ips: ['192.168.1.10'],
           properties: {}
       )
-      job_spec['azs'] = ['z1']
-      job_spec['networks'] << {
+      spec['azs'] = ['z1']
+      spec['networks'] << {
           'name' => 'dynamic-network',
           'default' => ['dns', 'gateway']
       }
-      job_spec
+      spec
     end
 
     it 'should not raise an error when consuming links without properties' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['jobs'] = [job_with_nil_properties]
+      manifest['instance_groups'] = [instance_group_with_nil_properties]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
 
@@ -2345,7 +2381,7 @@ Error: Unable to process links for deployment. Errors are:
     it 'should not raise an error when a deployment template property is not defined in the release properties' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['jobs'] = [job_with_link_properties_not_defined_in_release_properties]
+      manifest['instance_groups'] = [instance_group_with_link_properties_not_defined_in_release_properties]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest,  return_exit_code: true)
 
@@ -2354,7 +2390,7 @@ Error: Unable to process links for deployment. Errors are:
 
     it 'should be able to resolve a manual configuration in a consumes link' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['jobs'] = [job_with_manual_consumes_link]
+      manifest['instance_groups'] = [instance_group_with_manual_consumes_link]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
       expect(exit_code).to eq(0)
@@ -2366,11 +2402,13 @@ Error: Unable to process links for deployment. Errors are:
       expect(template['a']).to eq(2)
       expect(template['b']).to eq(3)
       expect(template['c']).to eq(4)
+      expect(template['nested']['one']).to eq('three')
+      expect(template['nested']['two']).to eq('four')
     end
 
     it 'should only have one consumer and no providers' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['jobs'] = [job_with_manual_consumes_link]
+      manifest['instance_groups'] = [instance_group_with_manual_consumes_link]
 
       deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
 
@@ -2387,25 +2425,25 @@ Error: Unable to process links for deployment. Errors are:
   end
 
   context 'when link is not satisfied in deployment' do
-    let(:bad_properties_job_spec) do
-      job_spec = Bosh::Spec::NewDeployments.simple_job(
+    let(:bad_properties_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'api_server_with_bad_link_types',
-          templates: [{'name' => 'api_server_with_bad_link_types'}],
+          jobs: [{'name' => 'api_server_with_bad_link_types'}],
           instances: 1,
           static_ips: ['192.168.1.10']
       )
-      job_spec['azs'] = ['z1']
-      job_spec['networks'] << {
+      spec['azs'] = ['z1']
+      spec['networks'] << {
           'name' => 'dynamic-network',
           'default' => ['dns', 'gateway']
       }
-      job_spec
+      spec
     end
 
     it 'should show all errors' do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['jobs'] = [bad_properties_job_spec]
+      manifest['instance_groups'] = [bad_properties_instance_group_spec]
 
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 

@@ -21,7 +21,7 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
   end
 
   context('when current deployment has an instance_group lifecycle service with an errand job') do
-    let(:manifest_hash) { Bosh::Spec::NewDeployments.manifest_with_errand_job_on_service_instance }
+    let(:manifest_hash) { Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance }
     it 'lists the job name as a errand' do
       output = bosh_runner.run('errands', deployment_name: deployment_name)
       expect(output).to match /errand1/
@@ -32,7 +32,7 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
   context 'when there are both jobs and instance groups that are errands' do
     let(:manifest_hash) do
       manifest = Bosh::Spec::NewDeployments.manifest_with_errand
-      manifest['jobs'] << Bosh::Spec::NewDeployments.service_job_with_errand
+      manifest['instance_groups'] << Bosh::Spec::NewDeployments.service_instance_group_with_errand
       manifest
     end
 
@@ -46,8 +46,8 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
     context 'the instance group and job have the same name' do
       let(:manifest_hash) do
         manifest = Bosh::Spec::NewDeployments.manifest_with_errand
-        manifest['jobs'].find { |job| job['name'] == 'fake-errand-name'}['name'] = 'errand1'
-        manifest['jobs'] << Bosh::Spec::NewDeployments.service_job_with_errand
+        manifest['instance_groups'].find { |instance_group| instance_group['name'] == 'fake-errand-name'}['name'] = 'errand1'
+        manifest['instance_groups'] << Bosh::Spec::NewDeployments.service_instance_group_with_errand
         manifest
       end
 

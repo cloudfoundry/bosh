@@ -17,11 +17,11 @@ describe 'deliver rendered templates through nats', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
-    manifest_hash['jobs'] = [{
+    manifest_hash['instance_groups'] = [{
        'name' => 'our_instance_group',
-       'templates' => [{
+       'jobs' => [{
                     'name' => 'job_1_with_many_properties',
                     'properties' => job_properties
                   }],
@@ -91,10 +91,10 @@ describe 'deliver rendered templates through nats', type: :integration do
     end
 
     let(:big_manifest_hash) do
-      big_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      big_manifest_hash['jobs'] = [{
+      big_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      big_manifest_hash['instance_groups'] = [{
                                  'name' => 'instance_group_1',
-                                 'templates' => [{
+                                 'jobs' => [{
                                                    'name' => 'job_1_with_many_properties',
                                                    'properties' => job_properties
                                                  },
@@ -112,7 +112,7 @@ describe 'deliver rendered templates through nats', type: :integration do
                                  'networks' => [{ 'name' => 'a' }]
                                },{
                                 'name' => 'instance_group_2',
-                                'templates' => [{
+                                'jobs' => [{
                                                   'name' => 'job_1_with_many_properties',
                                                   'properties' => job_2_properties
                                                 },

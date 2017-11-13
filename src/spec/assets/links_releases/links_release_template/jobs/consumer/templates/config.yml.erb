@@ -4,4 +4,8 @@ a: <%= link("provider").p("a") %>
 b: <%= b %>
 <% end %>
 c: <%= link("provider").p("c") %>
+nested:
+  one: <%= link("provider").p("nested.one", "") %>
+  two: <%= link("provider").p("nested.two", "") %>
+  three: <%= link("provider").p("nested.three", "") %>
 provider_link_0_address: <%= link("provider").instances[0].address %>

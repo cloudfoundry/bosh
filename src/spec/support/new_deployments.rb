@@ -51,38 +51,21 @@ module Bosh::Spec
       }
     end
 
-    def self.simple_errand_job
-      {
-        'name' => 'fake-errand-name',
-        'templates' => [
-          {
-            'release' => 'bosh-release',
-            'name' => 'errand1'
-          }
-        ],
-        'stemcell' => 'default',
-        'lifecycle' => 'errand',
-        'vm_type' => 'a',
-        'instances' => 1,
-        'networks' => [{'name' => 'a'}],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout' => 'fake-errand-stdout',
-            'stderr' => 'fake-errand-stderr',
-            'run_package_file' => true,
-          },
-        },
-      }
-    end
-
     def self.simple_errand_instance_group
       {
         'name' => 'fake-errand-name',
         'jobs' => [
           {
             'release' => 'bosh-release',
-            'name' => 'errand1'
+            'name' => 'errand1',
+            'properties' => {
+              'errand1' => {
+                'exit_code' => 0,
+                'stdout' => 'fake-errand-stdout',
+                'stderr' => 'fake-errand-stderr',
+                'run_package_file' => true,
+              },
+            },
           }
         ],
         'stemcell' => 'default',
@@ -90,53 +73,7 @@ module Bosh::Spec
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout' => 'fake-errand-stdout',
-            'stderr' => 'fake-errand-stderr',
-            'run_package_file' => true,
-          },
-        },
       }
-    end
-
-    def self.simple_job(opts = {})
-      job_hash = {
-        'name' => opts.fetch(:name, 'foobar'),
-        'templates' => opts[:templates] || opts[:jobs] || ['name' => 'foobar'],
-        'stemcell' => opts[:stemcell] || 'default',
-        'vm_type' => opts.fetch(:vm_type, 'a'),
-        'instances' => opts.fetch(:instances, 3),
-        'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
-        'properties' => {},
-      }
-
-      if opts.has_key?(:env)
-        job_hash['env'] = opts[:env]
-      end
-
-      if opts.has_key?(:static_ips)
-        job_hash['networks'].first['static_ips'] = opts[:static_ips]
-      end
-
-      if opts[:persistent_disk_pool]
-        job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool]
-      end
-
-      if opts[:persistent_disk_type]
-        job_hash['persistent_disk_type'] = opts[:persistent_disk_type]
-      end
-
-      if opts.has_key?(:azs)
-        job_hash['azs'] = opts[:azs]
-      end
-
-      if opts.has_key?(:properties)
-        job_hash['properties'] = opts[:properties]
-      end
-
-      job_hash
     end
 
     def self.simple_instance_group(opts = {})
@@ -177,8 +114,14 @@ module Bosh::Spec
         instance_group_hash['properties'] = opts[:properties]
       end
 
+      if opts.has_key?(:vm_resources)
+        instance_group_hash.delete('vm_type')
+        instance_group_hash['vm_resources'] = opts[:vm_resources]
+      end
+
       instance_group_hash
     end
+
     def self.minimal_manifest
       {
         'name' => 'minimal',
@@ -204,32 +147,17 @@ module Bosh::Spec
       }
     end
 
-    def self.minimal_manifest_with_stemcell
-      {
-        'name' => 'minimal',
-        'director_uuid'  => 'deadbeef',
-
-        'releases' => [{
-          'name'    => 'test_release',
-          'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
-        }],
-
-        'stemcells' => [{
+    def self.minimal_manifest_with_ubuntu_stemcell
+      minimal_manifest.merge('stemcells' => [
+        {
           'name' => 'ubuntu-stemcell',
           'version' => '1',
           'alias' => 'default'
-        }],
-
-        'update' => {
-          'canaries'          => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight'     => 1,
-          'update_watch_time' => 20
         }
-      }
+      ])
     end
 
-    def self.test_release_manifest
+    def self.manifest_with_release
       minimal_manifest.merge(
         'name' => DEFAULT_DEPLOYMENT_NAME,
 
@@ -241,7 +169,7 @@ module Bosh::Spec
     end
 
     def self.test_release_manifest_with_stemcell
-      minimal_manifest_with_stemcell.merge(
+      minimal_manifest_with_ubuntu_stemcell.merge(
         'name' => DEFAULT_DEPLOYMENT_NAME,
 
         'releases' => [{
@@ -251,45 +179,47 @@ module Bosh::Spec
       )
     end
 
-    def self.simple_manifest
-      test_release_manifest.merge({
-        'jobs' => [simple_job]
+    def self.simple_manifest_with_instance_groups(opts={})
+      test_release_manifest_with_stemcell.merge({
+        'instance_groups' => [simple_instance_group(opts)]
       })
     end
 
-    def self.simple_v2_manifest_with_stemcell
+    def self.simple_manifest_with_instance_groups_and_vm_resources
       test_release_manifest_with_stemcell.merge({
-        'instance_groups' => [simple_instance_group]
-      })
-    end
-
-    def self.simple_manifest_with_stemcell
-      test_release_manifest_with_stemcell.merge({
-        'jobs' => [simple_job]
-      })
-    end
-
-    def self.simple_manifest_with_instance_groups
-      test_release_manifest_with_stemcell.merge({
-        'instance_groups' => [simple_instance_group]
+        'instance_groups' => [
+          simple_instance_group(vm_resources: { 'cpu' => 2, 'ram' => 1024, 'ephemeral_disk_size' => 10 })
+        ]
       })
     end
 
     def self.manifest_with_errand
-      manifest = simple_manifest_with_stemcell.merge('name' => 'errand')
-      manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
-      manifest['jobs'] << simple_errand_job
+      manifest = simple_manifest_with_instance_groups.merge('name' => 'errand')
+      manifest['instance_groups'].find { |instance_group| instance_group['name'] == 'foobar'}['instances'] = 1
+      manifest['instance_groups'] << simple_errand_instance_group
       manifest
     end
 
     def self.manifest_errand_with_placeholders
       manifest = manifest_with_errand
-      manifest['jobs'][1]['properties']['errand1']['stdout'] = "((placeholder))"
+      manifest['instance_groups'][1]['jobs'].first['properties']['errand1']['stdout'] = "((placeholder))"
       manifest
     end
 
+    def self.test_release_instance_group
+      {
+        'instance_group' => [{
+          'name' => 'instance_group',
+          'jobs' => [{ 'name' => 'job_using_pkg_1' }],
+          'instances' => 1,
+          'resource_pool' => 'a',
+          'networks' => [{ 'name' => 'a' }]
+        }]
+      }
+    end
+
     def self.remote_release_manifest(remote_release_url, sha1, version='latest')
-      minimal_manifest_with_stemcell.merge(test_release_job).merge({
+      minimal_manifest_with_ubuntu_stemcell.merge(test_release_instance_group).merge({
         'releases' => [{
           'name'    => 'test_release',
           'version' => version,
@@ -300,26 +230,13 @@ module Bosh::Spec
     end
 
     def self.local_release_manifest(local_release_path, version = 'latest')
-      minimal_manifest_with_stemcell.merge(test_release_job).merge({
+      minimal_manifest_with_ubuntu_stemcell.merge(test_release_instance_group).merge({
         'releases' => [{
           'name'    => 'test_release',
           'version' => version,
           'url' => local_release_path,
         }]
       })
-    end
-
-    def self.test_release_job
-      {
-        'jobs' => [{
-          'name' => 'job',
-          'templates' => [{ 'name' => 'job_using_pkg_1' }],
-          'instances' => 1,
-          'vm_type' => 'a',
-          'networks' => [{ 'name' => 'a' }],
-          'stemcell' => 'default'
-        }]
-      }
     end
 
     def self.simple_cloud_config_with_multiple_azs_and_cpis
@@ -433,7 +350,7 @@ module Bosh::Spec
           'canaries'          => 2,
           'canary_watch_time' => 4000,
           'max_in_flight'     => 1,
-          'update_watch_time' => 20
+          'update_watch_time' => 20,
         },
 
         'stemcells' => [{
@@ -504,10 +421,10 @@ module Bosh::Spec
     end
 
     def self.stemcell_os_specific_addon_manifest
-      test_release_manifest.merge({
-        'jobs' => [
-          simple_job(vm_type: 'a', name: "has-addon-vm", instances: 1, stemcell: 'toronto'),
-          simple_job(vm_type: 'b', name: "no-addon-vm", instances: 1, stemcell: 'centos')
+      manifest_with_release.merge({
+        'instance_groups' => [
+          simple_instance_group(vm_type: 'a', name: "has-addon-vm", instances: 1, stemcell: 'toronto'),
+          simple_instance_group(vm_type: 'b', name: "no-addon-vm", instances: 1, stemcell: 'centos')
         ]
       })
     end
@@ -556,7 +473,7 @@ module Bosh::Spec
       }
     end
 
-    def self.deployment_manifest_with_addon
+    def self.manifest_with_addons
       minimal_manifest.merge(
         'name' => DEFAULT_DEPLOYMENT_NAME,
         'releases' => [
@@ -567,9 +484,9 @@ module Bosh::Spec
           {'name' => 'dummy2',
             'version' => '0.2-dev'}
         ],
-        'jobs' => [{
+        'instance_groups' => [{
           'name' => 'foobar',
-          'templates' => [{'name' => 'foobar', 'release' => 'bosh-release'}],
+          'jobs' => [{'name' => 'foobar', 'release' => 'bosh-release'}],
           'instances' => 1,
           'vm_type' => 'a',
           'networks' => [{'name' => 'a'}],
@@ -583,7 +500,7 @@ module Bosh::Spec
       )
     end
 
-    def self.complex_deployment_manifest_with_addon
+    def self.complex_manifest_with_addon
       manifest = minimal_manifest.merge(
         'name' => DEFAULT_DEPLOYMENT_NAME,
         'releases' => [
@@ -594,10 +511,10 @@ module Bosh::Spec
           {'name' => 'dummy2',
             'version' => '0.2-dev'}
         ],
-        'jobs' => [
-          simple_job(vm_type: 'b', name: 'has-rc-addon-vm', templates: [{"name" => "foobar", "release" => "bosh-release"}], instances: 1, stemcell: 'centos'),
-          simple_job(vm_type: 'a', name: 'has-depl-rc-addons-vm', templates: [{"name" => "foobar", "release" => 'bosh-release'}], instances: 1),
-          simple_job(vm_type: 'a', name: 'has-depl-addon-vm', templates: [{"name" => "foobar_without_packages", "release" => 'bosh-release'}], instances: 1),
+        'instance_groups' => [
+          simple_instance_group(vm_type: 'b', name: 'has-rc-addon-vm', jobs: [{"name" => "foobar", "release" => "bosh-release"}], instances: 1, stemcell: 'centos'),
+          simple_instance_group(vm_type: 'a', name: 'has-depl-rc-addons-vm', jobs: [{"name" => "foobar", "release" => 'bosh-release'}], instances: 1),
+          simple_instance_group(vm_type: 'a', name: 'has-depl-addon-vm', jobs: [{"name" => "foobar_without_packages", "release" => 'bosh-release'}], instances: 1),
         ],
         'addons' => [
           'name' => 'addon1',
@@ -616,28 +533,31 @@ module Bosh::Spec
       manifest
     end
 
-    def self.manifest_with_errand_job_on_service_instance
-      manifest = simple_manifest
-      manifest['jobs'] = [service_job_with_errand]
+    def self.manifest_with_errand_on_service_instance
+      manifest = manifest_with_release
+      manifest['instance_groups'] = [service_instance_group_with_errand]
       manifest
     end
 
-    def self.service_job_with_errand
+    def self.service_instance_group_with_errand
       {
         'name' => 'service_with_errand',
-        'templates' => [{'release' => 'bosh-release', 'name' => 'errand1'}],
+        'jobs' => [{
+          'release' => 'bosh-release',
+          'name' => 'errand1',
+          'properties' => {
+            'errand1' => {
+              'exit_code' => 0,
+              'stdout' => 'fake-errand-stdout-service',
+              'stderr' => 'fake-errand-stderr-service',
+              'run_package_file' => true,
+            },
+          },
+        }],
         'lifecycle' => 'service',
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout' => 'fake-errand-stdout-service',
-            'stderr' => 'fake-errand-stderr-service',
-            'run_package_file' => true,
-          },
-        },
         'stemcell' => 'default',
       }
     end

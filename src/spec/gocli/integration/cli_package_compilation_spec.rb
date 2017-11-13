@@ -18,7 +18,7 @@ describe 'cli: package compilation', type: :integration do
     end
 
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
-    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.simple_manifest_with_stemcell)
+    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
 
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
     bosh_runner.run("upload-stemcell #{stemcell_filename}")
@@ -64,12 +64,12 @@ describe 'cli: package compilation', type: :integration do
   end
 
   # This should be a unit test. Need to figure out best placement.
-  it "includes only immediate dependencies of the job's templates in the apply_spec" do
+  it "includes only immediate dependencies of the instance groups's jobs in the apply_spec" do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'][0]['templates'] = [{'name' => 'foobar'}, {'name' => 'goobaz'}]
-    manifest_hash['jobs'][0]['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['jobs'] = [{'name' => 'foobar'}, {'name' => 'goobaz'}]
+    manifest_hash['instance_groups'].first['instances'] = 1
 
     manifest_hash['releases'].first['name'] = 'release_compilation_test'
     manifest_hash['releases'].first['version'] = 'latest'
@@ -91,9 +91,9 @@ describe 'cli: package compilation', type: :integration do
   end
 
   it 'returns truncated output' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'][0]['templates'].first['name'] = 'fails_with_too_much_output'
-    manifest_hash['jobs'][0]['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['jobs'].first['name'] = 'fails_with_too_much_output'
+    manifest_hash['instance_groups'].first['instances'] = 1
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['compilation']['workers'] = 1
 
@@ -123,8 +123,8 @@ describe 'cli: package compilation', type: :integration do
       }
 
       cloud_config_hash['networks'].first['subnets'] = [subnet_without_dynamic_ips_available]
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(instances: 1, static_ips: ['192.168.1.2'])]
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(instances: 1, static_ips: ['192.168.1.2'])]
 
       deploy_output = deploy_from_scratch(
         cloud_config_hash: cloud_config_hash,

@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'tmpdir'
 require 'bosh/dev/test_runner'
 
 module Bosh::Dev

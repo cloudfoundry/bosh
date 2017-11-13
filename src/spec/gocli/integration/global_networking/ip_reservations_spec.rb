@@ -13,6 +13,13 @@ describe 'global networking', type: :integration do
   end
 
   def deploy_with_ips(manifest, ips, options={})
+    manifest['instance_groups'].first['networks'].first['static_ips'] = ips
+    manifest['instance_groups'].first['instances'] = ips.size
+    options.merge!(manifest_hash: manifest)
+    deploy_simple_manifest(options)
+  end
+
+  def deploy_legacy_with_ips(manifest, ips, options={})
     manifest['jobs'].first['networks'].first['static_ips'] = ips
     manifest['jobs'].first['instances'] = ips.size
     options.merge!(manifest_hash: manifest)
@@ -32,14 +39,14 @@ describe 'global networking', type: :integration do
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash
     end
 
     let(:second_deployment_manifest) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-      manifest_hash['jobs'].first['instances'] = 1
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['name'] = 'second_deployment'
       manifest_hash
     end
@@ -125,8 +132,8 @@ describe 'global networking', type: :integration do
       expect(first_deployment_instances.size).to eq(2)
       expect(first_deployment_instances.map(&:ips).flatten).to contain_exactly('192.168.1.10', '192.168.1.11')
 
-      simple_manifest['jobs'].first['instances'] = 0
-      simple_manifest['jobs'].first['networks'].first['static_ips'] = []
+      simple_manifest['instance_groups'].first['instances'] = 0
+      simple_manifest['instance_groups'].first['networks'].first['static_ips'] = []
 
       current_sandbox.cpi.commands.pause_delete_vms
       output = deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
@@ -245,33 +252,33 @@ describe 'global networking', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
 
-      manifest_hash['jobs'] = [
-        Bosh::Spec::NewDeployments.simple_job(name: 'first-job', static_ips: ['192.168.1.10'], instances: 1),
-        Bosh::Spec::NewDeployments.simple_job(name: 'second-job', static_ips: ['192.168.1.11'], instances: 1)
+      manifest_hash['instance_groups'] = [
+        Bosh::Spec::NewDeployments.simple_instance_group(name: 'first-instance-group', static_ips: ['192.168.1.10'], instances: 1),
+        Bosh::Spec::NewDeployments.simple_instance_group(name: 'second-instance-group', static_ips: ['192.168.1.11'], instances: 1)
       ]
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
-      manifest_hash['jobs'] = [
-        Bosh::Spec::NewDeployments.simple_job(name: 'first-job', static_ips: ['192.168.1.11'], instances: 1),
-        Bosh::Spec::NewDeployments.simple_job(name: 'second-job', static_ips: ['192.168.1.10'], instances: 1)
+      manifest_hash['instance_groups'] = [
+        Bosh::Spec::NewDeployments.simple_instance_group(name: 'first-instance-group', static_ips: ['192.168.1.11'], instances: 1),
+        Bosh::Spec::NewDeployments.simple_instance_group(name: 'second-instance-group', static_ips: ['192.168.1.10'], instances: 1)
       ]
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
       expect(exit_code).to_not eq(0)
 
       instances = director.instances(deployment_name: 'my-deploy')
-      expect(output).to include("Failed to reserve IP '192.168.1.11' for instance 'first-job/#{instances[0].id} (0)': already reserved by instance 'second-job/#{instances[1].id}' from deployment 'my-deploy'")
+      expect(output).to include("Failed to reserve IP '192.168.1.11' for instance 'first-instance-group/#{instances[0].id} (0)': already reserved by instance 'second-instance-group/#{instances[1].id}' from deployment 'my-deploy'")
     end
 
     it 'keeps static IPs reserved when a job fails to deploy its VMs' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       failing_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
       other_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-other-deploy', instances: 1)
-      failing_deployment_manifest_hash['jobs'] = [
-        Bosh::Spec::NewDeployments.simple_job(name: 'first-job', static_ips: ['192.168.1.10'], instances: 1)
+      failing_deployment_manifest_hash['instance_groups'] = [
+        Bosh::Spec::NewDeployments.simple_instance_group(name: 'first-instance-group', static_ips: ['192.168.1.10'], instances: 1)
       ]
 
-      other_deployment_manifest_hash['jobs'] = [
-        Bosh::Spec::NewDeployments.simple_job(name: 'first-job', static_ips: ['192.168.1.10'], instances: 1)
+      other_deployment_manifest_hash['instance_groups'] = [
+        Bosh::Spec::NewDeployments.simple_instance_group(name: 'first-instance-group', static_ips: ['192.168.1.10'], instances: 1)
       ]
       current_sandbox.cpi.commands.make_create_vm_always_fail
       _, exit_code = deploy_simple_manifest(manifest_hash: failing_deployment_manifest_hash, failure_expected: true, return_exit_code: true)
@@ -282,7 +289,7 @@ describe 'global networking', type: :integration do
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
-      expect(output).to match(/Failed to reserve IP '192.168.1.10' for instance 'first-job\/[a-z0-9\-]+ \(0\)': already reserved by instance 'first-job\/[a-z0-9\-]+' from deployment 'my-deploy'/)
+      expect(output).to match(/Failed to reserve IP '192.168.1.10' for instance 'first-instance-group\/[a-z0-9\-]+ \(0\)': already reserved by instance 'first-instance-group\/[a-z0-9\-]+' from deployment 'my-deploy'/)
     end
 
     def deploy_with_static_ip(deployment_name, ip, range)
@@ -312,11 +319,11 @@ describe 'global networking', type: :integration do
           available_ips: 20
         )
 
-        deploy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.11'])
+        deploy_legacy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.11'])
         original_first_instance = director.instances.find { |instance| instance.ips.include? '192.168.1.10'}
         original_second_instance = director.instances.find { |instance| instance.ips.include? '192.168.1.11'}
 
-        deploy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.12'])
+        deploy_legacy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.12'])
         new_first_instance = director.instances.find { |instance| instance.ips.include? '192.168.1.10'}
         new_second_instance = director.instances.find { |instance| instance.ips.include? '192.168.1.12'}
 
@@ -358,7 +365,7 @@ describe 'global networking', type: :integration do
       cloud_config_hash['networks'].first['subnets'].first.delete('static')
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      simple_manifest['jobs'].first['networks'].first.delete('static_ips')
+      simple_manifest['instance_groups'].first['networks'].first.delete('static_ips')
       deploy_simple_manifest(manifest_hash: simple_manifest)
       second_deploy_instances = director.instances
       expect(second_deploy_instances.size).to eq(1)
@@ -375,7 +382,7 @@ describe 'global networking', type: :integration do
       expect(first_deploy_instances.size).to eq(1)
       expect(first_deploy_instances.first.ips).to eq(['192.168.1.10'])
 
-      simple_manifest['jobs'].first['networks'].first.delete('static_ips')
+      simple_manifest['instance_groups'].first['networks'].first.delete('static_ips')
       deploy_simple_manifest(manifest_hash: simple_manifest)
       second_deploy_instances = director.instances
       expect(second_deploy_instances.size).to eq(1)
@@ -419,7 +426,7 @@ describe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
       original_ips = director.instances(deployment_name: 'my-deploy').map(&:ips).flatten
 
-      manifest_hash['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
+      manifest_hash['instance_groups'].first['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
       output = deploy_simple_manifest(manifest_hash: manifest_hash)
       expect(output).to include('Updating instance foobar') # actually re-deployed
       new_ips = director.instances(deployment_name: 'my-deploy').map(&:ips).flatten
@@ -446,7 +453,7 @@ describe 'global networking', type: :integration do
 
     it 'gives the correct error message when there are not enough IPs for instances' do
       new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2, template: 'foobar_without_packages')
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
@@ -461,19 +468,19 @@ describe 'global networking', type: :integration do
 
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
-      manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(
-        name: 'first-job',
+      manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'first-instance-group',
         instances: 1,
-        templates: [{'name' => 'foobar_without_packages'}]
+        jobs: [{'name' => 'foobar_without_packages'}]
       )]
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
       p director.instances(deployment_name: 'my-deploy')
-      expect_running_vms_with_names_and_count({'first-job' => 1}, {deployment_name: 'my-deploy'})
+      expect_running_vms_with_names_and_count({'first-instance-group' => 1}, {deployment_name: 'my-deploy'})
 
-      manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(name: 'second-job', instances: 1)]
+      manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(name: 'second-instance-group', instances: 1)]
       output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
       expect(output).to include('no more available')
     end
@@ -566,7 +573,7 @@ describe 'global networking', type: :integration do
         end
 
         let(:instance_group_with_two_networks) do
-          instance_group_spec = Bosh::Spec::NewDeployments.simple_job(instances: 1)
+          instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(instances: 1)
           instance_group_spec['networks'] = [
             { 'name' => 'first', 'default' => ['dns', 'gateway'] },
             { 'name' => 'second' }
@@ -583,9 +590,8 @@ describe 'global networking', type: :integration do
           cloud_config_hash['compilation']['network'] = 'first'
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-          manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+          manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
           manifest_hash['instance_groups'] = [instance_group_with_two_networks]
-          manifest_hash.delete('jobs')
           deploy_simple_manifest(manifest_hash: manifest_hash)
 
           instances = director.instances

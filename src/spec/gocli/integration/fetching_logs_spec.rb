@@ -4,7 +4,7 @@ describe 'fetching logs', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can fetch job (default) and agent logs' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
     vm_0 = director.instance('foobar', '0')
     vm_0.write_job_log('toplevel.log', 'some top level log contents')

@@ -84,7 +84,7 @@ module Bosh::Director
             instance_id: instance.uuid
         }
         tags = instance.deployment.tags
-        metadata[:custom_tags] = tags unless tags.empty?
+        metadata.merge!(tags) unless tags.empty?
 
         cloud = CloudFactory.create_with_latest_configs.get_for_az(instance.availability_zone)
         instance.persistent_disks.each do |disk|

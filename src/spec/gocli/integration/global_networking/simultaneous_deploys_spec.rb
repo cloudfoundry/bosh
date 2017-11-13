@@ -5,11 +5,11 @@ describe 'simultaneous deploys', type: :integration do
   with_reset_sandbox_before_each
 
   let(:first_manifest_hash) do
-    Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
   end
 
   let(:second_manifest_hash) do
-    Bosh::Spec::NewDeployments.simple_manifest_with_stemcell.merge('name' => 'second')
+    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups.merge('name' => 'second')
   end
 
   before do
@@ -20,8 +20,8 @@ describe 'simultaneous deploys', type: :integration do
   context 'when there are enough IPs for two deployments' do
     it 'allocates different IP to another deploy' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 6)
-      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, template: 'foobar_without_packages')
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages')
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, job: 'foobar_without_packages')
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
@@ -54,8 +54,8 @@ describe 'simultaneous deploys', type: :integration do
   context 'when there are not enough IPs for two deployments' do
     it 'fails one of deploys' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
-      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 2, template: 'foobar_without_packages')
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, template: 'foobar_without_packages')
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 2, job: 'foobar_without_packages')
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
@@ -73,7 +73,7 @@ describe 'simultaneous deploys', type: :integration do
     it 'allocates IPs correctly for simultaneous errand run and deploy' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1)
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages')
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
@@ -89,8 +89,8 @@ describe 'simultaneous deploys', type: :integration do
 
     it 'raises correct error message when we do not have enough IPs for the errand and the deploy' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
-      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 2, template: 'errand_without_package')
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, template: 'foobar_without_packages')
+      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 2, job: 'errand_without_package')
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)

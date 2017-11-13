@@ -4,9 +4,9 @@ describe 'cli: logs', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can fetch logs' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] = [Bosh::Spec::NewDeployments.simple_job(instances: 2, name: 'first-job')]
-    manifest_hash['jobs']<< {
+    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(instances: 2, name: 'first-job')]
+    manifest['instance_groups']<< {
         'name' => 'another-job',
         'template' => 'foobar',
         'vm_type' => 'a',
@@ -15,7 +15,7 @@ describe 'cli: logs', type: :integration do
         'stemcell' => 'default'
     }
 
-    manifest_hash['jobs']<< {
+    manifest['instance_groups']<< {
       'name' => 'fake-errand-name',
       'template' => 'errand_without_package',
       'vm_type' => 'a',
@@ -25,14 +25,14 @@ describe 'cli: logs', type: :integration do
       'stemcell' => 'default'
     }
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+    deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config)
 
     instances = director.instances
     instance_0 = get_instance(instances, 'first-job', "0")
     instance_1 = get_instance(instances, 'first-job', "1")
     instance_2 = get_instance(instances, 'another-job', "0")
 
-    deployment_name = manifest_hash['name']
+    deployment_name = manifest['name']
 
     expect(bosh_runner.run("-d #{deployment_name} logs first-job/1")).to match /#{deployment_name}.first-job.*\.tgz/
 

@@ -23,7 +23,6 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/jumpbox-user.yml \
   -o bosh-src/ci/bats/ops/remove-health-monitor.yml \
   -o bosh-deployment/local-bosh-release.yml \
-  -o bosh-deployment/experimental/nats-tls.yml \
   -v dns_recursor_ip=8.8.8.8 \
   -v director_name=bats-director \
   -v local_bosh_release=$(realpath bosh-release/*.tgz) \

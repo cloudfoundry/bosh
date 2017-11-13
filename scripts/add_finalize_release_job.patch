@@ -1,0 +1,120 @@
+diff --git a/ci/pipeline.yml b/ci/pipeline.yml
+index 66d708ec1..047a237a6 100644
+--- a/ci/pipeline.yml
++++ b/ci/pipeline.yml
+@@ -15,7 +15,7 @@ groups:
+       - legacy-load-tests-mysql
+       - fuzz-tests
+       - candidate-release
+-      # - finalize-bosh-release
++      - finalize-bosh-release
+       - bats-centos
+       - bats-ubuntu
+       - brats-ubuntu
+@@ -33,9 +33,9 @@ groups:
+       - unit-2.4-postgres
+       - unit-2.4-db-migrations-rds
+ 
+-  # - name: finalize
+-  #   jobs:
+-  #     - finalize-bosh-release
++  - name: finalize
++    jobs:
++      - finalize-bosh-release
+ 
+ shared:
+   - &deploy-director
+@@ -669,40 +669,40 @@ jobs:
+         input_mapping:
+           stemcell: candidate-warden-ubuntu-stemcell
+ 
+-  # - name: finalize-bosh-release
+-  #   serial: true
+-  #   plan:
+-  #     - aggregate:
+-  #       - get: bosh-src
+-  #         passed:
+-  #           - bats-centos
+-  #           - bats-ubuntu
+-  #       - get: bosh-master
+-  #       - get: bosh-dev-release
+-  #         resource: bosh-candidate-release-tarballs
+-  #         passed:
+-  #           - bats-centos
+-  #           - bats-ubuntu
+-  #       - get: bosh-cli
+-  #       - get: candidate-version
+-  #         params:
+-  #           bump: minor
+-  #     - task: promote-release
+-  #       file: bosh-src/ci/tasks/finalize-bosh-release.yml
+-  #       params:
+-  #         BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
+-  #         BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
+-  #     - put: candidate-version
+-  #       params:
+-  #         file: bumped-candidate-version/version
+-  #     - put: bosh-master
+-  #       params:
+-  #         repository: bosh-master-with-final
+-  #         tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
+-  #         annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
+-  #     - put: bosh-src
+-  #       params:
+-  #         repository: bosh-src-with-bumped-version
++  - name: finalize-bosh-release
++    serial: true
++    plan:
++      - aggregate:
++        - get: bosh-src
++          passed:
++            - bats-centos
++            - bats-ubuntu
++        - get: bosh-master
++        - get: bosh-dev-release
++          resource: bosh-candidate-release-tarballs
++          passed:
++            - bats-centos
++            - bats-ubuntu
++        - get: bosh-cli
++        - get: candidate-version
++          params:
++            bump: minor
++      - task: promote-release
++        file: bosh-src/ci/tasks/finalize-bosh-release.yml
++        params:
++          BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
++          BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
++      - put: candidate-version
++        params:
++          file: bumped-candidate-version/version
++      - put: bosh-master
++        params:
++          repository: bosh-master-with-final
++      - put: bosh-src
++        params:
++          repository: bosh-src-with-bumped-version
++          tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
++          annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
+ 
+ resources:
+   - name: bosh-src
+@@ -747,12 +747,12 @@ resources:
+       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
+       branch: master
+ 
+-  # - name: bosh-master
+-  #   type: git
+-  #   source:
+-  #     uri: ((bosh_src_url))
+-  #     branch: master
+-  #     private_key: ((github_deployment_key))
++  - name: bosh-master
++    type: git
++    source:
++      uri: ((bosh_src_url))
++      branch: master
++      private_key: ((github_deployment_key))
+ 
+   - name: fuzz-interval-trigger
+     type: time

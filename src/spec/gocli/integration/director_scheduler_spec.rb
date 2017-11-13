@@ -14,8 +14,8 @@ describe 'director_scheduler', type: :integration do
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
-    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    deployment_hash['jobs'][0]['persistent_disk'] = 20480
+    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    deployment_hash['instance_groups'][0]['persistent_disk'] = 20480
     deployment_manifest = yaml_file('deployment_manifest', deployment_hash)
     runner.run("deploy -d simple #{deployment_manifest.path}")
   end

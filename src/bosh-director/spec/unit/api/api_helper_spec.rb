@@ -58,6 +58,12 @@ describe Bosh::Director::Api::ApiHelper do
       }.to raise_exception(Bosh::Director::BadManifest, 'Manifest should not be empty')
     end
 
+    it 'should handle YAML-nil' do
+      expect {
+        validate_manifest_yml("--- \n...\n", 'context')
+      }.to raise_exception(Bosh::Director::BadManifest, 'Manifest should be a hash')
+    end
+
     it 'should handle Syntax Error' do
       yml = <<-FOO
 foo

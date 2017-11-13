@@ -89,7 +89,6 @@ module Bosh::Director
           begin
             current_variable_set = deployment_plan.model.current_variable_set
 
-
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 
             if dry_run?

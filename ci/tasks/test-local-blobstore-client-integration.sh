@@ -5,7 +5,7 @@ set -e
 source bosh-src/ci/tasks/utils.sh
 
 source /etc/profile.d/chruby.sh
-chruby 2.1.2
+chruby 2.4.2
 
 pushd bosh-src
   bosh sync blobs

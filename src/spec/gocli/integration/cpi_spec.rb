@@ -29,7 +29,7 @@ describe 'CPI calls', type: :integration do
 
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-      manifest_hash['jobs'].first['env'] = {'bosh' => {'password' => 'foobar'}}
+      manifest_hash['instance_groups'].first['env'] = {'bosh' => {'password' => 'foobar'}}
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       invocations = current_sandbox.cpi.invocations
@@ -63,6 +63,7 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' => {
             'mbus' => expected_mbus,
+            'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
             'group' => String,
             'groups' => Array
           }
@@ -131,6 +132,7 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' => {
             'mbus' => expected_mbus,
+            'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
             'group' => String,
             'groups' => Array,
           }
@@ -194,6 +196,7 @@ describe 'CPI calls', type: :integration do
         'env' => {
           'bosh' =>{
             'mbus' => expected_mbus,
+            'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
             'password' => 'foobar',
             'group' => 'testdirector-simple-foobar',
             'groups' => ['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
@@ -223,12 +226,12 @@ describe 'CPI calls', type: :integration do
     context 'when deploying instances with a persistent disk' do
       it 'recreates VM with correct CPI requests' do
         manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest_hash['jobs'] = [
-          Bosh::Spec::NewDeployments.simple_job(
+        manifest_hash['instance_groups'] = [
+          Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'first-job',
             static_ips: ['192.168.1.10'],
             instances: 1,
-            templates: ['name' => 'foobar_without_packages'],
+            jobs: ['name' => 'foobar_without_packages'],
             persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name']
           )
         ]
@@ -270,6 +273,7 @@ describe 'CPI calls', type: :integration do
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
               'group' => expected_group,
               'groups' => expected_groups,
             }
@@ -320,12 +324,12 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        manifest_hash['jobs'] = [
-          Bosh::Spec::NewDeployments.simple_job(
+        manifest_hash['instance_groups'] = [
+          Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'first-job',
             static_ips: ['192.168.1.11'],
             instances: 1,
-            templates: ['name' => 'foobar'],
+            jobs: ['name' => 'foobar'],
             persistent_disk_pool: Bosh::Spec::NewDeployments.disk_type['name']
           )
         ]
@@ -501,6 +505,7 @@ describe 'CPI calls', type: :integration do
           'env' => {
             'bosh' => {
               'mbus' => expected_mbus,
+              'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
               'group' => expected_group,
               'groups' => expected_groups
             }

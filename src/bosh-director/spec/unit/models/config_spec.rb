@@ -11,6 +11,13 @@ module Bosh::Director::Models
       end
     end
 
+    describe '#raw_manifest=' do
+      it 'returns updated content' do
+        config_model.raw_manifest = {'key' => 'value2'}
+        expect(config_model.raw_manifest.fetch('key')).to eq('value2')
+      end
+    end
+
     describe '#latest_set' do
       it 'returns the latest default config of the given type' do
         Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'default').save
@@ -34,6 +41,33 @@ module Bosh::Director::Models
 
       it 'returns empty list when there are no records' do
         expect(Bosh::Director::Models::Config.latest_set('type')).to be_empty()
+      end
+
+      context 'deleted config name' do
+        it 'is not enumerated in latest' do
+          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
+          one2 = Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'one').save
+
+          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'two').save
+          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'two', deleted: true).save
+
+          latests = Bosh::Director::Models::Config.latest_set('fake-cloud')
+          expect(latests).to contain_exactly(one2)
+        end
+
+        context 'resurrected a named config' do
+          it 'is enumerated in latest' do
+            Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
+            one2 = Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'one').save
+
+            Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'two').save
+            Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'two', deleted: true).save
+            two3 = Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v3', name: 'two').save
+
+            latests = Bosh::Director::Models::Config.latest_set('fake-cloud')
+            expect(latests).to contain_exactly(one2, two3)
+          end
+        end
       end
     end
 

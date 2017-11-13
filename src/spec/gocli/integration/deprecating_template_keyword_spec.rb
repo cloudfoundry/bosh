@@ -3,13 +3,9 @@ require_relative '../spec_helper'
 describe "Director deprecating the 'template' syntax", type: :integration do
   with_reset_sandbox_before_each
   let(:manifest_hash) {
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::Deployments.legacy_manifest
     manifest_hash['jobs'][0]['instances'] = 1
     manifest_hash
-  }
-
-  let(:cloud_config_hash) {
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
   }
 
   context 'when the manifest uses template with an array' do
@@ -17,16 +13,16 @@ describe "Director deprecating the 'template' syntax", type: :integration do
       manifest_hash['jobs'][0].delete('templates')
       manifest_hash['jobs'][0]['template'] = [ 'foobar' ]
       expect(
-        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-      ).to match(/Deprecation: .*soon be unsupported/)
+        deploy_from_scratch(manifest_hash: manifest_hash)
+      ).to match(/Deprecation:.*template.*soon be unsupported/)
     end
   end
 
   context 'when the manifest uses template with a string' do
     it 'does not issue a deprecation warning' do
       expect(
-        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-      ).to_not include('Deprecation')
+        deploy_from_scratch(manifest_hash: manifest_hash)
+      ).to_not match(/Deprecation:.*template.*soon be unsupported/)
     end
   end
 end
