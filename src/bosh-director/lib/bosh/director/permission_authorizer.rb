@@ -59,7 +59,7 @@ module Bosh::Director
           # already allowed with initial expected_scope
         when :create_deployment
           expected_scope << add_bosh_admin_scopes(user_scopes)
-        when :read_events, :list_links
+        when :read_events
           expected_scope << director_permissions[:read]
           expected_scope << add_bosh_team_scopes(user_scopes)
         when :read_releases, :list_deployments, :read_stemcells, :list_tasks
