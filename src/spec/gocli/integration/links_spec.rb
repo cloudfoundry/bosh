@@ -1628,6 +1628,98 @@ Error: Unable to process links for deployment. Errors are:
       it 'allows only the specified properties' do
         expect{ deploy_simple_manifest(manifest_hash: manifest) }.to_not raise_error
       end
+
+      context 'when a release job is being used as an addon' do
+        let(:instance_group_consumes_link_spec_for_addon) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'deployment-job',
+            jobs: [{'name' => 'api_server', 'consumes' => links, 'release'=> 'simple-link-release'}]
+          )
+          spec
+        end
+
+        let(:deployment_manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['releases'].clear
+          manifest['releases'] << {
+              'name' => 'simple-link-release',
+              'version' => '1.0'
+          }
+
+          manifest['instance_groups'] = [ mysql_instance_group_spec, postgres_instance_group_spec]
+          manifest['addons'] = [instance_group_consumes_link_spec_for_addon ]
+          manifest
+        end
+
+        it 'should ONLY use the release version specified in manifest' do
+          bosh_runner.run("upload-release #{spec_asset('links_releases/simple-link-release-v1.0.tgz')}")
+
+          _, exit_code_1 = deploy_simple_manifest(manifest_hash: deployment_manifest, return_exit_code: true)
+          expect(exit_code_1).to eq(0)
+
+          deployed_instances = director.instances
+          mysql_0_instance = director.find_instance(deployed_instances, 'mysql', '0')
+          mysql_1_instance = director.find_instance(deployed_instances, 'mysql', '1')
+          postgres_0_instance = director.find_instance(deployed_instances, 'postgres', '0')
+
+          mysql_template_1 = YAML.load(mysql_0_instance.read_job_template('api_server', 'config.yml'))
+          expect(mysql_template_1['databases']['main'].size).to eq(2)
+          expect(mysql_template_1['databases']['main']).to contain_exactly(
+               {
+                   'id' => "#{mysql_0_instance.id}",
+                   'name' => 'mysql',
+                   'index' => 0,
+                   'address' => anything
+               },
+               {
+                   'id' => "#{mysql_1_instance.id}",
+                   'name' => 'mysql',
+                   'index' => 1,
+                   'address' => anything
+               }
+           )
+
+          expect(mysql_template_1['databases']['backup']).to contain_exactly(
+               {
+                   'name' => 'postgres',
+                   'az' => 'z1',
+                   'index' => 0,
+                   'address' => anything
+               }
+           )
+
+          postgres_template_2 = YAML.load(postgres_0_instance.read_job_template('api_server', 'config.yml'))
+          expect(postgres_template_2['databases']['main'].size).to eq(2)
+          expect(postgres_template_2['databases']['main']).to contain_exactly(
+               {
+                   'id' => "#{mysql_0_instance.id}",
+                   'name' => 'mysql',
+                   'index' => 0,
+                   'address' => anything
+               },
+               {
+                   'id' => "#{mysql_1_instance.id}",
+                   'name' => 'mysql',
+                   'index' => 1,
+                   'address' => anything
+               }
+           )
+
+          expect(postgres_template_2['databases']['backup']).to contain_exactly(
+               {
+                   'name' => 'postgres',
+                   'az' => 'z1',
+                   'index' => 0,
+                   'address' => anything
+               }
+           )
+
+          bosh_runner.run("upload-release #{spec_asset('links_releases/simple-link-release-v2.0.tgz')}")
+
+          _, exit_code_2 = deploy_simple_manifest(manifest_hash: deployment_manifest, return_exit_code: true)
+          expect(exit_code_2).to eq(0)
+        end
+      end
     end
 
     context 'when resurrector tries to resurrect an VM with jobs that consume links', hm: true do
