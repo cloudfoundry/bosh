@@ -14,6 +14,7 @@ module Bosh::Director
       expect(db.table_exists? :link_providers).to be_truthy
       expect(db.table_exists? :link_consumers).to be_truthy
       expect(db.table_exists? :links).to be_truthy
+      expect(db.table_exists? :instances_links).to be_truthy
     end
 
     context 'providers migration' do
@@ -308,6 +309,18 @@ module Bosh::Director
           expect(db[:links].first[:created_at] > before).to be_truthy
           expect(db[:links].first[:created_at] < after).to be_truthy
         end
+
+        it 'will create one instance_link per job per consuming instance' do
+          DBSpecHelper.migrate(migration_file)
+          expect(db[:instances_links].count).to eq(2)
+
+          dataset = db[:instances_links].all
+          expect(dataset[0][:instance_id]).to eq(22)
+          expect(dataset[0][:link_id]).to eq(1)
+
+          expect(dataset[1][:instance_id]).to eq(22)
+          expect(dataset[1][:link_id]).to eq(2)
+        end
       end
 
       context 'when multiple instances contain the same link key' do
@@ -373,6 +386,18 @@ module Bosh::Director
         end
 
         context 'and contents are the same' do
+          before do
+            db[:instances] << {
+              job: 'provider_instance_group_1',
+              id: 23,
+              index: 1,
+              deployment_id: 42,
+              state: "started",
+              variable_set_id: 1,
+              spec_json: instance_spec_json.to_json
+            }
+          end
+
           it 'should merge them and create only one link row' do
             before = Time.now
             DBSpecHelper.migrate(migration_file)
@@ -386,6 +411,18 @@ module Bosh::Director
             expect(db[:links].first[:link_content]).to eq(link_content.to_json)
             expect(db[:links].first[:created_at] > before).to be_truthy
             expect(db[:links].first[:created_at] < after).to be_truthy
+          end
+
+          it 'will create one instance_link per consuming instance' do
+            DBSpecHelper.migrate(migration_file)
+            expect(db[:instances_links].count).to eq(2)
+
+            dataset = db[:instances_links].all
+            expect(dataset[0][:instance_id]).to eq(22)
+            expect(dataset[0][:link_id]).to eq(1)
+
+            expect(dataset[1][:instance_id]).to eq(23)
+            expect(dataset[1][:link_id]).to eq(1)
           end
         end
 
@@ -472,6 +509,18 @@ module Bosh::Director
             expect(link_rows[1][:link_content]).to eq(link_content2.to_json)
             expect(link_rows[1][:created_at] > before).to be_truthy
             expect(link_rows[1][:created_at] < after).to be_truthy
+          end
+
+          it 'will create one instance_link per consuming instance' do
+            DBSpecHelper.migrate(migration_file)
+            expect(db[:instances_links].count).to eq(2)
+
+            dataset = db[:instances_links].all
+            expect(dataset[0][:instance_id]).to eq(22)
+            expect(dataset[0][:link_id]).to eq(1)
+
+            expect(dataset[1][:instance_id]).to eq(23)
+            expect(dataset[1][:link_id]).to eq(2)
           end
         end
       end

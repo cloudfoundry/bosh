@@ -60,10 +60,16 @@ Sequel.migration do
       Time :created_at
     end
 
+    create_table :instances_links do
+      foreign_key :link_id, :links, :on_delete => :cascade, :null => false
+      foreign_key :instance_id, :instances, :on_delete => :cascade, :null => false
+      unique [:instance_id, :link_id]
+    end
+
     links_to_migrate = {}
 
     Struct.new('LinkKey', :deployment_id, :instance_group, :job, :link_name) unless defined?(Struct::LinkKey)
-    Struct.new('LinkDetail', :content, :consumer) unless defined?(Struct::LinkDetail)
+    Struct.new('LinkDetail', :link_id, :content) unless defined?(Struct::LinkDetail)
 
     self[:instances].each do |instance|
       spec_json = JSON.parse(instance[:spec_json] || '{}')
@@ -82,32 +88,34 @@ Sequel.migration do
           link_key = Struct::LinkKey.new(instance[:deployment_id], instance[:job], job_name, link_name)
 
           link_details = links_to_migrate[link_key] || []
-          content = link_details.find do |link_detail|
+          link_detail = link_details.find do |link_detail|
             link_detail.content == link_data
           end
 
-          unless content
+          unless link_detail
             consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).first
             raise "Could not find an appropriate consumer for this instance." unless consumer
-            link_detail = Struct::LinkDetail.new(link_data, consumer)
+
+            link_id = self[:links].insert(
+              {
+                name: link_name,
+                link_provider_id: nil,
+                link_consumer_id: consumer[:id],
+                link_content: link_data.to_json,
+                created_at: Time.now,
+              }
+            )
+            link_detail = Struct::LinkDetail.new(link_id, link_data)
 
             link_details << link_detail
             links_to_migrate[link_key] = link_details
           end
-        end
-      end
-    end
 
-    links_to_migrate.each do |link_key, link_details|
-      link_name = link_key.link_name
-      link_details.each do |link_detail|
-        self[:links] << {
-          name: link_name,
-          link_provider_id: nil,
-          link_consumer_id: link_detail.consumer[:id],
-          link_content: link_detail.content.to_json,
-          created_at: Time.now,
-        }
+          self[:instances_links] << {
+            link_id: link_detail.link_id,
+            instance_id: instance[:id]
+          }
+        end
       end
     end
   end
