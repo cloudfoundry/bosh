@@ -142,6 +142,11 @@ module Bosh::Director
       @deployment_plan.instance_groups.each do |instance_group|
         links_resolver.resolve(instance_group)
       end
+      # This can not be combined into the same loop as above. We need all the providers to be populated first before we can do the consumers.
+      @deployment_plan.instance_groups.each do |instance_group|
+        links_resolver.apply(instance_group)
+      end
+
       # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
       link_providers = Bosh::Director::Models::LinkProvider.where(deployment: @deployment_plan.model)
       link_providers.each do |link_provider|
@@ -160,7 +165,6 @@ module Bosh::Director
           # TODO: deleting any links referring to them.
         end
       end
-
     end
 
     # Binds template models for each release spec in the deployment plan

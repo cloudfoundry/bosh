@@ -13,6 +13,13 @@ module Bosh::Director
           resolve_consumed_links(instance_group, job)
           ensure_all_links_in_consumes_block_are_mentioned_in_spec(instance_group, job)
           add_provided_links(instance_group, job)
+        end
+      end
+
+      def apply(instance_group)
+        @logger.debug("Applying links for instance group '#{instance_group.name}'")
+
+        instance_group.jobs.each do |job|
           add_consumed_links(instance_group, job)
         end
       end
@@ -66,8 +73,8 @@ module Bosh::Director
         instance_group.link_paths[job.name].to_a.each do |link_name, _|
           unless job.model_consumed_links.map(&:name).include?(link_name)
             raise Bosh::Director::UnusedProvidedLink,
-              "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
-                'but the release job does not consume it.'
+                  "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
+                    'but the release job does not consume it.'
           end
         end
       end
@@ -115,12 +122,6 @@ module Bosh::Director
             owner_object_name: job.name)
 
           if consumer.nil?
-            if consumed_link.original_name.nil?
-              link_definition_name = consumed_link.name
-            else
-              link_definition_name = consumed_link.original_name
-            end
-
             consumer = Bosh::Director::Models::LinkConsumer.new(
               deployment: @deployment_plan.model,
               instance_group: instance_group.name,
@@ -129,8 +130,20 @@ module Bosh::Director
             )
           end
           consumer.save
-
           @deployment_plan.add_link_consumer(consumer)
+
+          link_path = instance_group.link_path(job.name, consumed_link.name)
+          provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, instance_group: link_path.job, owner_object_name: link_path.template, name: consumed_link.name)
+
+          Bosh::Director::Models::Link.create(
+            {
+              name: consumed_link.original_name,
+              link_consumer: consumer,
+              link_provider: provider,
+              link_content: provider[:content],
+              created_at: Time.now
+            }
+          )
         end
       end
     end

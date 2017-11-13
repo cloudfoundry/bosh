@@ -12,9 +12,9 @@ module Bosh::Director
       def self.parse_consumes_link(link_def)
         if link_def.is_a?(Hash) && link_def.has_key?('type') && link_def.has_key?('name')
           if link_def.has_key?('from')
-            return new(link_def['from'].split(".")[-1], link_def['type'], link_def['optional'] || false)
+            return new(link_def['from'].split(".")[-1], link_def['type'], link_def['optional'] || false, false, link_def['name'])
           else
-            return new(link_def['name'], link_def['type'], link_def['optional'] || false)
+            return new(link_def['name'], link_def['type'], link_def['optional'] || false, false, link_def['name'])
           end
         end
         raise JobInvalidLinkSpec, "Link '#{link_def}' must be a hash with name and type"

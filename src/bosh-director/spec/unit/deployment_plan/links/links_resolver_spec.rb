@@ -216,6 +216,63 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           expect(consumer.owner_object_name).to eq('api-server-template')
           expect(consumer.owner_object_type).to eq('Job')
         end
+
+        it 'adds link to links table' do
+          before = Time.now
+          api_server_instance_group #This kicks off the link resolver's resolve via bind_models in assembler
+          after = Time.now
+
+          expected_content = {
+            'deployment_name' => 'fake-deployment',
+            'domain' => 'bosh',
+            'default_network' => 'fake-manual-network',
+            'networks' => ['fake-manual-network','fake-dynamic-network'],
+            'instance_group' => 'mysql',
+            'properties' => {'mysql' => nil},
+            'instances' => [
+              {
+                'name' => 'mysql',
+                'id' => String,
+                'index' => 0,
+                'bootstrap' => true,
+                'az' => nil,
+                'address' => '127.0.0.3',
+                'addresses' => {
+                  'fake-manual-network' => '127.0.0.3',
+                  'fake-dynamic-network' => /.*\.mysql\.fake-dynamic-network\.fake-deployment\.bosh/
+                },
+                'dns_addresses' => {
+                  'fake-manual-network' => '127.0.0.3',
+                  'fake-dynamic-network' => /.*\.mysql\.fake-dynamic-network\.fake-deployment\.bosh/
+                }
+              },{
+                'name' => 'mysql',
+                'id' => String,
+                'index' => 1,
+                'bootstrap' => false,
+                'az' => nil,
+                'address' => '127.0.0.4',
+                'addresses' => {
+                  'fake-manual-network' => '127.0.0.4',
+                  'fake-dynamic-network' => /.*\.mysql\.fake-dynamic-network\.fake-deployment\.bosh/
+                },
+                'dns_addresses' => {
+                  'fake-manual-network' => '127.0.0.4',
+                  'fake-dynamic-network' => /.*\.mysql\.fake-dynamic-network\.fake-deployment\.bosh/
+                }
+              }
+            ]
+          }
+
+          expect(Bosh::Director::Models::Link.count).to eq(1)
+          link = Bosh::Director::Models::Link.first
+          expect(link.name).to eq('db')
+          expect(link.link_consumer_id).to eq(1)
+          expect(link.link_provider_id).to eq(1)
+          expect(JSON.parse(link.link_content)).to match(expected_content)
+          expect(link.created_at >= before).to be_truthy
+          expect(link.created_at <= after).to be_truthy
+        end
       end
     end
 
