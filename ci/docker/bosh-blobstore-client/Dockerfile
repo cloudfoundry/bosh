@@ -32,12 +32,21 @@ RUN mkdir /tmp/ruby-install && \
     rm -rf /tmp/ruby-install
 
 # ruby
+RUN ruby-install ruby 2.1.2
 RUN ruby-install ruby 2.4.2
 
-# Bundler and BOSH CLI
+# Bundler and BOSH CLI for ruby 2.4.2
 RUN /bin/bash -l -c "                                     \
   source /etc/profile.d/chruby.sh ;                       \
   chruby 2.4.2 ;                                          \
+  gem install bundler --version 1.15.3 --no-ri --no-rdoc ; \
+  gem install bosh_cli --no-ri --no-rdoc                  \
+"
+
+# Bundler and BOSH CLI for ruby 2.1.2
+RUN /bin/bash -l -c "                                     \
+  source /etc/profile.d/chruby.sh ;                       \
+  chruby 2.1.2 ;                                          \
   gem install bundler --version 1.15.3 --no-ri --no-rdoc ; \
   gem install bosh_cli --no-ri --no-rdoc                  \
 "
