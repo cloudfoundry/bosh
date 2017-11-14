@@ -57,10 +57,67 @@ module Bosh::Director
         let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
         let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
 
+        let(:dummy_template_spec) do
+          {
+            'provides' => [
+              {
+                'name' => 'provided_links_101',
+                'type' => 'type_101'
+              }
+            ],
+            'consumes' => [
+              {
+                'name' => 'consumed_links_102',
+                'type' => 'type_102'
+              }
+            ]
+          }
+        end
+
+        let(:dummy_with_properties_template_spec) do
+          {
+            'provides' => [
+              {
+                'name' => 'provided_links_1',
+                'type' => 'type_1'
+              },
+              {
+                'name' => 'provided_links_2',
+                'type' => 'type_2'
+              }
+            ],
+            'consumes' => [
+              {
+                'name' => 'consumed_links_3',
+                'type' => 'type_3'
+              },
+              {
+                'name' => 'consumed_links_4',
+                'type' => 'type_4'
+              }
+            ]
+          }
+        end
+
         before do
-          release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
-          release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model))
+          release_version_model.add_template(
+            Bosh::Director::Models::Template.make(
+                name: 'dummy',
+                release: release_model,
+                consumes_json: dummy_template_spec['consumes'].to_json,
+                provides_json: dummy_template_spec['provides'].to_json
+            )
+          )
+          release_version_model.add_template(
+              Bosh::Director::Models::Template.make(
+                name: 'dummy_with_properties',
+                release: release_model,
+                consumes_json: dummy_with_properties_template_spec['consumes'].to_json,
+                provides_json: dummy_with_properties_template_spec['provides'].to_json
+              )
+          )
           release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_package', release: release_model))
+
           release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
           deployment.add_release(release)
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger)
@@ -85,6 +142,27 @@ module Bosh::Director
             addon.add_to_deployment(deployment)
             deployment_instance_group = deployment.instance_group(instance_group.name)
             expect(deployment_instance_group.jobs.map(&:name)).to eq(['dummy', 'dummy_with_properties', 'dummy_with_package'])
+          end
+
+          context 'when addon job specified does not exist in release' do
+            let(:jobs) {
+              [
+                  {'name' => 'non-existing-job',
+                   'release' => 'dummy',
+                   'provides_links' => [],
+                   'consumes_links' => []},
+                  {'name' => 'dummy_with_package',
+                   'release' => 'dummy',
+                   'provides_links' => [],
+                   'consumes_links' => []}
+              ]
+            }
+
+            it 'throws an error' do
+              expect {
+                addon.add_to_deployment(deployment)
+              }.to raise_error Bosh::Director::DeploymentUnknownTemplate, /Can't find job 'non-existing-job'/
+            end
           end
 
           context 'none of the addon jobs have job level properties' do
@@ -128,6 +206,88 @@ module Bosh::Director
                 expect(added_job.properties).to eq({'foobar' => {'job' => 'properties'}})
               }
               addon.add_to_deployment(deployment)
+            end
+          end
+
+          context 'when the addon job has links' do
+            let(:consumed_links_from_manifest) {
+              {
+                'consumed_links_4' => {'from' => 'whatever_link_1'},
+              }
+            }
+
+            let(:provided_links_from_manifest) {
+              {
+                'provided_links_2' => {'as' => 'whatever_link_2', 'shared' => true},
+              }
+            }
+
+            let(:jobs) {
+              [
+                {'name' => 'dummy_with_properties',
+                 'release' => 'dummy',
+                 'provides_links' => provided_links_from_manifest.to_a,
+                 'consumes_links' => consumed_links_from_manifest.to_a,
+                 'properties' => {'job' => 'properties'}
+                }
+              ]
+            }
+
+            it 'adds correct provides/consumes links info from the release and the manifest to the job' do
+              expect(instance_group).to(receive(:add_job)) do |added_job|
+                expect(added_job.provides_link_info(instance_group.name, 'provided_links_1')).to eq({'name' => 'provided_links_1', 'type' => 'type_1'})
+                expect(added_job.provides_link_info(instance_group.name, 'provided_links_2')).to eq({'name' => 'provided_links_2', 'type'=>'type_2', 'as' => 'whatever_link_2', 'shared' =>true})
+                expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_3')).to eq({'name'=>'consumed_links_3', 'type'=>'type_3'})
+                expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_4')).to eq({'name'=>'consumed_links_4', 'type'=>'type_4', 'from' => 'whatever_link_1'})
+              end
+
+              addon.add_to_deployment(deployment)
+            end
+
+            context 'when there are multiple versions of the same release' do
+              let(:release_version_model_3) { Bosh::Director::Models::ReleaseVersion.make(version: '0.3-dev', release: release_model) }
+
+              let(:dummy_with_properties_template_spec_version_3) do
+                {
+                  'provides' => [
+                    {
+                      'name' => 'provided_links_v3_1',
+                      'type' => 'type_v3_1'
+                    }
+                  ],
+                  'consumes' => [
+                    {
+                      'name' => 'consumed_links_v3_3',
+                      'type' => 'type_v3_3'
+                    }
+                  ]
+                }
+              end
+
+              before do
+                release_version_model_3.add_template(
+                    Bosh::Director::Models::Template.make(
+                        name: 'dummy_with_properties',
+                        release: release_model,
+                        consumes_json: dummy_with_properties_template_spec_version_3['consumes'].to_json,
+                        provides_json: dummy_with_properties_template_spec_version_3['provides'].to_json
+                    )
+                )
+              end
+
+              it 'should ONLY add templates from the specified release version' do
+                expect(instance_group).to(receive(:add_job)) do |added_job|
+                  expect(added_job.provides_link_info(instance_group.name, 'provided_links_1')).to eq({'name' => 'provided_links_1', 'type' => 'type_1'})
+                  expect(added_job.provides_link_info(instance_group.name, 'provided_links_2')).to eq({'name' => 'provided_links_2', 'type'=>'type_2', 'as' => 'whatever_link_2', 'shared' =>true})
+                  expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_3')).to eq({'name'=>'consumed_links_3', 'type'=>'type_3'})
+                  expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_4')).to eq({'name'=>'consumed_links_4', 'type'=>'type_4', 'from' => 'whatever_link_1'})
+
+                  expect(added_job.provides_link_info(instance_group.name, 'provided_links_v3_1')).to eq({})
+                  expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_v3_3')).to eq({})
+                end
+
+                addon.add_to_deployment(deployment)
+              end
             end
           end
         end
