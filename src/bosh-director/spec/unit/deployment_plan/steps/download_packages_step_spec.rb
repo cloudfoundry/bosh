@@ -12,17 +12,21 @@ module Bosh::Director
       let(:instance0_agent_client) {instance_double(AgentClient)}
       let(:instance1_agent_client) {instance_double(AgentClient)}
 
-      let(:instance_model_hot_swap) { instance_double(Models::Instance, agent_id: 'swap_agent') }
+      let(:inactive_swap_vm) { instance_double(Models::Vm, agent_id: 'swap_agent') }
+      let(:instance_model_hot_swap) { instance_double(Models::Instance, most_recent_inactive_vm: inactive_swap_vm) }
       let(:deployment_plan_instance_hot_swap) { instance_double(DeploymentPlan::Instance, model: instance_model_hot_swap) }
       let(:swap_instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_hot_swap) }
       let(:instance_plans_with_hot_swap_and_needs_shutdown) { [swap_instance_plan] }
       let(:swap_instance_spec) { instance_double(DeploymentPlan::InstanceSpec) }
 
-      let(:instance_model_0) { instance_double(Models::Instance, agent_id: 'instance0_agent') }
+      let(:inactive_vm_0) { instance_double(Models::Vm, agent_id: 'instance0_agent') }
+      let(:instance_model_0) { instance_double(Models::Instance, most_recent_inactive_vm: inactive_vm_0) }
       let(:deployment_plan_instance_0) { instance_double(DeploymentPlan::Instance, model: instance_model_0) }
       let(:instance0_instance_spec) { instance_double(DeploymentPlan::InstanceSpec) }
       let(:instance0_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_0) }
-      let(:instance_model_1) { instance_double(Models::Instance, agent_id: 'instance1_agent') }
+
+      let(:inactive_vm_1) { instance_double(Models::Vm, agent_id: 'instance1_agent') }
+      let(:instance_model_1) { instance_double(Models::Instance, most_recent_inactive_vm: inactive_vm_1) }
       let(:deployment_plan_instance_1) { instance_double(DeploymentPlan::Instance, model: instance_model_1) }
       let(:instance1_instance_spec) { instance_double(DeploymentPlan::InstanceSpec) }
       let(:instance1_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_1) }

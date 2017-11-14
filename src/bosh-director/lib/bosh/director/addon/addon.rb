@@ -70,17 +70,14 @@ module Bosh::Director
       def convert_addon_jobs_to_object(deployment)
         jobs = []
         @addon_job_hashes.each do |addon_job_hash|
-
           deployment_release_version = deployment.release(addon_job_hash['release'])
           deployment_release_version.bind_model
 
           addon_job_object = DeploymentPlan::Job.new(deployment_release_version, addon_job_hash['name'], deployment.name)
           addon_job_object.bind_models
-          deployment_jobs = fetch_deployment_jobs(deployment, addon_job_hash['name'])
 
           deployment.instance_groups.map(&:name).each do |instance_group_name|
-
-            add_link_from_release(addon_job_object, deployment_jobs, instance_group_name)
+            add_link_from_release(addon_job_object, instance_group_name)
 
             add_links_from_manifest(addon_job_object, addon_job_hash, instance_group_name)
 
@@ -99,24 +96,15 @@ module Bosh::Director
         end
       end
 
-      def fetch_deployment_jobs(deployment, job_name)
-        deployment_release_names = deployment.releases.map(&:name)
-        deployment_release_ids = Models::Release.where(:name => deployment_release_names).map(&:id)
-        deployment_jobs = Models::Template.where(:name => job_name, :release_id => deployment_release_ids)
-        if deployment_jobs.empty?
-          raise "Job '#{job_name}' not found in Template table"
-        end
-        deployment_jobs
-      end
+      def add_link_from_release(addon_job_object, instance_group_name)
+        addon_template_model = addon_job_object.model
 
-      def add_link_from_release(addon_job_object, deployment_jobs, instance_group_name)
-        deployment_jobs.each do |deployment_job|
-          deployment_job.consumes.to_a.each do |deployment_job_consumes|
-            addon_job_object.add_link_from_release(instance_group_name, 'consumes', deployment_job_consumes['name'], deployment_job_consumes)
-          end
-          deployment_job.provides.to_a.each do |deployment_job_provides|
-            addon_job_object.add_link_from_release(instance_group_name, 'provides', deployment_job_provides['name'], deployment_job_provides)
-          end
+        addon_template_model.consumes.to_a.each do |deployment_job_consumes|
+          addon_job_object.add_link_from_release(instance_group_name, 'consumes', deployment_job_consumes['name'], deployment_job_consumes)
+        end
+
+        addon_template_model.provides.to_a.each do |deployment_job_provides|
+          addon_job_object.add_link_from_release(instance_group_name, 'provides', deployment_job_provides['name'], deployment_job_provides)
         end
       end
 
