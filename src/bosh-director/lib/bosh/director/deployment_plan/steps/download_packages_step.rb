@@ -27,7 +27,7 @@ module Bosh::Director
                   event_log_stage.advance_and_track(instance_model.to_s) do
                     @logger.info("Downloading packages for instance #{instance_model.to_s}.")
                     instance_spec = InstanceSpec.create_from_instance_plan(plan)
-                    agent = AgentClient.with_agent_id(instance_model.agent_id)
+                    agent = AgentClient.with_agent_id(instance_model.most_recent_inactive_vm.agent_id)
                     agent.prepare(instance_spec.as_jobless_apply_spec)
                   end
                 end
