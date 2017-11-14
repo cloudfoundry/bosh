@@ -4,8 +4,10 @@ set -e
 
 source bosh-src/ci/tasks/utils.sh
 
+check_param RUBY_VERSION
+
 source /etc/profile.d/chruby.sh
-chruby 2.1.2
+chruby $RUBY_VERSION
 
 pushd bosh-src
   bosh sync blobs

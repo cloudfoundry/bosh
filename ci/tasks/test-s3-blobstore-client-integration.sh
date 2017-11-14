@@ -4,13 +4,14 @@ set -e
 
 source bosh-src/ci/tasks/utils.sh
 
-source /etc/profile.d/chruby.sh
-chruby 2.1.2
-
 check_param access_key_id
 check_param secret_access_key
 check_param s3_host
 check_param s3_region
+check_param RUBY_VERSION
+
+source /etc/profile.d/chruby.sh
+chruby $RUBY_VERSION
 
 pushd bosh-src
   bosh sync blobs

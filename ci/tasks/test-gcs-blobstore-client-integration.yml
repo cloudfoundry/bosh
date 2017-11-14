@@ -13,3 +13,4 @@ run:
 params:
   google_project: replace-me
   google_json_key_data: replace-me
+  RUBY_VERSION: replace-me

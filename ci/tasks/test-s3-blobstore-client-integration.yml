@@ -16,3 +16,4 @@ params:
   s3_region: replace-me
   s3_host: replace-me
   run_aws_tests:
+  RUBY_VERSION: replace-me
