@@ -28,8 +28,6 @@ module Bosh::Director
 
       def resolve_consumed_links(instance_group, job)
         job.model_consumed_links.each do |consumed_link|
-          @logger.debug("WWWWWWWWW #{consumed_link.inspect}")
-
           link_name = consumed_link.name
 
           link_path = instance_group.link_path(job.name, link_name)
@@ -82,8 +80,6 @@ module Bosh::Director
 
       def add_provided_links(instance_group, job)
         job.provided_links(instance_group.name).each do |provided_link|
-          @logger.debug("QQQQQQQa #{provided_link.inspect}")
-
           link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
 
           provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, instance_group: instance_group.name, name: provided_link.name, owner_object_name: job.name)
