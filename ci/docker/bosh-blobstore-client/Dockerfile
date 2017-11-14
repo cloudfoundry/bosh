@@ -32,6 +32,7 @@ RUN mkdir /tmp/ruby-install && \
     rm -rf /tmp/ruby-install
 
 # ruby
+RUN ruby-install ruby 2.1.2
 RUN ruby-install ruby 2.4.2
 
 # Bundler and BOSH CLI
