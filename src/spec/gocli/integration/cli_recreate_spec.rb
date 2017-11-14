@@ -75,6 +75,35 @@ describe 'recreate instance', type: :integration do
     expect(director.instances).not_to match_array(initial_instances.map(&:vm_cid))
   end
 
+  context 'when a new release is uploaded and the release version in the manifest is latest ' do
+    it 'recreates an instance with initially resolved release version' do
+      release_filename = spec_asset('unsorted-release-0+dev.1.tgz')
+      stemcell_filename = spec_asset('valid_stemcell.tgz')
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash['releases'] = [{
+        'name' => 'unsorted-release',
+        'version' => 'latest'
+      }]
+
+      deployment_manifest = yaml_file('simple', manifest_hash)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("upload-stemcell #{stemcell_filename}")
+      bosh_runner.run("upload-release #{release_filename}")
+
+      bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+      bosh_runner.run("upload-release #{spec_asset('unsorted-release-0+dev.2.tgz')}")
+      bosh_runner.run('recreate', deployment_name: 'simple')
+
+      table_output = table(bosh_runner.run('releases', json: true))
+      expect(table_output).to include(
+        {"commit_hash" => String, "name" => "unsorted-release", "version" => "0+dev.2"},
+        {"commit_hash" => String, "name" => "unsorted-release", "version" => "0+dev.1*"}
+      )
+    end
+  end
+
   context 'with dry run flag' do
     context 'when a vm has been deleted' do
       it 'does not try to recreate that vm' do

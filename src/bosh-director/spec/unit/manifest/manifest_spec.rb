@@ -3,10 +3,11 @@ require 'spec_helper'
 module Bosh::Director
   describe Manifest do
     subject(:manifest_object) do
-      described_class.new(manifest_hash, cloud_config_hash, runtime_config_hash)
+      described_class.new(manifest_hash, manifest_text, cloud_config_hash, runtime_config_hash)
     end
 
     let(:manifest_hash) { {} }
+    let(:manifest_text) { '{}' }
     let(:cloud_config_hash) { {} }
     let(:runtime_config_hash) { {} }
 
@@ -35,12 +36,18 @@ module Bosh::Director
     end
 
     describe '.load_from_model' do
-      let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
-      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
-      let(:manifest_hash) { { 'name' => 'a_deployment', 'name-1' => 'my-name-1' } }
+      let(:deployment_model) {instance_double(Bosh::Director::Models::Deployment)}
+      let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
+      let(:manifest_hash) { {'name' => 'a_deployment', 'name-1' => 'my-name-1'} }
+      let(:manifest_text) do
+        %Q(---
+         name: a_deployment
+         name-1: my-name-1)
+      end
 
       before do
         allow(deployment_model).to receive(:manifest).and_return(manifest_hash.to_json)
+        allow(deployment_model).to receive(:raw_manifest).and_return(manifest_text)
         allow(deployment_model).to receive(:cloud_configs).and_return([cloud_config])
         allow(deployment_model).to receive(:runtime_configs).and_return(runtime_configs)
         allow(variables_interpolator).to receive(:interpolate_deployment_manifest).and_return(manifest_hash)
@@ -52,6 +59,7 @@ module Bosh::Director
       it 'creates a manifest object from a manifest, a cloud config, and an aggregation of the runtime configs' do
         result =  Manifest.load_from_model(deployment_model)
         expect(result.manifest_hash).to eq('name' => 'a_deployment', 'name-1' => 'my-name-1')
+        expect(result.manifest_text).to eq(manifest_text)
         expect(result.cloud_config_hash).to eq(cloud_config.raw_manifest)
         expect(result.runtime_config_hash).to eq('my_runtime' => 'foo_value')
       end
@@ -59,6 +67,7 @@ module Bosh::Director
       it 'ignores cloud config when ignore_cloud_config is true' do
         result = Manifest.load_from_model(deployment_model, ignore_cloud_config: true)
         expect(result.manifest_hash).to eq('name' => 'a_deployment', 'name-1' => 'my-name-1')
+        expect(result.manifest_text).to eq(manifest_text)
         expect(result.cloud_config_hash).to eq(nil)
         expect(result.runtime_config_hash).to eq('my_runtime' => 'foo_value')
       end
@@ -66,6 +75,7 @@ module Bosh::Director
       context 'when empty manifests exist' do
         before do
           allow(deployment_model).to receive(:manifest).and_return(nil)
+          allow(deployment_model).to receive(:raw_manifest).and_return(nil)
           allow(deployment_model).to receive(:cloud_configs).and_return([cloud_config])
           allow(deployment_model).to receive(:runtime_configs).and_return([])
           allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with([]).and_return(consolidated_runtime_config)
@@ -77,6 +87,7 @@ module Bosh::Director
         it 'creates a manifest object from a manifest, a cloud config, and a runtime config correctly' do
           result =  Manifest.load_from_model(deployment_model, ignore_cloud_config: false)
           expect(result.manifest_hash).to eq({})
+          expect(result.manifest_text).to eq('{}')
           expect(result.cloud_config_hash).to eq(cloud_config.raw_manifest)
           expect(result.runtime_config_hash).to eq({})
         end
@@ -122,6 +133,14 @@ module Bosh::Director
 
       let(:runtime_config_hash) { { 'raw_runtime' => '((foo))' } }
       let(:cloud_config_hash) { cloud_config.raw_manifest }
+      let(:manifest_text) do
+        %Q(---
+        name: minimal
+        releases:
+        - name: simple
+          version: latest
+       )
+      end
 
       before do
         allow(variables_interpolator).to receive(:interpolate_deployment_manifest).with({}).and_return({})
@@ -132,12 +151,12 @@ module Bosh::Director
 
       it 'creates a manifest object from a cloud config, a manifest text, and a runtime config' do
         expect(
-          Manifest.load_from_hash(manifest_hash, [cloud_config], runtime_configs).to_yaml
+          Manifest.load_from_hash(manifest_hash, manifest_text, [cloud_config], runtime_configs).to_yaml
         ).to eq(manifest_object.to_yaml)
       end
 
       it 'ignores cloud config when ignore_cloud_config is true' do
-        result = Manifest.load_from_hash(manifest_hash, [cloud_config], runtime_configs, ignore_cloud_config: true)
+        result = Manifest.load_from_hash(manifest_hash, YAML.dump(manifest_hash), [cloud_config], runtime_configs, ignore_cloud_config: true)
         expect(result.manifest_hash).to eq({})
         expect(result.cloud_config_hash).to eq(nil)
         expect(result.runtime_config_hash).to eq(runtime_config_hash)
@@ -152,7 +171,7 @@ module Bosh::Director
 
         it 'calls the manifest resolver with correct values' do
           expect(variables_interpolator).to receive(:interpolate_deployment_manifest).with('smurf' => '((smurf_placeholder))').and_return('smurf' => 'blue')
-          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, [cloud_config], runtime_configs)
+          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, YAML.dump(passed_in_manifest_hash), [cloud_config], runtime_configs)
           expect(manifest_object_result.manifest_hash).to eq('smurf' => 'blue')
           expect(manifest_object_result.cloud_config_hash).to eq(cloud_config.raw_manifest)
           expect(manifest_object_result.runtime_config_hash).to eq(runtime_config_hash)
@@ -161,7 +180,7 @@ module Bosh::Director
         it 'respects resolve_interpolation flag when calling the manifest resolver' do
           expect(variables_interpolator).to_not receive(:interpolate_deployment_manifest)
 
-          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, [cloud_config], runtime_configs, resolve_interpolation: false)
+          manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, YAML.dump(passed_in_manifest_hash), [cloud_config], runtime_configs, resolve_interpolation: false)
           expect(manifest_object_result.manifest_hash).to eq('smurf' => '((smurf_placeholder))')
           expect(manifest_object_result.cloud_config_hash).to eq(cloud_config.raw_manifest)
           expect(manifest_object_result.runtime_config_hash).to eq(runtime_config_hash)
@@ -178,6 +197,7 @@ module Bosh::Director
       it 'generates empty manifests' do
         result_manifest = Manifest.generate_empty_manifest
         expect(result_manifest.manifest_hash).to eq({})
+        expect(result_manifest.manifest_text).to eq('{}')
         expect(result_manifest.cloud_config_hash).to eq(nil)
         expect(result_manifest.runtime_config_hash).to eq({})
       end
@@ -447,6 +467,7 @@ module Bosh::Director
       subject(:new_manifest_object) do
         described_class.new(
           new_manifest_hash,
+          YAML.dump(new_manifest_hash),
           new_cloud_config_hash,
           new_runtime_config_hash,
         )
