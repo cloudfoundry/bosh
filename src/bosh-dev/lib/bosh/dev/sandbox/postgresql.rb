@@ -37,6 +37,11 @@ module Bosh::Dev::Sandbox
       @runner.run(%Q{PGPASSWORD=#{@password} pg_dump -h #{@host} -p #{@port} -U #{@username} -s "#{db_name}"})
     end
 
+    def describe_db
+      @logger.info("Describing postgres database tables for #{db_name}")
+      @runner.run(%Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} -d "#{db_name}" -c '\\d+ public.*'})
+    end
+
     def load_db_initial_state(initial_state_assets_dir)
       sql_dump_path = File.join(initial_state_assets_dir, 'postgres_db_snapshot.sql')
       load_db(sql_dump_path)
