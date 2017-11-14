@@ -175,7 +175,7 @@ module Bosh::Director::Models
 
     def most_recent_inactive_vm
       inactive_vms = self.vms.select{ |instance| instance.active == false }
-      inactive_vms.sort!{ |a,b| b.created_at <=> a.created_at }
+      inactive_vms.sort!{ |a,b| b.id <=> a.id }
 
       inactive_vms.first
     end
