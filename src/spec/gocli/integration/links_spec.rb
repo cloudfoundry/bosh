@@ -337,7 +337,7 @@ describe 'Links', type: :integration do
         expect(response_body[1]).to eq(body_one)
       end
 
-      context 'redeploy of provider' do
+      context 'deploy of manifest' do
         let(:links) do
           {
             'db' => {'from' => 'link_alias'},
@@ -352,9 +352,9 @@ describe 'Links', type: :integration do
         end
 
         let(:api_job_spec) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'my_api',
-            templates: [{'name' => 'api_server', 'consumes' => links}],
+            jobs: [{'name' => 'api_server', 'consumes' => links}],
             instances: 1
           )
           job_spec['azs'] = ['z1']
@@ -362,9 +362,9 @@ describe 'Links', type: :integration do
         end
 
         let(:aliased_job_spec) do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'aliased_postgres',
-            templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+            jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
             instances: 1,
           )
           job_spec['azs'] = ['z1']
@@ -372,9 +372,9 @@ describe 'Links', type: :integration do
           end
 
         let(:api_server_with_optional_db_links)do
-          job_spec = Bosh::Spec::NewDeployments.simple_job(
+          job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'optional_db',
-            templates: [{'name' => 'api_server_with_optional_db_link', 'consumes' => optional_links}],
+            jobs: [{'name' => 'api_server_with_optional_db_link', 'consumes' => optional_links}],
             instances: 1,
             static_ips: ['192.168.1.13']
           )
@@ -384,7 +384,7 @@ describe 'Links', type: :integration do
 
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [api_server_with_optional_db_links, api_job_spec, aliased_job_spec]
+          manifest['instance_groups'] = [api_server_with_optional_db_links, api_job_spec, aliased_job_spec]
           manifest
         end
 
@@ -392,7 +392,7 @@ describe 'Links', type: :integration do
           deploy_simple_manifest(manifest_hash: manifest)
         end
 
-        it 'initially has a provider and consumer' do
+        it 'should create a provider and consumer' do
           response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
 
           expect(response).not_to eq(nil)
@@ -412,7 +412,7 @@ describe 'Links', type: :integration do
         context 'without provider and consumer jobs' do
           let(:manifest) do
             manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-            manifest['jobs'] = []
+            manifest['instance_groups'] = []
             manifest
           end
 
@@ -446,7 +446,7 @@ describe 'Links', type: :integration do
           end
 
           it 'has no providers' do
-            manifest['jobs'] = [api_server_with_optional_db_links]
+            manifest['instance_groups'] = [api_server_with_optional_db_links]
             deploy_simple_manifest(manifest_hash: manifest)
 
             response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
@@ -458,7 +458,7 @@ describe 'Links', type: :integration do
           end
 
           it 'has no consumers' do
-            manifest['jobs'] = [aliased_job_spec]
+            manifest['instance_groups'] = [aliased_job_spec]
             deploy_simple_manifest(manifest_hash: manifest)
 
             response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
@@ -485,39 +485,39 @@ describe 'Links', type: :integration do
           end
 
           let(:api_job_spec2) do
-            job_spec = Bosh::Spec::NewDeployments.simple_job(
+            spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'my_api',
-              templates: [{'name' => 'api_server', 'consumes' => links2}],
+              jobs: [{'name' => 'api_server', 'consumes' => links2}],
               instances: 1
             )
-            job_spec['azs'] = ['z1']
-            job_spec
+            spec['azs'] = ['z1']
+            spec
           end
 
           let(:aliased_job_spec2) do
-            job_spec = Bosh::Spec::NewDeployments.simple_job(
+            spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'aliased_postgres',
-              templates: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias2'}}}],
+              jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias2'}}}],
               instances: 1,
             )
-            job_spec['azs'] = ['z1']
-            job_spec
+            spec['azs'] = ['z1']
+            spec
           end
 
           let(:api_server_with_optional_db_links2)do
-            job_spec = Bosh::Spec::NewDeployments.simple_job(
+            spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'optional_db',
-              templates: [{'name' => 'api_server_with_optional_db_link', 'consumes' => optional_links2}],
+              jobs: [{'name' => 'api_server_with_optional_db_link', 'consumes' => optional_links2}],
               instances: 1,
               static_ips: ['192.168.1.13']
             )
-            job_spec['azs'] = ['z1']
-            job_spec
+            spec['azs'] = ['z1']
+            spec
           end
 
           let(:new_manifest) do
             manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-            manifest['jobs'] = [api_server_with_optional_db_links2, api_job_spec2, aliased_job_spec2]
+            manifest['instance_groups'] = [api_server_with_optional_db_links2, api_job_spec2, aliased_job_spec2]
             manifest
           end
 

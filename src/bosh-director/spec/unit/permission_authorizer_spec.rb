@@ -127,15 +127,6 @@ module Bosh::Director
           it_behaves_like :admin_read_team_admin_scopes
         end
 
-        describe 'checking for list_links rights' do
-          let(:acl_right) { :list_links }
-          it_behaves_like :admin_read_team_admin_scopes
-
-          it 'allows team read scope' do
-            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.read'])).to eq(true)
-          end
-        end
-
         describe 'checking for read_stemcells rights' do
           let(:acl_right) { :read_stemcells }
           it_behaves_like :admin_read_team_admin_scopes

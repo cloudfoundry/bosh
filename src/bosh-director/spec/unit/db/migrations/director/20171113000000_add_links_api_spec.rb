@@ -3,7 +3,7 @@ require_relative '../../../../db_spec_helper'
 module Bosh::Director
   describe 'During migrations' do
     let(:db) {DBSpecHelper.db}
-    let(:migration_file) {'20171025151250_add_links_api.rb'}
+    let(:migration_file) {'20171113000000_add_links_api.rb'}
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)

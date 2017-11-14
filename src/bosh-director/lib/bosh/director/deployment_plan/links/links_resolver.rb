@@ -132,15 +132,27 @@ module Bosh::Director
           consumer.save
           @deployment_plan.add_link_consumer(consumer)
 
-          link_path = instance_group.link_path(job.name, consumed_link.name)
-          provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, instance_group: link_path.job, owner_object_name: link_path.template, name: consumed_link.name)
+          link_path = instance_group.link_path(job.name, consumed_link.original_name)
+          next if link_path.nil?
+
+          provider = Bosh::Director::Models::LinkProvider.find(deployment: link_path.deployment, instance_group: link_path.job, owner_object_name: link_path.template, name: consumed_link.name)
+          if provider.nil?
+            # When calculating link_path it will have failed if the link is ambiguous.
+            provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, link_provider_definition_type: consumed_link.type)
+          end
+
+          if link_path.manual_spec.nil?
+            link_content = provider[:content]
+          else
+            link_content = link_path.manual_spec.to_json
+          end
 
           Bosh::Director::Models::Link.create(
             {
               name: consumed_link.original_name,
               link_consumer: consumer,
               link_provider: provider,
-              link_content: provider[:content],
+              link_content: link_content,
               created_at: Time.now
             }
           )
