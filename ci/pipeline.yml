@@ -283,21 +283,21 @@ jobs:
           s3_region: {{blobstore_client_aws_s3_region}}
           s3_host: {{blobstore_client_aws_s3_host}}
           run_aws_tests: "Not null"
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.1.2
       - task: test-local
         file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.1.2
       - task: test-dav
         file: bosh-src/ci/tasks/test-dav-blobstore-client-integration.yml
         params:
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.1.2
       - task: test-gcs
         file: bosh-src/ci/tasks/test-gcs-blobstore-client-integration.yml
         params:
           google_project: {{blobstore_client_google_project}}
           google_json_key_data: {{blobstore_client_google_json_key_data}}
-          RUBY_VERSION: 2.3.1
+          RUBY_VERSION: 2.1.2
 
   - name: blobstore-performance
     public: true
