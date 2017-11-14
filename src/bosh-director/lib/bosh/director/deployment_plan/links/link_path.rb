@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class LinkPath
-      attr_reader :deployment_plan_name,:deployment, :job, :template, :name, :path, :skip, :manual_spec
+      attr_reader :deployment_plan_name, :deployment, :job, :template, :name, :path, :skip, :manual_spec
 
       def initialize(deployment_plan_name, instance_groups, instance_group_name, job_name)
         @deployment_plan_name = deployment_plan_name

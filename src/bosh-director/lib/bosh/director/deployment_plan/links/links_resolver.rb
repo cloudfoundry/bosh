@@ -28,6 +28,7 @@ module Bosh::Director
 
       def resolve_consumed_links(instance_group, job)
         job.model_consumed_links.each do |consumed_link|
+          @logger.debug("WWWWWWWWW #{consumed_link.inspect}")
 
           link_name = consumed_link.name
 
@@ -81,6 +82,8 @@ module Bosh::Director
 
       def add_provided_links(instance_group, job)
         job.provided_links(instance_group.name).each do |provided_link|
+          @logger.debug("QQQQQQQa #{provided_link.inspect}")
+
           link_spec = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec
 
           provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, instance_group: instance_group.name, name: provided_link.name, owner_object_name: job.name)
@@ -114,8 +117,9 @@ module Bosh::Director
       end
 
       def add_consumed_links(instance_group, job)
+        @logger.debug("ALL CONSUMED LINKS#{job.consumed_links(instance_group.name)}")
         job.consumed_links(instance_group.name).each do |consumed_link|
-
+          @logger.debug("QQQQQQQQ #{consumed_link.inspect} | #{job.name}")
           consumer = Bosh::Director::Models::LinkConsumer.find(
             deployment: @deployment_plan.model,
             instance_group: instance_group.name,
@@ -134,14 +138,17 @@ module Bosh::Director
 
           link_path = instance_group.link_path(job.name, consumed_link.original_name)
           next if link_path.nil?
+          next if link_path.disk? # TODO: Deal with disk links.
 
-          provider = Bosh::Director::Models::LinkProvider.find(deployment: link_path.deployment, instance_group: link_path.job, owner_object_name: link_path.template, name: consumed_link.name)
-          if provider.nil?
-            # When calculating link_path it will have failed if the link is ambiguous.
-            provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, link_provider_definition_type: consumed_link.type)
-          end
-
+          provider = nil
           if link_path.manual_spec.nil?
+            provider_deployment = Models::Deployment[name: link_path.deployment]
+            provider = Bosh::Director::Models::LinkProvider.find(deployment: provider_deployment, instance_group: link_path.job, owner_object_name: link_path.template, name: consumed_link.name)
+
+            if provider.nil? # implicit links
+              # When calculating link_path it will have failed if the link is ambiguous.
+              provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, link_provider_definition_type: consumed_link.type)
+            end
             link_content = provider[:content]
           else
             link_content = link_path.manual_spec.to_json
