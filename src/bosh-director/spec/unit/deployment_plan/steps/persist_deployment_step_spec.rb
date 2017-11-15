@@ -126,7 +126,7 @@ module Bosh::Director
           it 'saves original raw manifest' do
             subject.perform
             reloaded_model = deployment_model.reload
-            expect(reloaded_model.raw_manifest).to eq(raw_manifest_text)
+            expect(reloaded_model.manifest_text).to eq(raw_manifest_text)
           end
 
           it 'saves cloud config' do
