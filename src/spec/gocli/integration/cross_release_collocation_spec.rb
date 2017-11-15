@@ -104,40 +104,59 @@ describe 'collocating templates from multiple releases', type: :integration do
   end
 
   context 'when 2 templates depend on packages with the same name from different releases' do
-    let(:manifest) do
-      {
-        'releases' => [
-          { 'name' => 'dummy', 'version' => 'latest' },
-          { 'name' => 'dummy2', 'version' => 'latest' },
-        ],
-        'jobs' => [{
-          'name' => 'foobar',
-          'templates' => [
-            { 'name' => 'dummy_with_package', 'release' => 'dummy' },
-            { 'name' => 'template2',          'release' => 'dummy2' },
-          ],
-          'vm_type' => 'a',
-          'instances' => 1,
-          'networks' => [{ 'name' => 'a' }],
-          'stemcell' => 'default'
-        }]
-      }
+    let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+
+    context 'and the fingerprints match' do
+      before do
+        manifest['releases'] = [
+          { 'name' => 'test_release', 'version' => 'latest' },
+          { 'name' => 'test_release_2', 'version' => 'latest' }
+        ]
+        manifest['instance_groups'][0]['jobs'] = [
+          { 'name' => 'job_using_pkg_1_and_2', 'release' => 'test_release' },
+          { 'name' => 'job_using_pkg_1', 'release' => 'test_release_2' }
+        ]
+
+        bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
+        bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+      end
+
+      it 'allows the co-located jobs to share the same package' do
+        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+        instance = director.instances.first
+        agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
+        expect(Dir.entries(File.join(agent_dir, 'data', 'packages'))).to eq(%w[. .. pkg_1 pkg_2])
+        # need to check for 3 entries to account for . and ..
+        expect(Dir.entries(File.join(agent_dir, 'data', 'packages', 'pkg_1')).size).to eq(3)
+        expect(Dir.entries(File.join(agent_dir, 'data', 'packages', 'pkg_2')).size).to eq(3)
+      end
     end
 
-    it 'refuses to deploy' do
-      bosh_runner.run("upload-release #{spec_asset('dummy-release.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+    context 'and the fingerprints differ' do
+      before do
+        manifest['releases'] = [
+          { 'name' => 'test_release', 'version' => 'latest' },
+          { 'name' => 'test_release_with_modified_fingerprint_for_pkg_1', 'version' => 'latest' }
+        ]
+        manifest['instance_groups'][0]['jobs'] = [
+          { 'name' => 'job_using_pkg_1_and_2', 'release' => 'test_release' },
+          { 'name' => 'job_using_pkg_1', 'release' => 'test_release_with_modified_fingerprint_for_pkg_1' }
+        ]
 
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
-      bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+        bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
+        bosh_runner.run("upload-release #{spec_asset('test_release_with_modified_fingerprint_for_pkg_1.tgz')}")
+      end
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell.merge(manifest)
-      deployment_name = manifest_hash['name']
-      deployment_manifest = yaml_file('simple', manifest_hash)
+      it 'refuses to deploy' do
+        output = deploy_from_scratch(
+          manifest_hash: manifest,
+          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+          failure_expected: true
+        )
 
-      output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: deployment_name, failure_expected: true)
-      expect(output).to match(%r[Package name collision detected in instance group 'foobar': job 'dummy/dummy_with_package' depends on package 'dummy/dummy_package',])
+        expect(output).to match(%r[Package name collision detected in instance group 'foobar': job 'test_release/job_using_pkg_1_and_2' depends on package 'test_release/pkg_1',])
+      end
     end
   end
 end

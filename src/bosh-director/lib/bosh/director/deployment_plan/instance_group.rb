@@ -279,26 +279,34 @@ module Bosh::Director
       end
 
       def validate_package_names_do_not_collide!
-        releases_by_package_names = jobs
-                                      .reduce([]) { |memo, t| memo + t.model.package_names.product([t.release]) }
-                                      .reduce({}) { |memo, package_name_and_release_version|
-          package_name = package_name_and_release_version.first
-          release_version = package_name_and_release_version.last
-          memo[package_name] ||= Set.new
-          memo[package_name] << release_version
-          memo
-        }
+        releases_by_package_names = {}
 
-        releases_by_package_names.each do |package_name, releases|
+        jobs.each do |job|
+          job.model.package_names.each do |package_name|
+            package = job.model.release.packages.find{|p| p.name == package_name}
+
+            releases_by_package_names[package_name] ||= {
+              usages: []
+            }
+
+            releases_by_package_names[package_name][:usages] << {
+              fingerprint: package.fingerprint,
+              release: job.release.name,
+              job: job.name,
+            }
+          end
+        end
+
+        releases_by_package_names.each do |package_name, packages|
+          releases = packages[:usages].group_by{ |u| u[:fingerprint] }
+
           if releases.size > 1
-            release1, release2 = releases.to_a[0..1]
-            offending_job1 = jobs.find { |job| job.release == release1 }
-            offending_job2 = jobs.find { |job| job.release == release2 }
+            release1jobs, release2jobs = releases.values[0..1]
 
             raise JobPackageCollision,
               "Package name collision detected in instance group '#{@name}': "\
-                  "job '#{release1.name}/#{offending_job1.name}' depends on package '#{release1.name}/#{package_name}', "\
-                  "job '#{release2.name}/#{offending_job2.name}' depends on '#{release2.name}/#{package_name}'. " +
+                  "job '#{release1jobs[0][:release]}/#{release1jobs[0][:job]}' depends on package '#{release1jobs[0][:release]}/#{package_name}', "\
+                  "job '#{release2jobs[0][:release]}/#{release2jobs[0][:job]}' depends on '#{release2jobs[0][:release]}/#{package_name}'. " +
                 'BOSH cannot currently collocate two packages with identical names from separate releases.'
           end
         end
