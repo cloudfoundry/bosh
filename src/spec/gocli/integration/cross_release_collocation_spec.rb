@@ -126,7 +126,7 @@ describe 'collocating templates from multiple releases', type: :integration do
 
         instance = director.instances.first
         agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
-        expect(Dir.entries(File.join(agent_dir, 'data', 'packages'))).to eq(%w[. .. pkg_1 pkg_2])
+        expect(Dir.entries(File.join(agent_dir, 'data', 'packages'))).to match_array(%w[. .. pkg_1 pkg_2])
         # need to check for 3 entries to account for . and ..
         expect(Dir.entries(File.join(agent_dir, 'data', 'packages', 'pkg_1')).size).to eq(3)
         expect(Dir.entries(File.join(agent_dir, 'data', 'packages', 'pkg_2')).size).to eq(3)
