@@ -17,13 +17,34 @@ describe 'vm delete', type: :integration do
     it 'deletes the vm by its vm_cid' do
       instance = director.instances.first
       expect(current_sandbox.cpi.has_vm(instance.vm_cid)).to be_truthy
-      bosh_runner.run("delete-vm #{instance.vm_cid}", deployment_name: 'simple')
+      output = bosh_runner.run("delete-vm #{instance.vm_cid}", deployment_name: 'simple')
       expect(current_sandbox.cpi.has_vm(instance.vm_cid)).not_to be_truthy
       expect(director.vms.count).to eq(0)
+      expect(output).to match /Delete VM: [0-9]{1,5}/
+      expect(output).to match /Delete VM: VM [0-9]{1,5} is successfully deleted/
+      expect(output).to match /Succeeded/
 
+      #wait for resurrection
       resurrected_instance = director.wait_for_vm(instance.job_name, instance.index, 300, deployment_name: 'simple')
       expect(resurrected_instance.vm_cid).to_not eq(instance.vm_cid)
       expect(director.vms.count).to eq(1)
+
+      #no reference to instance
+      id = resurrected_instance.vm_cid
+      expect(current_sandbox.cpi.has_vm(id)).to be_truthy
+      output = bosh_runner.run("delete-vm #{id}", deployment_name: 'simple')
+      expect(current_sandbox.cpi.has_vm(id)).not_to be_truthy
+      expect(output).to match /Delete VM: [0-9]{1,5}/
+      expect(output).to match /Delete VM: VM [0-9]{1,5} is successfully deleted/
+      expect(output).to match /Succeeded/
+
+      #vm does not exists
+      current_sandbox.cpi.commands.make_delete_vm_to_raise_vmnotfound
+      output = bosh_runner.run("delete-vm #{id}", deployment_name: 'simple')
+
+      expect(output).to match /Delete VM: [0-9]{1,5}/
+      expect(output).to match /Warning: VM [0-9]{1,5} does not exist. Deletion is skipped/
+      expect(output).to match /Succeeded/
     end
   end
 
