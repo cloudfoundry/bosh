@@ -130,5 +130,5 @@
   "20171018102040_remove_compilation_local_dns_records": "5bb71074f5dfab23c1caef1a9fb1779190cb76d3",
   "20171030224934_convert_nil_configs_to_empty": "38992699f41df50e7b4b869a9e89a2fd2d8770f2",
   "20171104185823_add_manifest_text_to_deployments": "fbb7a4d05c9e12ad6d1fdf3ec04fc5dccf09cad1",
-  "20171113000000_add_links_api": "bddb7a6baa92126dac6a4ba18897148048b8e570"
+  "20171113000000_add_links_api": "6551e0247846a34df1949e48a13ea2f9bede77d5"
 }

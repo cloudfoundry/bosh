@@ -14,6 +14,29 @@ Sequel.migration do
       String :owner_object_type, :null => false
     end
 
+    create_table :link_consumers do
+      primary_key :id
+      foreign_key :deployment_id, :deployments, :on_delete => :cascade
+      String :instance_group
+      String :owner_object_name, :null => false
+      String :owner_object_type, :null => false
+    end
+
+    create_table :links do
+      primary_key :id
+      foreign_key :link_provider_id, :link_providers, :on_delete => :set_null
+      foreign_key :link_consumer_id, :link_consumers, :on_delete => :cascade, :null => false
+      String :name, :null => false
+      String :link_content
+      Time :created_at
+    end
+
+    create_table :instances_links do
+      foreign_key :link_id, :links, :on_delete => :cascade, :null => false
+      foreign_key :instance_id, :instances, :on_delete => :cascade, :null => false
+      unique [:instance_id, :link_id]
+    end
+
     if [:mysql, :mysql2].include? adapter_scheme
       set_column_type :link_providers, :content, 'longtext'
       set_column_type :links, :content, 'longtext'
@@ -41,29 +64,6 @@ Sequel.migration do
           end
         end
       end
-    end
-
-    create_table :link_consumers do
-      primary_key :id
-      foreign_key :deployment_id, :deployments, :on_delete => :cascade
-      String :instance_group
-      String :owner_object_name, :null => false
-      String :owner_object_type, :null => false
-    end
-
-    create_table :links do
-      primary_key :id
-      foreign_key :link_provider_id, :link_providers, :on_delete => :set_null
-      foreign_key :link_consumer_id, :link_consumers, :on_delete => :cascade, :null => false
-      String :name, :null => false
-      String :link_content
-      Time :created_at
-    end
-
-    create_table :instances_links do
-      foreign_key :link_id, :links, :on_delete => :cascade, :null => false
-      foreign_key :instance_id, :instances, :on_delete => :cascade, :null => false
-      unique [:instance_id, :link_id]
     end
 
     links_to_migrate = {}
