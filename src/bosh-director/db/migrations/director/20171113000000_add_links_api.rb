@@ -73,7 +73,7 @@ Sequel.migration do
 
     self[:instances].each do |instance|
       spec_json = JSON.parse(instance[:spec_json] || '{}')
-      links = spec_json['links']
+      links = spec_json['links'] || {}
       links.each do |job_name, consumed_links|
         consumed_links.each do |link_name, link_data|
           if self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).all.count == 0
