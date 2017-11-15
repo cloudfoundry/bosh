@@ -39,7 +39,7 @@ Sequel.migration do
 
     if [:mysql, :mysql2].include? adapter_scheme
       set_column_type :link_providers, :content, 'longtext'
-      set_column_type :links, :content, 'longtext'
+      set_column_type :links, :link_content, 'longtext'
     end
 
     self[:deployments].each do |deployment|
