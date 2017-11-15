@@ -49,7 +49,11 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
-      attr_reader :uninterpolated_manifest_text
+      # Hash with resolved aliases for stemcells, resource_pools and releases
+      attr_reader :uninterpolated_manifest_hash
+
+      # Text with raw manifest content
+      attr_reader :raw_manifest_text
 
       # @return [DeploymentPlan::Variables] Returns the variables object of deployment
       attr_reader :variables
@@ -71,12 +75,13 @@ module Bosh::Director
       attr_reader :link_providers
       attr_reader :link_consumers
 
-      def initialize(attrs, uninterpolated_manifest_text, cloud_configs, runtime_configs, deployment_model, options = {})
+      def initialize(attrs, uninterpolated_manifest_hash, raw_manifest_text, cloud_configs, runtime_configs, deployment_model, options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}
 
-        @uninterpolated_manifest_text = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_text)
+        @uninterpolated_manifest_hash = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_hash)
+        @raw_manifest_text = raw_manifest_text
         @cloud_configs = cloud_configs
         @runtime_configs = runtime_configs
         @model = deployment_model

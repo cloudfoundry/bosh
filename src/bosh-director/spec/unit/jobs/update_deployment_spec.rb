@@ -357,6 +357,23 @@ module Bosh::Director
             end
           end
 
+          context 'when manifest_text is specified in options' do
+            let(:manifest_text) { '{ name: raw }' }
+            let(:options) { {'manifest_text' => manifest_text} }
+
+            it 'uses options manifest_text value as manifest_text' do
+              expect(Bosh::Director::Manifest).to receive(:load_from_hash).with(Hash, manifest_text, nil, Array)
+              job.perform
+            end
+          end
+
+          context 'when manifest_text is not specified in options' do
+            it 'uses manifest value as manifest_text' do
+              expect(Bosh::Director::Manifest).to receive(:load_from_hash).with(Hash, manifest_content, nil, Array)
+              job.perform
+            end
+          end
+
           it 'should store new events' do
             expect {
               job.perform

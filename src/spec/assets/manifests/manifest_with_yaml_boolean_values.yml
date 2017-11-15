@@ -1,0 +1,27 @@
+director_uuid: deadbeef
+jobs:
+- instances: 1
+  name: foobar
+  networks:
+  - name: a
+  properties:
+    quote:
+      "n": "yes"
+      "y": "no"
+  stemcell: default
+  templates:
+  - name: foobar
+  vm_type: a
+name: simple
+releases:
+- name: bosh-release
+  version: 0.1-dev
+stemcells:
+- alias: default
+  name: ubuntu-stemcell
+  version: 1
+update:
+  canaries: 2
+  canary_watch_time: 4000
+  max_in_flight: 1
+  update_watch_time: 20

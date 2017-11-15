@@ -42,7 +42,7 @@ module Bosh::Director
       end
 
       let(:deployment) do
-        planner = DeploymentPlan::Planner.new({name: deployment_name, properties: {}}, manifest_hash, cloud_configs, {}, deployment_model)
+        planner = DeploymentPlan::Planner.new({name: deployment_name, properties: {}}, manifest_hash, YAML.dump(manifest_hash), cloud_configs, {}, deployment_model)
         planner.update = DeploymentPlan::UpdateConfig.new(manifest_hash['update'])
         planner
       end
