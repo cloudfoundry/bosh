@@ -237,7 +237,7 @@ module Bosh::Director
       end
 
       get '/:deployment', authorization: :read do
-        JSON.generate({'manifest' => deployment.raw_manifest})
+        JSON.generate({'manifest' => deployment.manifest_text})
       end
 
       get '/:deployment/vms', authorization: :read do

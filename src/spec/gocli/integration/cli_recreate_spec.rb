@@ -75,11 +75,11 @@ describe 'recreate instance', type: :integration do
     expect(director.instances).not_to match_array(initial_instances.map(&:vm_cid))
   end
 
-  context 'when a new release is uploaded and the release version in the manifest is latest ' do
+  context 'when a new release is uploaded and the release version in the manifest is latest' do
     it 'recreates an instance with initially resolved release version' do
       release_filename = spec_asset('unsorted-release-0+dev.1.tgz')
       stemcell_filename = spec_asset('valid_stemcell.tgz')
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       manifest_hash['releases'] = [{
         'name' => 'unsorted-release',
         'version' => 'latest'

@@ -4,7 +4,7 @@ module Bosh::Director
   class Manifest
     def self.load_from_model(deployment_model, options = {})
       manifest = deployment_model.manifest || '{}'
-      manifest_text = deployment_model.raw_manifest || '{}'
+      manifest_text = deployment_model.manifest_text || '{}'
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(deployment_model.runtime_configs)
       consolidated_cloud_config = Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(deployment_model.cloud_configs)
       load_manifest(YAML.safe_load(manifest, [Symbol], [], true), manifest_text, consolidated_cloud_config, consolidated_runtime_config, options)

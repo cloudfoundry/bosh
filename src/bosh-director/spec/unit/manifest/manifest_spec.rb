@@ -47,7 +47,7 @@ module Bosh::Director
 
       before do
         allow(deployment_model).to receive(:manifest).and_return(manifest_hash.to_json)
-        allow(deployment_model).to receive(:raw_manifest).and_return(manifest_text)
+        allow(deployment_model).to receive(:manifest_text).and_return(manifest_text)
         allow(deployment_model).to receive(:cloud_configs).and_return([cloud_config])
         allow(deployment_model).to receive(:runtime_configs).and_return(runtime_configs)
         allow(variables_interpolator).to receive(:interpolate_deployment_manifest).and_return(manifest_hash)
@@ -75,7 +75,7 @@ module Bosh::Director
       context 'when empty manifests exist' do
         before do
           allow(deployment_model).to receive(:manifest).and_return(nil)
-          allow(deployment_model).to receive(:raw_manifest).and_return(nil)
+          allow(deployment_model).to receive(:manifest_text).and_return(nil)
           allow(deployment_model).to receive(:cloud_configs).and_return([cloud_config])
           allow(deployment_model).to receive(:runtime_configs).and_return([])
           allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with([]).and_return(consolidated_runtime_config)
