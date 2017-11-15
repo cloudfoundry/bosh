@@ -44,7 +44,7 @@ module Bosh::Director
 
       context 'link is shared' do
         before do
-          allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment_id: deployment_id, name: link_name ).and_return(
+          allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment: previous_deployment, name: link_name ).and_return(
             [Bosh::Director::Models::LinkProvider.make(
               name: 'link_name',
               shared: true,
@@ -57,7 +57,7 @@ module Bosh::Director
               owner_object_type: 'Job',
               content: {
                 "instances":[],
-                "instance_group": "provider_instance_group"
+                # "instance_group": "provider_instance_group"
               }.to_json)])
           version.add_deployment(previous_deployment)
 
@@ -222,7 +222,7 @@ module Bosh::Director
           let(:path) { { 'from' => 'unprovided_link_name', 'deployment' => 'previous_deployment' } }
           link_name = "unprovided_link_name"
           before do
-            allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment_id: deployment_id, name: link_name ).and_return([])
+            allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment: previous_deployment, name: link_name ).and_return([])
           end
           it 'should raise an exception' do
             expect{link_path.parse(path)}.to raise_error("Can't resolve link '#{link_name}' in instance group 'consumer_instance_group' on job 'consumer_instance_group_job' in deployment 'deployment_name'. Please make sure the link was provided and shared.")
@@ -299,7 +299,7 @@ module Bosh::Director
       context 'link is not shared' do
         let(:link_shared) {false}
         before do
-          allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment_id: deployment_id, name: link_name ).and_return(
+          allow(Bosh::Director::Models::LinkProvider).to receive(:where).with(deployment: previous_deployment, name: link_name ).and_return(
             [Bosh::Director::Models::LinkProvider.make(
               name: 'link_name',
               shared: link_shared,

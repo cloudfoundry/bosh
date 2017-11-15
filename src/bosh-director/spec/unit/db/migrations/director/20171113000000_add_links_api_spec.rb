@@ -306,8 +306,8 @@ module Bosh::Director
           expect(db[:links].first[:link_provider_id]).to be_nil
           expect(db[:links].first[:link_consumer_id]).to eq(1)
           expect(db[:links].first[:link_content]).to eq(expected_content)
-          expect(db[:links].first[:created_at] > before).to be_truthy
-          expect(db[:links].first[:created_at] < after).to be_truthy
+          expect(db[:links].first[:created_at] >= before).to be_truthy
+          expect(db[:links].first[:created_at] <= after).to be_truthy
         end
 
         it 'will create one instance_link per job per consuming instance' do
@@ -409,8 +409,8 @@ module Bosh::Director
             expect(db[:links].first[:link_provider_id]).to be_nil
             expect(db[:links].first[:link_consumer_id]).to eq(1)
             expect(db[:links].first[:link_content]).to eq(link_content.to_json)
-            expect(db[:links].first[:created_at] > before).to be_truthy
-            expect(db[:links].first[:created_at] < after).to be_truthy
+            expect(db[:links].first[:created_at] >= before).to be_truthy
+            expect(db[:links].first[:created_at] <= after).to be_truthy
           end
 
           it 'will create one instance_link per consuming instance' do
@@ -507,8 +507,8 @@ module Bosh::Director
             expect(link_rows[1][:link_provider_id]).to be_nil
             expect(link_rows[1][:link_consumer_id]).to eq(1)
             expect(link_rows[1][:link_content]).to eq(link_content2.to_json)
-            expect(link_rows[1][:created_at] > before).to be_truthy
-            expect(link_rows[1][:created_at] < after).to be_truthy
+            expect(link_rows[1][:created_at] >= before).to be_truthy
+            expect(link_rows[1][:created_at] <= after).to be_truthy
           end
 
           it 'will create one instance_link per consuming instance' do
