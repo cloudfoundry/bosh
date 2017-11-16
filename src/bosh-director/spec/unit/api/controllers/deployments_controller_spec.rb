@@ -788,7 +788,7 @@ module Bosh::Director
           let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
 
           it 'returns a list of instances with vms (vm_cid != nil)' do
-            15.times do |i|
+            8.times do |i|
               instance_params = {
                 'deployment_id' => deployment.id,
                 'job' => "job-#{i}",
@@ -801,16 +801,19 @@ module Bosh::Director
               instance_params['availability_zone'] = "az0" if i == 0
               instance_params['availability_zone'] = "az1" if i == 1
               instance = Models::Instance.create(instance_params)
-              vm_params = {
-                'agent_id' => "agent-#{i}",
-                'cid' => "cid-#{i}",
-                'instance_id' => instance.id,
-                'created_at' => time
-              }
+              2.times do |j|
+                vm_params = {
+                  'agent_id' => "agent-#{i}-#{j}",
+                  'cid' => "cid-#{i}-#{j}",
+                  'instance_id' => instance.id,
+                  'created_at' => time
+                }
 
-              vm = Models::Vm.create(vm_params)
-              if i < 8
-                instance.active_vm = vm
+                vm = Models::Vm.create(vm_params)
+
+                if j == 0
+                  instance.active_vm = vm
+                end
               end
             end
 
@@ -818,18 +821,37 @@ module Bosh::Director
 
             expect(last_response.status).to eq(200)
             body = JSON.parse(last_response.body)
-            expect(body.size).to eq(8)
-            body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
+            expect(body.size).to eq(16)
+            body.sort_by{|instance| instance['agent_id']}.each_with_index do |instance_with_vm, i|
+              instance_idx = i / 2
+              vm_by_instance = i % 2
               expect(instance_with_vm).to eq(
-                'agent_id' => "agent-#{i}",
-                'job' => "job-#{i}",
-                'index' => i,
-                'cid' => "cid-#{i}",
-                'id' => "instance-#{i}",
-                'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                'agent_id' => "agent-#{instance_idx}-#{vm_by_instance}",
+                'job' => "job-#{instance_idx}",
+                'index' => instance_idx,
+                'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
+                'id' => "instance-#{instance_idx}",
+                'az' => {0 => "az0", 1 => "az1", nil => nil}[instance_idx],
                 'ips' => [],
                 'vm_created_at' => time.utc.iso8601
               )
+            end
+          end
+
+          context 'with full format requested' do
+            before do
+              deployment
+            end
+
+            it 'redirects to a delayed job' do
+              allow_any_instance_of(Api::InstanceManager).to receive(:fetch_instances_with_vm) do
+                Bosh::Director::Models::Task.make(id: 10002)
+              end
+
+              get '/test_deployment/vms?format=full'
+
+              task = expect_redirect_to_queued_task(last_response)
+              expect(task.id).to eq 10002
             end
           end
 
@@ -872,7 +894,7 @@ module Bosh::Director
 
               expect(last_response.status).to eq(200)
               body = JSON.parse(last_response.body)
-              expect(body.size).to eq(8)
+              expect(body.size).to eq(15)
 
               body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
                 expect(instance_with_vm).to eq(
@@ -920,7 +942,7 @@ module Bosh::Director
 
               expect(last_response.status).to eq(200)
               body = JSON.parse(last_response.body)
-              expect(body.size).to eq(8)
+              expect(body.size).to eq(15)
 
               body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
                 expect(instance_with_vm).to eq(
@@ -1335,7 +1357,6 @@ module Bosh::Director
           end
 
           context 'when there are only ignored vms' do
-
             it 'does not call the resurrector' do
               Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: false, ignore: true)
 

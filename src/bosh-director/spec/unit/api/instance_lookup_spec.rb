@@ -54,10 +54,6 @@ module Bosh::Director
           expect(instance_lookup.by_filter(id: instance.id).all).to eq([instance])
         end
 
-        # it 'finds only instances that are not excluded' do
-        #   expect(instance_lookup.by_filter({job: instance.job}, {id: another_instance.id}).all).to eq([instance])
-        # end
-
         context 'no instances exist for sql filter' do
           it 'raises' do
             expect {

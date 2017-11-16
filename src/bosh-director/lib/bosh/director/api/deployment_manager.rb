@@ -31,10 +31,6 @@ module Bosh::Director
       def delete_deployment(username, deployment, options = {}, context_id = '')
         JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment, context_id)
       end
-
-      def deployment_instances_with_vms(deployment)
-        Models::Instance.where(deployment: deployment).reject { |i| i.active_vm.nil? }
-      end
     end
   end
 end

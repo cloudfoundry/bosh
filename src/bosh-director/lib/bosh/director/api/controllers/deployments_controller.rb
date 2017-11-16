@@ -246,8 +246,8 @@ module Bosh::Director
           task = @instance_manager.fetch_instances_with_vm(current_user, deployment, format)
           redirect "/tasks/#{task.id}"
         else
-          instances = @deployment_manager.deployment_instances_with_vms(deployment)
-          JSON.generate(create_instances_response(instances))
+          vms_instances_hash = @instance_manager.vms_by_instances_for_deployment(deployment)
+          JSON.generate(create_vms_response(vms_instances_hash))
         end
       end
 
@@ -501,28 +501,32 @@ module Bosh::Director
         end
       end
 
-      def create_instances_response(instances)
-        instances.map do |instance|
-          create_instance_response(instance)
+      def create_vms_response(vms_instances_hash)
+        results = []
+        vms_instances_hash.each_pair do |instance, vms|
+          vms.each do |vm|
+            results << create_vm_response(instance, vm)
+          end
         end
+        results
       end
 
       def create_instances_response_with_vm_expected(instances)
         instances.map do |instance|
-          create_instance_response(instance).merge('expects_vm' => instance.expects_vm?)
+          create_vm_response(instance, instance.active_vm).merge('expects_vm' => instance.expects_vm?)
         end
       end
 
-      def create_instance_response(instance)
+      def create_vm_response(instance, vm)
         {
-          'agent_id' => instance.agent_id,
-          'cid' => instance.vm_cid,
+          'agent_id' => vm&.agent_id,
+          'cid' => vm&.cid,
           'job' => instance.job,
           'index' => instance.index,
           'id' => instance.uuid,
           'az' => instance.availability_zone,
           'ips' => ips(instance),
-          'vm_created_at' => instance.vm_created_at
+          'vm_created_at' => vm&.created_at&.utc&.iso8601
         }
       end
 
