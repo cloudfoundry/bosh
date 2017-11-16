@@ -62,7 +62,9 @@ module Bosh::Director
             instance.update_variable_set
           end
 
-          Preparer.new(instance_plan, agent(instance), @logger).prepare
+          unless instance_plan.needs_shutting_down? || instance.state == 'detached'
+            DeploymentPlan::Steps::PrepareInstanceStep.new(instance_plan, true).perform
+          end
 
           # current state
           if instance.model.state != 'stopped'
