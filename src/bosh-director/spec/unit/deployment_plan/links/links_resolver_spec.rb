@@ -270,8 +270,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           expect(link.link_consumer_id).to eq(1)
           expect(link.link_provider_id).to eq(1)
           expect(JSON.parse(link.link_content)).to match(expected_content)
-          expect(link.created_at >= before).to be_truthy
-          expect(link.created_at <= after).to be_truthy
+          expect(link.created_at.to_i).to >= before.to_i
+          expect(link.created_at.to_i).to <= after.to_i
         end
       end
     end
