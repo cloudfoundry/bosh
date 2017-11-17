@@ -110,7 +110,7 @@ module Bosh::Director
 
         expect(db[:variables].count).to eq(3)
 
-        db[:variable_sets].where('id = ?', 1).delete
+        db[:variable_sets].where(id: 1).delete
 
         expect(db[:variables].count).to eq(1)
         expect(db[:variables].first).to include({id: 3, variable_id: 'var_id_3', variable_name: 'var_3', variable_set_id: 2})

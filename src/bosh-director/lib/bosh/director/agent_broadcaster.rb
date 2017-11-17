@@ -102,10 +102,10 @@ module Bosh::Director
 
     def filter_instances(vm_cid_to_exclude)
       Models::Instance
-        .inner_join(:vms, vms__instance_id: :instances__id)
-        .select_append(Sequel.expr(:instances__id).as(:id))
-        .where { Sequel.expr(vms__active: true) }
-        .exclude { Sequel.expr(vms__cid: vm_cid_to_exclude) }
+        .inner_join(:vms, Sequel.qualify('vms', 'instance_id') => Sequel.qualify('instances','id'))
+        .select_append(Sequel.expr(Sequel.qualify('instances','id')).as(:id))
+        .where { Sequel.expr(Sequel.qualify('vms','active') => true) }
+        .exclude { Sequel.expr(Sequel.qualify('vms','cid') => vm_cid_to_exclude) }
         .where(compilation: false)
         .all
     end

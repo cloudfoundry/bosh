@@ -14,7 +14,7 @@ module Bosh::Director
 
     def clean
       cut_off_time = Time.now - @bundle_lifetime
-      old_bundles = Models::LogBundle.filter("timestamp <= ?", cut_off_time)
+      old_bundles = Models::LogBundle.filter(Sequel.lit("timestamp <= ?", cut_off_time))
       @logger.info("Deleting #{old_bundles.count} old log bundle(s) before #{cut_off_time}")
 
       old_bundles.each do |bundle|

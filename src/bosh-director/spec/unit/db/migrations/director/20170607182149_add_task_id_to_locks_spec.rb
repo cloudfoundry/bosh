@@ -15,8 +15,8 @@ module Bosh::Director
 
       DBSpecHelper.migrate(migration_file)
 
-      expect(db[:locks].where('id = ?', 100).first[:task_id]).to eq('')
-      expect(db[:locks].where('id = ?', 200).first[:task_id]).to eq('')
+      expect(db[:locks].where(id: 100).first[:task_id]).to eq('')
+      expect(db[:locks].where(id: 200).first[:task_id]).to eq('')
     end
 
     it 'supports adding task ids to lock' do
@@ -24,8 +24,8 @@ module Bosh::Director
       db[:locks] << {id: 100, name: 'lock1', uid: 'uuid-1', task_id: "task_1", expired_at: Time.now}
       db[:locks] << {id: 200, name: 'lock2', uid: 'uuid-2', expired_at: Time.now}
 
-      expect(db[:locks].where('id = ?', 100).first[:task_id]).to eq('task_1')
-      expect(db[:locks].where('id = ?', 200).first[:task_id]).to eq('')
+      expect(db[:locks].where(id: 100).first[:task_id]).to eq('task_1')
+      expect(db[:locks].where(id: 200).first[:task_id]).to eq('')
     end
 
     it 'does NOT support a null value for task_id' do

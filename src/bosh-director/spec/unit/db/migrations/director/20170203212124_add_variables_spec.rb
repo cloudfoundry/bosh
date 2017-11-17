@@ -54,10 +54,10 @@ module Bosh::Director
 
         expect(db[:variable_sets].count).to eq(5) # 2 were added during migration
 
-        db[:deployments].where('id = ?', 1).delete
+        db[:deployments].where(id: 1).delete
         expect(db[:variable_sets].count).to eq(2)
-        expect(db[:variable_sets].where('deployment_id = ?', 1).count).to eq(0)
-        expect(db[:variable_sets].where('deployment_id = ?', 2).count).to eq(2)
+        expect(db[:variable_sets].where(deployment_id: 1).count).to eq(0)
+        expect(db[:variable_sets].where(deployment_id: 2).count).to eq(2)
       end
     end
 
@@ -106,7 +106,7 @@ module Bosh::Director
 
         expect(db[:variables].count).to eq(3)
 
-        db[:variable_sets].where('id = ?', 100).delete
+        db[:variable_sets].where(id: 100).delete
 
         expect(db[:variables].count).to eq(1)
         expect(db[:variables].first).to eq({id: 3, variable_id: 'var_id_3', variable_name: 'var_3', variable_set_id: 200})
@@ -119,10 +119,10 @@ module Bosh::Director
 
         expect(db[:variables].count).to eq(3)
 
-        db[:deployments].where('id = ?', 1).delete
+        db[:deployments].where(id: 1).delete
 
         expect(db[:variables].count).to eq(1)
-        expect(db[:variables].where('variable_set_id = ?', 300).count).to eq(1)
+        expect(db[:variables].where(variable_set_id: 300).count).to eq(1)
       end
 
       it 'has variable_set_id and variable_name unique constraint' do
@@ -191,19 +191,19 @@ module Bosh::Director
 
         expect(db[:instances].count).to eq(3)
 
-        variable_set_1_id = db[:variable_sets].where('deployment_id = ?', 1).first[:id]
-        dep_1_instances = db[:instances].where('deployment_id = ?', 1).all
+        variable_set_1_id = db[:variable_sets].where(deployment_id: 1).first[:id]
+        dep_1_instances = db[:instances].where(deployment_id: 1).all
         expect(dep_1_instances.count).to eq(1)
         expect(dep_1_instances.first[:variable_set_id]).to eq(variable_set_1_id)
 
-        variable_set_2_id = db[:variable_sets].where('deployment_id = ?', 2).first[:id]
-        dep_2_instances = db[:instances].where('deployment_id = ?', 2).all
+        variable_set_2_id = db[:variable_sets].where(deployment_id: 2).first[:id]
+        dep_2_instances = db[:instances].where(deployment_id: 2).all
         expect(dep_2_instances.count).to eq(2)
         dep_2_instances.each do |instance|
           expect(instance[:variable_set_id]).to eq(variable_set_2_id)
         end
 
-        dep_3_instances = db[:instances].where('deployment_id = ?', 3).all
+        dep_3_instances = db[:instances].where(deployment_id: 3).all
         expect(dep_3_instances.count).to eq(0)
       end
 

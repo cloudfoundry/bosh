@@ -64,7 +64,7 @@ module Bosh::Director
               order { Sequel.desc(:id) }.limit(max_events).min(:parent_id)
           start_id_to_remove = (last_parent_id.nil? || (last_parent_id > last_id)) ? last_id+1: last_parent_id
 
-          Bosh::Director::Models::Event.filter("id < ?", start_id_to_remove).delete if start_id_to_remove != 0
+          Bosh::Director::Models::Event.filter(Sequel.lit("id < ?", start_id_to_remove)).delete if start_id_to_remove != 0
         end
       end
     end

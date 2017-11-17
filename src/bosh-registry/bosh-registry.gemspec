@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.bindir       = 'bin'
   spec.executables  = %w(bosh-registry bosh-registry-migrate)
 
-  spec.add_dependency 'sequel',    '~>4.36.0'
+  spec.add_dependency 'sequel',    '~>4.49.0'
   spec.add_dependency 'sinatra',   '~>1.4.2'
   spec.add_dependency 'thin',      '~>1.7.0'
   spec.add_dependency 'fog-openstack'
