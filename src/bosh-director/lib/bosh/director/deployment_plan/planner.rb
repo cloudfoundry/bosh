@@ -1,5 +1,3 @@
-require 'bosh/director/deployment_plan/deployment_spec_parser'
-require 'bosh/director/deployment_plan/cloud_manifest_parser'
 require 'bosh/director/deployment_plan/disk_type'
 require 'forwardable'
 require 'common/deep_copy'
