@@ -23,11 +23,11 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:az) { AvailabilityZone.new('az-1', {'foo' => 'bar'}) }
-    let(:reservations) {
+    let(:reservations) do
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, manual_network)
       reservation.resolve_ip('10.0.0.6')
       [reservation]
-    }
+    end
     let(:manual_network) {
       ManualNetwork.parse({
           'name' => 'net_a',
@@ -161,19 +161,63 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'addressable network' do
+      context 'when addressable is defined for a network' do
+        let(:net_a) do
+          {'ip' => '10.0.0.6', 'netmask' => '255.255.255.0', 'gateway' => '10.0.0.1'}
+        end
+
+        let(:net_public) do
+          {'ip' => '10.0.0.7'}
+        end
+
+        let(:reservation) do
+          network = ManualNetwork.parse(
+            {
+              'name' => 'net_public',
+              'dns' => ['1.2.3.4'],
+              'subnets' => [{
+                              'range' => '10.0.0.0/24',
+                              'gateway' => '10.0.0.1',
+                              'dns' => ['1.2.3.4'],
+                              'cloud_properties' => {'foo' => 'bar'}
+                            }
+              ]
+            },
+            [],
+            GlobalNetworkResolver.new(plan, [], logger),
+            logger
+          )
+          Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
+        end
+
+        let(:reservations) do
+          reservation.resolve_ip('10.0.0.7')
+          [reservation]
+        end
+
         let(:network_settings) do
           NetworkSettings.new(
             'fake-job',
             'fake-deployment',
             {'gateway' => 'net_a', 'addressable' => 'net_public'},
-            [reservation],
-            {'net_a' => {'ip' => '10.0.0.6', 'netmask' => '255.255.255.0', 'gateway' => '10.0.0.1'}},
+            reservations,
+            {'net_a' => net_a, 'net_public' => net_public},
             az,
             3,
             'uuid-1',
             'bosh1.tld',
+            false
           )
+        end
+
+
+        it 'returns the ip address of addressable network' do
+          expect(network_settings.network_address(false)).to eq("10.0.0.7")
+        end
+
+        it 'returns the dns address of addressable network' do
+          allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
+          expect(network_settings.network_address(true)).to eq('uuid-1.fake-job.net-public.fake-deployment.bosh1.tld')
         end
       end
 

@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20171030224934_convert_nil_configs_to_empty.rb')
+      expect(latest_db_migration_file).to eq('20171113000000_add_links_api.rb')
     end
   end
 end

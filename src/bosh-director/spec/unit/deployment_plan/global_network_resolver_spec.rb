@@ -15,6 +15,7 @@ module Bosh::Director
       DeploymentPlan::Planner.new(
         {name: 'current-deployment', properties: {}},
         '',
+        '',
         cloud_configs,
         runtime_configs,
         deployment_model

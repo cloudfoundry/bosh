@@ -23,10 +23,16 @@ module Bosh::Director
         },
       )
     end
+    subject(:job) { Jobs::VmState.new(deployment.id, 'full', instance_details) }
 
+    let(:instance_details) { false }
+    let(:deployment) { Models::Deployment.make }
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:time) {Time.now}
+    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
+    let(:instance) { Models::Instance.make(deployment: deployment) }
+
     before do
-      @deployment = Models::Deployment.make
       allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
       allow(Config).to receive(:result).and_return(TaskDBWriter.new(:result_output, task.id))
     end
@@ -36,10 +42,6 @@ module Bosh::Director
       let(:queue) { :urgent }
       it_behaves_like 'a DJ job'
     end
-
-    let(:time) {Time.now}
-    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
-    let(:instance) { Models::Instance.make(deployment: @deployment) }
 
     describe '#perform' do
       before do
@@ -60,7 +62,6 @@ module Bosh::Director
           'resource_pool' => {}
         )
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -83,7 +84,6 @@ module Bosh::Director
         it "returns the ip addresses from 'Models::Instance.ip_addresses'" do
           allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
 
-          job = Jobs::VmState.new(@deployment.id, 'full')
           job.perform
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
           expect(status['ips']).to eq(['1.1.1.1', '2.2.2.2'])
@@ -99,7 +99,6 @@ module Bosh::Director
         it "returns the ip addresses from 'Models::Instance.apply_spec'" do
           allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
 
-          job = Jobs::VmState.new(@deployment.id, 'full')
           job.perform
 
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -111,7 +110,6 @@ module Bosh::Director
         Models::IpAddress.make(instance_id: instance.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
         stub_agent_get_state_to_return_state_with_vitals
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -134,7 +132,6 @@ module Bosh::Director
 
         stub_agent_get_state_to_return_state_with_vitals
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -145,7 +142,6 @@ module Bosh::Director
         instance.update(dns_record_names: ['0.job.network.deployment.microbosh', 'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh'])
         stub_agent_get_state_to_return_state_with_vitals
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -157,7 +153,6 @@ module Bosh::Director
 
         expect(agent).to receive(:get_state).with('full').and_raise(RpcTimeout)
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -173,7 +168,6 @@ module Bosh::Director
       it 'should get the resurrection paused status' do
         instance.update(resurrection_paused: true)
         stub_agent_get_state_to_return_state_with_vitals
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
 
@@ -184,7 +178,6 @@ module Bosh::Director
       it 'should get the default ignore status of a vm' do
         instance
         stub_agent_get_state_to_return_state_with_vitals
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
 
@@ -195,7 +188,6 @@ module Bosh::Director
       it 'should get the ignore status of a vm when updated' do
         instance.update(ignore: true)
         stub_agent_get_state_to_return_state_with_vitals
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
 
@@ -210,7 +202,6 @@ module Bosh::Director
           disk_cid: 'fake-disk-cid',
         )
         stub_agent_get_state_to_return_state_with_vitals
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
 
@@ -233,7 +224,6 @@ module Bosh::Director
         )
 
         stub_agent_get_state_to_return_state_with_vitals
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
 
@@ -251,7 +241,6 @@ module Bosh::Director
         )
         stub_agent_get_state_to_return_state_with_vitals
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
 
@@ -265,7 +254,6 @@ module Bosh::Director
         instance.update(uuid: 'blarg')
         stub_agent_get_state_to_return_state_with_vitals
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -277,7 +265,6 @@ module Bosh::Director
 
         stub_agent_get_state_to_return_state_with_vitals
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
 
         job.perform
 
@@ -289,7 +276,6 @@ module Bosh::Director
         instance #trigger the let
         stub_agent_get_state_to_return_state_with_vitals
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -297,13 +283,15 @@ module Bosh::Director
           {'name' => 'fake-process-2', 'state' => 'failing'}])
       end
 
-      context 'without vm_cid' do
+      context 'when including instances missing vms' do
+        let(:instance_details) { true }
+
         it 'does not try to contact the agent' do
           instance.active_vm = nil
 
           expect(AgentClient).to_not receive(:with_agent_id)
 
-          Jobs::VmState.new(@deployment.id, 'full', true).perform
+          job.perform
 
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
           expect(status['job_state']).to eq(nil)
@@ -314,7 +302,6 @@ module Bosh::Director
         it 'should return bootstrap as true' do
           instance.update(bootstrap: true)
           stub_agent_get_state_to_return_state_with_vitals
-          job = Jobs::VmState.new(@deployment.id, 'full')
 
           job.perform
 
@@ -327,7 +314,6 @@ module Bosh::Director
         it 'should return bootstrap as false' do
           instance.update(bootstrap: false)
           stub_agent_get_state_to_return_state_with_vitals
-          job = Jobs::VmState.new(@deployment.id, 'full')
 
           job.perform
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -353,8 +339,6 @@ module Bosh::Director
           'resource_pool' => {}
         )
 
-        job = Jobs::VmState.new(@deployment.id, 'full')
-
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -373,11 +357,95 @@ module Bosh::Director
           allow(agent).to receive(:get_state).with('full').and_return({
             'networks' => {'test' => {'ip' => '1.1.1.1'}},
           })
-          job = Jobs::VmState.new(@deployment.id, 'full')
 
           expect(job.task_result).to receive(:write).once
 
           job.perform
+        end
+      end
+
+      context 'when instance has multiple vms' do
+        let!(:inactive_vm) { Models::Vm.make(instance: instance, active: false, agent_id: 'other_agent_id', cid: 'fake-vm-cid-2') }
+        let(:lazy_agent) { instance_double('Bosh::Director::AgentClient') }
+
+        before do
+          Models::IpAddress.make(instance_id: instance.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
+          allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', timeout: 5).and_return(lazy_agent)
+          allow(lazy_agent).to receive(:get_state).with('full').and_return(
+            'vm_cid' => 'fake-vm-cid-2',
+            'networks' => {'test' => {'ip' => '1.1.1.1'}},
+            'agent_id' => 'other_agent_id',
+            'index' => 0,
+            'job' => {'name' => 'dea'},
+            'job_state' => 'stopped',
+            'processes' => [
+              {'name' => 'fake-process-1', 'state' => 'stopped'},
+              {'name' => 'fake-process-2', 'state' => 'stopped'},
+            ],
+            'resource_pool' => {}
+          )
+          allow(agent).to receive(:get_state).with('full').and_return(
+            'vm_cid' => 'fake-vm-cid',
+            'networks' => {'test' => {'ip' => '1.1.1.1'}},
+            'agent_id' => 'fake-agent-id',
+            'index' => 0,
+            'job' => {'name' => 'dea'},
+            'job_state' => 'running',
+            'processes' => [
+              {'name' => 'fake-process-1', 'state' => 'running'},
+              {'name' => 'fake-process-2', 'state' => 'failing'},
+            ],
+            'resource_pool' => {}
+          )
+          instance.update(spec: {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}})
+        end
+
+        context 'when getting vm states' do
+          it 'returns all vms, active and inactive' do
+            job.perform
+            results = Models::Task.first(id: task.id).result_output.split("\n")
+
+            expect(results.length).to eq(2)
+            status = JSON.parse(results[0])
+            expect(status['ips']).to eq(['1.1.1.1'])
+            expect(status['vm_cid']).to eq('fake-vm-cid')
+            expect(status['agent_id']).to eq('fake-agent-id')
+            expect(status['job_state']).to eq('running')
+            expect(status['resource_pool']).to eq('fake-vm-type')
+            expect(status['vitals']).to be_nil
+            expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
+              {'name' => 'fake-process-2', 'state' => 'failing'}])
+
+            status = JSON.parse(results[1])
+            expect(status['ips']).to eq(['1.1.1.1'])
+            expect(status['vm_cid']).to eq('fake-vm-cid-2')
+            expect(status['agent_id']).to eq('other_agent_id')
+            expect(status['job_state']).to eq('stopped')
+            expect(status['resource_pool']).to eq('fake-vm-type')
+            expect(status['vitals']).to be_nil
+            expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'stopped'},
+              {'name' => 'fake-process-2', 'state' => 'stopped'}])
+          end
+        end
+
+        context 'when getting instance states' do
+          let(:instance_details) { true }
+
+          it 'returns information from active vm' do
+            job.perform
+            results = Models::Task.first(id: task.id).result_output.split("\n")
+
+            expect(results.length).to eq(1)
+            status = JSON.parse(results[0])
+            expect(status['ips']).to eq(['1.1.1.1'])
+            expect(status['vm_cid']).to eq('fake-vm-cid')
+            expect(status['agent_id']).to eq('fake-agent-id')
+            expect(status['job_state']).to eq('running')
+            expect(status['resource_pool']).to eq('fake-vm-type')
+            expect(status['vitals']).to be_nil
+            expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
+              {'name' => 'fake-process-2', 'state' => 'failing'}])
+          end
         end
       end
     end

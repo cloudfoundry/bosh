@@ -195,7 +195,19 @@ module Bosh::Director
     end
 
     describe '#fetch_instances_with_vm' do
+      before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
+      it 'enqueues a DJ job' do
+        allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
+
+        expect(job_queue).to receive(:enqueue).with(
+            username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT'], deployment).and_return(task)
+
+        expect(subject.fetch_instances_with_vm(username, deployment, 'FAKE_FORMAT')).to eq(task)
+      end
+    end
+
+    describe '#fetch_vms_by_instances' do
       before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
       it 'enqueues a DJ job' do
@@ -219,6 +231,18 @@ module Bosh::Director
             username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT', true], deployment).and_return(task)
 
         expect(subject.fetch_instances(username, deployment, 'FAKE_FORMAT')).to eq(task)
+      end
+    end
+
+    describe '#vms_by_instances_for_deployment' do
+      let!(:inactive_vm) { Models::Vm.make(instance: instance, active: false) }
+
+      it 'reports all vms in that deployment and their associated instances' do
+        results = subject.vms_by_instances_for_deployment(deployment)
+        expect(results).to eq({
+          instance => [ vm, inactive_vm ],
+          instance_1 => [ vm_1 ]
+        })
       end
     end
   end

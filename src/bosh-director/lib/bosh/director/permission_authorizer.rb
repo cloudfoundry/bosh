@@ -27,6 +27,7 @@ module Bosh::Director
             when :admin
               # already allowed with initial expected_scope
             when :read
+              expected_scope << subject_team_scopes(subject, 'read')
               expected_scope << director_permissions[:read]
             else
               raise ArgumentError, "Unexpected permission for task: #{permission}"
@@ -38,6 +39,7 @@ module Bosh::Director
             when :admin
               # already allowed with initial expected_scope
             when :read
+              expected_scope << subject_team_scopes(subject, 'read')
               expected_scope << director_permissions[:read]
             else
               raise ArgumentError, "Unexpected permission for deployment: #{permission}"

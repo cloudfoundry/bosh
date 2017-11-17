@@ -101,7 +101,7 @@ module Bosh::Director
     def current_states_by_instance(existing_instances, fix = false)
       lock = Mutex.new
       current_states_by_existing_instance = {}
-      is_version_1_manifest = ignore_cloud_config?(@deployment_plan.uninterpolated_manifest_text)
+      is_version_1_manifest = ignore_cloud_config?(@deployment_plan.uninterpolated_manifest_hash)
 
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         existing_instances.each do |existing_instance|
@@ -141,6 +141,29 @@ module Bosh::Director
 
       @deployment_plan.instance_groups.each do |instance_group|
         links_resolver.resolve(instance_group)
+      end
+      # This can not be combined into the same loop as above. We need all the providers to be populated first before we can do the consumers.
+      @deployment_plan.instance_groups.each do |instance_group|
+        links_resolver.apply(instance_group)
+      end
+
+      # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
+      link_providers = Bosh::Director::Models::LinkProvider.where(deployment: @deployment_plan.model)
+      link_providers.each do |link_provider|
+        result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
+        if result.empty?
+          link_provider.destroy
+          # TODO: orphaning any links referring to them.
+        end
+      end
+
+      link_consumers = Bosh::Director::Models::LinkConsumer.where(deployment: @deployment_plan.model)
+      link_consumers.each do |link_consumer|
+        result = @deployment_plan.link_consumers.select{ |lp| lp.id == link_consumer.id }
+        if result.empty?
+          link_consumer.destroy
+          # TODO: deleting any links referring to them.
+        end
       end
     end
 

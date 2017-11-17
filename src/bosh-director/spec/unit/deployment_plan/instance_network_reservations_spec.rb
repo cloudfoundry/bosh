@@ -9,6 +9,7 @@ module Bosh::Director
       DeploymentPlan::Planner.new(
         {name: 'foo-deployment', properties: {}},
         '',
+        '',
         cloud_config,
         runtime_config,
         deployment_model

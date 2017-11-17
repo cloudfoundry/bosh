@@ -19,16 +19,14 @@ module Bosh::Director
 
           ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
             instance_plans_needing_packages.each do |plan|
-              instance_model = plan.instance.model
+              instance_string = plan.instance.model.to_s
 
               pool.process do
-                with_thread_name("download_package_for_instance(#{instance_model}/#{total})") do
+                with_thread_name("download_package_for_instance(#{instance_string}/#{total})") do
 
-                  event_log_stage.advance_and_track(instance_model.to_s) do
-                    @logger.info("Downloading packages for instance #{instance_model.to_s}.")
-                    instance_spec = InstanceSpec.create_from_instance_plan(plan)
-                    agent = AgentClient.with_agent_id(instance_model.agent_id)
-                    agent.prepare(instance_spec.as_jobless_apply_spec)
+                  event_log_stage.advance_and_track(instance_string) do
+                    @logger.info("Downloading packages for instance #{instance_string}.")
+                    PrepareInstanceStep.new(plan, false).perform
                   end
                 end
               end

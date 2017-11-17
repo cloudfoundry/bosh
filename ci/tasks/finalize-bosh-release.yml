@@ -17,7 +17,7 @@ outputs:
   - name: bumped-candidate-version
   - name: bosh-src-with-bumped-version
   - name: bosh-master-with-final
-  - name: bosh-master-with-final-tag
+  - name: bosh-src-with-bumped-version-tag
 
 params:
   BLOBSTORE_ACCESS_KEY_ID: replace-me

@@ -48,7 +48,7 @@ module Bosh::Director
     end
 
     def network_address(prefer_dns_entry)
-      network_name = @default_network['gateway']
+      network_name = @default_network['addressable'] || @default_network['gateway']
       get_address(network_name, to_hash[network_name], prefer_dns_entry)
     end
 

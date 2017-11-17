@@ -486,5 +486,25 @@ module Bosh::Director::Models
         expect(instance_with_no_active_vm.has_important_vm?).to eq(false)
       end
     end
+
+    describe '#most_recent_inactive_vm' do
+      let!(:vm) { BD::Models::Vm.make(instance_id: instance.id, active: true) }
+      let(:instance) {BD::Models::Instance.make(state: 'started', ignore: false)}
+
+      context 'has one active and two inactive vms' do
+        let!(:old_inactive_vm) { BD::Models::Vm.make(instance_id: instance.id, active: false) }
+        let!(:new_inactive_vm) { BD::Models::Vm.make(instance_id: instance.id, active: false) }
+
+        it 'returns the most recent inactive vm' do
+          expect(instance.most_recent_inactive_vm).to eq(new_inactive_vm)
+        end
+      end
+
+      context 'has only active vm' do
+        it 'returns the most recent inactive vm' do
+          expect(instance.most_recent_inactive_vm).to eq(nil)
+        end
+      end
+    end
   end
 end

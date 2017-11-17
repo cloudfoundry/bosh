@@ -8,31 +8,18 @@ module Bosh::Director
 
       let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
 
-      let(:swap_agent_client) {instance_double(AgentClient)}
-      let(:instance0_agent_client) {instance_double(AgentClient)}
-      let(:instance1_agent_client) {instance_double(AgentClient)}
-
-      let(:instance_model_hot_swap) { instance_double(Models::Instance, agent_id: 'swap_agent') }
-      let(:deployment_plan_instance_hot_swap) { instance_double(DeploymentPlan::Instance, model: instance_model_hot_swap) }
-      let(:swap_instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_hot_swap) }
+      let(:swap_instance_plan) { instance_double(DeploymentPlan::InstancePlan) }
       let(:instance_plans_with_hot_swap_and_needs_shutdown) { [swap_instance_plan] }
-      let(:swap_instance_spec) { instance_double(DeploymentPlan::InstanceSpec) }
 
-      let(:instance_model_0) { instance_double(Models::Instance, agent_id: 'instance0_agent') }
-      let(:deployment_plan_instance_0) { instance_double(DeploymentPlan::Instance, model: instance_model_0) }
-      let(:instance0_instance_spec) { instance_double(DeploymentPlan::InstanceSpec) }
-      let(:instance0_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_0) }
-      let(:instance_model_1) { instance_double(Models::Instance, agent_id: 'instance1_agent') }
-      let(:deployment_plan_instance_1) { instance_double(DeploymentPlan::Instance, model: instance_model_1) }
-      let(:instance1_instance_spec) { instance_double(DeploymentPlan::InstanceSpec) }
-      let(:instance1_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_1) }
-
+      let(:instance0_plan) { instance_double(DeploymentPlan::InstancePlan) }
+      let(:instance1_plan) { instance_double(DeploymentPlan::InstancePlan) }
       let(:instance_plans_with_missing_vms) do
         [
           instance0_plan,
           instance1_plan,
         ]
       end
+
       let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
       let(:tags) { { 'some' => 'tags' } }
 
@@ -48,31 +35,25 @@ module Bosh::Director
           tags: tags)
       end
 
-      let(:swap_instance_spec) {instance_double(DeploymentPlan::InstanceSpec)}
-      let(:instance0_instance_spec) {instance_double(DeploymentPlan::InstanceSpec)}
-      let(:instance1_instance_spec) {instance_double(DeploymentPlan::InstanceSpec)}
+      let(:instance0_prepare_step) { instance_double PrepareInstanceStep }
+      let(:instance1_prepare_step) { instance_double PrepareInstanceStep }
+      let(:swap_prepare_step) { instance_double PrepareInstanceStep }
 
       before do
-        allow(DeploymentPlan::InstanceSpec).to receive(:create_from_instance_plan).with(swap_instance_plan).and_return(swap_instance_spec)
-        allow(DeploymentPlan::InstanceSpec).to receive(:create_from_instance_plan).with(instance0_plan).and_return(instance0_instance_spec)
-        allow(DeploymentPlan::InstanceSpec).to receive(:create_from_instance_plan).with(instance1_plan).and_return(instance1_instance_spec)
+        allow(PrepareInstanceStep).to receive(:new).with(instance0_plan, false).and_return instance0_prepare_step
+        allow(PrepareInstanceStep).to receive(:new).with(instance1_plan, false).and_return instance1_prepare_step
+        allow(PrepareInstanceStep).to receive(:new).with(swap_instance_plan, false).and_return swap_prepare_step
 
-        allow(swap_instance_spec).to receive(:as_jobless_apply_spec).and_return('swap_spec')
-        allow(instance0_instance_spec).to receive(:as_jobless_apply_spec).and_return('instance0_spec')
-        allow(instance1_instance_spec).to receive(:as_jobless_apply_spec).and_return('instance1_spec')
+        allow(swap_instance_plan).to receive_message_chain(:instance, :model, :to_s)
+        allow(instance0_plan).to receive_message_chain(:instance, :model, :to_s)
+        allow(instance1_plan).to receive_message_chain(:instance, :model, :to_s)
       end
 
       describe '#perform' do
-        before do
-          allow(AgentClient).to receive(:with_agent_id).with('swap_agent').and_return(swap_agent_client)
-          allow(AgentClient).to receive(:with_agent_id).with('instance0_agent').and_return(instance0_agent_client)
-          allow(AgentClient).to receive(:with_agent_id).with('instance1_agent').and_return(instance1_agent_client)
-        end
-
         it 'calls prepare for all agents with instances in deployment_plan that are newly created or hotswap' do
-          expect(swap_agent_client).to receive(:prepare).with('swap_spec')
-          expect(instance0_agent_client).to receive(:prepare).with('instance0_spec')
-          expect(instance1_agent_client).to receive(:prepare).with('instance1_spec')
+          expect(swap_prepare_step).to receive :perform
+          expect(instance0_prepare_step).to receive :perform
+          expect(instance1_prepare_step).to receive :perform
 
           subject.perform
         end

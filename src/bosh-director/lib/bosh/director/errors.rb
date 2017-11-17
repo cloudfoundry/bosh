@@ -239,6 +239,7 @@ module Bosh::Director
   DeploymentIgnoredInstancesDeletion = err(190021)
   DeploymentDuplicateVariableName = err(190022)
   DeploymentNATSClientCertificateGenerationError= err(190023)
+  DeploymentRequired = err(190024)
 
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)

@@ -7,6 +7,9 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(delete_vm_job)
+      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(event_log).to receive(:begin_stage).and_return(stage)
+      allow(stage).to receive(:advance_and_track).and_yield
     end
 
     let(:vm_cid) { 'vm_cid' }
@@ -14,10 +17,15 @@ module Bosh::Director
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:delete_vm_job) { instance_double(Bosh::Director::Jobs::DeleteVm, username: 'user', task_id: task.id, event_manager: event_manager) }
     let(:cloud) { Config.cloud }
+    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
+    let(:event_log){ Bosh::Director::EventLog::Log.new(task_writer) }
+    let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
 
     shared_examples_for 'vm delete' do
       it 'should delete vm' do
         expect(cloud).to receive(:delete_vm).with(vm_cid)
+        expect(event_log).to receive(:begin_stage).with('Delete VM', 1).and_return(stage)
+        expect(stage).to receive(:advance_and_track).with('vm_cid')
         expect(job.perform).to eq 'vm vm_cid deleted'
       end
 

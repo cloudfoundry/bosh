@@ -128,5 +128,7 @@
   "20171010161532_migrate_cloud_configs": "88816313055e4dfeb1816d73831a2e7a1c4b259c",
   "20171011122118_migrate_cpi_configs": "78b31890a8f2ce9bd1bb8b5d9a26bed69fb6dc30",
   "20171018102040_remove_compilation_local_dns_records": "5bb71074f5dfab23c1caef1a9fb1779190cb76d3",
-  "20171030224934_convert_nil_configs_to_empty": "38992699f41df50e7b4b869a9e89a2fd2d8770f2"
+  "20171030224934_convert_nil_configs_to_empty": "38992699f41df50e7b4b869a9e89a2fd2d8770f2",
+  "20171104185823_add_manifest_text_to_deployments": "fbb7a4d05c9e12ad6d1fdf3ec04fc5dccf09cad1",
+  "20171113000000_add_links_api": "aa3e46b2e6f4acfbbc99459aefacac639f4f05c6"
 }

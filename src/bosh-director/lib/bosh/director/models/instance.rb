@@ -173,6 +173,13 @@ module Bosh::Director::Models
       active_vm != nil && state != 'stopped' && !ignore
     end
 
+    def most_recent_inactive_vm
+      inactive_vms = self.vms.select{ |instance| instance.active == false }
+      inactive_vms.sort!{ |a,b| b.id <=> a.id }
+
+      inactive_vms.first
+    end
+
     def trusted_certs_sha1
       instance_active_vm = active_vm
       instance_active_vm.nil? ? ::Digest::SHA1.hexdigest('') : instance_active_vm.trusted_certs_sha1

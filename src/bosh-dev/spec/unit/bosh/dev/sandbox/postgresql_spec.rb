@@ -31,6 +31,22 @@ module Bosh::Dev::Sandbox
       end
     end
 
+    describe '#dump_db' do
+      it 'dumps the database' do
+        expect(runner).to receive(:run).with(
+          %Q{PGPASSWORD=my-pgpassword pg_dump -h host -p 9922 -U my-pguser -s "fake_db_name"})
+        postgresql.dump_db
+      end
+    end
+
+    describe '#describe_db' do
+      it 'describes database tables' do
+        expect(runner).to receive(:run).with(
+          %Q{PGPASSWORD=my-pgpassword psql -h host -p 9922 -U my-pguser -d "fake_db_name" -c '\\d+ public.*'})
+        postgresql.describe_db
+      end
+    end
+
     describe '#connection_string' do
       it 'returns a configured string' do
         expect(subject.connection_string).to eq('postgres://my-pguser:my-pgpassword@host:9922/fake_db_name')

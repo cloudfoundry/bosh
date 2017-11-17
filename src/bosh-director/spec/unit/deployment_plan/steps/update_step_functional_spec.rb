@@ -36,7 +36,7 @@ module Bosh::Director::DeploymentPlan::Steps
 
     let(:deployment_plan) do
       planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
-      manifest = Bosh::Director::Manifest.new(deployment_manifest, nil, nil)
+      manifest = Bosh::Director::Manifest.new(deployment_manifest, YAML.dump(deployment_manifest), nil, nil)
       deployment_plan = planner_factory.create_from_manifest(manifest, cloud_config, runtime_configs, {})
       Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan).bind_models
       deployment_plan

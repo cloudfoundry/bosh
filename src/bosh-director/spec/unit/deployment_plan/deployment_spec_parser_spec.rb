@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do
     subject(:parser) { described_class.new(deployment, event_log, logger) }
-    let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, cloud_config, runtime_configs, deployment_model, planner_options) }
+    let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, YAML.dump(manifest_hash), cloud_config, runtime_configs, deployment_model, planner_options) }
     let(:planner_options) { {} }
     let(:event_log) { Config.event_log }
     let(:cloud_config) { Models::Config.make(:cloud) }

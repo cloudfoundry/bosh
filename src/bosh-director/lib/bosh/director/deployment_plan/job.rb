@@ -93,7 +93,6 @@ module Bosh::Director
         present_model.logs
       end
 
-
       # return [Array]
       def model_consumed_links
         present_model.consumes.to_a.map { |l| TemplateLink.parse('consumes', l) }
@@ -133,6 +132,7 @@ module Bosh::Director
       end
 
       def add_link_from_release(instance_group_name, kind, link_name, source)
+      #TODO populate new provider object
         @link_infos[instance_group_name] ||= {}
         @link_infos[instance_group_name][kind] ||= {}
         @link_infos[instance_group_name][kind][link_name] ||= {}
@@ -153,6 +153,7 @@ module Bosh::Director
       end
 
       def add_link_from_manifest(instance_group_name, kind, link_name, source)
+        #TODO populate new provider object
         @link_infos[instance_group_name] ||= {}
         @link_infos[instance_group_name][kind] ||= {}
         @link_infos[instance_group_name][kind][link_name] ||= {}

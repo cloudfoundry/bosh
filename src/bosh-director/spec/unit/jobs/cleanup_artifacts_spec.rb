@@ -94,7 +94,6 @@ module Bosh::Director
             allow(event_log).to receive(:begin_stage).and_return(stage)
           end
 
-
           it 'logs and returns the result' do
             expect(event_log).to receive(:begin_stage).with('Deleting packages', 1).and_return(stage)
             expect(event_log).to receive(:begin_stage).with('Deleting jobs', 0).and_return(stage)
@@ -103,7 +102,6 @@ module Bosh::Director
             expect(event_log).to receive(:begin_stage).with('Deleting orphaned disks', 2).and_return(stage)
 
             result = subject.perform
-
             expect(result).to eq("Deleted 2 release(s), 2 stemcell(s), 2 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}")
 
             expect(Models::OrphanDisk.all).to be_empty
@@ -165,8 +163,6 @@ module Bosh::Director
 
           before do
             Models::Deployment.make
-            # blob1 = Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000)
-
             allow(blobstore).to receive(:delete).with(blob1.blob.blobstore_id)
           end
 

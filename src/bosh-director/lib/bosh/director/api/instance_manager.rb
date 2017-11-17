@@ -25,6 +25,16 @@ module Bosh::Director
         InstanceLookup.new.by_deployment(deployment)
       end
 
+      def vms_by_instances_for_deployment(deployment)
+        instances = InstanceLookup.new.by_deployment(deployment)
+
+        result = {}
+        instances.each do |instance|
+          result[instance] = instance.vms
+        end
+        result
+      end
+
       # @param [Models::Deployment] deployment
       # @param [Hash] filter Sequel-style DB record filter
       # @return [Array] List of instances that matched the filter

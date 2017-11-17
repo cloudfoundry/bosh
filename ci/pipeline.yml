@@ -118,8 +118,6 @@ jobs:
             params:
               RUBY_VERSION: 2.4.2
               DB: mysql
-          on_failure:
-            <<: *slack-alert
 
         - task: test-mysql-5.6
           privileged: true
@@ -136,8 +134,6 @@ jobs:
             params:
               RUBY_VERSION: 2.4.2
               DB: mysql
-          on_failure:
-            <<: *slack-alert
 
         - task: test-mysql-5.7
           privileged: true
@@ -154,8 +150,9 @@ jobs:
             params:
               RUBY_VERSION: 2.4.2
               DB: mysql
-          on_failure:
-            <<: *slack-alert
+
+        on_failure:
+          <<: *slack-alert
 
   - name: unit-2.4-postgres
     public: true
@@ -180,8 +177,6 @@ jobs:
               RUBY_VERSION: 2.4.2
               DB: postgresql
               DB_VERSION: 9.3
-          on_failure:
-            <<: *slack-alert
 
         - task: test-postgres-9.4
           privileged: true
@@ -199,8 +194,6 @@ jobs:
               RUBY_VERSION: 2.4.2
               DB: postgresql
               DB_VERSION: 9.4
-          on_failure:
-            <<: *slack-alert
 
         - task: test-postgres-9.5
           privileged: true
@@ -218,8 +211,6 @@ jobs:
               RUBY_VERSION: 2.4.2
               DB: postgresql
               DB_VERSION: 9.5
-          on_failure:
-            <<: *slack-alert
 
         - task: test-postgres-9.6
           privileged: true
@@ -237,8 +228,9 @@ jobs:
               RUBY_VERSION: 2.4.2
               DB: postgresql
               DB_VERSION: 9.6
-          on_failure:
-            <<: *slack-alert
+
+        on_failure:
+          <<: *slack-alert
 
   - name: unit-2.4-db-migrations-rds
     public: true
@@ -269,8 +261,8 @@ jobs:
             DB_HOST: ((postgresql-rds-host))
             DB_USER: ((postgresql-rds-user))
             DB_PASSWORD: ((postgresql-rds-password))
-          on_failure:
-            <<: *slack-alert
+        on_failure:
+          <<: *slack-alert
 
   - name: blobstore-client-integration
     public: true

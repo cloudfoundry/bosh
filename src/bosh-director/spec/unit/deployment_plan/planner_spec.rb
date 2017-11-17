@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_configs, runtime_config_consolidator, deployment_model, options) }
+      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options) }
 
       let(:options) { {} }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
@@ -97,15 +97,15 @@ module Bosh::Director
         end
 
         it 'manifest should be immutable' do
-          subject = Planner.new(planner_attributes, minimal_manifest, cloud_configs, runtime_config_consolidator, deployment_model, options)
+          subject = Planner.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options)
           minimal_manifest['name'] = 'new_name'
-          expect(subject.uninterpolated_manifest_text['name']).to eq('minimal')
+          expect(subject.uninterpolated_manifest_hash['name']).to eq('minimal')
         end
 
         it 'should parse recreate' do
           expect(planner.recreate).to be_falsey
 
-          plan = described_class.new(planner_attributes, manifest_text, cloud_configs, runtime_config_consolidator, deployment_model, 'recreate' => true)
+          plan = described_class.new(planner_attributes, manifest_text, YAML.dump(manifest_text), cloud_configs, runtime_config_consolidator, deployment_model, 'recreate' => true)
           expect(plan.recreate).to be_truthy
         end
 
@@ -456,6 +456,30 @@ module Bosh::Director
 
           it 'returns team names from the deployment' do
             expect(subject.team_names).to match_array(["team_1", "team_3"])
+          end
+        end
+
+        context 'links' do
+          describe '#add_link_providers' do
+            let(:link_provider) {instance_double(Models::LinkProvider)}
+            before do
+              subject.add_link_provider link_provider
+            end
+            it 'adds link provider to list of providers' do
+              expect(subject.link_providers.count).to eq(1)
+              expect(subject.link_providers[0]).to eq(link_provider)
+            end
+          end
+
+          describe '#add_link_consumers' do
+            let(:link_consumer) {instance_double(Models::LinkConsumer)}
+            before do
+              subject.add_link_consumer link_consumer
+            end
+            it 'adds link consumer to list of consumers' do
+              expect(subject.link_consumers.count).to eq(1)
+              expect(subject.link_consumers[0]).to eq(link_consumer)
+            end
           end
         end
       end

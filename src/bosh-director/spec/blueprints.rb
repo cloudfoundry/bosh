@@ -258,6 +258,8 @@ module Bosh::Director::Models
 
   Variable.blueprint {}
 
+  LinkProvider.blueprint {}
+
   Vm.blueprint do
     cid      { Sham.vm_cid }
     agent_id { Sham.agent_id }

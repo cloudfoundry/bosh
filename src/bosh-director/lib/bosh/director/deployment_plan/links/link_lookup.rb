@@ -11,7 +11,9 @@ module Bosh::Director
           unless provider_deployment
             raise DeploymentInvalidLink, "Link '#{consumed_link}' references unknown deployment '#{link_path.deployment}'"
           end
-          DeploymentLinkSpecLookup.new(consumed_link, link_path, provider_deployment.link_spec, link_network_options)
+
+          link_providers = Models::LinkProvider.where(deployment_id: provider_deployment.id).all
+          DeploymentLinkProviderLookup.new(consumed_link, link_path, link_providers, link_network_options)
         end
       end
     end
@@ -52,8 +54,9 @@ module Bosh::Director
         @deployment_plan = deployment_plan
       end
 
-      def find_link_spec
+      def find_link_provider
         instance_group = @deployment_plan.instance_groups.find { |instance_group| instance_group.name == @link_path.job }
+
         return nil unless instance_group
 
         if @link_path.disk?
@@ -106,32 +109,33 @@ module Bosh::Director
     end
 
     # Used to find link source from link spec in deployment model (saved in DB)
-    class DeploymentLinkSpecLookup < BaseLinkLookup
-      def initialize(consumed_link, link_path, deployment_link_spec, link_network_options)
+    class DeploymentLinkProviderLookup < BaseLinkLookup
+      def initialize(consumed_link, link_path, deployment_link_provider, link_network_options)
         super(link_network_options)
         @consumed_link = consumed_link
         @link_path = link_path
-        @deployment_link_spec = deployment_link_spec
+        @deployment_link_provider = deployment_link_provider
       end
 
-      def find_link_spec
-        job = @deployment_link_spec[@link_path.job]
-        return nil unless job
+      def find_link_provider
+        return nil if @deployment_link_provider.empty?
 
-        template = job[@link_path.template]
-        return nil unless template
+        job = @deployment_link_provider.select{|lp|
+          lp[:instance_group] == @link_path.job &&
+          lp[:owner_object_name] == @link_path.template &&
+          lp[:name] == @link_path.name}
+        return nil if job.empty?
 
-        link_spec = template.fetch(@link_path.name, {})[@consumed_link.type]
-        return nil unless link_spec
+        template = job.select{|j| j[:link_provider_definition_type] == @consumed_link.type }
+        return nil if template.empty?
 
-        update_addresses!(link_spec)
+        update_addresses!(JSON.parse(template.first[:content]))
       end
 
       private
 
       def update_addresses!(link_spec)
         link_spec_copy = Bosh::Common::DeepCopy.copy(link_spec)
-
         if !link_spec_copy.has_key?('default_network')
           if !@link_use_ip_address.nil?
             raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'

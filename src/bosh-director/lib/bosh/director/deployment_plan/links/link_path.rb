@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class LinkPath
-      attr_reader :deployment, :job, :template, :name, :path, :skip, :manual_spec
+      attr_reader :deployment_plan_name, :deployment, :job, :template, :name, :path, :skip, :manual_spec
 
       def initialize(deployment_plan_name, instance_groups, instance_group_name, job_name)
         @deployment_plan_name = deployment_plan_name
@@ -27,7 +27,6 @@ module Bosh::Director
           @skip = true
           return
         end
-
 
         if link_info.has_key?('from')
           link_path = fulfill_explicit_link(link_info)
@@ -56,7 +55,7 @@ module Bosh::Director
       end
 
       def to_s
-        "#{deployment}.#{job}.#{template}.#{name}"
+        "#{@deployment}.#{@job}.#{@template}.#{@name}"
       end
 
       private
@@ -169,30 +168,23 @@ module Bosh::Director
       end
 
       def find_deployment_and_get_link_path(deployment_name, name, link_network)
-        deployment_model = Models::Deployment.where(:name => deployment_name)
-
-        # get the link path from that deployment
-        if deployment_model.count != 0
-          return find_link_path_with_name(deployment_model.first, name, link_network)
-        else
+        deployment_model = Models::Deployment.find(name: deployment_name)
+        if !deployment_model
           raise "Can't find deployment #{deployment_name}"
         end
-      end
+
+        # get the link path from that deployment
+        find_link_path_with_name(deployment_model, name, link_network)
+    end
 
       def find_link_path_with_name(deployment, name, link_network)
-        deployment_link_spec = deployment.link_spec
         found_link_paths = []
-        deployment_link_spec.keys.each do |job|
-          deployment_link_spec[job].keys.each do |template|
-            deployment_link_spec[job][template].keys.each do |link|
-              if link == name
-                deployment_link_spec[job][template][link].keys.each do |type|
-                  if !link_network || (deployment_link_spec[job][template][link][type]['networks'].include? link_network)
-                    found_link_paths.push({:deployment => deployment.name, :job => job, :template => template, :name => name})
-                  end
-                end
-              end
-            end
+
+        Models::LinkProvider.where(deployment: deployment, name: name).each do |lp|
+          content = JSON.parse(lp.content)
+          if lp.shared && (!link_network || (content['networks'].include? link_network))
+            #TODO extract instance_group name from top level element from `link_provider`
+            found_link_paths.push({:deployment => deployment.name, :job => lp.instance_group, :template => lp.owner_object_name, :name => name})
           end
         end
         if found_link_paths.size == 1

@@ -17,6 +17,8 @@
 .vagrant
 .yardoc
 src/go/src/github.com/cloudfoundry/bosh-agent
+src/postgresql.dump.sql
+src/postgresql.tables.txt
 
 Checkfile
 TAGS

@@ -20,6 +20,22 @@ describe 'Links', type: :integration do
     end
   end
 
+  def send_director_api_request(url_path, query, method)
+    director_url = URI(current_sandbox.director_url)
+    director_url.path = URI.escape(url_path)
+    director_url.query = URI.escape(query)
+
+    req = Net::HTTP::Get.new(director_url)
+    req.basic_auth 'test', 'test'
+
+    res = Net::HTTP.start(director_url.hostname, director_url.port,
+    :use_ssl => true,
+    :verify_mode => OpenSSL::SSL::VERIFY_PEER,
+    :ca_file => current_sandbox.certificate_path) {|http|
+      http.request(req)
+    }
+  end
+
   let(:cloud_config) do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
@@ -283,6 +299,266 @@ describe 'Links', type: :integration do
               'address' => '192.168.1.12'
             }
           )
+      end
+
+      it 'links api lists link provider' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
+
+        expect(response).not_to eq(nil)
+
+        expect(response.code).to eq('200')
+        response_body = JSON.parse(response.read_body)
+
+        expect(response_body).to_not eq({}.to_json)
+        expect(response_body[0]['deployment']).to eq(manifest['name'])
+        expect(response_body[0]['instance_group']).to eq('mysql')
+        expect(response_body[0]['link_provider_definition']).to eq({'type' => 'db', 'name' => 'db'})
+        expect(response_body[0]['owner_object']).to eq({"type" => 'Job', "name" => 'database'})
+        expect(response_body[0]['content']).to_not eq({})
+        expect(response_body[0]['shared']).to eq(false)
+
+        id = response_body[1]['content'][/id":"([a-z0-9-]*)"/,1]
+
+        body_one = {
+          'id'=>2,
+          'name'=>'backup_db',
+          'shared'=>false,
+          'deployment'=>'simple',
+          'instance_group'=>'postgres',
+          'content'=>"{\"deployment_name\":\"simple\",\"domain\":\"bosh\",\"default_network\":\"a\",\"networks\":[\"a\"],\"instance_group\":\"postgres\",\"properties\":{\"foo\":\"backup_bar\"},\"instances\":[{\"name\":\"postgres\",\"id\":\"#{id}\",\"index\":0,\"bootstrap\":true,\"az\":\"z1\",\"address\":\"192.168.1.12\",\"addresses\":{\"a\":\"192.168.1.12\"},\"dns_addresses\":{\"a\":\"192.168.1.12\"}}]}",
+          'link_provider_definition'=>{'type'=>'db', 'name'=>'backup_db'},
+          'owner_object'=> {
+            'type'=>'Job',
+            'name'=>'backup_database',
+          }
+        }
+        expect(response_body[1]).to eq(body_one)
+      end
+
+      context 'deploy of manifest' do
+        let(:links) do
+          {
+            'db' => {'from' => 'link_alias'},
+            'backup_db' => {'from' => 'link_alias'},
+          }
+        end
+
+        let(:optional_links) do
+          {
+            'db' => {'from' => 'link_alias'}
+          }
+        end
+
+        let(:api_job_spec) do
+          job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'my_api',
+            jobs: [{'name' => 'api_server', 'consumes' => links}],
+            instances: 1
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:aliased_job_spec) do
+          job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'aliased_postgres',
+            jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+            instances: 1,
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+          end
+
+        let(:api_server_with_optional_db_links)do
+          job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'optional_db',
+            jobs: [{'name' => 'api_server_with_optional_db_link', 'consumes' => optional_links}],
+            instances: 1,
+            static_ips: ['192.168.1.13']
+          )
+          job_spec['azs'] = ['z1']
+          job_spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['instance_groups'] = [api_server_with_optional_db_links, api_job_spec, aliased_job_spec]
+          manifest
+        end
+
+        before do
+          deploy_simple_manifest(manifest_hash: manifest)
+        end
+
+        it 'should create a provider and consumer' do
+          response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
+
+          expect(response).not_to eq(nil)
+
+          expect(response.code).to eq('200')
+          response_body = JSON.parse(response.read_body)
+          expect(response_body.count).to eq(1)
+
+          response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
+
+          expect(response).not_to eq(nil)
+          expect(response.code).to eq('200')
+          response_body = JSON.parse(response.read_body)
+          expect(response_body.count).to eq(2)
+        end
+
+        context 'without provider and consumer jobs' do
+          let(:manifest) do
+            manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+            manifest['instance_groups'] = []
+            manifest
+          end
+
+          it 'has no providers' do
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
+
+            expect(response).not_to eq(nil)
+
+            expect(response.code).to eq('200')
+            response_body = JSON.parse(response.read_body)
+            expect(response_body.count).to eq(0)
+          end
+
+          it 'has no consumers' do
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
+
+            expect(response).not_to eq(nil)
+            expect(response.code).to eq('200')
+            response_body = JSON.parse(response.read_body)
+            expect(response_body.count).to eq(0)
+          end
+        end
+
+        context 'with jobs but without links' do
+          let(:optional_links) do
+            {}
+          end
+
+          it 'has no providers' do
+            manifest['instance_groups'] = [api_server_with_optional_db_links]
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
+
+            expect(response).not_to eq(nil)
+            expect(response.code).to eq('200')
+            response_body = JSON.parse(response.read_body)
+            expect(response_body.count).to eq(0)
+          end
+
+          it 'has no consumers' do
+            manifest['instance_groups'] = [aliased_job_spec]
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
+
+            expect(response).not_to eq(nil)
+            expect(response.code).to eq('200')
+            response_body = JSON.parse(response.read_body)
+            expect(response_body.count).to eq(0)
+          end
+        end
+
+        context 'with same jobs but different link alias' do
+          let(:links2) do
+            {
+              'db' => {'from'=>'link_alias2'},
+              'backup_db' => {'from' => 'link_alias2'},
+            }
+          end
+
+          let(:optional_links2) do
+            {
+              'db' => {'from' => 'link_alias2'}
+            }
+          end
+
+          let(:api_job_spec2) do
+            spec = Bosh::Spec::NewDeployments.simple_instance_group(
+              name: 'my_api',
+              jobs: [{'name' => 'api_server', 'consumes' => links2}],
+              instances: 1
+            )
+            spec['azs'] = ['z1']
+            spec
+          end
+
+          let(:aliased_job_spec2) do
+            spec = Bosh::Spec::NewDeployments.simple_instance_group(
+              name: 'aliased_postgres',
+              jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias2'}}}],
+              instances: 1,
+            )
+            spec['azs'] = ['z1']
+            spec
+          end
+
+          let(:api_server_with_optional_db_links2)do
+            spec = Bosh::Spec::NewDeployments.simple_instance_group(
+              name: 'optional_db',
+              jobs: [{'name' => 'api_server_with_optional_db_link', 'consumes' => optional_links2}],
+              instances: 1,
+              static_ips: ['192.168.1.13']
+            )
+            spec['azs'] = ['z1']
+            spec
+          end
+
+          let(:new_manifest) do
+            manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+            manifest['instance_groups'] = [api_server_with_optional_db_links2, api_job_spec2, aliased_job_spec2]
+            manifest
+          end
+
+          it 'still has a new provider with updated link' do
+            response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
+            response_body = JSON.parse(response.read_body)
+            original_provider_id = response_body[0]['id']
+            original_provider_link_name = response_body[0]['link_provider_definition']['name']
+
+            deploy_simple_manifest(manifest_hash: new_manifest)
+
+            response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
+
+            expect(response).not_to eq(nil)
+            expect(response.code).to eq('200')
+            response_body = JSON.parse(response.read_body)
+            expect(response_body.count).to eq(1)
+            expect(response_body[0]['id']).to_not eq(original_provider_id)
+            expect(response_body[0]['link_provider_definition']['name']).to eq(original_provider_link_name)
+          end
+
+          it 'still has the same consumers' do
+            response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
+            response_body = JSON.parse(response.read_body)
+            original_consumer_ids = []
+            response_body.each do |consumer|
+              original_consumer_ids << consumer['id']
+            end
+
+            deploy_simple_manifest(manifest_hash: new_manifest)
+
+            response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
+
+            expect(response).not_to eq(nil)
+            expect(response.code).to eq('200')
+            response_body = JSON.parse(response.read_body)
+            expect(response_body.count).to eq(2)
+            expect(response_body[0]['id']).to eq(original_consumer_ids[0])
+            expect(response_body[1]['id']).to eq(original_consumer_ids[1])
+          end
+        end
       end
     end
 
@@ -617,6 +893,24 @@ Error: Unable to process links for deployment. Errors are:
             }
           )
       end
+
+      it 'links api lists link consumer' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
+
+        expect(response).not_to eq(nil)
+
+        expect(response.code).to eq('200')
+        response_body = JSON.parse(response.read_body)
+
+        expect(response_body).to_not eq({}.to_json)
+        expect(response_body.count).to eq(1)
+        expect(response_body[0]['deployment']).to eq(manifest['name'])
+        expect(response_body[0]['instance_group']).to eq('my_api')
+        expect(response_body[0]['owner_object']).to eq({"type" => 'Job','name'=>'api_server'})
+      end
+
     end
 
     context 'deployment job does not have templates' do
@@ -1948,6 +2242,133 @@ Error: Unable to process links for deployment. Errors are:
         expect(template['databases']['backup_properties']).to eq('props_backup_db_bar')
       end
     end
+
+    context 'when consumer and provider has different types' do
+      let(:cloud_config) {Bosh::Spec::NewDeployments.simple_cloud_config}
+
+      let(:provider_alias) {'provider_login'}
+      let(:provides_definition) do
+        {
+          'admin' => {
+            'as' => provider_alias
+          }
+        }
+      end
+
+      let(:consumes_definition) do
+        {
+          'login' => {
+            'from' => provider_alias
+          }
+        }
+      end
+
+      let(:new_provides_definition) do
+        {
+          'credentials' => {
+            'as' => provider_alias
+          }
+        }
+      end
+
+      def get_provider_instance_group(provides_definition)
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'provider_ig',
+          jobs: [
+            {
+              'name' => 'provider_job',
+              'provides' => provides_definition
+            }
+          ],
+          instances: 2
+        )
+        instance_group_spec
+      end
+
+      let(:consumer_instance_group) do
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'consumer_ig',
+          jobs: [
+            {
+              'name' => 'consumer_job',
+              'consumes' => consumes_definition
+            }
+          ],
+          instances: 1
+        )
+        instance_group_spec
+      end
+
+      let(:releases) do
+        [
+          {
+            'name' => 'changing_job_with_stable_links',
+            'version' => 'latest',
+          }
+        ]
+      end
+
+      context 'but the alias is same' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NewDeployments.minimal_manifest
+          manifest['releases'] = releases
+          manifest['instance_groups'] = [get_provider_instance_group(provides_definition), consumer_instance_group]
+          manifest
+        end
+
+        it 'should fail to create the link' do
+          bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
+          output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+          expect(output).to include(%Q{Error: Cannot resolve link path 'minimal.provider_ig.provider_job.provider_login' required for link 'login' in instance group 'consumer_ig' on job 'consumer_job'})
+        end
+
+        context 'and the link is shared from another deployment' do
+          let(:provider_manifest) do
+            manifest = Bosh::Spec::NewDeployments.minimal_manifest
+            manifest['name'] = 'provider_deployment'
+            manifest['releases'] = releases
+            manifest['instance_groups'] = [get_provider_instance_group(provides_definition)]
+            manifest
+          end
+
+          let(:consumer_manifest) do
+            manifest = Bosh::Spec::NewDeployments.minimal_manifest
+            manifest['name'] = 'consumer_deployment'
+            manifest['releases'] = releases
+            manifest['instance_groups'] = [consumer_instance_group]
+            manifest
+          end
+
+          let(:provides_definition) do
+            {
+              'admin' => {
+                'shared' => true,
+                'as' => provider_alias
+              }
+            }
+          end
+
+          let(:consumes_definition) do
+            {
+              'login' => {
+                'deployment' => provider_manifest['name'],
+                'from' => provider_alias
+              }
+            }
+          end
+
+          before do
+            bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
+            deploy_simple_manifest(manifest_hash: provider_manifest)
+          end
+
+          it 'should fail to create the link' do
+            output = deploy_simple_manifest(manifest_hash: consumer_manifest, failure_expected: true)
+            expect(output).to include(%Q{Error: Cannot resolve link path 'provider_deployment.provider_ig.provider_job.provider_login' required for link 'login' in instance group 'consumer_ig' on job 'consumer_job'})
+          end
+        end
+      end
+    end
   end
 
   context 'when addon job requires link' do
@@ -2075,6 +2496,23 @@ Error: Unable to process links for deployment. Errors are:
       expect(template['c']).to eq(4)
       expect(template['nested']['one']).to eq('three')
       expect(template['nested']['two']).to eq('four')
+    end
+
+    it 'should only have one consumer and no providers' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['instance_groups'] = [instance_group_with_manual_consumes_link]
+
+      deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
+
+      response = send_director_api_request("/link_providers", "deployment=#{manifest['name']}", 'GET')
+      expect(response).not_to eq(nil)
+      response_body = JSON.parse(response.read_body)
+      expect(response_body.count).to eq(0)
+
+      response = send_director_api_request("/link_consumers", "deployment=#{manifest['name']}", 'GET')
+      expect(response).not_to eq(nil)
+      response_body = JSON.parse(response.read_body)
+      expect(response_body.count).to eq(1)
     end
   end
 

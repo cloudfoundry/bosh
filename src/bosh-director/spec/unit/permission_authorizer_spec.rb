@@ -350,6 +350,10 @@ module Bosh::Director
             expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.admin'])).to eq(true)
           end
 
+          it 'allows team read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.security.read'])).to eq(true)
+          end
+
           it 'denies others' do
             expect(subject.is_granted?(acl_subject, acl_right, [
                   'bosh.unexpected-uuid.admin', # other director-specific admin scope

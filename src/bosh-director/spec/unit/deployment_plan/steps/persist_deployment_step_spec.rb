@@ -37,6 +37,14 @@ module Bosh::Director
           }
         }
       end
+
+      let(:raw_manifest_text) do
+      %Q(---
+        name: minimal
+        releases:
+          - name: appcloud
+            version: "0.1")
+      end
       let(:cloud_config) { Models::Config.make(:cloud)}
       let(:runtime_configs) { [Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime)] }
       let(:link_spec) {
@@ -57,7 +65,8 @@ module Bosh::Director
       }
 
       before do
-        allow(deployment_planner).to receive(:uninterpolated_manifest_text).and_return(minimal_manifest)
+        allow(deployment_planner).to receive(:uninterpolated_manifest_hash).and_return(minimal_manifest)
+        allow(deployment_planner).to receive(:raw_manifest_text).and_return(raw_manifest_text)
         Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
         allow(deployment_planner).to receive(:model).and_return(deployment_model)
       end
@@ -112,6 +121,12 @@ module Bosh::Director
             subject.perform
             reloaded_model = deployment_model.reload
             expect(reloaded_model.manifest).to eq(YAML.dump(minimal_manifest))
+          end
+
+          it 'saves original raw manifest' do
+            subject.perform
+            reloaded_model = deployment_model.reload
+            expect(reloaded_model.manifest_text).to eq(raw_manifest_text)
           end
 
           it 'saves cloud config' do
