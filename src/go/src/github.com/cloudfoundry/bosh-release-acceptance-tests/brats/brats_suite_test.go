@@ -73,11 +73,7 @@ func assertEnvExists(envName string) string {
 	return val
 }
 
-func startInnerBosh() {
-	startInnerBoshWithParams()
-}
-
-func startInnerBoshWithParams(args ...string) {
+func startInnerBosh(args ...string) {
 	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), args...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
@@ -91,4 +87,42 @@ func stopInnerBosh() {
 	session, err := gexec.Start(exec.Command("../../../../../../../ci/docker/main-bosh-docker/destroy-inner-bosh.sh"), GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+}
+
+func assetPath(filename string) string {
+	path, err := filepath.Abs("../assets/" + filename)
+	Expect(err).ToNot(HaveOccurred())
+
+	return path
+}
+
+func execCommand(binaryPath string, args ...string) (*gexec.Session, error) {
+	return gexec.Start(exec.Command(binaryPath, args...), GinkgoWriter, GinkgoWriter)
+}
+
+func bbr(args ...string) (*gexec.Session, error) {
+	return execCommand(bbrBinaryPath, args...)
+}
+
+func outerBosh(args ...string) (*gexec.Session, error) {
+	return execCommand(outerBoshBinaryPath, args...)
+}
+
+func bosh(args ...string) (*gexec.Session, error) {
+	return execCommand(boshBinaryPath, args...)
+}
+
+func uploadStemcell(stemcellUrl string) {
+	session, err := bosh("-n", "upload-stemcell", stemcellUrl)
+	mustExec(session, err, 5*time.Minute, 0)
+}
+
+func uploadRelease(releaseUrl string) {
+	session, err := bosh("-n", "upload-release", releaseUrl)
+	mustExec(session, err, 2*time.Minute, 0)
+}
+
+func mustExec(session *gexec.Session, err error, timeout time.Duration, exitCode int) {
+	Expect(err).ToNot(HaveOccurred())
+	Eventually(session, timeout).Should(gexec.Exit(exitCode))
 }

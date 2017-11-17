@@ -2,8 +2,6 @@ package brats_test
 
 import (
 	"fmt"
-	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
 )
 
 func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string {
@@ -31,14 +28,10 @@ func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string 
 }
 
 func mustGetLatestDnsVersions() []int {
-	session, err := gexec.Start(exec.Command(
-		boshBinaryPath, "-n",
-		"-d", deploymentName,
-		"ssh",
+	session, err := bosh("-n", "-d", deploymentName, "ssh",
 		"-c", "sudo cat /var/vcap/instance/dns/records.json",
-	), GinkgoWriter, GinkgoWriter)
-	Expect(err).ToNot(HaveOccurred())
-	Eventually(session, time.Minute).Should(gexec.Exit(0))
+	)
+	mustExec(session, err, time.Minute, 0)
 
 	trimmedOutput := strings.TrimSpace(string(session.Out.Contents()))
 
@@ -74,60 +67,43 @@ var _ = Describe("BoshDns", func() {
 	BeforeEach(func() {
 		startInnerBosh()
 
-		session, err := gexec.Start(exec.Command(boshBinaryPath, "-n", "upload-stemcell", candidateWardenLinuxStemcellPath), GinkgoWriter, GinkgoWriter)
-		Expect(err).ToNot(HaveOccurred())
-		Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+		uploadStemcell(candidateWardenLinuxStemcellPath)
 
-		manifestPath, err = filepath.Abs("../assets/dns-with-templates-manifest.yml")
-		Expect(err).NotTo(HaveOccurred())
-
-		linkedTemplateReleasePath, err = filepath.Abs("../assets/linked-templates-release")
-		Expect(err).NotTo(HaveOccurred())
+		manifestPath = assetPath("dns-with-templates-manifest.yml")
+		linkedTemplateReleasePath = assetPath("linked-templates-release")
 	})
 
-	AfterEach(stopInnerBosh)
+	AfterEach(func() {
+		stopInnerBosh()
+	})
 
 	Context("having enabled short dns addresses", func() {
 		BeforeEach(func() {
-			opFilePath, err := filepath.Abs("../assets/op-enable-short-dns-addresses.yml")
-			Expect(err).NotTo(HaveOccurred())
+			opFilePath := assetPath("op-enable-short-dns-addresses.yml")
 
-			session, err := gexec.Start(exec.Command(
-				boshBinaryPath, "deploy",
-				"-n",
-				"-d", deploymentName,
-				manifestPath,
+			session, err := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
-			), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			)
+			mustExec(session, err, 15*time.Minute, 0)
 		})
 
 		It("can find instances using the address helper with short names", func() {
-			session, err := gexec.Start(exec.Command(
-				boshBinaryPath, "-n",
-				"-d", deploymentName,
-				"instances",
+			session, err := bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
-			), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, time.Minute).Should(gexec.Exit(0))
+			)
+			mustExec(session, err, time.Minute, 0)
 
 			instanceList := session.Out.Contents()
 
 			matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
 			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-			session, err = gexec.Start(exec.Command(boshBinaryPath,
-				"-d", deploymentName,
-				"run-errand", "query-all",
-			), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, time.Minute).Should(gexec.Exit(0))
+			session, err = bosh("-d", deploymentName, "run-errand", "query-all")
+			mustExec(session, err, time.Minute, 0)
 
 			Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
 
@@ -141,28 +117,20 @@ var _ = Describe("BoshDns", func() {
 		})
 
 		PIt("can find instances using the address helper with short names by network and instance ID", func() {
-			session, err := gexec.Start(exec.Command(
-				boshBinaryPath, "-n",
-				"-d", deploymentName,
-				"instances",
+			session, err := bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
-			), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, time.Minute).Should(gexec.Exit(0))
+			)
+			mustExec(session, err, time.Minute, 0)
 
 			instanceList := session.Out.Contents()
 
 			matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
 			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-			session, err = gexec.Start(exec.Command(boshBinaryPath,
-				"-d", deploymentName,
-				"run-errand", "query-individual-instance",
-			), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, time.Minute).Should(gexec.Exit(0))
+			session, err = bosh("-d", deploymentName, "run-errand", "query-individual-instance")
+			mustExec(session, err, time.Minute, 0)
 
 			Expect(session.Out).To(gbytes.Say("ANSWER: 1"))
 
@@ -175,29 +143,20 @@ var _ = Describe("BoshDns", func() {
 
 	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
-			session, err := gexec.Start(exec.Command(
-				boshBinaryPath, "deploy",
-				"-n",
-				"-d", deploymentName,
-				manifestPath,
+			session, err := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
-			), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			)
+			mustExec(session, err, 15*time.Minute, 0)
 		})
 
 		It("can find instances using the address helper", func() {
-			session, err := gexec.Start(exec.Command(
-				boshBinaryPath, "-n",
-				"-d", deploymentName,
-				"instances",
+			session, err := bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
-			), GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, time.Minute).Should(gexec.Exit(0))
+			)
+			mustExec(session, err, time.Minute, 0)
 
 			instanceList := session.Out.Contents()
 
@@ -205,12 +164,8 @@ var _ = Describe("BoshDns", func() {
 				matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-				session, err = gexec.Start(exec.Command(boshBinaryPath,
-					"-d", deploymentName,
-					"run-errand", "query-all",
-				), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				session, err = bosh("-d", deploymentName, "run-errand", "query-all")
+				mustExec(session, err, time.Minute, 0)
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
 				output := string(session.Out.Contents())
@@ -226,12 +181,8 @@ var _ = Describe("BoshDns", func() {
 				matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-				session, err = gexec.Start(exec.Command(boshBinaryPath,
-					"-d", deploymentName,
-					"run-errand", "query-with-az-filter",
-				), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				session, err = bosh("-d", deploymentName, "run-errand", "query-with-az-filter")
+				mustExec(session, err, time.Minute, 0)
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 2"))
 				output := string(session.Out.Contents())
@@ -253,14 +204,12 @@ var _ = Describe("BoshDns", func() {
 				}
 			}
 
-			session, err := gexec.Start(exec.Command("ssh",
+			session, err := execCommand("ssh",
 				fmt.Sprintf("%s@%s", innerDirectorUser, innerDirectorIP),
 				"-i", innerBoshJumpboxPrivateKeyPath,
 				"-oStrictHostKeyChecking=no",
-				"sudo /var/vcap/jobs/director/bin/sync_dns_ctl force"),
-				GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+				"sudo /var/vcap/jobs/director/bin/sync_dns_ctl force")
+			mustExec(session, err, 2*time.Minute, 0)
 
 			newVersionPerInstance := mustGetLatestDnsVersions()
 			firstNewVersion := newVersionPerInstance[0]
