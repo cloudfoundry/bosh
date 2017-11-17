@@ -8,10 +8,14 @@ SSL_DIR=/var/vcap/jobs/director/config/ssl
 TMP_DIR=/var/vcap/data/director/tmp
 RUNAS=vcap
 
+source $JOB_DIR/helpers/utils.sh
+
 case $1 in
 
   start)
     mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR
+
+    pid_guard $PIDFILE "nginx"
 
     echo $$ > $PIDFILE
 

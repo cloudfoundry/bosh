@@ -10,6 +10,7 @@ templates:
   write_users.erb:    config/write_users
   bbr_backup:         bin/bbr/backup
   bbr_restore:        bin/bbr/restore
+  utils.sh:           helpers/utils.sh
 
 packages:
 - nginx
