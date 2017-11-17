@@ -29,6 +29,7 @@ templates:
   nats_client_private_key.erb: config/nats_client_private_key
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
+  utils.sh: helpers/utils.sh
 
 packages:
 - director
