@@ -1,0 +1,8 @@
+---
+- type: replace
+  path: /instance_groups/name=bosh/properties/blobstore/allow_http?
+  value: ((allow_http))
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/agent/env/bosh/blobstores/provider=dav/options/endpoint
+  value: ((agent_blobstore_endpoint))

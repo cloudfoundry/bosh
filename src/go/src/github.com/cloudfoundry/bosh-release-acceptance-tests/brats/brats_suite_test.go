@@ -74,7 +74,11 @@ func assertEnvExists(envName string) string {
 }
 
 func startInnerBosh() {
-	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"))
+	startInnerBoshWithParams()
+}
+
+func startInnerBoshWithParams(args ...string) {
+	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), args...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
 

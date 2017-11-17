@@ -87,3 +87,40 @@
   path: /instance_groups/name=bosh/properties/director/local_dns?/enabled?
   value: true
 
+- type: replace
+  path: /instance_groups/name=bosh/properties/blobstore/tls?/cert
+  value:
+    ca: ((blobstore_ca_cert.ca))
+    certificate: ((blobstore_ssl.certificate))
+    private_key: ((blobstore_ssl.private_key))
+
+- type: replace
+  path: /variables/-
+  value:
+    name: blobstore_ca_cert
+    type: certificate
+    options:
+      is_ca: true
+      common_name: bosh-blobstore-ca
+
+- type: replace
+  path: /variables/-
+  value:
+    name: blobstore_ssl
+    type: certificate
+    options:
+      ca: blobstore_ca_cert
+      common_name: ((internal_ip))
+      alternative_names: [((internal_ip)), 10.254.50.4]
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/agent/env?/bosh/blobstores
+  value:
+    - provider: dav
+      options:
+        endpoint: 'https://((internal_ip)):25250'
+        user: 'agent'
+        password: ((blobstore_agent_password))
+        tls:
+          cert:
+            ca: ((blobstore_ca_cert.ca))
