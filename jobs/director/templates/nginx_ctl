@@ -8,6 +8,10 @@ SSL_DIR=/var/vcap/jobs/director/config/ssl
 TMP_DIR=/var/vcap/data/director/tmp
 RUNAS=vcap
 
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
 case $1 in
 
   start)
@@ -26,8 +30,22 @@ case $1 in
 
   stop)
     PID=$(head -1 $PIDFILE)
-    kill $PID
-    while [ -e /proc/$PID ]; do sleep 0.1; done
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill $PID
+    fi
+    TRIES=0
+    while [ -e /proc/$PID ]
+    do
+      TRIES=$(( $TRIES + 1 ))
+      if [ $TRIES -gt 100 ]; then
+        CHILD_PIDS=$(ps --forest -o pid=  -g $(ps -o sid= $PID) | sed 's/ //g' | grep -v "^${PID}$")
+        kill -9 $PID
+        for CHILD_PID in $CHILD_PIDS; do
+          kill -9 $CHILD_PID
+        done
+      fi
+      sleep 0.1
+    done
     rm -f $PIDFILE
     ;;
 
