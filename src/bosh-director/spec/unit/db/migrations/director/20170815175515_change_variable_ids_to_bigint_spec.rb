@@ -55,7 +55,7 @@ module Bosh::Director
 
         DBSpecHelper.migrate(migration_file)
 
-        can_insert_value_with_bigint(:variable_sets, {id: 9223372036854775807, deployment_id: 2, created_at: some_time}, 'id = 9223372036854775807')
+        can_insert_value_with_bigint(:variable_sets, {id: 9223372036854775807, deployment_id: 2, created_at: some_time}, Sequel.lit('id = 9223372036854775807'))
       end
 
     end
@@ -99,7 +99,7 @@ module Bosh::Director
 
         DBSpecHelper.migrate(migration_file)
 
-        can_insert_value_with_bigint(:variables, {id: 9223372036854775807, variable_set_id: 2, variable_id: 'some_id_2', variable_name: 'some_name_2'}, 'id = 9223372036854775807')
+        can_insert_value_with_bigint(:variables, {id: 9223372036854775807, variable_set_id: 2, variable_id: 'some_id_2', variable_name: 'some_name_2'}, Sequel.lit('id = 9223372036854775807'))
       end
 
       it 'cascades on variable_sets deletion' do

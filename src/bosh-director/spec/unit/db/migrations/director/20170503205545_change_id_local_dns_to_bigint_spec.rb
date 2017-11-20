@@ -37,7 +37,7 @@ module Bosh::Director
 
       DBSpecHelper.migrate(migration_file)
 
-      can_insert_value_with_bigint(:local_dns_records, {id: 9223372036854775807, ip: '123'}, 'id = 9223372036854775807')
+      can_insert_value_with_bigint(:local_dns_records, {id: 9223372036854775807, ip: '123'}, Sequel.lit('id = 9223372036854775807'))
     end
 
     it 'increments id on local_dns_blobs from original series' do
@@ -64,7 +64,7 @@ module Bosh::Director
       }.to raise_error
 
       DBSpecHelper.migrate(migration_file)
-      can_insert_value_with_bigint(:local_dns_blobs, {id: 9223372036854775807, blobstore_id: '123', sha1: 'sha1', created_at: Time.now, version: 3}, 'id = 9223372036854775807')
+      can_insert_value_with_bigint(:local_dns_blobs, {id: 9223372036854775807, blobstore_id: '123', sha1: 'sha1', created_at: Time.now, version: 3}, Sequel.lit('id = 9223372036854775807'))
     end
 
     it 'local_dns_blobs should change the type of version from int to bigint' do
@@ -80,7 +80,7 @@ module Bosh::Director
       }.to raise_error
 
       DBSpecHelper.migrate(migration_file)
-      can_insert_value_with_bigint(:local_dns_blobs, {version: 9223372036854775807, blobstore_id: '123', sha1: 'sha1', created_at: Time.now}, 'version = 9223372036854775807')
+      can_insert_value_with_bigint(:local_dns_blobs, {version: 9223372036854775807, blobstore_id: '123', sha1: 'sha1', created_at: Time.now}, Sequel.lit('version = 9223372036854775807'))
     end
 
     it 'agent_dns_versions should change the type of dns_version from int to bigint' do
@@ -96,7 +96,7 @@ module Bosh::Director
       }.to raise_error
 
       DBSpecHelper.migrate(migration_file)
-      can_insert_value_with_bigint(:agent_dns_versions, {dns_version: 9223372036854775807, agent_id: '456'}, 'dns_version = 9223372036854775807')
+      can_insert_value_with_bigint(:agent_dns_versions, {dns_version: 9223372036854775807, agent_id: '456'}, Sequel.lit('dns_version = 9223372036854775807'))
     end
 
     it 'increments id on agent_dns_versions from original series' do
@@ -123,7 +123,7 @@ module Bosh::Director
       }.to raise_error
 
       DBSpecHelper.migrate(migration_file)
-      can_insert_value_with_bigint(:agent_dns_versions, {id: 9223372036854775807, agent_id: '456', dns_version: 3}, 'id = 9223372036854775807')
+      can_insert_value_with_bigint(:agent_dns_versions, {id: 9223372036854775807, agent_id: '456', dns_version: 3}, Sequel.lit('id = 9223372036854775807'))
     end
   end
 end
