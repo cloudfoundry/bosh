@@ -84,7 +84,7 @@ module Bosh::Director
         raise e
       end
 
-      apply_initial_vm_state(instance_plan, vm.agent_id)
+      apply_initial_vm_state(instance_plan, vm)
 
       instance_plan.mark_desired_network_plans_as_existing
     end
@@ -107,8 +107,8 @@ module Bosh::Director
       event.id
     end
 
-    def apply_initial_vm_state(instance_plan, agent_id)
-      vm_state = DeploymentPlan::VmSpecApplier.new.apply_initial_vm_state(instance_plan.spec, agent_id)
+    def apply_initial_vm_state(instance_plan, vm)
+      vm_state = DeploymentPlan::VmSpecApplier.new.apply_initial_vm_state(instance_plan.spec, vm)
 
       instance_plan.instance.add_state_to_model(vm_state)
 

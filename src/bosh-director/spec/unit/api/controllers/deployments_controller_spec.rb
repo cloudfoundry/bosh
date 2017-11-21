@@ -795,7 +795,8 @@ module Bosh::Director
                 'index' => i,
                 'state' => 'started',
                 'uuid' => "instance-#{i}",
-                'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
+                'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
+                'spec' => {'networks' => {'network1' => {'ip' => "#{i}.#{i}.#{i}.#{i}"}}},
               }
 
               instance_params['availability_zone'] = "az0" if i == 0
@@ -806,7 +807,8 @@ module Bosh::Director
                   'agent_id' => "agent-#{i}-#{j}",
                   'cid' => "cid-#{i}-#{j}",
                   'instance_id' => instance.id,
-                  'created_at' => time
+                  'created_at' => time,
+                  'network_spec' => {'network1' => {'ip' => "#{i}.#{i}.#{j}.#{j}"}},
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -832,7 +834,7 @@ module Bosh::Director
                 'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
                 'id' => "instance-#{instance_idx}",
                 'az' => {0 => "az0", 1 => "az1", nil => nil}[instance_idx],
-                'ips' => [],
+                'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}"],
                 'vm_created_at' => time.utc.iso8601
               )
             end

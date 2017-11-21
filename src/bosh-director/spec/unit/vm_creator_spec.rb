@@ -407,7 +407,7 @@ module Bosh
         end
 
         it 'updates instance job templates with new IP' do
-          expect(spec_applier).to receive(:apply_initial_vm_state).with(instance_plan.spec, 'agent-id').and_return('updated-spec')
+          expect(spec_applier).to receive(:apply_initial_vm_state).with(instance_plan.spec, an_instance_of(Models::Vm)).and_return('updated-spec')
           expect(instance).to receive(:add_state_to_model).with('updated-spec')
           expect(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, dns_encoder, logger)
 

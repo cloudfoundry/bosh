@@ -525,15 +525,18 @@ module Bosh::Director
           'index' => instance.index,
           'id' => instance.uuid,
           'az' => instance.availability_zone,
-          'ips' => ips(instance),
+          'ips' => ips(vm),
           'vm_created_at' => vm&.created_at&.utc&.iso8601
         }
       end
 
-      def ips(instance)
-        result = instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
-        if result.empty? && instance.spec && instance.spec['networks']
-          result = instance.spec['networks'].map {|_, network| network['ip']}
+      def ips(vm)
+        # For manual and vip networks
+        result = vm.instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
+
+        # For dynamic networks
+        if result.empty? && !vm.network_spec.empty?
+          result = vm.network_spec.map {|_, network| network['ip']}
         end
         result
       end

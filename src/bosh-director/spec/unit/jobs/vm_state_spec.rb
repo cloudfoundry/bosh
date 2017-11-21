@@ -92,17 +92,19 @@ module Bosh::Director
 
       context "when 'ip_addresses' is empty for instance" do
         before do
+          vm.network_spec = {'a' => {'ip' => '3.3.3.3'}, 'b' => {'ip' => '4.4.4.4'}}
+          vm.save
           instance.spec = {'networks' => {'a' => {'ip' => '1.1.1.1'}, 'b' => {'ip' => '2.2.2.2'}}}
           instance.save
         end
 
-        it "returns the ip addresses from 'Models::Instance.apply_spec'" do
+        it "returns the ip addresses from 'Models::Vm.network_spec'" do
           allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
 
           job.perform
 
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
-          expect(status['ips']).to eq(['1.1.1.1', '2.2.2.2'])
+          expect(status['ips']).to eq(['3.3.3.3', '4.4.4.4'])
         end
       end
 
