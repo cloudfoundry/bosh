@@ -8,9 +8,10 @@ module Bosh::Director
       digests = JSON.parse(File.read(File.join(DBSpecHelper.director_migrations_dir, '..', 'migration_digests.json')))
       DBSpecHelper.get_migrations.each do | migration |
 
-        digest = digests.fetch(File.basename(migration, ".rb"))
+        expected_digest = digests.fetch(File.basename(migration, ".rb"))
 
-        expect(digest).to eq(::Digest::SHA1.hexdigest(File.read(migration))), "A digest mismatch was detected in #{migration}"
+        actual_digest = ::Digest::SHA1.hexdigest(File.read(migration))
+        expect(actual_digest).to eq(expected_digest), "A digest mismatch was detected in #{migration}. Expected #{expected_digest}, Got #{actual_digest}"
       end
     end
   end

@@ -174,6 +174,7 @@ module Bosh
       }
 
       let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
+      let(:spec_applier) { instance_double(DeploymentPlan::VmSpecApplier) }
 
       before do
         fake_app
@@ -395,12 +396,23 @@ module Bosh
         end
       end
 
-      it 'updates instance job templates with new IP' do
-        allow(cloud).to receive(:create_vm)
-        expect(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, dns_encoder, logger)
-        expect(instance).to receive(:apply_initial_vm_state)
+      describe 'rendering job templates' do
+        let(:spec) { instance_double(DeploymentPlan::InstanceSpec, as_template_spec: {}) }
 
-        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+        before do
+          allow(instance_plan).to receive(:spec).and_return(spec)
+          allow_any_instance_of(Models::Vm).to receive(:agent_id).and_return('agent-id')
+          allow(cloud).to receive(:create_vm)
+          allow(DeploymentPlan::VmSpecApplier).to receive(:new).and_return(spec_applier)
+        end
+
+        it 'updates instance job templates with new IP' do
+          expect(spec_applier).to receive(:apply_initial_vm_state).with(instance_plan.spec, an_instance_of(Models::Vm)).and_return('updated-spec')
+          expect(instance).to receive(:add_state_to_model).with('updated-spec')
+          expect(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, dns_encoder, logger)
+
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+        end
       end
 
       it 'should retry creating a VM if it is told it is a retryable error' do

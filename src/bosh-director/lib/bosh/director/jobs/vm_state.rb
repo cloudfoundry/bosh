@@ -63,7 +63,7 @@ module Bosh::Director
           :cloud_properties => instance.cloud_properties_hash,
           :disk_cid => instance.managed_persistent_disk_cid,
           :disk_cids => instance.active_persistent_disks.collection.map{|d| d.model.disk_cid},
-          :ips => ips(instance),
+          :ips => ips(vm),
           :dns => dns_records,
           :agent_id => vm&.agent_id,
           :job_name => instance.job,
@@ -82,10 +82,14 @@ module Bosh::Director
         }
       end
 
-      def ips(instance)
-        result = instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
-        if result.empty? && instance.spec
-          result = instance.spec['networks'].map {|_, network| network['ip']}
+      def ips(vm)
+        # For manual and vip networks
+        ip_addresses = vm&.instance&.ip_addresses || {}
+        result = ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
+
+        # For dynamic networks
+        if result.empty? && vm && !vm.network_spec.empty?
+          result = vm&.network_spec&.map {|_, network| network['ip']}
         end
         result
       end

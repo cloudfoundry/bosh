@@ -149,36 +149,11 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      describe 'apply_initial_vm_state' do
-        let(:apply_spec) do
-          {
-            'networks' => {'fake-network' => {'fake-network-settings' => {}}},
-            'deployment' => 'fake-deployment',
-            'job' => 'fake-job',
-            'index' => 5,
-            'id' => 'fake-uuid',
-            'env' => 'fake-env',
-            'unneeded-properties' => 'nope'
-          }
-        end
-        let(:instance_spec) { InstanceSpec.new(apply_spec, instance) }
+      describe '#add_state_to_model' do
+        it 'updates the model and merges the given values in' do
+          instance.add_state_to_model({'networks' => {'changed' => {}}})
 
-        it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
-          instance_apply_spec = instance_spec.as_apply_spec
-          expect(agent_client).to receive(:apply).with({
-            'networks' => instance_apply_spec['networks'],
-            'deployment' => instance_apply_spec['deployment'],
-            'job' => instance_apply_spec['job'],
-            'index' => instance_apply_spec['index'],
-            'id' => instance_apply_spec['id'],
-          }).ordered
-
-          agent_state = {'networks' => {'changed' => {}}}
-          expect(agent_client).to receive(:get_state).and_return(agent_state).ordered
-
-          instance.apply_initial_vm_state(instance_spec)
           expect(instance_model.spec_p('networks')).to eq({'changed' => {}})
-          expect(instance_model.spec_p('env')).to eq('fake-env')
         end
       end
     end

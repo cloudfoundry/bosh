@@ -164,7 +164,7 @@ module Bosh::Director
           expect(db[:link_consumers].first[:deployment_id]).to eq(42)
           expect(db[:link_consumers].first[:instance_group]).to eq('provider_instance_group_1')
           expect(db[:link_consumers].first[:owner_object_name]).to eq('http_proxy_with_requires')
-          expect(db[:link_consumers].first[:owner_object_type]).to eq('Job')
+          expect(db[:link_consumers].first[:owner_object_type]).to eq('job')
         end
 
         context 'multiple instances consume same link' do
@@ -188,7 +188,7 @@ module Bosh::Director
             expect(db[:link_consumers].first[:deployment_id]).to eq(42)
             expect(db[:link_consumers].first[:instance_group]).to eq('provider_instance_group_1')
             expect(db[:link_consumers].first[:owner_object_name]).to eq('http_proxy_with_requires')
-            expect(db[:link_consumers].first[:owner_object_type]).to eq('Job')
+            expect(db[:link_consumers].first[:owner_object_type]).to eq('job')
           end
         end
       end

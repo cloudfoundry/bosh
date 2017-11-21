@@ -116,7 +116,7 @@ module Bosh::Director
         @instance_plans = []
 
         @did_change = false
-        @persistent_disk_collection = nil
+        @persistent_disk_collection = PersistentDiskCollection.new(@logger)
 
         @deployment_name = nil
       end
