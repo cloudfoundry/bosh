@@ -75,16 +75,22 @@ Sequel.migration do
       spec_json = JSON.parse(instance[:spec_json] || '{}')
       links = spec_json['links'] || {}
       links.each do |job_name, consumed_links|
-        consumed_links.each do |link_name, link_data|
-          if self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).all.count == 0
-            self[:link_consumers] << {
+        consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).first
+
+        if consumer
+          consumer_id = consumer[:id]
+        else
+          consumer_id = self[:link_consumers].insert(
+            {
               deployment_id: instance[:deployment_id],
               instance_group: instance[:job],
               owner_object_name: job_name,
               owner_object_type: 'job'
             }
-          end
+          )
+        end
 
+        consumed_links.each do |link_name, link_data|
           link_key = Struct::LinkKey.new(instance[:deployment_id], instance[:job], job_name, link_name)
 
           link_details = links_to_migrate[link_key] || []
@@ -93,14 +99,11 @@ Sequel.migration do
           end
 
           unless link_detail
-            consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).first
-            raise "Could not find an appropriate consumer for this instance." unless consumer
-
             link_id = self[:links].insert(
               {
                 name: link_name,
                 link_provider_id: nil,
-                link_consumer_id: consumer[:id],
+                link_consumer_id: consumer_id,
                 link_content: link_data.to_json,
                 created_at: Time.now,
               }

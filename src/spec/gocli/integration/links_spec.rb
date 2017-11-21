@@ -497,7 +497,7 @@ describe 'Links', type: :integration do
         expect(response_body[0]['deployment']).to eq(manifest['name'])
         expect(response_body[0]['instance_group']).to eq('mysql')
         expect(response_body[0]['link_provider_definition']).to eq({'type' => 'db', 'name' => 'db'})
-        expect(response_body[0]['owner_object']).to eq({"type" => 'Job', "name" => 'database'})
+        expect(response_body[0]['owner_object']).to eq({"type" => 'job', "name" => 'database'})
         expect(response_body[0]['content']).to_not eq({})
         expect(response_body[0]['shared']).to eq(false)
 
@@ -1090,7 +1090,7 @@ Error: Unable to process links for deployment. Errors are:
         expect(response_body.count).to eq(1)
         expect(response_body[0]['deployment']).to eq(manifest['name'])
         expect(response_body[0]['instance_group']).to eq('my_api')
-        expect(response_body[0]['owner_object']).to eq({"type" => 'Job','name'=>'api_server'})
+        expect(response_body[0]['owner_object']).to eq({"type" => 'job','name'=>'api_server'})
       end
 
     end

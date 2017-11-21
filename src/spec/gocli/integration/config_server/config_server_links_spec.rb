@@ -336,7 +336,7 @@ describe 'using director with config server and deployments having links', type:
         expect(response_body[0]['deployment']).to eq(deployment_name)
         expect(response_body[0]['link_provider_definition']).to eq({"type" => 'http_endpoint', "name" => 'http_endpoint'})
         expect(response_body[0]['instance_group']).to eq('provider_deployment_node')
-        expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_server_with_provides'})
+        expect(response_body[0]['owner_object']).to eq({'type' => 'job', 'name' => 'http_server_with_provides'})
         expect(response_body[0]['content']).to_not eq({}.to_json)
         expect(response_body[0]['shared']).to eq(true)
       end
@@ -363,7 +363,7 @@ describe 'using director with config server and deployments having links', type:
           expect(response_body[0]['id']).to eq(expected_consumer_id)
           expect(response_body[0]['deployment']).to eq(consumer_manifest['name'])
           expect(response_body[0]['instance_group']).to eq('consumer_deployment_node')
-          expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_proxy_with_requires'})
+          expect(response_body[0]['owner_object']).to eq({'type' => 'job', 'name' => 'http_proxy_with_requires'})
         end
 
         context 'when updating config server values' do
@@ -386,7 +386,7 @@ describe 'using director with config server and deployments having links', type:
               expect(response_body[0]['deployment']).to eq(deployment_name)
               expect(response_body[0]['link_provider_definition']).to eq({"type" => 'http_endpoint', "name" => 'http_endpoint'})
               expect(response_body[0]['instance_group']).to eq('provider_deployment_node')
-              expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_server_with_provides'})
+              expect(response_body[0]['owner_object']).to eq({'type' => 'job', 'name' => 'http_server_with_provides'})
               expect(response_body[0]['content']).to_not eq({}.to_json)
               expect(response_body[0]['shared']).to eq(true)
             end
@@ -416,7 +416,7 @@ describe 'using director with config server and deployments having links', type:
                   expect(response_body[0]['id']).to eq(expected_consumer_id)
                   expect(response_body[0]['deployment']).to eq(consumer_manifest['name'])
                   expect(response_body[0]['instance_group']).to eq('consumer_deployment_node')
-                  expect(response_body[0]['owner_object']).to eq({'type' => 'Job', 'name' => 'http_proxy_with_requires'})
+                  expect(response_body[0]['owner_object']).to eq({'type' => 'job', 'name' => 'http_proxy_with_requires'})
                 end
               end
 
