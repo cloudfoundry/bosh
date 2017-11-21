@@ -2,10 +2,17 @@ Sequel.extension :blank
 
 Sequel::Model.plugin :validation_helpers
 Sequel::Model.raise_on_typecast_failure = false
+Sequel::Model.require_valid_table = false
+#Sequel::Deprecation.output = false
 
-[:exact_length, :format, :includes, :integer, :length_range, :max_length,
- :min_length, :not_null, :numeric, :type, :presence, :unique].each do |validation|
-  Sequel::Plugins::ValidationHelpers::DEFAULT_OPTIONS[validation][:message] = validation
+class Sequel::Model
+  private
+  def default_validation_helpers_options(type)
+    validation_type = super(type)
+    case type
+      when :exact_length, :integer, :format, :includes, :length_range, :max_length, :min_length, :not_null, :numeric, :type, :presence, :unique
+        validation_type[:message] = type
+    end
+    validation_type
+  end
 end
-
-Sequel::Plugins::ValidationHelpers::DEFAULT_OPTIONS[:max_length][:nil_message] = :max_length

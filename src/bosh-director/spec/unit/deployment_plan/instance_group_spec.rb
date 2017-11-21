@@ -272,9 +272,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       let(:release2_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release2_model) }
       let(:release2_model) { Bosh::Director::Models::Release.make(name: 'release2') }
       let(:release2_version_model) { Bosh::Director::Models::ReleaseVersion.make(release: release2_model, version: 1) }
-      let(:release2_package1_model) { Bosh::Director::Models::Package.make(name: release2_package1_name, release: release2_model, fingerprint: release2_package1_fingerprint) }
+      let(:release2_package1_model) { Bosh::Director::Models::Package.make(name: release2_package1_name, release: release2_model, fingerprint: release2_package1_fingerprint, dependency_set_json: JSON.dump(release2_package1_dependencies)) }
       let(:release2_package1_fingerprint) { '987asd' }
       let(:release2_package1_name) { 'another-name' }
+      let(:release2_package1_dependencies) { [] }
 
       before do
         release2_version_model.add_template(release2_bar_job_model)
@@ -324,8 +325,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
             }.to raise_error(
               Bosh::Director::JobPackageCollision,
               "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
-              " job 'release2/bar' depends on 'release2/same-name'. " +
-                'BOSH cannot currently collocate two packages with identical names from separate releases.',
+              " job 'release2/bar' depends on 'release2/same-name'. BOSH cannot currently collocate two packages with identical names from separate releases."
             )
           end
         end
@@ -333,8 +333,24 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         context 'fingerprints are the same' do
           let(:release2_package1_fingerprint) { 'abc123' }
 
-          it 'does not raise an exception' do
-            instance_group.validate_package_names_do_not_collide!
+          context 'when dependencies are the same' do
+            it 'does not raise an exception' do
+              instance_group.validate_package_names_do_not_collide!
+            end
+          end
+
+          context 'when dependencies are not the same' do
+            let(:release2_package1_dependencies) { ['whatever'] }
+
+            it 'raises an exception' do
+              expect {
+                instance_group.validate_package_names_do_not_collide!
+              }.to raise_error(
+                Bosh::Director::JobPackageCollision,
+                "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
+                " job 'release2/bar' depends on 'release2/same-name'. BOSH cannot currently collocate two packages with identical names from separate releases."
+              )
+            end
           end
         end
       end

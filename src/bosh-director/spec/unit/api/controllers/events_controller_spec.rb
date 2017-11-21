@@ -438,7 +438,7 @@ module Bosh::Director
 
           it 'returns correct number of events' do
             make_events(250)
-            Models::Event.filter("id > ?", 200).delete
+            Models::Event.filter(Sequel.lit("id > ?", 200)).delete
 
             make_events(50)
 
@@ -454,7 +454,7 @@ module Bosh::Director
           context 'when number of returned events is less than EVENT_LIMIT' do
             it 'returns empty list if before_id < minimal id' do
               make_events(10)
-              Models::Event.filter("id <  ?", 5).delete
+              Models::Event.filter(Sequel.lit("id <  ?", 5)).delete
               get '?before_id=4'
               body = JSON.parse(last_response.body)
 

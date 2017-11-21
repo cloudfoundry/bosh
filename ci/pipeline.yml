@@ -89,6 +89,7 @@ jobs:
       - { get: bosh-src, trigger: true }
 
       - task: test
+        timeout: 1h
         file: bosh-src/ci/tasks/test-unit.yml
         params:
           RUBY_VERSION: 2.4.2
@@ -104,6 +105,7 @@ jobs:
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-5.5
+          timeout: 2h
           privileged: true
           config:
             platform: linux
@@ -120,6 +122,7 @@ jobs:
               DB: mysql
 
         - task: test-mysql-5.6
+          timeout: 2h
           privileged: true
           config:
             platform: linux
@@ -136,6 +139,7 @@ jobs:
               DB: mysql
 
         - task: test-mysql-5.7
+          timeout: 2h
           privileged: true
           config:
             platform: linux
@@ -162,6 +166,7 @@ jobs:
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-postgres-9.3
+          timeout: 2h
           privileged: true
           config:
             platform: linux
@@ -179,6 +184,7 @@ jobs:
               DB_VERSION: 9.3
 
         - task: test-postgres-9.4
+          timeout: 2h
           privileged: true
           config:
             platform: linux
@@ -196,6 +202,7 @@ jobs:
               DB_VERSION: 9.4
 
         - task: test-postgres-9.5
+          timeout: 2h
           privileged: true
           config:
             platform: linux
@@ -213,6 +220,7 @@ jobs:
               DB_VERSION: 9.5
 
         - task: test-postgres-9.6
+          timeout: 2h
           privileged: true
           config:
             platform: linux
@@ -240,6 +248,7 @@ jobs:
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-rds
+          timeout: 3h
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
           params:
@@ -424,6 +433,7 @@ jobs:
     public: true
     serial: true
     build_logs_to_retain: 250
+    interruptible: true
     plan:
     - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }
@@ -448,6 +458,7 @@ jobs:
     public: true
     serial: true
     build_logs_to_retain: 250
+    interruptible: true
     plan:
     - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }
@@ -472,6 +483,7 @@ jobs:
     public: true
     serial: true
     build_logs_to_retain: 250
+    interruptible: true
     plan:
     - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }
@@ -496,6 +508,7 @@ jobs:
     public: true
     serial: true
     build_logs_to_retain: 250
+    interruptible: true
     plan:
     - { get: load-tests-interval, trigger: true }
     - { get: bosh-load-tests-workspace }

@@ -15,8 +15,8 @@ module Bosh::Director
 
       DBSpecHelper.migrate(migration_file)
 
-      expect(db[:runtime_configs].where('id = ?', 100).first[:name]).to eq('')
-      expect(db[:runtime_configs].where('id = ?', 200).first[:name]).to eq('')
+      expect(db[:runtime_configs].where(id: 100).first[:name]).to eq('')
+      expect(db[:runtime_configs].where(id: 200).first[:name]).to eq('')
     end
 
     it 'supports adding names to runtime config' do
@@ -24,8 +24,8 @@ module Bosh::Director
       db[:runtime_configs] << {id: 100, properties: 'I am alive', name: 'CUSTOM_CONFIG_1', created_at: Time.now}
       db[:runtime_configs] << {id: 200, properties: 'I am alive', created_at: Time.now}
 
-      expect(db[:runtime_configs].where('id = ?', 100).first[:name]).to eq('CUSTOM_CONFIG_1')
-      expect(db[:runtime_configs].where('id = ?', 200).first[:name]).to eq('')
+      expect(db[:runtime_configs].where(id: 100).first[:name]).to eq('CUSTOM_CONFIG_1')
+      expect(db[:runtime_configs].where(id: 200).first[:name]).to eq('')
     end
 
     it 'does NOT support a null value for name' do

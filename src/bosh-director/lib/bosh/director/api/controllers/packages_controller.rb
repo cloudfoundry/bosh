@@ -16,7 +16,7 @@ module Bosh::Director
           fingerprint_list << package['fingerprint'] if package['fingerprint']
         end
 
-        matching_packages = Models::Package.where(Sequel.~(:sha1 => nil), Sequel.~(:blobstore_id => nil), fingerprint: fingerprint_list).all
+        matching_packages = Models::Package.where(fingerprint: fingerprint_list).where(Sequel.~(:sha1 => nil)).where(Sequel.~(:blobstore_id => nil)).all
 
         json_encode(matching_packages.map(&:fingerprint).compact.uniq)
       end
@@ -33,9 +33,13 @@ module Bosh::Director
           fingerprint_list << package['fingerprint'] if package['fingerprint']
         end
 
-        matching_packages = Models::Package.join(Models::CompiledPackage, :package_id=>:id)
-                              .select(:packages__name, :packages__fingerprint, :compiled_packages__dependency_key, :stemcell_os, :stemcell_version)
-                              .where(fingerprint: fingerprint_list).all
+        matching_packages = Models::Package.join('compiled_packages', :package_id=>:id)
+                              .select(Sequel.qualify('packages', 'name'),
+                                      Sequel.qualify('packages', 'fingerprint'),
+                                      Sequel.qualify('compiled_packages', 'dependency_key'),
+                                      :stemcell_os,
+                                      :stemcell_version
+                              ).where(fingerprint: fingerprint_list).all
 
         matching_packages = filter_matching_packages(matching_packages, manifest)
 

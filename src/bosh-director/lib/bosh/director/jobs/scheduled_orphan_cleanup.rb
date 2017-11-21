@@ -9,7 +9,7 @@ module Bosh::Director
 
       def self.has_work(params)
         time = time_days_ago(params.first['max_orphaned_age_in_days'])
-        Models::OrphanDisk.where('created_at < ?', time).any?
+        Models::OrphanDisk.where(Sequel.lit('created_at < ?', time)).any?
       end
 
       def self.time_days_ago(days)
@@ -30,7 +30,7 @@ module Bosh::Director
         time = self.class.time_days_ago(@max_orphaned_age_in_days)
         logger.info("Started cleanup of orphan disks and orphan snapshots older than #{time}")
 
-        old_orphans = Models::OrphanDisk.where('created_at < ?', time)
+        old_orphans = Models::OrphanDisk.where(Sequel.lit('created_at < ?', time))
         old_orphans_count = old_orphans.count
         stage = Config.event_log.begin_stage('Deleting orphan disks', old_orphans_count)
         failed_orphan_disk_count = 0

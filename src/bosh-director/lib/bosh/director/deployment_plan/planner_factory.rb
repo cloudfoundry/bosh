@@ -1,3 +1,6 @@
+require 'bosh/director/deployment_plan/deployment_spec_parser'
+require 'bosh/director/deployment_plan/cloud_manifest_parser'
+
 module Bosh
   module Director
     module DeploymentPlan

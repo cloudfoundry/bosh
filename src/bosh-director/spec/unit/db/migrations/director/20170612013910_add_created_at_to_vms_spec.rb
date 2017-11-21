@@ -33,7 +33,7 @@ module Bosh::Director
       expect(db[:vms].columns.include?(:created_at)).to be_falsey
       DBSpecHelper.migrate(migration_file)
       expect(db[:vms].columns.include?(:created_at)).to be_truthy
-      expect(db[:vms].where('id = ?', 1).first[:created_at]).to be_nil
+      expect(db[:vms].where(id: 1).first[:created_at]).to be_nil
     end
 
     it 'supports adding created_at to vms' do
@@ -46,7 +46,7 @@ module Bosh::Director
         created_at: created_at_time
       }
 
-      expect(db[:vms].where('id = ?', 1).first[:created_at]).not_to be_nil
+      expect(db[:vms].where(id: 1).first[:created_at]).not_to be_nil
     end
   end
 end

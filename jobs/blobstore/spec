@@ -10,6 +10,7 @@ templates:
   write_users.erb: config/write_users
   bbr_backup: bin/bbr/backup
   bbr_restore: bin/bbr/restore
+  utils.sh: helpers/utils.sh
   server_tls_cert.pem.erb: config/server_tls_cert.pem
   server_tls_private_key.pem.erb: config/server_tls_private_key.pem
 

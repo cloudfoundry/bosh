@@ -43,7 +43,7 @@ PATH
       rake (~> 10.0)
       rufus-scheduler (~> 2.0.18)
       semi_semantic (~> 1.2.0)
-      sequel (~> 4.36.0)
+      sequel (~> 4.49.0)
       sinatra (~> 1.4.2)
       sys-filesystem (~> 1.1.0)
       talentbox-delayed_job_sequel (~> 4.1.0)
@@ -74,7 +74,7 @@ PATH
       excon (~> 0.49.0)
       fog-core (~> 1.40.1)
       fog-openstack
-      sequel (~> 4.36.0)
+      sequel (~> 4.49.0)
       sinatra (~> 1.4.2)
       thin (~> 1.7.0)
 
@@ -220,7 +220,7 @@ GEM
       tzinfo (>= 0.3.22)
     safe_yaml (1.0.4)
     semi_semantic (1.2.0)
-    sequel (4.36.0)
+    sequel (4.49.0)
     sinatra (1.4.8)
       rack (~> 1.5)
       rack-protection (~> 1.4)

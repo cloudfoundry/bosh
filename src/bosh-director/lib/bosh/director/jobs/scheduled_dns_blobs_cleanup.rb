@@ -12,7 +12,7 @@ module Bosh::Director
         num_dns_blobs_to_keep = params.first['num_dns_blobs_to_keep']
 
         if Models::LocalDnsBlob.count > num_dns_blobs_to_keep
-          return Models::LocalDnsBlob.where('created_at < ?', Time.now - max_blob_age).any?
+          return Models::LocalDnsBlob.where(Sequel.lit('created_at < ?', Time.now - max_blob_age)).any?
         end
 
         return false
@@ -29,8 +29,8 @@ module Bosh::Director
 
       def perform
         cutoff_time = Time.now - @max_blob_age
-        new_blob_count = Models::LocalDnsBlob.where('created_at >= ?', cutoff_time).count
-        old_blobs = Models::LocalDnsBlob.where('created_at < ?', cutoff_time).all
+        new_blob_count = Models::LocalDnsBlob.where(Sequel.lit('created_at >= ?', cutoff_time)).count
+        old_blobs = Models::LocalDnsBlob.where(Sequel.lit('created_at < ?', cutoff_time)).all
 
         num_deleted = 0
 

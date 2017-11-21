@@ -113,9 +113,7 @@ module Bosh::Director
       end
 
       def add_consumed_links(instance_group, job)
-        @logger.debug("ALL CONSUMED LINKS#{job.consumed_links(instance_group.name)}")
         job.consumed_links(instance_group.name).each do |consumed_link|
-          @logger.debug("QQQQQQQQ #{consumed_link.inspect} | #{job.name}")
           consumer = Bosh::Director::Models::LinkConsumer.find(
             deployment: @deployment_plan.model,
             instance_group: instance_group.name,

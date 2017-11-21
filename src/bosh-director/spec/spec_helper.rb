@@ -112,7 +112,10 @@ module SpecHelper
       Sequel.extension :migration
 
       connect_database
+
+      Sequel::Deprecation.output = false
       Delayed::Worker.backend = :sequel
+      Sequel::Deprecation.output = $stderr
 
       run_migrations
     end
@@ -163,17 +166,17 @@ module SpecHelper
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
-        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/`/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Delayed::Backend::Sequel.constants.each do |e|
         c = Delayed::Backend::Sequel.const_get(e)
-        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/`/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Bosh::Director::Models::Dns.constants.each do |e|
         c = Bosh::Director::Models::Dns.const_get(e)
-        c.db = @dns_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @dns_db[c.simple_table.gsub(/`/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
     end
 

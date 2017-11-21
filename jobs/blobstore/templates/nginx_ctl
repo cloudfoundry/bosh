@@ -4,6 +4,7 @@ RUN_DIR=/var/vcap/sys/run/blobstore
 LOG_DIR=/var/vcap/sys/log/blobstore
 STORE_DIR=/var/vcap/store/blobstore
 TMP_DIR=/var/vcap/data/blobstore/tmp
+JOB_DIR=/var/vcap/jobs/blobstore
 
 PIDFILE=$RUN_DIR/nginx.pid
 RUNAS=vcap
@@ -12,10 +13,14 @@ function pid_exists() {
   ps -p $1 &> /dev/null
 }
 
+source $JOB_DIR/helpers/utils.sh
+
 case $1 in
 
   start)
     mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR $TMP_DIR
+
+    pid_guard $PIDFILE "nginx"
 
     echo $$ > $PIDFILE
 

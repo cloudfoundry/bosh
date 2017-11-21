@@ -135,7 +135,7 @@ describe Bosh::Director::Api::EventManager do
         expect {
           manager.remove_old_events(3)
         }.to change {
-          Bosh::Director::Models::Event.filter.count
+          Bosh::Director::Models::Event.count
         }.from(4).to(3)
       end
     end
@@ -149,7 +149,7 @@ describe Bosh::Director::Api::EventManager do
         expect {
           manager.remove_old_events(3)
         }.to change {
-          Bosh::Director::Models::Event.filter.count
+          Bosh::Director::Models::Event.count
         }.from(13).to(3)
       end
 
