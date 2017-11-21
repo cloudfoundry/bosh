@@ -47,7 +47,7 @@ module Bosh::Director
       instance_model = instance.model
       @logger.info('Creating VM')
 
-      create(
+      vm = create(
         instance,
         stemcell_cid,
         instance.cloud_properties,
@@ -84,7 +84,7 @@ module Bosh::Director
         raise e
       end
 
-      apply_initial_vm_state(instance_plan)
+      apply_initial_vm_state(instance_plan, vm.agent_id)
 
       instance_plan.mark_desired_network_plans_as_existing
     end
@@ -107,14 +107,12 @@ module Bosh::Director
       event.id
     end
 
-    def apply_initial_vm_state(instance_plan)
-      instance_plan.instance.apply_initial_vm_state(instance_plan.spec)
+    def apply_initial_vm_state(instance_plan, agent_id)
+      vm_state = DeploymentPlan::VmSpecApplier.new.apply_initial_vm_state(instance_plan.spec, agent_id)
 
-      unless instance_plan.instance.compilation?
-        # re-render job templates with updated dynamic network settings
-        @logger.debug("Re-rendering templates with updated dynamic networks: #{instance_plan.spec.as_template_spec['networks']}")
-        JobRenderer.render_job_instances_with_cache([instance_plan], @template_blob_cache, @dns_encoder, @logger)
-      end
+      instance_plan.instance.add_state_to_model(vm_state)
+
+      DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(instance_plan, @template_blob_cache, @dns_encoder).perform
     end
 
     def choose_factory_and_stemcell_cid(instance_plan, use_existing)
@@ -201,6 +199,8 @@ module Bosh::Director
       end
 
       instance_model.update(options)
+
+      vm_model
     rescue => e
       @logger.error("error creating vm: #{e.message}")
       if vm_cid
