@@ -512,7 +512,7 @@ describe 'Links', type: :integration do
           'content'=>"{\"deployment_name\":\"simple\",\"domain\":\"bosh\",\"default_network\":\"a\",\"networks\":[\"a\"],\"instance_group\":\"postgres\",\"properties\":{\"foo\":\"backup_bar\"},\"instances\":[{\"name\":\"postgres\",\"id\":\"#{id}\",\"index\":0,\"bootstrap\":true,\"az\":\"z1\",\"address\":\"192.168.1.12\",\"addresses\":{\"a\":\"192.168.1.12\"},\"dns_addresses\":{\"a\":\"192.168.1.12\"}}]}",
           'link_provider_definition'=>{'type'=>'db', 'name'=>'backup_db'},
           'owner_object'=> {
-            'type'=>'Job',
+            'type'=>'job',
             'name'=>'backup_database',
           }
         }
