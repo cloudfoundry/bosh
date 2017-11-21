@@ -96,33 +96,36 @@ func assetPath(filename string) string {
 	return path
 }
 
-func execCommand(binaryPath string, args ...string) (*gexec.Session, error) {
-	return gexec.Start(exec.Command(binaryPath, args...), GinkgoWriter, GinkgoWriter)
+func execCommand(binaryPath string, args ...string) *gexec.Session {
+	session, err := gexec.Start(
+		exec.Command(binaryPath, args...),
+		GinkgoWriter,
+		GinkgoWriter,
+	)
+
+	Expect(err).ToNot(HaveOccurred())
+
+	return session
 }
 
-func bbr(args ...string) (*gexec.Session, error) {
+func bbr(args ...string) *gexec.Session {
 	return execCommand(bbrBinaryPath, args...)
 }
 
-func outerBosh(args ...string) (*gexec.Session, error) {
+func outerBosh(args ...string) *gexec.Session {
 	return execCommand(outerBoshBinaryPath, args...)
 }
 
-func bosh(args ...string) (*gexec.Session, error) {
+func bosh(args ...string) *gexec.Session {
 	return execCommand(boshBinaryPath, args...)
 }
 
 func uploadStemcell(stemcellUrl string) {
-	session, err := bosh("-n", "upload-stemcell", stemcellUrl)
-	mustExec(session, err, 5*time.Minute, 0)
+	session := bosh("-n", "upload-stemcell", stemcellUrl)
+	Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 }
 
 func uploadRelease(releaseUrl string) {
-	session, err := bosh("-n", "upload-release", releaseUrl)
-	mustExec(session, err, 2*time.Minute, 0)
-}
-
-func mustExec(session *gexec.Session, err error, timeout time.Duration, exitCode int) {
-	Expect(err).ToNot(HaveOccurred())
-	Eventually(session, timeout).Should(gexec.Exit(exitCode))
+	session := bosh("-n", "upload-release", releaseUrl)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }

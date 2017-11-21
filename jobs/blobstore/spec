@@ -2,14 +2,14 @@
 name: blobstore
 
 templates:
-  nginx_ctl:           bin/nginx_ctl
-  nginx.conf.erb:      config/nginx.conf
-  blobstore.conf.erb:  config/sites/blobstore.conf
-  mime.types:          config/mime.types
-  read_users.erb:      config/read_users
-  write_users.erb:     config/write_users
-  bbr_backup:          bin/bbr/backup
-  bbr_restore:         bin/bbr/restore
+  nginx_ctl: bin/nginx_ctl
+  nginx.conf.erb: config/nginx.conf
+  blobstore.conf.erb: config/sites/blobstore.conf
+  mime.types: config/mime.types
+  read_users.erb: config/read_users
+  write_users.erb: config/write_users
+  bbr_backup: bin/bbr/backup
+  bbr_restore: bin/bbr/restore
   server_tls_cert.pem.erb: config/server_tls_cert.pem
   server_tls_private_key.pem.erb: config/server_tls_private_key.pem
 

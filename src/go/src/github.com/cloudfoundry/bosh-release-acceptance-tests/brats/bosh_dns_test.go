@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 )
 
 func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string {
@@ -28,10 +29,10 @@ func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string 
 }
 
 func mustGetLatestDnsVersions() []int {
-	session, err := bosh("-n", "-d", deploymentName, "ssh",
+	session := bosh("-n", "-d", deploymentName, "ssh",
 		"-c", "sudo cat /var/vcap/instance/dns/records.json",
 	)
-	mustExec(session, err, time.Minute, 0)
+	Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 	trimmedOutput := strings.TrimSpace(string(session.Out.Contents()))
 
@@ -81,29 +82,29 @@ var _ = Describe("BoshDns", func() {
 		BeforeEach(func() {
 			opFilePath := assetPath("op-enable-short-dns-addresses.yml")
 
-			session, err := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 			)
-			mustExec(session, err, 15*time.Minute, 0)
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		It("can find instances using the address helper with short names", func() {
-			session, err := bosh("-n", "-d", deploymentName, "instances",
+			session := bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
 			)
-			mustExec(session, err, time.Minute, 0)
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 			instanceList := session.Out.Contents()
 
 			matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
 			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-			session, err = bosh("-d", deploymentName, "run-errand", "query-all")
-			mustExec(session, err, time.Minute, 0)
+			session = bosh("-d", deploymentName, "run-errand", "query-all")
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 			Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
 
@@ -117,20 +118,20 @@ var _ = Describe("BoshDns", func() {
 		})
 
 		PIt("can find instances using the address helper with short names by network and instance ID", func() {
-			session, err := bosh("-n", "-d", deploymentName, "instances",
+			session := bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
 			)
-			mustExec(session, err, time.Minute, 0)
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 			instanceList := session.Out.Contents()
 
 			matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
 			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-			session, err = bosh("-d", deploymentName, "run-errand", "query-individual-instance")
-			mustExec(session, err, time.Minute, 0)
+			session = bosh("-d", deploymentName, "run-errand", "query-individual-instance")
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 			Expect(session.Out).To(gbytes.Say("ANSWER: 1"))
 
@@ -143,20 +144,20 @@ var _ = Describe("BoshDns", func() {
 
 	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
-			session, err := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 			)
-			mustExec(session, err, 15*time.Minute, 0)
+			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
 		It("can find instances using the address helper", func() {
-			session, err := bosh("-n", "-d", deploymentName, "instances",
+			session := bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
 			)
-			mustExec(session, err, time.Minute, 0)
+			Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 			instanceList := session.Out.Contents()
 
@@ -164,8 +165,8 @@ var _ = Describe("BoshDns", func() {
 				matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-				session, err = bosh("-d", deploymentName, "run-errand", "query-all")
-				mustExec(session, err, time.Minute, 0)
+				session = bosh("-d", deploymentName, "run-errand", "query-all")
+				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
 				output := string(session.Out.Contents())
@@ -181,8 +182,8 @@ var _ = Describe("BoshDns", func() {
 				matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-				session, err = bosh("-d", deploymentName, "run-errand", "query-with-az-filter")
-				mustExec(session, err, time.Minute, 0)
+				session = bosh("-d", deploymentName, "run-errand", "query-with-az-filter")
+				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 2"))
 				output := string(session.Out.Contents())
@@ -204,12 +205,12 @@ var _ = Describe("BoshDns", func() {
 				}
 			}
 
-			session, err := execCommand("ssh",
+			session := execCommand("ssh",
 				fmt.Sprintf("%s@%s", innerDirectorUser, innerDirectorIP),
 				"-i", innerBoshJumpboxPrivateKeyPath,
 				"-oStrictHostKeyChecking=no",
 				"sudo /var/vcap/jobs/director/bin/sync_dns_ctl force")
-			mustExec(session, err, 2*time.Minute, 0)
+			Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 
 			newVersionPerInstance := mustGetLatestDnsVersions()
 			firstNewVersion := newVersionPerInstance[0]
