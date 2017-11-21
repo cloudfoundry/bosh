@@ -214,7 +214,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           expect(consumer.deployment.name).to eq(api_server_instance_group.deployment_name)
           expect(consumer.instance_group).to eq(api_server_instance_group.name)
           expect(consumer.owner_object_name).to eq('api-server-template')
-          expect(consumer.owner_object_type).to eq('Job')
+          expect(consumer.owner_object_type).to eq('job')
         end
 
         it 'adds link to links table' do
@@ -327,7 +327,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             link_provider_definition_name: 'db',
             link_provider_definition_type: 'db',
             owner_object_name: 'mysql-template',
-            owner_object_type: 'Job',
+            owner_object_type: 'job',
             #'default_network' => 'default'
             content: {
               "deployment_name" => "other-deployment",
@@ -617,7 +617,7 @@ Unable to process links for deployment. Errors are:
         expect(prov.link_provider_definition_name).to eq('db')
         expect(prov.link_provider_definition_type).to eq('db')
         expect(prov.owner_object_name).to eq('mysql-template')
-        expect(prov.owner_object_type).to eq('Job')
+        expect(prov.owner_object_type).to eq('job')
       end
 
       it 'checks for existing provider in link_provider table' do
@@ -726,6 +726,218 @@ Unable to process links for deployment. Errors are:
           expect(deployment_plan.link_providers.size).to eq(2)
           expect(deployment_plan.link_providers[0].consumable).to be_truthy
           expect(deployment_plan.link_providers[1].consumable).to be_falsey
+        end
+      end
+    end
+
+    context 'when unmanaged persistent disks are provided' do
+      let(:low_iops_persistent_disk) do
+        {
+            'type' => 'low-performance-disk-type',
+            'name' => 'low-iops-persistent-disk-name'
+        }
+      end
+
+      let(:high_iops_persistent_disk) do
+        {
+            'type' => 'high-performance-disk-type',
+            'name' => 'high-iops-persistent-disk-name'
+        }
+      end
+
+      let(:instance_groups) do
+        [{
+          'name' => 'mysql',
+          'jobs' => [
+            {
+              'name' => 'mysql-template',
+              'release' => 'fake-release',
+              'properties' => {'mysql' => nil}
+            }
+          ],
+          'resource_pool' => 'fake-resource-pool',
+          'instances' => 2,
+          'networks' => [
+            {
+              'name' => 'fake-manual-network',
+              'default' => ['dns', 'gateway']
+            },
+            {
+              'name' => 'fake-dynamic-network',
+            }
+          ],
+          'persistent_disks' => [low_iops_persistent_disk, high_iops_persistent_disk]
+        }]
+      end
+
+      let(:deployment_manifest) do
+        {
+          'name' => 'fake-deployment',
+          'instance_groups' => instance_groups,
+          'resource_pools' => [
+            {
+              'name' => 'fake-resource-pool',
+              'stemcell' => {
+                'name' => 'fake-stemcell',
+                'version' => 'fake-stemcell-version',
+              },
+              'network' => 'fake-manual-network',
+            }
+          ],
+          'networks' => [
+            {
+              'name' => 'fake-manual-network',
+              'type' => 'manual',
+              'subnets' => [
+                {
+                  'name' => 'fake-subnet',
+                  'range' => '127.0.0.0/20',
+                  'gateway' => '127.0.0.1',
+                  'static' => ['127.0.0.2'],
+                }
+              ]
+            },
+            {
+              'name' => 'fake-dynamic-network',
+              'type' => 'dynamic',
+            }
+          ],
+          'releases' => [
+            {
+              'name' => 'fake-release',
+              'version' => 'latest',
+            }
+          ],
+          'compilation' => {
+            'workers' => 1,
+            'network' => 'fake-manual-network',
+          },
+          'update' => {
+            'canaries' => 1,
+            'max_in_flight' => 1,
+            'canary_watch_time' => 1,
+            'update_watch_time' => 1,
+          },
+          'disk_pools' => [
+            {
+              'name' => 'low-performance-disk-type',
+              'disk_size' => 1024,
+              'cloud_properties' => {'type' => 'gp2'}
+            },
+            {
+              'name' => 'high-performance-disk-type',
+              'disk_size' => 2048,
+              'cloud_properties' => {'type' => 'io2'}
+            }
+          ]
+        }
+      end
+
+      it 'adds the disks to the database as providers.' do
+        api_server_instance_group
+        provider_model = Bosh::Director::Models::LinkProvider
+        expect(provider_model.count).to eq(3)
+
+        # remove DB columns not needed consume provide json
+
+        expected_disk_providers = [
+            {name: 'db', content: {'default_network' => 'fake-manual-network', 'deployment_name' => 'fake-deployment', 'domain' => 'bosh', 'instance_group' => 'mysql', 'instances' => Array, 'networks' => Array, 'properties' => Hash}},
+            {name: 'low-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "low-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
+            {name: 'high-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "high-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
+        ]
+
+        providers = provider_model.all
+
+        expected_disk_providers.each do |expected_provider|
+          provider = providers.find do |provider|
+            provider[:name] == expected_provider[:name]
+          end
+
+          expect(provider).to_not be_nil
+          expect(JSON.parse(provider[:content])).to match(expected_provider[:content])
+        end
+      end
+
+      context 'when job also provides the same link name' do
+        let(:instance_groups) do
+          [
+            {
+              'name' => 'mysql',
+              'jobs' => [
+                {
+                  'name' => 'mysql-template',
+                  'release' => 'fake-release',
+                  'provides' => {'db' => {'as' => 'db2'}},
+                  'properties' => {'mysql' => nil}
+                }
+              ],
+              'resource_pool' => 'fake-resource-pool',
+              'instances' => 2,
+              'networks' => [
+                {
+                  'name' => 'fake-manual-network',
+                  'default' => ['dns', 'gateway']
+                },
+                {
+                  'name' => 'fake-dynamic-network',
+                }
+              ],
+              'persistent_disks' => [{'name' => 'db2', 'type' => 'high-performance-disk-type'}]
+            }
+          ]
+        end
+
+        it 'should add the disk provider' do
+          api_server_instance_group
+          providers = Bosh::Director::Models::LinkProvider
+          expect(providers.count).to eq(2)
+
+          expected_providers = [
+            {name: 'db2', original_link_name: 'db', link_type: 'db', owner_type: 'job', owner_name: 'mysql-template'},
+            {name: 'db2', original_link_name: 'db2', link_type: 'disk', owner_type: 'instance_group', owner_name: 'mysql'},
+          ]
+
+          providers = providers.all
+          expected_providers.each do |expected_provider|
+            provider = providers.find do |provider|
+              provider[:name] == expected_provider[:name] &&
+                provider[:owner_object_type] == expected_provider[:owner_type] &&
+                provider[:link_provider_definition_type] == expected_provider[:link_type] &&
+                provider[:link_provider_definition_name] == expected_provider[:original_link_name] &&
+                provider[:owner_object_name] == expected_provider[:owner_name]
+
+            end
+
+            fail "Unable to find provider with properties #{expected_provider.inspect} from #{providers.inspect}" unless provider
+          end
+        end
+      end
+
+      context 'when the instance group does not have any jobs' do
+        before do
+          instance_groups[0]['jobs'] = []
+        end
+
+        it 'still creates disk providers' do
+          api_server_instance_group
+          provider_model = Bosh::Director::Models::LinkProvider
+          expect(provider_model.count).to eq(2)
+
+          expected_disk_providers = [
+            {name: 'low-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "low-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
+            {name: 'high-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "high-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
+          ]
+
+          providers = provider_model.all
+
+          expected_disk_providers.each do |expected_provider|
+            provider = providers.find do |provider|
+              provider[:name] == expected_provider[:name]
+            end
+
+            expect(provider).to_not be_nil
+            expect(JSON.parse(provider[:content])).to eq(expected_provider[:content])
+          end
         end
       end
     end

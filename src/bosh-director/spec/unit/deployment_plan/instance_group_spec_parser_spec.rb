@@ -27,6 +27,8 @@ module Bosh::Director
       let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
       let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
+      let(:disk_collection) { PersistentDiskCollection.new(logger) }
+
       describe '#parse' do
         before do
           allow(deployment_plan).to receive(:resource_pool).and_return(resource_pool)
@@ -40,6 +42,7 @@ module Bosh::Director
           )
           allow(deployment_plan).to receive(:disk_type).and_return(disk_type)
           allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
+          allow(PersistentDiskCollection).to receive(:new).and_return(disk_collection)
         end
         let(:parse_options) { {} }
         let(:parsed_instance_group) { parser.parse(instance_group_spec, parse_options) }
@@ -921,7 +924,7 @@ module Bosh::Director
                                          .with('fake-disk-pool-name')
                                          .and_return(disk_type)
 
-            expect(PersistentDiskCollection).to receive_message_chain(:new, :add_by_disk_type).with(disk_type)
+            expect(disk_collection).to receive(:add_by_disk_type).with(disk_type)
 
             parsed_instance_group
           end
@@ -982,7 +985,6 @@ module Bosh::Director
             expect(deployment_plan).to receive(:disk_type)
                                          .with('disk-type-large')
                                          .and_return(disk_type_large)
-            expect(PersistentDiskCollection).to receive_message_chain(:new).and_return(disk_collection)
             expect(disk_collection).to receive(:add_by_disk_name_and_type)
                                          .with('my-favourite-disk', disk_type_large)
             expect(disk_collection).to receive(:add_by_disk_name_and_type)

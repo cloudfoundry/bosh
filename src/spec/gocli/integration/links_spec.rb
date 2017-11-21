@@ -58,6 +58,188 @@ describe 'Links', type: :integration do
     upload_cloud_config(cloud_config_hash: cloud_config)
   end
 
+  context 'when instance group has unmanaged disks' do
+    let(:cloud_config_hash) do
+      hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      hash['disk_types'] = [
+        {
+          'name' => 'low-performance-disk-type',
+          'disk_size' => 1024,
+          'cloud_properties' => {'type' => 'gp2'}
+        },
+        {
+          'name' => 'high-performance-disk-type',
+          'disk_size' => 4076,
+          'cloud_properties' => {'type' => 'io1'}
+        },
+      ]
+      hash
+    end
+
+    let(:manifest_hash) do
+      manifest = Bosh::Spec::NewDeployments.manifest_with_release
+      manifest['instance_groups'] = [instance_group]
+      manifest
+    end
+
+    let(:instance_group) do
+      {
+        'name' => 'foobar',
+        # 'jobs' => [{'name' => 'empty_job'}],
+        'jobs' => [],
+        'vm_type' => 'a',
+        'stemcell' => 'default',
+        'instances' => 1,
+        'networks' => [{'name' => 'a'}],
+        'properties' => {},
+        'persistent_disks' => persistent_disks
+      }
+    end
+
+    let(:persistent_disks) do
+      [low_iops_persistent_disk, high_iops_persistent_disk]
+    end
+
+    let(:low_iops_persistent_disk) do
+      {
+        'type' => 'low-performance-disk-type',
+        'name' => 'low-iops-persistent-disk-name'
+      }
+    end
+
+    let(:high_iops_persistent_disk) do
+      {
+        'type' => 'high-performance-disk-type',
+        'name' => 'high-iops-persistent-disk-name'
+      }
+    end
+
+    it 'will consider the persistent disks as providers' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      response = send_director_api_request('/link_providers', 'deployment=simple', 'GET')
+
+      expect(response).not_to eq(nil)
+      expect(response.code).to eq('200')
+      response_body = JSON.parse(response.read_body)
+
+      expected_response_items = [
+        {
+          'name' => 'high-iops-persistent-disk-name',
+          'shared' => false,
+          'deployment' => 'simple',
+          'instance_group' => 'foobar',
+          'link_provider_definition' => {
+            'type' => 'disk',
+            'name' => 'high-iops-persistent-disk-name'
+          },
+          'owner_object' => {
+            'type' => 'instance_group',
+            'name' => 'foobar'
+          },
+          'content' => "{\"deployment_name\":\"simple\",\"properties\":{\"name\":\"high-iops-persistent-disk-name\"},\"networks\":[],\"instances\":[]}",
+          'id' => Integer
+        },
+        {
+          'name' => 'low-iops-persistent-disk-name',
+          'shared' => false,
+          'deployment' => 'simple',
+          'instance_group' => 'foobar',
+          'link_provider_definition' => {
+            'type' => 'disk',
+            'name' => 'low-iops-persistent-disk-name'
+          },
+          'owner_object' => {
+            'type' => 'instance_group',
+            'name' => 'foobar'
+          },
+          'content' => "{\"deployment_name\":\"simple\",\"properties\":{\"name\":\"low-iops-persistent-disk-name\"},\"networks\":[],\"instances\":[]}",
+          'id' => Integer
+        }
+      ]
+
+      expect(response_body).to match_array(expected_response_items)
+    end
+
+    context 'and a job in the same instance group provides a link with the same name' do
+      let(:instance_group) do
+        {
+          'name' => 'foobar',
+          'jobs' => [{'name' => 'database', 'provides' => {'db' => { 'as' => 'db'}}}],
+          'vm_type' => 'a',
+          'stemcell' => 'default',
+          'instances' => 1,
+          'networks' => [{'name' => 'a'}],
+          'properties' => {},
+          'persistent_disks' => persistent_disks
+        }
+      end
+
+      let(:persistent_disks) do
+        [{'type' => 'high-performance-disk-type', 'name'=>'db'}]
+      end
+
+      context 'and the link name is not being consumed' do
+        it 'should NOT raise an error' do
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+
+          response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
+
+          expect(response).not_to eq(nil)
+          expect(response.code).to eq('200')
+          response_body = JSON.parse(response.read_body)
+          expect(response_body.count).to eq(2)
+
+          expected_response_items = [
+            {
+              'name' => 'db',
+              'shared' => false,
+              'deployment' => 'simple',
+              'instance_group' => 'foobar',
+              'link_provider_definition' => {
+                'type' => 'disk',
+                'name' => 'db'
+              },
+              'owner_object' => {
+                'type' => 'instance_group',
+                'name' => 'foobar'
+              },
+              'content' => String,
+              'id' => Integer
+            },
+            {
+              'name' => 'db',
+              'shared' => false,
+              'deployment' => 'simple',
+              'instance_group' => 'foobar',
+              'link_provider_definition' => {
+                'type' => 'db',
+                'name' => 'db'
+              },
+              'owner_object' => {
+                'type' => 'job',
+                'name' => 'database'
+              },
+              'content' => String,
+              'id' => Integer
+            }
+          ]
+
+          expected_response_items.each do |expected_response|
+            response_item = response_body.find do |response_item|
+              response_item['name'] == expected_response['name'] &&
+                response_item['link_provider_definition']['type'] == expected_response['link_provider_definition']['type']
+            end
+
+            expect(response_item).to match(expected_response)
+          end
+        end
+      end
+    end
+  end
+
   context 'when job requires link' do
     let(:implied_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(

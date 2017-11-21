@@ -81,7 +81,7 @@ Sequel.migration do
               deployment_id: instance[:deployment_id],
               instance_group: instance[:job],
               owner_object_name: job_name,
-              owner_object_type: 'Job'
+              owner_object_type: 'job'
             }
           end
 
