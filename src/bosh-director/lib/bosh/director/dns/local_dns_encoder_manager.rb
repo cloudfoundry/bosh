@@ -25,11 +25,17 @@ module Bosh::Director
       end
 
       service_groups = {}
-      Bosh::Director::Models::LocalDnsEncodedInstanceGroup.eager(:deployment).each do |ig|
+      Bosh::Director::Models::LocalDnsEncodedInstanceGroup.
+        inner_join(:deployments, Sequel.qualify('local_dns_encoded_instance_groups', 'deployment_id') => Sequel.qualify('deployments', 'id')).
+        select(
+          Sequel.expr(Sequel.qualify('local_dns_encoded_instance_groups', 'id')).as(:id),
+          Sequel.expr(Sequel.qualify('local_dns_encoded_instance_groups', 'name')).as(:name),
+          Sequel.expr(Sequel.qualify('deployments', 'name')).as(:deployment_name),
+        ).all.each do |join_row|
         service_groups[{
-          instance_group: ig.name,
-          deployment: ig.deployment.name,
-        }] = ig.id.to_s
+          instance_group: join_row[:name],
+          deployment: join_row[:deployment_name],
+        }] = join_row[:id].to_s
       end
 
       instance_uuids = {}

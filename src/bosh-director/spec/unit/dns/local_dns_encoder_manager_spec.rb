@@ -56,6 +56,10 @@ module Bosh::Director
         Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
         Models::LocalDnsEncodedNetwork.create(name: 'my-network')
         Models::Instance.make(deployment: deployment, id: 42, uuid: 'my-uuid')
+
+        # ensure we are efficiently loading deployments in the same query, not later queries
+        expect(Bosh::Director::Models::LocalDnsEncodedInstanceGroup).to receive(:inner_join).at_least(:once).and_call_original
+        expect(Bosh::Director::Models::Deployment).to_not receive(:primary_key_lookup)
       end
 
       it 'should create a dns encoder that uses the current index' do
@@ -128,7 +132,6 @@ module Bosh::Director
         encoder = subject.new_encoder_with_updated_index(plan)
         expect(encoder.id_for_network('nw2')).to eq('2')
       end
-
 
       it 'returns an encoder that includes the provided groups' do
         encoder = subject.new_encoder_with_updated_index(plan)
