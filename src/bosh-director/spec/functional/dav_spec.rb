@@ -119,7 +119,11 @@ module Bosh::Blobstore
         user: user,
         password: password,
         davcli_path: davcli_path,
-        ca_cert: File.read(ca_cert_path)
+        tls: {
+          cert: {
+            ca: File.read(ca_cert_path)
+          }
+        }
       }
     end
 
