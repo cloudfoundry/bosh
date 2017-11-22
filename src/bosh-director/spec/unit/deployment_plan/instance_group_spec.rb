@@ -61,7 +61,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:logger) { double(:logger).as_null_object }
 
   before do
-    allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
+   allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
     allow(plan).to receive(:networks).and_return([network])
     allow(plan).to receive(:vm_type).with('dea').and_return vm_type

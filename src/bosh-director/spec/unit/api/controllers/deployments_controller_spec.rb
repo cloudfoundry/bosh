@@ -921,7 +921,6 @@ module Bosh::Director
                   'state' => 'started',
                   'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
                   'uuid' => "instance-#{i}",
-                  'spec_json' => "{ \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
                 }
 
                 instance_params['availability_zone'] = "az0" if i == 0
@@ -931,7 +930,8 @@ module Bosh::Director
                   'agent_id' => "agent-#{i}",
                   'cid' => "cid-#{i}",
                   'instance_id' => instance.id,
-                  'created_at' => time
+                  'created_at' => time,
+                  'network_spec' => {'network1' => {'ip' => "1.2.3.#{i}"}},
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -1007,7 +1007,8 @@ module Bosh::Director
                     'agent_id' => "agent-#{i}",
                     'cid' => "cid-#{i}",
                     'instance_id' => instance.id,
-                    'created_at' => time
+                    'created_at' => time,
+                    'network_spec' => {}
                   }
 
                   vm = Models::Vm.create(vm_params)
@@ -1052,7 +1053,7 @@ module Bosh::Director
             end
 
             context 'ips' do
-              it 'returns instance ip addresses' do
+              it 'returns no ips if there are no vms for the instance' do
                 15.times do |i|
                   instance_params = {
                       'deployment_id' => deployment.id,
@@ -1090,14 +1091,14 @@ module Bosh::Director
                                           'index' => i,
                                           'id' => "instance-#{i}",
                                           'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
-                                          'ips' => ["1.2.3.#{i}"],
+                                          'ips' => [],
                                           'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )
                 end
               end
 
-              it 'returns network spec ip addresses' do
+              it 'returns no ips even if there is a network spec ip addresses' do
                 15.times do |i|
                   instance_params = {
                       'deployment_id' => deployment.id,
@@ -1128,7 +1129,7 @@ module Bosh::Director
                                           'index' => i,
                                           'id' => "instance-#{i}",
                                           'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
-                                          'ips' => ["1.2.3.#{i}"],
+                                          'ips' => [],
                                           'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )

@@ -20,6 +20,7 @@ module Bosh::Director
             'id' => 'my-id',
             'and' => 'other_keys',
           })
+          allow(vm).to receive(:save)
           allow(spec).to receive(:full_spec).and_return({
             'networks' => 'my-networks',
             'deployment' => 'my-deployment',

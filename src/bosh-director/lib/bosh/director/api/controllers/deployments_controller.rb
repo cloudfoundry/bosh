@@ -531,6 +531,8 @@ module Bosh::Director
       end
 
       def ips(vm)
+        return [] if vm.nil?
+
         # For manual and vip networks
         result = vm.instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
 
