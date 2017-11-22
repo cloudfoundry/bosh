@@ -9,16 +9,15 @@ module Bosh::Director
 
         def perform
           spec = InstanceSpec.create_from_instance_plan(@instance_plan)
-          agent_id = nil
-          instance = @instance_plan.instance.model
+          instance_model = @instance_plan.instance.model
 
           if @use_active_vm
             spec = spec.as_apply_spec
-            agent_id = instance.agent_id
+            agent_id = instance_model.agent_id
             raise 'no active VM available to prepare for instance' if agent_id.nil?
           else
             spec = spec.as_jobless_apply_spec
-            vm = instance.most_recent_inactive_vm
+            vm = instance_model.most_recent_inactive_vm
             raise 'no inactive VM available to prepare for instance' if vm.nil?
             agent_id = vm.agent_id
           end
