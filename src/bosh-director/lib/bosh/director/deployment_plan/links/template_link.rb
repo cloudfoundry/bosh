@@ -27,7 +27,7 @@ module Bosh::Director
           elsif link_def.has_key?('as')
             return new(link_def['as'], link_def['type'], false, link_def['shared'] || false, link_def['name'])
           else
-            return new(link_def['name'], link_def['type'], false, link_def['shared'] || false)
+            return new(link_def['name'], link_def['type'], false, link_def['shared'] || false, link_def['name'])
           end
         end
         raise JobInvalidLinkSpec, "Link '#{link_def}' must be a hash with name and type"
