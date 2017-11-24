@@ -85,7 +85,6 @@ describe 'Links', type: :integration do
     let(:instance_group) do
       {
         'name' => 'foobar',
-        # 'jobs' => [{'name' => 'empty_job'}],
         'jobs' => [],
         'vm_type' => 'a',
         'stemcell' => 'default',
@@ -686,7 +685,7 @@ describe 'Links', type: :integration do
             spec
           end
 
-          let(:api_server_with_optional_db_links2)do
+          let(:api_server_with_optional_db_links2) do
             spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'optional_db',
               jobs: [{'name' => 'api_server_with_optional_db_link', 'consumes' => optional_links2}],
@@ -703,7 +702,7 @@ describe 'Links', type: :integration do
             manifest
           end
 
-          it 'still has a new provider with updated link' do
+          it "updates the first deployment's provider" do
             response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
             response_body = JSON.parse(response.read_body)
             original_provider_id = response_body[0]['id']
@@ -717,7 +716,7 @@ describe 'Links', type: :integration do
             expect(response.code).to eq('200')
             response_body = JSON.parse(response.read_body)
             expect(response_body.count).to eq(1)
-            expect(response_body[0]['id']).to_not eq(original_provider_id)
+            expect(response_body[0]['id']).to eq(original_provider_id)
             expect(response_body[0]['link_provider_definition']['name']).to eq(original_provider_link_name)
           end
 
