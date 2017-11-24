@@ -95,10 +95,7 @@ module Bosh::Director
         jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
         instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
 
-        # FIX this, instance groups can be empty
-        if !instance_groups.empty?
-          jobs = instance_groups
-        end
+        jobs = instance_groups unless instance_groups.empty?
 
         jobs.each do |job_spec|
           # get state specific for this job or all jobs
