@@ -175,7 +175,7 @@ module Bosh::Director
 
         # get the link path from that deployment
         find_link_path_with_name(deployment_model, name, link_network)
-    end
+      end
 
       def find_link_path_with_name(deployment, name, link_network)
         found_link_paths = []

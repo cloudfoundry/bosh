@@ -111,7 +111,7 @@ module Bosh::Director
               deployment: @deployment_plan.model, # Deployment
               instance_group: instance_group.name, # Instance Group
               owner_object_name: job.name, # Job
-              name: provided_link.original_name, # Link Name
+              link_provider_definition_name: provided_link.original_name, # Link Name
             }
           )
 

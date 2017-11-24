@@ -120,10 +120,11 @@ module Bosh::Director
       def find_link_provider
         return nil if @deployment_link_provider.empty?
 
-        job = @deployment_link_provider.select{|lp|
+        job = @deployment_link_provider.select do |lp|
           lp[:instance_group] == @link_path.job &&
           lp[:owner_object_name] == @link_path.template &&
-          lp[:name] == @link_path.name}
+          lp[:name] == @link_path.name
+        end
         return nil if job.empty?
 
         template = job.select{|j| j[:link_provider_definition_type] == @consumed_link.type }
