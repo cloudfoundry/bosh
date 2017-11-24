@@ -106,7 +106,14 @@ module Bosh::Director
 
       def add_provided_links(instance_group, job)
         job.provided_links(instance_group.name).each do |provided_link|
-          provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, instance_group: instance_group.name, name: provided_link.name, owner_object_name: job.name)
+          provider = Bosh::Director::Models::LinkProvider.find(
+            {
+              deployment: @deployment_plan.model, # Deployment
+              instance_group: instance_group.name, # Instance Group
+              owner_object_name: job.name, # Job
+              name: provided_link.original_name, # Link Name
+            }
+          )
 
           if provided_link.original_name.nil?
             link_definition_name = provided_link.name

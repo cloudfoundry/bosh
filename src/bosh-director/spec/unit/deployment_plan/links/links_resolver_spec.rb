@@ -628,7 +628,7 @@ Unable to process links for deployment. Errors are:
         expect(deployment_plan.link_providers.size).to eq(1)
       end
 
-      context 'when the contents is updated' do
+      context 'when the contents are updated' do
         let(:api_server_instance_group2) do
           deployment_plan2.instance_group('api-server')
         end
@@ -649,7 +649,7 @@ Unable to process links for deployment. Errors are:
           manifest_job_provides['my_db']['as'] = 'db'
           links['backup_db']['from'] = 'db'
           manifest = generate_deployment_manifest('fake-deployment', links, ['127.0.0.5', '127.0.0.6'])
-          manifest['instance_groups'][1]['jobs'][0]['properties']['mysql']={'happy' => true, 'sad' => false}
+          manifest['instance_groups'][1]['jobs'][0]['properties']['mysql'] = {'happy' => true, 'sad' => false}
           manifest
         end
 
@@ -675,14 +675,14 @@ Unable to process links for deployment. Errors are:
           provider = deployment_plan2.link_providers[0]
           content = JSON.parse(deployment_plan2.link_providers[0].content)
 
-          expect(deployment_plan2.link_providers[0].id).to eq(@original_provider_id)
+          expect(deployment_plan2.link_providers[0].id).to_not eq(@original_provider_id)
           expect(content['properties']['mysql']).to eq({'happy' => true, 'sad' => false})
           expect(provider.shared).to eq(true)
           expect(provider.link_provider_definition_type).to eq("db2")
           expect(provider.link_provider_definition_name).to eq("my_db")
         end
 
-        it 'consumer stays the same' do
+        it 'uses the same consumer' do
           links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(deployment_plan2, logger)
           links_resolver.resolve(api_server_instance_group2)
 
@@ -905,7 +905,6 @@ Unable to process links for deployment. Errors are:
                 provider[:link_provider_definition_type] == expected_provider[:link_type] &&
                 provider[:link_provider_definition_name] == expected_provider[:original_link_name] &&
                 provider[:owner_object_name] == expected_provider[:owner_name]
-
             end
 
             fail "Unable to find provider with properties #{expected_provider.inspect} from #{providers.inspect}" unless provider
