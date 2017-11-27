@@ -291,6 +291,7 @@ module Bosh::Director
 
             releases_by_package_names[package_name][:usages] << {
               fingerprint: package.fingerprint,
+              dependency_set_json: package.dependency_set_json,
               release: job.release.name,
               job: job.name,
             }
@@ -298,7 +299,7 @@ module Bosh::Director
         end
 
         releases_by_package_names.each do |package_name, packages|
-          releases = packages[:usages].group_by{ |u| u[:fingerprint] }
+          releases = packages[:usages].group_by{ |u| u[:fingerprint] + u[:dependency_set_json] }
 
           if releases.size > 1
             release1jobs, release2jobs = releases.values[0..1]
