@@ -22,7 +22,14 @@ module Bosh::Director
       vms = db[:vms].all
       expect(vms.length).to eq(2)
       expect(vms[0][:network_spec_json]).to eq(JSON.dump({'instance-networks' => ['a', 'b']}))
-      expect(vms[1][:network_spec_json]).to eq('{}')
+      expect(vms[1][:network_spec_json]).to eq(nil)
+    end
+
+    it 'makes the network_spec_json able to take long strings' do
+      DBSpecHelper.migrate(migration_file)
+
+      really_long_json_field = "{\"long-value\":\"#{'a' * 65536}}\""
+      db[:vms] << {instance_id: 123, network_spec_json: really_long_json_field}
     end
   end
 end

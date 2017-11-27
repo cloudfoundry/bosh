@@ -21,6 +21,14 @@ module Bosh::Director::Models
 
         expect(vm.network_spec).to eq({'some' => 'spec'})
       end
+
+      context 'when network_spec_json is nil' do
+        it 'returns empty hash' do
+          vm.network_spec_json = nil
+
+          expect(vm.network_spec).to eq({})
+        end
+      end
     end
 
     describe '#network_spec=' do

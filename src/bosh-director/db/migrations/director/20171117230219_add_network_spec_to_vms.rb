@@ -1,7 +1,12 @@
 Sequel.migration do
   up do
+    column_type = String
+    if [:mysql2, :mysql].include?(adapter_scheme)
+      column_type = 'longtext'
+    end
+
     alter_table(:vms) do
-      add_column(:network_spec_json, String, default: '{}')
+      add_column(:network_spec_json, column_type)
     end
 
     self[:vms].all do |vm|

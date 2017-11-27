@@ -3,7 +3,7 @@ module Bosh::Director::Models
     many_to_one :instance
 
     def network_spec
-      JSON.parse(network_spec_json)
+      JSON.parse(network_spec_json || '{}')
     end
 
     def network_spec=(spec)
