@@ -41,6 +41,7 @@ module Bosh::Director
         properties: {},
         vm_resources: DeploymentPlan::VmResources.new({'cpu' => 1, 'ephemeral_disk_size' => 1, 'ram' => 1}),
         lifecycle: DeploymentPlan::InstanceGroup::DEFAULT_LIFECYCLE_PROFILE,
+        strategy: 'fake-strat',
       )
     end
     let(:update_config) do

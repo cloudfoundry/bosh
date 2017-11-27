@@ -32,6 +32,7 @@ module Bosh::Director
       attr_reader :availability_zone
 
       attr_reader :existing_network_reservations
+      attr_reader :strategy
 
       def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, availability_zone, logger)
         new(
@@ -45,6 +46,7 @@ module Bosh::Director
           deployment_model,
           instance_state,
           availability_zone,
+          instance_group.strategy,
           logger
         )
       end
@@ -60,6 +62,7 @@ module Bosh::Director
         deployment_model,
         instance_state,
         availability_zone,
+        strategy,
         logger
       )
         @index = index
@@ -71,6 +74,7 @@ module Bosh::Director
         @env = env
         @compilation = compilation
         @merged_cloud_properties = merged_cloud_properties
+        @strategy = strategy
 
         @configuration_hash = nil
         @template_hashes = nil

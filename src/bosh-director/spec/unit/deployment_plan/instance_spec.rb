@@ -10,11 +10,11 @@ module Bosh::Director::DeploymentPlan
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
     let(:ip_provider) { IpProvider.new(in_memory_ip_repo, {}, logger) }
 
-    before { allow(Bosh::Director::Config).to receive(:dns).and_return({'domain_name' => 'test_domain'}) }
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
+      allow(Bosh::Director::Config).to receive(:dns).and_return({'domain_name' => 'test_domain'})
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
@@ -28,6 +28,7 @@ module Bosh::Director::DeploymentPlan
         persistent_disk_collection: PersistentDiskCollection.new(logger),
         compilation?: false,
         is_errand?: false,
+        strategy: 'hot-swap',
         vm_extensions: vm_extensions
       )
     end

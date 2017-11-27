@@ -95,7 +95,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'networks'  => [{'name' => 'fake-network-name'}],
         'properties' => props,
         'template' => %w(foo bar),
-        'update' => update
+        'update' => update,
+        'strategy' => 'hot-swap'
       }
     end
 

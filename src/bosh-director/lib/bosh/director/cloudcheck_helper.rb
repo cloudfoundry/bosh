@@ -160,6 +160,7 @@ module Bosh::Director
         instance_model.deployment,
         instance_model.spec,
         availability_zone,
+        'legacy',
         @logger
       )
       instance_from_model.bind_existing_instance_model(instance_model)

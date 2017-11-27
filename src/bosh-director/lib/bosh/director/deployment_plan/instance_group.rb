@@ -47,13 +47,13 @@ module Bosh::Director
 
       attr_accessor :default_network
 
-      # @return [Array<DeploymentPlan::Job] Jobs included on the instance group
+      # @return [Array<DeploymentPlan::Job>] Jobs included on the instance group
       attr_accessor :jobs
 
       # @return [Hash] Instance group properties
       attr_accessor :properties
 
-      # @return [Hash<String, DeploymentPlan::Package] Packages included on the instance group
+      # @return [Hash<String, DeploymentPlan::Package>] Packages included on the instance group
       attr_accessor :packages
 
       # @return [DeploymentPlan::UpdateConfig] Instance group update settings
@@ -177,6 +177,10 @@ module Bosh::Director
 
       def unignored_instance_plans
         needed_instance_plans.select { |instance_plan| !instance_plan.should_be_ignored? }
+      end
+
+      def strategy
+        update&.strategy
       end
 
       def needed_instance_plans

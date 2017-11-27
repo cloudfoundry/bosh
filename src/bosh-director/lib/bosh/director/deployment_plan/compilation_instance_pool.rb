@@ -284,6 +284,10 @@ module Bosh::Director
         nil
       end
 
+      def strategy
+        UpdateConfig::STRATEGY_LEGACY
+      end
+
       def persistent_disk_collection
         PersistentDiskCollection.new(@logger)
       end
