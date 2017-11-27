@@ -20,6 +20,7 @@ module Bosh::Director
       DBSpecHelper.migrate(migration_file)
 
       vms = db[:vms].all
+      vms.sort! { |vm1, vm2| vm1[:id] <=> vm2[:id] }
       expect(vms.length).to eq(2)
       expect(vms[0][:network_spec_json]).to eq(JSON.dump({'instance-networks' => ['a', 'b']}))
       expect(vms[1][:network_spec_json]).to eq(nil)
