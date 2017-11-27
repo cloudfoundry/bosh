@@ -122,8 +122,7 @@ module Bosh::Director
           'owner_object' => {
             'type' => model.owner_object_type,
             'name' => model.owner_object_name,
-          },
-          'content' => model.content
+          }
         }
       end
     end

@@ -137,7 +137,6 @@ describe 'Links', type: :integration do
             'type' => 'instance_group',
             'name' => 'foobar'
           },
-          'content' => "{\"deployment_name\":\"simple\",\"properties\":{\"name\":\"high-iops-persistent-disk-name\"},\"networks\":[],\"instances\":[]}",
           'id' => Integer
         },
         {
@@ -153,7 +152,6 @@ describe 'Links', type: :integration do
             'type' => 'instance_group',
             'name' => 'foobar'
           },
-          'content' => "{\"deployment_name\":\"simple\",\"properties\":{\"name\":\"low-iops-persistent-disk-name\"},\"networks\":[],\"instances\":[]}",
           'id' => Integer
         }
       ]
@@ -205,7 +203,6 @@ describe 'Links', type: :integration do
                 'type' => 'instance_group',
                 'name' => 'foobar'
               },
-              'content' => String,
               'id' => Integer
             },
             {
@@ -221,7 +218,6 @@ describe 'Links', type: :integration do
                 'type' => 'job',
                 'name' => 'database'
               },
-              'content' => String,
               'id' => Integer
             }
           ]
@@ -500,15 +496,12 @@ describe 'Links', type: :integration do
         expect(response_body[0]['content']).to_not eq({})
         expect(response_body[0]['shared']).to eq(false)
 
-        id = response_body[1]['content'][/id":"([a-z0-9-]*)"/,1]
-
         body_one = {
           'id'=>2,
           'name'=>'backup_db',
           'shared'=>false,
           'deployment'=>'simple',
           'instance_group'=>'postgres',
-          'content'=>"{\"deployment_name\":\"simple\",\"domain\":\"bosh\",\"default_network\":\"a\",\"networks\":[\"a\"],\"instance_group\":\"postgres\",\"properties\":{\"foo\":\"backup_bar\"},\"instances\":[{\"name\":\"postgres\",\"id\":\"#{id}\",\"index\":0,\"bootstrap\":true,\"az\":\"z1\",\"address\":\"192.168.1.12\",\"addresses\":{\"a\":\"192.168.1.12\"},\"dns_addresses\":{\"a\":\"192.168.1.12\"}}]}",
           'link_provider_definition'=>{'type'=>'db', 'name'=>'backup_db'},
           'owner_object'=> {
             'type'=>'job',
