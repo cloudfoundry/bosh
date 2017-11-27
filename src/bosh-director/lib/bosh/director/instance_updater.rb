@@ -11,7 +11,6 @@ module Bosh::Director
       dns_state_updater = DirectorDnsStateUpdater.new(dns_encoder)
       vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
       vm_creator = VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
-      vm_recreator = VmRecreator.new(vm_creator, vm_deleter)
       blobstore_client = App.instance.blobstores.blobstore
       rendered_templates_persistor = RenderedTemplatesPersister.new(blobstore_client, logger)
       new(
@@ -22,12 +21,11 @@ module Bosh::Director
         vm_deleter,
         vm_creator,
         disk_manager,
-        vm_recreator,
         rendered_templates_persistor
       )
     end
 
-    def initialize(logger, ip_provider, blobstore, dns_state_updater, vm_deleter, vm_creator, disk_manager, vm_recreator, rendered_templates_persistor)
+    def initialize(logger, ip_provider, blobstore, dns_state_updater, vm_deleter, vm_creator, disk_manager, rendered_templates_persistor)
       @logger = logger
       @blobstore = blobstore
       @dns_state_updater = dns_state_updater
@@ -35,7 +33,6 @@ module Bosh::Director
       @vm_creator = vm_creator
       @disk_manager = disk_manager
       @ip_provider = ip_provider
-      @vm_recreator = vm_recreator
       @rendered_templates_persistor = rendered_templates_persistor
       @current_state = {}
     end
@@ -100,7 +97,14 @@ module Bosh::Director
           @logger.debug('Failed to update in place. Recreating VM')
           @disk_manager.unmount_disk_for(instance_plan) unless instance_plan.needs_to_fix?
           tags = instance_plan.tags
-          @vm_recreator.recreate_vm(instance_plan, nil, tags)
+
+          instance_model = instance_plan.instance.model
+          @vm_deleter.delete_for_instance(instance_model)
+          disks = instance_model.active_persistent_disks.collection.
+            map(&:model).
+            map(&:disk_cid).compact
+          @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
+
           recreated = true
         end
 

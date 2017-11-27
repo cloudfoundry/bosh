@@ -7,12 +7,21 @@ module Bosh::Director
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
     let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
-    let(:vm_recreator) { instance_double(Bosh::Director::VmRecreator) }
+    let(:vm_creator) { instance_double(Bosh::Director::VmCreator) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:credentials) { {'user' => 'secret'} }
     let(:credentials_json) { JSON.generate(credentials) }
+    let(:persistent_disk_model) { instance_double(Bosh::Director::Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid')}
+    let(:disk_collection_model) { instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection::ModelPersistentDisk, model: persistent_disk_model)}
+    let(:active_persistent_disks) { instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model]) }
     let(:instance_model) do
-      instance = Models::Instance.make(uuid: 'uuid-1', deployment: deployment_model, state: instance_model_state, job: 'job-1', spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}})
+      instance = Models::Instance.make(
+        uuid: 'uuid-1',
+        deployment: deployment_model,
+        state: instance_model_state,
+        job: 'job-1',
+        spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}},
+      )
       vm_model = Models::Vm.make(agent_id: 'scool', instance_id: instance.id)
       instance.active_vm = vm_model
       instance
@@ -53,11 +62,12 @@ module Bosh::Director
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
       allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
-      allow(Bosh::Director::VmRecreator).to receive(:new).and_return(vm_recreator)
+      allow(Bosh::Director::VmCreator).to receive(:new).and_return(vm_creator)
       allow(Bosh::Director::RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
       allow(DiskManager).to receive(:new).and_return(disk_manager)
       allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
       allow(rendered_templates_persistor).to receive(:persist)
+      allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
     end
 
     context 'for any state' do
@@ -241,11 +251,12 @@ module Bosh::Director
             allow(disk_manager).to receive(:update_persistent_disk)
             allow(disk_manager).to receive(:unmount_disk_for)
             allow(job).to receive(:update)
-            allow(vm_deleter).to receive(:delete_for_instance)
           end
 
           it 'recreates correctly, and persists rendered templates to the blobstore' do
-            expect(vm_recreator).to receive(:recreate_vm).with(anything, anything, tags)
+            expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
+            expect(vm_creator).to receive(:create_for_instance_plan).with(instance_plan, [persistent_disk_model.disk_cid], tags)
+
             expect(state_applier).to receive(:apply)
             expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
 
