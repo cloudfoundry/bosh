@@ -3,9 +3,9 @@ require 'bosh/director/deployment_plan/multi_job_updater'
 require 'bosh/director/job_updater'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe PreCleanupStep do
-      subject { PreCleanupStep.new(logger, deployment_plan) }
+  module DeploymentPlan::Stages
+    describe PreCleanupStage do
+      subject { PreCleanupStage.new(logger, deployment_plan) }
       let(:event_log) { Config.event_log }
       let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
       let(:existing_instance) { Models::Instance.make }

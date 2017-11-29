@@ -2,9 +2,9 @@ require 'spec_helper'
 require 'bosh/director/dns/local_dns_encoder_manager'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe DownloadPackagesStep do
-      subject { DownloadPackagesStep.new(base_job, deployment_plan) }
+  module DeploymentPlan::Stages
+    describe DownloadPackagesStage do
+      subject { DownloadPackagesStage.new(base_job, deployment_plan) }
 
       let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
 

@@ -3,22 +3,22 @@ require 'bosh/director/deployment_plan/multi_job_updater'
 require 'bosh/director/job_updater'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe UpdateStep do
-      subject { UpdateStep.new(base_job, deployment_plan, multi_job_updater, dns_encoder) }
+  module DeploymentPlan::Stages
+    describe UpdateStage do
+      subject { UpdateStage.new(base_job, deployment_plan, multi_job_updater, dns_encoder) }
       let(:dns_encoder) { Bosh::Director::DnsEncoder.new }
       let(:base_job) { Jobs::BaseJob.new }
-      let(:pre_cleanup) { instance_double('Bosh::Director::DeploymentPlan::Steps::PreCleanupStep') }
-      let(:update_active_vm_cpis) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateActiveVmCpisStep') }
-      let(:setup) { instance_double('Bosh::Director::DeploymentPlan::Steps::SetupStep') }
-      let(:download_packages_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::DownloadPackagesStep')}
-      let(:update_jobs) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateJobsStep') }
-      let(:update_errands) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateErrandsStep') }
+      let(:pre_cleanup) { instance_double('Bosh::Director::DeploymentPlan::Stages::PreCleanupStage') }
+      let(:update_active_vm_cpis) { instance_double('Bosh::Director::DeploymentPlan::Stages::UpdateActiveVmCpisStage') }
+      let(:setup) { instance_double('Bosh::Director::DeploymentPlan::Stages::SetupStage') }
+      let(:download_packages_step) { instance_double('Bosh::Director::DeploymentPlan::Stages::DownloadPackagesStage')}
+      let(:update_jobs) { instance_double('Bosh::Director::DeploymentPlan::Stages::UpdateJobsStage') }
+      let(:update_errands) { instance_double('Bosh::Director::DeploymentPlan::Stages::UpdateErrandsStage') }
       let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
       let(:vm_deleter) { instance_double('Bosh::Director::VmDeleter') }
       let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
-      let(:cleanup_stemcell_reference) { instance_double('Bosh::Director::DeploymentPlan::Steps::CleanupStemcellReferencesStep') }
-      let(:persist_deployment) { instance_double('Bosh::Director::DeploymentPlan::Steps::PersistDeploymentStep') }
+      let(:cleanup_stemcell_reference) { instance_double('Bosh::Director::DeploymentPlan::Stages::CleanupStemcellReferencesStage') }
+      let(:persist_deployment) { instance_double('Bosh::Director::DeploymentPlan::Stages::PersistDeploymentStage') }
       let(:template_blob_cache) { instance_double'Bosh::Director::Core::Templates::TemplateBlobCache' }
 
       let(:deployment_plan) do
@@ -28,16 +28,16 @@ module Bosh::Director
       end
 
       before do
-        allow(PreCleanupStep).to receive(:new).with(base_job.logger, deployment_plan).and_return(pre_cleanup)
-        allow(UpdateActiveVmCpisStep).to receive(:new).with(base_job.logger, deployment_plan).and_return(update_active_vm_cpis)
-        allow(SetupStep).to receive(:new).with(base_job, deployment_plan, vm_creator, anything, anything).and_return(setup)
-        allow(DownloadPackagesStep).to receive(:new).with(base_job, deployment_plan).and_return(download_packages_step)
-        allow(UpdateJobsStep).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
-        allow(UpdateErrandsStep).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
+        allow(PreCleanupStage).to receive(:new).with(base_job.logger, deployment_plan).and_return(pre_cleanup)
+        allow(UpdateActiveVmCpisStage).to receive(:new).with(base_job.logger, deployment_plan).and_return(update_active_vm_cpis)
+        allow(SetupStage).to receive(:new).with(base_job, deployment_plan, vm_creator, anything, anything).and_return(setup)
+        allow(DownloadPackagesStage).to receive(:new).with(base_job, deployment_plan).and_return(download_packages_step)
+        allow(UpdateJobsStage).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
+        allow(UpdateErrandsStage).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
         allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, dns_encoder, anything).and_return(vm_creator)
-        allow(CleanupStemcellReferencesStep).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
-        allow(PersistDeploymentStep).to receive(:new).with(deployment_plan).and_return(persist_deployment)
+        allow(CleanupStemcellReferencesStage).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
+        allow(PersistDeploymentStage).to receive(:new).with(deployment_plan).and_return(persist_deployment)
       end
 
       describe '#perform' do

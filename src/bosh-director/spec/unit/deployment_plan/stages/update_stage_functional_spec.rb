@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Director::DeploymentPlan::Steps
+module Bosh::Director::DeploymentPlan::Stages
   describe 'deployment prepare & update', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
     before do
       release = Bosh::Director::Models::Release.make(name: 'fake-release')
@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan::Steps
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
-    let(:update_step) { UpdateStep.new(base_job, deployment_plan, multi_job_updater, dns_encoder) }
+    let(:update_step) { UpdateStage.new(base_job, deployment_plan, multi_job_updater, dns_encoder) }
 
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
     let(:assembler) { Assembler.new(deployment_plan, nil, nil) }

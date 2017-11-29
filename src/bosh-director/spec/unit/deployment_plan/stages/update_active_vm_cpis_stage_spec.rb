@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe UpdateActiveVmCpisStep do
+  module DeploymentPlan::Stages
+    describe UpdateActiveVmCpisStage do
       subject do
         deployment_assembler.bind_models
         described_class.new(base_job.logger, deployment_plan)

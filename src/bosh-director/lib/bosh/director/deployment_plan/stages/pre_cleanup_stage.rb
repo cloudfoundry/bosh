@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
-    module Steps
-      class PreCleanupStep
+    module Stages
+      class PreCleanupStage
         def initialize(logger, deployment_plan)
           @logger = logger
           @deployment_plan = deployment_plan
@@ -16,7 +16,7 @@ module Bosh::Director
         def delete_instances_for_obsolete_instance_groups
           @logger.info('Deleting no longer needed instances')
 
-	   obsolete_plans = @deployment_plan.instance_plans_for_obsolete_instance_groups
+          obsolete_plans = @deployment_plan.instance_plans_for_obsolete_instance_groups
 
           if !obsolete_plans.empty?
             event_log_stage = Config.event_log.begin_stage('Deleting unneeded instances', obsolete_plans.size)
@@ -24,7 +24,7 @@ module Bosh::Director
 
             instance_deleter.delete_instance_plans(obsolete_plans, event_log_stage)
             @logger.info('Deleted no longer needed instances')
-	   else
+          else
             @logger.info('No unneeded instances to delete')
           end
         end

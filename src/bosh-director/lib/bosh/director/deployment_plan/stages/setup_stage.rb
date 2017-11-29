@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
-    module Steps
-      class SetupStep
+    module Stages
+      class SetupStage
         def initialize(base_job, deployment_plan, vm_creator, local_dns_repo, dns_publisher)
           @base_job = base_job
           @logger = base_job.logger

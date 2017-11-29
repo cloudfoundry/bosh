@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
-    module Steps
-      class UpdateActiveVmCpisStep
+    module Stages
+      class UpdateActiveVmCpisStage
         def initialize(logger, deployment_plan)
           @logger = logger
           @deployment_plan = deployment_plan

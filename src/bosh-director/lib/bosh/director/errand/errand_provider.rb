@@ -130,7 +130,7 @@ module Bosh::Director
     end
 
     def compile_step(deployment_plan)
-      DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
+      DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
     end
   end
 

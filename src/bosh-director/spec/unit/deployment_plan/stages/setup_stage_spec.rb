@@ -2,10 +2,10 @@ require 'spec_helper'
 require 'bosh/director/dns/local_dns_encoder_manager'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe SetupStep do
+  module DeploymentPlan::Stages
+    describe SetupStage do
       describe 'deployment prepare & update' do
-        subject { SetupStep.new(base_job, deployment_plan, vm_creator, local_dns_repo, dns_publisher) }
+        subject { SetupStage.new(base_job, deployment_plan, vm_creator, local_dns_repo, dns_publisher) }
 
         let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
         let(:vm_creator) { instance_double(VmCreator) }

@@ -33,15 +33,15 @@ module SpecHelper
     attr_accessor :temp_dir
 
     def init
-      ENV["RACK_ENV"] = "test"
+      ENV['RACK_ENV'] = 'test'
       configure_init_logger
       configure_temp_dir
 
-      require "bosh/director"
+      require 'bosh/director'
 
       init_database
 
-      require "blueprints"
+      require 'blueprints'
     end
 
     # init_logger is only used before the tests start.
@@ -113,8 +113,8 @@ module SpecHelper
       @director_db_helper.create_db
       @dns_db_helper.create_db
 
-      @dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
-      @director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
+      @dns_migrations = File.expand_path('../../db/migrations/dns', __FILE__)
+      @director_migrations = File.expand_path('../../db/migrations/director', __FILE__)
       Sequel.extension :migration
 
       connect_database
@@ -172,17 +172,17 @@ module SpecHelper
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
-        c.dataset = @director_db[c.simple_table.gsub(/[`"]/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Delayed::Backend::Sequel.constants.each do |e|
         c = Delayed::Backend::Sequel.const_get(e)
-        c.dataset = @director_db[c.simple_table.gsub(/[`"]/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Bosh::Director::Models::Dns.constants.each do |e|
         c = Bosh::Director::Models::Dns.const_get(e)
-        c.dataset = @dns_db[c.simple_table.gsub(/[`"]/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @dns_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
     end
 

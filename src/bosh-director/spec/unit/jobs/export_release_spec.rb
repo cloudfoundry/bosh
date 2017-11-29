@@ -11,7 +11,7 @@ module Bosh::Director
 
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
-    let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
+    let(:package_compile_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage)}
 
     let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
     let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
@@ -132,7 +132,7 @@ module Bosh::Director
         context 'and the requested stemcell is found' do
           before do
             create_stemcell
-            allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
+            allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).and_return(package_compile_step)
             allow(job).to receive(:create_tarball)
             allow(package_compile_step).to receive(:perform)
           end
@@ -310,7 +310,7 @@ module Bosh::Director
           allow(Config).to receive(:event_log).and_return(EventLog::Log.new)
           allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
           allow(planner_factory).to receive(:create_from_model).and_return(planner)
-          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
+          allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).and_return(package_compile_step)
           allow(package_compile_step).to receive(:perform).with no_args
         end
 

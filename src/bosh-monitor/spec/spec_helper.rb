@@ -40,15 +40,15 @@ end
 
 def make_alert(attrs = {})
   defaults = {
-      "id" => 1,
-      "severity" => 2,
-      "title" => 'Test Alert',
-      "summary" => 'Everything is down',
-      "source" => 'mysql_node/instance_id_abc',
-      "deployment" => 'deployment',
-      "job" => 'job',
-      "instance_id" => 'instance_id',
-      "created_at" => Time.now.to_i
+      'id' => 1,
+      'severity' => 2,
+      'title' => 'Test Alert',
+      'summary' => 'Everything is down',
+      'source' => 'mysql_node/instance_id_abc',
+      'deployment' => 'deployment',
+      'job' => 'job',
+      'instance_id' => 'instance_id',
+      'created_at' => Time.now.to_i
   }
   Bhm::Events::Alert.new(defaults.merge(attrs))
 end

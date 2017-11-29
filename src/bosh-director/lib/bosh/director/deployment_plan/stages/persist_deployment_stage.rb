@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
-    module Steps
-      class PersistDeploymentStep
+    module Stages
+      class PersistDeploymentStage
 
         def initialize(deployment_plan)
           @deployment_plan = deployment_plan

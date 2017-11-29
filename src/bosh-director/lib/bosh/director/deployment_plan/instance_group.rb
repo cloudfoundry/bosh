@@ -171,7 +171,7 @@ module Bosh::Director
         @instance_plans.select(&:obsolete?)
       end
 
-      def instances # to preserve interface for UpdateStep -- switch to instance_plans eventually
+      def instances # to preserve interface for UpdateStage -- switch to instance_plans eventually
         needed_instance_plans.map(&:instance)
       end
 

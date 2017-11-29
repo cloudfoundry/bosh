@@ -176,13 +176,13 @@ module Bosh::Director
             model: deployment_model,
           )
         end
-        let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
+        let(:compile_packages_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage, perform: nil) }
         let(:cloud_config) { Models::Config.make(:cloud) }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
 
         before do
           allow(template_blob_cache).to receive(:clean_cache!)
-          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step)
+          allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).with(planner).and_return(compile_packages_step)
         end
 
           context 'when instance group representing an errand exists' do

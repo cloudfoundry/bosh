@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
-    module Steps
-      class UpdateJobsStep
+    module Stages
+      class UpdateJobsStage
         def initialize(base_job, deployment_plan, multi_job_updater)
           @base_job = base_job
           @logger = base_job.logger

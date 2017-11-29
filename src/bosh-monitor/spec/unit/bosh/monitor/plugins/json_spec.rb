@@ -5,7 +5,7 @@ describe Bhm::Plugins::Json do
 
   subject(:plugin) { Bhm::Plugins::Json.new({'process_manager' => process_manager}) }
 
-  it "send events to the process manager" do
+  it 'send events to the process manager' do
     expect(process_manager).to receive(:start)
     plugin.run
 
@@ -30,7 +30,7 @@ describe Bhm::Plugins::ProcessManager do
     expect(process_manager.start).to be(false)
   end
 
-  it "starts processes that match the glob" do
+  it 'starts processes that match the glob' do
     allow(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/plugin'])
 
     process = double('some-process').as_null_object
@@ -44,7 +44,7 @@ describe Bhm::Plugins::ProcessManager do
     end
   end
 
-  it "restarts processes when they die" do
+  it 'restarts processes when they die' do
     allow(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/non-existent-plugin'])
     expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).at_least(2).times.with('/non-existent-plugin').and_call_original
 
@@ -55,7 +55,7 @@ describe Bhm::Plugins::ProcessManager do
     end
   end
 
-  it "detects and starts new processes" do
+  it 'detects and starts new processes' do
     process = double('some-process', errback: nil)
     expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return([]).once.ordered
     expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/plugin']).at_least(1).times.ordered
@@ -84,7 +84,7 @@ describe Bhm::Plugins::ProcessManager do
   end
 
 
-  it "sends events to all managed processes as JSON" do
+  it 'sends events to all managed processes as JSON' do
     alert = make_alert(timestamp: Time.now.to_i)
 
     expect(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/process-a', '/process-b'])

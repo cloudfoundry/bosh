@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe CleanupStemcellReferencesStep do
-      subject { CleanupStemcellReferencesStep.new(deployment_planner) }
+  module DeploymentPlan::Stages
+    describe CleanupStemcellReferencesStage do
+      subject { CleanupStemcellReferencesStage.new(deployment_planner) }
 
       let!(:stemcell_model) { Bosh::Director::Models::Stemcell.create(name: 'default', version: '1', cid: 'abc') }
       let(:stemcell_model_2) { Bosh::Director::Models::Stemcell.create(name: 'stem2', version: '1.0', cid: 'def') }

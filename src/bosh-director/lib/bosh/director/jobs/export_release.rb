@@ -75,7 +75,7 @@ module Bosh::Director
       private
 
       def compile_step(deployment_plan)
-        DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
+        DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
       end
 
       def deployment_manifest_has_release?(manifest)

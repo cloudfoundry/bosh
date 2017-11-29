@@ -106,10 +106,10 @@ module Bosh::Director
           let(:errand_step1) { instance_double(Errand::LifecycleServiceStep) }
           let(:errand_step2) { instance_double(Errand::LifecycleServiceStep) }
           let(:errand_step3) { instance_double(Errand::LifecycleErrandStep) }
-          let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep) }
+          let(:package_compile_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage) }
 
           before do
-            allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
+            allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).and_return(package_compile_step)
             allow(package_compile_step).to receive(:perform)
             allow(instance_group2).to receive(:bind_instances)
             allow(Errand::Runner).to receive(:new).and_return(runner)
@@ -305,7 +305,7 @@ module Bosh::Director
         let(:errand_job_name) {'errand-job'}
         let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name, runs_as_errand?: true) }
         let(:needed_instance_plans) { [] }
-        let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep) }
+        let(:package_compile_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage) }
 
         before do
           allow(deployment_planner).to receive(:instance_group).with(instance_group_name).and_return(instance_group)
@@ -327,7 +327,7 @@ module Bosh::Director
           before do
             allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
             allow(instance).to receive(:model).and_return(instance_model)
-            allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).and_return(package_compile_step)
+            allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).and_return(package_compile_step)
             allow(instance_group).to receive(:bind_instances)
             allow(package_compile_step).to receive(:perform)
           end

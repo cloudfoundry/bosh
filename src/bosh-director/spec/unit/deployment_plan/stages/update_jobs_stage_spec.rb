@@ -3,9 +3,9 @@ require 'bosh/director/deployment_plan/multi_job_updater'
 require 'bosh/director/job_updater'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe UpdateJobsStep do
-      subject { UpdateJobsStep.new(base_job, deployment_plan, multi_job_updater) }
+  module DeploymentPlan::Stages
+    describe UpdateJobsStage do
+      subject { UpdateJobsStage.new(base_job, deployment_plan, multi_job_updater) }
       let(:base_job) { Jobs::BaseJob.new }
       let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
       let(:instance_group1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup') }

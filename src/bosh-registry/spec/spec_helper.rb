@@ -1,9 +1,9 @@
 require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
 
-require "fileutils"
-require "mono_logger"
-require "tmpdir"
-require "rack/test"
+require 'fileutils'
+require 'mono_logger'
+require 'tmpdir'
+require 'rack/test'
 
 module SpecHelper
   class << self
@@ -12,21 +12,21 @@ module SpecHelper
     attr_reader :registry_migrations_dir
 
     def init
-      ENV["RACK_ENV"] = "test"
+      ENV['RACK_ENV'] = 'test'
       configure_logging
       configure_temp_dir
 
-      require "bosh/registry"
+      require 'bosh/registry'
       init_database
       @registry_migrations_dir = File.expand_path('../../db/migrations', __FILE__)
     end
 
     def configure_logging
-      if ENV["DEBUG"]
+      if ENV['DEBUG']
         @logger = MonoLogger.new(STDOUT)
       else
-        path = File.expand_path("/tmp/spec.log", __FILE__)
-        log_file = File.open(path, "w")
+        path = File.expand_path('/tmp/spec.log', __FILE__)
+        log_file = File.open(path, 'w')
         log_file.sync = true
         @logger = MonoLogger.new(log_file)
       end
@@ -34,7 +34,7 @@ module SpecHelper
 
     def configure_temp_dir
       @temp_dir = Dir.mktmpdir
-      ENV["TMPDIR"] = @temp_dir
+      ENV['TMPDIR'] = @temp_dir
       FileUtils.mkdir_p(@temp_dir)
       at_exit do
         begin
@@ -51,7 +51,7 @@ module SpecHelper
     end
 
     def init_database
-      @migrations_dir = File.expand_path("../../db/migrations", __FILE__)
+      @migrations_dir = File.expand_path('../../db/migrations', __FILE__)
 
       Sequel.extension :migration
 
@@ -67,11 +67,11 @@ module SpecHelper
     end
 
     def reset_database
-      @db.execute("PRAGMA foreign_keys = OFF")
+      @db.execute('PRAGMA foreign_keys = OFF')
       @db.tables.each do |table|
         @db.drop_table(table)
       end
-      @db.execute("PRAGMA foreign_keys = ON")
+      @db.execute('PRAGMA foreign_keys = ON')
     end
 
     def get_migrations
@@ -92,23 +92,23 @@ SpecHelper.init
 
 def valid_config
   {
-    "logfile" => nil,
-    "loglevel" => "debug",
-    "http" => {
-      "user" => "admin",
-      "password" => "admin",
-      "port" => 25777
+    'logfile' => nil,
+    'loglevel' => 'debug',
+    'http' => {
+      'user' => 'admin',
+      'password' => 'admin',
+      'port' => 25777
     },
-    "db" => {
-      "connection_options" => {
-        "max_connections" => 433,
-        "pool_timeout" => 227,
+    'db' => {
+      'connection_options' => {
+        'max_connections' => 433,
+        'pool_timeout' => 227,
       },
-      "database" => "/:memory:",
-      "adapter" => "sqlite"
+      'database' => '/:memory:',
+      'adapter' => 'sqlite'
     },
-    "cloud" => {
-      "plugin" => "dummy"
+    'cloud' => {
+      'plugin' => 'dummy'
     }
   }
 end

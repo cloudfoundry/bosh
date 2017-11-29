@@ -97,7 +97,7 @@ module Bosh::Director
             else
               compilation_step(deployment_plan).perform
 
-              update_step(deployment_plan, dns_encoder).perform
+              update_stage(deployment_plan, dns_encoder).perform
 
               if check_for_changes(deployment_plan)
                 PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
@@ -181,11 +181,11 @@ module Bosh::Director
       end
 
       def compilation_step(deployment_plan)
-        DeploymentPlan::Steps::PackageCompileStep.create(deployment_plan)
+        DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
       end
 
-      def update_step(deployment_plan, dns_encoder)
-        DeploymentPlan::Steps::UpdateStep.new(
+      def update_stage(deployment_plan, dns_encoder)
+        DeploymentPlan::Stages::UpdateStage.new(
           self,
           deployment_plan,
           multi_job_updater(deployment_plan, dns_encoder),

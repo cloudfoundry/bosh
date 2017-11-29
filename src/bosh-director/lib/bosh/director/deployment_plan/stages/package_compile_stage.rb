@@ -3,8 +3,8 @@ require 'digest/sha1'
 
 module Bosh::Director
   module DeploymentPlan
-    module Steps
-      class PackageCompileStep
+    module Stages
+      class PackageCompileStage
         include LockHelper
 
         attr_reader :compilations_performed

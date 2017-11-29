@@ -3,9 +3,9 @@ require 'bosh/director/deployment_plan/multi_job_updater'
 require 'bosh/director/job_updater'
 
 module Bosh::Director
-  module DeploymentPlan::Steps
-    describe UpdateErrandsStep do
-      subject { DeploymentPlan::Steps::UpdateErrandsStep.new(base_job, deployment_plan) }
+  module DeploymentPlan::Stages
+    describe UpdateErrandsStage do
+      subject { DeploymentPlan::Stages::UpdateErrandsStage.new(base_job, deployment_plan) }
       let(:base_job) { Jobs::BaseJob.new }
       let(:event_log) { Config.event_log }
 

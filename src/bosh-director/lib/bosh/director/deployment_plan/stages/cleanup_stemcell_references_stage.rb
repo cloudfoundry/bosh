@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
-    module Steps
-      class CleanupStemcellReferencesStep
+    module Stages
+      class CleanupStemcellReferencesStage
 
         def initialize(deployment_planner)
           @deployment_planner = deployment_planner
