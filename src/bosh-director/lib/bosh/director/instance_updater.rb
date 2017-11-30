@@ -81,7 +81,7 @@ module Bosh::Director
           # Command issued: `bosh stop --hard`
           @logger.info("Detaching instance #{instance}")
           unless instance_plan.already_detached?
-            @disk_manager.unmount_disk_for(instance_plan)
+            DeploymentPlan::Steps::UnmountDisksStep.new(instance_plan).perform
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
             @vm_deleter.delete_for_instance(instance_model)
           end
@@ -95,7 +95,7 @@ module Bosh::Director
         recreated = false
         if needs_recreate?(instance_plan)
           @logger.debug('Failed to update in place. Recreating VM')
-          @disk_manager.unmount_disk_for(instance_plan) unless instance_plan.needs_to_fix?
+          DeploymentPlan::Steps::UnmountDisksStep.new(instance_plan).perform unless instance_plan.needs_to_fix?
           tags = instance_plan.tags
 
           instance_model = instance_plan.instance.model

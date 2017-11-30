@@ -63,13 +63,6 @@ module Bosh::Director
       end
     end
 
-    def unmount_disk_for(instance_plan)
-      instance_model = instance_plan.instance.model
-      instance_model.active_persistent_disks.select(&:managed?).each do |disk|
-        unmount_disk(disk.model)
-      end
-    end
-
     def attach_disk(disk, tags)
       cloud = cloud_for_cpi(disk.instance.active_vm.cpi)
       vm_cid = disk.instance.vm_cid

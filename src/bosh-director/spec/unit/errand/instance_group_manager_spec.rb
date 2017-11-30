@@ -104,12 +104,12 @@ module Bosh::Director
       let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1) }
       let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2) }
 
-      let(:disk_manager) { instance_double('Bosh::Director::DiskManager')}
+      let(:unmount_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UnmountDisksStep')}
       let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
 
       context 'when there are instance plans' do
         before do
-          allow(Bosh::Director::DiskManager).to receive(:new).and_return(disk_manager)
+          allow(Bosh::Director::DeploymentPlan::Steps::UnmountDisksStep).to receive(:new).with(instance_plan1).and_return(unmount_step)
           allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
           allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
@@ -120,7 +120,7 @@ module Bosh::Director
         it 'deletes vms for all obsolete plans' do
           expect(vm_deleter).to receive(:delete_for_instance).with(instance1_model)
           expect(vm_deleter).to receive(:delete_for_instance).with(instance2_model)
-          expect(disk_manager).to receive(:unmount_disk_for).with(instance_plan1)
+          expect(unmount_step).to receive(:perform)
 
           subject.delete_vms
         end
@@ -133,7 +133,7 @@ module Bosh::Director
 
         it 'does not try to delete vms' do
           expect(vm_deleter).to_not receive(:delete_for_instance)
-          expect(disk_manager).to_not receive(:unmount_disk_for)
+          expect(unmount_step).to_not receive(:perform)
           expect(logger).to receive(:info).with('No errand vms to delete')
 
           subject.delete_vms

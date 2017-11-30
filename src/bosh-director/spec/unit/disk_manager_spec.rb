@@ -613,13 +613,6 @@ module Bosh::Director
       end
     end
 
-    describe '#unmount_disk_for' do
-      it 'deletes the old mounted disk' do
-        expect(agent_client).to receive(:unmount_disk).with('disk123')
-        disk_manager.unmount_disk_for(instance_plan)
-      end
-    end
-
     describe '#attach_disks_if_needed' do
       context 'when instance desired job has disk' do
         let(:job_persistent_disk_size) { 100 }
