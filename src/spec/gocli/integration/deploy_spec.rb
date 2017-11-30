@@ -1385,7 +1385,7 @@ Error: Unable to render instance groups for deployment. Errors are:
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
       end
 
-      it 'does not modify the property for other release jobs' do
+      it 'does not modify the property for other templates' do
         deployment_name = Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME
         bosh_runner.run("deploy -d #{deployment_name} #{deployment_manifest.path}")
 

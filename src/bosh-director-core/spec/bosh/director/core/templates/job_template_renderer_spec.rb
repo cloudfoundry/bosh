@@ -111,7 +111,7 @@ module Bosh::Director::Core::Templates
                   'properties_need_filtering' => true,
                   'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
               }, dns_encoder
-          ).once
+          ).at_least(2).times
         end
 
         context 'rendering templates returns errors' do
@@ -181,7 +181,7 @@ module Bosh::Director::Core::Templates
           job_template_renderer.render(raw_spec)
         end
         it 'should have EvaluationContext called with correct spec' do
-          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).once
+          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).at_least(2).times
         end
       end
     end
