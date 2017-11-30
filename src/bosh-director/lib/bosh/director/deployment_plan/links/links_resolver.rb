@@ -125,19 +125,17 @@ module Bosh::Director
             provider = Bosh::Director::Models::LinkProvider.new(
               deployment: @deployment_plan.model,
               instance_group: instance_group.name,
-              name: provided_link.name,
-              consumable: true,
-              shared: provided_link.shared,
               owner_object_name: job.name,
               owner_object_type: 'job',
               link_provider_definition_name: link_definition_name,
+              consumable: true,
             )
           end
 
+          provider.name = provided_link.name
           provider.content = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec.to_json
           provider.shared = provided_link.shared
           provider.link_provider_definition_type = provided_link.type
-          provider.link_provider_definition_name = link_definition_name
           provider.save
 
           @deployment_plan.add_link_provider(provider)
@@ -164,20 +162,46 @@ module Bosh::Director
 
           link_path = instance_group.link_path(job.name, consumed_link.original_name)
           next if link_path.nil?
-          next if link_path.disk? # TODO: Deal with disk links.
 
           provider = nil
-          if link_path.manual_spec.nil?
+
+          if !link_path.manual_spec.nil?
+            link_content = link_path.manual_spec.to_json
+          else
             provider_deployment = Models::Deployment[name: link_path.deployment]
             provider = Bosh::Director::Models::LinkProvider.find(deployment: provider_deployment, instance_group: link_path.job, owner_object_name: link_path.template, name: consumed_link.name)
 
+            # This is fishy..
             if provider.nil? # implicit links
               # When calculating link_path it will have failed if the link is ambiguous.
               provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, link_provider_definition_type: consumed_link.type)
             end
-            link_content = provider[:content]
-          else
-            link_content = link_path.manual_spec.to_json
+
+            # This is duplicated up in the resolve consumed links section. Consider merging it together.
+            link_info = job.consumes_link_info(instance_group.name, consumed_link.name)
+
+            preferred_network_name = link_info['network']
+            link_use_ip_address = link_info.has_key?('ip_addresses') ? link_info['ip_addresses'] : nil
+
+            link_network_options = {
+              :preferred_network_name => preferred_network_name,
+              :global_use_dns_entry => @deployment_plan.use_dns_addresses?,
+              :link_use_ip_address => link_use_ip_address
+            }
+
+            link_lookup = LinkLookupFactory.create(consumed_link, link_path, @deployment_plan, link_network_options)
+            link_spec = link_lookup.find_link_provider
+
+            unless link_spec
+              raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
+            end
+
+            link_spec['instances'].each do |instance|
+              instance.delete('addresses')
+              instance.delete('dns_addresses')
+            end
+
+            link_content = link_spec.to_json
           end
 
           Bosh::Director::Models::Link.create(

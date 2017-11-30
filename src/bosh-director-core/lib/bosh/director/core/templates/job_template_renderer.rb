@@ -39,8 +39,6 @@ module Bosh::Director::Core::Templates
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
-        template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), @dns_encoder)
-
         begin
           file_contents = source_erb.render(template_context, @logger)
         rescue Exception => e

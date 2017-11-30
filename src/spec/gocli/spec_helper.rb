@@ -12,6 +12,6 @@ require 'bosh/director'
 require 'blue-shell'
 require_relative '../../bosh-dev/lib/bosh/dev/postgres_version'
 
-Dir.glob(File.expand_path('../../support/**/*.rb', __FILE__)).each { |f| require(f) }
-Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
-Dir.glob(File.expand_path('../shared/support/**/*.rb', __FILE__)).each { |f| require(f) }
+Dir.glob(File.expand_path('../../support/**/*.rb', __FILE__)).each {|f| require(f)}
+Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each {|f| require(f)}
+Dir.glob(File.expand_path('../shared/support/**/*.rb', __FILE__)).each {|f| require(f)}
