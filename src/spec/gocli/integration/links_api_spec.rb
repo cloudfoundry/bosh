@@ -4,15 +4,15 @@ describe 'links api', type: :integration do
   with_reset_sandbox_before_each
 
   def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, :preserve => true)
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: true)
     bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
     bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
   end
 
   let(:manifest_hash) do
-    Bosh::Spec::NewDeployments.manifest_with_release.tap do |manifest|
-      manifest['instance_groups'] = [instance_group]
-    end
+    Bosh::Spec::NewDeployments.manifest_with_release.merge(
+      'instance_groups' => [instance_group]
+    )
   end
 
   let(:instance_group) do
@@ -22,35 +22,127 @@ describe 'links api', type: :integration do
       'vm_type' => 'a',
       'stemcell' => 'default',
       'instances' => 1,
-      'networks' => [{'name' => 'a'}],
+      'networks' => [{ 'name' => 'a' }],
       'properties' => {},
       'persistent_disks' => persistent_disks
     }
   end
 
-  let(:jobs) do
-    []
-  end
+  let(:jobs) { [] }
 
-  let(:persistent_disks) do
-    []
-  end
+  let(:persistent_disks) { [] }
 
   let(:cloud_config_hash) do
-    hash = Bosh::Spec::NewDeployments.simple_cloud_config
-    hash['disk_types'] = [
-      {
-        'name' => 'low-performance-disk-type',
-        'disk_size' => 1024,
-        'cloud_properties' => {'type' => 'gp2'}
-      },
-      {
-        'name' => 'high-performance-disk-type',
-        'disk_size' => 4076,
-        'cloud_properties' => {'type' => 'io1'}
-      },
+    Bosh::Spec::NewDeployments.simple_cloud_config.merge(
+      'disk_types' => [
+        {
+          'name' => 'low-performance-disk-type',
+          'disk_size' => 1024,
+          'cloud_properties' => { 'type' => 'gp2' }
+        },
+        {
+          'name' => 'high-performance-disk-type',
+          'disk_size' => 4076,
+          'cloud_properties' => { 'type' => 'io1' }
+        }
+      ]
+    )
+  end
+
+  let(:explicit_provider_and_consumer) { [explicit_provider, explicit_consumer] }
+
+  let(:explicit_provider) do
+    {
+      'name' => 'provider',
+      'provides' => { 'provider' => { 'as' => 'foo' } }
+    }
+  end
+
+  let(:explicit_consumer) do
+    {
+      'name' => 'consumer',
+      'consumes' => { 'provider' => { 'from' => 'foo' } }
+    }
+  end
+
+  let(:implicit_provider_and_consumer) do
+    [
+      { 'name' => 'provider' },
+      { 'name' => 'consumer' }
     ]
-    hash
+  end
+
+  let(:provider_response) do
+    {
+      'id' => Integer,
+      'name' => 'provider',
+      'shared' => false,
+      'deployment' => 'simple',
+      'instance_group' => 'foobar',
+      'link_provider_definition' => {
+        'name' => 'provider',
+        'type' => 'provider'
+      },
+      'owner_object' => {
+        'name' => 'provider',
+        'type' => 'job'
+      }
+    }
+  end
+
+  def disk_provider_response(name)
+    provider_response.merge(
+      'name' => name,
+      'link_provider_definition' => {
+        'name' => name,
+        'type' => 'disk'
+      },
+      'owner_object' => {
+        'name' => 'foobar',
+        'type' => 'instance_group'
+      }
+    )
+  end
+
+  def consumer_response(name='consumer')
+    {
+      'id' => Integer,
+      'deployment' => 'simple',
+      'instance_group' => 'foobar',
+      'owner_object' => {
+        'type' => 'job', 'name' => name
+      }
+    }
+  end
+
+  let(:links_response) do
+    {
+      'id' => 1,
+      'name' => 'provider',
+      'link_consumer_id' => 1,
+      'link_provider_id' => 1,
+      'created_at' => String
+    }
+  end
+
+  def get(path, params)
+    send_director_api_request(path, params, 'GET')
+  end
+
+  def get_json(*args)
+    JSON.parse get(*args).read_body
+  end
+
+  def get_link_providers
+    get_json('/link_providers', 'deployment=simple')
+  end
+
+  def get_link_consumers
+    get_json('/link_consumers', 'deployment=simple')
+  end
+
+  def get_links
+    get_json('/links', 'deployment=simple')
   end
 
   before do
@@ -63,65 +155,22 @@ describe 'links api', type: :integration do
 
   context 'when requesting for a list of providers via link_providers endpoint' do
     context 'when deployment has an implicit link provider' do
-      let(:jobs) do
-        [{'name' => 'provider'}]
-      end
+      let(:jobs) { [{ 'name' => 'provider' }] }
 
       it 'should return the correct number of providers' do
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expected_response = [
-          {
-            "id" => 1,
-            "name" => "provider",
-            "shared" => false,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "link_provider_definition" => {
-              "type" => "provider", "name" => "provider"
-            },
-            "owner_object" => {
-              "type" => "job", "name" => "provider"
-            }
-          }
-        ]
+        expected_response = [provider_response]
 
-        expect(response_body).to match_array(expected_response)
+        expect(get_link_providers).to match_array(expected_response)
       end
     end
 
     context 'when deployment has an explicit link provider' do
-      let(:jobs) do
-        [
-          {
-            'name' => 'provider',
-            'provides' => {'provider' => {'as' => 'foo'}}
-          }
-        ]
-      end
+      let(:jobs) { [explicit_provider] }
 
       it 'should return the correct number of providers' do
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expected_response = [
-          {
-            "id" => 1,
-            "name" => "foo",
-            "shared" => false,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "link_provider_definition" => {
-              "name" => "provider",
-              "type" => "provider",
-            },
-            "owner_object" => {
-              "name" => "provider",
-              "type" => "job",
-            }
-          }
-        ]
+        expected_response = [provider_response.merge('name' => 'foo')]
 
-        expect(response_body).to match_array(expected_response)
+        expect(get_link_providers).to match_array(expected_response)
       end
 
       context 'and the provider is shared' do
@@ -140,27 +189,9 @@ describe 'links api', type: :integration do
         end
 
         it 'should set the `shared` key to true' do
-          response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-          response_body = JSON.parse(response.read_body)
-          expected_response = [
-            {
-              "id" => 1,
-              "name" => "foo",
-              "shared" => true,
-              "deployment" => "simple",
-              "instance_group" => "foobar",
-              "link_provider_definition" => {
-                "name" => "provider",
-                "type" => "provider",
-              },
-              "owner_object" => {
-                "name" => "provider",
-                "type" => "job",
-              }
-            }
-          ]
+          expected_response = [provider_response.merge('name' => 'foo', 'shared' => true)]
 
-          expect(response_body).to match_array(expected_response)
+          expect(get_link_providers).to match_array(expected_response)
         end
       end
 
@@ -177,27 +208,9 @@ describe 'links api', type: :integration do
         end
 
         it 'should return the original provider with updated information' do
-          response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-          response_body = JSON.parse(response.read_body)
-          expected_response = [
-            {
-              "id" => 1,
-              "name" => "bar",
-              "shared" => false,
-              "deployment" => "simple",
-              "instance_group" => "foobar",
-              "link_provider_definition" => {
-                "type" => "provider",
-                "name" => "provider"
-              },
-              "owner_object" => {
-                "type" => "job",
-                "name" => "provider"
-              }
-            }
-          ]
+          expected_response = [provider_response.merge('id' => 1, 'name' => 'bar')]
 
-          expect(response_body).to match_array(expected_response)
+          expect(get_link_providers).to match_array(expected_response)
         end
       end
     end
@@ -222,136 +235,71 @@ describe 'links api', type: :integration do
       end
 
       it 'should return the disk providers' do
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
         expected_response = [
-          {
-            "id" => 1,
-            "name" => "low-iops-persistent-disk-name",
-            "shared" => false,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "link_provider_definition" => {
-              "type" => "disk", "name" => "low-iops-persistent-disk-name"
-            },
-            "owner_object" => {
-              "type" => "instance_group", "name" => "foobar"
-            }
-          }, {
-            "id" => 2,
-            "name" => "high-iops-persistent-disk-name",
-            "shared" => false,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "link_provider_definition" => {
-              "type" => "disk", "name" => "high-iops-persistent-disk-name"
-            },
-            "owner_object" => {
-              "type" => "instance_group", "name" => "foobar"
-            }
-          }
+          disk_provider_response('low-iops-persistent-disk-name'),
+          disk_provider_response('high-iops-persistent-disk-name')
         ]
 
-        expect(response_body).to match_array(expected_response)
+        expect(get_link_providers).to match_array(expected_response)
       end
     end
 
     context 'when deployment has multiple providers with the same name' do
-      let(:persistent_disks) {
+      let(:persistent_disks) do
         [
           {
             'type' => 'low-performance-disk-type',
             'name' => 'provider'
           }
         ]
-      }
-      let(:jobs) {
+      end
+
+      let(:jobs) do
         [
-          {'name' => 'provider'},
+          { 'name' => 'provider' },
           {
             'name' => 'alternate_provider',
-            'provides' => {'provider' => {'as' => 'provider'}}
+            'provides' => { 'provider' => { 'as' => 'provider' } }
           }
         ]
-      }
+      end
 
-      it "should return all providers" do
+      it 'should return all providers' do
         expected_response = [
-          {
-            "id" => Integer,
-            "name" => "provider",
-            "shared" => false,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "link_provider_definition" => {
-              "type" => "provider", "name" => "provider"
-            },
-            "owner_object" => {
-              "type" => "job", "name" => "provider"
-            }
-          },
-          {
-            "id" => Integer,
-            "name" => "provider",
-            "shared" => false,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "link_provider_definition" => {
-              "type" => "provider", "name" => "provider"
-            },
-            "owner_object" => {
-              "type" => "job", "name" => "alternate_provider"
-            }
-          },
-          {
-            "id" => Integer,
-            "name" => "provider",
-            "shared" => false,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "link_provider_definition" => {
-              "type" => "disk", "name" => "provider"
-            },
-            "owner_object" => {
-              "type" => "instance_group", "name" => "foobar"
-            }
-          }
+          provider_response,
+          provider_response.merge( 'owner_object' => { 'type' => 'job', 'name' => 'alternate_provider' }),
+          disk_provider_response('provider')
         ]
 
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to match_array(expected_response)
+        expect(get_link_providers).to match_array(expected_response)
       end
     end
 
     context 'when deployment does not have a link provider' do
       it 'should return an empty list of providers' do
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
         expected_response = []
 
-        expect(response_body).to match_array(expected_response)
+        expect(get_link_providers).to match_array(expected_response)
       end
     end
 
     context 'when deployment is not specified' do
       it 'should raise an error' do
-        response = send_director_api_request("/link_providers", "", 'GET')
-        response_body = JSON.parse(response.read_body)
+        actual_response = get_json('/link_providers', '')
 
-        expected_error = Bosh::Director::DeploymentRequired.new("Deployment name is required")
+        expected_error = Bosh::Director::DeploymentRequired.new('Deployment name is required')
         expected_response = {
           'code' => expected_error.error_code,
-          'description' => expected_error.message,
+          'description' => expected_error.message
         }
 
-        expect(response_body).to match(expected_response)
+        expect(actual_response).to match(expected_response)
       end
     end
 
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET', {})
+        response = send_director_api_request('/link_providers', 'deployment=simple', 'GET', {})
 
         expect(response.read_body).to include("Not authorized: '/link_providers'")
       end
@@ -360,51 +308,21 @@ describe 'links api', type: :integration do
 
   context 'when requesting for a list of consumers via link_consumers endpoint' do
     context 'when a job has a link consumer' do
-      let(:jobs) do
-        [
-          {'name' => 'provider'},
-          {'name' => 'consumer'},
-        ]
-      end
+      let(:jobs) { implicit_provider_and_consumer }
 
       it 'should return the correct number of consumers' do
-        response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expected_response = [
-          {
-            "id" => 1,
-            "deployment" => "simple",
-            "instance_group" => "foobar",
-            "owner_object" => {
-              "type" => "job", "name" => "consumer"
-            }
-          }
-        ]
+        expected_response = [ consumer_response ]
 
-        expect(response_body).to match_array(expected_response)
+        expect(get_link_consumers).to match_array(expected_response)
       end
 
       context 'and the consumer is optional' do
-        let(:jobs) do
-          [
-            {'name' => 'api_server_with_optional_db_link'},
-          ]
-        end
-        it 'should still create a consumer' do
-          response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
-          response_body = JSON.parse(response.read_body)
-          expected_response = [
-            {
-              "id" => 1,
-              "deployment" => "simple",
-              "instance_group" => "foobar",
-              "owner_object" => {
-                "type" => "job", "name" => "api_server_with_optional_db_link"
-              }
-            }
-          ]
+        let(:jobs) { [{ 'name' => 'api_server_with_optional_db_link' }] }
 
-          expect(response_body).to match_array(expected_response)
+        it 'should still create a consumer' do
+          expected_response = [ consumer_response('api_server_with_optional_db_link') ]
+
+          expect(get_link_consumers).to match_array(expected_response)
         end
       end
 
@@ -416,43 +334,39 @@ describe 'links api', type: :integration do
         end
 
         it 'should reuse the same consumers' do
-          expected_response = JSON.parse send_director_api_request("/link_consumers", "deployment=simple", 'GET').read_body
+          expected_response = get_link_consumers
 
           deploy_simple_manifest(manifest_hash: updated_manifest_hash)
 
-          response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
-          response_body = JSON.parse(response.read_body)
-          expect(response_body).to match_array(expected_response)
+          actual_response = get_link_consumers
+          expect(actual_response).to match_array(expected_response)
         end
       end
     end
 
     context 'when deployment does not have a link consumer' do
       it 'should return an empty list of consumers' do
-        response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to be_empty
+        expect(get_link_consumers).to be_empty
       end
     end
 
     context 'when deployment is not specified' do
       it 'should raise an error' do
-        response = send_director_api_request("/link_consumers", "", 'GET')
-        response_body = JSON.parse(response.read_body)
+        actual_response = get_json('/link_consumers', '')
 
-        expected_error = Bosh::Director::DeploymentRequired.new("Deployment name is required")
+        expected_error = Bosh::Director::DeploymentRequired.new('Deployment name is required')
         expected_response = {
           'code' => expected_error.error_code,
-          'description' => expected_error.message,
+          'description' => expected_error.message
         }
 
-        expect(response_body).to match(expected_response)
+        expect(actual_response).to match(expected_response)
       end
     end
 
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
-        response = send_director_api_request("/link_consumers", "deployment=simple", 'GET', {})
+        response = send_director_api_request('/link_consumers', 'deployment=simple', 'GET', {})
 
         expect(response.read_body).to include("Not authorized: '/link_consumers'")
       end
@@ -461,58 +375,22 @@ describe 'links api', type: :integration do
 
   context 'when requesting for a list of links via links endpoint' do
     context 'when deployment has an implicit provider + consumer' do
-      let(:jobs) do
-        [
-          {'name' => 'provider'},
-          {'name' => 'consumer'},
-        ]
-      end
+      let(:jobs) { implicit_provider_and_consumer }
 
       it 'should return the correct number of links' do
-        response = send_director_api_request("/links", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expected_response = [
-          {
-            "id" => 1,
-            "name" => "provider",
-            "link_consumer_id" => 1,
-            "link_provider_id" => 1,
-            "created_at" => String
-          }
-        ]
+        expected_response = [ links_response ]
 
-        expect(response_body).to match_array(expected_response)
+        expect(get_links).to match_array(expected_response)
       end
     end
 
     context 'when deployment has an explicit provider + consumer' do
-      let(:jobs) do
-        [
-          {
-            'name' => 'provider',
-            'provides' => {'provider' => {'as' => 'foo'}}
-          },
-          {
-            'name' => 'consumer',
-            'consumes' => {'provider' => {'from' => 'foo'}}
-          },
-        ]
-      end
+      let(:jobs) { explicit_provider_and_consumer }
 
       it 'should return the correct number of links' do
-        response = send_director_api_request("/links", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expected_response = [
-          {
-            "id" => 1,
-            "name" => "provider",
-            "link_consumer_id" => 1,
-            "link_provider_id" => 1,
-            "created_at" => String
-          }
-        ]
+        expected_response = [ links_response ]
 
-        expect(response_body).to match_array(expected_response)
+        expect(get_links).to match_array(expected_response)
       end
 
       context 'and the provider is shared' do
@@ -531,10 +409,10 @@ describe 'links api', type: :integration do
         end
 
         let(:consumer_manifest_hash) do
-          manifest = Bosh::Spec::NewDeployments.manifest_with_release
-          manifest['name'] = 'consumer-simple'
-          manifest['instance_groups'] = [consumer_instance_group]
-          manifest
+          Bosh::Spec::NewDeployments.manifest_with_release.merge(
+            'name' => 'consumer-simple',
+            'instance_groups' => [consumer_instance_group]
+          )
         end
 
         let(:consumer_instance_group) do
@@ -554,7 +432,7 @@ describe 'links api', type: :integration do
             'vm_type' => 'a',
             'stemcell' => 'default',
             'instances' => 1,
-            'networks' => [{'name' => 'a'}],
+            'networks' => [{ 'name' => 'a' }],
             'properties' => {}
           }
         end
@@ -562,66 +440,11 @@ describe 'links api', type: :integration do
         it 'should create a link for the cross deployment link' do
           deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
 
-          response = send_director_api_request("/links", "deployment=consumer-simple", 'GET')
-          response_body = JSON.parse(response.read_body)
-          expected_response = [
-            {
-              "id" => 1,
-              "name" => "provider",
-              "link_consumer_id" => 1,
-              "link_provider_id" => 1,
-              "created_at" => String
-            }]
+          actual_response = get_json('/links', 'deployment=consumer-simple')
+          expected_response = [ links_response ]
 
-          expect(response_body).to match_array(expected_response)
+          expect(actual_response).to match_array(expected_response)
         end
-      end
-    end
-
-    context 'when deployment has an unmanaged persistent disk' do
-      let(:instance_group) do
-        {
-          'name' => 'foobar',
-          'jobs' => jobs,
-          'vm_type' => 'a',
-          'stemcell' => 'default',
-          'instances' => 1,
-          'networks' => [{'name' => 'a'}],
-          'properties' => {},
-          'persistent_disks' => [disk]
-        }
-      end
-
-      let(:jobs) do
-        [
-          {
-            'name' => 'disk_consumer',
-            'consumes' => {'disk_provider' => {'from' => 'disk_name'}}
-          },
-        ]
-      end
-
-      let(:disk) do
-        {
-          'name' => 'disk_name',
-          'type' => 'low-performance-disk-type',
-        }
-      end
-
-      it 'should return the disk providers' do
-        response = send_director_api_request("/links", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expected_response = [
-          {
-            "id" => 1,
-            "name" => "disk_provider",
-            "link_consumer_id" => 1,
-            "link_provider_id" => 1,
-            "created_at" => String
-          }
-        ]
-
-        expect(response_body).to match_array(expected_response)
       end
     end
 
@@ -632,103 +455,61 @@ describe 'links api', type: :integration do
             'name' => 'consumer',
             'consumes' => {
               'provider' => {
-                'instances' => [{'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com'}],
-                'properties' => {'a' => 'bar', 'c' => 'bazz'}
+                'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
+                'properties' => { 'a' => 'bar', 'c' => 'bazz' }
               }
             }
-          },
+          }
         ]
       end
 
       it 'should return a single orphaned link' do
-        response = send_director_api_request("/links", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expected_response = [
-          {
-            "id" => 1,
-            "name" => "provider",
-            "link_consumer_id" => 1,
-            "link_provider_id" => nil,
-            "created_at" => String
-          }
-        ]
-
-        expect(response_body).to match_array(expected_response)
+        expected_response = [ links_response.merge('link_provider_id' => nil) ]
+        expect(get_links).to match_array(expected_response)
       end
     end
 
     context 'when deployment is not specified' do
       it 'should raise an error' do
-        response = send_director_api_request("/links", "", 'GET')
-        response_body = JSON.parse(response.read_body)
+        actual_response = get_json('/links', '')
 
-        expected_error = Bosh::Director::DeploymentRequired.new("Deployment name is required")
+        expected_error = Bosh::Director::DeploymentRequired.new('Deployment name is required')
         expected_response = {
           'code' => expected_error.error_code,
-          'description' => expected_error.message,
+          'description' => expected_error.message
         }
 
-        expect(response_body).to match(expected_response)
+        expect(actual_response).to match(expected_response)
       end
     end
 
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
-        response = send_director_api_request("/links", "deployment=simple", 'GET', {})
+        response = send_director_api_request('/links', 'deployment=simple', 'GET', {})
 
         expect(response.read_body).to include("Not authorized: '/links'")
       end
     end
 
     context 'when consumer is removed from deployment' do
-      let(:jobs) do
-        [
-          {
-            'name' => 'provider',
-            'provides' => {'provider' => {'as' => 'foo'}}
-          },
-          {
-            'name' => 'consumer',
-            'consumes' => {'provider' => {'from' => 'foo'}}
-          },
-        ]
-      end
+      let(:jobs) { explicit_provider_and_consumer }
 
       it 'should remove consumer data from link_consumer' do
         manifest_hash['instance_groups'][0]['jobs'].pop
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
-        response = send_director_api_request("/links", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-
-        expect(response_body).to be_empty
+        expect(get_links).to be_empty
       end
     end
   end
 
   context 'when deployment which consumes and provides links already exist' do
-    let(:jobs) do
-      [
-        {
-          'name' => 'provider',
-          'provides' => {'provider' => {'as' => 'foo'}}
-        },
-        {
-          'name' => 'consumer',
-          'consumes' => {'provider' => {'from' => 'foo'}}
-        },
-      ]
-    end
+    let(:jobs) { explicit_provider_and_consumer }
 
     before do
-      providers_response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-      @providers_response_body = JSON.parse(providers_response.read_body)
-
-      consumers_response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
-      @consumers_response_body = JSON.parse(consumers_response.read_body)
-
-      links_response = send_director_api_request("/links", "deployment=simple", 'GET')
-      @links_response_body = JSON.parse(links_response.read_body)
+      @expected_providers = get_link_providers
+      @expected_consumers = get_link_consumers
+      @expected_links = get_links
     end
 
     context 'redeploying no changes' do
@@ -737,22 +518,16 @@ describe 'links api', type: :integration do
       end
 
       it 'should use the same provider' do
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to match_array(@providers_response_body)
+        expect(get_link_providers).to match_array(@expected_providers)
       end
 
       it 'should use the same consumer' do
-        response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to match_array(@consumers_response_body)
+        expect(get_link_consumers).to match_array(@expected_consumers)
       end
 
       it 'should not create a new link' do
-        pending("To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]")
-        response = send_director_api_request("/links", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to match_array(@links_response_body)
+        pending('To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]')
+        expect(get_links).to match_array(@expected_links)
       end
     end
 
@@ -762,22 +537,16 @@ describe 'links api', type: :integration do
       end
 
       it 'should use the same provider' do
-        response = send_director_api_request("/link_providers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to match_array(@providers_response_body)
+        expect(get_link_providers).to match_array(@expected_providers)
       end
 
       it 'should use the same consumer' do
-        response = send_director_api_request("/link_consumers", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to match_array(@consumers_response_body)
+        expect(get_link_consumers).to match_array(@expected_consumers)
       end
 
       it 'should not create a new link' do
-        pending("To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]")
-        response = send_director_api_request("/links", "deployment=simple", 'GET')
-        response_body = JSON.parse(response.read_body)
-        expect(response_body).to match_array(@links_response_body)
+        pending('To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]')
+        expect(get_links).to match_array(@expected_links)
       end
     end
   end
