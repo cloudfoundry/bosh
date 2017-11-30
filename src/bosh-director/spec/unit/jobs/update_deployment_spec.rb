@@ -32,7 +32,7 @@ module Bosh::Director
 
       describe '#perform' do
         let(:compile_stage) { instance_double(DeploymentPlan::Stages::PackageCompileStage) }
-        let(:update_step) { instance_double(DeploymentPlan::Stages::UpdateStage) }
+        let(:update_stage) { instance_double(DeploymentPlan::Stages::UpdateStage) }
         let(:notifier) { instance_double(DeploymentPlan::Notifier) }
         let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
         let(:variables_interpolator) { instance_double(ConfigServer::VariablesInterpolator) }
@@ -65,8 +65,8 @@ module Bosh::Director
         before do
           allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
-          allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).with(planner).and_return(compile_Stage)
-          allow(DeploymentPlan::Stages::UpdateStage).to receive(:new).and_return(update_step)
+          allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).with(planner).and_return(compile_stage)
+          allow(DeploymentPlan::Stages::UpdateStage).to receive(:new).and_return(update_stage)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
           allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
           allow(DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
@@ -89,7 +89,7 @@ module Bosh::Director
         context 'when variables need to be interpolated from config server' do
           before do
             allow(compile_stage).to receive(:perform).ordered
-            allow(update_step).to receive(:perform).ordered
+            allow(update_stage).to receive(:perform).ordered
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(notifier).to receive(:send_start_event)
@@ -210,7 +210,7 @@ module Bosh::Director
           before do
             expect(notifier).to receive(:send_start_event).ordered
             expect(compile_stage).to receive(:perform).ordered
-            expect(update_step).to receive(:perform).ordered
+            expect(update_stage).to receive(:perform).ordered
             expect(notifier).to receive(:send_end_event).ordered
             allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything, logger)
             allow(planner).to receive(:instance_models).and_return([])
@@ -591,7 +591,7 @@ Unable to render instance groups for deployment. Errors are:
 
           it 'should exit before trying to create vms' do
             expect(compile_stage).not_to receive(:perform)
-            expect(update_step).not_to receive(:perform)
+            expect(update_stage).not_to receive(:perform)
             expect(PostDeploymentScriptRunner).not_to receive(:run_post_deploys_after_deployment)
             expect(notifier).not_to receive(:send_start_event)
             expect(notifier).not_to receive(:send_end_event)

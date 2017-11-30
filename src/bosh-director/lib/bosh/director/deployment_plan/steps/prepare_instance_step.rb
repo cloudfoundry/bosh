@@ -2,7 +2,7 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class PrepareInstanceStep
-        def initialize(instance_plan, use_active_vm)
+        def initialize(instance_plan, use_active_vm: true)
           @instance_plan = instance_plan
           @use_active_vm = use_active_vm
         end

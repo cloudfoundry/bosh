@@ -2,7 +2,7 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class RenderInstanceJobTemplatesStep
-        def initialize(instance_plan, blob_cache, dns_encoder)
+        def initialize(instance_plan, blob_cache:, dns_encoder:)
           @instance_plan = instance_plan
           @blob_cache = blob_cache
           @dns_encoder = dns_encoder

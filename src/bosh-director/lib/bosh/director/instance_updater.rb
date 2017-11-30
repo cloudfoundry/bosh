@@ -60,7 +60,7 @@ module Bosh::Director
           end
 
           unless instance_plan.needs_shutting_down? || instance.state == 'detached'
-            DeploymentPlan::Steps::PrepareInstanceStep.new(instance_plan, true).perform
+            DeploymentPlan::Steps::PrepareInstanceStep.new(instance_plan).perform
           end
 
           # current state

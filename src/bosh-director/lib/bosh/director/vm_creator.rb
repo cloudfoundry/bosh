@@ -112,7 +112,7 @@ module Bosh::Director
 
       instance_plan.instance.add_state_to_model(vm_state)
 
-      DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(instance_plan, @template_blob_cache, @dns_encoder).perform
+      DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache: @template_blob_cache, dns_encoder: @dns_encoder).perform
     end
 
     def choose_factory_and_stemcell_cid(instance_plan, use_existing)

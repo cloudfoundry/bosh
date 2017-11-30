@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       describe PrepareInstanceStep do
-        subject(:step) { PrepareInstanceStep.new(instance_plan, use_active_vm) }
+        subject(:step) { PrepareInstanceStep.new(instance_plan, use_active_vm: use_active_vm) }
 
         let(:instance) { Models::Instance.make }
         let(:deployment_instance) { instance_double(Instance, model: instance) }

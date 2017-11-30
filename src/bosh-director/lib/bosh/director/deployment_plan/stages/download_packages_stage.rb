@@ -26,7 +26,7 @@ module Bosh::Director
 
                   event_log_stage.advance_and_track(instance_string) do
                     @logger.info("Downloading packages for instance #{instance_string}.")
-                    PrepareInstanceStep.new(plan, false).perform
+                    Steps::PrepareInstanceStep.new(plan, use_active_vm: false).perform
                   end
                 end
               end

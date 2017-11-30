@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       describe RenderInstanceJobTemplatesStep do
-        subject(:step) { RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache, dns_encoder) }
+        subject(:step) { RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache: blob_cache, dns_encoder: dns_encoder) }
 
         let(:blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
         let(:dns_encoder) { instance_double(DnsEncoder) }
