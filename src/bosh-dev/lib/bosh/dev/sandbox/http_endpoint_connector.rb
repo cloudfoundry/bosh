@@ -22,7 +22,7 @@ module Bosh::Dev::Sandbox
 
       begin
         remaining_attempts -= 1
-        result = Timeout.timeout(1) { Net::HTTP.get(uri) }
+        result = Timeout.timeout(2) { Net::HTTP.get(uri) }
         if !@expected_content.empty? && !result.to_s.include?(@expected_content)
           raise MissingContent.new("Expected to find '#{@expected_content}' in '#{result}'")
         end

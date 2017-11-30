@@ -28,7 +28,13 @@ params = {
     'host' => p('director.db.host'),
     'port' => p('director.db.port'),
     'database' => p('director.db.database'),
-    'connection_options' => p('director.db.connection_options')
+    'connection_options' => p('director.db.connection_options'),
+    'tls' => {
+      'enabled' => p('director.db.tls.enabled', false),
+      'cert' => {
+        'ca' => '/var/vcap/jobs/director/config/db/ca.pem'
+      }
+    }
   },
   'snapshots' => {
     'enabled'=> p('director.enable_snapshots')

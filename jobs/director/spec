@@ -30,6 +30,7 @@ templates:
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
   utils.sh: helpers/utils.sh
+  db_ca.pem.erb: config/db/ca.pem
 
 packages:
 - director
@@ -241,6 +242,11 @@ properties:
     default:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
+  director.db.tls.cert.ca:
+    description: Database CA certificate
+  director.db.tls.enabled:
+    description: Flag for enabling tls for database
+    default: false
 
   # DNS
   dns.address:

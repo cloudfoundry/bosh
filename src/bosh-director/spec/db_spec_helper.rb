@@ -23,17 +23,23 @@ module DBSpecHelper
       @db_name = SecureRandom.uuid.gsub('-', '')
       init_logger = Logging::Logger.new('TestLogger')
 
-      host = ENV['DB_HOST'] || '127.0.0.1'
-      user = ENV['DB_USER']
-      password = ENV['DB_PASSWORD']
+      db_options = {
+        username: ENV['DB_USER'],
+        password: ENV['DB_PASSWORD'],
+        host: ENV['DB_HOST'] || '127.0.0.1',
+      }.compact
 
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
-          @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, 5432, Bosh::Core::Shell.new, user || 'postgres', password || '', host)
+          db_options[:port] = 5432
+
+          @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", Bosh::Core::Shell.new, init_logger, db_options)
         when 'mysql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", init_logger, Bosh::Core::Shell.new, user || 'root', password || 'password', host)
+          db_options[:port] = 3306
+
+          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", Bosh::Core::Shell.new, init_logger, db_options)
         when 'sqlite'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)
@@ -43,10 +49,8 @@ module DBSpecHelper
 
       @db_helper.create_db
 
-      db_opts = {:max_connections => 32, :pool_timeout => 10}
-
       Sequel.default_timezone = :utc
-      @db = Sequel.connect(@db_helper.connection_string, db_opts)
+      @db = Sequel.connect(@db_helper.connection_string, {:max_connections => 32, :pool_timeout => 10})
     end
 
     def disconnect_database

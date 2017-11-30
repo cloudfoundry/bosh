@@ -83,19 +83,25 @@ module SpecHelper
     def init_database
       @db_name = SecureRandom.uuid.gsub('-', '')
 
-      host = ENV['DB_HOST'] || '127.0.0.1'
-      user = ENV['DB_USER']
-      password = ENV['DB_PASSWORD']
+      db_options = {
+        username: ENV['DB_USER'],
+        password: ENV['DB_PASSWORD'],
+        host: ENV['DB_HOST'] || '127.0.0.1',
+      }.compact
 
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
-          @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", @init_logger, 5432, Bosh::Core::Shell.new, user || 'postgres', password || '', host)
-          @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", @init_logger, 5432, Bosh::Core::Shell.new, user || 'postgres', password || '', host)
+          db_options[:port] = 5432
+
+          @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", Bosh::Core::Shell.new, @init_logger, db_options)
+          @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
         when 'mysql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-          @director_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", @init_logger, Bosh::Core::Shell.new, user || 'root', password || 'password', host)
-          @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", @init_logger, Bosh::Core::Shell.new, user || 'root', password || 'password', host)
+          db_options[:port] = 3306
+
+          @director_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director",  Bosh::Core::Shell.new, @init_logger, db_options)
+          @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns",  Bosh::Core::Shell.new, @init_logger, db_options)
         when 'sqlite'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
           @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)

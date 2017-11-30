@@ -3,7 +3,7 @@ namespace :db do
   task :dump do
     director_config = {
       'db' => {
-        'database' => "director_latest_tmp",
+        'database' => 'director_latest_tmp',
         'adapter' => 'postgresql',
         'user' => 'postgres'
       },
@@ -14,7 +14,7 @@ namespace :db do
 
     require 'bosh/dev/sandbox/postgresql'
     @logger = Logging.logger(STDOUT)
-    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], @logger, 5432)
+    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], Bosh::Core::Shell.new, @logger)
     @database.drop_db
     @database.create_db
 
@@ -32,7 +32,7 @@ namespace :db do
   task :describe do
     director_config = {
       'db' => {
-        'database' => "director_latest_tmp",
+        'database' => 'director_latest_tmp',
         'adapter' => 'postgresql',
         'user' => 'postgres'
       },
@@ -43,7 +43,7 @@ namespace :db do
 
     require 'bosh/dev/sandbox/postgresql'
     @logger = Logging.logger(STDOUT)
-    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], @logger, 5432)
+    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], Bosh::Core::Shell.new, @logger)
     @database.drop_db
     @database.create_db
 

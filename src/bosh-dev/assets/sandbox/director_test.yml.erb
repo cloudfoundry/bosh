@@ -30,9 +30,16 @@ db: &bosh_db
   user: <%= database.username %>
   password: <%= database.password %>
 
+  <% if database.tls_enabled %>
+  tls:
+    enable: <%= database.tls_enabled %>
+    cert:
+      ca: <%= database.ca_path %>
+  <% else %>
   # Failure to set `sslmode` will produce following error
   # 'PG::Error: SSL error: decryption failed or bad record mac:'
   sslmode: "disable"
+  <% end %>
 
   connection_options:
     max_connections: 32

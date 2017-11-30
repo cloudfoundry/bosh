@@ -3,17 +3,20 @@ require 'bosh/core/shell'
 
 module Bosh::Dev::Sandbox
   class Postgresql
-    attr_reader :db_name, :username, :password, :adapter, :port, :host
+    attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path, :tls_enabled
 
-    def initialize(db_name, logger, port, runner = Bosh::Core::Shell.new, username = 'postgres', password = '', host = 'localhost')
+    def initialize(db_name, runner, logger, options = {})
       @db_name = db_name
       @logger = logger
       @runner = runner
-      @username = username
-      @password = password
       @adapter = 'postgres'
-      @host = host
-      @port = port
+
+      @username = options.fetch(:username, 'postgres')
+      @password = options.fetch(:password, '')
+      @port = options.fetch(:port, 5432)
+      @host = options.fetch(:host, 'localhost')
+      @ca_path = options.fetch(:ca_path, nil)
+      @tls_enabled = options.fetch(:tls_enabled, false)
     end
 
     def connection_string

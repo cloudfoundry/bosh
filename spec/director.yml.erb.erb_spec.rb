@@ -71,6 +71,12 @@ describe 'director.yml.erb.erb' do
           'port' => 3306,
           'database' => 'bosh',
           'connection_options' => {},
+          'tls' => {
+            'enabled' => false,
+            'cert' => {
+              'ca' => 'config/db/ca.pem'
+            }
+          },
         },
         'config_server' => {
           'enabled' => false
@@ -412,6 +418,36 @@ describe 'director.yml.erb.erb' do
           end
         end
       end
+
+      describe 'director.db.tls properties' do
+        context 'when director.db.tls.enabled is true' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['enabled'] = true
+          end
+
+          it 'configures enabled TLS for database property' do
+            expect(parsed_yaml['db']['tls']['enabled']).to be_truthy
+          end
+        end
+        context 'when director.db.tls.enabled is false' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['enabled'] = false
+          end
+
+          it 'configures disables TLS for database property' do
+            expect(parsed_yaml['db']['tls']['enabled']).to be_falsey
+          end
+        end
+        context 'when director.db.tls.enabled is not defined' do
+          before do
+            merged_manifest_properties['director']['db']['tls'].delete('enabled')
+          end
+
+          it 'configures disables TLS for database property' do
+            expect(parsed_yaml['db']['tls']['enabled']).to be_falsey
+          end
+        end
+      end
     end
 
     describe 'ignore_missing_gateway property' do
@@ -525,6 +561,27 @@ describe 'director.yml.erb.erb' do
                 'tls' => {
                   'director' => {
                     'private_key' => content
+                  }
+                }
+              }
+            }
+          }
+        end
+      end
+    end
+
+    describe 'db_ca.pem.erb' do
+      it_should_behave_like 'a rendered file' do
+        let(:file_name) { '../jobs/director/templates/db_ca.pem.erb' }
+        let(:properties) do
+          {
+            'properties' => {
+              'director' => {
+                'db' => {
+                  'tls' => {
+                    'cert' => {
+                      'ca' => content
+                    }
                   }
                 }
               }

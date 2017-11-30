@@ -67,8 +67,6 @@ module Bosh::Dev::Sandbox
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
-        user: ENV['TRAVIS'] ? 'travis' : 'root',
-        password: ENV['TRAVIS'] ? '' : 'password',
       }
 
       logger = Logging.logger(STDOUT)
@@ -108,7 +106,11 @@ module Bosh::Dev::Sandbox
       @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
-      setup_database(db_opts)
+      @db_config = {
+        ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem'),
+      }.merge(db_opts)
+
+      setup_database(@db_config)
 
       director_config_path = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
@@ -492,13 +494,17 @@ module Bosh::Dev::Sandbox
       template.result(binding)
     end
 
-    def setup_database(db_opts)
-      if db_opts[:type] == 'mysql'
-        @database = Mysql.new(@name, @logger, Bosh::Core::Shell.new, db_opts[:user], db_opts[:password])
+    def setup_database(db_config)
+      if db_config[:type] == 'mysql'
+        @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
       else
-        @database = Postgresql.new(@name, @logger, @port_provider.get_port(:postgres))
+        proxy_port = @port_provider.get_port(:postgres)
+        postgres_options = db_config.dup
+        postgres_options[:port] = proxy_port
+
+        @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, postgres_options)
         # all postgres connections go through this proxy (for testing automatic reconnect)
-        @database_proxy = ConnectionProxyService.new(sandbox_root, '127.0.0.1', 5432, @port_provider.get_port(:postgres), base_log_path, @logger)
+        @database_proxy = ConnectionProxyService.new(sandbox_root, '127.0.0.1', 5432, proxy_port, base_log_path, @logger)
       end
     end
 

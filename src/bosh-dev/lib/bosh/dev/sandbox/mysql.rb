@@ -3,17 +3,20 @@ require 'bosh/core/shell'
 
 module Bosh::Dev::Sandbox
   class Mysql
-    attr_reader :db_name, :username, :password, :adapter, :port, :host
+    attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path, :tls_enabled
 
-    def initialize(db_name, logger, runner = Bosh::Core::Shell.new, username = 'root', password = 'password', host = '127.0.0.1')
+    def initialize(db_name, runner, logger, options = {})
       @db_name = db_name
       @logger = logger
       @runner = runner
-      @username = username
-      @password = password
       @adapter = 'mysql2'
-      @port = 3306
-      @host = host
+
+      @username = options.fetch(:username, 'root')
+      @password = options.fetch(:password, 'password')
+      @port = options.fetch(:port, 3306)
+      @host = options.fetch(:host, '127.0.0.1')
+      @ca_path = options.fetch(:ca_path, nil)
+      @tls_enabled = options.fetch(:tls_enabled, false)
     end
 
     def connection_string
