@@ -55,18 +55,25 @@ module Bosh::Director
 
     private
 
+    def self.with_skip_dupes
+      yield
+    rescue Sequel::UniqueConstraintViolation => _
+    end
+
     def self.encode_az(name)
-      Models::LocalDnsEncodedAz.find_or_create(name: name)
+      with_skip_dupes { Models::LocalDnsEncodedAz.find_or_create(name: name) }
     end
 
     def self.encode_instance_group(name, deployment_model)
-      Models::LocalDnsEncodedInstanceGroup.find_or_create(
-        name: name,
-        deployment: deployment_model)
+      with_skip_dupes do
+        Models::LocalDnsEncodedInstanceGroup.find_or_create(
+          name: name,
+          deployment: deployment_model)
+      end
     end
 
     def self.encode_network(name)
-      Models::LocalDnsEncodedNetwork.find_or_create(name: name)
+      with_skip_dupes { Models::LocalDnsEncodedNetwork.find_or_create(name: name) }
     end
 
     def self.persist_service_groups(plan)
