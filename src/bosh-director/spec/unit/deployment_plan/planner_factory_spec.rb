@@ -412,7 +412,6 @@ LOGMESSAGE
                   allow(skipped_link_path).to receive(:parse)
 
                   templateModel = Models::Template.where(name: 'provides_template').first
-                  templateModel.properties_json = 'null'
                   templateModel.save
 
                   expect(subject).to_not receive(:process_link_properties).with({}, { 'properties' => nil, 'template_name' => 'provides_template' }, ['a'], [])

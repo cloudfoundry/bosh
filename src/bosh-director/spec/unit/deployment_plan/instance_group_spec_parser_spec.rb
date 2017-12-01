@@ -793,7 +793,7 @@ module Bosh::Director
 
                 release_model = Models::Release.make(name: 'fake-release')
                 release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
-                release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model, consumes_json: 'null', provides_json: 'null'))
+                release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model))
               end
 
               it 'does not throw an error' do
