@@ -78,14 +78,16 @@ describe 'links api', type: :integration do
       'name' => 'provider',
       'shared' => false,
       'deployment' => 'simple',
-      'instance_group' => 'foobar',
       'link_provider_definition' => {
         'name' => 'provider',
         'type' => 'provider'
       },
       'owner_object' => {
         'name' => 'provider',
-        'type' => 'job'
+        'type' => 'job',
+        'info' => {
+          'instance_group' => 'foobar',
+        }
       }
     }
   end
@@ -99,7 +101,10 @@ describe 'links api', type: :integration do
       },
       'owner_object' => {
         'name' => 'foobar',
-        'type' => 'instance_group'
+        'type' => 'instance_group',
+        'info' => {
+          'instance_group' => 'foobar',
+        }
       }
     )
   end
@@ -267,7 +272,14 @@ describe 'links api', type: :integration do
       it 'should return all providers' do
         expected_response = [
           provider_response,
-          provider_response.merge( 'owner_object' => { 'type' => 'job', 'name' => 'alternate_provider' }),
+          provider_response.deep_merge(
+            'owner_object' => {
+              'name' => 'alternate_provider',
+              'info' => {
+                'instance_group' => 'foobar'
+              }
+            }
+          ),
           disk_provider_response('provider')
         ]
 
