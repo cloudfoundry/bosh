@@ -118,3 +118,12 @@ Instead of installing MySQL and PostgreSQL locally use `docker-compose` to spin 
 cd docs
 docker-compose up
 ```
+
+### Reset integration test environment
+
+1. Delete blobs/ folder at the root of your bosh repo
+2. Do a `bosh sync-blobs`
+3. Delete `src/tmp` folder in your repo
+4. Run `bundle install` in `src` folder
+5. Run `bundle exec rake spec:integration:download_bosh_agent`
+6. Run `bundle exec rake spec:integration:install_dependencies`
