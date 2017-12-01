@@ -67,7 +67,9 @@ module Bosh::Dev::Sandbox
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
+        tls_enabled: ENV['DB_TLS'] || false
       }
+      db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
       logger = Logging.logger(STDOUT)
       logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
@@ -107,7 +109,7 @@ module Bosh::Dev::Sandbox
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
       @db_config = {
-        ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem'),
+        ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
       }.merge(db_opts)
 
       setup_database(@db_config)

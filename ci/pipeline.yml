@@ -9,6 +9,7 @@ groups:
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
+      - integration-postgres-db-tls
       - load-tests-postgres
       - load-tests-mysql
       - legacy-load-tests-postgres
@@ -354,6 +355,56 @@ jobs:
             NUM_GROUPS:   24
             GROUP:        3,6,9,12,15,18,21,24
             SHA2_MODE:    true
+
+        on_failure:
+          <<: *slack-alert
+          
+  - name: integration-postgres-db-tls
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-cli
+        - get: bosh-agent
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-2"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        1,4,7,10,13,16,19,22
+            SHA2_MODE:    true
+            DB_TLS:       true
+
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-5"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        2,5,8,11,14,17,20,23
+            SHA2_MODE:    true
+            DB_TLS:       true
+
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-9"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        3,6,9,12,15,18,21,24
+            SHA2_MODE:    true
+            DB_TLS:       true
 
         on_failure:
           <<: *slack-alert

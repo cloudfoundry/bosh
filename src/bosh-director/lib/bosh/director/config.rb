@@ -271,9 +271,26 @@ module Bosh::Director
 
       def configure_db(db_config)
         connection_config = db_config.dup
-        connection_options = connection_config.delete('connection_options') {{}}
+        custom_connection_options = connection_config.delete('connection_options') {{}}
+        tls_options = connection_config.delete('tls') { {} }
+
+        if tls_options.fetch('enabled', false)
+          certificate_paths = tls_options.fetch('cert')
+          db_ca_path = certificate_paths.fetch('ca')
+
+          case connection_config['adapter']
+            when 'mysql', 'mysql2'
+              # TODO: make this also verify-full for mysql
+              connection_config['ssl_mode'] = 'verify_ca'
+              connection_config['sslca'] = db_ca_path
+            when 'postgres'
+              connection_config['sslmode'] = 'verify-full'
+              connection_config['sslrootcert'] = db_ca_path
+          end
+        end
+
         connection_config.delete_if { |_, v| v.to_s.empty? }
-        connection_config = connection_config.merge(connection_options)
+        connection_config = connection_config.merge(custom_connection_options)
 
         Sequel.default_timezone = :utc
         db = Sequel.connect(connection_config)

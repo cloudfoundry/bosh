@@ -3,7 +3,7 @@ variables:
   type: certificate
   options:
     is_ca: true
-- name: postgres_server
+- name: database_server
   type: certificate
   options:
     ca: default_ca
@@ -12,7 +12,7 @@ variables:
     - ((hostname))
     extended_key_usage:
       - server_auth
-- name: postgres_client
+- name: database_client
   type: certificate
   options:
     ca: default_ca

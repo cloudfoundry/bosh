@@ -555,4 +555,258 @@ describe Bosh::Director::Config do
       end
     end
   end
+
+  describe '#configure_db' do
+    let(:database) { instance_double(Sequel::Database) }
+
+    before do
+      allow(Sequel).to receive(:connect).and_return(database)
+      allow(database).to receive(:extension)
+      allow(database).to receive_message_chain(:pool, :connection_validation_timeout=)
+      allow(database).to receive(:logger=)
+      allow(database).to receive(:sql_log_level=)
+      allow(database).to receive(:log_connection_info=)
+    end
+
+    context 'when db config has empty entries' do
+      it 'prunes empty entries before passing it to sequel' do
+        parameters = {
+          'host' => '127.0.0.1',
+          'port' => 5432,
+          'nil_value' => nil,
+          'empty_value' => ''
+        }
+
+        expect(Sequel).to receive(:connect).with({'host' => '127.0.0.1', 'port' => 5432}).and_return(database)
+        described_class.configure_db(parameters)
+      end
+    end
+
+    context 'when connection_options is defined' do
+      it 'will add all entries to top level config' do
+        parameters = {
+          'host' => '127.0.0.1',
+          'port' => 5432,
+          'connection_options' => {
+            'max_connections' => 100,
+            'foo' => 'bar'
+          }
+        }
+
+        expect(Sequel).to receive(:connect).with(
+          {'host' => '127.0.0.1', 'port' => 5432, 'max_connections' =>100, 'foo' => 'bar'}
+        ).and_return(database)
+
+        described_class.configure_db(parameters)
+      end
+
+      it 'will overide default options' do
+        parameters = {
+          'host' => '127.0.0.1',
+          'port' => 5432,
+          'connection_options' => {
+            'host' => 'rds-somewhere',
+            'port' => 7000,
+            'max_connections' => 100,
+            'foo' => 'bar'
+          }
+        }
+
+        expect(Sequel).to receive(:connect).with(
+          {'host' => 'rds-somewhere', 'port' => 7000, 'max_connections' =>100, 'foo' => 'bar'}
+        ).and_return(database)
+
+        described_class.configure_db(parameters)
+      end
+    end
+
+    context 'when TLS is requested' do
+      shared_examples_for 'db connects with custom parameters' do
+        it 'connects with TLS enabled for database' do
+          expect(Sequel).to receive(:connect).with(connection_parameters).and_return(database)
+          described_class.configure_db(config)
+        end
+      end
+
+      context 'postgres' do
+        it_behaves_like 'db connects with custom parameters' do
+            let(:config) do
+              {
+                'adapter' => 'postgres',
+                'host' => '127.0.0.1',
+                'port' => 5432,
+                'tls' => {
+                  'enabled' => true,
+                  'cert' => {
+                    'ca' => '/path/to/root/ca'
+                  }
+                }
+              }
+            end
+
+            let(:connection_parameters) do
+              {
+                'adapter' => 'postgres',
+                'host' => '127.0.0.1',
+                'port' => 5432,
+                'sslmode' => 'verify-full',
+                'sslrootcert' => '/path/to/root/ca',
+              }
+            end
+        end
+
+        context 'when user defines TLS options in connection_options' do
+          it_behaves_like 'db connects with custom parameters' do
+            let(:config) do
+              {
+                'adapter' => 'postgres',
+                'host' => '127.0.0.1',
+                'port' => 5432,
+                'tls' => {
+                  'enabled' => true,
+                  'cert' => {
+                    'ca' => '/path/to/root/ca'
+                  }
+                },
+                'connection_options' => {
+                  'sslmode' => 'something-custom',
+                  'sslrootcert' => '/some/unknow/path'
+                }
+              }
+            end
+
+            let(:connection_parameters) do
+              {
+                'adapter' => 'postgres',
+                'host' => '127.0.0.1',
+                'port' => 5432,
+                'sslmode' => 'something-custom',
+                'sslrootcert' => '/some/unknow/path'
+              }
+            end
+          end
+        end
+      end
+
+      context 'mysql' do
+        it_behaves_like 'db connects with custom parameters' do
+          let(:config) do
+            {
+              'adapter' => 'mysql',
+              'host' => '127.0.0.1',
+              'port' => 3306,
+              'tls' => {
+                'enabled' => true,
+                'cert' => {
+                  'ca' => '/path/to/root/ca'
+                }
+              }
+            }
+          end
+
+          let(:connection_parameters) do
+            {
+              'adapter' => 'mysql',
+              'host' => '127.0.0.1',
+              'port' => 3306,
+              'ssl_mode' => 'verify_ca',
+              'sslca' => '/path/to/root/ca',
+            }
+          end
+        end
+
+        context 'when user defines TLS options in connection_options' do
+          it_behaves_like 'db connects with custom parameters' do
+            let(:config) do
+              {
+                'adapter' => 'mysql',
+                'host' => '127.0.0.1',
+                'port' => 3306,
+                'tls' => {
+                  'enabled' => true,
+                  'cert' => {
+                    'ca' => '/path/to/root/ca'
+                  }
+                },
+                'connection_options' => {
+                  'ssl_mode' => 'something-custom',
+                  'sslca' => '/some/unknow/path'
+                }
+              }
+            end
+
+            let(:connection_parameters) do
+              {
+                'adapter' => 'mysql',
+                'host' => '127.0.0.1',
+                'port' => 3306,
+                'ssl_mode' => 'something-custom',
+                'sslca' => '/some/unknow/path'
+              }
+            end
+          end
+        end
+      end
+
+      context 'mysql2' do
+        it_behaves_like 'db connects with custom parameters' do
+          let(:config) do
+            {
+              'adapter' => 'mysql2',
+              'host' => '127.0.0.1',
+              'port' => 3306,
+              'tls' => {
+                'enabled' => true,
+                'cert' => {
+                  'ca' => '/path/to/root/ca'
+                }
+              }
+            }
+          end
+
+          let(:connection_parameters) do
+            {
+              'adapter' => 'mysql2',
+              'host' => '127.0.0.1',
+              'port' => 3306,
+              'ssl_mode' => 'verify_ca',
+              'sslca' => '/path/to/root/ca',
+            }
+          end
+        end
+
+        context 'when user defines TLS options in connection_options' do
+          it_behaves_like 'db connects with custom parameters' do
+            let(:config) do
+              {
+                'adapter' => 'mysql2',
+                'host' => '127.0.0.1',
+                'port' => 3306,
+                'tls' => {
+                  'enabled' => true,
+                  'cert' => {
+                    'ca' => '/path/to/root/ca'
+                  }
+                },
+                'connection_options' => {
+                  'ssl_mode' => 'something-custom',
+                  'sslca' => '/some/unknow/path'
+                }
+              }
+            end
+
+            let(:connection_parameters) do
+              {
+                'adapter' => 'mysql2',
+                'host' => '127.0.0.1',
+                'port' => 3306,
+                'ssl_mode' => 'something-custom',
+                'sslca' => '/some/unknow/path'
+              }
+            end
+          end
+        end
+      end
+    end
+  end
 end

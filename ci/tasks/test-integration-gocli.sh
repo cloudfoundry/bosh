@@ -19,11 +19,13 @@ case "$DB" in
     ;;
   postgresql)
     export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+    export DB_PASSWORD="smurf"
 
     mkdir /tmp/postgres
     mount -t tmpfs -o size=512M tmpfs /tmp/postgres
     mkdir /tmp/postgres/data
     chown postgres:postgres /tmp/postgres/data
+    export PGDATA=/tmp/postgres/data
 
     su postgres -c '
       export PATH=/usr/lib/postgresql/9.4/bin:$PATH
@@ -31,7 +33,27 @@ case "$DB" in
       export PGLOGS=/tmp/log/postgres
       mkdir -p $PGDATA
       mkdir -p $PGLOGS
-      initdb -U postgres -D $PGDATA
+      echo $DB_PASSWORD > /tmp/bosh-postgres.password
+      initdb -U postgres -D $PGDATA --pwfile /tmp/bosh-postgres.password
+    '
+
+    if [ "$DB_TLS" = true ]; then
+      echo "....... DB TLS enabled ......."
+      su postgres -c '
+        export PGDATA=/tmp/postgres/data
+        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $PGDATA/server.key
+        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $PGDATA/server.crt
+
+        echo "ssl = on" >> $PGDATA/postgresql.conf
+        echo "hostssl all all 127.0.0.1/32 password" > $PGDATA/pg_hba.conf
+
+        chmod 600 $PGDATA/server.*
+      '
+    fi
+
+    su postgres -c '
+      export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+      export PGLOGS=/tmp/log/postgres
       pg_ctl start -l $PGLOGS/server.log -o "-N 400"
     '
     ;;
