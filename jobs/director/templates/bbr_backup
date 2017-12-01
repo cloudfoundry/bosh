@@ -5,7 +5,7 @@ set -e
 # BBR does not clean out the backup directory
 rm -rf $ARTIFACT_DIRECTORY/*
 
-source /var/vcap/packages/ruby-2.4/bosh/runtime.env
+source /var/vcap/packages/ruby-2.4-r3/bosh/runtime.env
 PATH=$PATH:/var/vcap/jobs/director/bin
 
 # Postgres

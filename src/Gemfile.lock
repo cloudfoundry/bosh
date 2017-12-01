@@ -271,7 +271,7 @@ DEPENDENCIES
   bosh-registry!
   bosh-template!
   bosh_common!
-  bundler (~> 1.15.0)
+  bundler (~> 1.16.0)
   eventmachine (~> 1.2)
   fakefs
   httpclient
@@ -299,4 +299,4 @@ DEPENDENCIES
   webmock (~> 1.0)
 
 BUNDLED WITH
-   1.15.4
+   1.16.0
