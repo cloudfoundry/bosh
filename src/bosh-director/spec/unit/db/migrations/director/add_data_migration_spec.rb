@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20171117230219_add_network_spec_to_vms.rb')
+      expect(latest_db_migration_file).to eq('20171201153629_remove_unused_template_columns.rb')
     end
   end
 end
