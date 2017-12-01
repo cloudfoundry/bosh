@@ -1,0 +1,20 @@
+module Bosh::Director
+  module DeploymentPlan
+    module Steps
+      class DetachInstanceDisksStep
+        def initialize(instance_model)
+          @instance_model = instance_model
+          @logger = Config.logger
+        end
+
+        def perform
+          return if @instance_model.active_vm.nil?
+
+          @instance_model.persistent_disks.each do |disk|
+            DetachDiskStep.new(disk).perform
+          end
+        end
+      end
+    end
+  end
+end

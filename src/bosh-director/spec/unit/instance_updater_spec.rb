@@ -4,23 +4,27 @@ module Bosh::Director
   describe InstanceUpdater do
     let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
-    let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
+    let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
-    let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
-    let(:vm_creator) { instance_double(Bosh::Director::VmCreator) }
+    let(:vm_deleter) { instance_double(VmDeleter) }
+    let(:vm_creator) { instance_double(VmCreator) }
     let(:agent_client) { instance_double(AgentClient) }
-    let(:credentials) { {'user' => 'secret'} }
+    let(:credentials) { { 'user' => 'secret' } }
     let(:credentials_json) { JSON.generate(credentials) }
-    let(:persistent_disk_model) { instance_double(Bosh::Director::Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid')}
-    let(:disk_collection_model) { instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection::ModelPersistentDisk, model: persistent_disk_model)}
-    let(:active_persistent_disks) { instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model]) }
+    let(:persistent_disk_model) { instance_double(Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid') }
+    let(:disk_collection_model) do
+      instance_double(DeploymentPlan::PersistentDiskCollection::ModelPersistentDisk, model: persistent_disk_model)
+    end
+    let(:active_persistent_disks) do
+      instance_double(DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model])
+    end
     let(:instance_model) do
       instance = Models::Instance.make(
         uuid: 'uuid-1',
         deployment: deployment_model,
         state: instance_model_state,
         job: 'job-1',
-        spec: {'stemcell' => {'name' => 'ubunut_1', 'version' => '8'}},
+        spec: { 'stemcell' => { 'name' => 'ubunut_1', 'version' => '8' } },
       )
       vm_model = Models::Vm.make(agent_id: 'scool', instance_id: instance.id)
       instance.active_vm = vm_model
@@ -30,10 +34,23 @@ module Bosh::Director
     let(:deployment_model) { Models::Deployment.make(name: 'deployment') }
     let(:instance) do
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
-      vm_type = DeploymentPlan::VmType.new({'name' => 'small_vm'})
+      vm_type = DeploymentPlan::VmType.new('name' => 'small_vm')
       stemcell = DeploymentPlan::Stemcell.new('ubuntu_stemcell', 'ubuntu_1', 'ubuntu', '8')
       merged_cloud_properties = DeploymentPlan::MergedCloudProperties.new(az, vm_type, []).get
-      instance = DeploymentPlan::Instance.new('job-1', 0, instance_desired_state, merged_cloud_properties, stemcell, {}, false, deployment_model, {}, az, 'fake-strat', logger)
+      instance = DeploymentPlan::Instance.new(
+        'job-1',
+        0,
+        instance_desired_state,
+        merged_cloud_properties,
+        stemcell,
+        {},
+        false,
+        deployment_model,
+        {},
+        az,
+        'fake-strat',
+        logger,
+      )
       instance.bind_existing_instance_model(instance_model)
 
       instance
@@ -42,13 +59,18 @@ module Bosh::Director
     let(:job) { instance_double(DeploymentPlan::InstanceGroup, default_network: {}) }
     let(:instance_plan) do
       desired_instance = DeploymentPlan::DesiredInstance.new(job)
-      instance_plan = DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, tags: tags)
+      instance_plan = DeploymentPlan::InstancePlan.new(
+        existing_instance: instance_model,
+        instance: instance,
+        desired_instance: desired_instance,
+        tags: tags,
+      )
       allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)
 
       instance_plan
     end
     let(:tags) do
-      {'key1' => 'value1'}
+      { 'key1' => 'value1' }
     end
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:rendered_templates_persistor) { instance_double(RenderedTemplatesPersister) }
@@ -60,10 +82,10 @@ module Bosh::Director
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
-      allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
-      allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
-      allow(Bosh::Director::VmCreator).to receive(:new).and_return(vm_creator)
-      allow(Bosh::Director::RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
+      allow(VmDeleter).to receive(:new).and_return(vm_deleter)
+      allow(VmCreator).to receive(:new).and_return(vm_creator)
+      allow(RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
       allow(DiskManager).to receive(:new).and_return(disk_manager)
       allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
       allow(rendered_templates_persistor).to receive(:persist)
@@ -71,7 +93,7 @@ module Bosh::Director
     end
 
     context 'for any state' do
-      let (:state_applier) { instance_double(InstanceUpdater::StateApplier) }
+      let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
 
       before do
         allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
@@ -93,9 +115,9 @@ module Bosh::Director
 
         it 'does NOT update the variable set id for the instance' do
           expect(instance).to_not receive(:update_variable_set)
-          expect {
+          expect do
             updater.update(instance_plan)
-          }.to raise_error
+          end.to raise_error
         end
       end
 
@@ -114,7 +136,7 @@ module Bosh::Director
       context 'when instance is currently started' do
         let(:instance_model_state) { 'started' }
 
-        it 'drains, stops, snapshots, and persists rendered templates to the blobstore but leaves DNS records unchanged' do
+        it 'drains, stops, snapshots, and persists rendered templates blobs but leaves DNS records unchanged' do
           expect(Api::SnapshotManager).to receive(:take_snapshot)
           expect(agent_client).not_to receive(:apply)
           expect(agent_client).to receive(:stop)
@@ -158,19 +180,21 @@ module Bosh::Director
         let(:instance_model_state) { 'started' }
         let(:instance_desired_state) { 'detached' }
         let(:director_state_updater) { instance_double(DirectorDnsStateUpdater) }
-        let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountDisksStep) }
+        let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
 
         before do
           allow(DirectorDnsStateUpdater).to receive(:new).and_return(director_state_updater)
           allow(instance_plan).to receive(:dns_changed?).and_return(true)
-          allow(DeploymentPlan::Steps::UnmountDisksStep).to receive(:new).with(instance_plan).and_return(unmount_step)
+          allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new)
+            .with(instance_plan).and_return(unmount_step)
         end
 
         it 'should update dns' do
           allow(instance_plan).to receive(:already_detached?).and_return(false)
           expect(unmount_step).to receive(:perform)
           expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
-          expect(director_state_updater).to receive(:update_dns_for_instance).with(instance_model, instance_plan.network_settings.dns_record_info)
+          expect(director_state_updater).to receive(:update_dns_for_instance)
+            .with(instance_model, instance_plan.network_settings.dns_record_info)
 
           expect(agent_client).to receive(:stop)
           expect(agent_client).to receive(:drain).and_return(0)
@@ -188,7 +212,8 @@ module Bosh::Director
           end
 
           it 'still updates dns' do
-            expect(director_state_updater).to receive(:update_dns_for_instance).with(instance_model, instance_plan.network_settings.dns_record_info)
+            expect(director_state_updater).to receive(:update_dns_for_instance)
+              .with(instance_model, instance_plan.network_settings.dns_record_info)
 
             updater.update(instance_plan)
             expect(instance_model.update_completed).to eq true
@@ -210,12 +235,21 @@ module Bosh::Director
         let(:instance_model_state) { 'stopped' }
         let(:disk_manager) { instance_double(DiskManager) }
         let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
-        let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountDisksStep) }
+        let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
+        let(:detach_step) { instance_double(DeploymentPlan::Steps::DetachInstanceDisksStep) }
 
         before do
           allow(DiskManager).to receive(:new).and_return(disk_manager)
           allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
-          allow(DeploymentPlan::Steps::UnmountDisksStep).to receive(:new).with(instance_plan).and_return(unmount_step)
+          allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new)
+            .with(instance_model).and_return(unmount_step)
+          allow(DeploymentPlan::Steps::DetachInstanceDisksStep).to receive(:new)
+            .with(instance_model).and_return(detach_step)
+
+          allow(updater).to receive(:needs_recreate?).and_return(false)
+          allow(disk_manager).to receive(:update_persistent_disk)
+          allow(job).to receive(:update)
+          allow(instance).to receive(:update_instance_settings)
         end
 
         it 'does NOT drain, stop, snapshot, but persists rendered templates to the blobstore and updates DNS' do
@@ -224,10 +258,6 @@ module Bosh::Director
           expect(agent_client).to_not receive(:stop)
           expect(agent_client).to_not receive(:drain)
 
-          allow(updater).to receive(:needs_recreate?).and_return(false)
-          allow(disk_manager).to receive(:update_persistent_disk)
-          allow(job).to receive(:update)
-          allow(instance).to receive(:update_instance_settings)
           expect(state_applier).to receive(:apply)
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
 
@@ -238,14 +268,20 @@ module Bosh::Director
           subnet = DeploymentPlan::ManualNetworkSubnet.parse('my-network', subnet_spec, ['az-1'], [])
           network = DeploymentPlan::ManualNetwork.new('my-network', [subnet], logger)
           reservation = ExistingNetworkReservation.new(instance_model, network, '10.10.10.10', :dynamic)
-          instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)]
+          instance_plan.network_plans = [
+            DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true),
+          ]
 
           instance_model.update(dns_record_names: ['old.dns.record'])
 
           updater.update(instance_plan)
 
           expect(instance_model.update_completed).to eq true
-          expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
+          expect(instance_model.dns_record_names).to eq [
+            'old.dns.record',
+            '0.job-1.my-network.deployment.bosh',
+            'uuid-1.job-1.my-network.deployment.bosh',
+          ]
           expect(Models::Event.count).to eq 2
           expect(Models::Event.all[1].error).to be_nil
         end
@@ -254,13 +290,15 @@ module Bosh::Director
           before do
             allow(updater).to receive(:needs_recreate?).and_return(true)
             allow(disk_manager).to receive(:update_persistent_disk)
-            allow(unmount_step).to receive(:perform)
             allow(job).to receive(:update)
           end
 
           it 'recreates correctly, and persists rendered templates to the blobstore' do
+            expect(unmount_step).to receive(:perform)
+            expect(detach_step).to receive(:perform)
             expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
-            expect(vm_creator).to receive(:create_for_instance_plan).with(instance_plan, [persistent_disk_model.disk_cid], tags)
+            expect(vm_creator).to receive(:create_for_instance_plan)
+              .with(instance_plan, [persistent_disk_model.disk_cid], tags)
 
             expect(state_applier).to receive(:apply)
             expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
@@ -276,7 +314,7 @@ module Bosh::Director
         allow(instance_plan).to receive(:changes).and_return([:dns])
       end
 
-      it 'should exit early without interacting at all with the agent, and does NOT persist rendered templates to the blobstore' do
+      it 'exits early without interacting with the agent, and does NOT persist rendered templates to the blobstore' do
         instance_model.update(dns_record_names: ['old.dns.record'])
         expect(instance_model.state).to eq('started')
         expect(Models::Event.count).to eq 0
@@ -290,13 +328,19 @@ module Bosh::Director
         subnet = DeploymentPlan::ManualNetworkSubnet.parse('my-network', subnet_spec, ['az-1'], [])
         network = DeploymentPlan::ManualNetwork.new('my-network', [subnet], logger)
         reservation = ExistingNetworkReservation.new(instance_model, network, '10.10.10.10', :dynamic)
-        instance_plan.network_plans = [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)]
+        instance_plan.network_plans = [
+          DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true),
+        ]
 
-        expect{
+        expect do
           updater.update(instance_plan)
-        }.not_to change { Models::RenderedTemplatesArchive.count }
+        end.not_to(change { Models::RenderedTemplatesArchive.count })
 
-        expect(instance_model.dns_record_names).to eq ['old.dns.record', '0.job-1.my-network.deployment.bosh', 'uuid-1.job-1.my-network.deployment.bosh']
+        expect(instance_model.dns_record_names).to eq [
+          'old.dns.record',
+          '0.job-1.my-network.deployment.bosh',
+          'uuid-1.job-1.my-network.deployment.bosh',
+        ]
         expect(instance_model.update_completed).to eq true
         expect(Models::Event.count).to eq 2
       end

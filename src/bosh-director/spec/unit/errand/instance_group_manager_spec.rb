@@ -3,61 +3,60 @@ require 'spec_helper'
 module Bosh::Director
   describe Errand::InstanceGroupManager do
     subject { described_class.new(deployment, job, logger) }
-    let(:ip_provider) {instance_double('Bosh::Director::DeploymentPlan::IpProvider')}
-    let(:skip_drain) {instance_double('Bosh::Director::DeploymentPlan::SkipDrain')}
+    let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
+    let(:skip_drain) { instance_double(DeploymentPlan::SkipDrain) }
     let(:deployment) do
-      instance_double('Bosh::Director::DeploymentPlan::Planner', {
-        ip_provider: ip_provider,
-        tags: ['tags'],
-        template_blob_cache: template_blob_cache,
-        skip_drain: skip_drain,
-        use_short_dns_addresses?: false,
-        name: 'fake-deployment',
-        availability_zones: [],
-      })
+      instance_double(DeploymentPlan::Planner, ip_provider: ip_provider,
+                                               tags: ['tags'],
+                                               template_blob_cache: template_blob_cache,
+                                               skip_drain: skip_drain,
+                                               use_short_dns_addresses?: false,
+                                               name: 'fake-deployment',
+                                               availability_zones: [])
     end
-    let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache')}
-    let(:missing_plans) { [instance_double('Bosh::Director::DeploymentPlan::InstancePlan')] }
+    let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
+    let(:missing_plans) { [instance_double(DeploymentPlan::InstancePlan)] }
     let(:job) do
-      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-        name: 'job_name',
-        instance_plans_with_missing_vms: missing_plans)
+      instance_double(DeploymentPlan::InstanceGroup,
+                      name: 'job_name',
+                      instance_plans_with_missing_vms: missing_plans)
     end
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
-    let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance1_model) }
-    let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance2_model) }
-    let(:vm1) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
+    let(:instance1) { instance_double(DeploymentPlan::Instance, model: instance1_model) }
+    let(:instance2) { instance_double(DeploymentPlan::Instance, model: instance2_model) }
+    let(:vm1) { instance_double(DeploymentPlan::Vm, clean: nil) }
     let(:vm_creator) do
       instance_double(VmCreator)
     end
 
-    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+    let(:task) { Models::Task.make(id: 42, username: 'user') }
+    let(:task_writer) { TaskDBWriter.new(:event_output, task.id) }
+    let(:event_log) { EventLog::Log.new(task_writer) }
 
-    let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
-    let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
+    let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
+    let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
 
     let(:dns_encoder) { instance_double(DnsEncoder) }
 
     before do
       fake_app
-      allow(LocalDnsEncoderManager).
-        to receive(:create_dns_encoder).
-        with(false).
-        and_return(dns_encoder)
-      allow(VmCreator).to receive(:new).
-        with(
+      allow(LocalDnsEncoderManager)
+        .to receive(:create_dns_encoder)
+        .with(false)
+        .and_return(dns_encoder)
+      allow(VmCreator).to receive(:new)
+        .with(
           anything,
           anything,
           anything,
           template_blob_cache,
           dns_encoder,
-          anything)
+          anything,
+        )
         .and_return vm_creator
       allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])
-      allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(Config).to receive(:event_log).and_return(event_log)
     end
 
     describe '#create_missing_vms' do
@@ -73,7 +72,7 @@ module Bosh::Director
 
     describe '#update_instances' do
       it 'binds vms to instances, creates jobs configurations and updates dns' do
-        job_updater = instance_double('Bosh::Director::JobUpdater')
+        job_updater = instance_double(JobUpdater)
         expect(JobUpdater).to receive(:new).with(
           ip_provider,
           job,
@@ -101,20 +100,20 @@ module Bosh::Director
         Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true, state: 'detached')
       end
 
-      let(:instance_plan1) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1) }
-      let(:instance_plan2) { Bosh::Director::DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2) }
+      let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1) }
+      let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2) }
 
-      let(:unmount_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UnmountDisksStep')}
-      let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
+      let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
+      let(:vm_deleter) { VmDeleter.new(logger, false, false) }
 
       context 'when there are instance plans' do
         before do
-          allow(Bosh::Director::DeploymentPlan::Steps::UnmountDisksStep).to receive(:new).with(instance_plan1).and_return(unmount_step)
+          allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new).with(instance_plan1).and_return(unmount_step)
           allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
           allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
 
-          allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
+          allow(VmDeleter).to receive(:new).and_return(vm_deleter)
         end
 
         it 'deletes vms for all obsolete plans' do

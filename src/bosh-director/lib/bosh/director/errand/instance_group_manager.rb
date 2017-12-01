@@ -9,8 +9,8 @@ module Bosh::Director
       agent_broadcaster = AgentBroadcaster.new
       @dns_encoder = LocalDnsEncoderManager.create_dns_encoder(@deployment.use_short_dns_addresses?)
       @powerdns_manager = PowerDnsManagerProvider.create
-      @vm_deleter = Bosh::Director::VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-      @vm_creator = Bosh::Director::VmCreator.new(logger, @vm_deleter, @disk_manager, @template_blob_cache, @dns_encoder, agent_broadcaster)
+      @vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
+      @vm_creator = VmCreator.new(logger, @vm_deleter, @disk_manager, @template_blob_cache, @dns_encoder, agent_broadcaster)
     end
 
     def create_missing_vms
@@ -33,7 +33,7 @@ module Bosh::Director
 
       bound_instance_plans.each do |instance_plan|
         unless instance_plan.already_detached?
-          DeploymentPlan::Steps::UnmountDisksStep.new(instance_plan).perform
+          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_plan).perform
         end
 
         @vm_deleter.delete_for_instance(instance_plan.instance.model)

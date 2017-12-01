@@ -36,7 +36,6 @@ module Bosh::Director
         else
           update_disk(instance_plan, new_disk, old_disk)
         end
-
       end
 
       inactive_disks = Models::PersistentDisk.where(active: false, instance: instance_model)
@@ -72,34 +71,12 @@ module Bosh::Director
     end
 
     def detach_disk(disk)
-      instance_model = disk.instance
       unmount_disk(disk) if disk.managed?
-      begin
-        @logger.info("Detaching disk #{disk.disk_cid}")
-        cloud = cloud_for_cpi(instance_model.active_vm.cpi)
-        vm_cid = instance_model.vm_cid
-        cloud.detach_disk(vm_cid, disk.disk_cid)
-      rescue Bosh::Clouds::DiskNotAttached
-        if disk.active
-          raise CloudDiskNotAttached,
-                "'#{instance_model}' VM should have persistent disk attached " +
-                    "but it doesn't (according to CPI)"
-        end
-      end
+      DeploymentPlan::Steps::DetachDiskStep.new(disk).perform
     end
 
     def unmount_disk(disk)
-      instance_model = disk.instance
-      disk_cid = disk.disk_cid
-      if disk_cid.nil?
-        @logger.info('Skipping disk unmounting, instance does not have a disk')
-        return
-      end
-
-      if agent_mounted_disks(instance_model).include?(disk_cid)
-        @logger.info("Unmounting disk '#{disk_cid}'")
-        agent_client(instance_model).unmount_disk(disk_cid)
-      end
+      DeploymentPlan::Steps::UnmountDiskStep.new(disk).perform
     end
 
     private
@@ -109,18 +86,17 @@ module Bosh::Director
     end
 
     def add_event(action, deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
-      event  = Config.current_job.event_manager.create_event(
-          {
-              parent_id:   parent_id,
-              user:        Config.current_job.username,
-              action:      action,
-              object_type: 'disk',
-              object_name: object_name,
-              deployment:  deployment_name,
-              instance:    instance_name,
-              task:        Config.current_job.task_id,
-              error:       error
-          })
+      event = Config.current_job.event_manager.create_event(
+        parent_id:   parent_id,
+        user:        Config.current_job.username,
+        action:      action,
+        object_type: 'disk',
+        object_name: object_name,
+        deployment:  deployment_name,
+        instance:    instance_name,
+        task:        Config.current_job.task_id,
+        error:       error,
+      )
       event.id
     end
 
@@ -136,9 +112,9 @@ module Bosh::Director
         @logger.debug('Disk is already detached')
       elsif agent_disk_cid != instance.model.managed_persistent_disk_cid
         raise AgentDiskOutOfSync,
-          "'#{instance}' has invalid disks: agent reports " +
-            "'#{agent_disk_cid}' while director record shows " +
-            "'#{instance.model.managed_persistent_disk_cid}'"
+              "'#{instance}' has invalid disks: agent reports " \
+              "'#{agent_disk_cid}' while director record shows " \
+              "'#{instance.model.managed_persistent_disk_cid}'"
       end
 
       instance.model.persistent_disks.each do |disk|
@@ -216,19 +192,26 @@ module Bosh::Director
           instance_id: instance_model.id,
           size: disk_size,
           cloud_properties: disk.cloud_properties,
-          cpi: instance_model.active_vm.cpi
+          cpi: instance_model.active_vm.cpi,
         )
       rescue Exception => e
         raise e
       ensure
-        add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}", disk_cid, parent_id, e)
+        add_event(
+          'create',
+          instance_model.deployment.name,
+          "#{instance_model.job}/#{instance_model.uuid}",
+          disk_cid,
+          parent_id,
+          e,
+        )
       end
 
       disk_model
     end
 
     def update_disk(instance_plan, new_disk, old_disk)
-      old_disk_model = old_disk.model unless old_disk.nil?
+      old_disk_model = old_disk&.model
       new_disk_model = nil
 
       if new_disk
@@ -243,15 +226,14 @@ module Bosh::Director
       end
 
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
-        old_disk_model.update(:active => false) if old_disk_model
-        new_disk_model.update(:active => true) if new_disk_model
+        old_disk_model&.update(active: false)
+        new_disk_model&.update(active: true)
       end
 
-      if old_disk_model
-        detach_disk(old_disk_model)
+      return if old_disk_model.nil?
 
-        @orphan_disk_manager.orphan_disk(old_disk_model)
-      end
+      detach_disk(old_disk_model)
+      @orphan_disk_manager.orphan_disk(old_disk_model)
     end
 
     def resize_disk(instance_plan, new_disk, old_disk)
@@ -268,7 +250,7 @@ module Bosh::Director
       end
 
       attach_disk(old_disk.model, instance_plan.tags)
-      old_disk.model.update(:size => new_disk.size)
+      old_disk.model.update(size: new_disk.size)
       @logger.info("Finished IaaS native disk resize #{old_disk.model.disk_cid}")
     end
 

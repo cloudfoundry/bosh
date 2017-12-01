@@ -8,8 +8,17 @@ AllCops:
 Style/FrozenStringLiteralComment:
   Enabled: false
 
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
 Metrics/LineLength:
   Max: 120
+
+Metrics/ModuleLength:
+  Exclude: ['**/*_spec.rb']
 
 Metrics/MethodLength:
   Max: 25
@@ -17,3 +26,11 @@ Metrics/MethodLength:
 Metrics/BlockLength:
   Max: 25
   ExcludedMethods: ['describe', 'context']
+
+Style/TrailingCommaInLiteral:
+  Enabled: true
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArguments:
+  Enabled: true
+  EnforcedStyleForMultiline: comma

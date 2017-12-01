@@ -21,7 +21,7 @@ module Bosh::Director
         vm_deleter,
         vm_creator,
         disk_manager,
-        rendered_templates_persistor
+        rendered_templates_persistor,
       )
     end
 
@@ -81,7 +81,7 @@ module Bosh::Director
           # Command issued: `bosh stop --hard`
           @logger.info("Detaching instance #{instance}")
           unless instance_plan.already_detached?
-            DeploymentPlan::Steps::UnmountDisksStep.new(instance_plan).perform
+            DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_plan).perform
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
             @vm_deleter.delete_for_instance(instance_model)
           end
@@ -94,15 +94,17 @@ module Bosh::Director
 
         recreated = false
         if needs_recreate?(instance_plan)
+          instance_model = instance_plan.instance.model
+
           @logger.debug('Failed to update in place. Recreating VM')
-          DeploymentPlan::Steps::UnmountDisksStep.new(instance_plan).perform unless instance_plan.needs_to_fix?
+          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform unless instance_plan.needs_to_fix?
+          DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform
           tags = instance_plan.tags
 
-          instance_model = instance_plan.instance.model
+          disks = instance_model.active_persistent_disks.collection
+                                .map(&:model)
+                                .map(&:disk_cid).compact
           @vm_deleter.delete_for_instance(instance_model)
-          disks = instance_model.active_persistent_disks.collection.
-            map(&:model).
-            map(&:disk_cid).compact
           @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
 
           recreated = true
@@ -113,9 +115,7 @@ module Bosh::Director
         update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
 
-        unless recreated
-          instance.update_instance_settings
-        end
+        instance.update_instance_settings unless recreated
 
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
 
@@ -127,7 +127,7 @@ module Bosh::Director
           agent(instance),
           cleaner,
           @logger,
-          canary: options[:canary]
+          canary: options[:canary],
         )
         state_applier.apply(instance_plan.desired_instance.instance_group.update)
       end
@@ -139,34 +139,33 @@ module Bosh::Director
 
     def add_event(deployment_name, action, instance_name = nil, context = nil, parent_id = nil, error = nil)
       event = Config.current_job.event_manager.create_event(
-        {
-          parent_id: parent_id,
-          user: Config.current_job.username,
-          action: action,
-          object_type: 'instance',
-          object_name: instance_name,
-          task: Config.current_job.task_id,
-          deployment: deployment_name,
-          instance: instance_name,
-          error: error,
-          context: context ? context : {}
-        })
+        parent_id: parent_id,
+        user: Config.current_job.username,
+        action: action,
+        object_type: 'instance',
+        object_name: instance_name,
+        task: Config.current_job.task_id,
+        deployment: deployment_name,
+        instance: instance_name,
+        error: error,
+        context: context ? context : {},
+      )
       event.id
     end
 
     def get_action_and_context(instance_plan)
       changes = instance_plan.changes
       context = {}
-      if changes.size == 1 && [:state, :restart].include?(changes.first)
+      if changes.size == 1 && %i[state restart].include?(changes.first)
         action = case instance_plan.instance.virtual_state
-                   when 'started'
-                     'start'
-                   when 'stopped'
-                     'stop'
-                   when 'detached'
-                     'stop'
-                   else
-                     instance_plan.instance.virtual_state
+                 when 'started'
+                   'start'
+                 when 'stopped'
+                   'stop'
+                 when 'detached'
+                   'stop'
+                 else
+                   instance_plan.instance.virtual_state
                  end
       else
         context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
@@ -177,7 +176,7 @@ module Bosh::Director
           action = needs_recreate?(instance_plan) ? 'recreate' : 'update'
         end
       end
-      return action, context
+      [action, context]
     end
 
     def stop(instance_plan)
