@@ -108,7 +108,7 @@ module Bosh::Director
 
       context 'when there are instance plans' do
         before do
-          allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new).with(instance_plan1).and_return(unmount_step)
+          allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new).with(instance1).and_return(unmount_step)
           allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
           allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
