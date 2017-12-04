@@ -66,6 +66,7 @@ describe 'global networking', type: :integration do
             }]
         })
 
+      cloud_config_hash['compilation'].delete('vm_type')
       cloud_config_hash['compilation']['cloud_properties'] = {
         'compilation_section_config' => 'blah',
         'who_wins' => 'compilation_section'
@@ -74,6 +75,24 @@ describe 'global networking', type: :integration do
       cloud_config_hash['compilation']['network'] = 'network_with_az'
 
       cloud_config_hash
+    end
+
+    it 'vm_types cloud_properties override az cloud properties' do
+      cloud_config_hash['compilation'].delete('cloud_properties')
+      cloud_config_hash['compilation']['vm_type'] = 'compilation'
+      cloud_config_hash['vm_types'][-1]['cloud_properties'] = { 'who_wins' => 'vm type cloud properties win' }
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm')[0]
+
+      expect(create_vm_invocation.inputs['cloud_properties']).to eq({
+            'az_section_config' => 'neato',
+            'who_wins' => 'vm type cloud properties win'
+          }
+        )
     end
 
     it 'should place the vm in the az with merged cloud properties and overrides specific cloud properties' do

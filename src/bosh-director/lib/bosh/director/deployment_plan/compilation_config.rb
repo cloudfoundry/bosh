@@ -66,9 +66,16 @@ module Bosh::Director
         vm_type_name = safe_property(compilation_config, 'vm_type', class: String, optional: true)
         vm_resources = safe_property(compilation_config, 'vm_resources', class: Hash, optional: true)
 
-        if [vm_type_name, vm_resources, @cloud_properties].reject { |v| v.nil? || v.empty? }.count > 1
+        vm_configurations = [vm_type_name, vm_resources, @cloud_properties].reject { |v| v.nil? || v.empty? }.count
+
+        if vm_configurations == 0
           raise Bosh::Director::CompilationConfigBadVmConfiguration,
-            "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed."
+            "Compilation config requires either 'vm_type', 'vm_resources', or 'cloud_properties', none given."
+        end
+
+        if vm_configurations > 1
+          raise Bosh::Director::CompilationConfigBadVmConfiguration,
+            "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed."
         end
 
         if vm_type_name

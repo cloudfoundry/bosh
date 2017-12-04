@@ -126,6 +126,7 @@ describe 'vm_types and stemcells', type: :integration do
     vm_type3['name'] = 'changed-vm-type-cloud-properties'
     vm_type3['cloud_properties']['blarg'] = ['ful']
     cloud_config_hash['vm_types'] = [vm_type1, vm_type2, vm_type3]
+    cloud_config_hash['compilation']['vm_type'] = vm_type1['name']
 
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
@@ -189,7 +190,7 @@ describe 'vm_types and stemcells', type: :integration do
       vm_type1 = Bosh::Spec::Deployments.vm_type
       vm_type2 = Bosh::Spec::Deployments.vm_type
       vm_type2['name'] = 'a'
-      cloud_config_hash['vm_types'] = [vm_type1, vm_type2]
+      cloud_config_hash['vm_types'] = [vm_type1, vm_type2, Bosh::Spec::NewDeployments.compilation_vm_type]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       manifest_hash.delete('resource_pools')

@@ -62,7 +62,12 @@ module Bosh::Director::DeploymentPlan
     let(:cloud_config_hash) do
       {
         'networks' => networks_spec,
-        'compilation' => { 'workers' => 1, 'network' => 'a', 'cloud_properties' => {}, 'az' => cloud_config_availability_zones.first['name'] },
+        'compilation' => {
+          'workers' => 1,
+          'network' => 'a',
+          'cloud_properties' => { 'instance_type' => 'fake-instance-type' },
+          'az' => cloud_config_availability_zones.first['name']
+        },
         'resource_pools' => [
           {
             'name' => 'a',

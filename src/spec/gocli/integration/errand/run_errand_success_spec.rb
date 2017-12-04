@@ -257,7 +257,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
           'compilation' => {
             'workers' => 1,
             'network' => 'fake-network',
-            'cloud_properties' => {},
+            'cloud_properties' => { 'instance_type' => 'fake-instance-type' },
           },
           'networks' => [
             {

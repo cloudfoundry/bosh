@@ -35,6 +35,7 @@ module Bosh::Director
     let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
+    let(:vm_type) { BD::DeploymentPlan::VmType.new({'name' => 'fake-vm-type'}) }
     let(:compilation_config) do
       compilation_spec = {
         'workers' => n_workers,
@@ -307,7 +308,7 @@ module Bosh::Director
             'reuse_compilation_vms' => false,
             'az' => 'foo-az',
           }
-          DeploymentPlan::CompilationConfig.new(compilation_spec, {'foo-az' => availability_zone }, [])
+          DeploymentPlan::CompilationConfig.new(compilation_spec, {'foo-az' => availability_zone }, [vm_type])
         end
 
         let(:max_instance_count) { 4 }

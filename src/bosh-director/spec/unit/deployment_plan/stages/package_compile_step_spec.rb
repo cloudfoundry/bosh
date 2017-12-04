@@ -20,7 +20,7 @@ module Bosh::Director
         'workers' => number_of_workers,
         'network' => 'default',
         'env' => {},
-        'cloud_properties' => {},
+        'cloud_properties' => { 'instance_type' => 'fake-instance-type' },
         'reuse_compilation_vms' => reuse_compilation_vms,
         'az' => '',
       }
@@ -508,7 +508,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).once.ordered.
-          with(instance_of(String), stemcell.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
+          with(instance_of(String), stemcell.models.first.cid, {"instance_type"=>"fake-instance-type"}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
@@ -627,7 +627,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).
-          with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
+          with(instance_of(String), @stemcell_a.models.first.cid, {"instance_type"=>"fake-instance-type"}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)

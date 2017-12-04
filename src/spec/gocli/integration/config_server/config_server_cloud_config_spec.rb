@@ -104,7 +104,7 @@ describe 'using director with config server', type: :integration do
 
       it 'uses the interpolated values for a successful deploy' do
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-        
+
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.last.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
 
@@ -321,7 +321,7 @@ describe 'using director with config server', type: :integration do
 
     let(:cloud_config_hash) {
       {"azs"=>[{"cloud_properties"=>{"hz4RwVr"=>"((/moVsfGUa))"}, "name"=>"z1"}],
-       "compilation"=>{"network"=>"cAknaSb", "workers"=>1},
+       "compilation"=>{"network"=>"cAknaSb", "workers"=>1, "vm_type" => "dMF8vIexnI"},
        "networks"=>
            [{"name"=>"j6XUS1M",
              "subnets"=>
@@ -413,7 +413,8 @@ describe 'using director with config server', type: :integration do
         'compilation' => {
           'az' => 'z1',
           'network' => 'default',
-          'workers' => 1
+          'workers' => 1,
+          'vm_type' => 'default'
         },
         'vm_types' => [
           'name' => 'default'

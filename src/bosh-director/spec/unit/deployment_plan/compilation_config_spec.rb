@@ -2,15 +2,21 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe Bosh::Director::DeploymentPlan::CompilationConfig do
   describe :initialize do
+    let(:vm_type) { BD::DeploymentPlan::VmType.new({'name' => 'my-foo-compilation'}) }
 
     context 'when availability zone is specified' do
       let(:az1) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('az1', {}) }
+
       it 'should parse the basic properties' do
         config = BD::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
-            'az' => 'az1'
-          }, { 'az1' => az1})
+            'az' => 'az1',
+            'vm_type' => 'my-foo-compilation'
+          },
+          { 'az1' => az1},
+          [vm_type]
+          )
 
         expect(config.availability_zone).to eq(az1)
       end
@@ -60,7 +66,6 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     end
 
     context 'when vm_type is configured' do
-      let(:vm_type) { BD::DeploymentPlan::VmType.new({'name' => 'my-foo-compilation'}) }
 
       it 'should parse the property' do
         config = BD::DeploymentPlan::CompilationConfig.new(
@@ -91,6 +96,21 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
           "Compilation config references unknown vm type 'undefined-vm'. Known vm types are: my-foo-compilation"
       end
 
+      it 'it should error if none of vm_type, cloud_properties or resource pools are configured' do
+        expect {
+          BD::DeploymentPlan::CompilationConfig.new(
+            {
+              'workers' => 2,
+              'network' => 'foo',
+              'cloud_properties' => { },
+            },
+            {},
+            []
+          )
+        }.to raise_error BD::CompilationConfigBadVmConfiguration,
+          "Compilation config requires either 'vm_type', 'vm_resources', or 'cloud_properties', none given."
+      end
+
       it 'it should error if both vm_type and cloud_properties are configured' do
         expect {
           BD::DeploymentPlan::CompilationConfig.new(
@@ -106,7 +126,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             [vm_type]
           )
         }.to raise_error BD::CompilationConfigBadVmConfiguration,
-          "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed."
+          "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed."
       end
 
       context 'when vm_resources is configured' do
@@ -126,7 +146,8 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               {},
               [vm_type]
             )
-          }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed.")
+          }.to raise_error BD::CompilationConfigBadVmConfiguration,
+            "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed."
         end
       end
 
@@ -188,7 +209,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 [],
                 vm_extensions
               )}.to raise_error BD::CompilationConfigBadVmConfiguration,
-              "Compilation config is using vm extension 'my-foo-compilation-extension' and must configure a vm type or vm_resources block."
+                "Compilation config is using vm extension 'my-foo-compilation-extension' and must configure a vm type or vm_resources block."
           end
         end
       end
@@ -248,10 +269,11 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                   'ephemeral_disk_size' => 100,
                 },
                 'cloud_properties' => {
-                  'some' => 'value'
+                  'instance_type' => 'fake-value'
                 }
               }, {})
-            }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed.")
+            }.to raise_error BD::CompilationConfigBadVmConfiguration,
+              "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed."
           end
         end
       end
@@ -309,8 +331,12 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       it 'defaults resource pool cloud properties to empty hash' do
         config = BD::DeploymentPlan::CompilationConfig.new({
             'workers' => 1,
-            'network' => 'foo'
-          }, {})
+            'network' => 'foo',
+            'vm_type' => 'my-foo-compilation'
+          },
+          {},
+          [vm_type]
+        )
         expect(config.cloud_properties).to eq({})
       end
 

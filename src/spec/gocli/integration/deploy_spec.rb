@@ -75,7 +75,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
     let(:first_cloud_config) do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-      cloud_config_hash['vm_types'] = [{'name'  => 'a', 'cloud_properties' => {'prop-key-a' => 'prop-val-a'}}]
+      cloud_config_hash['vm_types'] = [{'name'  => 'a', 'cloud_properties' => {'prop-key-a' => 'prop-val-a'}}, Bosh::Spec::NewDeployments.compilation_vm_type]
       yaml_file('first-cloud-config', cloud_config_hash)
     end
     let(:second_cloud_config) do

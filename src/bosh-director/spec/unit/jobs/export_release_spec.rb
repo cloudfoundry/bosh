@@ -155,7 +155,7 @@ module Bosh::Director
               config = Bosh::Spec::NewDeployments.simple_cloud_config
               config['azs'] = [{'name' => 'z1', 'cloud_properties' => {}}]
               config['networks'].first['subnets'].first['az'] = 'z1'
-              config['vm_types'] =  [Bosh::Spec::NewDeployments.vm_type]
+              config['vm_types'] =  [Bosh::Spec::NewDeployments.vm_type, Bosh::Spec::NewDeployments.compilation_vm_type]
               config['compilation']['az'] = 'z1'
               config
             end

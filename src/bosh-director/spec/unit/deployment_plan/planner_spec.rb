@@ -408,7 +408,7 @@ module Bosh::Director
           end
 
           context 'when cloud configs are not empty' do
-            let(:cloud_configs) { [Models::Config.make(:cloud, content: '--- {"networks": [{"name":"test","subnets":[]}],"compilation":{"workers":1,"canary_watch_time":1,"update_watch_time":1,"serial":false,"network":"test"}}')] }
+            let(:cloud_configs) { [Models::Config.make(:cloud, content: '--- {"networks": [{"name":"test","subnets":[]}],"compilation":{"cloud_properties":{"instance_type":"fake-instance-type"},"workers":1,"canary_watch_time":1,"update_watch_time":1,"serial":false,"network":"test"}}')] }
 
             it 'returns true' do
               expect(subject.using_global_networking?).to be_truthy

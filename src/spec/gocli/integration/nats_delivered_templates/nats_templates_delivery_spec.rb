@@ -12,7 +12,7 @@ describe 'deliver rendered templates through nats', type: :integration do
 
   let(:cloud_config) do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-    cloud_config_hash['vm_types'] = [vm_type]
+    cloud_config_hash['vm_types'] << vm_type
     cloud_config_hash
   end
 

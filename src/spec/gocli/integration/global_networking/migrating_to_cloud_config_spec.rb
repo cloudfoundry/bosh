@@ -119,7 +119,7 @@ describe 'migrating to cloud config', type: :integration do
           ],
 
           'update' => {'canaries' => 2, 'canary_watch_time' => 4000, 'max_in_flight' => 1, 'update_watch_time' => 20},
-          'compilation' => {'workers' => 1, 'network' => 'a', 'cloud_properties' => {}},
+          'compilation' => {'workers' => 1, 'network' => 'a', 'cloud_properties' => { 'instance_type' => 'fake-instance-type' }},
           'jobs' => [
             {'name' => 'foobar_z1', 'templates' => [{'name' => 'foobar'}], 'resource_pool' => 'a1', 'instances' => 2, 'networks' => [{'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.1.11']}], 'properties' => {}},
             {'name' => 'foobar_z2', 'templates' => [{'name' => 'foobar'}], 'resource_pool' => 'a2', 'instances' => 1, 'networks' => [{'name' => 'a', 'static_ips' => ['192.168.1.12']}], 'properties' => {}}

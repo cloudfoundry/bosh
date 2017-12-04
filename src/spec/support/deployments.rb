@@ -12,7 +12,9 @@ module Bosh::Spec
         'compilation' => {
           'workers' => 1,
           'network' => 'a',
-          'cloud_properties' => {},
+          'cloud_properties' => {
+            'instance_type' => 'fake-instance-type'
+          },
         },
 
         'resource_pools' => [],
@@ -224,7 +226,7 @@ module Bosh::Spec
                                      'compilation' => {
                                          'workers' => 1,
                                          'network' => 'a',
-                                         'cloud_properties' => {},
+                                         'cloud_properties' => { 'instance_type' => 'a' },
                                          'az' => 'z1'
                                      },
                                  })

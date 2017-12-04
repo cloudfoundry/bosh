@@ -69,6 +69,7 @@ describe 'deploy job with addons', type: :integration do
 
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config_hash['vm_types'] = [
+        { 'name' => 'compilation', 'cloud_properties' => {}, },
         { 'name' => 'a', 'cloud_properties' => {}, },
         { 'name' => 'b', 'cloud_properties' => {}, }
       ]
