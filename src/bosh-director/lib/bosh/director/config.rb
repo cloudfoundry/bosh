@@ -279,9 +279,8 @@ module Bosh::Director
           db_ca_path = certificate_paths.fetch('ca')
 
           case connection_config['adapter']
-            when 'mysql', 'mysql2'
-              # TODO: make this also verify-full for mysql
-              connection_config['ssl_mode'] = 'verify_ca'
+            when 'mysql2'
+              connection_config['ssl_mode'] = 'verify_identity'
               connection_config['sslca'] = db_ca_path
             when 'postgres'
               connection_config['sslmode'] = 'verify-full'

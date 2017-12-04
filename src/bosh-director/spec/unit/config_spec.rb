@@ -688,66 +688,6 @@ describe Bosh::Director::Config do
         end
       end
 
-      context 'mysql' do
-        it_behaves_like 'db connects with custom parameters' do
-          let(:config) do
-            {
-              'adapter' => 'mysql',
-              'host' => '127.0.0.1',
-              'port' => 3306,
-              'tls' => {
-                'enabled' => true,
-                'cert' => {
-                  'ca' => '/path/to/root/ca'
-                }
-              }
-            }
-          end
-
-          let(:connection_parameters) do
-            {
-              'adapter' => 'mysql',
-              'host' => '127.0.0.1',
-              'port' => 3306,
-              'ssl_mode' => 'verify_ca',
-              'sslca' => '/path/to/root/ca',
-            }
-          end
-        end
-
-        context 'when user defines TLS options in connection_options' do
-          it_behaves_like 'db connects with custom parameters' do
-            let(:config) do
-              {
-                'adapter' => 'mysql',
-                'host' => '127.0.0.1',
-                'port' => 3306,
-                'tls' => {
-                  'enabled' => true,
-                  'cert' => {
-                    'ca' => '/path/to/root/ca'
-                  }
-                },
-                'connection_options' => {
-                  'ssl_mode' => 'something-custom',
-                  'sslca' => '/some/unknow/path'
-                }
-              }
-            end
-
-            let(:connection_parameters) do
-              {
-                'adapter' => 'mysql',
-                'host' => '127.0.0.1',
-                'port' => 3306,
-                'ssl_mode' => 'something-custom',
-                'sslca' => '/some/unknow/path'
-              }
-            end
-          end
-        end
-      end
-
       context 'mysql2' do
         it_behaves_like 'db connects with custom parameters' do
           let(:config) do
@@ -769,7 +709,7 @@ describe Bosh::Director::Config do
               'adapter' => 'mysql2',
               'host' => '127.0.0.1',
               'port' => 3306,
-              'ssl_mode' => 'verify_ca',
+              'ssl_mode' => 'verify_identity',
               'sslca' => '/path/to/root/ca',
             }
           end

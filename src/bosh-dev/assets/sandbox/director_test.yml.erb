@@ -32,7 +32,7 @@ db: &bosh_db
 
   <% if database.tls_enabled %>
   tls:
-    enable: <%= database.tls_enabled %>
+    enabled: <%= database.tls_enabled %>
     cert:
       ca: <%= database.ca_path %>
   <% else %>

@@ -10,12 +10,27 @@ check_param DB
 echo "Starting $DB..."
 case "$DB" in
   mysql)
+    export DB_PASSWORD="password"
     mv /var/lib/mysql /var/lib/mysql-src
     mkdir /var/lib/mysql
     mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
     mv /var/lib/mysql-src/* /var/lib/mysql/
 
+    if [ "$DB_TLS" = true ]; then
+      echo "....... DB TLS enabled ......."
+
+      export MYSQLDIR=/var/lib/mysql
+      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $MYSQLDIR/server-key.pem
+      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $MYSQLDIR/server-cert.pem
+      echo '
+[mysqld]
+ssl-cert=server-cert.pem
+ssl-key=server-key.pem
+require_secure_transport=ON' >> /etc/mysql/my.cnf
+    fi
+
     sudo service mysql start
+    sleep 5
     ;;
   postgresql)
     export PATH=/usr/lib/postgresql/9.4/bin:$PATH
