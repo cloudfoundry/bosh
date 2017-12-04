@@ -947,7 +947,7 @@ Unable to process links for deployment. Errors are:
 
       context 'when link source specifies network' do
         it 'respects value passed' do
-          expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+          expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
             anything,
             anything,
             anything,
@@ -961,7 +961,7 @@ Unable to process links for deployment. Errors are:
           let(:links) { {'db' => {'from' => 'db'}} }
 
           it 'defaults to nil' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
               anything,
               anything,
               anything,
@@ -983,7 +983,7 @@ Unable to process links for deployment. Errors are:
             let(:links) { {'db' => {'from' => 'db'}} }
 
             it 'it passes global_use_dns_entry as false' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
                 anything,
                 anything,
                 anything,
@@ -1002,7 +1002,7 @@ Unable to process links for deployment. Errors are:
             let(:links) { {'db' => {'from' => 'db'}} }
 
             it 'it passes global_use_dns_entry as true' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
                 anything,
                 anything,
                 anything,
@@ -1023,7 +1023,7 @@ Unable to process links for deployment. Errors are:
             let(:links) { {'db' => {'from' => 'db'}} }
 
             it 'it passes global_use_dns_entry as false' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
                 anything,
                 anything,
                 anything,
@@ -1042,7 +1042,7 @@ Unable to process links for deployment. Errors are:
             let(:links) { {'db' => {'from' => 'db'}} }
 
             it 'it passes global_use_dns_entry as TRUE' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
                 anything,
                 anything,
                 anything,
@@ -1060,7 +1060,7 @@ Unable to process links for deployment. Errors are:
           let(:links) { {'db' => {'from' => 'db'}} }
 
           it 'it sets link_use_ip_address to nil' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
               anything,
               anything,
               anything,
@@ -1074,7 +1074,7 @@ Unable to process links for deployment. Errors are:
         context 'when ip_addresses key on the consumed link is FALSE' do
           let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => false }} }
           it 'it sets link_use_ip_address to false' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
               anything,
               anything,
               anything,
@@ -1088,7 +1088,7 @@ Unable to process links for deployment. Errors are:
         context 'when ip_addresses key on the consumed link is TRUE' do
           let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => true }} }
           it 'it sets link_use_ip_address to true' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(3).times.with(
+            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
               anything,
               anything,
               anything,

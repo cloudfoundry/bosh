@@ -64,12 +64,12 @@ describe 'links_resolver' do
       it 'should update the previous provider' do
         providers = Bosh::Director::Models::LinkProvider
 
-        links_resolver.resolve(instance_group)
+        links_resolver.add_providers(instance_group)
 
         expect(providers.count).to eq(1)
         original_provider_id = providers.first.id
 
-        links_resolver.resolve(instance_group)
+        links_resolver.add_providers(instance_group)
 
         expect(providers.count).to eq(1)
         updated_provider_id = providers.first.id
@@ -88,7 +88,7 @@ describe 'links_resolver' do
     end
 
     it 'should create two providers in the database' do
-      links_resolver.resolve(instance_group)
+      links_resolver.add_providers(instance_group)
 
       providers = Bosh::Director::Models::LinkProvider
       expect(providers.count).to eq(2)

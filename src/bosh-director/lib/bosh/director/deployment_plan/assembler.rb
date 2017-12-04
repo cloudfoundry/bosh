@@ -140,11 +140,11 @@ module Bosh::Director
       links_resolver = DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
 
       @deployment_plan.instance_groups.each do |instance_group|
-        links_resolver.resolve(instance_group)
+        links_resolver.add_providers(instance_group)
       end
-      # This can not be combined into the same loop as above. We need all the providers to be populated first before we can do the consumers.
+
       @deployment_plan.instance_groups.each do |instance_group|
-        links_resolver.apply(instance_group)
+        links_resolver.resolve(instance_group)
       end
 
       # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them

@@ -182,7 +182,7 @@ module Bosh::Director
 
           before do
             allow(DeploymentPlan::LinksResolver).to receive(:new).with(deployment_plan, logger).and_return(links_resolver)
-            allow(links_resolver).to receive(:apply)
+            allow(links_resolver).to receive(:add_providers)
           end
 
           it 'should bind links by default' do
