@@ -186,7 +186,7 @@ module Bosh::Director
           allow(DirectorDnsStateUpdater).to receive(:new).and_return(director_state_updater)
           allow(instance_plan).to receive(:dns_changed?).and_return(true)
           allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new)
-            .with(instance_plan).and_return(unmount_step)
+            .with(instance_model).and_return(unmount_step)
         end
 
         it 'should update dns' do

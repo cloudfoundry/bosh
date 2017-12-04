@@ -173,7 +173,7 @@ module Bosh::Director
           instance_model.job,
           "#{Bosh::Director::Config.name}-#{deployment_name}",
           "#{deployment_name}-#{instance_model.job}",
-          "#{Bosh::Director::Config.name}-#{deployment_name}-#{instance_model.job}"
+          "#{Bosh::Director::Config.name}-#{deployment_name}-#{instance_model.job}",
         ]
         env['bosh']['groups'].map! { |name| Canonicalizer.canonicalize(name) }
       end

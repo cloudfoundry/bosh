@@ -81,8 +81,8 @@ module Bosh::Director
           # Command issued: `bosh stop --hard`
           @logger.info("Detaching instance #{instance}")
           unless instance_plan.already_detached?
-            DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_plan).perform
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
+            DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform
             @vm_deleter.delete_for_instance(instance_model)
           end
           instance_plan.release_obsolete_network_plans(@ip_provider)

@@ -32,11 +32,13 @@ module Bosh::Director
       end
 
       bound_instance_plans.each do |instance_plan|
+        instance_model = instance_plan.instance.model
+
         unless instance_plan.already_detached?
-          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_plan.instance).perform
+          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform
         end
 
-        @vm_deleter.delete_for_instance(instance_plan.instance.model)
+        @vm_deleter.delete_for_instance(instance_model)
       end
     end
 
