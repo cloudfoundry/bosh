@@ -98,9 +98,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       'compilation' => {
         'workers' => 1,
         'network' => 'fake-manual-network',
-        'cloud_properties' => {
-          'instance_type' => 'fake-instance-type'
-        }
       },
       'update' => {
         'canaries' => 1,
@@ -798,9 +795,6 @@ Unable to process links for deployment. Errors are:
           'compilation' => {
             'workers' => 1,
             'network' => 'fake-manual-network',
-            'cloud_properties' => {
-              'instance_type' => 'fake-instance-type'
-            }
           },
           'update' => {
             'canaries' => 1,
@@ -1207,9 +1201,6 @@ Unable to process links for deployment. Errors are:
                   'workers' => 1,
                   'network' => 'fake-manual-network',
                   'az' => 'az1',
-                  'cloud_properties' => {
-                    'instance_type' => 'fake-instance-type'
-                  }
               },
             'vm_types' => [
               {

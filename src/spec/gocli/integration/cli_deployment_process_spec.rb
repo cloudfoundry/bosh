@@ -41,8 +41,7 @@ describe 'cli: deployment process', type: :integration do
           'cloud_properties' => {
             'my-property' => 'foo'
           }
-        },
-        Bosh::Spec::NewDeployments.compilation_vm_type
+        }
       ]
       cloud_config
     end

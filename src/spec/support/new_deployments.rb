@@ -4,7 +4,8 @@ module Bosh::Spec
 
     def self.simple_cloud_config
       minimal_cloud_config.merge({
-        'networks' => [network]
+        'networks' => [network],
+        'vm_types' => [vm_type]
       })
     end
 
@@ -18,10 +19,10 @@ module Bosh::Spec
         'compilation' => {
           'workers' => 1,
           'network' => 'a',
-          'vm_type' => 'compilation',
+          'cloud_properties' => {},
         },
 
-        'vm_types' => [vm_type, compilation_vm_type],
+        'vm_types' => [],
       }
     end
 
@@ -46,13 +47,6 @@ module Bosh::Spec
     def self.vm_type
       {
         'name' => 'a',
-        'cloud_properties' => {}
-      }
-    end
-
-    def self.compilation_vm_type
-      {
-        'name' => 'compilation',
         'cloud_properties' => {}
       }
     end
@@ -284,12 +278,12 @@ module Bosh::Spec
       ]
       minimal_cloud_config.merge({
         'networks' => networks,
-        'vm_types' => [vm_type, compilation_vm_type],
+        'vm_types' => [vm_type],
         'azs' => azs,
         'compilation' => {
           'workers' => 1,
           'network' => 'a',
-          'vm_type' => 'compilation',
+          'cloud_properties' => {},
           'az' => 'z1'
         },
       })
@@ -444,8 +438,7 @@ module Bosh::Spec
         {
           'name' => 'b',
           'cloud_properties' => {},
-        },
-        compilation_vm_type
+        }
       ]
       minimal_cloud_config.merge({
         'networks' => [network],

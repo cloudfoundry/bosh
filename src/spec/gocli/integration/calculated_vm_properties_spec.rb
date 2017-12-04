@@ -15,7 +15,6 @@ describe 'calculated vm properties', type: :integration do
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config.delete('resource_pools')
     cloud_config.delete('vm_types')
-    cloud_config['compilation'].delete('cloud_properties')
     cloud_config['compilation']['vm_resources'] = vm_resources
     cloud_config
   end
@@ -131,8 +130,6 @@ describe 'calculated vm properties', type: :integration do
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config.delete('resource_pools')
       cloud_config['vm_types'] = [{'name' => 'vm_type_1', 'cloud_properties' => { 'instance_type' => 'from-vm-type'}}]
-      cloud_config['compilation'].delete('vm_type')
-      cloud_config['compilation']['cloud_properties'].delete('instance_type')
       cloud_config['compilation']['vm_resources'] = vm_resources
       cloud_config['networks'].first['subnets'].first['static'] << '192.168.1.11'
       cloud_config
@@ -176,7 +173,6 @@ describe 'calculated vm properties', type: :integration do
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis
       cloud_config.delete('resource_pools')
       cloud_config.delete('vm_types')
-      cloud_config['compilation'].delete('cloud_properties')
       cloud_config['compilation']['vm_resources'] = vm_resources
       cloud_config
     end

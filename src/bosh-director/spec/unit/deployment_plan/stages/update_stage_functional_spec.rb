@@ -101,9 +101,7 @@ module Bosh::Director::DeploymentPlan::Stages
         'compilation' => {
           'workers' => 1,
           'network' => 'fake-network',
-          'cloud_properties' => {
-            'resource_pool' => 'fake-resource-pool',
-          },
+          'cloud_properties' => {},
         },
         'update' => {
           'canaries' => 1,

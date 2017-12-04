@@ -41,8 +41,7 @@ describe 'using director with config server disabled', type: :integration do
       'compilation' => {
         'az' => 'z1',
         'network' => 'default',
-        'workers' => 1,
-        'vm_type' => 'default'
+        'workers' => 1
       },
       'vm_types' => [{'name' => 'default'}],
       'disk_types' => [

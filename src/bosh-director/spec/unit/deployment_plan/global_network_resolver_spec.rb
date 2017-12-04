@@ -73,14 +73,8 @@ module Bosh::Director
               }],
               'compilation' => {
                 'network' => 'manual',
-                'workers' => 1,
-                'vm_type' =>  'fake-vm-type'
-              },
-              'vm_types' => [
-                {
-                  'name' => 'fake-vm-type'
-                }
-              ]
+                'workers' => 1
+              }
             })
           })]
         end
