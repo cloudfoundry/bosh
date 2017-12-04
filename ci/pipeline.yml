@@ -378,7 +378,7 @@ jobs:
             DB:           postgresql
             RUBY_VERSION: 2.4.2
             NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22,3,6,9,12,15
+            GROUP:        1,4,7,10,13,16,19,22
             SHA2_MODE:    true
             DB_TLS:       true
         - task: mysql-tls
@@ -400,9 +400,21 @@ jobs:
               DB:           mysql
               RUBY_VERSION: 2.4.2
               NUM_GROUPS:   24
-              GROUP:        2,5,8,11,14,17,20,23,18,21,24
+              GROUP:        2,5,8,11,14,17,20,23
               SHA2_MODE:    true
               DB_TLS:       true
+        - task: postgres-tls-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-9"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        3,6,9,12,15,18,21,24
+            SHA2_MODE:    true
+            DB_TLS:       true
+
         on_failure:
           <<: *slack-alert
 
