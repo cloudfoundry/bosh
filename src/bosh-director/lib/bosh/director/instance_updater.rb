@@ -97,8 +97,10 @@ module Bosh::Director
           instance_model = instance_plan.instance.model
 
           @logger.debug('Failed to update in place. Recreating VM')
-          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform unless instance_plan.needs_to_fix?
-          DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform
+          unless instance_plan.needs_to_fix?
+            DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform
+            DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform
+          end
           tags = instance_plan.tags
 
           disks = instance_model.active_persistent_disks.collection
