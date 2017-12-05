@@ -94,3 +94,7 @@ print_git_state
 bundle install --local
 
 bundle exec rake --trace spec:integration_gocli
+
+if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
+  sudo service stop mysql
+fi
