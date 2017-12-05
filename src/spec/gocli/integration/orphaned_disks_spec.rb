@@ -99,7 +99,9 @@ describe 'orphaned disks', type: :integration do
     cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
 
     # does not attach disk again, delete_vm
-    expect(cpi_invocations.map(&:method_name)).to eq(['snapshot_disk', 'delete_vm', 'create_vm', 'set_vm_metadata', 'detach_disk'])
+    expect(cpi_invocations.map(&:method_name)).to eq(
+      %w[snapshot_disk detach_disk delete_vm create_vm set_vm_metadata detach_disk],
+    )
   end
 
   it 'should orhpan disk' do
