@@ -9,7 +9,7 @@ groups:
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
-      - integration-postgres-db-tls
+      - integration-db-tls
       - load-tests-postgres
       - load-tests-mysql
       - legacy-load-tests-postgres
@@ -359,7 +359,7 @@ jobs:
         on_failure:
           <<: *slack-alert
 
-  - name: integration-postgres-db-tls
+  - name: integration-db-tls
     public: true
     serial: true
     build_logs_to_retain: 250
@@ -383,7 +383,7 @@ jobs:
             DB_TLS:       true
         - task: mysql-tls
           privileged: true
-          tags: ["bosh-integration-5"]
+          tags: ["bosh-integration-1"]
           config:
             platform: linux
             image_resource:

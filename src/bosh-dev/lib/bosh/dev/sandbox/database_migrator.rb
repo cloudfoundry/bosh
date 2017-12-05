@@ -12,10 +12,11 @@ module Bosh::Dev::Sandbox
       @logger.info("Migrating database with #{@director_config_path}")
 
       Dir.chdir(@director_dir) do
-        output = `bin/bosh-director-migrate -c #{@director_config_path}`
-        unless $?.exitstatus == 0
-          @logger.info("Failed to run migrations: \n#{output}")
-          exit 1
+        Open3.popen3("bin/bosh-director-migrate -c #{@director_config_path}") do |stdin, stdout, stderr, thread|
+          unless thread.value.exitstatus == 0
+            @logger.info("Failed to run migrations: \n #{stderr.read}")
+            raise "Failed to run migrations: \n #{stderr.read}"
+          end
         end
       end
     end

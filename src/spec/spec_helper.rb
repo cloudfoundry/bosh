@@ -29,6 +29,7 @@ end
 RSpec.configure do |c|
   c.filter_run :focus => true if ENV['FOCUS']
   c.filter_run_excluding :db => :postgresql unless ENV['DB'] == 'postgresql'
+  c.filter_run_excluding :skip_for_db_tls_ci => :true if ENV['DB_TLS'] == 'true'
   c.include BlueShell::Matchers
   c.before(:suite) do
     agent_dir = File.expand_path('../../go/src/github.com/cloudfoundry/bosh-agent', __FILE__)

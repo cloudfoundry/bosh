@@ -334,7 +334,10 @@ module Bosh::Dev::Sandbox
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
+      @db_config[:tls_enabled] = options.fetch(:tls_enabled, @db_config[:tls_enabled ])
+
       check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
+      setup_database(@db_config)
     end
 
     def check_if_nats_need_reset(allow_legacy_clients)

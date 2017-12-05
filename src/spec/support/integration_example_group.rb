@@ -316,6 +316,16 @@ module IntegrationSandboxHelpers
     current_sandbox.start
   end
 
+  def reset_sandbox(example, options)
+    prepare_sandbox
+    reconfigure_sandbox(options)
+    if !sandbox_started?
+      start_sandbox
+    elsif !example.metadata[:no_reset]
+      current_sandbox.reset
+    end
+  end
+
   def sandbox_started?
     !!$sandbox_started
   end
@@ -336,10 +346,6 @@ module IntegrationSandboxHelpers
 
   def reconfigure_sandbox(options)
     current_sandbox.reconfigure(options)
-  end
-
-  def reset_sandbox
-    current_sandbox.reset
   end
 
   def setup_test_release_dir(destination_dir = ClientSandbox.test_release_dir)
@@ -399,13 +405,7 @@ end
 module IntegrationSandboxBeforeHelpers
   def with_reset_sandbox_before_each(options={})
     before do |example|
-      prepare_sandbox
-      reconfigure_sandbox(options)
-      if !sandbox_started?
-        start_sandbox
-      elsif !example.metadata[:no_reset]
-        reset_sandbox
-      end
+      reset_sandbox(example, options)
     end
   end
 
@@ -416,7 +416,7 @@ module IntegrationSandboxBeforeHelpers
       if !sandbox_started?
         start_sandbox
       else
-        reset_sandbox
+        current_sandbox.reset
       end
     end
   end
