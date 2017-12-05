@@ -113,9 +113,12 @@ describe 'links api', type: :integration do
     {
       'id' => Integer,
       'deployment' => 'simple',
-      'instance_group' => 'foobar',
       'owner_object' => {
-        'type' => 'job', 'name' => name
+        'name' => name,
+        'type' => 'job',
+        'info' => {
+          'instance_group' => 'foobar'
+        }
       }
     }
   end
