@@ -94,7 +94,7 @@ module Bosh::Director
       before do
         allow(deployment_plan).to receive(:instance_groups).and_return(instance_groups)
         allow(instance_group).to receive(:name).and_return('ig_1')
-        allow(link_path).to receive(:job).and_return('ig_1')
+        allow(link_path).to receive(:instance_group).and_return('ig_1')
       end
 
       describe '#find_link_provider' do
@@ -144,7 +144,7 @@ module Bosh::Director
 
           before do
             allow(job).to receive(:name).and_return('job_name')
-            allow(link_path).to receive(:template).and_return('job_name')
+            allow(link_path).to receive(:job).and_return('job_name')
             allow(link_path).to receive(:disk?).and_return(false)
             allow(instance_group).to receive(:jobs).and_return(jobs)
             allow(job).to receive(:provided_links).with('ig_1').and_return([provided_link])
@@ -213,7 +213,7 @@ module Bosh::Director
           }}
 
           before do
-            allow(link_path).to receive(:template).and_return('job_name')
+            allow(link_path).to receive(:job).and_return('job_name')
             allow(link_path).to receive(:disk?).and_return(false)
             allow(link_path).to receive(:name).and_return('my_link')
             allow(link_path).to receive(:deployment).and_return('my_dep')
@@ -513,8 +513,8 @@ module Bosh::Director
       before do
         allow(link_path).to receive(:deployment_plan_name).and_return('my_deployment')
         allow(link_path).to receive(:name).and_return('my_link')
-        allow(link_path).to receive(:job).and_return('ig_1')
-        allow(link_path).to receive(:template).and_return('job_1')
+        allow(link_path).to receive(:instance_group).and_return('ig_1')
+        allow(link_path).to receive(:job).and_return('job_1')
         allow(link_path).to receive(:to_s).and_return('my_deployment.ig_1.job_1.my_link')
         allow(consumed_link).to receive(:type).and_return('my_type')
       end

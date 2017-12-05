@@ -55,14 +55,14 @@ module Bosh::Director
       end
 
       def find_link_provider
-        instance_group = @deployment_plan.instance_groups.find { |instance_group| instance_group.name == @link_path.job }
+        instance_group = @deployment_plan.instance_groups.find { |instance_group| instance_group.name == @link_path.instance_group }
 
         return nil unless instance_group
 
         if @link_path.disk?
           return DiskLink.new(@link_path.deployment, @link_path.name).spec
         else
-          job = instance_group.jobs.find { |job| job.name == @link_path.template }
+          job = instance_group.jobs.find { |job| job.name == @link_path.job }
           return nil unless job
 
           found = job.provided_links(instance_group.name).find { |p| p.name == @link_path.name && p.type == @consumed_link.type }
@@ -121,8 +121,8 @@ module Bosh::Director
         return nil if @deployment_link_provider.empty?
 
         job = @deployment_link_provider.select do |lp|
-          lp[:instance_group] == @link_path.job &&
-          lp[:owner_object_name] == @link_path.template &&
+          lp[:instance_group] == @link_path.instance_group &&
+          lp[:owner_object_name] == @link_path.job &&
           lp[:name] == @link_path.name
         end
         return nil if job.empty?

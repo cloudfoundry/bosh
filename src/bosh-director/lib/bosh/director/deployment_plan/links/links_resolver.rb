@@ -61,7 +61,7 @@ module Bosh::Director
             link_content = link_path.manual_spec.to_json
           else
             provider_deployment = Models::Deployment[name: link_path.deployment]
-            provider = Bosh::Director::Models::LinkProvider.find(deployment: provider_deployment, instance_group: link_path.job, owner_object_name: link_path.template, name: link_path.name)
+            provider = Bosh::Director::Models::LinkProvider.find(deployment: provider_deployment, instance_group: link_path.job, owner_object_name: link_path.job, name: link_path.name)
 
             if provider.nil? # implicit links
               # When calculating link_path it will have failed if the link is ambiguous.
