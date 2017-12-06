@@ -63,10 +63,7 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      cloud = cloud_for_cpi(disk.instance.active_vm.cpi)
-      vm_cid = disk.instance.vm_cid
-      cloud.attach_disk(vm_cid, disk.disk_cid)
-      MetadataUpdater.build.update_disk_metadata(cloud, disk, tags)
+      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform
       mount_disk(disk) if disk.managed?
     end
 
@@ -133,9 +130,7 @@ module Bosh::Director
     end
 
     def mount_disk(disk)
-      agent_client = agent_client(disk.instance)
-      agent_client.wait_until_ready
-      agent_client.mount_disk(disk.disk_cid)
+      DeploymentPlan::Steps::MountDiskStep.new(disk).perform
     rescue => e
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")
 

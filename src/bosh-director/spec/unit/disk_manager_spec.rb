@@ -66,31 +66,39 @@ module Bosh::Director
     end
 
     describe '#attach_disk' do
+      let(:attach_step) { instance_double(DeploymentPlan::Steps::AttachDiskStep, perform: nil) }
+      let(:tags) { {} }
+
+      before do
+        allow(DeploymentPlan::Steps::AttachDiskStep).to receive(:new)
+          .with(persistent_disk, tags).and_return(attach_step)
+      end
+
       context 'managed disks' do
         it 'attaches + mounts disk' do
-          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).once.and_return(cloud)
-          expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(attach_step).to receive(:perform)
           expect(agent_client).to receive(:wait_until_ready)
           expect(agent_client).to receive(:mount_disk).with('disk123')
-          disk_manager.attach_disk(persistent_disk, {})
+          disk_manager.attach_disk(persistent_disk, tags)
         end
       end
 
       context 'unmanaged disks' do
         it 'attaches the disk without mounting' do
           persistent_disk.update(name: 'chewbacca')
-          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).once.and_return(cloud)
-          expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
+          expect(attach_step).to receive(:perform)
           expect(agent_client).to_not receive(:mount_disk)
-          disk_manager.attach_disk(persistent_disk, {})
+          disk_manager.attach_disk(persistent_disk, tags)
         end
       end
 
-      it 'sets disk metadata with deployment information' do
-        allow(cloud_factory).to receive(:get).and_return(cloud)
-        allow(cloud).to receive(:attach_disk)
-        expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud, persistent_disk, 'mytag' => 'myvalue')
-        disk_manager.attach_disk(persistent_disk, 'mytag' => 'myvalue')
+      context 'when tags are set' do
+        let(:tags) { { 'mytag' => 'myvalue' } }
+
+        it 'passes tags to attach step' do
+          expect(attach_step).to receive(:perform)
+          disk_manager.attach_disk(persistent_disk, tags)
+        end
       end
     end
 
