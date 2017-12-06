@@ -10,12 +10,11 @@ describe 'When director try to connect database using TLS', type: :integration, 
 
     it 'fails during migration' do
       begin
-        reset_sandbox({}, {:tls_enabled => true})
+        reset_sandbox(nil, {:tls_enabled => true})
       rescue => err
         ssl_error = err
       end
 
-      puts ssl_error.inspect
       ssl_error_list = ["Mysql2::Error: SSL connection error", "PG::ConnectionBad: server does not support SSL"]
 
       error_found = false

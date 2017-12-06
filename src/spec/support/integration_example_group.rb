@@ -321,7 +321,7 @@ module IntegrationSandboxHelpers
     reconfigure_sandbox(options)
     if !sandbox_started?
       start_sandbox
-    elsif !example.metadata[:no_reset]
+    elsif example != nil && !example.metadata[:no_reset]
       current_sandbox.reset
     end
   end

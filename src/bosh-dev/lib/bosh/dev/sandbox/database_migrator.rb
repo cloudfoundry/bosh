@@ -14,8 +14,9 @@ module Bosh::Dev::Sandbox
       Dir.chdir(@director_dir) do
         Open3.popen3("bin/bosh-director-migrate -c #{@director_config_path}") do |stdin, stdout, stderr, thread|
           unless thread.value.exitstatus == 0
-            @logger.info("Failed to run migrations: \n #{stderr.read}")
-            raise "Failed to run migrations: \n #{stderr.read}"
+            migration_error = stderr.read
+            @logger.info("Failed to run migrations: \n #{migration_error}")
+            raise "Failed to run migrations: #{migration_error}"
           end
         end
       end
