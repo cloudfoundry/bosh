@@ -54,6 +54,10 @@ module Bosh::Director
         @disk
       end
 
+      def owner
+        disk? ? @instance_group : @job
+      end
+
       def to_s
         "#{@deployment}.#{@instance_group}.#{@job}.#{@name}"
       end

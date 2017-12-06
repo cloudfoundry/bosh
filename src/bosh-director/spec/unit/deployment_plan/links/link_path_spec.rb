@@ -70,6 +70,7 @@ module Bosh::Director
             expect(link_path.deployment).to eq('deployment_name')
             expect(link_path.instance_group).to eq('provider_instance_group')
             expect(link_path.job).to eq('provider_job')
+            expect(link_path.owner).to eq('provider_job')
             expect(link_path.name).to eq('link_name')
           end
 
@@ -92,6 +93,7 @@ module Bosh::Director
             expect(link_path.deployment).to eq('deployment_name')
             expect(link_path.instance_group).to eq('provider_instance_group')
             expect(link_path.job).to eq(nil) #disks are not provided by a job, they're declared on the instance group
+            expect(link_path.owner).to eq('provider_instance_group')
             expect(link_path.name).to eq('ssd-disk')
           end
         end

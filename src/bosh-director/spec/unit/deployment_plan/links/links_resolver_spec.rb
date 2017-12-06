@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::LinksResolver do
-  subject(:links_resolver) { described_class.new(deployment_plan, logger) }
+  subject(:links_resolver) {described_class.new(deployment_plan, logger)}
 
   let(:deployment_plan) do
     planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
@@ -41,7 +41,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         {
           'name' => 'mysql',
           'jobs' => [
-            {'name' => 'mysql-template',
+            {
+              'name' => 'mysql-template',
               'release' => 'fake-release',
               'provides' => manifest_job_provides,
               'properties' => {'mysql' => nil}
@@ -108,7 +109,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     }
   end
 
-  let(:logger) { Logging::Logger.new('TestLogger') }
+  let(:logger) {Logging::Logger.new('TestLogger')}
 
   let(:api_server_instance_group) do
     deployment_plan.instance_group('api-server')
@@ -155,20 +156,22 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
     version.add_deployment(deployment_model)
 
-    deployment_model = Bosh::Director::Models::Deployment.make(name: 'other-deployment',
+    deployment_model = Bosh::Director::Models::Deployment.make(
+      name: 'other-deployment',
       manifest: deployment_manifest.to_json,
-      link_spec_json: '{"mysql":{"mysql-template":{"db":{"db":{}}}}}')
+      link_spec_json: '{"mysql":{"mysql-template":{"db":{"db":{}}}}}'
+    )
     Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
     version.add_deployment(deployment_model)
   end
 
-  let(:template_consumes_links) { [{name: "db", type: "db"}] }
-  let(:template_provides_links) { [{name: "db", type: "db", shared: true, properties: ['mysql']}] }
+  let(:template_consumes_links) {[{name: "db", type: "db"}]}
+  let(:template_provides_links) {[{name: "db", type: "db", shared: true, properties: ['mysql']}]}
 
   describe '#resolve' do
     context 'when job consumes link from the same deployment' do
       context 'when link source is provided by some job' do
-        let(:links) { {'db' => {"from" => 'db'}} }
+        let(:links) {{'db' => {"from" => 'db'}}}
 
         it 'adds link to job' do
           links_resolver.resolve(api_server_instance_group)
@@ -226,7 +229,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             'deployment_name' => 'fake-deployment',
             'domain' => 'bosh',
             'default_network' => 'fake-manual-network',
-            'networks' => ['fake-manual-network','fake-dynamic-network'],
+            'networks' => ['fake-manual-network', 'fake-dynamic-network'],
             'instance_group' => 'mysql',
             'properties' => {'mysql' => nil},
             'instances' => [
@@ -237,7 +240,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 'bootstrap' => true,
                 'az' => nil,
                 'address' => '127.0.0.3',
-              },{
+              }, {
                 'name' => 'mysql',
                 'id' => String,
                 'index' => 1,
@@ -349,7 +352,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         end
 
         context 'when requesting for ip addresses only' do
-          let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment', 'ip_addresses' => true}} }
+          let(:links) {{'db' => {"from" => 'db', 'deployment' => 'other-deployment', 'ip_addresses' => true}}}
 
           it 'returns link from another deployment' do
             links_resolver.resolve(api_server_instance_group)
@@ -388,7 +391,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         end
 
         context 'when requesting for DNS entries' do
-          let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment', 'ip_addresses' => false}} }
+          let(:links) {{'db' => {"from" => 'db', 'deployment' => 'other-deployment', 'ip_addresses' => false}}}
 
           it 'returns link from another deployment' do
             links_resolver.resolve(api_server_instance_group)
@@ -428,10 +431,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         end
 
         context 'when other deployment link type does not match' do
-          let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment'}} }
+          let(:links) {{'db' => {"from" => 'db', 'deployment' => 'other-deployment'}}}
 
-          let(:template_consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
-          let(:template_provides_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
+          let(:template_consumes_links) {[{'name' => 'db', 'type' => 'other'}]}
+          let(:template_provides_links) {[{name: "db", type: "db"}]} # name and type is implicitly db
 
           it 'fails' do
             expect {
@@ -441,9 +444,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         end
       end
 
-
       context 'when another deployment does not have link source' do
-        let(:links) { {'db' => {"from" => 'bad_alias', 'deployment' => 'other-deployment'}} }
+        let(:links) {{'db' => {"from" => 'bad_alias', 'deployment' => 'other-deployment'}}}
 
         it 'fails' do
           expected_error_msg = <<-EXPECTED.strip
@@ -458,7 +460,7 @@ Unable to process links for deployment. Errors are:
       end
 
       context 'when requested deployment does not exist' do
-        let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existent'}} }
+        let(:links) {{'db' => {"from" => 'db', 'deployment' => 'non-existent'}}}
 
         it 'fails' do
           expected_error_msg = <<-EXPECTED.strip
@@ -474,25 +476,25 @@ Unable to process links for deployment. Errors are:
     end
 
     context 'when provided link type does not match required link type' do
-      let(:links) { {'db' => {"from" => 'db'}} }
+      let(:links) {{'db' => {"from" => 'db'}}}
 
-      let(:template_consumes_links) { [{'name' => 'db', 'type' => 'other'}] }
-      let(:template_provides_links) { [{name: "db", type: "db"}] } # name and type is implicitly db
+      let(:template_consumes_links) {[{'name' => 'db', 'type' => 'other'}]}
+      let(:template_provides_links) {[{name: "db", type: "db"}]} # name and type is implicitly db
 
       it 'fails to find link' do
         expect {
           links_resolver.resolve(api_server_instance_group)
         }.to raise_error Bosh::Director::DeploymentInvalidLink,
-          "Cannot resolve link path 'fake-deployment.mysql.mysql-template.db' " +
-            "required for link 'db' in instance group 'api-server' on job 'api-server-template'"
+                         "Cannot resolve link path 'fake-deployment.mysql.mysql-template.db' " +
+                           "required for link 'db' in instance group 'api-server' on job 'api-server-template'"
       end
     end
 
     context 'when provided link name matches links name' do
-      let (:links) { {'backup_db' => {"from" => 'db'}} }
+      let (:links) {{'backup_db' => {"from" => 'db'}}}
 
-      let(:template_consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
-      let(:template_provides_links) { [{name: "db", type: "db", properties: ['mysql']}] }
+      let(:template_consumes_links) {[{'name' => 'backup_db', 'type' => 'db'}]}
+      let(:template_provides_links) {[{name: "db", type: "db", properties: ['mysql']}]}
 
       it 'adds link to job' do
         links_resolver.resolve(api_server_instance_group)
@@ -532,7 +534,7 @@ Unable to process links for deployment. Errors are:
       end
 
       context 'when a link is shared' do
-        let (:links) { {'backup_db' => {"from" => 'db', "shared" => true}} }
+        let (:links) {{'backup_db' => {"from" => 'db', "shared" => true}}}
 
         it 'adds shared provider to deployment_plan.link_providers' do
 
@@ -676,7 +678,7 @@ Unable to process links for deployment. Errors are:
       end
 
       context 'when provider name is renamed' do
-        let (:links) { {'backup_db' => {"from" => 'source_db'} } }
+        let (:links) {{'backup_db' => {"from" => 'source_db'}}}
         let(:manifest_job_provides) do
           {'db' => {'as' => 'source_db'}}
         end
@@ -691,13 +693,13 @@ Unable to process links for deployment. Errors are:
 
       # Feature to be implemented in story #151894692
       xcontext 'if the the alias is nil' do
-        let (:links) { {'backup_db' => {"from" => 'db'}} }
+        let (:links) {{'backup_db' => {"from" => 'db'}}}
 
-        let(:template_consumes_links) { [{'name' => 'backup_db', 'type' => 'db'}] }
+        let(:template_consumes_links) {[{'name' => 'backup_db', 'type' => 'db'}]}
         let(:template_provides_links) do
           [
             {name: "db", type: "db", properties: ['mysql']},
-            {name: "unconsumable", type: "key", properties: ["oranges","pineapples"]}
+            {name: "unconsumable", type: "key", properties: ["oranges", "pineapples"]}
           ]
         end
 
@@ -717,41 +719,41 @@ Unable to process links for deployment. Errors are:
     context 'when unmanaged persistent disks are provided' do
       let(:low_iops_persistent_disk) do
         {
-            'type' => 'low-performance-disk-type',
-            'name' => 'low-iops-persistent-disk-name'
+          'type' => 'low-performance-disk-type',
+          'name' => 'low-iops-persistent-disk-name'
         }
       end
 
       let(:high_iops_persistent_disk) do
         {
-            'type' => 'high-performance-disk-type',
-            'name' => 'high-iops-persistent-disk-name'
+          'type' => 'high-performance-disk-type',
+          'name' => 'high-iops-persistent-disk-name'
         }
       end
 
       let(:instance_groups) do
         [{
-          'name' => 'mysql',
-          'jobs' => [
-            {
-              'name' => 'mysql-template',
-              'release' => 'fake-release',
-              'properties' => {'mysql' => nil}
-            }
-          ],
-          'resource_pool' => 'fake-resource-pool',
-          'instances' => 2,
-          'networks' => [
-            {
-              'name' => 'fake-manual-network',
-              'default' => ['dns', 'gateway']
-            },
-            {
-              'name' => 'fake-dynamic-network',
-            }
-          ],
-          'persistent_disks' => [low_iops_persistent_disk, high_iops_persistent_disk]
-        }]
+           'name' => 'mysql',
+           'jobs' => [
+             {
+               'name' => 'mysql-template',
+               'release' => 'fake-release',
+               'properties' => {'mysql' => nil}
+             }
+           ],
+           'resource_pool' => 'fake-resource-pool',
+           'instances' => 2,
+           'networks' => [
+             {
+               'name' => 'fake-manual-network',
+               'default' => ['dns', 'gateway']
+             },
+             {
+               'name' => 'fake-dynamic-network',
+             }
+           ],
+           'persistent_disks' => [low_iops_persistent_disk, high_iops_persistent_disk]
+         }]
       end
 
       let(:deployment_manifest) do
@@ -825,9 +827,9 @@ Unable to process links for deployment. Errors are:
         # remove DB columns not needed consume provide json
 
         expected_disk_providers = [
-            {name: 'db', content: {'default_network' => 'fake-manual-network', 'deployment_name' => 'fake-deployment', 'domain' => 'bosh', 'instance_group' => 'mysql', 'instances' => Array, 'networks' => Array, 'properties' => Hash}},
-            {name: 'low-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "low-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
-            {name: 'high-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "high-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
+          {name: 'db', content: {'default_network' => 'fake-manual-network', 'deployment_name' => 'fake-deployment', 'domain' => 'bosh', 'instance_group' => 'mysql', 'instances' => Array, 'networks' => Array, 'properties' => Hash}},
+          {name: 'low-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "low-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
+          {name: 'high-iops-persistent-disk-name', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "high-iops-persistent-disk-name"}, 'networks' => [], 'instances' => []}},
         ]
 
         providers = provider_model.all
@@ -926,7 +928,7 @@ Unable to process links for deployment. Errors are:
     end
 
     context 'when link source is does not specify deployment name' do
-      let(:links) { {'db' => {"from" => 'db'}} }
+      let(:links) {{'db' => {"from" => 'db'}}}
 
       it 'defaults to current deployment' do
         links_resolver.resolve(api_server_instance_group)
@@ -937,172 +939,8 @@ Unable to process links for deployment. Errors are:
       end
     end
 
-    context 'when link source specifies ip_addresses or network' do
-      let(:links) { {'db' => {"from" => 'db', 'ip_addresses' => true, 'network' => 'fake-dynamic-network'}} }
-      let(:link_lookup) { instance_double(Bosh::Director::DeploymentPlan::PlannerLinkLookup) }
-
-      before do
-        allow(link_lookup).to receive(:find_link_provider).and_return({'instances' => []})
-      end
-
-      context 'when link source specifies network' do
-        it 'respects value passed' do
-          expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-            anything,
-            anything,
-            anything,
-            {:preferred_network_name => 'fake-dynamic-network', :global_use_dns_entry => false, :link_use_ip_address => true}
-          ).and_return(link_lookup)
-
-          links_resolver.resolve(api_server_instance_group)
-        end
-
-        context 'when not specified' do
-          let(:links) { {'db' => {'from' => 'db'}} }
-
-          it 'defaults to nil' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-              anything,
-              anything,
-              anything,
-              {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => nil}
-            ).and_return(link_lookup)
-
-            links_resolver.resolve(api_server_instance_group)
-          end
-        end
-      end
-
-      context 'use_dns_addresses director and deployment level flag' do
-        context 'when deployment use_dns_addresses is NOT defined' do
-          context 'when director use_dns_addresses flag is FALSE' do
-            before do
-              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(false)
-            end
-
-            let(:links) { {'db' => {'from' => 'db'}} }
-
-            it 'it passes global_use_dns_entry as false' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-                anything,
-                anything,
-                anything,
-                {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => nil}
-              ).and_return(link_lookup)
-
-              links_resolver.resolve(api_server_instance_group)
-            end
-          end
-
-          context 'when director use_dns_addresses flag is TRUE' do
-            before do
-              allow(Bosh::Director::Config).to receive(:local_dns_use_dns_addresses?).and_return(true)
-            end
-
-            let(:links) { {'db' => {'from' => 'db'}} }
-
-            it 'it passes global_use_dns_entry as true' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-                anything,
-                anything,
-                anything,
-                {:preferred_network_name => nil, :global_use_dns_entry => true, :link_use_ip_address => nil}
-              ).and_return(link_lookup)
-
-              links_resolver.resolve(api_server_instance_group)
-            end
-          end
-        end
-
-        context 'when deployment use_dns_addresses is defined' do
-          context 'when it is FALSE' do
-            before do
-              deployment_manifest['features'] = {'use_dns_addresses' => false}
-            end
-
-            let(:links) { {'db' => {'from' => 'db'}} }
-
-            it 'it passes global_use_dns_entry as false' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-                anything,
-                anything,
-                anything,
-                {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => nil}
-              ).and_return(link_lookup)
-
-              links_resolver.resolve(api_server_instance_group)
-            end
-          end
-
-          context 'when it is TRUE' do
-            before do
-              deployment_manifest['features'] = {'use_dns_addresses' => true}
-            end
-
-            let(:links) { {'db' => {'from' => 'db'}} }
-
-            it 'it passes global_use_dns_entry as TRUE' do
-              expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-                anything,
-                anything,
-                anything,
-                {:preferred_network_name => nil, :global_use_dns_entry => true, :link_use_ip_address => nil}
-              ).and_return(link_lookup)
-
-              links_resolver.resolve(api_server_instance_group)
-            end
-          end
-        end
-      end
-
-      context 'ip_addresses' do
-        context 'when ip_addresses key on the consumed link is not set' do
-          let(:links) { {'db' => {'from' => 'db'}} }
-
-          it 'it sets link_use_ip_address to nil' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-              anything,
-              anything,
-              anything,
-              {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => nil}
-            ).and_return(link_lookup)
-
-            links_resolver.resolve(api_server_instance_group)
-          end
-        end
-
-        context 'when ip_addresses key on the consumed link is FALSE' do
-          let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => false }} }
-          it 'it sets link_use_ip_address to false' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-              anything,
-              anything,
-              anything,
-              {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => false}
-            ).and_return(link_lookup)
-
-            links_resolver.resolve(api_server_instance_group)
-          end
-        end
-
-        context 'when ip_addresses key on the consumed link is TRUE' do
-          let(:links) { {'db' => {'from' => 'db', 'ip_addresses' => true }} }
-          it 'it sets link_use_ip_address to true' do
-            expect(Bosh::Director::DeploymentPlan::LinkLookupFactory).to receive(:create).exactly(2).times.with(
-              anything,
-              anything,
-              anything,
-              {:preferred_network_name => nil, :global_use_dns_entry => false, :link_use_ip_address => true}
-            ).and_return(link_lookup)
-
-            links_resolver.resolve(api_server_instance_group)
-          end
-        end
-      end
-    end
-
     context 'when links source is not provided' do
-      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'non-existant'}} }
+      let(:links) {{'db' => {"from" => 'db', 'deployment' => 'non-existant'}}}
 
       it 'fails' do
         expected_error_msg = <<-EXPECTED.strip
@@ -1117,8 +955,8 @@ Unable to process links for deployment. Errors are:
     end
 
     context 'when required link is not specified in manifest' do
-      let(:links) { {'other' => {"from" => 'c'}} }
-      let(:template_consumes_links) { [{'name' => 'other', 'type' => 'db'}] }
+      let(:links) {{'other' => {"from" => 'c'}}}
+      let(:template_consumes_links) {[{'name' => 'other', 'type' => 'db'}]}
 
       it 'fails' do
         expected_error_msg = <<-EXPECTED.strip
@@ -1134,17 +972,17 @@ Unable to process links for deployment. Errors are:
 
     context 'when link specified in manifest is not required' do
 
-      let(:links) { {'db' => {"from" => 'db'}} }
+      let(:links) {{'db' => {"from" => 'db'}}}
 
-      let(:template_consumes_links) { [] }
-      let(:template_provides_links) { [{'name' => 'db', 'type' => 'db'}] }
+      let(:template_consumes_links) {[]}
+      let(:template_provides_links) {[{'name' => 'db', 'type' => 'db'}]}
 
       it 'raises unused link error' do
         expect {
           links_resolver.resolve(api_server_instance_group)
         }.to raise_error Bosh::Director::UnusedProvidedLink,
-          "Job 'api-server-template' in instance group 'api-server' specifies link 'db', " +
-            "but the release job does not consume it."
+                         "Job 'api-server-template' in instance group 'api-server' specifies link 'db', " +
+                           "but the release job does not consume it."
       end
     end
 
@@ -1158,56 +996,57 @@ Unable to process links for deployment. Errors are:
         planner
       end
 
-      let(:links) { {'db' => {'from' => 'db'}} }
+      let(:links) {{'db' => {'from' => 'db'}}}
 
-      let(:deployment_manifest) { generate_manifest_without_cloud_config('fake-deployment', links, ['127.0.0.3', '127.0.0.4']) }
+      let(:deployment_manifest) {generate_manifest_without_cloud_config('fake-deployment', links, ['127.0.0.3', '127.0.0.4'])}
 
       let(:cloud_configs) do
         [
-          Bosh::Director::Models::Config.make(:cloud, content: YAML.dump({
+          Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(
+            {
               'azs' => [
-                  {
-                      'name' => 'az1',
-                      'cloud_properties' => {}
-                  },
-                  {
-                      'name' => 'az2',
-                      'cloud_properties' => {}
-                  }
+                {
+                  'name' => 'az1',
+                  'cloud_properties' => {}
+                },
+                {
+                  'name' => 'az2',
+                  'cloud_properties' => {}
+                }
               ],
               'networks' => [
-                  {
-                      'name' => 'fake-manual-network',
-                      'type' => 'manual',
-                      'subnets' => [
-                          {
-                              'name' => 'fake-subnet',
-                              'range' => '127.0.0.0/20',
-                              'gateway' => '127.0.0.1',
-                              'az' => 'az1',
-                              'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
-                          }
-                      ]
-                  },
-                  {
-                      'name' => 'fake-dynamic-network',
-                      'type' => 'dynamic',
-                      'subnets' => [
-                          {'az' => 'az1'}
-                      ]
-                  }
+                {
+                  'name' => 'fake-manual-network',
+                  'type' => 'manual',
+                  'subnets' => [
+                    {
+                      'name' => 'fake-subnet',
+                      'range' => '127.0.0.0/20',
+                      'gateway' => '127.0.0.1',
+                      'az' => 'az1',
+                      'static' => ['127.0.0.2', '127.0.0.3', '127.0.0.4'],
+                    }
+                  ]
+                },
+                {
+                  'name' => 'fake-dynamic-network',
+                  'type' => 'dynamic',
+                  'subnets' => [
+                    {'az' => 'az1'}
+                  ]
+                }
               ],
               'compilation' => {
-                  'workers' => 1,
-                  'network' => 'fake-manual-network',
-                  'az' => 'az1',
+                'workers' => 1,
+                'network' => 'fake-manual-network',
+                'az' => 'az1',
               },
-            'vm_types' => [
-              {
-                'name' => 'fake-vm-type',
-              }
-            ]
-          }))
+              'vm_types' => [
+                {
+                  'name' => 'fake-vm-type',
+                }
+              ]
+            }))
         ]
       end
 
@@ -1247,7 +1086,8 @@ Unable to process links for deployment. Errors are:
               'name' => 'mysql',
               'stemcell' => 'fake-stemcell',
               'templates' => [
-                {'name' => 'mysql-template',
+                {
+                  'name' => 'mysql-template',
                   'release' => 'fake-release',
                   'provides' => {'db' => {'as' => 'db'}},
                   'properties' => {'mysql' => nil}
