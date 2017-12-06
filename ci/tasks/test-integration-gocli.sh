@@ -99,7 +99,7 @@ bundle exec rake --trace spec:integration_gocli
 bundle_exit_code=$?
 
 if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
-  sudo service stop mysql
+  sudo service mysql stop
 fi
 
 exit $bundle_exit_code
