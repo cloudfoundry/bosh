@@ -480,13 +480,18 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[9].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[9].method_name).to eq('detach_disk')
         expect(second_deploy_invocations[9].inputs).to match({
+          "vm_cid" => vm_cid, "disk_id" => disk_cid
+        })
+
+        expect(second_deploy_invocations[10].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[10].inputs).to match({
           'vm_cid' => vm_cid
         })
 
-        expect(second_deploy_invocations[10].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[10].inputs).to match({
+        expect(second_deploy_invocations[11].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[11].inputs).to match({
           'agent_id' => String,
           'stemcell_id' => String,
           'cloud_properties' => {},
@@ -512,8 +517,8 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[11].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[11].inputs).to match({
+        expect(second_deploy_invocations[12].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[12].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
             'director' => 'TestDirector',
@@ -529,18 +534,18 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect_name(second_deploy_invocations[11])
+        expect_name(second_deploy_invocations[12])
 
-        new_vm_cid = second_deploy_invocations[11].inputs['vm_cid']
+        new_vm_cid = second_deploy_invocations[12].inputs['vm_cid']
 
-        expect(second_deploy_invocations[12].method_name).to eq('attach_disk')
-        expect(second_deploy_invocations[12].inputs).to match({
+        expect(second_deploy_invocations[13].method_name).to eq('attach_disk')
+        expect(second_deploy_invocations[13].inputs).to match({
           'vm_cid' => new_vm_cid,
           'disk_id' => disk_cid
         })
 
-        expect(second_deploy_invocations[13].method_name).to eq('set_disk_metadata')
-        expect(second_deploy_invocations[13].inputs).to match({
+        expect(second_deploy_invocations[14].method_name).to eq('set_disk_metadata')
+        expect(second_deploy_invocations[14].inputs).to match({
           'disk_cid' => disk_cid,
           'metadata' => {
             'director' => 'TestDirector',
