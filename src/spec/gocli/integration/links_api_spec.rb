@@ -113,9 +113,12 @@ describe 'links api', type: :integration do
     {
       'id' => Integer,
       'deployment' => 'simple',
-      'instance_group' => 'foobar',
       'owner_object' => {
-        'type' => 'job', 'name' => name
+        'name' => name,
+        'type' => 'job',
+        'info' => {
+          'instance_group' => 'foobar'
+        }
       }
     }
   end
@@ -477,6 +480,57 @@ describe 'links api', type: :integration do
 
       it 'should return a single orphaned link' do
         expected_response = [ links_response.merge('link_provider_id' => nil) ]
+        expect(get_links).to match_array(expected_response)
+      end
+    end
+
+    context 'when the deployment consumes a disk provider' do
+      let(:persistent_disks) do
+        [low_iops_persistent_disk, high_iops_persistent_disk]
+      end
+
+      let(:low_iops_persistent_disk) do
+        {
+          'type' => 'low-performance-disk-type',
+          'name' => 'low-iops-persistent-disk-name'
+        }
+      end
+
+      let(:high_iops_persistent_disk) do
+        {
+          'type' => 'high-performance-disk-type',
+          'name' => 'high-iops-persistent-disk-name'
+        }
+      end
+
+      let(:jobs) do
+        [
+          {
+            'name' => 'disk_consumer',
+            'consumes' => {
+              'disk_provider' => {'from' => 'low-iops-persistent-disk-name'},
+              'backup_disk_provider' => {'from' => 'high-iops-persistent-disk-name'},
+            }
+          }
+        ]
+      end
+
+      it 'should have one link for each disk being consumed' do
+        expected_response = [
+          links_response.merge(
+            {
+              'id' => 1,
+              'name' => 'disk_provider',
+            }
+          ),
+          links_response.merge(
+            {
+              'id' => 2,
+              'name' => 'backup_disk_provider',
+              'link_provider_id' => 2,
+            }
+          )
+        ]
         expect(get_links).to match_array(expected_response)
       end
     end

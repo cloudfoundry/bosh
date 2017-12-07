@@ -2230,9 +2230,9 @@ Error: Unable to process links for deployment. Errors are:
 
       expect(exit_code).not_to eq(0)
       expect(out).to include('Error: Unable to process links for deployment. Errors are:')
-      expect(out).to include("- Can't find link with type 'bad_link' for job 'api_server_with_bad_link_types' in deployment 'simple'")
-      expect(out).to include("- Can't find link with type 'bad_link_2' for job 'api_server_with_bad_link_types' in deployment 'simple'")
-      expect(out).to include("- Can't find link with type 'bad_link_3' for job 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_2' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't find link with type 'bad_link_3' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
     end
   end
 end

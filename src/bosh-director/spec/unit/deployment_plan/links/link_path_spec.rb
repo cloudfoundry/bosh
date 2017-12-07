@@ -68,8 +68,9 @@ module Bosh::Director
           it 'gets full link path' do
             link_path.parse(path)
             expect(link_path.deployment).to eq('deployment_name')
-            expect(link_path.job).to eq('provider_instance_group')
-            expect(link_path.template).to eq('provider_job')
+            expect(link_path.instance_group).to eq('provider_instance_group')
+            expect(link_path.job).to eq('provider_job')
+            expect(link_path.owner).to eq('provider_job')
             expect(link_path.name).to eq('link_name')
           end
 
@@ -78,8 +79,8 @@ module Bosh::Director
             it 'also gets full link path' do
               link_path.parse(path)
               expect(link_path.deployment).to eq('deployment_name')
-              expect(link_path.job).to eq('provider_instance_group')
-              expect(link_path.template).to eq('provider_job')
+              expect(link_path.instance_group).to eq('provider_instance_group')
+              expect(link_path.job).to eq('provider_job')
               expect(link_path.name).to eq('link_name')
             end
           end
@@ -90,8 +91,9 @@ module Bosh::Director
           it 'returns a link path' do
             link_path.parse(path)
             expect(link_path.deployment).to eq('deployment_name')
-            expect(link_path.job).to eq('provider_instance_group')
-            expect(link_path.template).to eq(nil) #disks are not provided by a job, they're declared on the instance group
+            expect(link_path.instance_group).to eq('provider_instance_group')
+            expect(link_path.job).to eq(nil) #disks are not provided by a job, they're declared on the instance group
+            expect(link_path.owner).to eq('provider_instance_group')
             expect(link_path.name).to eq('ssd-disk')
           end
         end
@@ -101,8 +103,8 @@ module Bosh::Director
           it 'gets full link path' do
             link_path.parse(path)
             expect(link_path.deployment).to eq('deployment_name')
-            expect(link_path.job).to eq('provider_instance_group')
-            expect(link_path.template).to eq('provider_job')
+            expect(link_path.instance_group).to eq('provider_instance_group')
+            expect(link_path.job).to eq('provider_job')
             expect(link_path.name).to eq('link_name')
           end
 
@@ -111,8 +113,8 @@ module Bosh::Director
             it 'also gets full link path' do
               link_path.parse(path)
               expect(link_path.deployment).to eq('deployment_name')
-              expect(link_path.job).to eq('provider_instance_group')
-              expect(link_path.template).to eq('provider_job')
+              expect(link_path.instance_group).to eq('provider_instance_group')
+              expect(link_path.job).to eq('provider_job')
               expect(link_path.name).to eq('link_name')
             end
           end
@@ -123,8 +125,8 @@ module Bosh::Director
           it 'gets full link path' do
             link_path.parse(path)
             expect(link_path.deployment).to eq('previous_deployment')
-            expect(link_path.job).to eq('provider_instance_group')
-            expect(link_path.template).to eq('provider_job')
+            expect(link_path.instance_group).to eq('provider_instance_group')
+            expect(link_path.job).to eq('provider_job')
             expect(link_path.name).to eq('link_name')
           end
 
@@ -133,8 +135,8 @@ module Bosh::Director
             it 'also gets full link path' do
               link_path.parse(path)
               expect(link_path.deployment).to eq('previous_deployment')
-              expect(link_path.job).to eq('provider_instance_group')
-              expect(link_path.template).to eq('provider_job')
+              expect(link_path.instance_group).to eq('provider_instance_group')
+              expect(link_path.job).to eq('provider_job')
               expect(link_path.name).to eq('link_name')
             end
           end
@@ -145,8 +147,8 @@ module Bosh::Director
           it 'should attempt to implicitly fulfill the link' do
             link_path.parse(path)
             expect(link_path.deployment).to eq('deployment_name')
-            expect(link_path.job).to eq('provider_instance_group')
-            expect(link_path.template).to eq('provider_job')
+            expect(link_path.instance_group).to eq('provider_instance_group')
+            expect(link_path.job).to eq('provider_job')
             expect(link_path.name).to eq('link_name')
           end
 
@@ -155,8 +157,8 @@ module Bosh::Director
             it 'also gets full link path' do
               link_path.parse(path)
               expect(link_path.deployment).to eq('deployment_name')
-              expect(link_path.job).to eq('provider_instance_group')
-              expect(link_path.template).to eq('provider_job')
+              expect(link_path.instance_group).to eq('provider_instance_group')
+              expect(link_path.job).to eq('provider_job')
               expect(link_path.name).to eq('link_name')
             end
           end
@@ -175,8 +177,8 @@ module Bosh::Director
             it 'should not parse the link and set the manual_config property' do
               link_path.parse(link_info)
               expect(link_path.deployment).to be_nil
+              expect(link_path.instance_group).to be_nil
               expect(link_path.job).to be_nil
-              expect(link_path.template).to be_nil
               expect(link_path.name).to be_nil
               expect(link_path.manual_spec).to eq(
                                                  {
@@ -193,7 +195,7 @@ module Bosh::Director
         context 'when consumes block does not have from key, and an invalid link type' do
           let(:path) { { 'name' => 'link_name', 'type' => 'invalid_type' } }
           it 'should throw an error' do
-            expect{link_path.parse(path)}.to raise_error("Can't find link with type 'invalid_type' for job 'consumer_instance_group' in deployment 'deployment_name'")
+            expect{link_path.parse(path)}.to raise_error("Can't find link with type 'invalid_type' for instance_group 'consumer_instance_group' in deployment 'deployment_name'")
           end
 
           context 'when the link is optional' do

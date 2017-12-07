@@ -100,10 +100,12 @@ module Bosh::Director
         {
           'id' => model.id,
           'deployment' => model.deployment.name,
-          'instance_group' => model.instance_group,
           'owner_object' => {
             'type' => model.owner_object_type,
             'name' => model.owner_object_name,
+            'info' => {
+              'instance_group' => model.instance_group,
+            },
           }
         }
       end

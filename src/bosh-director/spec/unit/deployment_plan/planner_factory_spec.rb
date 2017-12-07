@@ -340,7 +340,7 @@ LOGMESSAGE
               let(:deployment_name) { 'deployment_name' }
 
               let(:job1) do
-                job = Bosh::Director::DeploymentPlan::Job.new(release, 'provides_template', deployment_name)
+                job = Bosh::Director::DeploymentPlan::Job.new(release, 'provides_job', deployment_name)
                 job.add_link_from_release('job1-name', 'consumes', 'link_name', 'name' => 'link_name', 'type' => 'link_type')
                 job.add_link_from_release('job1-name', 'provides', 'link_name_2', 'properties' => ['a'])
                 job
@@ -357,10 +357,10 @@ LOGMESSAGE
                 instance_double(
                   'Bosh::Director::DeploymentPlan::LinkPath',
                   deployment: 'deployment_name',
-                  job: 'job_name',
-                  template: 'provides_template',
+                  instance_group: 'ig_name',
+                  job: 'provides_job',
                   name: 'link_name',
-                  path: 'deployment_name.job_name.provides_template.link_name',
+                  path: 'deployment_name.ig_name.provides_job.link_name',
                   skip: false
                 )
               end
@@ -369,10 +369,10 @@ LOGMESSAGE
                 instance_double(
                   'Bosh::Director::DeploymentPlan::LinkPath',
                   deployment: 'deployment_name',
-                  job: 'job_name',
-                  template: 'provides_template',
+                  instance_group: 'ig_name',
+                  job: 'provides_job',
                   name: 'link_name',
-                  path: 'deployment_name.job_name.provides_template.link_name',
+                  path: 'deployment_name.ig_name.provides_job.link_name',
                   skip: true
                 )
               end
@@ -388,7 +388,7 @@ LOGMESSAGE
                 allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
                 expect(DeploymentPlan::LinkPath).to receive(:new).and_return(link_path)
                 expect(link_path).to receive(:parse)
-                expect(instance_group1).to receive(:add_link_path).with('provides_template', 'link_name', link_path)
+                expect(instance_group1).to receive(:add_link_path).with('provides_job', 'link_name', link_path)
 
                 planner
               end
@@ -403,7 +403,7 @@ LOGMESSAGE
                 planner
               end
 
-              context 'when template properties_json has the value "null"' do
+              context 'when job properties_json has the value "null"' do
                 it 'should not throw an error' do
                   allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
                   allow(job1).to receive(:release).and_return(release)
@@ -411,10 +411,10 @@ LOGMESSAGE
                   allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
                   allow(skipped_link_path).to receive(:parse)
 
-                  templateModel = Models::Template.where(name: 'provides_template').first
+                  templateModel = Models::Template.where(name: 'provides_job').first
                   templateModel.save
 
-                  expect(subject).to_not receive(:process_link_properties).with({}, { 'properties' => nil, 'template_name' => 'provides_template' }, ['a'], [])
+                  expect(subject).to_not receive(:process_link_properties).with({}, { 'properties' => nil, 'template_name' => 'provides_job' }, ['a'], [])
                   planner
                 end
               end
@@ -427,7 +427,7 @@ LOGMESSAGE
                   allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
                   allow(skipped_link_path).to receive(:parse)
 
-                  template_model = Models::Template.where(name: 'provides_template').first
+                  template_model = Models::Template.where(name: 'provides_job').first
                   template_model.spec = template_model.spec.merge(properties: { 'a' => {} })
                   template_model.save
 
@@ -477,7 +477,7 @@ LOGMESSAGE
             job = manifest_hash['jobs'].first
             release = Models::Release.make(name: release_entry['name'])
             template = Models::Template.make(name: job['templates'].first['name'], release: release)
-            template2 = Models::Template.make(name: 'provides_template', release: release, spec: { properties: { 'a' => { default: 'b' } } })
+            template2 = Models::Template.make(name: 'provides_job', release: release, spec: { properties: { 'a' => { default: 'b' } } })
             release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
             release_version.add_template(template2)
