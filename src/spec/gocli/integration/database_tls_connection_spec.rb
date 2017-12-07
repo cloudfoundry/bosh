@@ -6,7 +6,7 @@ describe 'when director try to connect database using TLS', type: :integration, 
   let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
 
   context "when database doesn't support TLS" do
-    it 'fails during migration' do
+    xit 'fails during migration' do
       error = nil
       begin
         reset_sandbox(nil, tls_enabled: true)
