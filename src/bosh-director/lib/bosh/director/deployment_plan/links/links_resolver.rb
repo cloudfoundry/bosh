@@ -34,15 +34,16 @@ module Bosh::Director
           consumer = Bosh::Director::Models::LinkConsumer.find(
             deployment: @deployment_plan.model,
             instance_group: instance_group.name,
-            owner_object_name: job.name)
+            owner_object_name: job.name
+          )
 
           if consumer.nil?
             consumer = Bosh::Director::Models::LinkConsumer.new(
               deployment: @deployment_plan.model,
               instance_group: instance_group.name,
               owner_object_name: job.name,
-              owner_object_type: 'job',
-              )
+              owner_object_type: 'job'
+            )
           end
           consumer.save
           @deployment_plan.add_link_consumer(consumer)
@@ -179,64 +180,6 @@ module Bosh::Director
       end
 
       def update_addresses(link_spec, preferred_network_name, global_use_dns_entry, link_use_ip_address)
-        link_spec_copy = Bosh::Common::DeepCopy.copy(link_spec)
-        if !link_spec_copy.has_key?('default_network')
-          if !link_use_ip_address.nil?
-            raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'
-          end
-
-          if preferred_network_name
-            link_spec_copy['instances'].each do |instance|
-              desired_addresses = instance['addresses']
-              raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{preferred_network_name}'" unless desired_addresses.key?(preferred_network_name)
-              instance['address'] = desired_addresses[preferred_network_name]
-              log_warning_if_applicable(instance['address'], global_use_dns_entry, instance['name'], instance['id'])
-            end
-          end
-        else
-          if link_use_ip_address.nil?
-            use_dns_entries = global_use_dns_entry
-          else
-            use_dns_entries = !link_use_ip_address
-          end
-
-          network_name = preferred_network_name || link_spec_copy['default_network']
-          link_spec_copy['default_network'] = network_name
-
-          link_spec_copy['instances'].each do |instance|
-            if use_dns_entries
-              desired_addresses = instance['dns_addresses']
-            else
-              desired_addresses = instance['addresses']
-            end
-
-            raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{network_name}'" unless desired_addresses.key?(network_name)
-
-            instance['address'] = desired_addresses[network_name]
-            log_warning_if_applicable(instance['address'], use_dns_entries, instance['name'], instance['id'])
-          end
-        end
-
-        link_spec_copy['instances'].each do |instance|
-          instance.delete('addresses')
-          instance.delete('dns_addresses')
-        end
-
-        link_spec_copy
-      end
-
-      def find_link_provider(consumed_link, link_path, provider, link_network_options)
-        preferred_network_name = link_network_options.fetch(:preferred_network_name, nil)
-        global_use_dns_entry = link_network_options.fetch(:global_use_dns_entry)
-        link_use_ip_address = link_network_options.fetch(:link_use_ip_address, nil)
-
-        return nil if provider.nil?
-
-        template = job.select {|j| j[:link_provider_definition_type] == @consumed_link.type}
-        return nil if template.empty?
-
-        link_spec = JSON.parse(template.first[:content])
-
         link_spec_copy = Bosh::Common::DeepCopy.copy(link_spec)
         if !link_spec_copy.has_key?('default_network')
           if !link_use_ip_address.nil?
