@@ -1,0 +1,9 @@
+#!/bin/bash
+
+<% if p('succeed') %>
+  touch job-1-success
+  exit 0
+<% else %>
+  touch job-1-fail
+  exit 1
+<% end %>

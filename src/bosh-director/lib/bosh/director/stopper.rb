@@ -14,10 +14,15 @@ module Bosh::Director
       if @instance_plan.skip_drain
         @logger.info("Skipping drain for '#{@instance_model}'")
       else
+        @logger.info("Running drain for #{@instance_model}")
         perform_drain
       end
 
+      @logger.info("Stopping instance #{@instance_model}")
       agent_client.stop
+
+      @logger.info("Running post-stop for #{@instance_model}")
+      agent_client.run_script('post-stop', {})
     end
 
     private

@@ -136,9 +136,10 @@ module Bosh::Director
       context 'when instance is currently started' do
         let(:instance_model_state) { 'started' }
 
-        it 'drains, stops, snapshots, and persists rendered templates blobs but leaves DNS records unchanged' do
+        it 'drains, stops, post-stops, snapshots, and persists rendered templates blobs but leaves DNS records unchanged' do
           expect(Api::SnapshotManager).to receive(:take_snapshot)
           expect(agent_client).not_to receive(:apply)
+          expect(agent_client).to receive(:run_script).with('post-stop', {})
           expect(agent_client).to receive(:stop)
           expect(agent_client).to receive(:drain).and_return(0.1)
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan)
@@ -156,9 +157,10 @@ module Bosh::Director
       context 'when instance is currently stopped' do
         let(:instance_model_state) { 'stopped' }
 
-        it 'does not try to stop, drain, or snapshot' do
+        it 'does not try to post-stop, stop, drain, or snapshot' do
           expect(Api::SnapshotManager).not_to receive(:take_snapshot)
           expect(agent_client).not_to receive(:apply)
+          expect(agent_client).not_to receive(:run_script).with('post-stop', {})
           expect(agent_client).not_to receive(:stop)
           expect(agent_client).not_to receive(:drain)
           allow(rendered_templates_persistor).to receive(:persist).with(instance_plan)
@@ -196,6 +198,7 @@ module Bosh::Director
           expect(director_state_updater).to receive(:update_dns_for_instance)
             .with(instance_model, instance_plan.network_settings.dns_record_info)
 
+          expect(agent_client).to receive(:run_script).with('post-stop', {})
           expect(agent_client).to receive(:stop)
           expect(agent_client).to receive(:drain).and_return(0)
 
@@ -252,9 +255,10 @@ module Bosh::Director
           allow(instance).to receive(:update_instance_settings)
         end
 
-        it 'does NOT drain, stop, snapshot, but persists rendered templates to the blobstore and updates DNS' do
+        it 'does NOT drain, stop, post-stop, snapshot, but persists rendered templates to the blobstore and updates DNS' do
           # https://www.pivotaltracker.com/story/show/121721619
           expect(Api::SnapshotManager).to_not receive(:take_snapshot)
+          expect(agent_client).to_not receive(:run_script).with('post-stop', {})
           expect(agent_client).to_not receive(:stop)
           expect(agent_client).to_not receive(:drain)
 
