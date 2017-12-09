@@ -37,6 +37,48 @@ module Bosh::Director
         end
       end
 
+      describe 'status' do
+        context 'when default' do
+          let(:specific_query) { { status: 'default' } }
+
+          it 'includes the health code in the query' do
+            expect(subject.encode_query(criteria)).to eq('q-s0.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+
+        context 'when healthy' do
+          let(:specific_query) { { status: 'healthy' } }
+
+          it 'includes the health code in the query' do
+            expect(subject.encode_query(criteria)).to eq('q-s3.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+
+        context 'when unhealthy' do
+          let(:specific_query) { { status: 'unhealthy' } }
+
+          it 'includes the health code in the query' do
+            expect(subject.encode_query(criteria)).to eq('q-s1.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+
+        context 'when all' do
+          let(:specific_query) { { status: 'all' } }
+
+          it 'includes the health code in the query' do
+            expect(subject.encode_query(criteria)).to eq('q-s4.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+
+        context 'when it is an invalid value' do
+          let(:specific_query) { { status: 'laksjdfl;kasdfklasd' } }
+
+          it 'includes the health code in the query' do
+            expect(subject.encode_query(criteria)).to eq('q-s0.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+      end
+
       describe 'individual instance query' do
         let(:specific_query) { {uuid: 'uuid-1'} }
 

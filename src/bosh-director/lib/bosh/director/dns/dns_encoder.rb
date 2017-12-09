@@ -94,8 +94,17 @@ module Bosh::Director
         end
       end
 
-      queries << 's0' # healthy by default; also prevents empty queries
+      healthiness = {
+        'healthy' => 3,
+        'unhealthy' => 1,
+        'all' => 4,
+        'default' => 0
+      }
+      queries << "s#{healthiness.fetch(criteria[:status], 0)}"
       queries.flatten.sort.join
+    end
+
+    def healthiness_query(status)
     end
 
     def encode_long_subdomains(criteria)
