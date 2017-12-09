@@ -134,6 +134,9 @@ properties:
   director.remove_dev_tools:
     description: When true, remove dev tool packages from non-compilation VMs
     default: false
+  director.log_level:
+    description: Log level
+    default: debug
   director.log_access_events_to_syslog:
     description: Access to api is logged to the syslog
     default: false
