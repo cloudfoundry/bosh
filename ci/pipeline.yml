@@ -9,7 +9,8 @@ groups:
       - blobstore-client-integration
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
-      - integration-db-tls
+      - integration-db-tls-postgres
+      - integration-db-tls-mysql
       - load-tests-postgres
       - load-tests-mysql
       - legacy-load-tests-postgres
@@ -359,65 +360,6 @@ jobs:
         on_failure:
           <<: *slack-alert
 
-  - name: integration-db-tls
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - aggregate:
-        - get: bosh-src
-          trigger: true
-        - get: bosh-cli
-        - get: bosh-agent
-      - aggregate:
-        - task: postgres-tls
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-2"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: mysql-tls
-          privileged: true
-          tags: ["bosh-integration-1"]
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-            - name: bosh-src
-            - name: bosh-cli
-            - name: bosh-agent
-            run:
-              path: bosh-src/ci/tasks/test-integration-gocli.sh
-            params:
-              DB:           mysql
-              RUBY_VERSION: 2.4.2
-              NUM_GROUPS:   24
-              GROUP:        2,5,8,11,14,17,20,23
-              SHA2_MODE:    true
-              DB_TLS:       true
-        - task: postgres-tls-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-9"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-            DB_TLS:       true
-
-        on_failure:
-          <<: *slack-alert
-
   - name: integration-mysql-gocli-sha1
     public: true
     serial: true
@@ -458,6 +400,135 @@ jobs:
             RUBY_VERSION: 2.4.2
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
+
+        on_failure:
+          <<: *slack-alert
+
+  - name: integration-db-tls-postgres
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-cli
+        - get: bosh-agent
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-1"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        1,4,7,10,13,16,19,22
+            SHA2_MODE:    true
+            DB_TLS:       true
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-2"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        2,5,8,11,14,17,20,23
+            SHA2_MODE:    true
+            DB_TLS:       true
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-3"]
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        3,6,9,12,15,18,21,24
+            SHA2_MODE:    true
+            DB_TLS:       true
+
+        on_failure:
+          <<: *slack-alert
+
+  - name: integration-db-tls-mysql
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-cli
+        - get: bosh-agent
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          tags: ["bosh-integration-4"]
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-mysql-5.7
+            inputs:
+            - name: bosh-src
+            - name: bosh-cli
+            - name: bosh-agent
+            run:
+              path: bosh-src/ci/tasks/test-integration-gocli.sh
+            params:
+              DB:           mysql
+              RUBY_VERSION: 2.4.2
+              NUM_GROUPS:   24
+              GROUP:        1,4,7,10,13,16,19,22
+              SHA2_MODE:    true
+              DB_TLS:       true
+        - task: test-group-2
+          privileged: true
+          tags: ["bosh-integration-5"]
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-mysql-5.7
+            inputs:
+            - name: bosh-src
+            - name: bosh-cli
+            - name: bosh-agent
+            run:
+              path: bosh-src/ci/tasks/test-integration-gocli.sh
+            params:
+              DB:           mysql
+              RUBY_VERSION: 2.4.2
+              NUM_GROUPS:   24
+              GROUP:        2,5,8,11,14,17,20,23
+              SHA2_MODE:    true
+              DB_TLS:       true
+        - task: test-group-3
+          privileged: true
+          tags: ["bosh-integration-6"]
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: bosh/main-mysql-5.7
+            inputs:
+            - name: bosh-src
+            - name: bosh-cli
+            - name: bosh-agent
+            run:
+              path: bosh-src/ci/tasks/test-integration-gocli.sh
+            params:
+              DB:           mysql
+              RUBY_VERSION: 2.4.2
+              NUM_GROUPS:   24
+              GROUP:        3,6,9,12,15,18,21,24
+              SHA2_MODE:    true
+              DB_TLS:       true
 
         on_failure:
           <<: *slack-alert
