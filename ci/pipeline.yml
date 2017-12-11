@@ -418,7 +418,7 @@ jobs:
         - task: test-group-1
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-1"]
+          tags: ["bosh-integration-db-tls-postgres"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.4.2
@@ -429,7 +429,7 @@ jobs:
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-2"]
+          tags: ["bosh-integration-db-tls-postgres"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.4.2
@@ -440,7 +440,7 @@ jobs:
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-3"]
+          tags: ["bosh-integration-db-tls-postgres"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.4.2
@@ -465,7 +465,7 @@ jobs:
       - aggregate:
         - task: test-group-1
           privileged: true
-          tags: ["bosh-integration-4"]
+          tags: ["bosh-integration-db-tls-mysql"]
           config:
             platform: linux
             image_resource:
@@ -487,7 +487,7 @@ jobs:
               DB_TLS:       true
         - task: test-group-2
           privileged: true
-          tags: ["bosh-integration-5"]
+          tags: ["bosh-integration-db-tls-mysql"]
           config:
             platform: linux
             image_resource:
@@ -509,7 +509,7 @@ jobs:
               DB_TLS:       true
         - task: test-group-3
           privileged: true
-          tags: ["bosh-integration-6"]
+          tags: ["bosh-integration-db-tls-mysql"]
           config:
             platform: linux
             image_resource:
