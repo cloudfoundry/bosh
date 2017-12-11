@@ -574,7 +574,7 @@ jobs:
 
     - task: test
       privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
       tags: ["bosh-load-tests"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
@@ -624,7 +624,7 @@ jobs:
 
     - task: test
       privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
+      file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
       tags: ["bosh-load-tests-3"]
       input_mapping:
         bosh-candidate-stemcell: warden-ubuntu-trusty
