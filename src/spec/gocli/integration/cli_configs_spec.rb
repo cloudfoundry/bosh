@@ -65,7 +65,16 @@ describe 'cli configs', type: :integration do
 
       output = bosh_runner.run('configs --type=my-type --name=my-name')
       expect(output).to_not include('other-type','other-name')
-      expect(output).to include('my-type', 'my-name')
+    end
+
+    it 'can include outdated configs' do
+      bosh_runner.run("update-config my-type --name=my-name #{config.path}")
+      bosh_runner.run("update-config my-type --name=my-name #{config.path}")
+
+      output = bosh_runner.run('configs --include-outdated')
+
+      expect(output.scan('my-type').length).to be(2)
+      expect(output.scan('my-name').length).to be(2)
     end
   end
 
