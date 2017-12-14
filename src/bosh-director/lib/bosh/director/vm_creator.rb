@@ -194,7 +194,7 @@ module Bosh::Director
       vm_model.save
 
       unless instance.vm_created?
-        instance_model.active_vm = vm_model
+        DeploymentPlan::Steps::ElectActiveVmStep.new(vm_model).perform
       end
 
       instance_model.update(options)

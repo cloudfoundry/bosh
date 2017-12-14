@@ -104,6 +104,7 @@ module Bosh
       end
 
       let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
+      let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
 
       let(:event_manager) { Api::EventManager.new(true)}
       let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
@@ -176,6 +177,7 @@ module Bosh
       let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
       let(:spec_applier) { instance_double(DeploymentPlan::VmSpecApplier) }
       let(:update_settings_step) { instance_double(DeploymentPlan::Steps::UpdateInstanceSettingsStep, perform: nil) }
+      let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
 
       before do
         fake_app
@@ -193,8 +195,15 @@ module Bosh
         allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
         allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
         allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+        allow(Models::Vm).to receive(:create).and_return(vm_model)
         allow(DeploymentPlan::Steps::UpdateInstanceSettingsStep).to receive(:new)
           .with(instance, an_instance_of(Models::Vm)).and_return(update_settings_step)
+        allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
+          .with(an_instance_of(Models::Vm)).and_return(elect_active_vm_step)
+        allow(elect_active_vm_step).to receive(:perform) do
+          vm_model.active = true
+          vm_model.save
+        end
       end
 
       context 'with existing cloud config' do
@@ -221,6 +230,7 @@ module Bosh
 
         context 'when cloud-config/azs are not used' do
           let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
+          let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: '') }
 
           it 'uses any cloud config if availability zones are not used, even though requested' do
             expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
@@ -245,13 +255,9 @@ module Bosh
 
         expect(agent_client).to receive(:wait_until_ready)
         expect(update_settings_step).to receive(:perform)
+        expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
 
-        expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        }.to change {
-          vm = Models::Vm.where(cid: 'new-vm-cid').first
-          vm.nil? ? nil : Models::Instance[vm.instance_id]
-        }
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
       end
 
       it 'should create vm for the instance plans' do
@@ -267,32 +273,9 @@ module Bosh
         expect(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new).with(instance_model, tags).and_return mock_step
         expect(mock_step).to receive(:perform).once
         expect(update_settings_step).to receive(:perform)
+        expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
 
-        expect {
-          subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
-        }.to change {
-          vm = Models::Vm.where(cid: 'new-vm-cid').first
-          vm.nil? ? 0 : Models::Instance.where(id: vm.instance_id).count
-        }.from(0).to(1)
-      end
-
-      it 'should create vm for the instance plans with arbitrary metadata' do
-        expect(cloud).to receive(:create_vm).with(
-          kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, [], {'bosh' => {'group' => expected_group,
-          'groups' => expected_groups
-        }}
-        ).and_return('new-vm-cid')
-
-        expect(agent_client).to receive(:wait_until_ready)
-        expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
-        expect(update_settings_step).to receive(:perform)
-
-        expect {
-          subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
-        }.to change {
-          vm = Models::Vm.where(cid: 'new-vm-cid').first
-          vm.nil? ? 0 : Models::Instance.where(id: vm.instance_id).count
-        }.from(0).to(1)
+        subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
       end
 
       it 'should record events' do
@@ -421,11 +404,9 @@ module Bosh
         expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
         expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
 
-        expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        }.to change {
-          vm = Models::Vm.where(cid: 'fake-vm-cid').first
-          vm.nil? ? false : vm.active }.from(false).to(true)
+        expect(Models::Vm).to receive(:create).with(hash_including(cid: 'fake-vm-cid', instance: instance_model))
+
+        subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
       end
 
       it 'should not retry creating a VM if it is told it is not a retryable error' do
@@ -451,6 +432,7 @@ module Bosh
                 }
               }).and_return('new-vm-cid')
 
+            expect(elect_active_vm_step).not_to receive(:perform)
             subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
 
             instance_model.refresh
