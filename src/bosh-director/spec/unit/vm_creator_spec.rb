@@ -175,6 +175,7 @@ module Bosh
 
       let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
       let(:spec_applier) { instance_double(DeploymentPlan::VmSpecApplier) }
+      let(:update_settings_step) { instance_double(DeploymentPlan::Steps::UpdateInstanceSettingsStep, perform: nil) }
 
       before do
         fake_app
@@ -192,6 +193,8 @@ module Bosh
         allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
         allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
         allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+        allow(DeploymentPlan::Steps::UpdateInstanceSettingsStep).to receive(:new)
+          .with(instance, an_instance_of(Models::Vm)).and_return(update_settings_step)
       end
 
       context 'with existing cloud config' do
@@ -241,8 +244,7 @@ module Bosh
         ).and_return('new-vm-cid')
 
         expect(agent_client).to receive(:wait_until_ready)
-        expect(instance).to receive(:update_instance_settings)
-        expect(instance).to receive(:update_cloud_properties!)
+        expect(update_settings_step).to receive(:perform)
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
@@ -262,8 +264,7 @@ module Bosh
         expect(agent_client).to receive(:wait_until_ready)
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
         expect(disk_manager).to receive(:attach_disks_if_needed).ordered
-        expect(instance).to receive(:update_instance_settings).ordered
-        expect(instance).to receive(:update_cloud_properties!)
+        expect(update_settings_step).to receive(:perform)
 
         expect {
           subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
@@ -282,8 +283,7 @@ module Bosh
 
         expect(agent_client).to receive(:wait_until_ready)
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
-        expect(instance).to receive(:update_instance_settings)
-        expect(instance).to receive(:update_cloud_properties!)
+        expect(update_settings_step).to receive(:perform)
 
         expect {
           subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
@@ -473,7 +473,7 @@ module Bosh
         expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
         expect(cloud).to_not receive(:delete_vm)
 
-        expect(instance).to receive(:update_instance_settings).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+        expect(update_settings_step).to receive(:perform).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
@@ -498,11 +498,10 @@ module Bosh
 
       it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
         Config.keep_unreachable_vms = false
-
         expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
         expect(cloud).to receive(:delete_vm)
 
-        expect(instance).to receive(:update_instance_settings).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+        expect(update_settings_step).to receive(:perform).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
         expect {
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)

@@ -72,8 +72,7 @@ module Bosh::Director
 
         @disk_manager.attach_disks_if_needed(instance_plan)
 
-        instance.update_instance_settings
-        instance.update_cloud_properties!
+        DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance, instance.model.active_vm).perform
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
         if Config.keep_unreachable_vms
