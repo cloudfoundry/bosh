@@ -263,7 +263,9 @@ module Bosh
 
         expect(agent_client).to receive(:wait_until_ready)
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
-        expect(disk_manager).to receive(:attach_disks_if_needed).ordered
+        mock_step = instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep)
+        expect(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new).with(instance_model, tags).and_return mock_step
+        expect(mock_step).to receive(:perform).once
         expect(update_settings_step).to receive(:perform)
 
         expect {
