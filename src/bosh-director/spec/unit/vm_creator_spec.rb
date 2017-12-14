@@ -88,6 +88,7 @@ module Bosh
         instance_group.default_network = {'gateway' => 'name'}
         instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
         instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+        instance_group.persistent_disk_collection.add_by_disk_size(1024)
         instance_group
       end
 
@@ -439,6 +440,32 @@ module Bosh
             old_vm.refresh
 
             expect(instance_model.active_vm).to eq(old_vm)
+        end
+      end
+
+      context 'when the instance plan does not need a persistent disk' do
+        before do
+          allow(instance_plan).to receive(:needs_disk?).and_return(false)
+        end
+
+        it 'does not try to attach the disk' do
+          expect(cloud).to receive(:create_vm).with(
+            kind_of(String),
+            'stemcell-id',
+            kind_of(Hash),
+            network_settings,
+            ['fake-disk-cid'],
+            {
+              'bosh' =>
+                {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
+            },
+          ).and_return('new-vm-cid')
+          expect(DeploymentPlan::Steps::AttachInstanceDisksStep).not_to receive(:new)
+
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         end
       end
 

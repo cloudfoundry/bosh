@@ -70,7 +70,9 @@ module Bosh::Director
           @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
 
-        DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform
+        if instance_plan.needs_disk?
+          DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform
+        end
 
         DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance, instance.model.active_vm).perform
       rescue Exception => e
