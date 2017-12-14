@@ -309,6 +309,31 @@ module Bosh::Director
 
             updater.update(instance_plan)
           end
+
+          context 'when the instance uses hot-swap strategy' do
+            let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
+            let!(:inactive_vm_model) { Models::Vm.make(instance_id: instance_model.id) }
+
+            before do
+              allow(instance).to receive(:strategy).and_return(DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP)
+              allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
+                .with(inactive_vm_model).and_return(elect_active_vm_step)
+            end
+
+            it 'activates the vm but does not delete the old one or create another vm' do
+              expect(unmount_step).to receive(:perform)
+              expect(detach_step).to receive(:perform)
+              expect(vm_deleter).not_to receive(:delete_for_instance)
+              expect(vm_creator).not_to receive(:create_for_instance_plan)
+
+              expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)
+              expect(elect_active_vm_step).to receive(:perform)
+              expect(state_applier).to receive(:apply)
+              expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+
+              updater.update(instance_plan)
+            end
+          end
         end
       end
     end

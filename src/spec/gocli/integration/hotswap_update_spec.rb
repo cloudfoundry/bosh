@@ -7,7 +7,7 @@ describe 'deploy with hotswap', type: :integration do
 
     let(:manifest) do
       manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
-      manifest['update'] = manifest['update'].merge({'strategy' => 'hot-swap'})
+      manifest['update'] = manifest['update'].merge('strategy' => 'hot-swap')
       manifest
     end
 
@@ -35,7 +35,7 @@ describe 'deploy with hotswap', type: :integration do
         'az' => '',
         'instance' => /foobar\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
-        'process_state' => 'running',
+        'process_state' => /[a-z]{7}/,
         'vm_cid' => /[0-9]{1,6}/,
         'vm_type' => 'a',
       }
@@ -50,7 +50,7 @@ describe 'deploy with hotswap', type: :integration do
       expect(vm0['vm_type']).to eq(vm1['vm_type'])
       expect(vm0['instance']).to eq(vm1['instance'])
       expect(vm0['vm_cid']).to_not eq(vm1['vm_cid'])
-      expect(vm0['process_state']).to eq(vm1['process_state'])
+      expect(vm0['process_state']).to_not eq(vm1['process_state'])
       expect(vm0['ips']).to_not eq(vm1['ips'])
     end
   end
