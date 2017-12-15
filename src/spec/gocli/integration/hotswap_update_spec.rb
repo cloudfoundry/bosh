@@ -53,23 +53,5 @@ describe 'deploy with hotswap', type: :integration do
       expect(vm0['process_state']).to_not eq(vm1['process_state'])
       expect(vm0['ips']).to_not eq(vm1['ips'])
     end
-
-    context 'when using instances with persistent disk' do
-      before do
-        manifest['instance_groups'][0]['persistent_disk'] = 1000
-        deploy_simple_manifest(manifest_hash: manifest)
-      end
-
-      it 'should attach disks to new hotswap vms' do
-        director.start_recording_nats
-        disk_cid = director.instances.first.disk_cids[0]
-        deploy_simple_manifest(manifest_hash: manifest, recreate: true)
-
-        instance = director.instances.first
-        expect(current_sandbox.cpi.disk_attached_to_vm?(instance.vm_cid, disk_cid)).to eq(true)
-        nats_messages = extract_agent_messages(director.finish_recording_nats, instance.agent_id)
-        expect(nats_messages).to include('mount_disk')
-      end
-    end
   end
 end

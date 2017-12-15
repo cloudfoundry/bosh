@@ -31,8 +31,10 @@ module Bosh::Director
     end
     let!(:vm) { Models::Vm.make(instance: instance, active: true) }
     let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
-    let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
-    let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
+    let(:deployment_model) do
+      manifest = Bosh::Spec::Deployments.legacy_manifest
+      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+    end
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder(false) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
@@ -194,25 +196,6 @@ module Bosh::Director
             }
           }
         end
-
-        let(:manifest) do
-          manifest = Bosh::Spec::Deployments.legacy_manifest
-          disk_pool = Bosh::Spec::Deployments.disk_pool
-          manifest['disk_pools'] = [disk_pool]
-          manifest['jobs'][0] = Bosh::Spec::Deployments.simple_job(persistent_disk_pool: disk_pool['name'])
-          manifest['tags'] = { 'some' => 'tags' }
-
-          manifest
-        end
-        let!(:persistent_disk_model) { Models::PersistentDisk.make(active: true, name: '', instance: instance) }
-        let!(:variable_set) do
-          set = Models::VariableSet.make(deployment: deployment_model)
-          set.add_instance(instance)
-          set
-        end
-        let(:attach_disk_step) { instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep) }
-        let(:mount_disk_step) { instance_double(DeploymentPlan::Steps::MountInstanceDisksStep) }
-
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
@@ -233,15 +216,8 @@ module Bosh::Director
               expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
               expect(instance_plan.instance.cloud_properties).to eq({'foo' => 'bar'})
               expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
-              expect(instance_plan.needs_disk?).to eq(persistent_disk_model.disk_cid)
               expect(use_existing).to eq(true)
             end
-
-            expect(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new).with(instance, { 'some' => 'tags' }).and_return(attach_disk_step)
-            expect(attach_disk_step).to receive(:perform)
-
-            expect(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new).with(instance).and_return(mount_disk_step)
-            expect(mount_disk_step).to receive(:perform)
 
             expect(rendered_templates_persister).to receive(:persist)
 

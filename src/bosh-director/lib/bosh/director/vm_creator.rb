@@ -70,6 +70,11 @@ module Bosh::Director
           @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
         end
 
+        if instance_plan.needs_disk?
+          DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform
+          DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform
+        end
+
         DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance, instance.model.active_vm).perform
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")

@@ -271,6 +271,13 @@ module Bosh
         expect(agent_client).to receive(:wait_until_ready)
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
 
+        attach_instance_disks_step = instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep)
+        mount_instance_disks_step = instance_double(DeploymentPlan::Steps::MountInstanceDisksStep)
+        expect(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new).with(instance_model, tags).and_return attach_instance_disks_step
+        expect(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new).with(instance_model).and_return mount_instance_disks_step
+
+        expect(attach_instance_disks_step).to receive(:perform).once
+        expect(mount_instance_disks_step).to receive(:perform).once
         expect(update_settings_step).to receive(:perform)
         expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
 

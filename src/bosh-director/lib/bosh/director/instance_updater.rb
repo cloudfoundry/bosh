@@ -114,11 +114,6 @@ module Bosh::Director
             @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
           end
 
-          if instance_plan.needs_disk?
-            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform
-            DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform
-          end
-
           recreated = true
         end
 

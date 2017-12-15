@@ -240,8 +240,6 @@ module Bosh::Director
         let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
         let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
         let(:detach_step) { instance_double(DeploymentPlan::Steps::DetachInstanceDisksStep) }
-        let(:mount_step) { instance_double(DeploymentPlan::Steps::MountInstanceDisksStep) }
-        let(:attach_step) { instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep) }
 
         before do
           allow(DiskManager).to receive(:new).and_return(disk_manager)
@@ -250,16 +248,11 @@ module Bosh::Director
             .with(instance_model).and_return(unmount_step)
           allow(DeploymentPlan::Steps::DetachInstanceDisksStep).to receive(:new)
             .with(instance_model).and_return(detach_step)
-          allow(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new)
-            .with(instance_model).and_return(mount_step)
-          allow(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)
-            .with(instance_model, tags).and_return(attach_step)
 
           allow(updater).to receive(:needs_recreate?).and_return(false)
           allow(disk_manager).to receive(:update_persistent_disk)
           allow(job).to receive(:update)
           allow(instance).to receive(:update_instance_settings)
-          allow(instance_plan).to receive(:needs_disk?).and_return('a-disk')
         end
 
         it 'does NOT drain, stop, post-stop, snapshot, but persists rendered templates to the blobstore and updates DNS' do
@@ -305,13 +298,11 @@ module Bosh::Director
           end
 
           it 'recreates correctly, and persists rendered templates to the blobstore' do
-            expect(unmount_step).to receive(:perform).ordered
-            expect(detach_step).to receive(:perform).ordered
-            expect(vm_deleter).to receive(:delete_for_instance).with(instance_model).ordered
-            expect(vm_creator).to receive(:create_for_instance_plan).ordered
+            expect(unmount_step).to receive(:perform)
+            expect(detach_step).to receive(:perform)
+            expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
+            expect(vm_creator).to receive(:create_for_instance_plan)
               .with(instance_plan, [persistent_disk_model.disk_cid], tags)
-            expect(attach_step).to receive(:perform).ordered
-            expect(mount_step).to receive(:perform).ordered
 
             expect(state_applier).to receive(:apply)
             expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
@@ -330,12 +321,10 @@ module Bosh::Director
             end
 
             it 'activates the vm but does not delete the old one or create another vm' do
-              expect(unmount_step).to receive(:perform).ordered
-              expect(detach_step).to receive(:perform).ordered
+              expect(unmount_step).to receive(:perform)
+              expect(detach_step).to receive(:perform)
               expect(vm_deleter).not_to receive(:delete_for_instance)
               expect(vm_creator).not_to receive(:create_for_instance_plan)
-              expect(attach_step).to receive(:perform).ordered
-              expect(mount_step).to receive(:perform).ordered
 
               expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)
               expect(elect_active_vm_step).to receive(:perform)
