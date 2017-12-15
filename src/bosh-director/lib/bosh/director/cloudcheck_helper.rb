@@ -79,6 +79,11 @@ module Bosh::Director
           true
         )
 
+        if instance_plan_to_create.needs_disk?
+          DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan_to_create.tags).perform
+          DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform
+        end
+
         powerdns_manager = PowerDnsManagerProvider.create
         local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger, dns_encoder)
         dns_names_to_ip = {}
