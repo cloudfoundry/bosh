@@ -11,8 +11,8 @@ module Bosh::Director
         def perform
           return if @instance_model.active_vm.nil?
 
-          @instance_model.persistent_disks.each do |disk|
-            AttachDiskStep.new(disk, @tags).perform
+          @instance_model.active_persistent_disks.collection.each do |disk|
+            AttachDiskStep.new(disk.model, @tags).perform
           end
         end
       end

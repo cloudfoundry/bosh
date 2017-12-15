@@ -72,6 +72,7 @@ module Bosh::Director
 
         if instance_plan.needs_disk?
           DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform
+          DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform
         end
 
         DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance, instance.model.active_vm).perform
