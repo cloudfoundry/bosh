@@ -2,6 +2,10 @@ module Bosh
   module Director
     module Api
       class ConfigManager
+        def initialize
+          @tasks_config_manager = TasksConfigManager.new
+        end
+
         def create(type, name, config_yaml, team_id = nil)
           config = Bosh::Director::Models::Config.new(
             type: type,
@@ -10,6 +14,8 @@ module Bosh
             team_id: team_id,
           )
           config.save
+          @tasks_config_manager.rebuild_groups if type == 'tasks'
+          config
         end
 
         def find(type: nil, name: nil, limit: 1)
@@ -53,9 +59,11 @@ module Bosh
         end
 
         def delete(type, name)
-          Bosh::Director::Models::Config
+          config = Bosh::Director::Models::Config
             .where(type: type, name: name, deleted: false)
             .update(deleted: true)
+          @tasks_config_manager.rebuild_groups if type == 'tasks'
+          config
         end
 
         def delete_by_id(id)

@@ -3,9 +3,11 @@ require 'spec_helper'
 describe Bosh::Director::Api::ConfigManager do
   subject(:manager) { Bosh::Director::Api::ConfigManager.new }
 
+  let(:name) { 'some-name' }
+
   describe '#create' do
     let(:type) { 'my-type' }
-    let(:name) { 'some-name' }
+
     let(:valid_yaml) { YAML.dump("---\n{key: value") }
 
     it 'saves the config' do
@@ -16,6 +18,13 @@ describe Bosh::Director::Api::ConfigManager do
       config = Bosh::Director::Models::Config.first
       expect(config.created_at).to_not be_nil
       expect(config.content).to eq(valid_yaml)
+    end
+
+    context 'when type == tasks' do
+      it 'calls TasksConfigManager to rebuild groups' do
+        expect_any_instance_of(Bosh::Director::Api::TasksConfigManager).to receive(:rebuild_groups)
+        manager.create('tasks', name, '{}')
+      end
     end
   end
 
@@ -248,6 +257,13 @@ describe Bosh::Director::Api::ConfigManager do
         expect(count).to eq(0)
       end
     end
+
+    context 'when type == tasks' do
+      it 'calls TasksConfigManager to rebuild groups' do
+        expect_any_instance_of(Bosh::Director::Api::TasksConfigManager).to receive(:rebuild_groups)
+        manager.delete('tasks', name)
+      end
+    end
   end
 
   describe '#delete_by_id' do
@@ -280,7 +296,12 @@ describe Bosh::Director::Api::ConfigManager do
         expect(count).to eq(0)
       end
     end
+
+    context 'when type == tasks' do
+      it 'calls TasksConfigManager to rebuild groups' do
+        expect_any_instance_of(Bosh::Director::Api::TasksConfigManager).to receive(:rebuild_groups)
+        manager.delete('tasks', name)
+      end
+    end
   end
-
-
 end

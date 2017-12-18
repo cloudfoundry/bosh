@@ -1,8 +1,19 @@
 require 'db_migrator'
 require 'delayed_job'
 
+
 module Bosh
   module Director
+    class EnqueueOrder < Delayed::Plugin
+      callbacks do |lifecycle|
+        lifecycle.around(:enqueue) do |job, &block|
+          Delayed::Worker.delay_jobs ? job.save : job.invoke_job
+          job.hook(:enqueue)
+          block.call(job)
+        end
+      end
+    end
+
     class Worker
       MAX_MIGRATION_ATTEMPTS = 50
 
@@ -14,6 +25,7 @@ module Bosh
 
       def prep
         Delayed::Worker.logger = @config.worker_logger
+        Delayed::Worker.plugins << Bosh::Director::EnqueueOrder
 
         ensure_migrations
         Bosh::Director::App.new(@config)

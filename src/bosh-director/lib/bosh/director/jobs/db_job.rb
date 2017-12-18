@@ -19,6 +19,11 @@ module Bosh::Director
         @worker_name = job.locked_by
       end
 
+      def enqueue(job)
+        @tasks_config_manager ||= Api::TasksConfigManager.new
+        @tasks_config_manager.add_to_groups(job)
+      end
+
       def perform
         Config.db.transaction(:retry_on => [Sequel::DatabaseConnectionError]) do
           if Models::Task.where(id: @task_id, state: 'queued').update(state: 'processing', checkpoint_time: Time.now) != 1

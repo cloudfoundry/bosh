@@ -608,5 +608,15 @@ module Bosh::Spec
         ],
       }
     end
+
+    def self.tasks_config(options = {})
+      {
+        'rules' => [{
+          'options' => {
+            'rate_limit' => options.fetch(:limit, 1),
+          },
+        }],
+      }
+    end
   end
 end

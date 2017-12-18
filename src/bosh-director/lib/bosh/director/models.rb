@@ -43,6 +43,7 @@ require 'bosh/director/models/variable'
 require 'bosh/director/models/variable_set'
 require 'bosh/director/models/vm'
 require 'delayed_job_sequel'
+require 'bosh/director/models/delayed_job_group'
 
 module Bosh::Director
   module Models
