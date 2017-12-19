@@ -7,7 +7,7 @@ if [ "`uname -m`" == "ppc64le" ]; then
   cp ${BOSH_COMPILE_TARGET}/config/config.{guess,sub} ./config
 fi
 
-./configure --prefix=$BOSH_INSTALL_TARGET
+./configure --with-openssl --prefix=$BOSH_INSTALL_TARGET
 cp -R src/include $BOSH_INSTALL_TARGET
 cd src/interfaces/libpq
 
