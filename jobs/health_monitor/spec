@@ -57,7 +57,9 @@ properties:
   hm.nats.certs.private_key:
     description: Private Key for establishing mutual TLS with NATs
   hm.nats.certs.certificate:
-    description: Certificate for establishing mutual TLS with NATs
+    description: |
+      Certificate for establishing mutual TLS with NATs. The Common-Name for the certificate
+      should be "default.hm.bosh-internal"
 
   #
   # NATS options (to get alerts from agents)
