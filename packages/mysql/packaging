@@ -10,12 +10,11 @@ tar zxvf mysql/server-$MYSQL_VERSION.tar.gz
   cp -a bin ${BOSH_INSTALL_TARGET}/
 )
 
-MARIADB_VERSION='2.2.1'
+MARIADB_VERSION='2.3.4'
 (
   set -e
-  mkdir mariadb-connector-c-${MARIADB_VERSION}-src
+  tar xzf mysql/mariadb-connector-c-${MARIADB_VERSION}-src.tar.gz
   cd mariadb-connector-c-${MARIADB_VERSION}-src
-  tar xzf ../mysql/mariadb-connector-c-${MARIADB_VERSION}-src.tar.gz
   mkdir bld
   cd bld
   cmake .. -DCMAKE_INSTALL_PREFIX=${BOSH_INSTALL_TARGET}

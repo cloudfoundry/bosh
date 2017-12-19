@@ -1,5 +1,5 @@
 ---
 name: mysql
 files:
-- mysql/mariadb-connector-c-2.2.1-src.tar.gz
+- mysql/mariadb-connector-c-2.3.4-src.tar.gz
 - mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz
