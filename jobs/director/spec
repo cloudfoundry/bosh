@@ -213,9 +213,11 @@ properties:
   nats.tls.client_ca.private_key:
     description: Private Key for NATs mutual TLS (Director uses to generate Agent cert)
   nats.tls.director.certificate:
-    description: Certificate for NATs mutual TLS (Director client)
+    description: |
+      Certificate for NATs mutual TLS client (Director client). The Common-Name for this certificate
+      should be "default.director.bosh-internal"
   nats.tls.director.private_key:
-    description: Private Key for NATs mutual TLS (Director client)
+    description: Private Key for NATs mutual TLS client (Director client)
 
   # Director Database
   director.db.adapter:
