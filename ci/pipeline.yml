@@ -243,7 +243,6 @@ jobs:
           <<: *slack-alert
 
   - name: unit-2.4-db-migrations-rds
-    public: true
     serial: true
     build_logs_to_retain: 250
     plan:
