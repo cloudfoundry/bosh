@@ -173,7 +173,7 @@ GEM
     mono_logger (1.1.0)
     mtrc (0.0.4)
     multi_json (1.12.2)
-    mysql2 (0.4.9)
+    mysql2 (0.4.10)
     nats (0.8.2)
       eventmachine (~> 1.2, >= 1.2)
     net-ssh (4.2.0)
