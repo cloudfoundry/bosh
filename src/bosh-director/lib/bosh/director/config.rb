@@ -281,6 +281,7 @@ module Bosh::Director
           case connection_config['adapter']
             when 'mysql2'
               connection_config['ssl_mode'] = 'verify_identity'
+              connection_config['sslverify'] = true
               connection_config['sslca'] = db_ca_path
             when 'postgres'
               connection_config['sslmode'] = 'verify-full'
