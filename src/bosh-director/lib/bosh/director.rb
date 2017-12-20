@@ -236,6 +236,8 @@ require 'bosh/director/api/controllers/link_consumers_controller'
 require 'bosh/director/api/controllers/links_controller'
 require 'bosh/director/api/route_configuration'
 
+require 'bosh/director/step_executor'
+
 require 'common/common'
 
 require 'bosh/blobstore_client/errors'
