@@ -2,8 +2,8 @@
 
 set -e
 
-RUBY_VERSION=2.3.1
-RUBYGEMS_VERSION=2.6.4
+RUBY_VERSION=2.3.6
+RUBYGEMS_VERSION=2.7.3
 BUNDLER_VERSION=1.15.3
 LIBYAML_VERSION=0.1.7
 
@@ -47,5 +47,3 @@ tar zxvf "ruby/rubygems-${RUBYGEMS_VERSION}.tgz"
     exit 1
   fi
 )
-
-${BOSH_INSTALL_TARGET}/bin/gem install "ruby/bundler-${BUNDLER_VERSION}.gem" --local --no-ri --no-rdoc
