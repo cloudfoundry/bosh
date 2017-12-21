@@ -26,18 +26,18 @@ nginx/headers-more-nginx-module-0.30.tar.gz:
   size: 27793
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
   sha: a188a399f3e365a0831585a9d7aa0e6ed1a75f0d
-nginx/nginx-1.12.1.tar.gz:
-  size: 981093
-  object_id: 740ca33e-2b75-4b22-5713-e5791471ec49
-  sha: 71000022267589f50e83b0d6743923c1b7e64238
+nginx/nginx-1.12.2.tar.gz:
+  size: 981687
+  object_id: 5bf3b3af-e100-497a-4a56-7a0d14603d43
+  sha: 6b41d63befa4f52b0724b533e6292a6671b71fdc
 nginx/nginx-upload-module-2.2.tar.gz:
   size: 28505
   object_id: 118f94b0-2738-4019-9aa2-1832b948a5b1
   sha: 74ccd116525a155db76f92a1cd484d9516a70398
-nginx/pcre-8.40.tar.gz:
-  size: 2065161
-  object_id: 55ecdf7e-38b1-4fd8-68e8-e28285ec19eb
-  sha: 10384eb3d411794cc15f55b9d837d3f69e35391e
+nginx/pcre-8.41.tar.gz:
+  size: 2068775
+  object_id: f942d349-aac1-4c78-77fc-33a38804fa83
+  sha: dddf0995aefe04cc6267c1448ffef0e7b0560ec0
 postgres/postgresql-9.0.23.tar.gz:
   size: 19776342
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
