@@ -51,6 +51,9 @@ RUN /bin/bash -l -c "                                     \
   gem install bosh_cli --no-ri --no-rdoc                  \
 "
 
+# Install bosh-cli
+RUN wget https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-2.0.45-linux-amd64 -O /usr/local/bin/bosh2 && echo "bf04be72daa7da0c9bbeda16fda7fc7b2b8af51e  /usr/local/bin/bosh2" | sha1sum -c - && chmod +x /usr/local/bin/bosh2
+
 RUN cd /tmp && \
     curl -O -L https://github.com/s3tools/s3cmd/archive/v1.6.0.tar.gz && \
     tar xzf v1.6.0.tar.gz && \
