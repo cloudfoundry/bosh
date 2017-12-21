@@ -718,7 +718,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-      branch: master
+      branch: 262.x
 
   - name: bosh-load-tests-workspace
     type: git
