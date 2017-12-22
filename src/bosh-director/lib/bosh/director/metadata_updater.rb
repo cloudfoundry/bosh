@@ -9,9 +9,7 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update_vm_metadata(instance, metadata, factory = CloudFactory.create_with_latest_configs)
-      vm = instance.active_vm
-
+    def update_vm_metadata(instance, vm, metadata, factory = CloudFactory.create_with_latest_configs)
       cloud = factory.get(vm.cpi)
 
       if cloud.respond_to?(:set_vm_metadata)
@@ -24,7 +22,7 @@ module Bosh::Director
         metadata['name'] = "#{instance.job}/#{instance.uuid}"
         metadata['created_at'] = Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        cloud.set_vm_metadata(instance.vm_cid, metadata)
+        cloud.set_vm_metadata(vm.cid, metadata)
       end
     rescue Bosh::Clouds::NotImplemented => e
       @logger.debug(e.inspect)

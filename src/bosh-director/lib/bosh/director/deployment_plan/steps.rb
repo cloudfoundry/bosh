@@ -7,6 +7,7 @@ end
 
 require 'bosh/director/deployment_plan/steps/attach_disk_step'
 require 'bosh/director/deployment_plan/steps/attach_instance_disks_step'
+require 'bosh/director/deployment_plan/steps/create_vm_step'
 require 'bosh/director/deployment_plan/steps/detach_disk_step'
 require 'bosh/director/deployment_plan/steps/detach_instance_disks_step'
 require 'bosh/director/deployment_plan/steps/elect_active_vm_step'

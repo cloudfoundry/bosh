@@ -168,7 +168,7 @@ module Bosh::Director
       end
 
       it 'passes tags to vm' do
-        expect_any_instance_of(MetadataUpdater).to receive(:update_vm_metadata).with(anything, tags, anything)
+        expect_any_instance_of(MetadataUpdater).to receive(:update_vm_metadata).with(anything, anything, tags, anything)
         action
       end
 

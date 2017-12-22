@@ -263,8 +263,8 @@ module Bosh::Director
         metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
 
         allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, {compiling: 'common'})
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, hash_including(:compiling)).exactly(10).times
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, {compiling: 'common'})
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, hash_including(:compiling)).exactly(10).times
 
         agent_client = instance_double('Bosh::Director::AgentClient')
         allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
@@ -429,7 +429,7 @@ module Bosh::Director
 
         metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
         allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, hash_including(:compiling))
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, hash_including(:compiling))
 
         initial_state = {
           'deployment' => 'mycloud',
@@ -684,6 +684,7 @@ module Bosh::Director
 
       def self.it_tears_down_vm_exactly_once(exception)
         it "tears down VMs exactly once when #{exception} error occurs" do
+          pending('Extraction of VmDeleter.delete_for_instance to step so that it can accept non-active vm')
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient')
           expect(agent).to receive(:wait_until_ready).and_raise(exception)

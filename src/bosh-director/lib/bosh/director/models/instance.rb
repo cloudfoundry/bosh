@@ -140,8 +140,8 @@ module Bosh::Director::Models
     def active_vm=(new_active_vm)
       old_active_vm = active_vm
       Bosh::Director::Config.db.transaction do
-        old_active_vm.update(active: false) unless old_active_vm.nil?
-        new_active_vm.update(active: true) unless new_active_vm.nil?
+        old_active_vm&.update(active: false)
+        new_active_vm&.update(active: true)
       end
     end
 
@@ -174,7 +174,7 @@ module Bosh::Director::Models
     end
 
     def most_recent_inactive_vm
-      inactive_vms = self.vms.select{ |instance| instance.active == false }
+      inactive_vms = self.vms.select{ |vm| vm.active == false }
       inactive_vms.sort!{ |a,b| b.id <=> a.id }
 
       inactive_vms.first

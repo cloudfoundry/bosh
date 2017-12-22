@@ -40,74 +40,61 @@ module Bosh::Director
     end
 
     def create_for_instance_plan(instance_plan, disks, tags, use_existing=false)
+      DeploymentPlan::Steps::CreateVmStep.new(
+        instance_plan,
+        @agent_broadcaster,
+        @vm_deleter,
+        disks,
+        tags, # definitely d on't need to put these tags here, because they come off the instance plan
+        use_existing,
+      ).perform
+
       instance = instance_plan.instance
 
-      factory, stemcell_cid = choose_factory_and_stemcell_cid(instance_plan, use_existing)
-
-      instance_model = instance.model
-      @logger.info('Creating VM')
-
-      vm = create(
-        instance,
-        stemcell_cid,
-        instance.cloud_properties,
-        instance_plan.network_settings_hash,
-        disks,
-        instance.env,
-        factory
-      )
+      unless instance.vm_created?
+        DeploymentPlan::Steps::ElectActiveVmStep.new(instance.model.most_recent_inactive_vm).perform
+      end
 
       begin
-        MetadataUpdater.build.update_vm_metadata(instance_model, tags, factory)
-        agent_client = AgentClient.with_agent_id(instance_model.agent_id)
-        agent_client.wait_until_ready
-
-        if Config.flush_arp
-          ip_addresses = instance_plan.network_settings_hash.map do |index, network|
-            network['ip']
-          end.compact
-
-          @agent_broadcaster.delete_arp_entries(instance_model.vm_cid, ip_addresses)
-        end
-
         if instance_plan.needs_disk?
-          DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform
-          DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform
+          DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags).perform
+          DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model).perform
         end
-
         DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance, instance.model.active_vm).perform
       rescue Exception => e
-        @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
+        # cleanup in case of failure
+        @logger.error("Failed to create/contact VM #{instance.model.vm_cid}: #{e.inspect}")
+        # TODO: what is appropriate response to this error case ? orphan ?
         if Config.keep_unreachable_vms
           @logger.info('Keeping the VM for debugging')
         else
-          @vm_deleter.delete_for_instance(instance_model)
+          @vm_deleter.delete_for_instance(instance.model)
         end
         raise e
       end
 
+      # use a STANDARD way to get the "new vm" off the instance
+
+      vm = instance.model.active_vm
+      # apply initial state (collection of steps)
       apply_initial_vm_state(instance_plan, vm)
+
+      # def perform
+      #   vm = @instance_plan.instance.most_recent_inactive_vm
+      #   apply_initial_vm_state(instance_plan, vm)
+      # end
+
+      # update instance_plan state
+      # per story task, move this to where we activate the vm
+
+
+
+
 
       instance_plan.mark_desired_network_plans_as_existing
     end
 
     private
-
-    def add_event(deployment_name, instance_name, action, object_name = nil, parent_id = nil, error = nil)
-      event = Config.current_job.event_manager.create_event(
-        {
-          parent_id: parent_id,
-          user: Config.current_job.username,
-          action: action,
-          object_type: 'vm',
-          object_name: object_name,
-          task: Config.current_job.task_id,
-          deployment: deployment_name,
-          instance: instance_name,
-          error: error
-        })
-      event.id
-    end
 
     def apply_initial_vm_state(instance_plan, vm)
       vm_state = DeploymentPlan::VmSpecApplier.new.apply_initial_vm_state(instance_plan.spec, vm)
@@ -115,108 +102,6 @@ module Bosh::Director
       instance_plan.instance.add_state_to_model(vm_state)
 
       DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache: @template_blob_cache, dns_encoder: @dns_encoder).perform
-    end
-
-    def choose_factory_and_stemcell_cid(instance_plan, use_existing)
-      if use_existing && !!instance_plan.existing_instance.availability_zone
-        factory = CloudFactory.create_from_deployment(instance_plan.existing_instance.deployment)
-
-        stemcell = instance_plan.instance.stemcell
-        cpi = factory.get_name_for_az(instance_plan.existing_instance.availability_zone)
-        stemcell_cid = stemcell.models.find { |model| model.cpi == cpi }.cid
-        return factory, stemcell_cid
-      else
-        return CloudFactory.create_with_latest_configs, instance_plan.instance.stemcell_cid
-      end
-    end
-
-    def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env, factory)
-      instance_model = instance.model
-      deployment_name = instance_model.deployment.name
-      parent_id = add_event(deployment_name, instance_model.name, 'create')
-      agent_id = self.class.generate_agent_id
-
-      config_server_client = @config_server_client_factory.create_client
-      env = config_server_client.interpolate_with_versioning(env, instance.desired_variable_set)
-      cloud_properties = config_server_client.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
-      network_settings = config_server_client.interpolate_with_versioning(network_settings, instance.desired_variable_set)
-
-      cpi = factory.get_name_for_az(instance_model.availability_zone)
-
-      vm_options = {instance: instance_model, agent_id: agent_id, cpi: cpi}
-      options = {}
-
-      env['bosh'] ||= {}
-      env['bosh'] = Config.agent_env.merge(env['bosh'])
-
-      if Config.nats_server_ca
-        env['bosh'] ||= {}
-        env['bosh']['mbus'] ||= {}
-        env['bosh']['mbus']['cert'] ||= {}
-        env['bosh']['mbus']['cert']['ca'] = Config.nats_server_ca
-        cert_generator = NatsClientCertGenerator.new(@logger)
-        agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{agent_id}.agent.bosh-internal"
-        env['bosh']['mbus']['cert']['certificate'] = agent_cert_key_result[:cert].to_pem
-        env['bosh']['mbus']['cert']['private_key'] = agent_cert_key_result[:key].to_pem
-      end
-
-      password = env.fetch('bosh', {}).fetch('password', "")
-      if Config.generate_vm_passwords && password == ""
-        env['bosh'] ||= {}
-        env['bosh']['password'] = sha512_hashed_password
-      end
-
-      if instance_model.job
-        env['bosh'] ||= {}
-        env['bosh']['group'] = Canonicalizer.canonicalize("#{Bosh::Director::Config.name}-#{deployment_name}-#{instance_model.job}")
-        env['bosh']['groups'] = [
-          Bosh::Director::Config.name,
-          deployment_name,
-          instance_model.job,
-          "#{Bosh::Director::Config.name}-#{deployment_name}",
-          "#{deployment_name}-#{instance_model.job}",
-          "#{Bosh::Director::Config.name}-#{deployment_name}-#{instance_model.job}",
-        ]
-        env['bosh']['groups'].map! { |name| Canonicalizer.canonicalize(name) }
-      end
-
-      count = 0
-      begin
-        cloud = factory.get(vm_options[:cpi])
-        vm_cid = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
-      rescue Bosh::Clouds::VMCreationFailed => e
-        count += 1
-        @logger.error("failed to create VM, retrying (#{count})")
-        retry if e.ok_to_retry && count < Config.max_vm_create_tries
-        raise e
-      end
-
-      vm_options[:cid] = vm_cid
-      vm_options[:created_at] = Time.now
-      vm_model = Models::Vm.create(vm_options)
-      vm_model.save
-
-      unless instance.vm_created?
-        DeploymentPlan::Steps::ElectActiveVmStep.new(vm_model).perform
-      end
-
-      instance_model.update(options)
-
-      vm_model
-    rescue => e
-      @logger.error("error creating vm: #{e.message}")
-      if vm_cid
-        parent_id = add_event(deployment_name, instance_model.name, 'delete', vm_cid)
-        @vm_deleter.delete_vm_by_cid(vm_cid)
-        add_event(deployment_name, instance_model.name, 'delete', vm_cid, parent_id)
-      end
-      raise e
-    ensure
-      add_event(deployment_name, instance_model.name, 'create', vm_cid, parent_id, e)
-    end
-
-    def self.generate_agent_id
-      SecureRandom.uuid
     end
   end
 end
