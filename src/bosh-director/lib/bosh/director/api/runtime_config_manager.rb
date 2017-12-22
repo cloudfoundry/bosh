@@ -14,7 +14,7 @@ module Bosh
         end
 
         def list(limit, name='default')
-          Bosh::Director::Models::Config.where(name: name, type: 'runtime').order(Sequel.desc(:id)).limit(limit).to_a
+          Bosh::Director::Models::Config.where(deleted: false, name: name, type: 'runtime').order(Sequel.desc(:id)).limit(limit).to_a
         end
 
         private

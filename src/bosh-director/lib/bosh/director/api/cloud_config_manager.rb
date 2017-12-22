@@ -12,11 +12,7 @@ module Bosh
         end
 
         def list(limit)
-          Bosh::Director::Models::Config.where(type: 'cloud', name: 'default').order(Sequel.desc(:id)).limit(limit).to_a
-        end
-
-        def find_by_id(id)
-          Bosh::Director::Models::Config.find(id: id)
+          Bosh::Director::Models::Config.where(deleted: false, type: 'cloud', name: 'default').order(Sequel.desc(:id)).limit(limit).to_a
         end
 
         def self.interpolated_manifest(cloud_configs, deployment_name)

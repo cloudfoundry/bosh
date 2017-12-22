@@ -13,7 +13,7 @@ module Bosh
         end
 
         def list(limit)
-          Bosh::Director::Models::Config.where(type: 'cpi', name: 'default').order(Sequel.desc(:id)).limit(limit).to_a
+          Bosh::Director::Models::Config.where(deleted: false, type: 'cpi', name: 'default').order(Sequel.desc(:id)).limit(limit).to_a
         end
 
         def latest
