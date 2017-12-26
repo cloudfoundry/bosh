@@ -135,6 +135,34 @@ module Bosh::Monitor::Plugins
             plugin.process(alert)
           end
         end
+
+        context 'when resurrection is disabled' do
+
+          let(:resurrection_manager) { double(Bosh::Monitor::ResurrectionManager, :resurrection_enabled? => false) }
+          before { allow(Bhm).to receive(:resurrection_manager).and_return(resurrection_manager) }
+
+          it 'does not send requests to scan and fix' do
+            plugin.run
+            expect(plugin).not_to receive(:send_http_put_request)
+            plugin.process(alert)
+          end
+
+          it 'sends alerts to the EventProcessor' do
+            expected_time = Time.new
+            allow(Time).to receive(:now).and_return(expected_time)
+            alert_option = {
+              :severity => 1,
+              :title => "Resurrection is disabled by resurrection config",
+              :summary => "Skipping resurrection for instance: 'j/i'; summary because of resurrection config",
+              :source => "HM plugin resurrector",
+              :deployment => "d",
+              :created_at => expected_time.to_i
+            }
+            expect(event_processor).to receive(:process).with(:alert, alert_option)
+            plugin.run
+            plugin.process(alert)
+          end
+        end
       end
 
       context 'alerts without deployment, job and id' do

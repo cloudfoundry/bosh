@@ -14,6 +14,7 @@ module Bosh::Monitor
       @intervals     = Bhm.intervals
       @mbus          = Bhm.mbus
       @instance_manager = Bhm.instance_manager
+      @resurrection_manager = Bhm.resurrection_manager
       EM.threadpool_size = Bhm.em_threadpool_size
     end
 
@@ -31,6 +32,7 @@ module Bosh::Monitor
         @instance_manager.setup_events
         setup_timers
         start_http_server
+        update_resurrection_config
         @logger.info("BOSH HealthMonitor #{Bhm::VERSION} is running...")
       end
     end
@@ -45,7 +47,7 @@ module Bosh::Monitor
         poll_director
         EM.add_periodic_timer(@intervals.poll_director) { poll_director }
         EM.add_periodic_timer(@intervals.log_stats) { log_stats }
-
+        EM.add_periodic_timer(@intervals.resurrection_config) { update_resurrection_config }
         EM.add_timer(@intervals.poll_grace_period) do
           EM.add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
           EM.add_periodic_timer(@intervals.analyze_instances) { analyze_instances }
@@ -58,6 +60,11 @@ module Bosh::Monitor
       n_agents = pluralize(@instance_manager.agents_count, "agent")
       @logger.info("Managing #{n_deployments}, #{n_agents}")
       @logger.info("Agent heartbeats received = %s" % [ @instance_manager.heartbeats_received ])
+    end
+
+    def update_resurrection_config
+      @logger.debug("Getting resurrection config from director...")
+      Fiber.new { fetch_resurrection_config }.resume
     end
 
     def connect_to_mbus
@@ -168,6 +175,16 @@ module Bosh::Monitor
         @instance_manager.sync_deployment_state(deployment, instances_data)
       end
 
+    rescue Bhm::DirectorError => e
+      log_exception(e)
+      alert_director_error(e.message)
+    end
+
+    def fetch_resurrection_config
+      @logger.debug("Fetching resurrection config information...")
+
+      resurrection_config = @director.get_resurrection_config
+      @resurrection_manager.update_rules(resurrection_config)
     rescue Bhm::DirectorError => e
       log_exception(e)
       alert_director_error(e.message)
