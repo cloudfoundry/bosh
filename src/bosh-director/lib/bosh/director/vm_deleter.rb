@@ -8,7 +8,9 @@ module Bosh::Director
     end
 
     def delete_for_instance(instance_model, store_event=true)
-      DeploymentPlan::Steps::DeleteVmStep.new(@logger, instance_model, store_event, @force, @enable_virtual_delete_vm).perform
+      if instance_model.active_vm
+        DeploymentPlan::Steps::DeleteVmStep.new(instance_model.active_vm, store_event, @force, @enable_virtual_delete_vm).perform
+      end
     end
 
     def delete_vm_by_cid(cid)

@@ -18,6 +18,23 @@ module Bosh
         allow(cloud_factory).to receive(:get).with(nil).and_return(cloud)
       end
 
+      describe '#delete_for_instance' do
+        context 'when there is an active vm' do
+          before do
+            vm_model.update(active: true)
+          end
+
+          let(:step) {instance_double(DeploymentPlan::Steps::DeleteVmStep)}
+
+          it 'delegates to a step' do
+            expect(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).with(vm_model, true, false, false).and_return(step)
+            expect(step).to receive(:perform)
+
+            subject.delete_for_instance(instance_model)
+          end
+        end
+      end
+
       describe '#delete_vm_by_cid' do
         it 'calls delete_vm if only one cloud is configured' do
           allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)

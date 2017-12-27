@@ -6,7 +6,7 @@ module Bosh
     module DeploymentPlan
       module Steps
         describe DeleteVmStep do
-          subject { DeleteVmStep.new(logger, instance_model, store_event, force, allow_virtual) }
+          subject { DeleteVmStep.new(vm_model, store_event, force, allow_virtual) }
           let(:store_event) { true }
           let(:force) { false }
           let(:allow_virtual) { false }
@@ -15,8 +15,6 @@ module Bosh
           let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
 
           # TODO
-          #   > have VM model (as well or instead of instance model)
-          #   > don't pass in logger
           #   > then we can replace the removed test coverage thru a createvmstep test to invoke this step
 
           describe '#perform' do
@@ -65,7 +63,6 @@ module Bosh
 
             before do
               instance_model.active_vm = vm_model
-              expect(instance_model).to receive(:active_vm=).with(nil).and_call_original
               allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
               allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
               allow(Config).to receive(:local_dns_enabled?).and_return(true)
@@ -75,7 +72,7 @@ module Bosh
               allow(job).to receive(:task_id).and_return('fake-task-id')
             end
 
-            it 'deletes the instance and stores an event' do
+            it 'deletes the instances vm and stores an event' do
               expect(job).to receive(:event_manager).twice.and_return(event_manager)
               expect(job).to receive(:username).twice.and_return('fake-username')
               expect(job).to receive(:task_id).twice.and_return('fake-task-id')
