@@ -654,62 +654,6 @@ module Bosh::Director
       end
     end
 
-    describe 'tearing down compilation vms' do
-      before do # prepare compilation
-        prepare_samples
-      end
-
-      let(:job) do
-        release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model, name: 'release', version: release_version_model.version)
-        release = Models::Release.make(name: release_version.name)
-        release.add_version(release_version_model)
-        stemcell = make_stemcell
-
-        package = make_package('common')
-        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package], name: 'fake_template')
-
-        instance_double(
-          'Bosh::Director::DeploymentPlan::InstanceGroup',
-          name: 'job-with-one-package',
-          release: release,
-          jobs: [job],
-          vm_type: {},
-          stemcell: stemcell,
-        )
-      end
-
-      before do # create vm
-        allow(cloud).to receive(:create_vm).and_return('vm-cid-1')
-      end
-
-      def self.it_tears_down_vm_exactly_once(exception)
-        it "tears down VMs exactly once when #{exception} error occurs" do
-          pending('Extraction of VmDeleter.delete_for_instance to step so that it can accept non-active vm')
-          # agent raises error
-          agent = instance_double('Bosh::Director::AgentClient')
-          expect(agent).to receive(:wait_until_ready).and_raise(exception)
-          expect(AgentClient).to receive(:with_agent_id).and_return(agent)
-
-          expect(cloud).to receive(:delete_vm).once
-
-          compiler = DeploymentPlan::Stages::PackageCompileStage.new(deployment.name, [job], compilation_config, compilation_instance_pool, logger, @director_job)
-          allow(compiler).to receive(:with_compile_lock).and_yield
-          expect { compiler.perform }.to raise_error(exception)
-        end
-      end
-
-      context 'reuse_compilation_vms is true' do
-        it_tears_down_vm_exactly_once(RpcTimeout)
-        it_tears_down_vm_exactly_once(TaskCancelled)
-      end
-
-      context 'reuse_compilation_vms is false' do
-        let(:reuse_compilation_vms) { false }
-        it_tears_down_vm_exactly_once(RpcTimeout)
-        it_tears_down_vm_exactly_once(TaskCancelled)
-      end
-    end
-
     it 'should make sure a parallel deployment did not compile a package already' do
       package = Models::Package.make
       stemcell = make_stemcell
