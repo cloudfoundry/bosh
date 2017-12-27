@@ -19,9 +19,11 @@ module Bosh::Director
 
         result = []
 
-        link_providers = Bosh::Director::Models::LinkProvider.where(deployment: deployment)
+        link_providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: deployment)
         link_providers.each do |link_provider|
-          result << generate_provider_hash(link_provider)
+          link_provider.intents.each do |link_provider_intent|
+            result << generate_provider_hash(link_provider_intent)
+          end
         end
 
         body(json_encode(result))
@@ -30,21 +32,22 @@ module Bosh::Director
       private
 
       def generate_provider_hash(model)
+        provider = model.provider
         {
           :id => model.id,
-          :name => model.name,
+          :name => model.alias,
           :shared => model.shared,
-          :deployment => model.deployment.name,
+          :deployment => provider.deployment.name,
           :link_provider_definition =>
             {
-              :type => model.link_provider_definition_type,
-              :name => model.link_provider_definition_name,
+              :type => model.type,
+              :name => model.name,
             },
           :owner_object => {
-            :type => model.owner_object_type,
-            :name => model.owner_object_name,
+            :type => provider.type,
+            :name => provider.name,
             :info => {
-              :instance_group => model.instance_group,
+              :instance_group => provider.instance_group,
             }
           }
         }

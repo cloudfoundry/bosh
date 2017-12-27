@@ -72,35 +72,53 @@ module Bosh::Director
 
         context 'and there are links in the database' do
           let!(:consumer_1) do
-            Models::LinkConsumer.create(
+            Models::Links::LinkConsumer.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
-              :owner_object_type => 'job',
-              :owner_object_name => 'job_name_1',
+              :type => 'job',
+              :name => 'job_name_1',
+            )
+            end
+          let!(:consumer_intent_1) do
+            Models::Links::LinkConsumerIntent.create(
+              :consumer => consumer_1,
+              :name => 'link_1',
+              :type => 'link_type_1',
+              :optional => false,
+              :blocked => false,
             )
           end
           let!(:consumer_2) do
-            Models::LinkConsumer.create(
+            Models::Links::LinkConsumer.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
-              :owner_object_type => 'job',
-              :owner_object_name => 'job_name_2',
+              :type => 'job',
+              :name => 'job_name_2',
             )
           end
+          let!(:consumer_intent_2) do
+            Models::Links::LinkConsumerIntent.create(
+              :consumer => consumer_2,
+              :name => 'link_2',
+              :type => 'link_type_2',
+              :optional => false,
+              :blocked => false,
+              )
+          end
           let!(:link_1) do
-            Models::Link.create(
+            Models::Links::Link.create(
               :name => 'link_1',
-              :link_provider_id => nil,
-              :link_consumer_id => consumer_1.id,
+              :link_provider_intent_id => nil,
+              :link_consumer_intent_id => consumer_intent_1.id,
               :link_content => "content 1",
               :created_at => Time.now
             )
           end
           let!(:link_2) do
-            Models::Link.create(
+            Models::Links::Link.create(
               :name => 'link_2',
-              :link_provider_id => nil,
-              :link_consumer_id => consumer_2.id,
+              :link_provider_intent_id => nil,
+              :link_consumer_intent_id => consumer_intent_2.id,
               :link_content => "content 2",
               :created_at => Time.now
             )
@@ -118,8 +136,8 @@ module Bosh::Director
         {
           'id' => model.id,
           'name' => model.name,
-          'link_consumer_id' => model.link_consumer_id,
-          'link_provider_id' => model.link_provider_id,
+          'link_consumer_id' => model[:link_consumer_intent_id],
+          'link_provider_id' => model[:link_provider_intent_id],
           'created_at' => model.created_at.to_s,
         }
       end

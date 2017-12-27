@@ -181,16 +181,19 @@ module Bosh::Director
         find_link_path_with_name(deployment_model, name, link_network)
       end
 
-      def find_link_path_with_name(deployment, name, link_network)
+      def find_link_path_with_name(deployment, alias_name, link_network)
         found_link_paths = []
 
-        Models::LinkProvider.where(deployment: deployment, name: name).each do |lp|
-          content = JSON.parse(lp.content)
-          if lp.shared && (!link_network || (content['networks'].include? link_network))
-            #TODO extract instance_group name from top level element from `link_provider`
-            found_link_paths.push({:deployment => deployment.name, :instance_group => lp.instance_group, :job => lp.owner_object_name, :name => name})
+        Models::Links::LinkProvider.where(deployment: deployment).each do |provider|
+          provider.intents.each do |intent|
+            next if intent[:alias] != alias_name
+            content = JSON.parse(intent[:content])
+            if intent[:shared] && (!link_network || (content['networks'].include? link_network))
+              found_link_paths.push({:deployment => deployment.name, :instance_group => provider[:instance_group], :job => provider[:name], :name => alias_name})
+            end
           end
         end
+
         if found_link_paths.size == 1
           return found_link_paths[0]
         elsif found_link_paths.size > 1
@@ -198,10 +201,10 @@ module Bosh::Director
           found_link_paths.each do |link_path|
             all_link_paths = all_link_paths + "\n   #{link_path[:deployment]}.#{link_path[:instance_group]}.#{link_path[:job]}.#{link_path[:name]}"
           end
-          link_str = "#{@deployment_plan_name}.#{@consumes_instance_group_name}.#{@consumes_job_name}.#{name}"
+          link_str = "#{@deployment_plan_name}.#{@consumes_instance_group_name}.#{@consumes_job_name}.#{alias_name}"
           raise "Cannot resolve ambiguous link '#{link_str}' in deployment #{deployment.name}:#{all_link_paths}"
         else
-          raise "Can't resolve link '#{name}' in instance group '#{@consumes_instance_group_name}' on job '#{@consumes_job_name}' in deployment '#{@deployment_plan_name}'#{" and network '#{link_network}''" unless link_network.to_s.empty?}. Please make sure the link was provided and shared."
+          raise "Can't resolve link '#{alias_name}' in instance group '#{@consumes_instance_group_name}' on job '#{@consumes_job_name}' in deployment '#{@deployment_plan_name}'#{" and network '#{link_network}''" unless link_network.to_s.empty?}. Please make sure the link was provided and shared."
         end
       end
 

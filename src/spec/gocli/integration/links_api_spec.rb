@@ -393,6 +393,8 @@ describe 'links api', type: :integration do
       let(:jobs) { implicit_provider_and_consumer }
 
       it 'should return the correct number of links' do
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
         expected_response = [ links_response ]
 
         expect(get_links).to match_array(expected_response)
@@ -521,12 +523,14 @@ describe 'links api', type: :integration do
             {
               'id' => 1,
               'name' => 'disk_provider',
+              'link_provider_id' => 1,
             }
           ),
           links_response.merge(
             {
               'id' => 2,
               'name' => 'backup_disk_provider',
+              'link_consumer_id' => 2,
               'link_provider_id' => 2,
             }
           )
@@ -592,7 +596,6 @@ describe 'links api', type: :integration do
       end
 
       it 'should not create a new link' do
-        pending('To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]')
         expect(get_links).to match_array(@expected_links)
       end
     end
@@ -611,8 +614,31 @@ describe 'links api', type: :integration do
       end
 
       it 'should not create a new link' do
-        pending('To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]')
         expect(get_links).to match_array(@expected_links)
+      end
+    end
+
+    context 'when redeploying with change to provider' do
+      let(:new_jobs) do
+        [
+          {
+            'name' => 'provider',
+            'provides' => { 'provider' => { 'as' => 'bar' } }
+          },
+          {
+            'name' => 'consumer',
+            'consumes' => { 'provider' => { 'from' => 'bar' } }
+          }
+        ]
+      end
+
+      it 'should reuse the old links' do
+        manifest_hash['instance_groups'][0]['jobs'] = new_jobs
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        expected_response = [ links_response ]
+        expect(get_links).to match_array(expected_response)
       end
     end
   end

@@ -19,7 +19,7 @@ module Bosh::Director
 
         result = []
 
-        link_consumers = Bosh::Director::Models::LinkConsumer.where(deployment: deployment)
+        link_consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment)
         link_consumers.each do |link_consumer|
           result << generate_consumer_hash(link_consumer)
         end
@@ -34,8 +34,8 @@ module Bosh::Director
           :id => model.id,
           :deployment => model.deployment.name,
           :owner_object => {
-            :type => model.owner_object_type,
-            :name => model.owner_object_name,
+            :type => model.type,
+            :name => model.name,
             :info => {
               :instance_group => model.instance_group,
             },

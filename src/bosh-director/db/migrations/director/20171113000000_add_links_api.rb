@@ -2,30 +2,45 @@ Sequel.migration do
   up do
     create_table :link_providers do
       primary_key :id
-      String :name, :null => false
-      Boolean :shared, :null => false
       foreign_key :deployment_id, :deployments, :null => false, :on_delete => :cascade
+      String :name, :null => false
+      String :type, :null => false
       String :instance_group, :null => false
+    end
+
+    create_table :link_provider_intents do
+      primary_key :id
+      foreign_key :provider_id, :link_providers,  :on_delete => :cascade
+      String :name, :null => false
+      String :type, :null => false
+      String :alias # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
+      String :content # rely on networks, make optional because of delayed content resolution
+      Boolean :shared, :null => false
       Boolean :consumable, :null => false
-      String :content, :null => false
-      String :link_provider_definition_type, :null => false
-      String :link_provider_definition_name, :null => false # Original name. Only for debugging.
-      String :owner_object_name, :null => false
-      String :owner_object_type, :null => false
     end
 
     create_table :link_consumers do
       primary_key :id
       foreign_key :deployment_id, :deployments, :on_delete => :cascade
       String :instance_group
-      String :owner_object_name, :null => false
-      String :owner_object_type, :null => false
+      String :name, :null => false
+      String :type, :null => false
+    end
+
+    create_table :link_consumer_intents do
+      primary_key :id
+      foreign_key :consumer_id, :link_consumers, :on_delete => :cascade
+      String :name, :null => false #think about adding alias/from
+      String :type, :null => false
+      Boolean :optional, :null => false
+      Boolean :blocked, :null => false # intentially blocking the consumption of the link, consume: nil
+      # String :metadata, :null => false # put extra json object that has some flags, ip addresses true or false, or any other potential thing
     end
 
     create_table :links do
       primary_key :id
-      foreign_key :link_provider_id, :link_providers, :on_delete => :set_null
-      foreign_key :link_consumer_id, :link_consumers, :on_delete => :cascade, :null => false
+      foreign_key :link_provider_intent_id, :on_delete => :set_null
+      foreign_key :link_consumer_intent_id, :on_delete => :cascade, :null => false
       String :name, :null => false
       String :link_content
       Time :created_at
@@ -38,7 +53,7 @@ Sequel.migration do
     end
 
     if [:mysql, :mysql2].include? adapter_scheme
-      set_column_type :link_providers, :content, 'longtext'
+      set_column_type :link_provider_intents, :content, 'longtext'
       set_column_type :links, :link_content, 'longtext'
     end
 
@@ -46,20 +61,26 @@ Sequel.migration do
       link_spec_json = JSON.parse(deployment[:link_spec_json] || '{}')
       link_spec_json.each do |instance_group_name, provider_jobs|
         provider_jobs.each do |provider_job_name, link_names|
+          provider_id = self[:link_providers].insert({
+            deployment_id: deployment[:id],
+            name: provider_job_name,
+            type: 'job',
+            instance_group: instance_group_name,
+          })
+
           link_names.each do |link_name, link_types|
             link_types.each do |link_type, content|
-              self[:link_providers] << {
-                name: link_name,
-                deployment_id: deployment[:id],
-                instance_group: instance_group_name,
-                shared: true,
-                consumable: true,
-                link_provider_definition_type: link_type,
-                link_provider_definition_name: link_name,
-                owner_object_name: provider_job_name,
-                owner_object_type: 'job',
-                content: content.to_json,
-              }
+              self[:link_provider_intents].insert(
+                {
+                  provider_id: provider_id,
+                  name: link_name,
+                  type: link_type,
+                  alias: link_name,
+                  shared: true,
+                  consumable: true,
+                  content: content.to_json,
+                }
+              )
             end
           end
         end
@@ -75,7 +96,7 @@ Sequel.migration do
       spec_json = JSON.parse(instance[:spec_json] || '{}')
       links = spec_json['links'] || {}
       links.each do |job_name, consumed_links|
-        consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], owner_object_name: job_name).first
+        consumer = self[:link_consumers].where(deployment_id: instance[:deployment_id], instance_group: instance[:job], name: job_name).first
 
         if consumer
           consumer_id = consumer[:id]
@@ -84,8 +105,8 @@ Sequel.migration do
             {
               deployment_id: instance[:deployment_id],
               instance_group: instance[:job],
-              owner_object_name: job_name,
-              owner_object_type: 'job'
+              name: job_name,
+              type: 'job'
             }
           )
         end
@@ -93,17 +114,34 @@ Sequel.migration do
         consumed_links.each do |link_name, link_data|
           link_key = Struct::LinkKey.new(instance[:deployment_id], instance[:job], job_name, link_name)
 
+          # since we can go through multiple instances
           link_details = links_to_migrate[link_key] || []
           link_detail = link_details.find do |link_detail|
             link_detail.content == link_data
+          end
+
+          link_consumer_intent = self[:link_consumer_intents].where(consumer_id: consumer_id, name: link_name).first
+
+          if link_consumer_intent
+            link_consumer_intent_id = link_consumer_intent[:id]
+          else
+            link_consumer_intent_id = self[:link_consumer_intents].insert(
+              {
+                consumer_id: consumer_id,
+                name: link_name,
+                type: 'undefined-migration',
+                optional: false,
+                blocked: false
+              }
+            )
           end
 
           unless link_detail
             link_id = self[:links].insert(
               {
                 name: link_name,
-                link_provider_id: nil,
-                link_consumer_id: consumer_id,
+                link_provider_intent_id: nil,
+                link_consumer_intent_id: link_consumer_intent_id,
                 link_content: link_data.to_json,
                 created_at: Time.now,
               }

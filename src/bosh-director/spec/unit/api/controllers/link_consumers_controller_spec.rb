@@ -72,19 +72,19 @@ module Bosh::Director
 
         context 'and there are consumers in the database' do
           let!(:consumer_1) do
-            Models::LinkConsumer.create(
+            Models::Links::LinkConsumer.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
-              :owner_object_type => 'job',
-              :owner_object_name => 'job_name_1',
+              :type => 'job',
+              :name => 'job_name_1',
             )
           end
           let!(:consumer_2) do
-            Models::LinkConsumer.create(
+            Models::Links::LinkConsumer.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
-              :owner_object_type => 'job',
-              :owner_object_name => 'job_name_2',
+              :type => 'job',
+              :name => 'job_name_2',
             )
           end
 
@@ -101,8 +101,8 @@ module Bosh::Director
           'id' => model.id,
           'deployment' => model.deployment.name,
           'owner_object' => {
-            'type' => model.owner_object_type,
-            'name' => model.owner_object_name,
+            'type' => model.type,
+            'name' => model.name,
             'info' => {
               'instance_group' => model.instance_group,
             },

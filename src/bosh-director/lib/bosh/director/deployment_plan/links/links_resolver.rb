@@ -7,6 +7,7 @@ module Bosh::Director
         @deployment_plan = deployment_plan
         @logger = logger
         @event_log = Config.event_log
+        @links_manager = Bosh::Director::Links::LinksManager.new()
       end
 
       def add_providers(instance_group)
@@ -31,26 +32,26 @@ module Bosh::Director
 
       def resolve_consumed_links(instance_group, job)
         job.model_consumed_links.each do |consumed_link|
-          consumer = Bosh::Director::Models::LinkConsumer.find(
-            deployment: @deployment_plan.model,
-            instance_group: instance_group.name,
-            owner_object_name: job.name
+          consumer = @links_manager.find_or_create_consumer(
+            deployment_model: @deployment_plan.model,
+            instance_group_name: instance_group.name,
+            name: job.name,
+            type: 'job'
           )
 
-          if consumer.nil?
-            consumer = Bosh::Director::Models::LinkConsumer.new(
-              deployment: @deployment_plan.model,
-              instance_group: instance_group.name,
-              owner_object_name: job.name,
-              owner_object_type: 'job'
-            )
-          end
-          consumer.save
+          consumer_intent = @links_manager.find_or_create_consumer_intent(
+            link_consumer: consumer,
+            link_name: consumed_link.original_name,
+            link_type: consumed_link.type,
+            optional: false,
+            blocked: false
+          )
+
           @deployment_plan.add_link_consumer(consumer)
 
           link_name = consumed_link.name
 
-          provider = nil
+          provider_intent = nil
 
           link_path = instance_group.link_path(job.name, link_name)
           if link_path.nil?
@@ -64,44 +65,49 @@ module Bosh::Director
             link_content = link_path.manual_spec.to_json
           else
             provider_deployment = Models::Deployment[name: link_path.deployment]
-            provider = Bosh::Director::Models::LinkProvider.find(
-              deployment: provider_deployment,
-              instance_group: link_path.instance_group,
-              owner_object_name: link_path.owner,
-              name: link_path.name,
-              link_provider_definition_type: consumed_link.type
+
+            provider = @links_manager.find_provider(
+              deployment_model: provider_deployment,
+              instance_group_name: link_path.instance_group,
+              name: link_path.owner
             )
 
-            if provider.nil? # implicit links
-              # When calculating link_path it will have failed if the link is ambiguous.
-              provider = Bosh::Director::Models::LinkProvider.find(
-                deployment: @deployment_plan.model,
-                link_provider_definition_type: consumed_link.type
-              )
+            provider_intent = @links_manager.find_provider_intent(
+              link_provider: provider,
+              link_alias: link_path.name,
+              link_name: nil,
+              link_type: consumed_link.type,
+            )
+
+            if provider_intent.nil?
+              provider_intent = @links_manager.find_provider_intent(
+                link_provider: provider,
+                link_name: link_path.name,
+                link_alias: nil,
+                link_type: consumed_link.type,
+                )
             end
 
-            if provider.nil?
+
+            if provider_intent.nil?
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
             end
 
             link_info = job.consumes_link_info(instance_group.name, link_name)
             link_use_ip_address = link_info.has_key?('ip_addresses') ? link_info['ip_addresses'] : nil
 
-            link_spec = update_addresses(JSON.parse(provider[:content]), link_info['network'], @deployment_plan.use_dns_addresses?, link_use_ip_address)
+            link_spec = update_addresses(JSON.parse(provider_intent[:content]), link_info['network'], @deployment_plan.use_dns_addresses?, link_use_ip_address)
 
             instance_group.add_resolved_link(job.name, link_name, link_spec)
 
             link_content = link_spec.to_json
           end
 
-          Bosh::Director::Models::Link.create(
-            {
-              name: consumed_link.original_name,
-              link_consumer: consumer,
-              link_provider: provider,
-              link_content: link_content,
-              created_at: Time.now
-            }
+          @links_manager.find_or_create_link(
+            name: consumed_link.original_name,
+            provider_intent: provider_intent,
+            consumer_intent: consumer_intent,
+            link_content: link_content
           )
         end
       end
@@ -119,23 +125,23 @@ module Bosh::Director
 
       def add_unmanaged_disk_providers(instance_group)
         instance_group.persistent_disk_collection.non_managed_disks.each do |disk|
-          provider = Bosh::Director::Models::LinkProvider.find(deployment: @deployment_plan.model, instance_group: instance_group.name, name: disk.name, owner_object_name: instance_group.name, owner_object_type: 'instance_group')
+          provider = @links_manager.find_or_create_provider(
+            deployment_model: @deployment_plan.model,
+            instance_group_name: instance_group.name,
+            name: instance_group.name,
+            type: 'instance_group'
+          )
 
-          if provider.nil?
-            provider = Bosh::Director::Models::LinkProvider.new(
-              deployment: @deployment_plan.model,
-              instance_group: instance_group.name,
-              name: disk.name,
-              consumable: true,
-              shared: false,
-              owner_object_name: instance_group.name,
-              owner_object_type: 'instance_group',
-              link_provider_definition_name: disk.name,
-              link_provider_definition_type: 'disk',
-              content: DiskLink.new(instance_group.deployment_name, disk.name).spec.to_json
-            )
-            provider.save
-          end
+          provider_intent = @links_manager.find_or_create_provider_intent(
+            link_provider: provider,
+            link_name: disk.name,
+            link_type: 'disk',
+            link_shared: false
+          )
+
+          provider_intent.alias = disk.name
+          provider_intent.content = DiskLink.new(@deployment_plan.name, disk.name).spec.to_json
+          provider_intent.save
 
           @deployment_plan.add_link_provider(provider)
         end
@@ -143,37 +149,23 @@ module Bosh::Director
 
       def add_provided_links(instance_group, job)
         job.provided_links(instance_group.name).each do |provided_link|
-          provider = Bosh::Director::Models::LinkProvider.find(
-            {
-              deployment: @deployment_plan.model, # Deployment
-              instance_group: instance_group.name, # Instance Group
-              owner_object_name: job.name, # Job
-              link_provider_definition_name: provided_link.original_name, # Link Name
-            }
+          provider = @links_manager.find_or_create_provider(
+            deployment_model: @deployment_plan.model,
+            instance_group_name: instance_group.name,
+            name: job.name,
+            type: 'job'
           )
 
-          if provided_link.original_name.nil?
-            link_definition_name = provided_link.name
-          else
-            link_definition_name = provided_link.original_name
-          end
+          provider_intent = @links_manager.find_or_create_provider_intent(
+            link_provider: provider,
+            link_name: provided_link.original_name,
+            link_type: provided_link.type,
+            link_shared: provided_link.shared
+          )
 
-          if provider.nil?
-            provider = Bosh::Director::Models::LinkProvider.new(
-              deployment: @deployment_plan.model,
-              instance_group: instance_group.name,
-              owner_object_name: job.name,
-              owner_object_type: 'job',
-              link_provider_definition_name: link_definition_name,
-              consumable: true
-            )
-          end
-
-          provider.name = provided_link.name
-          provider.content = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec.to_json
-          provider.shared = provided_link.shared
-          provider.link_provider_definition_type = provided_link.type
-          provider.save
+          provider_intent.alias = provided_link.name
+          provider_intent.content = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec.to_json
+          provider_intent.save
 
           @deployment_plan.add_link_provider(provider)
         end

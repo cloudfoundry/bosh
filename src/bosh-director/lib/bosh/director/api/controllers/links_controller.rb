@@ -19,10 +19,12 @@ module Bosh::Director
 
         result = []
 
-        Models::LinkConsumer.where(deployment: deployment).each do |consumer|
-          links = Models::Link.where(link_consumer: consumer)
-          links.each do |link|
-            result << generate_link_hash(link)
+        Models::Links::LinkConsumer.where(deployment: deployment).each do |consumer|
+          Models::Links::LinkConsumerIntent.where(consumer: consumer).each do |consumer_intent|
+            links = Models::Links::Link.where(link_consumer_intent: consumer_intent)
+            links.each do |link|
+              result << generate_link_hash(link)
+            end
           end
         end
 
@@ -35,8 +37,8 @@ module Bosh::Director
         {
           :id => model.id,
           :name => model.name,
-          :link_consumer_id => model.link_consumer_id,
-          :link_provider_id => model.link_provider_id,
+          :link_consumer_id => model[:link_consumer_intent_id],
+          :link_provider_id => model[:link_provider_intent_id],
           :created_at => model.created_at,
         }
       end

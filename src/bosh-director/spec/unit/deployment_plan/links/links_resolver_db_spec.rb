@@ -7,17 +7,18 @@ describe 'links_resolver' do
 
   let(:instance_group) do
     instance_group = instance_double(Bosh::Director::DeploymentPlan::InstanceGroup, {
-      name: 'ig1',
+      name: 'ig_1',
       deployment_name: deployment_name,
       link_paths: []
     })
     allow(instance_group).to receive_message_chain(:persistent_disk_collection, :non_managed_disks).and_return([])
     allow(instance_group).to receive(:jobs).and_return(jobs)
+    allow(instance_group).to receive(:link_path).and_return(link_path)
     instance_group
   end
 
   let(:provider_job) do
-    job = instance_double(Bosh::Director::DeploymentPlan::Job, name: 'j1')
+    job = instance_double(Bosh::Director::DeploymentPlan::Job, name: 'job_1')
     allow(job).to receive(:provided_links).and_return(provided_links)
     job
   end
@@ -33,7 +34,7 @@ describe 'links_resolver' do
   end
 
   let(:consumer_job) do
-    job = instance_double(Bosh::Director::DeploymentPlan::Job, name: 'j1')
+    job = instance_double(Bosh::Director::DeploymentPlan::Job, name: 'job_1')
     allow(job).to receive(:model_consumed_links).and_return(consumed_links)
     allow(job).to receive(:consumes_link_info).and_return(consumed_link_info)
     job
@@ -71,6 +72,15 @@ describe 'links_resolver' do
     }
   end
 
+  let(:link_path) do
+    instance_double(Bosh::Director::DeploymentPlan::LinkPath,
+                    deployment: deployment_name,
+                    instance_group: 'ig_1',
+                    owner: 'job_1',
+                    name: 'original_provider_name',
+                    manual_spec: nil)
+  end
+
   before do
     allow(Bosh::Director::DeploymentPlan::Link).to receive_message_chain(:new, :spec).and_return(link_spec)
   end
@@ -78,7 +88,7 @@ describe 'links_resolver' do
   context 'when an instance group is updated' do
     context 'and the provided link name specified in the release did not change' do
       it 'should update the previous provider' do
-        providers = Bosh::Director::Models::LinkProvider
+        providers = Bosh::Director::Models::Links::LinkProvider
 
         links_resolver.add_providers(instance_group)
 
@@ -103,42 +113,418 @@ describe 'links_resolver' do
       ]
     end
 
-    it 'should create two providers in the database' do
+    it 'should create two provider intents in the database' do
       links_resolver.add_providers(instance_group)
 
-      providers = Bosh::Director::Models::LinkProvider
-      expect(providers.count).to eq(2)
+      expect(Bosh::Director::Models::Links::LinkProviderIntent.count).to eq(2)
+    end
+  end
+
+  describe '#add_providers' do
+    let(:jobs) do
+      [provider_job]
+    end
+
+    let(:link_path) do
+      instance_double(Bosh::Director::DeploymentPlan::LinkPath,
+                      deployment: deployment_name,
+                      instance_group: 'ig_1',
+                      owner: 'job_1',
+                      name: 'original_provider_name',
+                      manual_spec: nil)
+    end
+
+    let(:links_manager) do
+      Bosh::Director::Links::LinksManager.new
+    end
+
+    before do
+      allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
+      allow(instance_group).to receive(:link_path).and_return(link_path)
+      allow(instance_group).to receive(:add_resolved_link)
+
+      consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+        deployment: deployment_model,
+        instance_group: 'ig_1',
+        name: 'job_1',
+        type: 'job'
+      )
+
+      Bosh::Director::Models::Links::LinkConsumerIntent.create(
+        consumer: consumer,
+        name: 'p1',
+        type: 'pt1',
+        optional: false,
+        blocked: false
+      )
+    end
+
+    context 'when there are jobs that provide links' do
+      it 'should add a provider' do
+        old_count = Bosh::Director::Models::Links::LinkProvider.count
+        links_resolver.add_providers(instance_group)
+        new_count = Bosh::Director::Models::Links::LinkProvider.count
+
+        expect(old_count).to eq(0)
+        expect(new_count).to eq(1)
+        provider = Bosh::Director::Models::Links::LinkProvider.first
+        expect(provider.instance_group).to eq('ig_1')
+        expect(provider.name).to eq('job_1')
+        expect(provider.type).to eq('job')
+      end
+
+      it 'should add a provider intent' do
+        old_count = Bosh::Director::Models::Links::LinkProviderIntent.count
+        links_resolver.add_providers(instance_group)
+        new_count = Bosh::Director::Models::Links::LinkProviderIntent.count
+
+        expect(old_count).to eq(0)
+        expect(new_count).to eq(1)
+        provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
+        provider = Bosh::Director::Models::Links::LinkProvider.first
+        expect(provider_intent.provider).to eq(provider)
+        expect(provider_intent.name).to eq('p1')
+        expect(provider_intent.type).to eq('pt1')
+      end
+
+      context 'when provider is updated' do
+        before do
+          links_resolver.add_providers(instance_group)
+          provider = Bosh::Director::Models::Links::LinkProvider.first
+          expect(provider.instance_group).to eq('ig_1')
+          expect(provider.name).to eq('job_1')
+          expect(provider.type).to eq('job')
+
+          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
+          expect(provider_intent.provider).to eq(provider)
+          expect(provider_intent.alias).to eq('foo')
+          expect(provider_intent.name).to eq('p1')
+          expect(provider_intent.type).to eq('pt1')
+        end
+
+        it 'should only update and not create a new provider' do
+          allow(provider_job).to receive(:provided_links).and_return(
+            [ Bosh::Director::DeploymentPlan::TemplateLink.new('bar', 'pt1', false, false, 'p1') ]
+          )
+          old_count = Bosh::Director::Models::Links::LinkProvider.count
+          old_link_provider = Bosh::Director::Models::Links::LinkProvider.first
+          old_provider_id = old_link_provider[:id]
+
+          links_resolver.add_providers(instance_group)
+          new_count = Bosh::Director::Models::Links::LinkProvider.count
+
+          expect(old_count).to eq(1)
+          expect(new_count).to eq(1)
+          provider = Bosh::Director::Models::Links::LinkProvider.first
+          expect(provider.instance_group).to eq('ig_1')
+          expect(provider.name).to eq('job_1')
+          expect(provider.type).to eq('job')
+          expect(provider[:id]).to eq(old_provider_id)
+        end
+
+        it 'should only update and not create a new provider intent' do
+          allow(provider_job).to receive(:provided_links).and_return(
+            [ Bosh::Director::DeploymentPlan::TemplateLink.new('bar', 'pt1', false, false, 'p1') ]
+          )
+          old_count = Bosh::Director::Models::Links::LinkProviderIntent.count
+          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
+          provider = Bosh::Director::Models::Links::LinkProvider.first
+          expect(provider_intent.provider).to eq(provider)
+          expect(provider_intent.alias).to eq('foo')
+          expect(provider_intent.name).to eq('p1')
+          expect(provider_intent.type).to eq('pt1')
+
+          provided_links = [ Bosh::Director::DeploymentPlan::TemplateLink.new('bar', 'pt1', false, false, 'p1') ]
+          links_resolver.add_providers(instance_group)
+
+          new_count = Bosh::Director::Models::Links::LinkProviderIntent.count
+
+          expect(old_count).to eq(1)
+          expect(new_count).to eq(1)
+
+          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
+          provider = Bosh::Director::Models::Links::LinkProvider.first
+          expect(provider_intent.provider).to eq(provider)
+          expect(provider_intent.alias).to eq('bar')
+          expect(provider_intent.name).to eq('p1')
+          expect(provider_intent.type).to eq('pt1')
+
+        end
+      end
+    end
+
+    context 'when there are unmanaged persistent disks' do
+      let(:provided_links) {[]}
+
+      def new_persistent_disk(name)
+        disk_type = Bosh::Director::DeploymentPlan::DiskType.new('disk_type_name', 1000, {})
+        Bosh::Director::DeploymentPlan::PersistentDiskCollection::NewPersistentDisk.new(name, disk_type)
+      end
+
+      before do
+        allow(instance_group).to receive_message_chain(:persistent_disk_collection, :non_managed_disks).and_return(
+          [new_persistent_disk('disk_1'), new_persistent_disk('disk_2')]
+        )
+      end
+
+      context 'when there are no jobs' do
+        let(:jobs) {[]}
+
+        it 'should add a provider' do
+          links_resolver.add_providers(instance_group)
+
+          provider = Bosh::Director::Models::Links::LinkProvider.find(
+            deployment_id: 1,
+            instance_group: instance_group.name,
+            name: instance_group.name,
+            type: 'instance_group'
+          )
+
+          expect(provider).to_not be_nil
+        end
+
+        it 'should add a provider intent per disk' do
+          links_resolver.add_providers(instance_group)
+
+          actual_intents = Bosh::Director::Models::Links::LinkProviderIntent.all.map do |intent|
+            {name: intent[:name], content: JSON.parse(intent[:content])}
+          end
+
+          expected_intents = [
+            {name: 'disk_1', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
+            {name: 'disk_2', content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
+          ]
+
+          expect(actual_intents).to match_array(expected_intents)
+        end
+
+      end
+    end
+
+    context 'when there are jobs providing links and unmanaged disks' do
+      def new_persistent_disk(name)
+        disk_type = Bosh::Director::DeploymentPlan::DiskType.new('disk_type_name', 1000, {})
+        Bosh::Director::DeploymentPlan::PersistentDiskCollection::NewPersistentDisk.new(name, disk_type)
+      end
+
+      before do
+        allow(instance_group).to receive_message_chain(:persistent_disk_collection, :non_managed_disks).and_return(
+          [new_persistent_disk('disk_1'), new_persistent_disk('disk_2')]
+        )
+      end
+
+      context 'when the names are the same' do
+        let(:provided_links) do
+          [
+            Bosh::Director::DeploymentPlan::TemplateLink.new('disk1', 'disk', false, false, 'disk1'),
+            Bosh::Director::DeploymentPlan::TemplateLink.new('disk2', 'disk', false, false, 'disk2'),
+          ]
+        end
+
+        it 'should create providers' do
+          links_resolver.add_providers(instance_group)
+          expect(Bosh::Director::Models::Links::LinkProvider.count).to eq(2)
+
+          disk_provider = Bosh::Director::Models::Links::LinkProvider.find(
+            deployment_id: 1,
+            instance_group: instance_group.name,
+            name: instance_group.name,
+            type: 'instance_group'
+          )
+
+          expect(disk_provider).to_not be_nil
+
+          link_provider = Bosh::Director::Models::Links::LinkProvider.find(
+            deployment_id: 1,
+            instance_group: instance_group.name,
+            name: provider_job.name,
+            type: 'job'
+          )
+
+          expect(link_provider).to_not be_nil
+        end
+
+        it 'should create the appropriate intents for each provider' do
+          links_resolver.add_providers(instance_group)
+
+          actual_intents = Bosh::Director::Models::Links::LinkProviderIntent.all.map do |intent|
+            {name: intent[:name], alias: intent[:alias], provider_id: intent.provider_id, content: JSON.parse(intent[:content])}
+          end
+
+          expected_intents = [
+            {name: 'disk1', alias: 'disk1', provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {name: 'disk2', alias: 'disk2', provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {name: 'disk_1', alias: 'disk_1', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
+            {name: 'disk_2', alias: 'disk_2', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
+          ]
+
+          expect(actual_intents).to match_array(expected_intents)
+        end
+      end
+
+      context 'when the names are different' do
+        let(:provided_links) do
+          [
+            Bosh::Director::DeploymentPlan::TemplateLink.new('foo', 'pt1', false, false, 'p1'),
+          ]
+        end
+        it 'should create providers' do
+          links_resolver.add_providers(instance_group)
+          expect(Bosh::Director::Models::Links::LinkProvider.count).to eq(2)
+
+          disk_provider = Bosh::Director::Models::Links::LinkProvider.find(
+            deployment_id: 1,
+            instance_group: instance_group.name,
+            name: instance_group.name,
+            type: 'instance_group'
+          )
+
+          expect(disk_provider).to_not be_nil
+
+          link_provider = Bosh::Director::Models::Links::LinkProvider.find(
+            deployment_id: 1,
+            instance_group: instance_group.name,
+            name: provider_job.name,
+            type: 'job'
+          )
+
+          expect(link_provider).to_not be_nil
+        end
+
+        it 'should create the appropriate intents for each provider' do
+          links_resolver.add_providers(instance_group)
+
+          actual_intents = Bosh::Director::Models::Links::LinkProviderIntent.all.map do |intent|
+            {name: intent[:name], alias: intent[:alias], provider_id: intent.provider_id, content: JSON.parse(intent[:content])}
+          end
+
+          expected_intents = [
+            {name: 'p1', alias: 'foo', provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {name: 'disk_1', alias: 'disk_1', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
+            {name: 'disk_2', alias: 'disk_2', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
+          ]
+
+          expect(actual_intents).to match_array(expected_intents)
+        end
+      end
     end
   end
 
   describe '#resolve' do
-    context 'when job consumes link from another deployment' do
-      context 'and the provider is using old content format' do
+    context 'when job consumes link from the same deployment' do
+      let(:jobs) do
+        [consumer_job]
+      end
+
+      let(:link_path) do
+        instance_double(Bosh::Director::DeploymentPlan::LinkPath,
+                        deployment: deployment_name,
+                        instance_group: 'ig_1',
+                        owner: 'job_1',
+                        name: 'original_provider_name',
+                        manual_spec: nil)
+      end
+
+      let(:links_manager) do
+        Bosh::Director::Links::LinksManager.new
+      end
+
+      before do
+        allow(deployment_plan).to receive(:use_dns_addresses?).and_return(true)
+        allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
+        allow(instance_group).to receive(:link_path).and_return(link_path)
+        allow(instance_group).to receive(:add_resolved_link)
+
+        provider = Bosh::Director::Models::Links::LinkProvider.create(
+          deployment: deployment_model,
+          instance_group: 'ig_1',
+          name: 'job_1',
+          type: 'job'
+        )
+
+        Bosh::Director::Models::Links::LinkProviderIntent.create(
+          provider: provider,
+          name: 'original_provider_name',
+          type: 'pt1',
+          alias: 'foo',
+          shared: true,
+          consumable: true,
+          content: {
+            'instances' =>
+              [
+                {
+                  'address' => 'net-2-addr',
+                  'addresses' => {
+                    'net-1' => 'net-1-addr',
+                    'net-2' => 'net-2-addr',
+                    'net-3' => 'net-3-addr',
+                  }
+                }
+              ]
+          }.to_json
+        )
+      end
+
+      it 'calls find or creates a new consumer' do
+        expect(links_manager).to receive(:find_or_create_consumer).once.and_call_original
+        expect(links_manager).to receive(:find_or_create_consumer_intent).once.and_call_original
+        links_resolver.resolve(instance_group)
+      end
+
+      it 'adds consumer to deployment_plan' do
+        expect(deployment_plan).to receive(:add_link_consumer)
+        links_resolver.resolve(instance_group)
+      end
+
+      it 'adds link to links table' do
+        links_resolver.resolve(instance_group)
+        expected_content = {
+          'instances' => [
+            {
+              'address' => 'net-2-addr'
+            }
+          ]
+        }
+        expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+        link = Bosh::Director::Models::Links::Link.first
+        expect(link.name).to eq('c1')
+        expect(link.link_provider_intent_id).to eq(1)
+        expect(link.link_consumer_intent_id).to eq(1)
+        expect(JSON.parse(link.link_content)).to match(expected_content)
+        expect(link.created_at).to_not be_nil
+      end
+
+      context 'when link alias changes' do
+        let(:consumed_links) do
+          [
+            Bosh::Director::DeploymentPlan::TemplateLink.new('bar', 'pt1', false, false, 'p1')
+          ]
+        end
+
         let(:jobs) do
           [consumer_job]
         end
 
-        let(:link_path) do
-          instance_double(Bosh::Director::DeploymentPlan::LinkPath,
-                          deployment: deployment_name,
-                          instance_group: 'ig_1',
-                          owner: 'job_1',
-                          name: 'foo',
-                          manual_spec: nil)
-        end
-
         before do
-          allow(instance_group).to receive(:link_path).and_return(link_path)
-          allow(instance_group).to receive(:add_resolved_link)
-
-          Bosh::Director::Models::LinkProvider.create(
-            name: 'foo', # Alias
+          provider = Bosh::Director::Models::Links::LinkProvider.create(
             deployment: deployment_model,
             instance_group: 'ig_1',
-            link_provider_definition_name: 'original_provider_name',
-            link_provider_definition_type: 'pt1',
-            owner_object_name: 'job_1',
-            owner_object_type: 'Job',
+            name: 'job_1',
+            type: 'job'
+          )
+
+          consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+            deployment: deployment_model,
+            instance_group: 'ig_1',
+            name: 'job_1',
+            type: 'job'
+          )
+
+          @link_provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+            provider_id: provider[:id],
+            name: 'original_provider_name',
+            type: 'pt1',
+            alias: 'foo',
             shared: true,
             consumable: true,
             content: {
@@ -155,135 +541,222 @@ describe 'links_resolver' do
                 ]
             }.to_json
           )
+
+          @link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            consumer_id: consumer[:id],
+            name: 'original_provider_name',
+            type: 'pt1',
+            optional: false,
+            blocked: false
+          )
+
+          @created_link = Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: @link_provider_intent,
+            link_consumer_intent: @link_consumer_intent,
+            name: 'p1',
+            link_content: 'link_content',
+            created_at: Time.now
+          )
         end
 
-        context 'when global_use_dns_entry is TRUE' do
-          before do
-            allow(deployment_plan).to receive(:use_dns_addresses?).and_return(true)
-          end
+        it 'the link uses the same consumer' do
+          old_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(id: @created_link[:link_consumer_intent_id])
+          old_consumer = old_consumer_intent.consumer
+          links_resolver.resolve(instance_group)
+          updated_link = links_manager.find_link(
+            name: 'p1',
+            provider_intent: @link_provider_intent,
+            consumer_intent: @link_consumer_intent
+          )
+          expect(updated_link).to_not be_nil
+          expect(updated_link[:link_consumer_intent_id]).to eq(old_consumer_intent[:id])
 
-          context 'when link_use_ip_address is nil' do
-            it 'returns whatever is in the spec.address' do
-              links_resolver.resolve(instance_group)
-
-              link = Bosh::Director::Models::Link.first
-              expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
-              expect(link[:name]).to eq("c1")
-              expect(link[:link_content]).to eq({'instances' => [{'address' => 'net-2-addr'}]}.to_json)
-              expect(link[:created_at]).to be_a(Time)
-            end
-          end
-
-          context 'when link_use_ip_address is TRUE' do
-            let(:consumed_link_info) do
-              {'ip_addresses' => true}
-            end
-
-            it 'raises an error' do
-              expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
-            end
-          end
-
-          context 'when link_use_ip_address is FALSE' do
-            let(:consumed_link_info) do
-              {'ip_addresses' => false}
-            end
-
-
-            it 'raises an error' do
-              expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
-            end
-          end
+          new_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(id: updated_link[:link_consumer_intent_id])
+          expect(new_consumer_intent.consumer[:id]).to eq(old_consumer[:id])
         end
 
-        context 'when global_use_dns_entry is FALSE' do
-          before do
-            allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)
+        # Feature to be implemented in story #151894692
+        xcontext 'if the the alias is nil' do
+          let (:links) {{'backup_db' => {"from" => 'db'}}}
+
+          let(:template_consumes_links) {[{'name' => 'backup_db', 'type' => 'db'}]}
+          let(:template_provides_links) do
+            [
+              {name: "db", type: "db", properties: ['mysql']},
+              {name: "unconsumable", type: "key", properties: ["oranges", "pineapples"]}
+            ]
           end
 
-          context 'when link_use_ip_address is nil' do
-
-            it 'returns whatever is in the spec.address' do
-              links_resolver.resolve(instance_group)
-
-              link = Bosh::Director::Models::Link.first
-              expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
-              expect(link[:name]).to eq("c1")
-              expect(link[:link_content]).to eq({'instances' => [{'address' => 'net-2-addr'}]}.to_json)
-              expect(link[:created_at]).to be_a(Time)
-            end
+          let(:manifest_job_provides) do
+            {'db' => {'as' => 'db'}, 'unconsumable' => nil}
           end
 
-          context 'when link_use_ip_address is TRUE' do
-            let(:consumed_link_info) do
-              {'ip_addresses' => true}
-            end
-
-            it 'raises an error' do
-              expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
-            end
-          end
-
-          context 'when link_use_ip_address is FALSE' do
-            let(:consumed_link_info) do
-              {'ip_addresses' => false}
-            end
-
-            it 'raises an error' do
-              expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
-            end
-          end
-        end
-
-        context 'when preferred network is specified' do
-          let(:consumed_link_info) do
-            {'network' => 'net-3'}
-          end
-
-          before do
-            allow(deployment_plan).to receive(:use_dns_addresses?).and_return(true)
-          end
-
-          it 'picks the address from the preferred network' do
+          it 'is not consumable' do
             links_resolver.resolve(instance_group)
-
-            link = Bosh::Director::Models::Link.first
-            expect(link[:id]).to eq(1)
-            expect(link[:link_provider_id]).to eq(1)
-            expect(link[:link_consumer_id]).to eq(1)
-            expect(link[:name]).to eq("c1")
-            expect(link[:link_content]).to eq({'instances' => [{'address' => 'net-3-addr'}]}.to_json)
-            expect(link[:created_at]).to be_a(Time)
-          end
-
-          context 'with a bad network name' do
-            let(:consumed_link_info) do
-              {'network' => 'whatever-net'}
-            end
-
-            it 'raises an error' do
-              expect {links_resolver.resolve(instance_group)}.to raise_error "Provider link does not have network: 'whatever-net'"
-            end
+            expect(deployment_plan.link_providers.size).to eq(2)
+            expect(deployment_plan.link_providers[0].consumable).to be_truthy
+            expect(deployment_plan.link_providers[1].consumable).to be_falsey
           end
         end
       end
+    end
+
+    context 'when job consumes link from another deployment' do
+        context 'and the provider is using old content format' do
+          let(:jobs) do
+            [consumer_job]
+          end
+
+          before do
+            allow(instance_group).to receive(:add_resolved_link)
+            provider = Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment_model,
+              instance_group: 'ig_1',
+              name: 'job_1',
+              type: 'job'
+            )
+
+            Bosh::Director::Models::Links::LinkProviderIntent.create(
+              provider: provider,
+              name: 'original_provider_name',
+              type: 'pt1',
+              alias: 'foo',
+              shared: true,
+              consumable: true,
+              content: {
+                'instances' =>
+                  [
+                    {
+                      'address' => 'net-2-addr',
+                      'addresses' => {
+                        'net-1' => 'net-1-addr',
+                        'net-2' => 'net-2-addr',
+                        'net-3' => 'net-3-addr',
+                      }
+                    }
+                  ]
+              }.to_json
+            )
+          end
+
+          context 'when global_use_dns_entry is TRUE' do
+            before do
+              allow(deployment_plan).to receive(:use_dns_addresses?).and_return(true)
+            end
+
+            context 'when link_use_ip_address is nil' do
+              it 'returns whatever is in the spec.address' do
+                links_resolver.resolve(instance_group)
+
+                link = Bosh::Director::Models::Links::Link.first
+                expect(link[:id]).to eq(1)
+                expect(link[:link_provider_intent_id]).to eq(1)
+                expect(link[:link_consumer_intent_id]).to eq(1)
+                expect(link[:name]).to eq("c1")
+                expect(link[:link_content]).to eq({'instances' => [{'address' => 'net-2-addr'}]}.to_json)
+                expect(link[:created_at]).to be_a(Time)
+              end
+            end
+
+            context 'when link_use_ip_address is TRUE' do
+              let(:consumed_link_info) do
+                {'ip_addresses' => true}
+              end
+
+              it 'raises an error' do
+                expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
+              end
+            end
+
+            context 'when link_use_ip_address is FALSE' do
+              let(:consumed_link_info) do
+                {'ip_addresses' => false}
+              end
+
+
+              it 'raises an error' do
+                expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
+              end
+            end
+          end
+
+          context 'when global_use_dns_entry is FALSE' do
+            before do
+              allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)
+            end
+
+            context 'when link_use_ip_address is nil' do
+
+              it 'returns whatever is in the spec.address' do
+                links_resolver.resolve(instance_group)
+
+                link = Bosh::Director::Models::Links::Link.first
+                expect(link[:id]).to eq(1)
+                expect(link[:link_provider_intent_id]).to eq(1)
+                expect(link[:link_consumer_intent_id]).to eq(1)
+                expect(link[:name]).to eq("c1")
+                expect(link[:link_content]).to eq({'instances' => [{'address' => 'net-2-addr'}]}.to_json)
+                expect(link[:created_at]).to be_a(Time)
+              end
+            end
+
+            context 'when link_use_ip_address is TRUE' do
+              let(:consumed_link_info) do
+                {'ip_addresses' => true}
+              end
+
+              it 'raises an error' do
+                expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
+              end
+            end
+
+            context 'when link_use_ip_address is FALSE' do
+              let(:consumed_link_info) do
+                {'ip_addresses' => false}
+              end
+
+              it 'raises an error' do
+                expect {links_resolver.resolve(instance_group)}.to raise_error 'Unable to retrieve default network from provider. Please redeploy provider deployment'
+              end
+            end
+          end
+
+          context 'when preferred network is specified' do
+            let(:consumed_link_info) do
+              {'network' => 'net-3'}
+            end
+
+            before do
+              allow(deployment_plan).to receive(:use_dns_addresses?).and_return(true)
+            end
+
+            it 'picks the address from the preferred network' do
+              links_resolver.resolve(instance_group)
+
+              link = Bosh::Director::Models::Links::Link.first
+              expect(link[:id]).to eq(1)
+              expect(link[:link_provider_intent_id]).to eq(1)
+              expect(link[:link_consumer_intent_id]).to eq(1)
+              expect(link[:name]).to eq("c1")
+              expect(link[:link_content]).to eq({'instances' => [{'address' => 'net-3-addr'}]}.to_json)
+              expect(link[:created_at]).to be_a(Time)
+            end
+
+            context 'with a bad network name' do
+              let(:consumed_link_info) do
+                {'network' => 'whatever-net'}
+              end
+
+              it 'raises an error' do
+                expect {links_resolver.resolve(instance_group)}.to raise_error "Provider link does not have network: 'whatever-net'"
+              end
+            end
+          end
+        end
 
       context 'and the provider is using new content format' do
         let(:jobs) do
           [consumer_job]
-        end
-
-        let(:link_path) do
-          instance_double(Bosh::Director::DeploymentPlan::LinkPath,
-                          deployment: deployment_name,
-                          instance_group: 'ig_1',
-                          owner: 'job_1',
-                          name: 'foo',
-                          manual_spec: nil)
         end
 
         let(:addresses) do
@@ -303,17 +776,20 @@ describe 'links_resolver' do
         end
 
         before do
-          allow(instance_group).to receive(:link_path).and_return(link_path)
           allow(instance_group).to receive(:add_resolved_link)
 
-          Bosh::Director::Models::LinkProvider.create(
-            name: 'foo', # Alias
+          provider = Bosh::Director::Models::Links::LinkProvider.create(
             deployment: deployment_model,
             instance_group: 'ig_1',
-            link_provider_definition_name: 'original_provider_name',
-            link_provider_definition_type: 'pt1',
-            owner_object_name: 'job_1',
-            owner_object_type: 'Job',
+            name: 'job_1',
+            type: 'Job',
+            )
+
+          Bosh::Director::Models::Links::LinkProviderIntent.create(
+            provider: provider,
+            name: 'original_provider_name',
+            type: 'pt1',
+            alias: 'foo',
             shared: true,
             consumable: true,
             content: {
@@ -349,10 +825,10 @@ describe 'links_resolver' do
                 ]
               }
 
-              link = Bosh::Director::Models::Link.first
+              link = Bosh::Director::Models::Links::Link.first
               expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
+              expect(link[:link_provider_intent_id]).to eq(1)
+              expect(link[:link_consumer_intent_id]).to eq(1)
               expect(link[:name]).to eq("c1")
               expect(JSON.parse(link[:link_content])).to match(expected_link_content)
               expect(link[:created_at]).to be_a(Time)
@@ -409,10 +885,10 @@ describe 'links_resolver' do
                 ]
               }
 
-              link = Bosh::Director::Models::Link.first
+              link = Bosh::Director::Models::Links::Link.first
               expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
+              expect(link[:link_provider_intent_id]).to eq(1)
+              expect(link[:link_consumer_intent_id]).to eq(1)
               expect(link[:name]).to eq("c1")
               expect(JSON.parse(link[:link_content])).to match(expected_link_content)
               expect(link[:created_at]).to be_a(Time)
@@ -455,10 +931,10 @@ describe 'links_resolver' do
                 ]
               }
 
-              link = Bosh::Director::Models::Link.first
+              link = Bosh::Director::Models::Links::Link.first
               expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
+              expect(link[:link_provider_intent_id]).to eq(1)
+              expect(link[:link_consumer_intent_id]).to eq(1)
               expect(link[:name]).to eq("c1")
               expect(JSON.parse(link[:link_content])).to match(expected_link_content)
               expect(link[:created_at]).to be_a(Time)
@@ -485,10 +961,10 @@ describe 'links_resolver' do
                 ]
               }
 
-              link = Bosh::Director::Models::Link.first
+              link = Bosh::Director::Models::Links::Link.first
               expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
+              expect(link[:link_provider_intent_id]).to eq(1)
+              expect(link[:link_consumer_intent_id]).to eq(1)
               expect(link[:name]).to eq("c1")
               expect(JSON.parse(link[:link_content])).to match(expected_link_content)
               expect(link[:created_at]).to be_a(Time)
@@ -513,10 +989,10 @@ describe 'links_resolver' do
                 ]
               }
 
-              link = Bosh::Director::Models::Link.first
+              link = Bosh::Director::Models::Links::Link.first
               expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
+              expect(link[:link_provider_intent_id]).to eq(1)
+              expect(link[:link_consumer_intent_id]).to eq(1)
               expect(link[:name]).to eq("c1")
               expect(JSON.parse(link[:link_content])).to match(expected_link_content)
               expect(link[:created_at]).to be_a(Time)
@@ -541,10 +1017,10 @@ describe 'links_resolver' do
                 ]
               }
 
-              link = Bosh::Director::Models::Link.first
+              link = Bosh::Director::Models::Links::Link.first
               expect(link[:id]).to eq(1)
-              expect(link[:link_provider_id]).to eq(1)
-              expect(link[:link_consumer_id]).to eq(1)
+              expect(link[:link_provider_intent_id]).to eq(1)
+              expect(link[:link_consumer_intent_id]).to eq(1)
               expect(link[:name]).to eq("c1")
               expect(JSON.parse(link[:link_content])).to match(expected_link_content)
               expect(link[:created_at]).to be_a(Time)
@@ -574,10 +1050,10 @@ describe 'links_resolver' do
               ]
             }
 
-            link = Bosh::Director::Models::Link.first
+            link = Bosh::Director::Models::Links::Link.first
             expect(link[:id]).to eq(1)
-            expect(link[:link_provider_id]).to eq(1)
-            expect(link[:link_consumer_id]).to eq(1)
+            expect(link[:link_provider_intent_id]).to eq(1)
+            expect(link[:link_consumer_intent_id]).to eq(1)
             expect(link[:name]).to eq("c1")
             expect(JSON.parse(link[:link_content])).to match(expected_link_content)
             expect(link[:created_at]).to be_a(Time)

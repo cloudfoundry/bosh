@@ -148,7 +148,7 @@ module Bosh::Director
       end
 
       # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
-      link_providers = Bosh::Director::Models::LinkProvider.where(deployment: @deployment_plan.model)
+      link_providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: @deployment_plan.model)
       link_providers.each do |link_provider|
         result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
         if result.empty?
@@ -157,7 +157,8 @@ module Bosh::Director
         end
       end
 
-      link_consumers = Bosh::Director::Models::LinkConsumer.where(deployment: @deployment_plan.model)
+      # this can be more efficient
+      link_consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: @deployment_plan.model)
       link_consumers.each do |link_consumer|
         result = @deployment_plan.link_consumers.select{ |lp| lp.id == link_consumer.id }
         if result.empty?

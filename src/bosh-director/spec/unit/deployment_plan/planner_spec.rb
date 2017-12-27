@@ -461,7 +461,7 @@ module Bosh::Director
 
         context 'links' do
           describe '#add_link_providers' do
-            let(:link_provider) {instance_double(Models::LinkProvider)}
+            let(:link_provider) {instance_double(Models::Links::LinkProvider)}
             before do
               subject.add_link_provider link_provider
             end
@@ -472,7 +472,7 @@ module Bosh::Director
           end
 
           describe '#add_link_consumers' do
-            let(:link_consumer) {instance_double(Models::LinkConsumer)}
+            let(:link_consumer) {instance_double(Models::Links::LinkConsumer)}
             before do
               subject.add_link_consumer link_consumer
             end
