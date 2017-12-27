@@ -6,7 +6,7 @@ module Bosh
     module DeploymentPlan
       module Steps
         describe CreateVmStep do
-          subject { CreateVmStep.new(instance_plan, agent_broadcaster, vm_deleter, disks, tags, use_existing )} 
+          subject { CreateVmStep.new(instance_plan, agent_broadcaster, vm_deleter, disks, tags, use_existing )}
           let(:use_existing) { false }
           let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
           let(:agent_client) do
