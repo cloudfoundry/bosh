@@ -20,47 +20,56 @@ describe Bosh::Director::Api::ConfigManager do
 
   describe '#find' do
     before do
-      Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name')
-      Bosh::Director::Models::Config.make(type: 'new-type', name: 'new-name')
-      Bosh::Director::Models::Config.make(type: 'my-type', name: 'other-name')
-      Bosh::Director::Models::Config.make(type: 'new-type', name: 'new-name', content: 'newer-content')
+
+      Bosh::Director::Models::Config.make(type: 'my-type', name: 'b', content: '1')
+      Bosh::Director::Models::Config.make(type: 'my-type', name: 'e', content: '2')
+      Bosh::Director::Models::Config.make(type: 'new-type', name: 'default', content: '3')
+      Bosh::Director::Models::Config.make(type: 'my-type', name: 'default', content: '4')
+      Bosh::Director::Models::Config.make(type: 'my-type', name: 'a', content: '5')
+      Bosh::Director::Models::Config.make(type: 'new-type', name: 'a', content: '6')
+      Bosh::Director::Models::Config.make(type: 'new-type', name: 'a', content: '7')
     end
 
     context "when 'latest' is anything but string 'true'" do
       context 'when no filtering' do
         it 'returns all configs including outdated ones' do
           configs = manager.find
-          expect(configs.count).to eq(4)
-          expect(configs).to include(Bosh::Director::Models::Config.all[0])
-          expect(configs).to include(Bosh::Director::Models::Config.all[1])
-          expect(configs).to include(Bosh::Director::Models::Config.all[2])
-          expect(configs).to include(Bosh::Director::Models::Config.all[3])
+          expect(configs.count).to eq(7)
+          (0..6).each do |val|
+            expect(configs).to include(Bosh::Director::Models::Config.all[val])
+          end
         end
 
-        it 'sorts type -> name -> id' do
-          Bosh::Director::Models::Config.make(type: 'new-type', name: 'new-name', content: 'newer-content2')
+        it 'sorts type -> name `default` first -> name -> id' do
 
           configs = manager.find
+          filtered_configs = configs.map(&:values).map{|e| e.select {|k,_| k == :name || k == :type || k == :content} }
 
-          expect(configs[2].content).to eq('newer-content2')
-          expect(configs[3].content).to eq('newer-content')
-          expect(configs[4].content).to eq('--- {}')
+          expect(filtered_configs).to eq([
+            {:name=> 'default', :type=> 'my-type', :content => '4'},
+            {:name=> 'a', :type=> 'my-type', :content => '5'},
+            {:name=> 'b', :type=> 'my-type', :content => '1'},
+            {:name=> 'e', :type=> 'my-type', :content => '2'},
+            {:name=> 'default', :type=> 'new-type', :content => '3'},
+            {:name=> 'a', :type=> 'new-type', :content => '7'},
+            {:name=> 'a', :type=> 'new-type', :content => '6'}
+          ])
         end
       end
 
       context 'when filtering' do
         it 'returns only the elements with the given type' do
           configs = manager.find(type: 'my-type')
-          expect(configs.count).to eq(2)
+          expect(configs.count).to eq(4)
         end
 
         it 'returns only the elements with the given name' do
-          configs = manager.find(name: 'other-name')
-          expect(configs.count).to eq(1)
+          configs = manager.find(name: 'a')
+          expect(configs.count).to eq(3)
         end
 
         it 'returns only the elements matching type and name' do
-          configs = manager.find(name: 'new-name', type: 'new-type')
+          configs = manager.find(name: 'a', type: 'new-type')
           expect(configs.count).to eq(2)
         end
 
@@ -75,26 +84,27 @@ describe Bosh::Director::Api::ConfigManager do
       context 'when no filtering' do
         it 'returns the latest config for each type/name combination' do
           configs = manager.find(latest: 'true')
-          expect(configs.count).to eq(3)
-          expect(configs).to include(Bosh::Director::Models::Config.all[0])
-          expect(configs).to include(Bosh::Director::Models::Config.all[2])
-          expect(configs).to include(Bosh::Director::Models::Config.all[3])
+          expect(configs.count).to eq(6)
+
+          [0,1,2,3,4,6].each do |val|
+            expect(configs).to include(Bosh::Director::Models::Config.all[val])
+          end
         end
       end
 
       context 'when filtering' do
         it 'returns only the elements with the given type' do
           configs = manager.find(type: 'my-type', latest: 'true')
-          expect(configs.count).to eq(2)
+          expect(configs.count).to eq(4)
         end
 
         it 'returns only the elements with the given name' do
-          configs = manager.find(name: 'other-name', latest: 'true')
-          expect(configs.count).to eq(1)
+          configs = manager.find(name: 'a', latest: 'true')
+          expect(configs.count).to eq(2)
         end
 
         it 'returns only the elements matching type and name' do
-          configs = manager.find(name: 'new-name', type: 'new-type', latest: 'true')
+          configs = manager.find(name: 'a', type: 'new-type', latest: 'true')
           expect(configs.count).to eq(1)
         end
 
@@ -106,9 +116,9 @@ describe Bosh::Director::Api::ConfigManager do
 
       context 'when configs have been deleted' do
         it 'returns only not deleted configs' do
-          Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name', deleted: true)
+          Bosh::Director::Models::Config.make(type: 'my-type', name: 'a', deleted: true)
 
-          configs = manager.find(type: 'my-type', name: 'my-name')
+          configs = manager.find(type: 'my-type', name: 'a')
 
           expect(configs.count).to eq(1)
         end

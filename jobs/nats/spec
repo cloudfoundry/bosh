@@ -34,7 +34,9 @@ properties:
   nats.tls.ca:
     description: CA cert used by NATS server to verify clients certificates (For Mutual TLS Connections)
   nats.tls.server.certificate:
-    description: Certificate used by the NATS server to serve TLS connections
+    description: |
+      Certificate used by the NATS server to serve TLS connections. The Common-Name for the certificate
+      should be "default.nats.bosh-internal"
   nats.tls.server.private_key:
     description: Private Key used by the NATS server to serve TLS connections
   nats.tls.timeout:

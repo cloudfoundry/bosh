@@ -10,14 +10,10 @@ gnatsd/gnatsd-0.9.6-bosh.12-linux-amd64:
   size: 9505349
   object_id: 54d32ad0-9d4a-4b5d-7431-7f504bd9fb9a
   sha: a801c9fa84f29f9885d54739a3c284c7f58d56bb
-mysql/mariadb-connector-c-2.2.1-src.tar.gz:
-  size: 519628
-  object_id: b7f2ab15-c9c3-4441-bb7b-f41dbf43f668
-  sha: 74dd87a9537f98fc93cace2252424ae1c6c46fbf
-mysql/server-5.1.62-rel13.3-435-Linux-x86_64.tar.gz:
-  size: 34179263
-  object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fb68b2898dd0
-  sha: 2bfd575545fe78729c56bb832aa69d8d9fc8630d
+mysql/mariadb-connector-c-3.0.2-src.tar.gz:
+  size: 662569
+  object_id: 852fcdf2-221f-49cf-61b6-7ab8b2d9d585
+  sha: bc1fd6c20610822abdb67fe300bd723fe9225e50
 mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
   size: 4639216
   object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
@@ -42,10 +38,10 @@ postgres/postgresql-9.0.23.tar.gz:
   size: 19776342
   object_id: 705f775e-0c3c-4704-8220-c5acd76dc8b8
   sha: bd793e6191a187f680566de00fa5ac8a149fb7e0
-postgres/postgresql-9.4.12.tar.gz:
-  size: 23420452
-  object_id: 50a5bc6e-454a-4cb3-62de-78482ca4b03d
-  sha: 1405b6faf980c6a6ddd6869856a9859f6e13bcae
+postgres/postgresql-9.4.15.tar.gz:
+  size: 23509816
+  object_id: 0b786dbd-8e12-40e5-49fc-86c285c51960
+  sha: 3917ce873cb2e86126748dd34c848ef6092bab84
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274

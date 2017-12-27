@@ -36,15 +36,30 @@ describe Bosh::Director::Api::RuntimeConfigManager do
   end
 
   describe '#list' do
-    it 'returns the specified number of runtime configs (most recent first)' do
-      Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_from_time_immortal', name: 'default').save
-      older_runtime_config = Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_from_yesteryear', name: 'default').save
+    before(:each) do
+      @oldest_runtime_config = Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_from_time_immortal', name: 'default').save
+      @older_runtime_config = Bosh::Director::Models::Config.new(type: 'runtime', content: 'config_from_yesteryear', name: 'default').save
       Bosh::Director::Models::Config.new(type: 'runtime', content: 'named_config2', name: 'some-foo-name').save
-      newer_runtime_config = Bosh::Director::Models::Config.new(type: 'runtime', content: "---\nsuper_shiny: new_config", name: 'default').save
+      @newer_runtime_config = Bosh::Director::Models::Config.new(type: 'runtime', content: "---\nsuper_shiny: new_config", name: 'default').save
+    end
 
+    it 'returns the specified number of runtime configs (most recent first)' do
       runtime_configs = manager.list(2)
 
-      expect(runtime_configs).to eq([newer_runtime_config, older_runtime_config])
+      expect(runtime_configs).to eq([@newer_runtime_config, @older_runtime_config])
+    end
+
+    context 'when there are deleted runtime configs' do
+      before(:each) do
+        @oldest_runtime_config.update(deleted: true)
+        @older_runtime_config.update(deleted: true)
+      end
+
+      it 'ignores the deleted configs from the result' do
+        runtime_configs = manager.list(2)
+
+        expect(runtime_configs).to eq([@newer_runtime_config])
+      end
     end
 
     context 'when name is specified' do

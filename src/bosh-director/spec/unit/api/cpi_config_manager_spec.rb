@@ -32,38 +32,53 @@ describe Bosh::Director::Api::CpiConfigManager do
   end
 
   describe '#list' do
-    it 'returns the specified number of cpi configs (most recent first)' do
+    before(:each) do
       days = 24*60*60
 
-      Bosh::Director::Models::Config.make(:cpi,
-        content: 'config_from_time_immortal',
-        created_at: Time.now - 3*days,
-      )
-      older_cpi_config = Bosh::Director::Models::Config.make(:cpi,
-        content: 'config_from_last_year',
-        created_at: Time.now - 2*days,
-      )
-      newer_cpi_config = Bosh::Director::Models::Config.make(:cpi,
-        content: "---\nsuper_shiny: new_config",
-        created_at: Time.now - 1*days,
-      )
+      @oldest_cpi_config = Bosh::Director::Models::Config.make(:cpi,
+                                          content: 'config_from_time_immortal',
+                                          created_at: Time.now - 3*days,
+                                          )
+      @older_cpi_config = Bosh::Director::Models::Config.make(:cpi,
+                                                             content: 'config_from_last_year',
+                                                             created_at: Time.now - 2*days,
+                                                             )
+      @newer_cpi_config = Bosh::Director::Models::Config.make(:cpi,
+                                                             content: "---\nsuper_shiny: new_config",
+                                                             created_at: Time.now - 1*days,
+                                                             )
+    end
 
+    it 'returns the specified number of cpi configs (most recent first)' do
       cpi_configs = manager.list(2)
 
       expect(cpi_configs.count).to eq(2)
-      expect(cpi_configs[0]).to eq(newer_cpi_config)
-      expect(cpi_configs[1]).to eq(older_cpi_config)
+      expect(cpi_configs[0]).to eq(@newer_cpi_config)
+      expect(cpi_configs[1]).to eq(@older_cpi_config)
     end
 
     it 'returns only configs of type `cpi` and name `default`' do
-      cpi_config = Bosh::Director::Models::Config.make(:cpi)
       Bosh::Director::Models::Config.make(:cpi, name: 'non-default')
       Bosh::Director::Models::Config.make(:cloud)
 
-      cpi_configs = manager.list(3)
+      cpi_configs = manager.list(4)
 
-      expect(cpi_configs.count).to eq(1)
-      expect(cpi_configs[0]).to eq(cpi_config)
+      expect(cpi_configs.count).to eq(3)
+      expect(cpi_configs[0]).to eq(@newer_cpi_config)
+      expect(cpi_configs[1]).to eq(@older_cpi_config)
+      expect(cpi_configs[2]).to eq(@oldest_cpi_config)
+    end
+
+    context 'when there are deleted cpi configs' do
+      before(:each) do
+        @older_cpi_config.update(deleted: true)
+      end
+
+      it 'ignores the deleted configs from the result' do
+        runtime_configs = manager.list(2)
+
+        expect(runtime_configs).to eq([@newer_cpi_config, @oldest_cpi_config])
+      end
     end
   end
 

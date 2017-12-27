@@ -104,7 +104,27 @@ module Bosh::Dev::Sandbox
     end
 
     def db_config
-      YAML.load_file(@director_config)['db']
+      connection_config = YAML.load_file(@director_config)['db']
+
+      custom_connection_options = connection_config.delete('connection_options') {{}}
+      tls_options = connection_config.delete('tls') { {} }
+      if tls_options.fetch('enabled', false)
+        certificate_paths = tls_options.fetch('cert')
+        db_ca_path = certificate_paths.fetch('ca')
+
+        case connection_config['adapter']
+          when 'mysql2'
+            connection_config['ssl_mode'] = 'verify_identity'
+            connection_config['sslca'] = db_ca_path
+          when 'postgres'
+            connection_config['sslmode'] = 'verify-full'
+            connection_config['sslrootcert'] = db_ca_path
+        end
+      end
+
+      connection_config.delete_if { |_, v| v.to_s.empty? }
+      connection_config = connection_config.merge(custom_connection_options)
+      connection_config
     end
 
     private

@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'when director try to connect database using TLS', type: :integration, skip_for_db_tls_ci: true do
-  # db_tls: :disabled is just a filter flag to skip this test if TLS is enabled on database
+  # skip_for_db_tls_ci: :disabled is just a filter flag to skip this test if TLS is enabled on database
 
   let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
 

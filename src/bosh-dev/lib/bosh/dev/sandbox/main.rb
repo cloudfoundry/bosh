@@ -67,7 +67,7 @@ module Bosh::Dev::Sandbox
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
-        tls_enabled: ENV['DB_TLS'] || false
+        tls_enabled: ENV['DB_TLS']=='true'
       }
       db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
@@ -112,7 +112,7 @@ module Bosh::Dev::Sandbox
         ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
       }.merge(db_opts)
 
-      setup_database(@db_config)
+      setup_database(@db_config, nil)
 
       director_config_path = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
@@ -334,10 +334,11 @@ module Bosh::Dev::Sandbox
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
-      @db_config[:tls_enabled] = options.fetch(:tls_enabled, @db_config[:tls_enabled ])
+      old_tls_enabled_value = @db_config[:tls_enabled]
+      @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS']=='true')
 
       check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
-      setup_database(@db_config)
+      setup_database(@db_config, old_tls_enabled_value)
     end
 
     def check_if_nats_need_reset(allow_legacy_clients)
@@ -499,17 +500,19 @@ module Bosh::Dev::Sandbox
       template.result(binding)
     end
 
-    def setup_database(db_config)
-      if db_config[:type] == 'mysql'
-        @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
-      else
-        proxy_port = @port_provider.get_port(:postgres)
-        postgres_options = db_config.dup
-        postgres_options[:port] = proxy_port
+    def setup_database(db_config, old_tls_enabled_value)
+      if !@database || (db_config[:tls_enabled] != old_tls_enabled_value)
+        if db_config[:type] == 'mysql'
+          @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
+        else
+          proxy_port = @port_provider.get_port(:postgres)
+          postgres_options = db_config.dup
+          postgres_options[:port] = proxy_port
 
-        @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, postgres_options)
-        # all postgres connections go through this proxy (for testing automatic reconnect)
-        @database_proxy = ConnectionProxyService.new(sandbox_root, '127.0.0.1', 5432, proxy_port, base_log_path, @logger)
+          @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, postgres_options)
+          # all postgres connections go through this proxy (for testing automatic reconnect)
+          @database_proxy = ConnectionProxyService.new(sandbox_root, '127.0.0.1', 5432, proxy_port, base_log_path, @logger)
+        end
       end
     end
 

@@ -26,7 +26,8 @@ case "$DB" in
 [mysqld]
 ssl-cert=server-cert.pem
 ssl-key=server-key.pem
-require_secure_transport=ON' >> /etc/mysql/my.cnf
+require_secure_transport=ON
+max_allowed_packet=6M' >> /etc/mysql/my.cnf
     fi
 
     sudo service mysql start

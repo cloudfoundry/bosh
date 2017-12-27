@@ -16,7 +16,12 @@ module Bosh
           dataset = dataset.where(type: type) if type
           dataset = dataset.where(name: name) if name
           dataset = dataset.where(id: dataset.select{max(:id)}.group(:type, :name)) if latest == 'true'
-          dataset.order(:type, :name, Sequel.desc(:id)).all
+          dataset
+            .order(:type)
+            .order_append {Sequel.case([[{name: 'default'}, 1]], 2)}
+            .order_append(:name)
+            .order_append(Sequel.desc(:id))
+            .all
         end
 
         def delete(type, name)

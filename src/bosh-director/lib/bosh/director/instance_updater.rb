@@ -106,8 +106,13 @@ module Bosh::Director
           disks = instance_model.active_persistent_disks.collection
                                 .map(&:model)
                                 .map(&:disk_cid).compact
-          @vm_deleter.delete_for_instance(instance_model)
-          @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
+
+          if instance_plan.instance.strategy == DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+            DeploymentPlan::Steps::ElectActiveVmStep.new(instance_model.most_recent_inactive_vm).perform
+          else
+            @vm_deleter.delete_for_instance(instance_model)
+            @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
+          end
 
           recreated = true
         end
