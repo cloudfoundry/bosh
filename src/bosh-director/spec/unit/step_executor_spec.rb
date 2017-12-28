@@ -3,8 +3,12 @@ require 'spec_helper'
 module Bosh::Director
   describe 'StepExecutor' do
     subject(:executor) { StepExecutor.new(stage_name, state_step_hash) }
-    let(:state_object) { double('state_object', task_name: task_name,thread_name: thread_name, info: info, state: state) }
-    let(:another_state_object) { double('another_state_object', task_name: task_name, thread_name: thread_name, info: info, state: another_state) }
+    let(:state_object) do
+      double('state_object', task_name: task_name, thread_name: thread_name, info: info, state: state)
+    end
+    let(:another_state_object) do
+      double('another_state_object', task_name: task_name, thread_name: thread_name, info: info, state: another_state)
+    end
     let(:state) { double('state') }
     let(:another_state) { double('another_state') }
     let(:stage_name) { 'dummy stage' }
@@ -20,15 +24,13 @@ module Bosh::Director
     let(:task_name) { 'task name' }
     let(:stage) { instance_double(EventLog::Stage) }
 
-
-    before {
+    before do
       allow(Bosh::Director::ThreadPool).to receive(:new).and_call_original
       allow(Config).to receive(:max_threads).and_return(2)
       allow(Config).to receive(:logger).and_return(logger)
       allow(logger).to receive(:debug)
       allow(logger).to receive(:info)
-
-    }
+    end
 
     it 'call perform on each of the steps, passing the state_hash along' do
       expect(step1).to receive(:perform).with(state) do
@@ -70,7 +72,7 @@ module Bosh::Director
 
     it 'create a stage and track the tasks within the stage' do
       expect(EventLog::Stage).to receive(:new)
-        .with(anything, stage_name, anything,state_step_hash.length)
+        .with(anything, stage_name, anything, state_step_hash.length)
         .and_return(stage)
       expect(stage).to receive(:advance_and_track).with(task_name).twice
       executor.run

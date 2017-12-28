@@ -4,9 +4,7 @@ require 'timecop'
 module Bosh
   module Director
     describe VmCreator do
-      subject { VmCreator.new(
-        logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster
-      ) }
+      subject { VmCreator.new(logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster) }
 
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:cloud_factory) { instance_double(CloudFactory) }
@@ -19,10 +17,23 @@ module Bosh
           wait_until_ready: nil,
           update_settings: nil,
           apply: nil,
-          get_state: nil
+          get_state: nil,
         )
       end
-      let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
+      let(:network_settings) do
+        BD::DeploymentPlan::NetworkSettings.new(
+          instance_group.name,
+          'deployment_name',
+          { 'gateway' => 'name' },
+          [reservation],
+          {},
+          availability_zone,
+          5,
+          'uuid-1',
+          'bosh',
+          false,
+        ).to_hash
+      end
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:deployment_plan) do
         instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
@@ -30,13 +41,13 @@ module Bosh
       let(:availability_zone) do
         BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
       end
-      let(:cloud_properties) { {'ram' => '2gb'} }
-      let(:network_cloud_properties) { {'bandwidth' => '5mbps'} }
-      let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
-      let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
+      let(:cloud_properties) { { 'ram' => '2gb' } }
+      let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
+      let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
+      let(:stemcell_model) { Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123') }
       let(:stemcell) do
         stemcell_model
-        stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
+        stemcell = DeploymentPlan::Stemcell.parse('name' => 'fake-stemcell', 'version' => '123')
         stemcell.add_stemcell_models
         stemcell
       end
@@ -152,7 +163,7 @@ module Bosh
       let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, networks, logger) }
 
 
-      let(:spec_applier) { instance_double(DeploymentPlan::VmSpecApplier) }
+      let(:spec_apply_step) { instance_double(DeploymentPlan::Steps::ApplyVmSpecStep) }
       let(:create_vm_step) { instance_double(DeploymentPlan::Steps::CreateVmStep, perform: nil) }
       let(:update_settings_step) { instance_double(DeploymentPlan::Steps::UpdateInstanceSettingsStep, perform: nil) }
       let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
@@ -224,13 +235,14 @@ module Bosh
         before do
           allow(create_vm_step).to receive(:perform)
           allow(instance_plan).to receive(:spec).and_return(spec)
-          allow(DeploymentPlan::VmSpecApplier).to receive(:new).and_return(spec_applier)
+          allow(DeploymentPlan::Steps::ApplyVmSpecStep).to receive(:new)
+            .with(instance_plan, an_instance_of(Models::Vm)).and_return(spec_apply_step)
         end
 
-        it 'updates instance job templates with new IP' do
-          expect(spec_applier).to receive(:apply_initial_vm_state).with(instance_plan.spec, an_instance_of(Models::Vm)).and_return('updated-spec')
-          expect(instance).to receive(:add_state_to_model).with('updated-spec')
-          expect(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, dns_encoder, logger)
+        it 're-renders job templates after applying spec' do
+          expect(spec_apply_step).to receive(:perform)
+          expect(JobRenderer).to receive(:render_job_instances_with_cache)
+            .with([instance_plan], template_blob_cache, dns_encoder, logger)
 
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         end

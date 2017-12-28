@@ -72,11 +72,15 @@ module Bosh::Director
         raise e
       end
 
-      # use a STANDARD way to get the "new vm" off the instance
-
+      # TODO: use a STANDARD way to get the "new vm" off the instance
       vm = instance.model.active_vm
-      # apply initial state (collection of steps)
-      apply_initial_vm_state(instance_plan, vm)
+      DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan, vm).perform
+
+      DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(
+        instance_plan,
+        blob_cache: @template_blob_cache,
+        dns_encoder: @dns_encoder,
+      ).perform
 
       # def perform
       #   vm = @instance_plan.instance.most_recent_inactive_vm
@@ -86,21 +90,7 @@ module Bosh::Director
       # update instance_plan state
       # per story task, move this to where we activate the vm
 
-
-
-
-
       instance_plan.mark_desired_network_plans_as_existing
-    end
-
-    private
-
-    def apply_initial_vm_state(instance_plan, vm)
-      vm_state = DeploymentPlan::VmSpecApplier.new.apply_initial_vm_state(instance_plan.spec, vm)
-
-      instance_plan.instance.add_state_to_model(vm_state)
-
-      DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache: @template_blob_cache, dns_encoder: @dns_encoder).perform
     end
   end
 end
