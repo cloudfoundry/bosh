@@ -39,7 +39,7 @@ module Bosh::Director
             if Config.keep_unreachable_vms
               @logger.info('Keeping the VM for debugging')
             else
-              @vm_deleter.delete_for_instance(instance_model)
+              DeleteVmStep.new(vm).perform
             end
             raise e
           end

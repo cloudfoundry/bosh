@@ -6,7 +6,6 @@ module Bosh::Director
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
-    let(:vm_deleter) { instance_double(VmDeleter) }
     let(:vm_creator) { instance_double(VmCreator) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:credentials) { { 'user' => 'secret' } }
@@ -82,8 +81,8 @@ module Bosh::Director
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
+      allow(Config).to receive(:enable_virtual_delete_vms).and_return true
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
-      allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
       allow(RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persistor)
       allow(DiskManager).to receive(:new).and_return(disk_manager)
@@ -183,18 +182,21 @@ module Bosh::Director
         let(:instance_desired_state) { 'detached' }
         let(:director_state_updater) { instance_double(DirectorDnsStateUpdater) }
         let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
+        let(:delete_step) { instance_double(DeploymentPlan::Steps::DeleteVmStep) }
 
         before do
           allow(DirectorDnsStateUpdater).to receive(:new).and_return(director_state_updater)
           allow(instance_plan).to receive(:dns_changed?).and_return(true)
           allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new)
             .with(instance_model).and_return(unmount_step)
+          allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new)
+            .with(instance_model.active_vm, true, false, true).and_return delete_step
         end
 
         it 'should update dns' do
           allow(instance_plan).to receive(:already_detached?).and_return(false)
           expect(unmount_step).to receive(:perform)
-          expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
+          expect(delete_step).to receive(:perform)
           expect(director_state_updater).to receive(:update_dns_for_instance)
             .with(instance_model, instance_plan.network_settings.dns_record_info)
 
@@ -291,16 +293,20 @@ module Bosh::Director
         end
 
         context 'when an instance needs to be recreated' do
+          let(:delete_step) { instance_double(DeploymentPlan::Steps::DeleteVmStep) }
+
           before do
             allow(updater).to receive(:needs_recreate?).and_return(true)
             allow(disk_manager).to receive(:update_persistent_disk)
             allow(job).to receive(:update)
+            allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new)
+              .with(instance_model.active_vm, true, false, true).and_return delete_step
           end
 
           it 'recreates correctly, and persists rendered templates to the blobstore' do
             expect(unmount_step).to receive(:perform)
             expect(detach_step).to receive(:perform)
-            expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
+            expect(delete_step).to receive(:perform)
             expect(vm_creator).to receive(:create_for_instance_plan)
               .with(instance_plan, [persistent_disk_model.disk_cid], tags)
 
@@ -323,7 +329,7 @@ module Bosh::Director
             it 'activates the vm but does not delete the old one or create another vm' do
               expect(unmount_step).to receive(:perform)
               expect(detach_step).to receive(:perform)
-              expect(vm_deleter).not_to receive(:delete_for_instance)
+              expect(DeploymentPlan::Steps::DeleteVmStep).to_not receive(:new)
               expect(vm_creator).not_to receive(:create_for_instance_plan)
 
               expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)

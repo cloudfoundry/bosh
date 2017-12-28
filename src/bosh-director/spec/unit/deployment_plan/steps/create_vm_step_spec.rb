@@ -330,11 +330,9 @@ module Bosh
           end
 
           it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
-            pending('Extraction of VmDeleter.delete_for_instance to step so that it can accept non-active vm')
             expect(agent_client).to receive(:wait_until_ready).and_raise(metadata_err)
             Config.keep_unreachable_vms = false
             expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
-            # FIXME: vm deleter only deletes the active vm, needs to be refactored to take in ref to vm + diff logic
             expect(cloud).to receive(:delete_vm)
 
             expect {subject.perform}.to raise_error(metadata_err)

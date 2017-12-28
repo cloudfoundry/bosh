@@ -8,8 +8,8 @@ module Bosh::Director
       logger = Config.logger
       disk_manager = DiskManager.new(logger)
       agent_broadcaster = AgentBroadcaster.new
+      vm_deleter = VmDeleter.new(false, Config.enable_virtual_delete_vms)
       dns_state_updater = DirectorDnsStateUpdater.new(dns_encoder)
-      vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
       vm_creator = VmCreator.new(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
       blobstore_client = App.instance.blobstores.blobstore
       rendered_templates_persistor = RenderedTemplatesPersister.new(blobstore_client, logger)
@@ -83,7 +83,7 @@ module Bosh::Director
           unless instance_plan.already_detached?
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform
-            @vm_deleter.delete_for_instance(instance_model)
+            DeploymentPlan::Steps::DeleteVmStep.new(instance_model.active_vm, true, false, Config.enable_virtual_delete_vms).perform
           end
           instance_plan.release_obsolete_network_plans(@ip_provider)
           instance.update_state
@@ -110,7 +110,7 @@ module Bosh::Director
           if instance_plan.instance.strategy == DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
             DeploymentPlan::Steps::ElectActiveVmStep.new(instance_model.most_recent_inactive_vm).perform
           else
-            @vm_deleter.delete_for_instance(instance_model)
+            DeploymentPlan::Steps::DeleteVmStep.new(instance_model.active_vm, true, false, Config.enable_virtual_delete_vms).perform
             @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
           end
 

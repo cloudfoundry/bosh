@@ -13,9 +13,9 @@ module Bosh::Director
           pool.process do
             with_thread_name(state_object.thread_name) do
               event_log_stage.advance_and_track(state_object.task_name) do
-              @logger.info(state_object.info)
-              steps.each do |step|
-                step.perform(state_object.state)
+                @logger.info(state_object.info)
+                steps.each do |step|
+                  step.perform(state_object.state)
                 end
               end
             end
