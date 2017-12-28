@@ -49,7 +49,6 @@ module Bosh::Director
         .with(
           anything,
           anything,
-          anything,
           template_blob_cache,
           dns_encoder,
           anything,

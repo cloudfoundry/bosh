@@ -35,7 +35,7 @@ module Bosh::Director
         allow(UpdateJobsStage).to receive(:new).with(base_job, deployment_plan, multi_job_updater).and_return(update_jobs)
         allow(UpdateErrandsStage).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, anything, dns_encoder, anything).and_return(vm_creator)
+        allow(VmCreator).to receive(:new).with(logger, vm_deleter, anything, dns_encoder, anything).and_return(vm_creator)
         allow(CleanupStemcellReferencesStage).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
         allow(PersistDeploymentStage).to receive(:new).with(deployment_plan).and_return(persist_deployment)
       end

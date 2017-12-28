@@ -198,9 +198,8 @@ module Bosh::Director
     end
 
     def vm_creator(template_cache, dns_encoder)
-      disk_manager = DiskManager.new(@logger)
       agent_broadcaster = AgentBroadcaster.new
-      @vm_creator ||= VmCreator.new(@logger, vm_deleter, disk_manager, template_cache, dns_encoder, agent_broadcaster)
+      @vm_creator ||= VmCreator.new(@logger, vm_deleter, template_cache, dns_encoder, agent_broadcaster)
     end
 
     def validate_spec(spec)

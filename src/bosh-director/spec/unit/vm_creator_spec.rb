@@ -5,10 +5,9 @@ module Bosh
   module Director
     describe VmCreator do
       subject { VmCreator.new(
-        logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster
+        logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster
       ) }
 
-      let(:disk_manager) { DiskManager.new(logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
       let(:cloud_factory) { instance_double(CloudFactory) }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }

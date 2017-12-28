@@ -10,7 +10,7 @@ module Bosh::Director
       @dns_encoder = LocalDnsEncoderManager.create_dns_encoder(@deployment.use_short_dns_addresses?)
       @powerdns_manager = PowerDnsManagerProvider.create
       @vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-      @vm_creator = VmCreator.new(logger, @vm_deleter, @disk_manager, @template_blob_cache, @dns_encoder, agent_broadcaster)
+      @vm_creator = VmCreator.new(logger, @vm_deleter, @template_blob_cache, @dns_encoder, agent_broadcaster)
     end
 
     def create_missing_vms

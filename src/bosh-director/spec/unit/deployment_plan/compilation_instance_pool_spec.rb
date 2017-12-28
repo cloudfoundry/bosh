@@ -32,9 +32,8 @@ module Bosh::Director
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:dns_encoder) { DnsEncoder.new }
-    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster) }
+    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-    let(:disk_manager) { DiskManager.new(logger) }
     let(:compilation_config) do
       compilation_spec = {
         'workers' => n_workers,
@@ -325,7 +324,7 @@ module Bosh::Director
 
         before do
           allow(vm_creator).to receive(:create_for_instance_plan)
-          allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, agent_broadcaster).and_return(vm_creator)
+          allow(VmCreator).to receive(:new).with(logger, vm_deleter, template_blob_cache, agent_broadcaster).and_return(vm_creator)
         end
 
         it 'spins up vm in the az' do
@@ -462,7 +461,7 @@ module Bosh::Director
         allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
         allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, vm_deleter, disk_manager, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
+        allow(VmCreator).to receive(:new).with(logger, vm_deleter, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
         allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
         allow(DeploymentPlan::InstanceProvider).to receive(:new).with(deployment_plan, vm_creator, logger).and_return(instance_provider)
         allow(Config).to receive(:logger).and_return(logger)

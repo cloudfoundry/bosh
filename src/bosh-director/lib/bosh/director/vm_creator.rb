@@ -6,10 +6,9 @@ module Bosh::Director
   class VmCreator
     include PasswordHelper
 
-    def initialize(logger, vm_deleter, disk_manager, template_blob_cache, dns_encoder, agent_broadcaster)
+    def initialize(logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster)
       @logger = logger
       @vm_deleter = vm_deleter
-      @disk_manager = disk_manager
       @template_blob_cache = template_blob_cache
       @dns_encoder = dns_encoder
       @agent_broadcaster = agent_broadcaster
