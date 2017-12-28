@@ -95,10 +95,10 @@ describe Bosh::Director::Links::LinksManager do
     context 'intent already exist' do
       it 'returns the existing link_provider_intent' do
         expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-          provider: link_provider,
-          name: 'test_original_link_name',
+          link_provider: link_provider,
+          original_name: 'test_original_link_name',
           type: 'test_link_type',
-          alias: 'test_link_alias',
+          name: 'test_link_alias',
           content: 'test_link_content',
           shared: false,
           consumable: true
@@ -128,8 +128,8 @@ describe Bosh::Director::Links::LinksManager do
 
         expect(Bosh::Director::Models::Links::LinkProviderIntent.count).to eq(1)
         saved_provided_intent = Bosh::Director::Models::Links::LinkProviderIntent.find(
-          provider: link_provider,
-          name: "test_original_link_name",
+          link_provider: link_provider,
+          original_name: "test_original_link_name",
           type: "test_link_type",
           shared: false,
           consumable: true
@@ -155,10 +155,10 @@ describe Bosh::Director::Links::LinksManager do
 
         it 'returns the existing link_provider_intent' do
           expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-            provider: link_provider,
-            name: 'test_original_link_name',
+            link_provider: link_provider,
+            original_name: 'test_original_link_name',
             type: 'test_link_type',
-            alias: 'test_link_alias',
+            name: 'test_link_alias',
             content: 'test_link_content',
             shared: false,
             consumable: true
@@ -194,10 +194,10 @@ describe Bosh::Director::Links::LinksManager do
 
         it 'returns the existing link_provider_intent' do
           expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-            provider: link_provider,
-            name: 'test_original_link_name',
+            link_provider: link_provider,
+            original_name: 'test_original_link_name',
             type: 'test_link_type',
-            alias: 'test_link_alias',
+            name: 'test_link_alias',
             content: 'test_link_content',
             shared: false,
             consumable: true
@@ -287,8 +287,8 @@ describe Bosh::Director::Links::LinksManager do
     context 'intent already exist' do
       it 'returns the existing link_consumer_intent' do
         expected_link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          consumer: link_consumer,
-          name: 'test_original_link_name',
+          link_consumer: link_consumer,
+          original_name: 'test_original_link_name',
           type: 'test_link_type',
           optional: false,
           blocked: false
@@ -312,15 +312,15 @@ describe Bosh::Director::Links::LinksManager do
           link_consumer: link_consumer,
           link_name: 'test_original_link_name',
           link_type: 'test_link_type',
-          optional: false,
+          optional: true,
           blocked: false
         )
 
         actual_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
-          consumer: link_consumer,
-          name: 'test_original_link_name',
+          link_consumer: link_consumer,
+          original_name: 'test_original_link_name',
           type: 'test_link_type',
-          optional: false,
+          optional: true,
           blocked: false
         )
 
@@ -372,10 +372,10 @@ describe Bosh::Director::Links::LinksManager do
 
     let(:provider_intent) do
       Bosh::Director::Models::Links::LinkProviderIntent.create(
-        provider: provider,
-        name: 'test_original_link_name',
+        link_provider: provider,
+        original_name: 'test_original_link_name',
         type: 'test_link_type',
-        alias: 'test_link_alias',
+        name: 'test_link_alias',
         content: '{}',
         shared: false,
         consumable: true
@@ -393,8 +393,8 @@ describe Bosh::Director::Links::LinksManager do
 
     let(:consumer_intent) do
       Bosh::Director::Models::Links::LinkConsumerIntent.create(
-        consumer: consumer,
-        name: 'test_original_link_name',
+        link_consumer: consumer,
+        original_name: 'test_original_link_name',
         type: 'test_link_type',
         optional: false,
         blocked: false
@@ -451,10 +451,10 @@ describe Bosh::Director::Links::LinksManager do
     end
     let(:provider_intent) do
       Bosh::Director::Models::Links::LinkProviderIntent.create(
-        provider: link_provider,
-        name: 'test_original_link_name',
+        link_provider: link_provider,
+        original_name: 'test_original_link_name',
         type: 'test_link_type',
-        alias: 'test_link_alias',
+        name: 'test_link_alias',
         content: 'test_link_content',
         shared: false,
         consumable: true
@@ -462,8 +462,8 @@ describe Bosh::Director::Links::LinksManager do
     end
     let(:consumer_intent) do
       Bosh::Director::Models::Links::LinkConsumerIntent.create(
-        consumer: link_consumer,
-        name: 'test_original_link_name',
+        link_consumer: link_consumer,
+        original_name: 'test_original_link_name',
         type: 'test_link_type',
         optional: false,
         blocked: false

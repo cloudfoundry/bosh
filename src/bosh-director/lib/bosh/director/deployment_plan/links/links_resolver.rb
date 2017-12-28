@@ -43,9 +43,12 @@ module Bosh::Director
             link_consumer: consumer,
             link_name: consumed_link.original_name,
             link_type: consumed_link.type,
-            optional: false,
+            optional: consumed_link.optional,
             blocked: false
           )
+
+          consumer_intent.name = consumed_link.name
+          consumer_intent.save
 
           @deployment_plan.add_link_consumer(consumer)
 
@@ -139,7 +142,7 @@ module Bosh::Director
             link_shared: false
           )
 
-          provider_intent.alias = disk.name
+          provider_intent.name = disk.name
           provider_intent.content = DiskLink.new(@deployment_plan.name, disk.name).spec.to_json
           provider_intent.save
 
@@ -163,7 +166,7 @@ module Bosh::Director
             link_shared: provided_link.shared
           )
 
-          provider_intent.alias = provided_link.name
+          provider_intent.name = provided_link.name
           provider_intent.content = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec.to_json
           provider_intent.save
 

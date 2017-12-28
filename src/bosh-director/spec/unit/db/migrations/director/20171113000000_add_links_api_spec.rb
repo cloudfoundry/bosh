@@ -77,19 +77,19 @@ module Bosh::Director
           provider_3_id = db[:link_providers].where(instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_2').first[:id]
 
           expected_link_providers_intents = [
-            {provider_id: provider_1_id, name: 'link_name_1', type: 'link_type_1', alias: 'link_name_1', content: '{"my_val":"hello"}'},
-            {provider_id: provider_1_id, name: 'link_name_2', type: 'link_type_2', alias: 'link_name_2', content: '{"foo":"bar"}'},
-            {provider_id: provider_2_id, name: 'link_name_3', type: 'link_type_1', alias: 'link_name_3', content: '{"bar":"baz"}'},
-            {provider_id: provider_3_id, name: 'link_name_4', type: 'link_type_2', alias: 'link_name_4', content: '{"foobar":"bazbaz"}'},
+            {link_provider_id: provider_1_id, original_name: 'link_name_1', type: 'link_type_1', name: 'link_name_1', content: '{"my_val":"hello"}'},
+            {link_provider_id: provider_1_id, original_name: 'link_name_2', type: 'link_type_2', name: 'link_name_2', content: '{"foo":"bar"}'},
+            {link_provider_id: provider_2_id, original_name: 'link_name_3', type: 'link_type_1', name: 'link_name_3', content: '{"bar":"baz"}'},
+            {link_provider_id: provider_3_id, original_name: 'link_name_4', type: 'link_type_2', name: 'link_name_4', content: '{"foobar":"bazbaz"}'},
           ]
 
           expect(db[:link_provider_intents].count).to eq(4)
           db[:link_provider_intents].order(:id).each_with_index do |provider_intent, index|
             output = expected_link_providers_intents[index]
-            expect(provider_intent[:provider_id]).to eq(output[:provider_id])
-            expect(provider_intent[:name]).to eq(output[:name])
+            expect(provider_intent[:link_provider_id]).to eq(output[:link_provider_id])
+            expect(provider_intent[:original_name]).to eq(output[:original_name])
             expect(provider_intent[:type]).to eq(output[:type])
-            expect(provider_intent[:alias]).to eq(output[:alias])
+            expect(provider_intent[:name]).to eq(output[:name])
             expect(provider_intent[:shared]).to eq(true)
             expect(provider_intent[:consumable]).to eq(true)
           end
@@ -192,8 +192,8 @@ module Bosh::Director
           consumer_id = db[:link_consumers].first[:id]
 
           expected_links_consumers_intents = [
-            {:id=>Integer, :consumer_id=>consumer_id, :name=>'proxied_http_endpoint', :type=>'undefined-migration', :optional=>false, :blocked=>false},
-            {:id=>Integer, :consumer_id=>consumer_id, :name=>'proxied_http_endpoint2', :type=>'undefined-migration', :optional=>false, :blocked=>false}
+            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false},
+            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false}
           ]
 
           expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)
@@ -228,8 +228,8 @@ module Bosh::Director
             consumer_id = db[:link_consumers].first[:id]
 
             expected_links_consumers_intents = [
-              {:id=>Integer, :consumer_id=>consumer_id, :name=>'proxied_http_endpoint', :type=>'undefined-migration', :optional=>false, :blocked=>false},
-              {:id=>Integer, :consumer_id=>consumer_id, :name=>'proxied_http_endpoint2', :type=>'undefined-migration', :optional=>false, :blocked=>false}
+              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false},
+              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false}
             ]
 
             expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)
@@ -324,8 +324,8 @@ module Bosh::Director
           DBSpecHelper.migrate(migration_file)
           after = Time.now
 
-          link_consumer_intent_1 = db[:link_consumer_intents].where(name: 'proxied_http_endpoint').first
-          link_consumer_intent_2 = db[:link_consumer_intents].where(name: 'proxied_http_endpoint2').first
+          link_consumer_intent_1 = db[:link_consumer_intents].where(original_name: 'proxied_http_endpoint').first
+          link_consumer_intent_2 = db[:link_consumer_intents].where(original_name: 'proxied_http_endpoint2').first
 
           expect(db[:links].count).to eq(2)
 
@@ -480,7 +480,7 @@ module Bosh::Director
             after = Time.now
 
             link_consumers_1_id = db[:link_consumers].where(name: 'http_proxy_with_requires').first[:id]
-            link_consumers_intent_1_id = db[:link_consumer_intents].where(name: 'proxied_http_endpoint', consumer_id: link_consumers_1_id).first[:id]
+            link_consumers_intent_1_id = db[:link_consumer_intents].where(original_name: 'proxied_http_endpoint', link_consumer_id: link_consumers_1_id).first[:id]
 
             expect(link_consumers_intent_1_id).to_not be_nil
             expect(db[:links].count).to eq(1)
@@ -572,7 +572,7 @@ module Bosh::Director
             after = Time.now
 
             link_consumers_1_id = db[:link_consumers].where(name: 'http_proxy_with_requires').first[:id]
-            link_consumers_intent_1_id = db[:link_consumer_intents].where(name: 'proxied_http_endpoint', consumer_id: link_consumers_1_id).first[:id]
+            link_consumers_intent_1_id = db[:link_consumer_intents].where(original_name: 'proxied_http_endpoint', link_consumer_id: link_consumers_1_id).first[:id]
             expect(link_consumers_intent_1_id).to_not be_nil
 
             links_dataset = db[:links]

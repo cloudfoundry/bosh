@@ -52,10 +52,10 @@ module Bosh::Director
           )
 
           Bosh::Director::Models::Links::LinkProviderIntent.create(
-            provider: provider,
-            name: 'http_endpoint',
+            link_provider: provider,
+            original_name: 'http_endpoint',
             type: 'http_endpoint',
-            alias: 'link_name',
+            name: 'link_name',
             shared: true,
             consumable: link_shared,
             content: {
@@ -308,10 +308,10 @@ module Bosh::Director
             type: 'Job'
           )
           Bosh::Director::Models::Links::LinkProviderIntent.create(
-            provider: provider,
-            name: 'http_endpoint',
+            link_provider: provider,
+            original_name: 'http_endpoint',
             type: 'http_endpoint',
-            alias: 'link_name',
+            name: 'link_name',
             shared: link_shared,
             consumable: true,
             content: {

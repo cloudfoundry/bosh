@@ -81,8 +81,8 @@ module Bosh::Director
             end
           let!(:consumer_intent_1) do
             Models::Links::LinkConsumerIntent.create(
-              :consumer => consumer_1,
-              :name => 'link_1',
+              :link_consumer => consumer_1,
+              :original_name => 'link_1',
               :type => 'link_type_1',
               :optional => false,
               :blocked => false,
@@ -98,8 +98,8 @@ module Bosh::Director
           end
           let!(:consumer_intent_2) do
             Models::Links::LinkConsumerIntent.create(
-              :consumer => consumer_2,
-              :name => 'link_2',
+              :link_consumer => consumer_2,
+              :original_name => 'link_2',
               :type => 'link_type_2',
               :optional => false,
               :blocked => false,

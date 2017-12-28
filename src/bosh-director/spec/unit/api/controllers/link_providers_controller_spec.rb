@@ -81,23 +81,23 @@ module Bosh::Director
             end
           let!(:provider_intent_1a) do
             Models::Links::LinkProviderIntent.create(
-              :alias => 'link_name_1a',
-              :provider => provider_1,
+              :name => 'link_name_1a',
+              :link_provider => provider_1,
               :shared => true,
               :consumable => true,
               :type => 'link_type_1a',
-              :name => 'link_original_name_1a',
+              :original_name => 'link_original_name_1a',
               :content => 'some link content',
             )
             end
           let!(:provider_intent_1b) do
             Models::Links::LinkProviderIntent.create(
-              :alias => 'link_name_1b',
-              :provider => provider_1,
+              :name => 'link_name_1b',
+              :link_provider => provider_1,
               :shared => true,
               :consumable => true,
               :type => 'link_type_1b',
-              :name => 'link_original_name_1b',
+              :original_name => 'link_original_name_1b',
               :content => 'some link content',
             )
           end
@@ -111,12 +111,12 @@ module Bosh::Director
             end
           let!(:provider_intent_2) do
             Models::Links::LinkProviderIntent.create(
-              :alias => 'link_name_2',
-              :provider => provider_2,
+              :name => 'link_name_2',
+              :link_provider => provider_2,
               :shared => false,
               :consumable => true,
               :type => 'link_type_2',
-              :name => 'link_original_name_2',
+              :original_name => 'link_original_name_2',
               :content => 'I have content',
             )
           end
@@ -130,16 +130,16 @@ module Bosh::Director
       end
 
       def generate_provider_hash(model)
-        provider = model.provider
+        provider = model.link_provider
         {
           'id' => model.id,
-          'name' => model.alias,
+          'name' => model.name,
           'shared' => model.shared,
           'deployment' => provider.deployment.name,
           'link_provider_definition' =>
             {
               'type' => model.type,
-              'name' => model.name,
+              'name' => model.original_name,
             },
           'owner_object' => {
             'type' => provider.type,

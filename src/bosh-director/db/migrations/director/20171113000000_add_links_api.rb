@@ -10,10 +10,10 @@ Sequel.migration do
 
     create_table :link_provider_intents do
       primary_key :id
-      foreign_key :provider_id, :link_providers,  :on_delete => :cascade
-      String :name, :null => false
+      foreign_key :link_provider_id, :link_providers,  :on_delete => :cascade
+      String :original_name, :null => false
       String :type, :null => false
-      String :alias # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
+      String :name # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
       String :content # rely on networks, make optional because of delayed content resolution
       Boolean :shared, :null => false
       Boolean :consumable, :null => false
@@ -29,9 +29,10 @@ Sequel.migration do
 
     create_table :link_consumer_intents do
       primary_key :id
-      foreign_key :consumer_id, :link_consumers, :on_delete => :cascade
-      String :name, :null => false #think about adding alias/from
+      foreign_key :link_consumer_id, :link_consumers, :on_delete => :cascade
+      String :original_name, :null => false
       String :type, :null => false
+      String :name # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
       Boolean :optional, :null => false
       Boolean :blocked, :null => false # intentially blocking the consumption of the link, consume: nil
       # String :metadata, :null => false # put extra json object that has some flags, ip addresses true or false, or any other potential thing
@@ -72,10 +73,10 @@ Sequel.migration do
             link_types.each do |link_type, content|
               self[:link_provider_intents].insert(
                 {
-                  provider_id: provider_id,
-                  name: link_name,
+                  link_provider_id: provider_id,
+                  original_name: link_name,
                   type: link_type,
-                  alias: link_name,
+                  name: link_name,
                   shared: true,
                   consumable: true,
                   content: content.to_json,
@@ -120,14 +121,16 @@ Sequel.migration do
             link_detail.content == link_data
           end
 
-          link_consumer_intent = self[:link_consumer_intents].where(consumer_id: consumer_id, name: link_name).first
+          link_consumer_intent = self[:link_consumer_intents].where(link_consumer_id: consumer_id, original_name: link_name).first
 
           if link_consumer_intent
             link_consumer_intent_id = link_consumer_intent[:id]
           else
+            # #153608828 set original name and alias to the same value (link_name from consumed_links)
             link_consumer_intent_id = self[:link_consumer_intents].insert(
               {
-                consumer_id: consumer_id,
+                link_consumer_id: consumer_id,
+                original_name: link_name,
                 name: link_name,
                 type: 'undefined-migration',
                 optional: false,

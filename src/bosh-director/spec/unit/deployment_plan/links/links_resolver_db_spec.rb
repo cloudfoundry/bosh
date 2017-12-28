@@ -151,8 +151,8 @@ describe 'links_resolver' do
       )
 
       Bosh::Director::Models::Links::LinkConsumerIntent.create(
-        consumer: consumer,
-        name: 'p1',
+        link_consumer: consumer,
+        original_name: 'p1',
         type: 'pt1',
         optional: false,
         blocked: false
@@ -182,8 +182,8 @@ describe 'links_resolver' do
         expect(new_count).to eq(1)
         provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
         provider = Bosh::Director::Models::Links::LinkProvider.first
-        expect(provider_intent.provider).to eq(provider)
-        expect(provider_intent.name).to eq('p1')
+        expect(provider_intent.link_provider).to eq(provider)
+        expect(provider_intent.original_name).to eq('p1')
         expect(provider_intent.type).to eq('pt1')
       end
 
@@ -196,9 +196,9 @@ describe 'links_resolver' do
           expect(provider.type).to eq('job')
 
           provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
-          expect(provider_intent.provider).to eq(provider)
-          expect(provider_intent.alias).to eq('foo')
-          expect(provider_intent.name).to eq('p1')
+          expect(provider_intent.link_provider).to eq(provider)
+          expect(provider_intent.name).to eq('foo')
+          expect(provider_intent.original_name).to eq('p1')
           expect(provider_intent.type).to eq('pt1')
         end
 
@@ -229,9 +229,9 @@ describe 'links_resolver' do
           old_count = Bosh::Director::Models::Links::LinkProviderIntent.count
           provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
           provider = Bosh::Director::Models::Links::LinkProvider.first
-          expect(provider_intent.provider).to eq(provider)
-          expect(provider_intent.alias).to eq('foo')
-          expect(provider_intent.name).to eq('p1')
+          expect(provider_intent.link_provider).to eq(provider)
+          expect(provider_intent.name).to eq('foo')
+          expect(provider_intent.original_name).to eq('p1')
           expect(provider_intent.type).to eq('pt1')
 
           provided_links = [ Bosh::Director::DeploymentPlan::TemplateLink.new('bar', 'pt1', false, false, 'p1') ]
@@ -244,9 +244,9 @@ describe 'links_resolver' do
 
           provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
           provider = Bosh::Director::Models::Links::LinkProvider.first
-          expect(provider_intent.provider).to eq(provider)
-          expect(provider_intent.alias).to eq('bar')
-          expect(provider_intent.name).to eq('p1')
+          expect(provider_intent.link_provider).to eq(provider)
+          expect(provider_intent.name).to eq('bar')
+          expect(provider_intent.original_name).to eq('p1')
           expect(provider_intent.type).to eq('pt1')
 
         end
@@ -287,7 +287,7 @@ describe 'links_resolver' do
           links_resolver.add_providers(instance_group)
 
           actual_intents = Bosh::Director::Models::Links::LinkProviderIntent.all.map do |intent|
-            {name: intent[:name], content: JSON.parse(intent[:content])}
+            {name: intent[:original_name], content: JSON.parse(intent[:content])}
           end
 
           expected_intents = [
@@ -348,14 +348,14 @@ describe 'links_resolver' do
           links_resolver.add_providers(instance_group)
 
           actual_intents = Bosh::Director::Models::Links::LinkProviderIntent.all.map do |intent|
-            {name: intent[:name], alias: intent[:alias], provider_id: intent.provider_id, content: JSON.parse(intent[:content])}
+            {original_name: intent[:original_name], name: intent[:name], link_provider_id: intent.link_provider_id, content: JSON.parse(intent[:content])}
           end
 
           expected_intents = [
-            {name: 'disk1', alias: 'disk1', provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
-            {name: 'disk2', alias: 'disk2', provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
-            {name: 'disk_1', alias: 'disk_1', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
-            {name: 'disk_2', alias: 'disk_2', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
+            {original_name: 'disk1', name: 'disk1', link_provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {original_name: 'disk2', name: 'disk2', link_provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {original_name: 'disk_1', name: 'disk_1', link_provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
+            {original_name: 'disk_2', name: 'disk_2', link_provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
           ]
 
           expect(actual_intents).to match_array(expected_intents)
@@ -395,13 +395,13 @@ describe 'links_resolver' do
           links_resolver.add_providers(instance_group)
 
           actual_intents = Bosh::Director::Models::Links::LinkProviderIntent.all.map do |intent|
-            {name: intent[:name], alias: intent[:alias], provider_id: intent.provider_id, content: JSON.parse(intent[:content])}
+            {original_name: intent[:original_name], name: intent[:name], link_provider_id: intent.link_provider_id, content: JSON.parse(intent[:content])}
           end
 
           expected_intents = [
-            {name: 'p1', alias: 'foo', provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
-            {name: 'disk_1', alias: 'disk_1', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
-            {name: 'disk_2', alias: 'disk_2', provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
+            {original_name: 'p1', name: 'foo', link_provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {original_name: 'disk_1', name: 'disk_1', link_provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
+            {original_name: 'disk_2', name: 'disk_2', link_provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
           ]
 
           expect(actual_intents).to match_array(expected_intents)
@@ -443,10 +443,10 @@ describe 'links_resolver' do
         )
 
         Bosh::Director::Models::Links::LinkProviderIntent.create(
-          provider: provider,
-          name: 'original_provider_name',
+          link_provider: provider,
+          original_name: 'original_provider_name',
           type: 'pt1',
-          alias: 'foo',
+          name: 'foo',
           shared: true,
           consumable: true,
           content: {
@@ -474,6 +474,13 @@ describe 'links_resolver' do
       it 'adds consumer to deployment_plan' do
         expect(deployment_plan).to receive(:add_link_consumer)
         links_resolver.resolve(instance_group)
+      end
+
+      it 'adds consumer intent with alias to database' do
+        links_resolver.resolve(instance_group)
+        link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.first
+        expect(link_consumer_intent[:original_name]).to eq('c1')
+        expect(link_consumer_intent[:name]).to eq('foo')
       end
 
       it 'adds link to links table' do
@@ -521,10 +528,10 @@ describe 'links_resolver' do
           )
 
           @link_provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-            provider_id: provider[:id],
-            name: 'original_provider_name',
+            link_provider_id: provider[:id],
+            original_name: 'original_provider_name',
             type: 'pt1',
-            alias: 'foo',
+            name: 'foo',
             shared: true,
             consumable: true,
             content: {
@@ -543,8 +550,8 @@ describe 'links_resolver' do
           )
 
           @link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-            consumer_id: consumer[:id],
-            name: 'original_provider_name',
+            link_consumer_id: consumer[:id],
+            original_name: 'original_provider_name',
             type: 'pt1',
             optional: false,
             blocked: false
@@ -561,7 +568,7 @@ describe 'links_resolver' do
 
         it 'the link uses the same consumer' do
           old_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(id: @created_link[:link_consumer_intent_id])
-          old_consumer = old_consumer_intent.consumer
+          old_consumer = old_consumer_intent.link_consumer
           links_resolver.resolve(instance_group)
           updated_link = links_manager.find_link(
             name: 'p1',
@@ -572,7 +579,7 @@ describe 'links_resolver' do
           expect(updated_link[:link_consumer_intent_id]).to eq(old_consumer_intent[:id])
 
           new_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(id: updated_link[:link_consumer_intent_id])
-          expect(new_consumer_intent.consumer[:id]).to eq(old_consumer[:id])
+          expect(new_consumer_intent.link_consumer[:id]).to eq(old_consumer[:id])
         end
 
         # Feature to be implemented in story #151894692
@@ -617,10 +624,10 @@ describe 'links_resolver' do
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
-              provider: provider,
-              name: 'original_provider_name',
+              link_provider: provider,
+              original_name: 'original_provider_name',
               type: 'pt1',
-              alias: 'foo',
+              name: 'foo',
               shared: true,
               consumable: true,
               content: {
@@ -786,10 +793,10 @@ describe 'links_resolver' do
             )
 
           Bosh::Director::Models::Links::LinkProviderIntent.create(
-            provider: provider,
-            name: 'original_provider_name',
+            link_provider: provider,
+            original_name: 'original_provider_name',
             type: 'pt1',
-            alias: 'foo',
+            name: 'foo',
             shared: true,
             consumable: true,
             content: {

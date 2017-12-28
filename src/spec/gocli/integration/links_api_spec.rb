@@ -109,16 +109,22 @@ describe 'links api', type: :integration do
     )
   end
 
-  def consumer_response(name='consumer')
+  def consumer_response(job_name = 'consumer', link_name = 'provider')
     {
       'id' => Integer,
+      'name' => link_name,
+      'optional' => false,
       'deployment' => 'simple',
       'owner_object' => {
-        'name' => name,
+        'name' => job_name,
         'type' => 'job',
         'info' => {
           'instance_group' => 'foobar'
-        }
+        },
+      },
+      'link_consumer_definition' => {
+        'name' => link_name,
+        'type' => link_name
       }
     }
   end
@@ -335,7 +341,7 @@ describe 'links api', type: :integration do
         let(:jobs) { [{ 'name' => 'api_server_with_optional_db_link' }] }
 
         it 'should still create a consumer' do
-          expected_response = [ consumer_response('api_server_with_optional_db_link') ]
+          expected_response = [ consumer_response('api_server_with_optional_db_link', 'db').merge('optional' => true) ]
 
           expect(get_link_consumers).to match_array(expected_response)
         end

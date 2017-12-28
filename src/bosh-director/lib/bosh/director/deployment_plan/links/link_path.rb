@@ -186,7 +186,7 @@ module Bosh::Director
 
         Models::Links::LinkProvider.where(deployment: deployment).each do |provider|
           provider.intents.each do |intent|
-            next if intent[:alias] != alias_name
+            next if intent[:name] != alias_name
             content = JSON.parse(intent[:content])
             if intent[:shared] && (!link_network || (content['networks'].include? link_network))
               found_link_paths.push({:deployment => deployment.name, :instance_group => provider[:instance_group], :job => provider[:name], :name => alias_name})

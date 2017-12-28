@@ -33,8 +33,8 @@ module Bosh::Director::Links
       link_shared:
     )
       Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
-        provider: link_provider,
-        name: link_name,
+        link_provider: link_provider,
+        original_name: link_name,
         type: link_type,
         shared: link_shared,
         consumable: true
@@ -49,15 +49,15 @@ module Bosh::Director::Links
     )
       if link_alias
         Bosh::Director::Models::Links::LinkProviderIntent.find(
-          provider: link_provider,
-          alias: link_alias,
+          link_provider: link_provider,
+          name: link_alias,
           type: link_type,
           consumable: true
         )
       elsif link_name
         Bosh::Director::Models::Links::LinkProviderIntent.find(
-          provider: link_provider,
-          name: link_name,
+          link_provider: link_provider,
+          original_name: link_name,
           type: link_type,
           consumable: true
         )
@@ -99,8 +99,8 @@ module Bosh::Director::Links
       blocked:
     )
       Bosh::Director::Models::Links::LinkConsumerIntent.find_or_create(
-        consumer: link_consumer,
-        name: link_name,
+        link_consumer: link_consumer,
+        original_name: link_name,
         type: link_type,
         optional: optional,
         blocked: blocked

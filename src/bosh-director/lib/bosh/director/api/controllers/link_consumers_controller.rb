@@ -21,7 +21,9 @@ module Bosh::Director
 
         link_consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment)
         link_consumers.each do |link_consumer|
-          result << generate_consumer_hash(link_consumer)
+          link_consumer.intents.each do |link_consumer_intent|
+            result << generate_consumer_hash(link_consumer_intent)
+          end
         end
 
         body(json_encode(result))
@@ -30,16 +32,23 @@ module Bosh::Director
       private
 
       def generate_consumer_hash(model)
+        consumer = model.link_consumer
         {
           :id => model.id,
-          :deployment => model.deployment.name,
+          :name => model.name,
+          :optional => model.optional,
+          :deployment => consumer.deployment.name,
           :owner_object => {
-            :type => model.type,
-            :name => model.name,
+            :type => consumer.type,
+            :name => consumer.name,
             :info => {
-              :instance_group => model.instance_group,
+              :instance_group => consumer.instance_group,
             },
           },
+          :link_consumer_definition => {
+            :name => model.original_name,
+            :type => model.type,
+          }
         }
       end
     end

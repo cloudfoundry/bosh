@@ -261,12 +261,12 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           )
 
           Bosh::Director::Models::Links::LinkProviderIntent.create(
-            provider: provider,
+            link_provider: provider,
             shared: true,
             consumable: true,
-            name: 'db',
+            original_name: 'db',
             type: 'db',
-            alias: 'db',
+            name: 'db',
             content: {
               "deployment_name" => "other-deployment",
               "default_network" => "fake-manual-network",

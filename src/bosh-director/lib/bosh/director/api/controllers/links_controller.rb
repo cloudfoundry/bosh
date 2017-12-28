@@ -20,7 +20,7 @@ module Bosh::Director
         result = []
 
         Models::Links::LinkConsumer.where(deployment: deployment).each do |consumer|
-          Models::Links::LinkConsumerIntent.where(consumer: consumer).each do |consumer_intent|
+          Models::Links::LinkConsumerIntent.where(link_consumer: consumer).each do |consumer_intent|
             links = Models::Links::Link.where(link_consumer_intent: consumer_intent)
             links.each do |link|
               result << generate_link_hash(link)
