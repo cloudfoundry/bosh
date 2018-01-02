@@ -108,7 +108,6 @@ describe Bosh::Director::Links::LinksManager do
           link_provider: link_provider,
           link_name: "test_original_link_name",
           link_type: "test_link_type",
-          link_shared: false
         )
 
         expect(actual_intent).to eq(expected_intent)
@@ -123,7 +122,6 @@ describe Bosh::Director::Links::LinksManager do
           link_provider: link_provider,
           link_name: "test_original_link_name",
           link_type: "test_link_type",
-          link_shared: false
         )
 
         expect(Bosh::Director::Models::Links::LinkProviderIntent.count).to eq(1)
@@ -296,7 +294,7 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_link_consumer_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
-          link_name: 'test_original_link_name',
+          original_link_name: 'test_original_link_name',
           link_type: 'test_link_type',
           optional: false,
           blocked: false
@@ -310,7 +308,7 @@ describe Bosh::Director::Links::LinksManager do
       it 'creates a new link_consumer_intent' do
         expected_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
-          link_name: 'test_original_link_name',
+          original_link_name: 'test_original_link_name',
           link_type: 'test_link_type',
           optional: true,
           blocked: false

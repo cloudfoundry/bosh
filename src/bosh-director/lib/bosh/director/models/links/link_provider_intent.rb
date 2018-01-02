@@ -8,7 +8,6 @@ module Bosh::Director::Models::Links
                            :original_name,
                            :link_provider_id,
                            :type,
-                           :shared,
                            :consumable
                          ]
     end

@@ -29,14 +29,12 @@ module Bosh::Director::Links
     def find_or_create_provider_intent(
       link_provider:,
       link_name:,
-      link_type:,
-      link_shared:
+      link_type:
     )
       Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
         link_provider: link_provider,
         original_name: link_name,
         type: link_type,
-        shared: link_shared,
         consumable: true
       )
     end
@@ -62,7 +60,6 @@ module Bosh::Director::Links
           consumable: true
         )
       end
-
     end
 
     def find_or_create_consumer(
@@ -93,14 +90,14 @@ module Bosh::Director::Links
 
     def find_or_create_consumer_intent(
       link_consumer:,
-      link_name:,
+      original_link_name:,
       link_type:,
       optional:,
       blocked:
     )
       Bosh::Director::Models::Links::LinkConsumerIntent.find_or_create(
         link_consumer: link_consumer,
-        original_name: link_name,
+        original_name: original_link_name,
         type: link_type,
         optional: optional,
         blocked: blocked

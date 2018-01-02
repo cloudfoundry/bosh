@@ -121,10 +121,6 @@ describe 'links_resolver' do
   end
 
   describe '#add_providers' do
-    let(:jobs) do
-      [provider_job]
-    end
-
     let(:link_path) do
       instance_double(Bosh::Director::DeploymentPlan::LinkPath,
                       deployment: deployment_name,
@@ -159,6 +155,11 @@ describe 'links_resolver' do
       )
     end
 
+    def new_persistent_disk(name)
+      disk_type = Bosh::Director::DeploymentPlan::DiskType.new('disk_type_name', 1000, {})
+      Bosh::Director::DeploymentPlan::PersistentDiskCollection::NewPersistentDisk.new(name, disk_type)
+    end
+
     context 'when there are jobs that provide links' do
       it 'should add a provider' do
         old_count = Bosh::Director::Models::Links::LinkProvider.count
@@ -190,22 +191,13 @@ describe 'links_resolver' do
       context 'when provider is updated' do
         before do
           links_resolver.add_providers(instance_group)
-          provider = Bosh::Director::Models::Links::LinkProvider.first
-          expect(provider.instance_group).to eq('ig_1')
-          expect(provider.name).to eq('job_1')
-          expect(provider.type).to eq('job')
-
-          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.first
-          expect(provider_intent.link_provider).to eq(provider)
-          expect(provider_intent.name).to eq('foo')
-          expect(provider_intent.original_name).to eq('p1')
-          expect(provider_intent.type).to eq('pt1')
         end
 
         it 'should only update and not create a new provider' do
           allow(provider_job).to receive(:provided_links).and_return(
             [ Bosh::Director::DeploymentPlan::TemplateLink.new('bar', 'pt1', false, false, 'p1') ]
           )
+
           old_count = Bosh::Director::Models::Links::LinkProvider.count
           old_link_provider = Bosh::Director::Models::Links::LinkProvider.first
           old_provider_id = old_link_provider[:id]
@@ -231,8 +223,6 @@ describe 'links_resolver' do
           provider = Bosh::Director::Models::Links::LinkProvider.first
           expect(provider_intent.link_provider).to eq(provider)
           expect(provider_intent.name).to eq('foo')
-          expect(provider_intent.original_name).to eq('p1')
-          expect(provider_intent.type).to eq('pt1')
 
           provided_links = [ Bosh::Director::DeploymentPlan::TemplateLink.new('bar', 'pt1', false, false, 'p1') ]
           links_resolver.add_providers(instance_group)
@@ -248,18 +238,12 @@ describe 'links_resolver' do
           expect(provider_intent.name).to eq('bar')
           expect(provider_intent.original_name).to eq('p1')
           expect(provider_intent.type).to eq('pt1')
-
         end
       end
     end
 
     context 'when there are unmanaged persistent disks' do
       let(:provided_links) {[]}
-
-      def new_persistent_disk(name)
-        disk_type = Bosh::Director::DeploymentPlan::DiskType.new('disk_type_name', 1000, {})
-        Bosh::Director::DeploymentPlan::PersistentDiskCollection::NewPersistentDisk.new(name, disk_type)
-      end
 
       before do
         allow(instance_group).to receive_message_chain(:persistent_disk_collection, :non_managed_disks).and_return(
@@ -302,11 +286,6 @@ describe 'links_resolver' do
     end
 
     context 'when there are jobs providing links and unmanaged disks' do
-      def new_persistent_disk(name)
-        disk_type = Bosh::Director::DeploymentPlan::DiskType.new('disk_type_name', 1000, {})
-        Bosh::Director::DeploymentPlan::PersistentDiskCollection::NewPersistentDisk.new(name, disk_type)
-      end
-
       before do
         allow(instance_group).to receive_message_chain(:persistent_disk_collection, :non_managed_disks).and_return(
           [new_persistent_disk('disk_1'), new_persistent_disk('disk_2')]
@@ -316,8 +295,8 @@ describe 'links_resolver' do
       context 'when the names are the same' do
         let(:provided_links) do
           [
-            Bosh::Director::DeploymentPlan::TemplateLink.new('disk1', 'disk', false, false, 'disk1'),
-            Bosh::Director::DeploymentPlan::TemplateLink.new('disk2', 'disk', false, false, 'disk2'),
+            Bosh::Director::DeploymentPlan::TemplateLink.new('disk_1', 'disk', false, false, 'disk_1'),
+            Bosh::Director::DeploymentPlan::TemplateLink.new('disk_2', 'disk', false, false, 'disk_2'),
           ]
         end
 
@@ -352,8 +331,8 @@ describe 'links_resolver' do
           end
 
           expected_intents = [
-            {original_name: 'disk1', name: 'disk1', link_provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
-            {original_name: 'disk2', name: 'disk2', link_provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {original_name: 'disk_1', name: 'disk_1', link_provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
+            {original_name: 'disk_2', name: 'disk_2', link_provider_id: 1, content: {"deployment_name" => "fake-deployment", "domain" => "bosh", "default_network" => "net_a", "networks" => ["net_a", "net_b"], "instance_group" => "ig_1", "instances" => []}},
             {original_name: 'disk_1', name: 'disk_1', link_provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_1"}, 'networks' => [], 'instances' => []}},
             {original_name: 'disk_2', name: 'disk_2', link_provider_id: 2, content: {'deployment_name' => "fake-deployment", 'properties' => {'name' => "disk_2"}, 'networks' => [], 'instances' => []}}
           ]
@@ -465,22 +444,71 @@ describe 'links_resolver' do
         )
       end
 
-      it 'calls find or creates a new consumer' do
-        expect(links_manager).to receive(:find_or_create_consumer).once.and_call_original
-        expect(links_manager).to receive(:find_or_create_consumer_intent).once.and_call_original
-        links_resolver.resolve(instance_group)
+      context 'consumer does not exist' do
+        it 'creates a new consumer' do
+          expect(links_manager).to receive(:find_or_create_consumer).once.and_call_original
+          expect(links_manager).to receive(:find_or_create_consumer_intent).once.and_call_original
+          links_resolver.resolve(instance_group)
+
+          link_consumer = Bosh::Director::Models::Links::LinkConsumer.first
+          expect(link_consumer.deployment).to eq(deployment_model)
+          expect(link_consumer[:instance_group]).to eq('ig_1')
+          expect(link_consumer[:name]).to eq('job_1')
+          expect(link_consumer[:type]).to eq('job')
+        end
+
+        it 'adds consumer intent with alias to database' do
+          links_resolver.resolve(instance_group)
+          link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.first
+          expect(link_consumer_intent[:original_name]).to eq('c1')
+          expect(link_consumer_intent[:name]).to eq('foo')
+        end
+      end
+
+      context 'consumer already exist' do
+        before do
+          link_consumer = links_manager.find_or_create_consumer(
+            deployment_model: deployment_model,
+            instance_group_name: 'ig_1',
+            name: 'job_1',
+            type: 'job',
+          )
+
+          links_manager.find_or_create_consumer_intent(
+            link_consumer: link_consumer,
+            original_link_name: 'c1',
+            link_type: 'pt1',
+            optional: false,
+            blocked: false,
+          )
+        end
+
+        it 'reuses the existing consumer' do
+          original_count = Bosh::Director::Models::Links::LinkConsumer.count
+          expect(original_count).to eq(1)
+          original_link_consumer = Bosh::Director::Models::Links::LinkConsumer.first
+          links_resolver.resolve(instance_group)
+
+          expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(original_count)
+          link_consumer = Bosh::Director::Models::Links::LinkConsumer.first
+          expect(link_consumer[:id]).to eq(original_link_consumer[:id])
+        end
+
+        it 'reuses the same consumer intent' do
+          original_count = Bosh::Director::Models::Links::LinkConsumerIntent.count
+          expect(original_count).to eq(1)
+          original_link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.first
+          links_resolver.resolve(instance_group)
+
+          expect(Bosh::Director::Models::Links::LinkConsumerIntent.count).to eq(original_count)
+          link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.first
+          expect(original_link_consumer_intent[:id]).to eq(link_consumer_intent[:id])
+        end
       end
 
       it 'adds consumer to deployment_plan' do
         expect(deployment_plan).to receive(:add_link_consumer)
         links_resolver.resolve(instance_group)
-      end
-
-      it 'adds consumer intent with alias to database' do
-        links_resolver.resolve(instance_group)
-        link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.first
-        expect(link_consumer_intent[:original_name]).to eq('c1')
-        expect(link_consumer_intent[:name]).to eq('foo')
       end
 
       it 'adds link to links table' do
@@ -512,22 +540,26 @@ describe 'links_resolver' do
           [consumer_job]
         end
 
-        before do
-          provider = Bosh::Director::Models::Links::LinkProvider.create(
+        let!(:provider) do
+          Bosh::Director::Models::Links::LinkProvider.create(
             deployment: deployment_model,
             instance_group: 'ig_1',
             name: 'job_1',
             type: 'job'
           )
+        end
 
-          consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+        let!(:consumer) do
+          Bosh::Director::Models::Links::LinkConsumer.create(
             deployment: deployment_model,
             instance_group: 'ig_1',
             name: 'job_1',
             type: 'job'
           )
+        end
 
-          @link_provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+        let!(:link_provider_intent) do
+          Bosh::Director::Models::Links::LinkProviderIntent.create(
             link_provider_id: provider[:id],
             original_name: 'original_provider_name',
             type: 'pt1',
@@ -548,18 +580,22 @@ describe 'links_resolver' do
                 ]
             }.to_json
           )
+        end
 
-          @link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+        let!(:link_consumer_intent) do
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
             link_consumer_id: consumer[:id],
             original_name: 'original_provider_name',
             type: 'pt1',
             optional: false,
             blocked: false
           )
+        end
 
-          @created_link = Bosh::Director::Models::Links::Link.create(
-            link_provider_intent: @link_provider_intent,
-            link_consumer_intent: @link_consumer_intent,
+        let!(:created_link) do
+          Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: link_provider_intent,
+            link_consumer_intent: link_consumer_intent,
             name: 'p1',
             link_content: 'link_content',
             created_at: Time.now
@@ -567,19 +603,17 @@ describe 'links_resolver' do
         end
 
         it 'the link uses the same consumer' do
-          old_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(id: @created_link[:link_consumer_intent_id])
-          old_consumer = old_consumer_intent.link_consumer
           links_resolver.resolve(instance_group)
           updated_link = links_manager.find_link(
             name: 'p1',
-            provider_intent: @link_provider_intent,
-            consumer_intent: @link_consumer_intent
+            provider_intent: link_provider_intent,
+            consumer_intent: link_consumer_intent
           )
           expect(updated_link).to_not be_nil
-          expect(updated_link[:link_consumer_intent_id]).to eq(old_consumer_intent[:id])
+          expect(updated_link[:link_consumer_intent_id]).to eq(link_consumer_intent[:id])
 
           new_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(id: updated_link[:link_consumer_intent_id])
-          expect(new_consumer_intent.link_consumer[:id]).to eq(old_consumer[:id])
+          expect(new_consumer_intent.link_consumer[:id]).to eq(consumer[:id])
         end
 
         # Feature to be implemented in story #151894692

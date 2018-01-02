@@ -15,7 +15,7 @@ Sequel.migration do
       String :type, :null => false
       String :name # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
       String :content # rely on networks, make optional because of delayed content resolution
-      Boolean :shared, :null => false
+      Boolean :shared, :null => false, :default => false
       Boolean :consumable, :null => false
     end
 
