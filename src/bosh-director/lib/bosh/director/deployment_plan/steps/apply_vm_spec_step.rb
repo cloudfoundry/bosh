@@ -1,14 +1,14 @@
 module Bosh::Director
   module DeploymentPlan::Steps
     class ApplyVmSpecStep
-      def initialize(instance_plan, vm)
+      def initialize(instance_plan)
         @instance_plan = instance_plan
-        @vm = vm
       end
 
-      def perform
+      def perform(report)
+        vm = report.vm
         spec = @instance_plan.spec
-        agent_client = AgentClient.with_agent_id(@vm.agent_id)
+        agent_client = AgentClient.with_agent_id(vm.agent_id)
 
         # Agent will return dynamic network settings, we need to update spec with it
         # so that we can render templates with new spec later.
@@ -22,8 +22,8 @@ module Bosh::Director
         agent_state = agent_client.get_state
         unless agent_state.nil?
           agent_networks = agent_state['networks']
-          @vm.network_spec = agent_networks
-          @vm.save
+          vm.network_spec = agent_networks
+          vm.save
           instance_partial_state['networks'] = agent_networks
         end
 

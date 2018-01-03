@@ -93,9 +93,13 @@ module Bosh::Director
         end
 
         recreated = false
-        if needs_recreate?(instance_plan)
-          instance_model = instance_plan.instance.model
 
+        instance_model = instance_plan.instance.model
+        new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
+        instance_report = DeploymentPlan::Stages::Report.new
+        instance_report.vm = new_vm
+
+        if needs_recreate?(instance_plan)
           @logger.debug('Failed to update in place. Recreating VM')
           unless instance_plan.needs_to_fix?
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform
@@ -108,13 +112,22 @@ module Bosh::Director
                                 .map(&:disk_cid).compact
 
           if instance_plan.instance.strategy == DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
-            DeploymentPlan::Steps::ElectActiveVmStep.new(instance_model.most_recent_inactive_vm).perform
+            DeploymentPlan::Steps::ElectActiveVmStep.new(new_vm).perform
           else
             DeploymentPlan::Steps::DeleteVmStep.new(instance_model.active_vm, true, false, Config.enable_virtual_delete_vms).perform
             @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
           end
 
           recreated = true
+        end
+
+        if instance_plan.instance.strategy == DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+          if instance_plan.needs_disk?
+            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform
+            DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform
+          end
+
+          DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan).perform(instance_report)
         end
 
         instance_plan.release_obsolete_network_plans(@ip_provider)

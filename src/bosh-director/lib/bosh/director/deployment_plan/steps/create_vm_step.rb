@@ -14,7 +14,7 @@ module Bosh::Director
           @logger = Config.logger
         end
 
-        def perform
+        def perform(report)
           instance = @instance_plan.instance
 
           cpi_factory, stemcell_cid = choose_factory_and_stemcell_cid(@instance_plan, @use_existing)
@@ -34,6 +34,7 @@ module Bosh::Director
 
           begin
             update_metadata(@instance_plan, vm, cpi_factory)
+            report.vm = vm
           rescue Exception => e
             @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
             if Config.keep_unreachable_vms

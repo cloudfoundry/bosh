@@ -4,7 +4,12 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       describe ApplyVmSpecStep do
-        subject(:step) { ApplyVmSpecStep.new(instance_plan, vm) }
+        subject(:step) { ApplyVmSpecStep.new(instance_plan) }
+        let(:report) do
+          rp = Stages::Report.new
+          rp.vm = vm
+          rp
+        end
 
         describe '#perform' do
           let(:agent_client) { instance_double(AgentClient, apply: nil, get_state: { 'networks' => 'agent-network' }) }
@@ -58,13 +63,13 @@ module Bosh::Director
               'env' => 'my-env',
             )
 
-            step.perform
+            step.perform(report)
           end
 
           it 'sets the network_spec on the vm' do
             expect(vm).to receive(:network_spec=).with('agent-network')
 
-            step.perform
+            step.perform(report)
           end
         end
       end

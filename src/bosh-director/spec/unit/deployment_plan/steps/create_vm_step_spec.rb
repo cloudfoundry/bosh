@@ -121,6 +121,7 @@ module Bosh
               }}
           end
           let(:metadata_err) { "metadata_err" } 
+          let(:report) { Stages::Report.new }
 
           before do
             allow(Config).to receive(:current_job).and_return(update_job)
@@ -134,6 +135,13 @@ module Bosh
             allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
             allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
             allow(Models::Vm).to receive(:create).and_return(vm_model)
+            allow(cloud).to receive(:create_vm)
+          end
+
+          it 'sets vm on given report' do
+            subject.perform(report)
+
+            expect(report.vm).to eq(vm_model)
           end
 
           context 'with existing cloud config' do
@@ -156,7 +164,7 @@ module Bosh
                 kind_of(String), 'old-stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
               ).and_return('new-vm-cid')
 
-              subject.perform
+              subject.perform(report)
             end
 
             context 'when cloud-config/azs are not used' do
@@ -172,7 +180,7 @@ module Bosh
                   kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
                 ).and_return('new-vm-cid')
 
-                subject.perform
+                subject.perform(report)
               end
             end
           end
@@ -187,7 +195,7 @@ module Bosh
             expect(agent_client).to receive(:wait_until_ready)
             expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
 
-            subject.perform
+            subject.perform(report)
           end
 
           it 'should record events' do
@@ -198,7 +206,7 @@ module Bosh
 
             ).and_return('new-vm-cid')
             expect {
-              subject.perform
+              subject.perform(report)
             }.to change { Models::Event.count }.from(0).to(2)
 
             event1 = Models::Event.first
@@ -224,7 +232,7 @@ module Bosh
           it 'should record events about error' do
             expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
             expect {
-              subject.perform
+              subject.perform(report)
             }.to raise_error Bosh::Clouds::VMCreationFailed
 
             event2 = Models::Event.order(:id)[2]
@@ -236,7 +244,7 @@ module Bosh
             expect(Bosh::Director::Models::Vm).to receive(:create).and_raise('Bad DB. Bad.')
             expect(vm_deleter).to receive(:delete_vm_by_cid).with('vm-cid')
             expect {
-              subject.perform
+              subject.perform(report)
             }.to raise_error ('Bad DB. Bad.')
           end
 
@@ -249,7 +257,7 @@ module Bosh
               network_settings.merge(extra_ip)
             )
 
-            subject.perform
+            subject.perform(report)
             expect(agent_broadcaster).to have_received(:delete_arp_entries).with(vm_model.cid, ['192.168.1.3'])
           end
 
@@ -264,7 +272,7 @@ module Bosh
               network_settings.merge(extra_ip)
             )
 
-            subject.perform
+            subject.perform(report)
             expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(vm_model.cid, ['192.168.1.3'])
 
           end
@@ -291,7 +299,7 @@ module Bosh
                 })
               end
 
-              subject.perform
+              subject.perform(report)
             end
           end
 
@@ -302,13 +310,13 @@ module Bosh
 
               expect(Models::Vm).to receive(:create).with(hash_including(cid: 'fake-vm-cid', instance: instance_model))
 
-              subject.perform
+              subject.perform(report)
             end
 
             it 'should not retry creating a VM if it is told it is not a retryable error' do
               expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
-              expect {subject.perform}.to raise_error(Bosh::Clouds::VMCreationFailed)
+              expect {subject.perform(report)}.to raise_error(Bosh::Clouds::VMCreationFailed)
             end
 
             it 'should try exactly the configured number of times (max_vm_create_tries) when it is a retryable error' do
@@ -316,7 +324,7 @@ module Bosh
 
               expect(cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
-              expect {subject.perform}.to raise_error(Bosh::Clouds::VMCreationFailed)
+              expect {subject.perform(report)}.to raise_error(Bosh::Clouds::VMCreationFailed)
             end
           end
 
@@ -326,7 +334,7 @@ module Bosh
             expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
             expect(cloud).to_not receive(:delete_vm)
 
-            expect {subject.perform}.to raise_error(metadata_err)
+            expect {subject.perform(report)}.to raise_error(metadata_err)
           end
 
           it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
@@ -335,7 +343,7 @@ module Bosh
             expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
             expect(cloud).to receive(:delete_vm)
 
-            expect {subject.perform}.to raise_error(metadata_err)
+            expect {subject.perform(report)}.to raise_error(metadata_err)
           end
 
           it 'should have deep copy of environment' do
@@ -345,13 +353,13 @@ module Bosh
               env_id = args[5].object_id
             end
 
-            subject.perform
+            subject.perform(report)
 
             expect(cloud).to receive(:create_vm) do |*args|
               expect(args[5].object_id).not_to eq(env_id)
             end
 
-            subject.perform
+            subject.perform(report)
           end
 
           context 'nats information' do
@@ -369,7 +377,7 @@ module Bosh
                     },
                   }
                 ).and_return('new-vm-cid')
-                subject.perform
+                subject.perform(report)
               end
 
               context 'when ca is included' do
@@ -410,7 +418,7 @@ module Bosh
                       }
                     }
                   ).and_return('new-vm-cid')
-                  subject.perform
+                  subject.perform(report)
                 end
               end
             end
@@ -430,7 +438,7 @@ module Bosh
                     }
                   }
                 ).and_return('new-vm-cid')
-                subject.perform
+                subject.perform(report)
               end
             end
           end
@@ -446,7 +454,7 @@ module Bosh
                   expect(env['bosh']['password'].length).to_not eq(0)
                 end.and_return('new-vm-cid')
 
-                subject.perform
+                subject.perform(report)
               end
             end
 
@@ -461,7 +469,7 @@ module Bosh
                   expect(env['bosh']['password']).to eq('custom-password')
                 end.and_return('new-vm-cid')
 
-                subject.perform
+                subject.perform(report)
               end
             end
           end
@@ -477,7 +485,7 @@ module Bosh
                   expect(env['bosh']).to eq({'group' => expected_group, 'groups' => expected_groups})
                 end.and_return('new-vm-cid')
 
-                subject.perform
+                subject.perform(report)
               end
             end
 
@@ -493,7 +501,7 @@ module Bosh
                   expect(env['bosh']['password']).to eq('custom-password')
                 end.and_return('new-vm-cid')
 
-                subject.perform
+                subject.perform(report)
               end
             end
           end
@@ -660,7 +668,7 @@ module Bosh
                 expect(env_param).to eq(expected_env)
               end.and_return('new-vm-cid')
 
-              subject.perform
+              subject.perform(report)
             end
           end
         end
@@ -668,4 +676,3 @@ module Bosh
     end
   end
 end
-

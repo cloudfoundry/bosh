@@ -39,6 +39,11 @@ module Bosh::Director
     end
 
     def create_for_instance_plan(instance_plan, disks, tags, use_existing=false)
+      instance = instance_plan.instance
+      already_had_active_vm = instance.vm_created?
+      instance_report = DeploymentPlan::Stages::Report.new
+      instance_report.network_plans = instance_plan.network_plans
+
       DeploymentPlan::Steps::CreateVmStep.new(
         instance_plan,
         @agent_broadcaster,
@@ -46,16 +51,14 @@ module Bosh::Director
         disks,
         tags, # definitely d on't need to put these tags here, because they come off the instance plan
         use_existing,
-      ).perform
+      ).perform(instance_report)
 
-      instance = instance_plan.instance
-
-      unless instance.vm_created?
+      unless already_had_active_vm
         DeploymentPlan::Steps::ElectActiveVmStep.new(instance.model.most_recent_inactive_vm).perform
       end
 
       begin
-        if instance_plan.needs_disk?
+        if instance_plan.needs_disk? && instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
           DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags).perform
           DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model).perform
         end
@@ -72,9 +75,8 @@ module Bosh::Director
         raise e
       end
 
-      # TODO: use a STANDARD way to get the "new vm" off the instance
-      vm = instance.model.active_vm
-      DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan, vm).perform
+      instance_report.vm = instance.model.active_vm
+      DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan).perform(instance_report)
 
       DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(
         instance_plan,
@@ -82,15 +84,7 @@ module Bosh::Director
         dns_encoder: @dns_encoder,
       ).perform
 
-      # def perform
-      #   vm = @instance_plan.instance.most_recent_inactive_vm
-      #   apply_initial_vm_state(instance_plan, vm)
-      # end
-
-      # update instance_plan state
-      # per story task, move this to where we activate the vm
-
-      instance_plan.mark_desired_network_plans_as_existing
+      DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep.new.perform(instance_report)
     end
   end
 end

@@ -2,21 +2,33 @@ require 'spec_helper'
 
 module Bosh::Director
   describe 'StepExecutor' do
-    subject(:executor) { StepExecutor.new(stage_name, state_step_hash) }
-    let(:state_object) do
-      double('state_object', task_name: task_name, thread_name: thread_name, info: info, state: state)
+    subject(:executor) { StepExecutor.new(stage_name, agenda_step_hash) }
+    let(:agenda) do
+      instance_double(
+        DeploymentPlan::Stages::Agenda,
+        task_name: task_name,
+        thread_name: thread_name,
+        info: info,
+        report: report,
+      )
     end
-    let(:another_state_object) do
-      double('another_state_object', task_name: task_name, thread_name: thread_name, info: info, state: another_state)
+    let(:another_agenda) do
+      instance_double(
+        DeploymentPlan::Stages::Agenda,
+        task_name: task_name,
+        thread_name: thread_name,
+        info: info,
+        report: another_report,
+      )
     end
-    let(:state) { double('state') }
-    let(:another_state) { double('another_state') }
+    let(:report) { instance_double(DeploymentPlan::Stages::Report) }
+    let(:another_report) { instance_double(DeploymentPlan::Stages::Report) }
     let(:stage_name) { 'dummy stage' }
     let(:step1) { double('step1', perform: nil) }
     let(:step2) { double('step2', perform: nil) }
     let(:step3) { double('step3', perform: nil) }
     let(:step4) { double('step4', perform: nil) }
-    let(:state_step_hash) { { state_object => [step1, step2], another_state_object => [step3, step4] } }
+    let(:agenda_step_hash) { { agenda => [step1, step2], another_agenda => [step3, step4] } }
     let(:queue) { Thread::Queue.new }
     let(:logger) { Logging::Logger.new('test-logger') }
     let(:thread_name) { 'dummy_thread' }
@@ -32,20 +44,12 @@ module Bosh::Director
       allow(logger).to receive(:info)
     end
 
-    it 'call perform on each of the steps, passing the state_hash along' do
-      expect(step1).to receive(:perform).with(state) do
-        allow(state_object).to receive(:step1_performed?).and_return(true)
-      end
-      expect(step2).to receive(:perform).with(state) do
-        expect(state_object.step1_performed?).to eq(true)
-      end
+    it 'call perform on each of the steps, passing the report along' do
+      expect(step1).to receive(:perform).with(report).ordered
+      expect(step2).to receive(:perform).with(report).ordered
 
-      expect(step3).to receive(:perform).with(another_state) do
-        allow(another_state_object).to receive(:step3_performed?).and_return(true)
-      end
-      expect(step4).to receive(:perform).with(another_state) do
-        expect(another_state_object.step3_performed?).to eq(true)
-      end
+      expect(step3).to receive(:perform).with(another_report).ordered
+      expect(step4).to receive(:perform).with(another_report).ordered
 
       executor.run
     end
@@ -72,7 +76,7 @@ module Bosh::Director
 
     it 'create a stage and track the tasks within the stage' do
       expect(EventLog::Stage).to receive(:new)
-        .with(anything, stage_name, anything, state_step_hash.length)
+        .with(anything, stage_name, anything, agenda_step_hash.length)
         .and_return(stage)
       expect(stage).to receive(:advance_and_track).with(task_name).twice
       executor.run

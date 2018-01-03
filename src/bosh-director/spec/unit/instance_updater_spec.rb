@@ -65,6 +65,7 @@ module Bosh::Director
         tags: tags,
       )
       allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)
+      allow(instance_plan).to receive(:needs_disk?).and_return(false)
 
       instance_plan
     end
@@ -240,8 +241,8 @@ module Bosh::Director
         let(:instance_model_state) { 'stopped' }
         let(:disk_manager) { instance_double(DiskManager) }
         let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
-        let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
-        let(:detach_step) { instance_double(DeploymentPlan::Steps::DetachInstanceDisksStep) }
+        let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep, perform: nil) }
+        let(:detach_step) { instance_double(DeploymentPlan::Steps::DetachInstanceDisksStep, perform: nil) }
 
         before do
           allow(DiskManager).to receive(:new).and_return(disk_manager)
@@ -319,11 +320,20 @@ module Bosh::Director
           context 'when the instance uses hot-swap strategy' do
             let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
             let!(:inactive_vm_model) { Models::Vm.make(instance_id: instance_model.id) }
+            let(:attach_step) { instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep, perform: nil) }
+            let(:mount_step) { instance_double(DeploymentPlan::Steps::MountInstanceDisksStep, perform: nil) }
+            let(:apply_spec_step) { instance_double(DeploymentPlan::Steps::ApplyVmSpecStep, perform: nil) }
 
             before do
               allow(instance).to receive(:strategy).and_return(DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP)
               allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
                 .with(inactive_vm_model).and_return(elect_active_vm_step)
+              allow(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)
+                .with(instance_model, 'key1' => 'value1').and_return(attach_step)
+              allow(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new)
+                .with(instance_model).and_return(mount_step)
+              allow(DeploymentPlan::Steps::ApplyVmSpecStep).to receive(:new)
+                .with(instance_plan).and_return(apply_spec_step)
             end
 
             it 'activates the vm but does not delete the old one or create another vm' do
@@ -336,8 +346,24 @@ module Bosh::Director
               expect(elect_active_vm_step).to receive(:perform)
               expect(state_applier).to receive(:apply)
               expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+              expect(apply_spec_step).to receive(:perform)
 
               updater.update(instance_plan)
+            end
+
+            context 'when instance has persistent disks' do
+              before do
+                allow(instance_plan).to receive(:needs_disk?).and_return(true)
+              end
+
+              it 'attaches and mounts persistent disks' do
+                expect(attach_step).to receive(:perform)
+                expect(mount_step).to receive(:perform)
+                expect(apply_spec_step).to receive(:perform)
+                expect(state_applier).to receive(:apply)
+
+                updater.update(instance_plan)
+              end
             end
           end
         end
