@@ -64,9 +64,6 @@ module Bosh::Director
 
       attr_accessor :addons
 
-      # @return [Hash] Returns the shared links
-      attr_reader :link_spec
-
       attr_reader :cloud_configs
       attr_reader :runtime_configs
 
@@ -96,7 +93,6 @@ module Bosh::Director
         @recreate = !!options['recreate']
         @fix = !!options['fix']
 
-        @link_spec = {}
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @variables = Variables.new([])
@@ -281,14 +277,6 @@ module Bosh::Director
 
       def add_link_consumer(link_consumer)
         @link_consumers << link_consumer unless @link_consumers.include?(link_consumer)
-      end
-
-      # If we don't want to do what we are doing in this method, then link_spec should be an object
-      def add_deployment_link_spec(instance_group_name, job_name, provided_link_name, provided_link_type, link_spec)
-        @link_spec[instance_group_name] ||= {}
-        @link_spec[instance_group_name][job_name] ||= {}
-        @link_spec[instance_group_name][job_name][provided_link_name] ||= {}
-        @link_spec[instance_group_name][job_name][provided_link_name][provided_link_type] = link_spec
       end
 
       def set_variables(variables_obj)

@@ -162,5 +162,9 @@ Sequel.migration do
         end
       end
     end
+
+    alter_table(:deployments) do
+      drop_column :link_spec_json
+    end
   end
 end

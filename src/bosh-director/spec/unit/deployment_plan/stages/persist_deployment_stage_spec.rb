@@ -140,12 +140,6 @@ module Bosh::Director
             reloaded_model = deployment_model.reload
             expect(reloaded_model.runtime_configs).to eq(runtime_configs)
           end
-
-          it 'saves link_spec' do
-            subject.perform
-            reloaded_model = deployment_model.reload
-            expect(reloaded_model.link_spec).to eq(link_spec)
-          end
         end
       end
     end
