@@ -194,10 +194,10 @@ module Bosh
             false,
           ).and_return(create_vm_step)
         allow(DeploymentPlan::Steps::UpdateInstanceSettingsStep).to receive(:new)
-          .with(instance, an_instance_of(Models::Vm)).and_return(update_settings_step)
+          .with(instance).and_return(update_settings_step)
         allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
-          .with(an_instance_of(Models::Vm)).and_return(elect_active_vm_step)
-        allow(elect_active_vm_step).to receive(:perform) do
+          .and_return(elect_active_vm_step)
+        allow(elect_active_vm_step).to receive(:perform).with(report) do
           vm_model.active = true
           vm_model.save
         end
@@ -206,8 +206,8 @@ module Bosh
 
       it 'should create a vm and associate it with an instance' do
         expect(create_vm_step).to receive(:perform).with(report)
-        expect(elect_active_vm_step).to receive(:perform)
-        expect(update_settings_step).to receive(:perform)
+        expect(elect_active_vm_step).to receive(:perform).with(report)
+        expect(update_settings_step).to receive(:perform).with(report)
 
         subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
       end
@@ -222,9 +222,9 @@ module Bosh
         expect(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new).with(instance_model, tags).and_return attach_instance_disks_step
         expect(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new).with(instance_model).and_return mount_instance_disks_step
 
-        expect(attach_instance_disks_step).to receive(:perform).once
-        expect(mount_instance_disks_step).to receive(:perform).once
-        expect(update_settings_step).to receive(:perform)
+        expect(attach_instance_disks_step).to receive(:perform).with(report).once
+        expect(mount_instance_disks_step).to receive(:perform).with(report).once
+        expect(update_settings_step).to receive(:perform).with(report)
 
         expect(instance_plan).to receive(:release_obsolete_network_plans).with(ip_provider)
 
@@ -233,18 +233,20 @@ module Bosh
 
       describe 'rendering job templates' do
         let(:spec) { instance_double(DeploymentPlan::InstanceSpec, as_template_spec: {}) }
+        let(:render_step) { instance_double(DeploymentPlan::Steps::RenderInstanceJobTemplatesStep) }
 
         before do
           allow(instance_plan).to receive(:spec).and_return(spec)
           allow(DeploymentPlan::Steps::ApplyVmSpecStep).to receive(:new)
             .with(instance_plan).and_return(spec_apply_step)
+          allow(DeploymentPlan::Steps::RenderInstanceJobTemplatesStep).to receive(:new)
+            .with(instance_plan, template_blob_cache, dns_encoder).and_return(render_step)
         end
 
         it 're-renders job templates after applying spec' do
           expect(create_vm_step).to receive(:perform).with(report).ordered
           expect(spec_apply_step).to receive(:perform).with(report).ordered
-          expect(JobRenderer).to receive(:render_job_instances_with_cache)
-            .with([instance_plan], template_blob_cache, dns_encoder, logger)
+          expect(render_step).to receive(:perform).with(report)
 
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         end
@@ -280,30 +282,6 @@ module Bosh
 
           subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
         end
-      end
-
-      it 'should not destroy the VM if the Config.keep_unreachable_vms flag is true' do
-        Config.keep_unreachable_vms = true
-        expect(create_vm_step).to receive(:perform).with(report)
-        expect(cloud).to_not receive(:delete_vm)
-
-        expect(update_settings_step).to receive(:perform).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
-
-        expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        }.to raise_error(Bosh::Clouds::VMCreationFailed)
-      end
-
-      it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
-        Config.keep_unreachable_vms = false
-        expect(create_vm_step).to receive(:perform).with(report)
-        expect(cloud).to receive(:delete_vm)
-
-        expect(update_settings_step).to receive(:perform).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
-
-        expect {
-          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
-        }.to raise_error(Bosh::Clouds::VMCreationFailed)
       end
     end
   end

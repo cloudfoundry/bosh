@@ -49,40 +49,28 @@ module Bosh::Director
         @agent_broadcaster,
         @vm_deleter,
         disks,
-        tags, # definitely d on't need to put these tags here, because they come off the instance plan
+        tags,
         use_existing,
       ).perform(instance_report)
 
       unless already_had_active_vm
-        DeploymentPlan::Steps::ElectActiveVmStep.new(instance.model.most_recent_inactive_vm).perform
+        DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
       end
 
-      begin
-        if instance_plan.needs_disk? && instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
-          DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags).perform
-          DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model).perform
-        end
-        DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance, instance.model.active_vm).perform
-      rescue Exception => e
-        # cleanup in case of failure
-        @logger.error("Failed to create/contact VM #{instance.model.vm_cid}: #{e.inspect}")
-        # TODO: what is appropriate response to this error case ? orphan ?
-        if Config.keep_unreachable_vms
-          @logger.info('Keeping the VM for debugging')
-        else
-          @vm_deleter.delete_for_instance(instance.model)
-        end
-        raise e
+      if instance_plan.needs_disk? && instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+        DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags).perform(instance_report)
+        DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model).perform(instance_report)
       end
+      DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance).perform(instance_report)
 
-      instance_report.vm = instance.model.active_vm
+      # instance_report.vm = instance.model.active_vm
       DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan).perform(instance_report)
 
       DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(
         instance_plan,
-        blob_cache: @template_blob_cache,
-        dns_encoder: @dns_encoder,
-      ).perform
+        @template_blob_cache,
+        @dns_encoder,
+      ).perform(instance_report)
 
       DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep.new.perform(instance_report)
     end

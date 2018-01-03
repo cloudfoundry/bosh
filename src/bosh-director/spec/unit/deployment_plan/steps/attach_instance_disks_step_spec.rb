@@ -10,8 +10,8 @@ module Bosh::Director
         let!(:vm) { Models::Vm.make(instance: instance, active: true, cpi: 'vm-cpi') }
         let!(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
         let!(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }
-        let(:tags) {{'mytag' => 'myvalue'}}
-
+        let(:tags) { { 'mytag' => 'myvalue' } }
+        let(:report) { Stages::Report.new }
         let(:attach_disk_1) { instance_double(AttachDiskStep) }
         let(:attach_disk_2) { instance_double(AttachDiskStep) }
 
@@ -19,17 +19,17 @@ module Bosh::Director
           allow(AttachDiskStep).to receive(:new).with(disk1, tags).and_return(attach_disk_1)
           allow(AttachDiskStep).to receive(:new).with(disk2, tags).and_return(attach_disk_2)
 
-          allow(attach_disk_1).to receive(:perform).once
-          allow(attach_disk_2).to receive(:perform).once
+          allow(attach_disk_1).to receive(:perform).with(report).once
+          allow(attach_disk_2).to receive(:perform).with(report).once
         end
 
         it 'calls out to vms cpi to attach all attached disks' do
           expect(AttachDiskStep).to receive(:new).with(disk1, tags)
           expect(AttachDiskStep).to receive(:new).with(disk2, tags)
-          expect(attach_disk_1).to receive(:perform).once
-          expect(attach_disk_2).to receive(:perform).once
+          expect(attach_disk_1).to receive(:perform).with(report).once
+          expect(attach_disk_2).to receive(:perform).with(report).once
 
-          step.perform
+          step.perform(report)
         end
 
         context 'when the instance does not have an active vm' do
@@ -43,7 +43,7 @@ module Bosh::Director
             expect(attach_disk_1).not_to receive(:perform)
             expect(attach_disk_2).not_to receive(:perform)
 
-            step.perform
+            step.perform(report)
           end
         end
       end

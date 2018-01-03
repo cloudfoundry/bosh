@@ -1,9 +1,9 @@
 module Bosh::Director
   module DeploymentPlan
     class UpdateConfig
-      STRATEGY_HOT_SWAP = 'hot-swap'
-      STRATEGY_LEGACY = 'legacy'
-      ALLOWED_STRATEGY = [STRATEGY_HOT_SWAP, STRATEGY_LEGACY]
+      STRATEGY_HOT_SWAP = 'hot-swap'.freeze
+      STRATEGY_LEGACY = 'legacy'.freeze
+      ALLOWED_STRATEGY = [STRATEGY_HOT_SWAP, STRATEGY_LEGACY].freeze
 
       include ValidationHelper
 

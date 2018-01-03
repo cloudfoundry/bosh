@@ -11,8 +11,9 @@ module Bosh::Director
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { Config.cloud }
-        let(:tags) {{'mytag' => 'myvalue'}}
+        let(:tags) { { 'mytag' => 'myvalue' } }
         let(:meta_updater) { instance_double(MetadataUpdater, update_disk_metadata: nil) }
+        let(:report) { Stages::Report.new }
 
         before do
           allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
@@ -24,19 +25,19 @@ module Bosh::Director
         it 'calls out to cpi associated with disk to attach disk' do
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk.disk_cid)
 
-          step.perform
+          step.perform(report)
         end
 
         it 'logs notification of attaching' do
           expect(logger).to receive(:info).with("Attaching disk #{disk.disk_cid}")
 
-          step.perform
+          step.perform(report)
         end
 
         it 'updates the disk metadata with given tags' do
           expect(meta_updater).to receive(:update_disk_metadata).with(cloud, disk, tags)
 
-          step.perform
+          step.perform(report)
         end
 
         context 'when the CPI reports error when a disk is not able to be attached' do
@@ -49,7 +50,7 @@ module Bosh::Director
           end
 
           it 'raises a CloudDiskNotAttached error' do
-            expect { step.perform }.to raise_error(cpi_error)
+            expect { step.perform(report) }.to raise_error(cpi_error)
           end
         end
 
@@ -59,7 +60,7 @@ module Bosh::Director
           it 'does not perform any cloud actions' do
             expect(cloud).to_not receive(:attach_disk)
 
-            step.perform
+            step.perform(report)
           end
         end
       end

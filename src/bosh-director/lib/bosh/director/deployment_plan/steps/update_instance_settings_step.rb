@@ -2,13 +2,11 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class UpdateInstanceSettingsStep
-        def initialize(instance, vm)
+        def initialize(instance)
           @instance = instance
-          @vm = vm
-          @agent_client = AgentClient.with_agent_id(@vm.agent_id)
         end
 
-        def perform
+        def perform(report)
           instance_model = @instance.model.reload
 
           disk_associations = instance_model.active_persistent_disks.collection.reject do |disk|
@@ -19,8 +17,9 @@ module Bosh::Director
             { 'name' => disk.model.name, 'cid' => disk.model.disk_cid }
           end
 
-          @agent_client.update_settings(Config.trusted_certs, disk_associations)
-          @vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
+          vm = report.vm
+          AgentClient.with_agent_id(vm.agent_id).update_settings(Config.trusted_certs, disk_associations)
+          vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
 
           instance_model.update(cloud_properties: JSON.dump(@instance.cloud_properties))
         end

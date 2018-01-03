@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       describe UpdateInstanceSettingsStep do
-        subject(:step) { UpdateInstanceSettingsStep.new(instance, vm) }
+        subject(:step) { UpdateInstanceSettingsStep.new(instance) }
 
         let(:instance_model) { Models::Instance.make(cloud_properties: '{}') }
         let(:cloud_props) { { 'prop1' => 'value1' } }
@@ -20,6 +20,7 @@ module Bosh::Director
             cpi: 'vm-cpi',
           )
         end
+        let(:report) { Stages::Report.new.tap { |r| r.vm = vm } }
 
         describe '#perform' do
           before do
@@ -46,19 +47,19 @@ module Bosh::Director
             it 'updates agent disk associations' do
               expect(agent_client).to receive(:update_settings)
                 .with(trusted_certs, [{ 'name' => 'unmanaged', 'cid' => 'cid2' }])
-              step.perform
+              step.perform(report)
             end
           end
 
           it 'updates the agent settings and VM table with configured trusted certs' do
             expect(agent_client).to receive(:update_settings).with(trusted_certs, [])
-            expect { step.perform }.to change {
+            expect { step.perform(report) }.to change {
               vm.trusted_certs_sha1
             }.from(old_trusted_certs_sha1).to(::Digest::SHA1.hexdigest(trusted_certs))
           end
 
           it 'should update any cloud_properties provided' do
-            expect { step.perform }.to change {
+            expect { step.perform(report) }.to change {
               instance_model.cloud_properties
             }.from('{}').to(JSON.dump(cloud_props))
           end

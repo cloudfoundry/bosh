@@ -2,14 +2,14 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class RenderInstanceJobTemplatesStep
-        def initialize(instance_plan, blob_cache:, dns_encoder:)
+        def initialize(instance_plan, blob_cache, dns_encoder)
           @instance_plan = instance_plan
           @blob_cache = blob_cache
           @dns_encoder = dns_encoder
           @logger = Config.logger
         end
 
-        def perform
+        def perform(_report)
           if @instance_plan.instance.compilation?
             @logger.debug('Skipping job template rendering, as instance is a compilation instance')
           else
