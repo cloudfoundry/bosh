@@ -26,40 +26,32 @@ module Bosh::Director::Links
       )
     end
 
+    # Used by provider, not using alias because want to update existing provider intent when alias changes
     def find_or_create_provider_intent(
       link_provider:,
-      link_name:,
+      link_original_name:,
       link_type:
     )
       Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
         link_provider: link_provider,
-        original_name: link_name,
+        original_name: link_original_name,
         type: link_type,
         consumable: true
       )
     end
 
-    def find_provider_intent(
+    # Used by consumer
+    def find_provider_intent_by_alias(
       link_provider:,
-      link_name:,
       link_alias:,
       link_type:
     )
-      if link_alias
-        Bosh::Director::Models::Links::LinkProviderIntent.find(
-          link_provider: link_provider,
-          name: link_alias,
-          type: link_type,
-          consumable: true
-        )
-      elsif link_name
-        Bosh::Director::Models::Links::LinkProviderIntent.find(
-          link_provider: link_provider,
-          original_name: link_name,
-          type: link_type,
-          consumable: true
-        )
-      end
+      Bosh::Director::Models::Links::LinkProviderIntent.find(
+        link_provider: link_provider,
+        name: link_alias,
+        type: link_type,
+        consumable: true
+      )
     end
 
     def find_or_create_consumer(

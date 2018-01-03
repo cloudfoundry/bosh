@@ -75,22 +75,11 @@ module Bosh::Director
               name: link_path.owner
             )
 
-            provider_intent = @links_manager.find_provider_intent(
+            provider_intent = @links_manager.find_provider_intent_by_alias(
               link_provider: provider,
               link_alias: link_path.name,
-              link_name: nil,
               link_type: consumed_link.type,
             )
-
-            if provider_intent.nil?
-              provider_intent = @links_manager.find_provider_intent(
-                link_provider: provider,
-                link_name: link_path.name,
-                link_alias: nil,
-                link_type: consumed_link.type,
-                )
-            end
-
 
             if provider_intent.nil?
               raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
@@ -137,7 +126,7 @@ module Bosh::Director
 
           provider_intent = @links_manager.find_or_create_provider_intent(
             link_provider: provider,
-            link_name: disk.name,
+            link_original_name: disk.name,
             link_type: 'disk'
           )
 
@@ -161,7 +150,7 @@ module Bosh::Director
 
           provider_intent = @links_manager.find_or_create_provider_intent(
             link_provider: provider,
-            link_name: provided_link.original_name,
+            link_original_name: provided_link.original_name,
             link_type: provided_link.type
           )
 

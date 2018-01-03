@@ -10,8 +10,6 @@ describe Bosh::Director::Links::LinksManager do
   end
 
   describe '#find_or_create_provider' do
-    let!(:expected_provider) {}
-
     it 'returns the existing provider' do
       expected_provider = Bosh::Director::Models::Links::LinkProvider.create(
         deployment: deployment_model,
@@ -106,7 +104,7 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_intent = subject.find_or_create_provider_intent(
           link_provider: link_provider,
-          link_name: "test_original_link_name",
+          link_original_name: "test_original_link_name",
           link_type: "test_link_type",
         )
 
@@ -120,7 +118,7 @@ describe Bosh::Director::Links::LinksManager do
 
         provided_intent = subject.find_or_create_provider_intent(
           link_provider: link_provider,
-          link_name: "test_original_link_name",
+          link_original_name: "test_original_link_name",
           link_type: "test_link_type",
         )
 
@@ -138,7 +136,7 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
-  describe '#find_provider_intent' do
+  describe '#find_provider_intent_*' do
     let(:link_provider) do
       Bosh::Director::Models::Links::LinkProvider.create(
         deployment: deployment_model,
@@ -150,7 +148,6 @@ describe Bosh::Director::Links::LinksManager do
 
     context 'when searching by alias' do
       context 'intent already exist' do
-
         it 'returns the existing link_provider_intent' do
           expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
             link_provider: link_provider,
@@ -162,9 +159,8 @@ describe Bosh::Director::Links::LinksManager do
             consumable: true
           )
 
-          actual_intent = subject.find_provider_intent(
+          actual_intent = subject.find_provider_intent_by_alias(
             link_provider: link_provider,
-            link_name: nil,
             link_alias: 'test_link_alias',
             link_type: "test_link_type"
           )
@@ -175,9 +171,8 @@ describe Bosh::Director::Links::LinksManager do
 
       context 'intent is missing' do
         it 'does not return a link_provider_intent' do
-          actual_intent = subject.find_provider_intent(
+          actual_intent = subject.find_provider_intent_by_alias(
             link_provider: link_provider,
-            link_name: nil,
             link_alias: "test_link_alias",
             link_type: "test_link_type"
           )
@@ -186,46 +181,6 @@ describe Bosh::Director::Links::LinksManager do
         end
       end
     end
-
-    context 'when searching by name' do
-      context 'intent already exist' do
-
-        it 'returns the existing link_provider_intent' do
-          expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-            link_provider: link_provider,
-            original_name: 'test_original_link_name',
-            type: 'test_link_type',
-            name: 'test_link_alias',
-            content: 'test_link_content',
-            shared: false,
-            consumable: true
-          )
-
-          actual_intent = subject.find_provider_intent(
-            link_provider: link_provider,
-            link_name: "test_original_link_name",
-            link_alias: nil,
-            link_type: "test_link_type"
-          )
-
-          expect(actual_intent).to eq(expected_intent)
-        end
-      end
-
-      context 'intent is missing' do
-        it 'does not return a link_provider_intent' do
-          actual_intent = subject.find_provider_intent(
-            link_provider: link_provider,
-            link_name: "test_original_link_name",
-            link_alias: nil,
-            link_type: "test_link_type"
-          )
-
-          expect(actual_intent).to be_nil
-        end
-      end
-    end
-
 
   end
 

@@ -77,7 +77,7 @@ describe 'links_resolver' do
                     deployment: deployment_name,
                     instance_group: 'ig_1',
                     owner: 'job_1',
-                    name: 'original_provider_name',
+                    name: 'foo',
                     manual_spec: nil)
   end
 
@@ -400,7 +400,7 @@ describe 'links_resolver' do
                         deployment: deployment_name,
                         instance_group: 'ig_1',
                         owner: 'job_1',
-                        name: 'original_provider_name',
+                        name: 'foo',
                         manual_spec: nil)
       end
 
