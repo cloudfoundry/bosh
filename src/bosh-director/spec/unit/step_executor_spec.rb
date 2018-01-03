@@ -26,9 +26,7 @@ module Bosh::Director
     let(:stage_name) { 'dummy stage' }
     let(:step1) { double('step1', perform: nil) }
     let(:step2) { double('step2', perform: nil) }
-    let(:step3) { double('step3', perform: nil) }
-    let(:step4) { double('step4', perform: nil) }
-    let(:agenda_step_hash) { { agenda => [step1, step2], another_agenda => [step3, step4] } }
+    let(:agenda_step_hash) { { agenda => [step1, step2] } }
     let(:queue) { Thread::Queue.new }
     let(:logger) { Logging::Logger.new('test-logger') }
     let(:thread_name) { 'dummy_thread' }
@@ -44,24 +42,9 @@ module Bosh::Director
       allow(logger).to receive(:info)
     end
 
-    it 'call perform on each of the steps, passing the report along' do
+    it 'calls perform on each of the steps for the agenda, passing the report along' do
       expect(step1).to receive(:perform).with(report).ordered
       expect(step2).to receive(:perform).with(report).ordered
-
-      expect(step3).to receive(:perform).with(another_report).ordered
-      expect(step4).to receive(:perform).with(another_report).ordered
-
-      executor.run
-    end
-
-    it 'runs each group of steps in a separate thread, with threads running in parallel' do
-      expect(step2).to receive(:perform) do
-        wait_for_parallel_call(queue, nil)
-      end
-
-      expect(step4).to receive(:perform) do
-        wait_for_parallel_call(queue, nil)
-      end
 
       executor.run
     end
@@ -78,8 +61,24 @@ module Bosh::Director
       expect(EventLog::Stage).to receive(:new)
         .with(anything, stage_name, anything, agenda_step_hash.length)
         .and_return(stage)
-      expect(stage).to receive(:advance_and_track).with(task_name).twice
+      expect(stage).to receive(:advance_and_track).with(task_name)
       executor.run
+    end
+
+    context 'when there are multiple agendas' do
+      let(:agenda_step_hash) { { agenda => [step1], another_agenda => [step2] } }
+
+      it 'runs each group of steps in a separate thread, with threads running in parallel' do
+        expect(step1).to receive(:perform) do
+          wait_for_parallel_call(queue, nil)
+        end
+
+        expect(step2).to receive(:perform) do
+          wait_for_parallel_call(queue, nil)
+        end
+
+        executor.run
+      end
     end
 
     def wait_for_parallel_call(queue, result)
