@@ -87,7 +87,7 @@ describe 'deploy with hotswap', type: :integration do
 
       expect(original_instance).to match(
         'az' => '',
-        'instance' => /foobar\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/,
+        'instance' => %r|foobar/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
         'process_state' => 'running',
       )
@@ -101,6 +101,16 @@ describe 'deploy with hotswap', type: :integration do
       expect(new_instances.length).to eq(1)
       new_instance = new_instances[0]
       expect(new_instance).to_not eq original_instance
+    end
+
+    it 'should run software on the newly created vm' do
+      manifest['instance_groups'].first['jobs'].first['properties'] = { 'test_property' => 1 }
+      deploy_simple_manifest(manifest_hash: manifest, recreate: true)
+
+      foobar_instance = director.instance('foobar', '0')
+
+      template = foobar_instance.read_job_template('foobar', 'bin/foobar_ctl')
+      expect(template).to include('test_property=1')
     end
   end
 end
