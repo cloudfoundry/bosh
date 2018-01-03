@@ -71,6 +71,9 @@ properties:
   director.enable_dedicated_status_worker:
     description: "Separate worker for 'bosh vms' and 'bosh ssh'"
     default: false
+  director.puma_workers:
+    description: Number of puma workers
+    default: 3
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true

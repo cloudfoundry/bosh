@@ -40,6 +40,7 @@ describe 'director.yml.erb.erb' do
         'backend_port' => 25556,
         'max_tasks' => 100,
         'max_threads' => 32,
+        'puma_workers' => 3,
         'enable_snapshots' => true,
         'enable_post_deploy' => false,
         'enable_nats_delivered_templates' => false,
@@ -448,6 +449,13 @@ describe 'director.yml.erb.erb' do
           end
         end
       end
+
+      describe 'puma_workers' do
+        it 'configures default puma_workers correctly' do
+          expect(parsed_yaml['puma_workers']).to eq(3)
+        end
+      end
+
     end
 
     describe 'ignore_missing_gateway property' do
@@ -523,8 +531,10 @@ describe 'director.yml.erb.erb' do
       merged_manifest_properties['compiled_package_cache']['provider'] = 's3'
 
       binding = Bosh::Template::EvaluationContext.new(
-        { 'job' => {'name' => 'i_like_bosh'},
-          'properties' => merged_manifest_properties }, nil).get_binding
+        {
+          'job' => {'name' => 'i_like_bosh'},
+          'properties' => merged_manifest_properties
+        }, nil).get_binding
       YAML.load(ERB.new(erb_yaml).result(binding))
     end
 

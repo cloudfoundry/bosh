@@ -413,6 +413,10 @@ module Bosh::Director
       hash['port']
     end
 
+    def puma_workers
+      hash['puma_workers']
+    end
+
     def version
       hash['version']
     end

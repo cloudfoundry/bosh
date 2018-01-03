@@ -8,6 +8,7 @@ params = {
   'port' => p('director.backend_port'),
   'max_tasks' => p('director.max_tasks'),
   'max_threads' => p('director.max_threads'),
+  'puma_workers' => p('director.puma_workers'),
   'logging' => {
     'level' => 'DEBUG',
     'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
