@@ -33,14 +33,14 @@ module Bosh::Director
           )
 
           begin
-            update_metadata(@instance_plan, vm, cpi_factory)
             report.vm = vm
+            update_metadata(@instance_plan, vm, cpi_factory)
           rescue Exception => e
             @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
             if Config.keep_unreachable_vms
               @logger.info('Keeping the VM for debugging')
             else
-              DeleteVmStep.new(vm).perform
+              DeleteVmStep.new.perform(report)
             end
             raise e
           end

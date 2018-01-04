@@ -7,9 +7,9 @@ module Bosh::Director
           @logger = Config.logger
         end
 
-        def perform
+        def perform(report)
           @instance_model.active_persistent_disks.select(&:managed?).each do |disk|
-            UnmountDiskStep.new(disk.model).perform
+            UnmountDiskStep.new(disk.model).perform(report)
           end
         end
       end

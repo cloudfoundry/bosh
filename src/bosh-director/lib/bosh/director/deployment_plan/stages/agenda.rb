@@ -6,6 +6,7 @@ module Bosh::Director
         :thread_name,
         :task_name,
         :info,
+        :steps,
       )
     end
   end

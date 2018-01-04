@@ -191,7 +191,7 @@ module Bosh::Director
           allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new)
             .with(instance_model).and_return(unmount_step)
           allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new)
-            .with(instance_model.active_vm, true, false, true).and_return delete_step
+            .with(true, false, true).and_return delete_step
         end
 
         it 'should update dns' do
@@ -301,7 +301,7 @@ module Bosh::Director
             allow(disk_manager).to receive(:update_persistent_disk)
             allow(job).to receive(:update)
             allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new)
-              .with(instance_model.active_vm, true, false, true).and_return delete_step
+              .with(true, false, true).and_return delete_step
           end
 
           it 'recreates correctly, and persists rendered templates to the blobstore' do
@@ -327,7 +327,7 @@ module Bosh::Director
             before do
               allow(instance).to receive(:strategy).and_return(DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP)
               allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
-                .with(inactive_vm_model).and_return(elect_active_vm_step)
+                .and_return(elect_active_vm_step)
               allow(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)
                 .with(instance_model, 'key1' => 'value1').and_return(attach_step)
               allow(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new)

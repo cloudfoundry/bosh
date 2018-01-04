@@ -9,7 +9,15 @@ module Bosh
       let(:cloud_factory) { instance_double(CloudFactory) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
-      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
+      let(:instance_model) do
+        Models::Instance.make(
+          uuid: SecureRandom.uuid,
+          index: 5,
+          job: 'fake-job',
+          deployment: deployment,
+          availability_zone: 'az1',
+        )
+      end
 
       before do
         instance_model.active_vm = vm_model
@@ -24,10 +32,10 @@ module Bosh
             vm_model.update(active: true)
           end
 
-          let(:step) {instance_double(DeploymentPlan::Steps::DeleteVmStep)}
+          let(:step) { instance_double(DeploymentPlan::Steps::DeleteVmStep) }
 
           it 'delegates to a step' do
-            expect(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).with(vm_model, true, false, false).and_return(step)
+            expect(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).with(true, false, false).and_return(step)
             expect(step).to receive(:perform)
 
             subject.delete_for_instance(instance_model)

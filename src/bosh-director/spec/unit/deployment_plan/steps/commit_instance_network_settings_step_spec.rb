@@ -29,6 +29,20 @@ module Bosh::Director
             expect(report.network_plans[0].existing?).to eq(true)
             expect(report.network_plans[1].existing?).to eq(true)
           end
+
+          context 'when given ip provider is nil' do
+            let(:ip_provider) { nil }
+
+            it 'marks desired plans as existing, but does not release obsolete plans' do
+              step.perform(report)
+
+              expect(report.network_plans.length).to eq(3)
+
+              expect(report.network_plans[0].existing?).to eq(true)
+              expect(report.network_plans[1].obsolete?).to eq(true)
+              expect(report.network_plans[2].existing?).to eq(true)
+            end
+          end
         end
       end
     end

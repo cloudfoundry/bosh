@@ -10,6 +10,7 @@ module Bosh::Director
           expect(agenda).to respond_to(:thread_name)
           expect(agenda).to respond_to(:info)
           expect(agenda).to respond_to(:task_name)
+          expect(agenda).to respond_to(:steps)
         end
       end
     end

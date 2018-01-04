@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe 'StepExecutor' do
-    subject(:executor) { StepExecutor.new(stage_name, agenda_step_hash) }
+    subject(:executor) { StepExecutor.new(stage_name, agendas) }
     let(:agenda) do
       instance_double(
         DeploymentPlan::Stages::Agenda,
@@ -10,15 +10,7 @@ module Bosh::Director
         thread_name: thread_name,
         info: info,
         report: report,
-      )
-    end
-    let(:another_agenda) do
-      instance_double(
-        DeploymentPlan::Stages::Agenda,
-        task_name: task_name,
-        thread_name: thread_name,
-        info: info,
-        report: another_report,
+        steps: [step1, step2],
       )
     end
     let(:report) { instance_double(DeploymentPlan::Stages::Report) }
@@ -26,7 +18,7 @@ module Bosh::Director
     let(:stage_name) { 'dummy stage' }
     let(:step1) { double('step1', perform: nil) }
     let(:step2) { double('step2', perform: nil) }
-    let(:agenda_step_hash) { { agenda => [step1, step2] } }
+    let(:agendas) { [agenda] }
     let(:queue) { Thread::Queue.new }
     let(:logger) { Logging::Logger.new('test-logger') }
     let(:thread_name) { 'dummy_thread' }
@@ -59,14 +51,26 @@ module Bosh::Director
 
     it 'create a stage and track the tasks within the stage' do
       expect(EventLog::Stage).to receive(:new)
-        .with(anything, stage_name, anything, agenda_step_hash.length)
+        .with(anything, stage_name, anything, agendas.length)
         .and_return(stage)
       expect(stage).to receive(:advance_and_track).with(task_name)
       executor.run
     end
 
     context 'when there are multiple agendas' do
-      let(:agenda_step_hash) { { agenda => [step1], another_agenda => [step2] } }
+      let(:another_agenda) do
+        instance_double(
+          DeploymentPlan::Stages::Agenda,
+          task_name: task_name,
+          thread_name: thread_name,
+          info: info,
+          report: another_report,
+          steps: [step2],
+        )
+      end
+      let(:agendas) { [agenda, another_agenda] }
+
+      before { allow(agenda).to receive(:steps).and_return([step1]) }
 
       it 'runs each group of steps in a separate thread, with threads running in parallel' do
         expect(step1).to receive(:perform) do

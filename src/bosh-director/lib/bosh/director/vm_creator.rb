@@ -20,59 +20,70 @@ module Bosh::Director
       return @logger.info('No missing vms to create') if instance_plans.empty?
 
       total = instance_plans.size
-      event_log_stage = Config.event_log.begin_stage('Creating missing vms', total)
-      ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-        instance_plans.each do |instance_plan|
-          instance = instance_plan.instance
-          pool.process do
-            with_thread_name("create_missing_vm(#{instance.model}/#{total})") do
-              event_log_stage.advance_and_track(instance.model.to_s) do
-                @logger.info('Creating missing VM')
-                disks = [instance.model.managed_persistent_disk_cid].compact
-                create_for_instance_plan(instance_plan, disks, tags)
-                instance_plan.release_obsolete_network_plans(ip_provider)
-              end
-            end
-          end
-        end
+      agendas = []
+      instance_plans.each do |instance_plan|
+        disks = [instance_plan.instance.model.managed_persistent_disk_cid].compact
+
+        agendas << get_agenda_for_instance_plan(instance_plan, disks, tags, ip_provider, total)
       end
+
+      StepExecutor.new('Creating missing vms', agendas).run
     end
 
-    def create_for_instance_plan(instance_plan, disks, tags, use_existing=false)
+    def create_for_instance_plan(instance_plan, disks, tags, use_existing = false)
+      agenda = get_agenda_for_instance_plan(instance_plan, disks, tags, nil, 1, use_existing)
+
+      StepExecutor.new('Creating VM', [agenda]).run
+    end
+
+    private
+
+    def get_agenda_for_instance_plan(instance_plan, disks, tags, ip_provider, total, use_existing = false)
+      instance_string = instance_plan.instance.model.to_s
+
+      agenda = DeploymentPlan::Stages::Agenda.new.tap do |a|
+        a.report = DeploymentPlan::Stages::Report.new.tap do |r|
+          r.network_plans = instance_plan.network_plans
+        end
+
+        a.thread_name = "create_missing_vm(#{instance_string}/#{total})"
+        a.info = 'Creating missing VM'
+        a.task_name = instance_string
+      end
+
       instance = instance_plan.instance
       already_had_active_vm = instance.vm_created?
-      instance_report = DeploymentPlan::Stages::Report.new
-      instance_report.network_plans = instance_plan.network_plans
 
-      DeploymentPlan::Steps::CreateVmStep.new(
-        instance_plan,
-        @agent_broadcaster,
-        @vm_deleter,
-        disks,
-        tags,
-        use_existing,
-      ).perform(instance_report)
+      agenda.steps = [
+        DeploymentPlan::Steps::CreateVmStep.new(
+          instance_plan,
+          @agent_broadcaster,
+          @vm_deleter,
+          disks,
+          tags,
+          use_existing,
+        ),
+      ]
 
       unless already_had_active_vm
-        DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
+        agenda.steps << DeploymentPlan::Steps::ElectActiveVmStep.new
       end
 
       if instance_plan.needs_disk? && instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
-        DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags).perform(instance_report)
-        DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model).perform(instance_report)
+        agenda.steps << DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags)
+        agenda.steps << DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model)
       end
-      DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance).perform(instance_report)
 
-      # instance_report.vm = instance.model.active_vm
-      DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan).perform(instance_report)
-
-      DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(
+      agenda.steps << DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance)
+      agenda.steps << DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan)
+      agenda.steps << DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(
         instance_plan,
         @template_blob_cache,
         @dns_encoder,
-      ).perform(instance_report)
+      )
+      agenda.steps << DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep.new(ip_provider)
 
-      DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep.new.perform(instance_report)
+      agenda
     end
   end
 end

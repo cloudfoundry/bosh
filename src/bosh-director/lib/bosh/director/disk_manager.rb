@@ -63,20 +63,24 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform
+      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(step_report)
       mount_disk(disk) if disk.managed?
     end
 
     def detach_disk(disk)
       unmount_disk(disk) if disk.managed?
-      DeploymentPlan::Steps::DetachDiskStep.new(disk).perform
+      DeploymentPlan::Steps::DetachDiskStep.new(disk).perform(step_report)
     end
 
     def unmount_disk(disk)
-      DeploymentPlan::Steps::UnmountDiskStep.new(disk).perform
+      DeploymentPlan::Steps::UnmountDiskStep.new(disk).perform(step_report)
     end
 
     private
+
+    def step_report
+      DeploymentPlan::Stages::Report.new
+    end
 
     def use_cpi_resize_disk?(old_disk, new_disk)
       Config.enable_cpi_resize_disk && new_disk && new_disk.size_diff_only?(old_disk) && new_disk.managed?
@@ -130,7 +134,7 @@ module Bosh::Director
     end
 
     def mount_disk(disk)
-      DeploymentPlan::Steps::MountDiskStep.new(disk).perform
+      DeploymentPlan::Steps::MountDiskStep.new(disk).perform(step_report)
     rescue => e
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")
 

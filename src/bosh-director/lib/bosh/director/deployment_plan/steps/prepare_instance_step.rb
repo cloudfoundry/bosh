@@ -7,7 +7,7 @@ module Bosh::Director
           @use_active_vm = use_active_vm
         end
 
-        def perform
+        def perform(_report)
           spec = InstanceSpec.create_from_instance_plan(@instance_plan)
           instance_model = @instance_plan.instance.model
 

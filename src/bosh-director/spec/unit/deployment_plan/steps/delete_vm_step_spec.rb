@@ -6,27 +6,35 @@ module Bosh
     module DeploymentPlan
       module Steps
         describe DeleteVmStep do
-          subject { DeleteVmStep.new(vm_model, store_event, force, allow_virtual) }
+          subject { DeleteVmStep.new(store_event, force, allow_virtual) }
           let(:store_event) { true }
           let(:force) { false }
           let(:allow_virtual) { false }
-          let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
+          let(:instance_model) do
+            Models::Instance.make(
+              uuid: SecureRandom.uuid,
+              index: 5,
+              job: 'fake-job',
+              deployment: deployment,
+              availability_zone: 'az1',
+            )
+          end
           let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
           let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
-
-          # TODO
-          #   > then we can replace the removed test coverage thru a createvmstep test to invoke this step
+          let(:report) { Stages::Report.new.tap { |r| r.vm = vm_model } }
 
           describe '#perform' do
             let(:cloud) { Config.cloud }
             let(:cloud_factory) { instance_double(CloudFactory) }
-            let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => {'ram' => '2gb'}}) }
+            let(:vm_type) do
+              DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => { 'ram' => '2gb' })
+            end
             let(:env) { DeploymentPlan::Env.new({}) }
             let(:job) { instance_double(BD::Jobs::BaseJob) }
-            let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
+            let(:stemcell_model) { Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123') }
             let(:stemcell) do
               stemcell_model
-              stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
+              stemcell = DeploymentPlan::Stemcell.parse('name' => 'fake-stemcell', 'version' => '123')
               stemcell.add_stemcell_models
               stemcell
             end
@@ -41,24 +49,29 @@ module Bosh
               instance_group.stemcell = stemcell
               instance_group.env = env
               instance_group.jobs << job
-              instance_group.default_network = {"gateway" => "name"}
-              instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+              instance_group.default_network = { 'gateway' => 'name' }
+              instance_group.update = BD::DeploymentPlan::UpdateConfig.new(
+                'canaries' => 1,
+                'max_in_flight' => 1,
+                'canary_watch_time' => '1000-2000',
+                'update_watch_time' => '1000-2000',
+              )
               instance_group
             end
             let(:instance) do
               instance = DeploymentPlan::Instance.create_from_instance_group(
-                  instance_group,
-                  5,
-                  'started',
-                  deployment,
-                  {},
-                  nil,
-                  logger
+                instance_group,
+                5,
+                'started',
+                deployment,
+                {},
+                nil,
+                logger,
               )
               instance.bind_existing_instance_model(instance_model)
               instance
             end
-            let!(:event_manager) { Api::EventManager.new(true)}
+            let!(:event_manager) { Api::EventManager.new(true) }
             let!(:local_dns_record) { Models::LocalDnsRecord.create(ip: '1.2.3.4', instance_id: instance.model.id) }
 
             before do
@@ -82,9 +95,7 @@ module Bosh
               expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
               expect(cloud).to receive(:delete_vm).with('vm-cid')
 
-              expect {
-                subject.perform
-              }.to change { Models::Event.count }.from(0).to(2)
+              expect { subject.perform(report) }.to(change { Models::Event.count }.from(0).to(2))
             end
 
             context 'when store_event is false' do
@@ -92,19 +103,18 @@ module Bosh
               it 'deletes the instance and does not store an event' do
                 expect(cloud).to receive(:delete_vm).with('vm-cid')
 
-                expect {
-                  subject.perform
-                }.not_to change { Models::Event.count }
+                expect { subject.perform(report) }.not_to(change { Models::Event.count })
               end
             end
 
             context 'when vm has already been deleted from the IaaS' do
               it 'should log a warning' do
                 expect(logger).to receive(:info).with('Deleting VM')
-                expect(logger).to receive(:warn).with("VM '#{vm_model.cid}' might have already been deleted from the cloud")
+                expect(logger).to receive(:warn)
+                  .with("VM '#{vm_model.cid}' might have already been deleted from the cloud")
                 expect(cloud).to receive(:delete_vm).with(vm_model.cid).and_raise Bosh::Clouds::VMNotFound
 
-                subject.perform
+                subject.perform(report)
               end
             end
 
@@ -114,7 +124,7 @@ module Bosh
               it 'skips calling delete_vm on the cloud' do
                 expect(logger).to receive(:info).with('Deleting VM')
                 expect(cloud).not_to receive(:delete_vm)
-                subject.perform
+                subject.perform(report)
               end
             end
           end

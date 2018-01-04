@@ -62,7 +62,7 @@ module Bosh
           deployment,
           {},
           nil,
-          logger
+          logger,
         )
         instance.bind_existing_instance_model(instance_model)
         instance
@@ -70,19 +70,20 @@ module Bosh
       let(:reservation) do
         subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
         network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
       end
       let(:instance_plan) do
         desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)
         network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-        BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
+        BD::DeploymentPlan::InstancePlan.new(
+          existing_instance: instance_model,
+          desired_instance: desired_instance,
+          instance: instance,
+          network_plans: [network_plan],
+        )
       end
 
-      let(:tags) do
-        {
-          'mytag' => 'foobar'
-        }
-      end
+      let(:tags) { { 'mytag' => 'foobar' } }
 
       let(:instance_group) do
         template_model = BD::Models::Template.make
@@ -95,25 +96,40 @@ module Bosh
         instance_group.stemcell = stemcell
         instance_group.env = env
         instance_group.jobs << job
-        instance_group.default_network = {'gateway' => 'name'}
-        instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+        instance_group.default_network = { 'gateway' => 'name' }
+        instance_group.update = BD::DeploymentPlan::UpdateConfig.new(
+          'canaries' => 1,
+          'max_in_flight' => 1,
+          'canary_watch_time' => '1000-2000',
+          'update_watch_time' => '1000-2000',
+        )
         instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
         instance_group.persistent_disk_collection.add_by_disk_size(1024)
         instance_group
       end
 
-      let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
+      let(:instance_model) do
+        Models::Instance.make(
+          uuid: SecureRandom.uuid,
+          index: 5,
+          job: 'fake-job',
+          deployment: deployment,
+          availability_zone: 'az1',
+        )
+      end
       let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
 
-      let(:event_manager) { Api::EventManager.new(true)}
-      let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
-      let(:update_job) {instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
+      let(:event_manager) { Api::EventManager.new(true) }
+      let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+      let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+      let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
+      let(:update_job) do
+        instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)
+      end
 
       let(:global_network_resolver) { instance_double(DeploymentPlan::GlobalNetworkResolver, reserved_ranges: Set.new) }
-      let(:networks) { {'my-manual-network' => manual_network} }
-      let(:manual_network_spec) {
+      let(:networks) { { 'my-manual-network' => manual_network } }
+      let(:manual_network_spec) do
         {
           'name' => 'my-manual-network',
           'subnets' => [
@@ -143,20 +159,19 @@ module Bosh
               'reserved' => [],
               'cloud_properties' => {},
               'azs' => ['az-2'],
-            }
-
-          ]
+            },
+          ],
         }
-      }
+      end
       let(:manual_network) do
         DeploymentPlan::ManualNetwork.parse(
           manual_network_spec,
           [
             BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
-            BD::DeploymentPlan::AvailabilityZone.new('az-2', {})
+            BD::DeploymentPlan::AvailabilityZone.new('az-2', {}),
           ],
           global_network_resolver,
-          logger
+          logger,
         )
       end
       let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
@@ -173,7 +188,8 @@ module Bosh
 
         allow(Config).to receive(:cloud).and_return(cloud)
         allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
-        allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, dns_encoder, logger)
+        allow(JobRenderer).to receive(:render_job_instances_with_cache)
+          .with([instance_plan], template_blob_cache, dns_encoder, logger)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
         allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
@@ -219,14 +235,14 @@ module Bosh
 
         attach_instance_disks_step = instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep)
         mount_instance_disks_step = instance_double(DeploymentPlan::Steps::MountInstanceDisksStep)
-        expect(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new).with(instance_model, tags).and_return attach_instance_disks_step
-        expect(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new).with(instance_model).and_return mount_instance_disks_step
+        expect(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)
+          .with(instance_model, tags).and_return(attach_instance_disks_step)
+        expect(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new)
+          .with(instance_model).and_return(mount_instance_disks_step)
 
         expect(attach_instance_disks_step).to receive(:perform).with(report).once
         expect(mount_instance_disks_step).to receive(:perform).with(report).once
         expect(update_settings_step).to receive(:perform).with(report)
-
-        expect(instance_plan).to receive(:release_obsolete_network_plans).with(ip_provider)
 
         subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider, tags)
       end

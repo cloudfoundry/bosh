@@ -1,16 +1,20 @@
 module Bosh::Director
   class VmDeleter
-    def initialize(logger, force=false, enable_virtual_delete_vm=false)
+    def initialize(logger, force=false, enable_virtual_delete_vm = false)
       @logger = logger
       @error_ignorer = ErrorIgnorer.new(force, @logger)
       @enable_virtual_delete_vm = enable_virtual_delete_vm
       @force = force
     end
 
-    def delete_for_instance(instance_model, store_event=true)
-      if instance_model.active_vm
-        DeploymentPlan::Steps::DeleteVmStep.new(instance_model.active_vm, store_event, @force, @enable_virtual_delete_vm).perform
-      end
+    def delete_for_instance(instance_model, store_event = true)
+      return unless instance_model.active_vm
+
+      DeploymentPlan::Steps::DeleteVmStep.new(
+        store_event,
+        @force,
+        @enable_virtual_delete_vm,
+      ).perform(DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance_model.active_vm })
     end
 
     def delete_vm_by_cid(cid)

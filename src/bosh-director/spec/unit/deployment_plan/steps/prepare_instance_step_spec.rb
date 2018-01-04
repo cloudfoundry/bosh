@@ -10,6 +10,7 @@ module Bosh::Director
         let(:deployment_instance) { instance_double(Instance, model: instance) }
         let(:instance_plan) { instance_double(InstancePlan, instance: deployment_instance) }
         let(:spec) { instance_double(InstanceSpec, as_apply_spec: 'apply-me', as_jobless_apply_spec: 'unemployed') }
+        let(:report) { Stages::Report.new }
 
         before do
           allow(InstanceSpec).to receive(:create_from_instance_plan).with(instance_plan).and_return spec
@@ -33,7 +34,7 @@ module Bosh::Director
               it 'sends the full spec to the active vms agent' do
                 expect(active_agent).to receive(:prepare).with('apply-me')
 
-                step.perform
+                step.perform(report)
               end
             end
 
@@ -43,7 +44,7 @@ module Bosh::Director
               it 'sends the jobless spec to the other vms agent' do
                 expect(lazy_agent).to receive(:prepare).with('unemployed')
 
-                step.perform
+                step.perform(report)
               end
             end
           end
@@ -62,7 +63,7 @@ module Bosh::Director
               it 'sends the full spec to the active vms agent' do
                 expect(old_agent).to receive(:prepare).with('apply-me')
 
-                step.perform
+                step.perform(report)
               end
             end
 
@@ -70,7 +71,7 @@ module Bosh::Director
               let(:use_active_vm) { false }
 
               it 'raises error' do
-                expect { step.perform }.to raise_error('no inactive VM available to prepare for instance')
+                expect { step.perform(report) }.to raise_error('no inactive VM available to prepare for instance')
               end
             end
           end
@@ -87,7 +88,7 @@ module Bosh::Director
               let(:use_active_vm) { true }
 
               it 'raises error' do
-                expect { step.perform }.to raise_error('no active VM available to prepare for instance')
+                expect { step.perform(report) }.to raise_error('no active VM available to prepare for instance')
               end
             end
 
@@ -97,7 +98,7 @@ module Bosh::Director
               it 'sends the jobless spec to the other vms agent' do
                 expect(new_agent).to receive(:prepare).with('unemployed')
 
-                step.perform
+                step.perform(report)
               end
             end
           end

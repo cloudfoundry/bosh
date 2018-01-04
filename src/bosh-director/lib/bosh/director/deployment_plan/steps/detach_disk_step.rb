@@ -7,7 +7,7 @@ module Bosh::Director
           @logger = Config.logger
         end
 
-        def perform
+        def perform(_report)
           return if @disk.nil?
 
           cloud_factory = CloudFactory.create_with_latest_configs
