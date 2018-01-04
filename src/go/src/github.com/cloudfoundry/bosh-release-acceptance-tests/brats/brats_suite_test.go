@@ -96,6 +96,10 @@ func assetPath(filename string) string {
 	return path
 }
 
+func boshDeploymentAssetPath(assetPath string) string {
+	return filepath.Join("/usr/local/bosh-deployment/", assetPath)
+}
+
 func execCommand(binaryPath string, args ...string) *gexec.Session {
 	session, err := gexec.Start(
 		exec.Command(binaryPath, args...),

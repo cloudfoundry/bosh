@@ -4,16 +4,13 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: bosh/main-bosh-docker
+    repository: bosh/main
 
 inputs:
-  - name: bosh-src
-  - name: bosh-dns-release
-  - name: stemcell
-  - name: bosh-release
+- name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/test-brats.sh
+  path: bosh-src/ci/tasks/test-brats-db-cleanup.sh
 
 params:
   RDS_MYSQL_EXTERNAL_DB_HOST: replace-me
