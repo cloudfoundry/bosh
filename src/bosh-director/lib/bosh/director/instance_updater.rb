@@ -39,7 +39,7 @@ module Bosh::Director
 
     def update(instance_plan, options = {})
       instance = instance_plan.instance
-      instance_report = DeploymentPlan::Stages::Report.new
+      instance_report = DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance.model.active_vm }
       action, context = get_action_and_context(instance_plan)
       parent_id = add_event(instance.deployment_model.name, action, instance.model.name, context) if instance_plan.changed?
       @logger.info("Updating instance #{instance}, changes: #{instance_plan.changes.to_a.join(', ').inspect}")
@@ -83,7 +83,6 @@ module Bosh::Director
           @logger.info("Detaching instance #{instance}")
           unless instance_plan.already_detached?
             instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
-            instance_report.vm = instance_model.active_vm
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
             DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms)
               .perform(instance_report)

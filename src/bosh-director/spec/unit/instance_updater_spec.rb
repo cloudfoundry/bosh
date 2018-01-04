@@ -307,7 +307,9 @@ module Bosh::Director
           it 'recreates correctly, and persists rendered templates to the blobstore' do
             expect(unmount_step).to receive(:perform)
             expect(detach_step).to receive(:perform)
-            expect(delete_step).to receive(:perform)
+            expect(delete_step).to receive(:perform) do |report|
+              expect(report.vm).to eql(instance_model.active_vm)
+            end
             expect(vm_creator).to receive(:create_for_instance_plan)
               .with(instance_plan, [persistent_disk_model.disk_cid], tags)
 
