@@ -37,12 +37,12 @@ var _ = Describe("Director external database TLS connections", func() {
 	}
 
 	DescribeTable("RDS", testDBConnectionOverTLS,
-		Entry("allows TLS connections to POSTGRES", "rds_mysql"),
-		Entry("allows TLS connections to MYSQL", "rds_postgres"),
+		Entry("allows TLS connections to MYSQL", "rds_mysql"),
+		Entry("allows TLS connections to POSTGRES", "rds_postgres"),
 	)
 
 	DescribeTable("GCP", testDBConnectionOverTLS,
-		Entry("allows TLS connections to POSTGRES", "gcp_mysql"),
-		Entry("allows TLS connections to MYSQL", "gcp_postgres"),
+		Entry("allows TLS connections to MYSQL", "gcp_mysql"),
+		Entry("allows TLS connections to POSTGRES", "gcp_postgres"),
 	)
 })
