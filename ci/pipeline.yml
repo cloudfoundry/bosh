@@ -85,6 +85,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -100,6 +101,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-mysql-5.5
           privileged: true
@@ -161,6 +163,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-postgres-9.3
           privileged: true
@@ -271,6 +274,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
       - task: test-s3
         file: bosh-src/ci/tasks/test-s3-blobstore-client-integration.yml
         params:
@@ -294,6 +298,7 @@ jobs:
           trigger: true
         - get: bosh-cli
         - get: bosh-agent
+        - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -341,6 +346,7 @@ jobs:
           trigger: true
         - get: bosh-cli
         - get: bosh-agent
+        - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -382,6 +388,7 @@ jobs:
     plan:
       - { get: bosh-src, trigger: true }
       - { get: bosh-agent, trigger: true }
+      - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -426,6 +433,7 @@ jobs:
           trigger: true
         - get: bosh-cli
         - get: bosh-agent
+        - { get: every-sunday, trigger: true }
       - aggregate:
         - task: upgrade-with-postgres
           privileged: true
@@ -664,6 +672,7 @@ jobs:
     plan:
     - do:
       - aggregate:
+        - { get: every-sunday, trigger: true }
         - get: bosh-src
           passed:
           - candidate-release
@@ -730,6 +739,13 @@ resources:
     type: time
     source:
       interval: 15m
+
+  - name: every-sunday
+    type: time
+    source:
+      start: 1:00 PM
+      stop: 9:00 PM
+      days: [Sunday]
 
   - name: slack-alert
     type: slack-notification
