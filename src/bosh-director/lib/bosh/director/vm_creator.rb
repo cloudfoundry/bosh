@@ -33,7 +33,7 @@ module Bosh::Director
     def create_for_instance_plan(instance_plan, disks, tags, use_existing = false)
       agenda = get_agenda_for_instance_plan(instance_plan, disks, tags, nil, 1, use_existing)
 
-      StepExecutor.new('Creating VM', [agenda]).run
+      StepExecutor.new('Creating VM', [agenda], track: false).run
     end
 
     private

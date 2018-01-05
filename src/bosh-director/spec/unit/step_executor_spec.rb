@@ -57,6 +57,16 @@ module Bosh::Director
       executor.run
     end
 
+    context 'when configured to skip tracking' do
+      subject(:executor) { StepExecutor.new(stage_name, agendas, track: false) }
+
+      it 'skips tracking' do
+        allow(Config.event_log).to receive(:begin_stage)
+        executor.run
+        expect(Config.event_log).to_not have_received(:begin_stage)
+      end
+    end
+
     context 'when there are multiple agendas' do
       let(:another_agenda) do
         instance_double(
