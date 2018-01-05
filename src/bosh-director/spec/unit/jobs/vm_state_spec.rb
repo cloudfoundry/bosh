@@ -68,6 +68,7 @@ module Bosh::Director
         expect(status['ips']).to eq(['1.1.1.1'])
         expect(status['dns']).to be_empty
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to be_nil
@@ -118,6 +119,7 @@ module Bosh::Director
         expect(status['ips']).to eq(['1.1.1.1'])
         expect(status['dns']).to be_empty
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to be_nil
@@ -159,6 +161,7 @@ module Bosh::Director
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['active']).to eq(true)
         expect(status['vm_created_at']).to eq(time.utc.iso8601)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('unresponsive agent')
@@ -209,6 +212,7 @@ module Bosh::Director
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['active']).to eq(true)
         expect(status['disk_cid']).to eq('fake-disk-cid')
         expect(status['disk_cids']).to contain_exactly('fake-disk-cid')
       end
@@ -231,6 +235,7 @@ module Bosh::Director
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['active']).to eq(true)
         expect(status['disk_cid']).to eq('fake-disk-cid')
         expect(status['disk_cids']).to contain_exactly('fake-disk-cid', 'fake-disk-cid2')
       end
@@ -248,6 +253,7 @@ module Bosh::Director
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['active']).to eq(true)
         expect(status['disk_cid']).to be_nil
         expect(status['disk_cids']).to be_empty
       end
@@ -346,6 +352,7 @@ module Bosh::Director
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['ips']).to eq(['1.1.1.1'])
         expect(status['vm_cid']).to eq('fake-vm-cid')
+        expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to eq('fake-vm-type')
@@ -411,6 +418,7 @@ module Bosh::Director
             status = JSON.parse(results[0])
             expect(status['ips']).to eq(['1.1.1.1'])
             expect(status['vm_cid']).to eq('fake-vm-cid')
+            expect(status['active']).to eq(true)
             expect(status['agent_id']).to eq('fake-agent-id')
             expect(status['job_state']).to eq('running')
             expect(status['resource_pool']).to eq('fake-vm-type')
@@ -421,6 +429,7 @@ module Bosh::Director
             status = JSON.parse(results[1])
             expect(status['ips']).to eq(['1.1.1.1'])
             expect(status['vm_cid']).to eq('fake-vm-cid-2')
+            expect(status['active']).to eq(false)
             expect(status['agent_id']).to eq('other_agent_id')
             expect(status['job_state']).to eq('stopped')
             expect(status['resource_pool']).to eq('fake-vm-type')
@@ -441,6 +450,7 @@ module Bosh::Director
             status = JSON.parse(results[0])
             expect(status['ips']).to eq(['1.1.1.1'])
             expect(status['vm_cid']).to eq('fake-vm-cid')
+            expect(status['active']).to eq(true)
             expect(status['agent_id']).to eq('fake-agent-id')
             expect(status['job_state']).to eq('running')
             expect(status['resource_pool']).to eq('fake-vm-type')

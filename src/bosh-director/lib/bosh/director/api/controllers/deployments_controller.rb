@@ -505,7 +505,7 @@ module Bosh::Director
         results = []
         vms_instances_hash.each_pair do |instance, vms|
           vms.each do |vm|
-            results << create_vm_response(instance, vm)
+            results << create_vm_response(instance, vm).merge('active' => vm.active)
           end
         end
         results
@@ -526,7 +526,7 @@ module Bosh::Director
           'id' => instance.uuid,
           'az' => instance.availability_zone,
           'ips' => ips(vm),
-          'vm_created_at' => vm&.created_at&.utc&.iso8601
+          'vm_created_at' => vm&.created_at&.utc&.iso8601,
         }
       end
 

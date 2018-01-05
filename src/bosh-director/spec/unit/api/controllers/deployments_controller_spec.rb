@@ -827,15 +827,17 @@ module Bosh::Director
             body.sort_by{|instance| instance['agent_id']}.each_with_index do |instance_with_vm, i|
               instance_idx = i / 2
               vm_by_instance = i % 2
+              vm_is_active = vm_by_instance == 0
               expect(instance_with_vm).to eq(
                 'agent_id' => "agent-#{instance_idx}-#{vm_by_instance}",
                 'job' => "job-#{instance_idx}",
                 'index' => instance_idx,
                 'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
                 'id' => "instance-#{instance_idx}",
+                'active' => vm_is_active,
                 'az' => {0 => "az0", 1 => "az1", nil => nil}[instance_idx],
                 'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}"],
-                'vm_created_at' => time.utc.iso8601
+                'vm_created_at' => time.utc.iso8601,
               )
             end
           end
@@ -876,7 +878,7 @@ module Bosh::Director
                   'agent_id' => "agent-#{i}",
                   'cid' => "cid-#{i}",
                   'instance_id' => instance.id,
-                  'created_at' => time
+                  'created_at' => time,
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -899,12 +901,14 @@ module Bosh::Director
               expect(body.size).to eq(15)
 
               body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
+                vm_is_active = i < 8
                 expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
                   'id' => "instance-#{i}",
+                  'active' => vm_is_active,
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
                   'vm_created_at' => time.utc.iso8601
@@ -947,12 +951,14 @@ module Bosh::Director
               expect(body.size).to eq(15)
 
               body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
+                vm_is_active = i < 8
                 expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
                   'id' => "instance-#{i}",
+                  'active' => vm_is_active,
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
                   'vm_created_at' => time.utc.iso8601
