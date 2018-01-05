@@ -50,9 +50,7 @@ module Bosh::Director
     end
 
     it 'create a stage and track the tasks within the stage' do
-      expect(EventLog::Stage).to receive(:new)
-        .with(anything, stage_name, anything, agendas.length)
-        .and_return(stage)
+      expect(Config.event_log).to receive(:begin_stage).with(stage_name, agendas.length).and_return(stage)
       expect(stage).to receive(:advance_and_track).with(task_name)
       executor.run
     end
@@ -61,9 +59,8 @@ module Bosh::Director
       subject(:executor) { StepExecutor.new(stage_name, agendas, track: false) }
 
       it 'skips tracking' do
-        allow(Config.event_log).to receive(:begin_stage)
+        expect(Config.event_log).to_not receive(:begin_stage)
         executor.run
-        expect(Config.event_log).to_not have_received(:begin_stage)
       end
     end
 
