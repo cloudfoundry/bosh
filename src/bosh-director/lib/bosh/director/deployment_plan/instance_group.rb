@@ -360,6 +360,7 @@ module Bosh::Director
         end
       end
 
+      #TODO LINKS: Remove me (me == resolved_links)!!! Should query database directly for resolved links.
       def add_resolved_link(job_name, link_name, link_spec)
         @resolved_links[job_name] ||= {}
         @resolved_links[job_name][link_name] = sort_property(link_spec)

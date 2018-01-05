@@ -476,10 +476,8 @@ describe 'links_resolver' do
 
           links_manager.find_or_create_consumer_intent(
             link_consumer: link_consumer,
-            original_link_name: 'c1',
-            link_type: 'pt1',
-            optional: false,
-            blocked: false,
+            link_original_name: 'c1',
+            link_type: 'pt1'
           )
         end
 

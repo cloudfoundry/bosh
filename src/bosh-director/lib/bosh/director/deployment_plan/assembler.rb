@@ -137,6 +137,10 @@ module Bosh::Director
     end
 
     def bind_links
+      # TODO LINKS
+      # Update providers with correct link content.
+      # Create the links
+
       links_resolver = DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
 
       @deployment_plan.instance_groups.each do |instance_group|
@@ -146,6 +150,11 @@ module Bosh::Director
       @deployment_plan.instance_groups.each do |instance_group|
         links_resolver.resolve(instance_group)
       end
+
+      # TODO LINKS
+      # we should not clean up the consumers or providers here
+      # need to clean them up at the end of the deployment
+      # since a deployment can fail and we'll end up with no providers and consumers
 
       # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
       link_providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: @deployment_plan.model)

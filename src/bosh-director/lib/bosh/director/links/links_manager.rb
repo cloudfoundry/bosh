@@ -17,13 +17,23 @@ module Bosh::Director::Links
     def find_provider(
       deployment_model:,
       instance_group_name:,
-      name:
+      name:,
+      type:
     )
       Bosh::Director::Models::Links::LinkProvider.find(
         deployment: deployment_model,
         instance_group: instance_group_name,
-        name: name
+        name: name,
+        type: type
       )
+    end
+
+    def find_providers(
+      deployment:
+    )
+      Bosh::Director::Models::Links::LinkProvider.where(
+        deployment: deployment
+      ).all
     end
 
     # Used by provider, not using alias because want to update existing provider intent when alias changes
@@ -33,6 +43,18 @@ module Bosh::Director::Links
       link_type:
     )
       Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
+        link_provider: link_provider,
+        original_name: link_original_name,
+        type: link_type,
+      )
+    end
+
+    def find_provider_intent_by_original_name(
+      link_provider:,
+      link_original_name:,
+      link_type:
+    )
+      Bosh::Director::Models::Links::LinkProviderIntent.find(
         link_provider: link_provider,
         original_name: link_original_name,
         type: link_type,
@@ -71,28 +93,26 @@ module Bosh::Director::Links
     def find_consumer(
       deployment_model:,
       instance_group_name:,
-      name:
+      name:,
+      type:
     )
       Bosh::Director::Models::Links::LinkConsumer.find(
         deployment: deployment_model,
         instance_group: instance_group_name,
-        name: name
+        name: name,
+        type: type
       )
     end
 
     def find_or_create_consumer_intent(
       link_consumer:,
-      original_link_name:,
-      link_type:,
-      optional:,
-      blocked:
+      link_original_name:,
+      link_type:
     )
       Bosh::Director::Models::Links::LinkConsumerIntent.find_or_create(
         link_consumer: link_consumer,
-        original_name: original_link_name,
-        type: link_type,
-        optional: optional,
-        blocked: blocked
+        original_name: link_original_name,
+        type: link_type
       )
     end
 

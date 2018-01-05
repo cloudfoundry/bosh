@@ -4,7 +4,7 @@ module Bosh::Director::Models::Links
     one_to_many :links, :key => :link_consumer_intent_id, :class => 'Bosh::Director::Models::Links::Link'
 
     def validate
-      validates_presence [:link_consumer_id, :original_name, :type, :optional, :blocked]
+      validates_presence [:link_consumer_id, :original_name, :type]
     end
   end
 end

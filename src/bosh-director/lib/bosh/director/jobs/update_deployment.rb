@@ -73,10 +73,15 @@ module Bosh::Director
           event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+
+            # that's where the link path is created
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
+
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
+
+            # that's where the links resolver is created
             deployment_assembler.bind_models({:should_bind_new_variable_set => is_deploy_action})
           end
 
@@ -105,6 +110,7 @@ module Bosh::Director
 
               # only in the case of a deploy should you be cleaning up
               if is_deploy_action
+                # TODO LINKS: Clean up old providers from previous deployments. It should only happen when deployment is successful. Similar to variables.
                 current_variable_set.update(deployed_successfully: true)
                 remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
               end

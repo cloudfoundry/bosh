@@ -112,7 +112,14 @@ module Bosh::Director
     def apply_initial_vm_state(instance_plan, vm)
       vm_state = DeploymentPlan::VmSpecApplier.new.apply_initial_vm_state(instance_plan.spec, vm)
 
+      # first time to update the instance spec json
+      # don't care about the links, since they are not being used yet
+      # add_state_to_model is the only place it is being called here
+
       instance_plan.instance.add_state_to_model(vm_state)
+
+      # TODO LINKS
+      # save the association between links and the instance
 
       DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache: @template_blob_cache, dns_encoder: @dns_encoder).perform
     end

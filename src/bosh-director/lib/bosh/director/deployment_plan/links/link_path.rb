@@ -29,16 +29,16 @@ module Bosh::Director
         end
 
         if link_info.has_key?('from')
-          link_path = fulfill_explicit_link(link_info)
-        elsif ( link_info.has_key?('instances') ||
-                link_info.has_key?('properties') ||
-                link_info.has_key?('address') )
-          @manual_spec = {}
-          @manual_spec['deployment_name'] = @deployment_plan_name
-          @manual_spec['instances'] = link_info['instances']
-          @manual_spec['properties'] = link_info['properties']
-          @manual_spec['address'] = link_info['address']
-          return
+          link_path = fulfill_explicit_link(link_info['from'], link_info['network'], link_info['deployment'])
+        # elsif ( link_info.has_key?('instances') ||
+        #         link_info.has_key?('properties') ||
+        #         link_info.has_key?('address') )
+        #   @manual_spec = {}
+        #   @manual_spec['deployment_name'] = @deployment_plan_name
+        #   @manual_spec['instances'] = link_info['instances']
+        #   @manual_spec['properties'] = link_info['properties']
+        #   @manual_spec['address'] = link_info['address']
+        #   return
         else
           link_path = fulfill_implicit_link(link_info)
         end
@@ -99,11 +99,7 @@ module Bosh::Director
         end
       end
 
-      def fulfill_explicit_link(link_info)
-        from_name = link_info['from']
-        link_network = link_info['network']
-        deployment_name = link_info['deployment']
-
+      def fulfill_explicit_link(from_name, link_network, from_deployment)
         if !deployment_name.nil?
           if deployment_name == @deployment_plan_name
             link_path = get_link_path_from_deployment_plan(from_name, link_network)

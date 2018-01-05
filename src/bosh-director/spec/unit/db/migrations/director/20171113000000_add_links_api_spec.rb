@@ -192,8 +192,8 @@ module Bosh::Director
           consumer_id = db[:link_consumers].first[:id]
 
           expected_links_consumers_intents = [
-            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false},
-            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false}
+            {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=> nil},
+            {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=> nil}
           ]
 
           expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)
@@ -228,8 +228,8 @@ module Bosh::Director
             consumer_id = db[:link_consumers].first[:id]
 
             expected_links_consumers_intents = [
-              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false},
-              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false}
+              {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=>nil},
+              {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=>nil}
             ]
 
             expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)
@@ -461,6 +461,7 @@ module Bosh::Director
           }
         end
 
+        # having 2 links with same contents should be ok as well, test for it
         context 'and contents are the same' do
           before do
             db[:instances] << {
@@ -505,6 +506,10 @@ module Bosh::Director
             expect(dataset[1][:link_id]).to eq(1)
           end
         end
+
+        # multiple links attached to the same consumer intent???
+        # how we do the equality of the links contents, need to validate it is correct ???
+        # the order of the hash contents and keys should be ok
 
         context 'and contents are different' do
           let(:instance_spec_json2) do

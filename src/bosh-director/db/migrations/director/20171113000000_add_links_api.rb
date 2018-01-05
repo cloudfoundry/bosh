@@ -10,13 +10,14 @@ Sequel.migration do
 
     create_table :link_provider_intents do
       primary_key :id
-      foreign_key :link_provider_id, :link_providers,  :on_delete => :cascade
+      foreign_key :link_provider_id, :link_providers, :on_delete => :cascade
       String :original_name, :null => false
       String :type, :null => false
       String :name # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
       String :content # rely on networks, make optional because of delayed content resolution
       Boolean :shared, :null => false, :default => false
-      Boolean :consumable, :null => false
+      Boolean :consumable, :null => false, :default => true
+      String :metadata #mapped properties
     end
 
     create_table :link_consumers do
@@ -33,9 +34,9 @@ Sequel.migration do
       String :original_name, :null => false
       String :type, :null => false
       String :name # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
-      Boolean :optional, :null => false
-      Boolean :blocked, :null => false # intentially blocking the consumption of the link, consume: nil
-      # String :metadata, :null => false # put extra json object that has some flags, ip addresses true or false, or any other potential thing
+      Boolean :optional, :null => false, :default => false
+      Boolean :blocked, :null => false, :default => false # intentionally blocking the consumption of the link, consume: nil
+      String :metadata # put extra json object that has some flags, ip addresses true or false, network, from_deployment or any other potential thing
     end
 
     create_table :links do

@@ -62,7 +62,8 @@ describe Bosh::Director::Links::LinksManager do
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
           instance_group_name: "control_instance_group",
-          name: "control_owner_object_name"
+          name: "control_owner_object_name",
+          type: "control_owner_object_type"
         )
         expect(actual_provider).to eq(expected_provider)
       end
@@ -73,9 +74,45 @@ describe Bosh::Director::Links::LinksManager do
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
           instance_group_name: "control_instance_group",
-          name: "control_owner_object_name"
+          name: "control_owner_object_name",
+          type: "control_owner_object_type"
         )
         expect(actual_provider).to be_nil
+      end
+    end
+  end
+
+  describe '#find_providers' do
+    context 'link providers exist' do
+      it 'returns the existing providers for deployment' do
+        expected_providers = [
+          Bosh::Director::Models::Links::LinkProvider.create(
+            deployment: deployment_model,
+            instance_group: 'control_instance_group',
+            name: 'control_owner_object_name',
+            type: 'control_owner_object_type'
+          ),
+          Bosh::Director::Models::Links::LinkProvider.create(
+            deployment: deployment_model,
+            instance_group: 'control_instance_group',
+            name: 'control_owner_object_name2',
+            type: 'control_owner_object_type2'
+          )
+        ]
+
+        actual_providers = subject.find_providers(
+          deployment: deployment_model
+        )
+        expect(actual_providers).to eq(expected_providers)
+      end
+    end
+
+    context 'no link providers exist' do
+      it 'does not return a provider for deployment' do
+        actual_providers = subject.find_providers(
+          deployment: deployment_model
+        )
+        expect(actual_providers).to eq([])
       end
     end
   end
@@ -90,7 +127,7 @@ describe Bosh::Director::Links::LinksManager do
       )
     end
 
-    context 'intent already exist' do
+    context 'intent already exists' do
       it 'returns the existing link_provider_intent' do
         expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
           link_provider: link_provider,
@@ -105,7 +142,7 @@ describe Bosh::Director::Links::LinksManager do
         actual_intent = subject.find_or_create_provider_intent(
           link_provider: link_provider,
           link_original_name: "test_original_link_name",
-          link_type: "test_link_type",
+          link_type: "test_link_type"
         )
 
         expect(actual_intent).to eq(expected_intent)
@@ -116,14 +153,13 @@ describe Bosh::Director::Links::LinksManager do
       it 'creates a new link_provider_intent' do
         expect(Bosh::Director::Models::Links::LinkProviderIntent.count).to eq(0)
 
-        provided_intent = subject.find_or_create_provider_intent(
+        actual_intent = subject.find_or_create_provider_intent(
           link_provider: link_provider,
           link_original_name: "test_original_link_name",
-          link_type: "test_link_type",
+          link_type: "test_link_type"
         )
 
-        expect(Bosh::Director::Models::Links::LinkProviderIntent.count).to eq(1)
-        saved_provided_intent = Bosh::Director::Models::Links::LinkProviderIntent.find(
+        expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.find(
           link_provider: link_provider,
           original_name: "test_original_link_name",
           type: "test_link_type",
@@ -131,7 +167,8 @@ describe Bosh::Director::Links::LinksManager do
           consumable: true
         )
 
-        expect(provided_intent).to eq(saved_provided_intent)
+        expect(Bosh::Director::Models::Links::LinkProviderIntent.count).to eq(1)
+        expect(actual_intent).to eq(expected_intent)
       end
     end
   end
@@ -249,10 +286,8 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_link_consumer_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
-          original_link_name: 'test_original_link_name',
-          link_type: 'test_link_type',
-          optional: false,
-          blocked: false
+          link_original_name: 'test_original_link_name',
+          link_type: 'test_link_type'
         )
 
         expect(actual_link_consumer_intent).to eq(expected_link_consumer_intent)
@@ -263,17 +298,15 @@ describe Bosh::Director::Links::LinksManager do
       it 'creates a new link_consumer_intent' do
         expected_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
-          original_link_name: 'test_original_link_name',
-          link_type: 'test_link_type',
-          optional: true,
-          blocked: false
+          link_original_name: 'test_original_link_name',
+          link_type: 'test_link_type'
         )
 
         actual_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
           link_consumer: link_consumer,
           original_name: 'test_original_link_name',
           type: 'test_link_type',
-          optional: true,
+          optional: false,
           blocked: false
         )
 
@@ -295,7 +328,8 @@ describe Bosh::Director::Links::LinksManager do
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
           instance_group_name: "control_instance_group",
-          name: "control_owner_object_name"
+          name: "control_owner_object_name",
+          type: 'control_owner_object_type'
         )
         expect(actual_consumer).to eq(expected_consumer)
       end
@@ -306,7 +340,8 @@ describe Bosh::Director::Links::LinksManager do
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
           instance_group_name: "control_instance_group",
-          name: "control_owner_object_name"
+          name: "control_owner_object_name",
+          type: 'job'
         )
         expect(actual_consumer).to be_nil
       end

@@ -107,8 +107,6 @@ module Bosh
             deployment.add_variables(parsed_runtime_config.variables)
           end
 
-          process_links(deployment)
-
           DeploymentValidator.new.validate(deployment)
 
           deployment
@@ -127,122 +125,10 @@ module Bosh
           runtime_config_consolidator.tags(deployment_name).merge!(tags)
         end
 
-        def process_links(deployment)
-          errors = []
-
-          deployment.instance_groups.each do |current_instance_group|
-            current_instance_group.jobs.each do |current_job|
-              current_job.consumes_links_for_instance_group_name(current_instance_group.name).each do |name, source|
-                link_path = LinkPath.new(deployment.name, deployment.instance_groups, current_instance_group.name, current_job.name)
-
-                begin
-                  link_path.parse(source)
-                rescue Exception => e
-                  errors.push e
-                end
-
-                unless link_path.skip
-                  current_instance_group.add_link_path(current_job.name, name, link_path)
-                end
-              end
-
-              template_properties = current_job.properties[current_instance_group.name]
-
-              current_job.provides_links_for_instance_group_name(current_instance_group.name).each do |_link_name, provided_link|
-                next unless provided_link['link_properties_exported']
-                ## Get default values for this job
-                default_properties = get_default_properties(deployment, current_job)
-
-                provided_link['mapped_properties'] = process_link_properties(template_properties, default_properties, provided_link['link_properties_exported'], errors)
-              end
-            end
-          end
-
-          unless errors.empty?
-            combined_errors = errors.map { |error| "- #{error.message.strip}" }.join("\n")
-            header = 'Unable to process links for deployment. Errors are:'
-            message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, indent_by: 2)
-
-            raise message
-          end
-        end
-
-        def get_default_properties(deployment, template)
-          release_manager = Api::ReleaseManager.new
-
-          release_versions_templates_models_hash = {}
-
-          template_name = template.name
-          release_name = template.release.name
-
-          release = deployment.release(release_name)
-
-          unless release_versions_templates_models_hash.key?(release_name)
-            release_model = release_manager.find_by_name(release_name)
-            current_release_version = release_manager.find_version(release_model, release.version)
-            release_versions_templates_models_hash[release_name] = current_release_version.templates
-          end
-
-          templates_models_list = release_versions_templates_models_hash[release_name]
-          current_template_model = templates_models_list.find { |target| target.name == template_name }
-
-          unless current_template_model.properties.nil?
-            default_prop = {}
-            default_prop['properties'] = current_template_model.properties
-            default_prop['template_name'] = template.name
-            return default_prop
-          end
-
-          { 'template_name' => template.name }
-        end
-
-        def process_link_properties(scoped_properties, default_properties, link_property_list, errors)
-          mapped_properties = {}
-          link_property_list.each do |link_property|
-            property_path = link_property.split('.')
-            result = find_property(property_path, scoped_properties)
-            if !result['found']
-              if default_properties.key?('properties') && default_properties['properties'].key?(link_property)
-                if default_properties['properties'][link_property].key?('default')
-                  mapped_properties = update_mapped_properties(mapped_properties, property_path, default_properties['properties'][link_property]['default'])
-                else
-                  mapped_properties = update_mapped_properties(mapped_properties, property_path, nil)
-                end
-              else
-                e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
-                errors.push(e)
-              end
-            else
-              mapped_properties = update_mapped_properties(mapped_properties, property_path, result['value'])
-            end
-          end
-          mapped_properties
-        end
-
-        def find_property(property_path, scoped_properties)
-          current_node = scoped_properties
-          property_path.each do |key|
-            if !current_node || !current_node.key?(key)
-              return { 'found' => false, 'value' => nil }
-            else
-              current_node = current_node[key]
-            end
-          end
-          { 'found' => true, 'value' => current_node }
-        end
-
-        def update_mapped_properties(mapped_properties, property_path, value)
-          current_node = mapped_properties
-          property_path.each_with_index do |key, index|
-            if index == property_path.size - 1
-              current_node[key] = value
-            else
-              current_node[key] = {} unless current_node.key?(key)
-              current_node = current_node[key]
-            end
-          end
-          mapped_properties
-        end
+        # TODO LINKS
+        # process link will actually try to mix and match the links, here
+        # this is done through the link path
+        # is it the right place to even do that ??????????
 
         def validate_and_get_argument(arg, type)
           raise "#{type} value should be integer or percent" unless arg =~ /^\d+%$|\A[-+]?[0-9]+\z/ || arg.nil?

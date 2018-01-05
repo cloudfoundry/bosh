@@ -7,8 +7,7 @@ module Bosh::Director::Models::Links
       validates_presence [
                            :original_name,
                            :link_provider_id,
-                           :type,
-                           :consumable
+                           :type
                          ]
     end
   end

@@ -12,6 +12,7 @@ module Bosh::Director
         @deployment = deployment
         @event_log = event_log
         @logger = logger
+        @links_manager = Bosh::Director::Links::LinksManager.new # TODO LINKS: Make this a passed in dependency of IGSP?
       end
 
       # @param [Hash] instance_group_spec Raw instance_group spec from the deployment manifest
@@ -25,7 +26,6 @@ module Bosh::Director
 
         parse_release
         validate_jobs
-
 
         merged_global_and_instance_group_properties = extract_global_and_instance_group_properties
 
@@ -146,19 +146,19 @@ module Bosh::Director
           release_versions_templates_models_hash = {}
 
           jobs.each do |job_spec|
-            template_name = safe_property(job_spec, 'name', class: String)
+            job_name = safe_property(job_spec, 'name', class: String)
             release_name = safe_property(job_spec, 'release', class: String, optional: true)
 
             if release_name
               release = @deployment.release(release_name)
               unless release
                 raise InstanceGroupUnknownRelease,
-                      "Job '#{template_name}' (instance group '#{@instance_group.name}') references an unknown release '#{release_name}'"
+                      "Job '#{job_name}' (instance group '#{@instance_group.name}') references an unknown release '#{release_name}'"
               end
             else
               release = @instance_group.release
               unless release
-                raise InstanceGroupMissingRelease, "Cannot tell what release template '#{template_name}' (instance group '#{@instance_group.name}') is supposed to use, please explicitly specify one"
+                raise InstanceGroupMissingRelease, "Cannot tell what release template '#{job_name}' (instance group '#{@instance_group.name}') is supposed to use, please explicitly specify one"
               end
               release_name = release.name
             end
@@ -170,33 +170,12 @@ module Bosh::Director
             end
 
             templates_models_list = release_versions_templates_models_hash[release_name]
-            current_template_model = templates_models_list.find {|target| target.name == template_name }
+            current_template_model = templates_models_list.find {|target| target.name == job_name }
 
-            job = release.get_or_create_template(template_name)
+            job = release.get_or_create_template(job_name)
 
             if current_template_model == nil
-              raise "Job '#{template_name}' not found in Template table"
-            end
-
-            if current_template_model.consumes != nil
-              current_template_model.consumes.each do |consumes|
-                job.add_link_from_release(@instance_group.name,'consumes', consumes["name"], consumes)
-              end
-            end
-            if current_template_model.provides != nil
-              current_template_model.provides.each do |provides|
-                job.add_link_from_release(@instance_group.name, 'provides', provides["name"], provides)
-              end
-            end
-
-            provides_links = safe_property(job_spec, 'provides', class: Hash, optional: true)
-            provides_links.to_a.each do |link_name, source|
-              job.add_link_from_manifest(@instance_group.name, "provides", link_name, source)
-            end
-
-            consumes_links = safe_property(job_spec, 'consumes', class: Hash, optional: true)
-            consumes_links.to_a.each do |link_name, source|
-              job.add_link_from_manifest(@instance_group.name, 'consumes', link_name, source)
+              raise "Job '#{job_name}' not found in Template table"
             end
 
             if job_spec.has_key?('properties')
@@ -204,14 +183,200 @@ module Bosh::Director
             else
               job_properties = merged_global_and_instance_group_properties
             end
+
             job.add_properties(
               job_properties,
               @instance_group.name
             )
 
+            # Find out what is the exported properties per job, store them somewhere? DB?
+            # add_link_from_release parses out which properties to be exported.
+            # The values of each property to be exported should be the ones passed to 'job.add_properties'
+            provider = nil
+
+            # Providers defined from manifest
+            provides_links = safe_property(job_spec, 'provides', class: Hash, optional: true, default: {})
+
+            if current_template_model.provides != nil
+              provider = @links_manager.find_or_create_provider(
+                deployment_model: @deployment.model,
+                instance_group_name: @instance_group.name,
+                name: job_name,
+                type: 'job'
+              )
+
+              errors = []
+
+              current_template_model.provides.each do |provides|
+                link_name = provides['name']
+                provider_intent = @links_manager.find_or_create_provider_intent(
+                  link_provider: provider,
+                  link_original_name: link_name,
+                  link_type: provides['type']
+                )
+
+                exported_properties = provides['properties'] || []
+
+                manifest_source = provides_links[link_name]
+                if manifest_source # This provider is defined in my manifest
+                  errors.concat(validate_link_def(link_name, provider_intent, manifest_source, job_name))
+
+                  if manifest_source.eql? 'nil' # User explicitly specified nil. eg. "---\nfoo: nil\n"
+                    provider_intent.consumable = false
+                  else
+                    provider_intent.name = manifest_source['as'] || link_name
+                    provider_intent.shared = manifest_source['shared'] || false
+                  end
+
+                  mapped_properties = process_link_properties(job_properties, get_default_properties(@deployment, job), exported_properties, errors)
+
+                  provider_intent.metadata = {:mapped_properties => mapped_properties}.to_json
+                  provider_intent.save
+                  provides_links.delete(link_name)
+                end
+              end
+
+              errors.push('....') unless provides_links.empty?
+
+              unless errors.empty?
+                raise errors.join("\n")
+              end
+            end
+            raise "Job '#{job_name}' does not define any providers in the release spec" if provider.nil? && !provides_links.empty?
+
+            consumer = nil
+            if current_template_model.consumes != nil
+              consumer = @links_manager.find_or_create_consumer(
+                deployment_model: @deployment.model,
+                instance_group_name: @instance_group.name,
+                name: job_name,
+                type: 'job'
+              )
+              current_template_model.consumes.each do |consumes|
+                @links_manager.find_or_create_consumer_intent(
+                  link_consumer: consumer,
+                  link_original_name: consumes["name"],
+                  link_type: consumes['type']
+                )
+              end
+            end
+
+            consumes_links = safe_property(job_spec, 'consumes', class: Hash, optional: true) || {}
+            raise "Job '#{job_name}' does not define any consumers in the release spec" if consumer.nil? && !consumes_links.empty?
+
+            consumes_links.each do |link_name, source|
+              consumer_intent = consumer.intents&.find do |intent|
+                intent.original_name == link_name
+              end
+
+              errors = validate_consume_link(source, link_name, @instance_group.name)
+              errors.concat(validate_link_def(link_name, consumer_intent, source, job_name))
+
+              if errors.size > 0
+                raise errors.join("\n")
+              end
+
+              if source.eql? 'nil' # User explicitly specified nil. eg. "---\nfoo: nil\n"
+                consumer_intent.blocked = true
+              else
+                consumer_intent.name = source['from']
+                consumer_intent.optional = source['optional'] || false
+
+                metadata = {}
+                metadata['ip_addresses'] = source['ip_addresses'] if source.has_key? ('ip_addresses')
+                metadata['network'] = source['network'] if source.has_key? ('network')
+                if source['deployment']
+                  from_deployment = Bosh::Director::Models::Deployment.find(name: source['deployment'])
+                  if from_deployment
+                    metadata['from_deployment'] = from_deployment
+                  else
+                    errors.push("Deployment #{source['deployment']} not found for consumed link #{consumer_intent.name}")
+                  end
+                end
+                consumer_intent.metadata = metadata.to_json
+              end
+              consumer_intent.save
+
+              manual_link_keys = [ 'instances', 'properties', 'address' ]
+              is_manual_link = manual_link_keys.any? do |key|
+                source.has_key? key
+              end
+              process_manual_link(consumer, intent, source, manual_link_keys) if is_manual_link
+            end
+
             @instance_group.jobs << job
           end
         end
+      end
+
+      def process_manual_link(consumer, consumer_intent, source, manual_link_property_keys)
+        manual_provider = @links_manager.find_or_create_provider(
+          deployment_model: consumer.deployment,
+          instance_group_name: consumer.instance_group,
+          name: consumer.name,
+          type: 'manual'
+        )
+
+        manual_provider_intent = @links_manager.find_or_create_provider_intent(
+          link_provider: manual_provider,
+          link_original_name: consumer_intent.name,
+          link_type: consumer_intent.type
+        )
+
+        content = {
+          'deployment_name' => consumer.deployment.name
+        }
+        #TODO LINKS: Maybe only take certain manual link properties like link_path.parse used to:
+        #   @manual_spec = {}
+        #   @manual_spec['deployment_name'] = @deployment_plan_name
+        #   @manual_spec['instances'] = link_info['instances']
+        #   @manual_spec['properties'] = link_info['properties']
+        #   @manual_spec['address'] = link_info['address']
+        manual_link_property_keys.each do |key|
+          content[key] = source[key]
+        end
+        manual_provider_intent.content = content.to_json
+        manual_provider_intent.save
+      end
+
+      def validate_link_def(link_name, link_intent, source, job_name)
+        errors = []
+
+        errors.push("Job '#{job_name}' does not define link '#{link_name}' in the release spec") unless link_intent
+        unless source.nil? # User did not define any source definition, only the link name. eg. "---\nfoo:\n"
+          if source.has_key?('name') || source.has_key?('type')
+            errors.push("Cannot specify 'name' or 'type' properties in the manifest for link '#{link_name}' in job '#{@name}' in instance group '#{@instance_group.name}'. Please provide these keys in the release only.")
+          end
+        end
+
+        errors
+      end
+
+      def validate_consume_link(source, link_name, instance_group_name)
+        errors = []
+        if source == nil
+          return errors
+        end
+
+        blacklist = [['instances', 'from'], ['properties', 'from']]
+        blacklist.each do |invalid_props|
+          if invalid_props.all? {|prop| source.has_key?(prop)}
+            errors.push("Cannot specify both '#{invalid_props[0]}' and '#{invalid_props[1]}' keys for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
+          end
+        end
+
+        if source.has_key?('properties') && !source.has_key?('instances')
+          errors.push("Cannot specify 'properties' without 'instances' for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
+        end
+
+        if source.has_key?('ip_addresses')
+          # The first expression makes it TRUE or FALSE then if the second expression is neither TRUE or FALSE it will return FALSE
+          unless (!!source['ip_addresses']) == source['ip_addresses']
+            errors.push("Cannot specify non boolean values for 'ip_addresses' field for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
+          end
+        end
+
+        errors
       end
 
       def check_job_uniqueness
@@ -265,6 +430,8 @@ module Bosh::Director
           persistent_disk_collection.add_by_disk_type(disk_type)
         end
 
+        # TODO LINKS: Add disks to the provider + intents
+        # The disks being added should have alias set to the original name
         if persistent_disks
           unique_names = persistent_disks.map { |persistent_disk| persistent_disk['name'] }.uniq
           if unique_names.size != persistent_disks.size
@@ -427,6 +594,121 @@ module Bosh::Director
           end
           @instance_group.migrated_from << MigratedFromJob.new(name, az)
         end
+      end
+
+      def process_links(deployment)
+        errors = []
+
+        @instance_group.jobs.each do |current_job|
+          # current_job.consumes_links_for_instance_group_name(@instance_group.name).each do |name, source|
+          #   link_path = LinkPath.new(deployment.name, deployment.instance_groups, @instance_group.name, current_job.name)
+          #
+          #   begin
+          #     link_path.parse(source)
+          #   rescue Exception => e
+          #     errors.push e
+          #   end
+          #
+          #   unless link_path.skip
+          #     @instance_group.add_link_path(current_job.name, name, link_path)
+          #   end
+          # end
+
+          template_properties = current_job.properties[@instance_group.name]
+
+          current_job.provides_links_for_instance_group_name(@instance_group.name).each do |_link_name, provided_link|
+            next unless provided_link['link_properties_exported']
+            ## Get default values for this job
+            default_properties = get_default_properties(deployment, current_job)
+
+            provided_link['mapped_properties'] = process_link_properties(template_properties, default_properties, provided_link['link_properties_exported'], errors)
+          end
+        end
+
+        unless errors.empty?
+          combined_errors = errors.map { |error| "- #{error.message.strip}" }.join("\n")
+          header = 'Unable to process links for deployment. Errors are:'
+          message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, indent_by: 2)
+
+          raise message
+        end
+      end
+
+      def get_default_properties(deployment, template)
+        release_manager = Api::ReleaseManager.new
+
+        release_versions_templates_models_hash = {}
+
+        template_name = template.name
+        release_name = template.release.name
+
+        release = deployment.release(release_name)
+
+        unless release_versions_templates_models_hash.key?(release_name)
+          release_model = release_manager.find_by_name(release_name)
+          current_release_version = release_manager.find_version(release_model, release.version)
+          release_versions_templates_models_hash[release_name] = current_release_version.templates
+        end
+
+        templates_models_list = release_versions_templates_models_hash[release_name]
+        current_template_model = templates_models_list.find { |target| target.name == template_name }
+
+        unless current_template_model.properties.nil?
+          default_prop = {}
+          default_prop['properties'] = current_template_model.properties
+          default_prop['template_name'] = template.name
+          return default_prop
+        end
+
+        { 'template_name' => template.name }
+      end
+
+      def process_link_properties(scoped_properties, default_properties, link_property_list, errors)
+        mapped_properties = {}
+        link_property_list.each do |link_property|
+          property_path = link_property.split('.')
+          result = find_property(property_path, scoped_properties)
+          if !result['found']
+            if default_properties.key?('properties') && default_properties['properties'].key?(link_property)
+              if default_properties['properties'][link_property].key?('default')
+                mapped_properties = update_mapped_properties(mapped_properties, property_path, default_properties['properties'][link_property]['default'])
+              else
+                mapped_properties = update_mapped_properties(mapped_properties, property_path, nil)
+              end
+            else
+              e = Exception.new("Link property #{link_property} in template #{default_properties['template_name']} is not defined in release spec")
+              errors.push(e)
+            end
+          else
+            mapped_properties = update_mapped_properties(mapped_properties, property_path, result['value'])
+          end
+        end
+        mapped_properties
+      end
+
+      def find_property(property_path, scoped_properties)
+        current_node = scoped_properties
+        property_path.each do |key|
+          if !current_node || !current_node.key?(key)
+            return { 'found' => false, 'value' => nil }
+          else
+            current_node = current_node[key]
+          end
+        end
+        { 'found' => true, 'value' => current_node }
+      end
+
+      def update_mapped_properties(mapped_properties, property_path, value)
+        current_node = mapped_properties
+        property_path.each_with_index do |key, index|
+          if index == property_path.size - 1
+            current_node[key] = value
+          else
+            current_node[key] = {} unless current_node.key?(key)
+            current_node = current_node[key]
+          end
+        end
+        mapped_properties
       end
 
       def validate_jobs

@@ -31,76 +31,105 @@ module Bosh::Director
       private
 
       def resolve_consumed_links(instance_group, job)
-        job.model_consumed_links.each do |consumed_link|
-          consumer = @links_manager.find_or_create_consumer(
-            deployment_model: @deployment_plan.model,
-            instance_group_name: instance_group.name,
-            name: job.name,
-            type: 'job'
-          )
+        consumer = @links_manager.find_consumer(
+          deployment_model: @deployment_plan.model,
+          instance_group_name: instance_group.name,
+          name: job.name,
+          type: 'job'
+        )
 
-          consumer_intent = @links_manager.find_or_create_consumer_intent(
-            link_consumer: consumer,
-            original_link_name: consumed_link.original_name,
-            link_type: consumed_link.type,
-            optional: consumed_link.optional,
-            blocked: false
-          )
-
-          consumer_intent.name = consumed_link.name
-          consumer_intent.save
-
-          @deployment_plan.add_link_consumer(consumer)
-
-          link_name = consumed_link.name
-
-          provider_intent = nil
-
-          link_path = instance_group.link_path(job.name, link_name)
-          if link_path.nil?
-            # Only raise an exception when the link_path is nil, and it is not optional
-            if !consumed_link.optional
-              raise JobMissingLink, "Link path was not provided for required link '#{link_name}' in instance group '#{instance_group.name}'"
+        if consumer&.intents
+          consumer.intents.each do |consumer_intent|
+            #TODO LINKS: Double check logic in fulfill_explicit/implicit_links -> ... if found_providers are 0 and consumer is optional. Should we raise exception or continue silently?
+            consumer_intent_metadata = {}
+            consumer_intent_metadata = JSON.parse(consumer_intent.metadata) unless consumer_intent.metadata.nil?
+            if consumer_intent.name
+              from_deployment = consumer_intent_metadata['from_deployment'] || consumer.deployment
+              provider_intent = fulfill_explicit_link(consumer_intent.name, consumer_intent_metadata['network'], from_deployment, consumer_intent)
+              create_link(consumer_intent, consumer_intent_metadata, instance_group, job, provider_intent)
+            else
+              provider_intents = get_manual_link_provider_for_consumer(consumer_intent)
+              if provider_intents && provider_intents.size == 1
+                provider_intent = provider_intents.first
+                @links_manager.find_or_create_link(
+                  name: consumer_intent.original_name,
+                  provider_intent: provider_intent,
+                  consumer_intent: consumer_intent,
+                  link_content: provider_intent.contents
+                )
+              else
+                provider_intent = fulfill_implicit_link(consumer_intent.type, consumer_intent_metadata['network'], consumer_intent)
+                create_link(consumer_intent, consumer_intent_metadata, instance_group, job, provider_intent)
+              end
             end
-            next
-          elsif !link_path.manual_spec.nil?
-            instance_group.add_resolved_link(job.name, link_name, link_path.manual_spec)
-            link_content = link_path.manual_spec.to_json
-          else
-            provider_deployment = Models::Deployment[name: link_path.deployment]
-
-            provider = @links_manager.find_provider(
-              deployment_model: provider_deployment,
-              instance_group_name: link_path.instance_group,
-              name: link_path.owner
-            )
-
-            provider_intent = @links_manager.find_provider_intent_by_alias(
-              link_provider: provider,
-              link_alias: link_path.name,
-              link_type: consumed_link.type,
-            )
-
-            if provider_intent.nil?
-              raise DeploymentInvalidLink, "Cannot resolve link path '#{link_path}' required for link '#{link_name}' in instance group '#{instance_group.name}' on job '#{job.name}'"
-            end
-
-            link_info = job.consumes_link_info(instance_group.name, link_name)
-            link_use_ip_address = link_info.has_key?('ip_addresses') ? link_info['ip_addresses'] : nil
-
-            link_spec = update_addresses(JSON.parse(provider_intent[:content]), link_info['network'], @deployment_plan.use_dns_addresses?, link_use_ip_address)
-
-            instance_group.add_resolved_link(job.name, link_name, link_spec)
-
-            link_content = link_spec.to_json
           end
+        end
+      end
+
+      def create_link(consumer_intent, consumer_intent_metadata, instance_group, job, provider_intent)
+        # If provider_intent is nil and no exception was raised by now, it must be optional so don't raise anything here
+        if provider_intent
+          link_use_ip_address = consumer_intent_metadata['ip_addresses']
+
+          link_spec = update_addresses(JSON.parse(provider_intent[:content]), consumer_intent_metadata['network'], @deployment_plan.use_dns_addresses?, link_use_ip_address)
+
+          instance_group.add_resolved_link(job.name, consumer_intent.name, link_spec)
+
+          link_content = link_spec.to_json
 
           @links_manager.find_or_create_link(
-            name: consumed_link.original_name,
+            name: consumer_intent.original_name,
             provider_intent: provider_intent,
             consumer_intent: consumer_intent,
             link_content: link_content
           )
+        end
+      end
+
+      def get_manual_link_provider_for_consumer(consumer_intent)
+        manual_provider = @links_manager.find_provider(
+          deployment_model: consumer_intent.consumer.deployment,
+          instance_group_name: consumer_intent.consumer.instance_group,
+          name: consumer_intent.consumer.name,
+          type: 'manual'
+        )
+        manual_provider.intents.select do |provider_intent|
+          provider_intent.original_name == consumer_intent.original_name
+        end
+      end
+
+      def fulfill_explicit_link(link_from_name, link_network, from_deployment, consumer_intent)
+        if from_deployment.nil? || from_deployment == @deployment_plan.name
+          get_link_path_from_deployment_plan(link_from_name, link_network, consumer_intent)
+        else
+          find_deployment_and_get_link_path(from_deployment, link_from_name, link_network, consumer_intent)
+        end
+      end
+
+      def fulfill_implicit_link(link_type, link_network, consumer_intent)
+        found_provider_intents = []
+        found_providers = @links_manager.find_providers(deployment: @deployment_plan)
+        found_providers.each do |provider|
+          if instance_group_has_link_network(provider.instance_group, link_network)
+            provider.intents&.each do |provider_intent|
+              found_provider_intents << provider_intent if provider_intent[:type] == link_type
+            end
+          end
+        end
+
+        if found_provider_intents.size == 1
+          return found_provider_intents.first
+        elsif found_provider_intents.size > 1
+          all_link_paths = ''
+          found_provider_intents.each do |provider_intent|
+            all_link_paths = all_link_paths + "\n   #{provider_intent.provider[:deployment]}.#{provider_intent.provider[:instance_group]}.#{provider_intent.provider[:name]}.#{provider_intent[:name]}"
+          end
+          raise "Multiple instance groups provide links of type '#{link_type}'. Cannot decide which one to use for instance group '#{consumer_intent.consumer.instance_group}'.#{all_link_paths}"
+        else
+          # Only raise an exception if no linkpath was found, and the link is not optional
+          unless consumer_intent.optional
+            raise "Can't find link with type '#{link_type}' for instance_group '#{consumer_intent.consumer.instance_group}' in deployment '#{@deployment_plan.name}'#{" and network '#{link_network}''" unless link_network.to_s.empty?}"
+          end
         end
       end
 
@@ -111,6 +140,71 @@ module Bosh::Director
             raise Bosh::Director::UnusedProvidedLink,
                   "Job '#{job.name}' in instance group '#{instance_group.name}' specifies link '#{link_name}', " +
                     'but the release job does not consume it.'
+          end
+        end
+      end
+
+      def instance_group_has_link_network(instance_group, link_network)
+        !link_network || instance_group.has_network?(link_network)
+      end
+
+      def get_link_path_from_deployment_plan(from_name, link_network, consumer_intent)
+        found_provider_intents = []
+        found_providers = @links_manager.find_providers(deployment: @deployment_plan)
+        found_providers.each do |provider|
+          if instance_group_has_link_network(provider.instance_group, link_network)
+            provider.intents&.each do |provider_intent|
+              found_provider_intents << provider_intent if provider_intent[:name] == from_name
+            end
+          end
+        end
+
+        if found_provider_intents.size == 1
+          return found_provider_intents.first
+        elsif found_provider_intents.size > 1
+          all_link_paths = ''
+          found_provider_intents.each do |provider_intent|
+            all_link_paths = all_link_paths + "\n   #{provider_intent[:original_name]}#{" aliased as '#{provider_intent[:name]}'" unless provider_intent[:name].nil?} (job: #{provider_intent.provider[:name]}, instance group: #{provider_intent.provider[:instance_group]})"
+          end
+          raise "Cannot resolve ambiguous link '#{from_name}' (job: #{consumer_intent.consumer.name}, instance group: #{consumer_intent.consumer.instance_group}). All of these match: #{all_link_paths}"
+        else
+          unless consumer_intent.optional
+            raise "Can't resolve link '#{from_name}' in instance group '#{consumer_intent.consumer.instance_group}' on job '#{consumer_intent.consumer.name}' in deployment '#{@deployment_plan.name}'#{" and network '#{link_network}'" unless link_network.to_s.empty?}."
+          end
+        end
+      end
+
+      def find_deployment_and_get_link_path(deployment_name, alias_name, link_network, consumer_intent)
+        deployment = Models::Deployment.find(name: deployment_name)
+        if !deployment
+          raise "Can't find deployment #{deployment_name}"
+        end
+
+        # get the link path from that deployment
+        found_provider_intents = []
+        found_providers = @links_manager.find_providers(deployment: deployment)
+        found_providers.each do |provider|
+          provider.intents&.each do |provider_intent|
+            provider_intent_networks = JSON.parse(provider_intent.content)&['networks']
+            #TODO LINKS: Optimize here and 3000 other places - query DB by these params and not by deployment first
+            if provider_intent[:name] == alias_name && provider_intent.shared && (!link_network || provider_intent_networks.include?(link_network))
+              found_provider_intents << provider_intent
+            end
+          end
+        end
+
+        if found_provider_intents.size == 1
+          return found_provider_intents.first
+        elsif found_provider_intents.size > 1
+          all_link_paths = ''
+          found_provider_intents.each do |provider_intent|
+            all_link_paths = all_link_paths + "\n   #{provider_intent.provider[:deployment]}.#{provider_intent.provider[:instance_group]}.#{provider_intent.provider[:name]}.#{alias_name}"
+          end
+          link_str = "#{@deployment_plan.name}.#{consumer_intent.consumer.instance_group}.#{consumer_intent.consumer.name}.#{consumer_intent.name}"
+          raise "Cannot resolve ambiguous link '#{link_str}' in deployment #{deployment.name}:#{all_link_paths}"
+        else
+          unless consumer_intent.optional
+            raise "Can't resolve link '#{alias_name}' in instance group '#{@consumer_intent.consumer.instance_group}' on job '#{@consumer_intent.consumer.name}' in deployment '#{@consumer_intent.consumer.deployment}'#{" and network '#{link_network}''" unless link_network.to_s.empty?}. Please make sure the link was provided and shared."
           end
         end
       end
@@ -140,27 +234,36 @@ module Bosh::Director
       end
 
       def add_provided_links(instance_group, job)
-        job.provided_links(instance_group.name).each do |provided_link|
-          provider = @links_manager.find_or_create_provider(
-            deployment_model: @deployment_plan.model,
-            instance_group_name: instance_group.name,
-            name: job.name,
-            type: 'job'
-          )
-
-          provider_intent = @links_manager.find_or_create_provider_intent(
-            link_provider: provider,
-            link_original_name: provided_link.original_name,
-            link_type: provided_link.type
-          )
-
-          provider_intent.shared = provided_link.shared
-          provider_intent.name = provided_link.name
-          provider_intent.content = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec.to_json
-          provider_intent.save
-
-          @deployment_plan.add_link_provider(provider)
+        providers = @links_manager.find_providers(deployment: @deployment_plan.model)
+        providers.each do |provider|
+          provider.intents.each do |provider_intent|
+            metadata = {}
+            metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
+            provider_intent.content = Link.new(instance_group.deployment_name, instance_group, job, metadata['mapped_properties']).spec.to_json
+            provider_intent.save
+          end
         end
+        # job.provided_links(instance_group.name).each do |provided_link|
+        #   provider = @links_manager.find_or_create_provider(
+        #     deployment_model: @deployment_plan.model,
+        #     instance_group_name: instance_group.name,
+        #     name: job.name,
+        #     type: 'job'
+        #   )
+        #
+        #   provider_intent = @links_manager.find_or_create_provider_intent(
+        #     link_provider: provider,
+        #     link_original_name: provided_link.original_name,
+        #     link_type: provided_link.type
+        #   )
+        #
+        #   provider_intent.shared = provided_link.shared
+        #   provider_intent.name = provided_link.name
+        #   provider_intent.content = Link.new(instance_group.deployment_name, provided_link.name, instance_group, job).spec.to_json
+        #   provider_intent.save
+        #
+        #   @deployment_plan.add_link_provider(provider)
+        # end
       end
 
       def update_addresses(link_spec, preferred_network_name, global_use_dns_entry, link_use_ip_address)
