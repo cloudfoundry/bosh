@@ -10,7 +10,7 @@ params = {
   'max_threads' => p('director.max_threads'),
   'puma_workers' => p('director.puma_workers'),
   'logging' => {
-    'level' => 'DEBUG',
+    'level' => p('director.log_level'),
     'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
   },
   'mbus' => "nats://#{p('nats.address')}:#{p('nats.port')}",
