@@ -317,7 +317,18 @@ module Bosh::Director
       def parse_resource_pool
         env_hash = safe_property(@instance_group_spec, 'env', class: Hash, :default => {})
 
-        resource_pool_name = safe_property(@instance_group_spec, "resource_pool", class: String, optional: true)
+        resource_pool_name = safe_property(@instance_group_spec, 'resource_pool', class: String, optional: true)
+        vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String, optional: true)
+        vm_resources = safe_property(@instance_group_spec, 'vm_resources', class: Hash, optional: true)
+
+        statement_count = [resource_pool_name, vm_type_name, vm_resources].compact.count
+        if statement_count == 0
+          raise InstanceGroupBadVmConfiguration,
+            "Instance group '#{@instance_group.name}' is missing either 'vm_type' or 'vm_resources' or 'resource_pool' section."
+        elsif statement_count > 1
+          raise InstanceGroupBadVmConfiguration,
+            "Instance group '#{@instance_group.name}' can only specify one of 'resource_pool', 'vm_type' or 'vm_resources' keys."
+        end
 
         if resource_pool_name
           resource_pool = @deployment.resource_pool(resource_pool_name)
@@ -344,20 +355,16 @@ module Bosh::Director
           if env_hash.empty?
             env_hash = resource_pool.env
           end
+
         else
-          vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String, optional: true)
-          vm_resources = safe_property(@instance_group_spec, 'vm_resources', class: Hash, optional: true)
           vm_type = nil
-          if vm_type_name && vm_resources
-            raise InstanceGroupBadVmConfiguration, "Instance group '#{@instance_group.name}' specifies both 'vm_type' and 'vm_resources' keys, only one is allowed."
-          elsif vm_type_name
+
+          if vm_type_name
             vm_type = @deployment.vm_type(vm_type_name)
             raise InstanceGroupUnknownVmType, "Instance group '#{@instance_group.name}' references an unknown vm type '#{vm_type_name}'" unless vm_type
           elsif vm_resources
             vm_resources = VmResources.new(vm_resources)
             @logger.debug("Using 'vm_resources' block for instance group '#{@instance_group.name}'")
-          else
-            raise InstanceGroupBadVmConfiguration, "Instance group '#{@instance_group.name}' is missing either 'vm_type' or 'vm_resources' or 'resource_pool' section."
           end
 
           vm_extension_names = Array(safe_property(@instance_group_spec, 'vm_extensions', class: Array, optional: true))

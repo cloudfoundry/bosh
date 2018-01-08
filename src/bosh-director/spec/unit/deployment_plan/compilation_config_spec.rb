@@ -106,7 +106,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             [vm_type]
           )
         }.to raise_error BD::CompilationConfigBadVmConfiguration,
-          "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed."
+          "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed."
       end
 
       context 'when vm_resources is configured' do
@@ -126,7 +126,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               {},
               [vm_type]
             )
-          }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed.")
+          }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed.")
         end
       end
 
@@ -251,7 +251,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                   'some' => 'value'
                 }
               }, {})
-            }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed.")
+            }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed.")
           end
         end
       end

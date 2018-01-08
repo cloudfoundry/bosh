@@ -1195,7 +1195,7 @@ module Bosh::Director
 
         end
 
-        describe 'vm requirements' do
+        describe 'vm resources' do
           let(:vm_resources) do
             {
               'vm_resources' => {
@@ -1233,7 +1233,7 @@ module Bosh::Director
               instance_group_spec.merge!(vm_resources)
             end
 
-            it 'parses the vm requirements' do
+            it 'parses the vm resources' do
               instance_group = nil
               expect {
                 instance_group = parsed_instance_group
@@ -1244,30 +1244,50 @@ module Bosh::Director
             end
           end
 
-          context 'when vm requirements and vm types are given' do
-            before do
-              instance_group_spec.merge!(
-                'vm_type' => 'fake-vm-type',
-              ).merge!(
-                vm_resources
-              )
+          context 'when more than one vm config is given' do
+            let(:resource_pool_config) { { 'resource_pool' => 'fake-resource-pool' } }
+            let(:vm_type) { { 'vm_type' => 'fake-vm-type' } }
 
+            before do
               allow(deployment_plan).to receive(:vm_type).with('fake-vm-type').and_return(
-                VmType.new({
-                  'name' => 'fake-vm-type',
-                  'cloud_properties' => {}
-                })
+                VmType.new('name' => 'fake-vm-type', 'cloud_properties' => {})
               )
             end
 
-            it 'raises an error' do
+            it 'raises an error for vm_type, vm_resources, resource_pool' do
+              instance_group_spec.merge!(resource_pool_config).merge!(vm_type).merge!(vm_resources)
+
               expect {
                 parsed_instance_group
-              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' specifies both 'vm_type' and 'vm_resources' keys, only one is allowed.")
+              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' can only specify one of 'resource_pool', 'vm_type' or 'vm_resources' keys.")
+            end
+
+            it 'raises an error for vm_type, vm_resources' do
+              instance_group_spec.merge!(vm_type).merge!(vm_resources)
+
+              expect {
+                parsed_instance_group
+              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' can only specify one of 'resource_pool', 'vm_type' or 'vm_resources' keys.")
+            end
+
+            it 'raises an error for resource_pool, vm_resources' do
+              instance_group_spec.merge!(resource_pool_config).merge!(vm_resources)
+
+              expect {
+                parsed_instance_group
+              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' can only specify one of 'resource_pool', 'vm_type' or 'vm_resources' keys.")
+            end
+
+            it 'raises an error for resource_pool, vm_type' do
+              instance_group_spec.merge!(resource_pool_config).merge!(vm_type)
+
+              expect {
+                parsed_instance_group
+              }.to raise_error(InstanceGroupBadVmConfiguration, "Instance group 'instance-group-name' can only specify one of 'resource_pool', 'vm_type' or 'vm_resources' keys.")
             end
           end
 
-          context 'when neither vm type, vm requirements nor resource pool are given' do
+          context 'when neither vm type, vm resources nor resource pool are given' do
             it 'raises an error' do
               expect {
                 parsed_instance_group
