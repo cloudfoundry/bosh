@@ -57,7 +57,7 @@ module Bosh::Director
         let(:instance_group) do
           instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
           jobs = [{'name' => 'dummy', 'release' => 'dummy'}]
-          instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: jobs), {})
+          instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(jobs: jobs, azs: ['z1']), {})
         end
         let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
         let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
@@ -114,7 +114,7 @@ module Bosh::Director
           release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
           deployment.add_release(release)
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger)
-                                       .parse(Bosh::Spec::Deployments.simple_cloud_config,
+                                       .parse(Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
                                          DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
                                          DeploymentPlan::IpProviderFactory.new(true, logger))
 
@@ -297,6 +297,15 @@ module Bosh::Director
             addon.add_to_deployment(deployment)
           end
         end
+
+        context 'when addon does not apply to the availability zones' do
+          let(:include_spec) { {'azs' => ['z3']} }
+
+          it 'does nothing' do
+            expect(instance_group).to_not receive(:add_job)
+            addon.add_to_deployment(deployment)
+          end
+        end
       end
 
       describe '#parse' do
@@ -459,6 +468,42 @@ module Bosh::Director
             it 'exludes specified job only' do
               expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
               expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar1'))).to eq(true)
+            end
+          end
+
+          context 'when the addon has availability zones' do
+            let(:instance_group_parser) {DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)}
+            let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
+            let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
+
+            before do
+              release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
+
+              release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
+              deployment.add_release(release)
+              stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
+              deployment.add_stemcell(stemcell)
+              deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger)
+                .parse(Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs,
+                       DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
+                       DeploymentPlan::IpProviderFactory.new(true, logger))
+              jobs = [{'name' => 'dummy', 'release' => 'dummy'}]
+              instance_group = instance_group_parser.parse(Bosh::Spec::NewDeployments.simple_instance_group(jobs: jobs, azs: ['z1']), {})
+              deployment.add_instance_group(instance_group)
+            end
+
+            context 'when the addon is applicable by availability zones' do
+              let(:include_spec) { {'azs' => ['z1']} }
+              it 'it applies' do
+                expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(true)
+              end
+            end
+
+            context 'when the addon is not applicable by availability zones' do
+              let(:include_spec) { {'azs' => ['z5']} }
+              it 'does not apply' do
+                expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
+              end
             end
           end
         end
