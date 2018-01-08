@@ -33,6 +33,7 @@ describe 'deploy with hotswap', type: :integration do
       expect(vms.length).to eq(2)
 
       vm_pattern = {
+        'active' => /./,
         'az' => '',
         'instance' => /foobar\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
@@ -47,6 +48,8 @@ describe 'deploy with hotswap', type: :integration do
       expect(vm0).to match(vm_pattern)
       expect(vm1).to match(vm_pattern)
 
+      expect(vm0['active']).to eq("false")
+      expect(vm1['active']).to eq("true")
       expect(vm0['az']).to eq(vm1['az'])
       expect(vm0['vm_type']).to eq(vm1['vm_type'])
       expect(vm0['instance']).to eq(vm1['instance'])
