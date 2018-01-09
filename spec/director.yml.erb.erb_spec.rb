@@ -47,6 +47,7 @@ describe 'director.yml.erb.erb' do
         'enable_cpi_resize_disk' => false,
         'generate_vm_passwords' => false,
         'remove_dev_tools' => false,
+        'log_level' => 'debug',
         'log_access_events_to_syslog' => false,
         'flush_arp' => false,
         'local_dns' => {
