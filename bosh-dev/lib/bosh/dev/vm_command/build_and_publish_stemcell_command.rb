@@ -34,7 +34,7 @@ module Bosh::Dev
           BOSH_AWS_SECRET_ACCESS_KEY
           BOSHIO_BEARER_TOKEN
         ].map do |env_var|
-          "export #{env_var}='#{env.fetch(env_var)}'"
+          "export #{env_var}='#{env.fetch(env_var, nil)}'"
         end
 
         exports += %w[
