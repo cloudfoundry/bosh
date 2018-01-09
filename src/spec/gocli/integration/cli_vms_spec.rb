@@ -139,7 +139,7 @@ describe 'cli: vms', type: :integration do
     output = bosh_runner.run('vms --parallel 5')
     expect(output).to include('Succeeded')
     # 2 deployments must not be mixed in the output, but they can be printed in any order
-    expect(output).to match(/Deployment 'simple1'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s*\n(foobar1\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s*\n){2}\n2 vms/)
-    expect(output).to match(/Deployment 'simple2'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s*\n(foobar2\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s*\n){4}\n4 vms/)
+    expect(output).to match(/Deployment 'simple1'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s+Active\s*\n(foobar1\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s+true\s*\n){2}\n2 vms/)
+    expect(output).to match(/Deployment 'simple2'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s+Active\s*\n(foobar2\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s+true\s*\n){4}\n4 vms/)
   end
 end
