@@ -422,6 +422,12 @@ describe 'director.yml.erb.erb' do
       end
 
       describe 'director.db.tls properties' do
+        it 'passes correct path for database ca cert, client cert, and client private key' do
+          expect(parsed_yaml['db']['tls']['cert']['ca']).to eq('/var/vcap/jobs/director/config/db/ca.pem')
+          expect(parsed_yaml['db']['tls']['cert']['certificate']).to eq('/var/vcap/jobs/director/config/db/client_certificate.pem')
+          expect(parsed_yaml['db']['tls']['cert']['private_key']).to eq('/var/vcap/jobs/director/config/db/client_private_key.key')
+        end
+
         context 'when director.db.tls.enabled is true' do
           before do
             merged_manifest_properties['director']['db']['tls']['enabled'] = true
@@ -431,6 +437,7 @@ describe 'director.yml.erb.erb' do
             expect(parsed_yaml['db']['tls']['enabled']).to be_truthy
           end
         end
+
         context 'when director.db.tls.enabled is false' do
           before do
             merged_manifest_properties['director']['db']['tls']['enabled'] = false
@@ -440,6 +447,7 @@ describe 'director.yml.erb.erb' do
             expect(parsed_yaml['db']['tls']['enabled']).to be_falsey
           end
         end
+
         context 'when director.db.tls.enabled is not defined' do
           before do
             merged_manifest_properties['director']['db']['tls'].delete('enabled')
@@ -447,6 +455,53 @@ describe 'director.yml.erb.erb' do
 
           it 'configures disables TLS for database property' do
             expect(parsed_yaml['db']['tls']['enabled']).to be_falsey
+          end
+        end
+
+        context 'when director.db.tls.cert.ca is provided' do
+          it 'set bosh_internal ca_provided to true' do
+            expect(parsed_yaml['db']['tls']['bosh_internal']['ca_provided']).to be_truthy
+          end
+        end
+
+        context 'when director.db.tls.cert.ca is NOT provided' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['cert']['ca'] = nil
+          end
+
+          it 'set bosh_internal ca_provided to false' do
+            expect(parsed_yaml['db']['tls']['bosh_internal']['ca_provided']).to be_falsey
+          end
+        end
+
+        context 'when director.db.tls.cert.certificate and director.db.tls.cert.private_key are provided' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['cert']['certificate'] = 'something'
+            merged_manifest_properties['director']['db']['tls']['cert']['private_key'] = 'something secret'
+          end
+
+          it 'configures mutual TLS for database' do
+            expect(parsed_yaml['db']['tls']['bosh_internal']['mutual_tls_enabled']).to be_truthy
+          end
+        end
+
+        context 'when director.db.tls.cert.certificate is NOT provided' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['cert']['private_key'] = 'something secret'
+          end
+
+          it 'does NOT configure mutual TLS for database' do
+            expect(parsed_yaml['db']['tls']['bosh_internal']['mutual_tls_enabled']).to be_falsey
+          end
+        end
+
+        context 'when director.db.tls.cert.private_key is NOT provided' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['cert']['certificate'] = 'something'
+          end
+
+          it 'does NOT configure mutual TLS for database' do
+            expect(parsed_yaml['db']['tls']['bosh_internal']['mutual_tls_enabled']).to be_falsey
           end
         end
       end
