@@ -92,8 +92,9 @@ module Bosh::Dev
       logger.info("sha1 #{normal_filename} = #{sha1}")
 
       if @bearer_token
-        stdout, stderr, status = exec_cmd("curl -X POST --fail 'https://bosh.io/checksums/#{normal_filename}' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{@bearer_token}'")
-        raise "Failed to notify bosh.io with checksum '#{sha1}' for '#{normal_filename}': stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+        # # we are no longer publishing to bosh.io; we will have to manually build the meta4 file from the sha1 output above
+        # stdout, stderr, status = exec_cmd("curl -X POST --fail 'https://bosh.io/checksums/#{normal_filename}' -d 'sha1=#{sha1}' -H 'Authorization: bearer #{@bearer_token}'")
+        # raise "Failed to notify bosh.io with checksum '#{sha1}' for '#{normal_filename}': stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
       end
     end
 
