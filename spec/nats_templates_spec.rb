@@ -34,7 +34,6 @@ describe 'nats.cfg.erb' do
 
           logtime: true
 
-          pid_file: /var/vcap/sys/run/nats/nats.pid
           log_file: /var/vcap/sys/log/nats/nats.log
 
           authorization {
@@ -122,7 +121,6 @@ describe 'nats.cfg.erb' do
 
           logtime: true
 
-          pid_file: /var/vcap/sys/run/nats/nats.pid
           log_file: /var/vcap/sys/log/nats/nats.log
 
           authorization {

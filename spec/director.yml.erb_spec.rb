@@ -5,7 +5,7 @@ require 'bosh/template/test'
 require 'bosh/template/evaluation_context'
 require_relative './template_example_group'
 
-describe 'director.yml.erb.erb' do
+describe 'director.yml.erb' do
   let(:merged_manifest_properties) do
     {
       'agent' => {
@@ -104,7 +104,7 @@ describe 'director.yml.erb.erb' do
 
         it 'should configure the paths' do
           expect(parsed_yaml['blobstore']['provider']).to eq('davcli')
-          expect(parsed_yaml['blobstore']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
+          expect(parsed_yaml['blobstore']['options']['davcli_config_path']).to eq('/var/vcap/data/director/tmp')
           expect(parsed_yaml['blobstore']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
           expect(parsed_yaml['blobstore']['options']['tls']['cert']['ca']).to eq('-----BEGIN CERTIFICATE-----')
         end
@@ -118,7 +118,7 @@ describe 'director.yml.erb.erb' do
 
         it 'should configure the paths' do
           expect(parsed_yaml['blobstore']['provider']).to eq('s3cli')
-          expect(parsed_yaml['blobstore']['options']['s3cli_config_path']).to eq('/var/vcap/data/tmp/director')
+          expect(parsed_yaml['blobstore']['options']['s3cli_config_path']).to eq('/var/vcap/data/director/tmp')
           expect(parsed_yaml['blobstore']['options']['s3cli_path']).to eq('/var/vcap/packages/s3cli/bin/s3cli')
         end
       end
@@ -170,10 +170,6 @@ describe 'director.yml.erb.erb' do
         expect(parsed_yaml['version']).to eq('0.0.0')
       end
 
-      it 'should keep dynamic, COMPONENT-based logging paths' do
-        expect(parsed_yaml['logging']['file']).to eq("/var/vcap/sys/log/director/<%= ENV['COMPONENT'] %>.debug.log")
-      end
-
       context 'when domain name specified without all other dns properties' do
         before do
           merged_manifest_properties['dns'] = {
@@ -203,7 +199,7 @@ describe 'director.yml.erb.erb' do
             'access_key_id'=>nil,
             'secret_access_key'=>nil,
             'region'=>nil,
-            's3cli_config_path'=>'/var/vcap/data/tmp/director',
+            's3cli_config_path'=>'/var/vcap/data/director/tmp',
             's3cli_path'=>'/var/vcap/packages/s3cli/bin/s3cli',
             'port'=>443,
             'use_ssl'=>true,
@@ -240,7 +236,7 @@ describe 'director.yml.erb.erb' do
 
           it 'should configure the paths' do
             expect(parsed_yaml['backup_destination']['provider']).to eq('s3cli')
-            expect(parsed_yaml['backup_destination']['options']['s3cli_config_path']).to eq('/var/vcap/data/tmp/director')
+            expect(parsed_yaml['backup_destination']['options']['s3cli_config_path']).to eq('/var/vcap/data/director/tmp')
             expect(parsed_yaml['backup_destination']['options']['s3cli_path']).to eq('/var/vcap/packages/s3cli/bin/s3cli')
           end
         end
@@ -255,7 +251,7 @@ describe 'director.yml.erb.erb' do
           it 'should configure the paths' do
             expect(parsed_yaml['backup_destination']['provider']).to eq('davcli')
 
-            expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/tmp/director')
+            expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/director/tmp')
             expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
           end
         end
@@ -573,7 +569,7 @@ describe 'director.yml.erb.erb' do
     subject(:parsed_yaml) do
       release = Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '../'))
       job = release.job('director')
-      template = job.template('config/director.yml.erb')
+      template = job.template('config/director.yml')
       YAML.load(template.render(merged_manifest_properties))
     end
 
@@ -581,7 +577,7 @@ describe 'director.yml.erb.erb' do
   end
 
   describe Bosh::Template::EvaluationContext do
-    let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb.erb')) }
+    let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb')) }
 
     subject(:parsed_yaml) do
       merged_manifest_properties['compiled_package_cache']['provider'] = 's3'

@@ -1,0 +1,21 @@
+---
+processes:
+- name: director
+  executable: /var/vcap/jobs/director/bin/director
+  ephemeral_disk: true
+  persistent_disk: true
+
+- name: nginx
+  executable:  /var/vcap/packages/nginx/sbin/nginx
+  ephemeral_disk: true
+  args:
+  - -c
+  - /var/vcap/jobs/director/config/nginx.conf
+
+- name: scheduler
+  executable: /var/vcap/jobs/director/bin/scheduler
+  ephemeral_disk: true
+
+- name: sync_dns
+  executable: /var/vcap/jobs/director/bin/sync-dns
+  ephemeral_disk: true

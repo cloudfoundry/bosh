@@ -172,7 +172,7 @@ describe Bosh::Director::Config do
         it 'configures the logger with a file appender' do
           appender = Logging::Appender.new('file')
           expect(Logging.appenders).to receive(:file).with(
-            'DirectorLogFile',
+            'Director',
             hash_including(filename: 'fake-file')
           ).and_return(appender)
           described_class.configure(test_config)

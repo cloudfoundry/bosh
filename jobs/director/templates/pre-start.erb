@@ -5,12 +5,17 @@ set -e
 STORE_DIR=/var/vcap/store/director
 CONFIG_DIR=/var/vcap/jobs/director/config
 DB_MUTUAL_TLS_PRIVATE_KEY=/var/vcap/jobs/director/config/db/client_private_key.key
+TMPDIR=/var/vcap/data/director/tmp
 
 mkdir -p $STORE_DIR
 chown -R vcap:vcap $STORE_DIR
 
 chmod -R 0640 $CONFIG_DIR
 find $CONFIG_DIR -type d | xargs -n1 chmod 0750
+
+<% if p('blobstore.provider') == "s3" %>
+rm -f $TMPDIR/s3_blobstore_config*
+<% end %>
 
 chown -R root:vcap $CONFIG_DIR
 
@@ -21,3 +26,18 @@ chown -R root:vcap $CONFIG_DIR
 # Refer to "32.18.2. Client Certificates" section on https://www.postgresql.org/docs/9.6/static/libpq-ssl.html
 chmod 0600 $DB_MUTUAL_TLS_PRIVATE_KEY
 chown vcap:vcap $DB_MUTUAL_TLS_PRIVATE_KEY
+
+cp /var/vcap/jobs/director/config/sudoers /etc/sudoers.d/director
+chmod 440 /etc/sudoers.d/director
+
+# if we encounter a problem after adding the sudoers file, back it out and abort
+visudo --check
+if [ $? -ne 0 ]; then
+  rm /etc/sudoers.d/director
+  echo "ERROR: could not configure sudoers"
+  exit 1
+fi
+
+(crontab -l | sed /task_logrotate/d; cat /var/vcap/jobs/director/config/task_logrotate.cron) | sed /^$/d | crontab
+
+ln -fs $TMPDIR/proxy /var/vcap/packages/nginx/proxy_temp

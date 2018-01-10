@@ -46,8 +46,8 @@ git clone ./bosh-src $PROMOTED_SRC
 pushd $PROMOTED_SRC
   git status
 
-  sed -i "s/\['version'\] = ..*/['version'] = '$FULL_VERSION'/" jobs/director/templates/director.yml.erb.erb
-  sed -i "s/\['version'\])\.to eq..*/['version']).to eq('$FULL_VERSION')/" spec/director.yml.erb.erb_spec.rb
+  sed -i "s/\['version'\] = ..*/['version'] = '$FULL_VERSION'/" jobs/director/templates/director.yml.erb
+  sed -i "s/\['version'\])\.to eq..*/['version']).to eq('$FULL_VERSION')/" spec/director.yml.erb_spec.rb
 
   git add -A
   git status

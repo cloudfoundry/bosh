@@ -2,7 +2,7 @@ worker_processes <%= p('director.nginx.workers') %>;
 daemon off;
 
 error_log /var/vcap/sys/log/director/error.log;
-pid       /var/vcap/sys/run/director/nginx.pid;
+pid       /var/vcap/data/director/nginx.pid;
 
 events {
   worker_connections 8192;

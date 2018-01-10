@@ -3,8 +3,7 @@ name: director
 
 templates:
   pre-start.erb: bin/pre-start
-  director_ctl.erb: bin/director_ctl
-  director.yml.erb.erb: config/director.yml.erb
+  director.yml.erb: config/director.yml
   worker_ctl.erb: bin/worker_ctl
   ps_utils.sh: bin/ps_utils.sh
   drain: bin/drain
@@ -16,12 +15,9 @@ templates:
   director.pem.erb: config/ssl/director.pem
   director.key.erb: config/ssl/director.key
   nginx.conf.erb: config/nginx.conf
-  nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
-  scheduler_ctl.erb: bin/scheduler_ctl
   config_server_ca.cert.erb: config/config_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
-  sync_dns_ctl.erb: bin/sync_dns_ctl
   bbr_backup: bin/bbr/backup
   bbr_restore: bin/bbr/restore
   nats_server_ca.pem.erb: config/nats_server_ca.pem
@@ -29,10 +25,16 @@ templates:
   nats_client_private_key.erb: config/nats_client_private_key
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
+  bpm.yml: config/bpm.yml
   utils.sh: helpers/utils.sh
   db_ca.pem.erb: config/db/ca.pem
   db_client_certificate.pem.erb: config/db/client_certificate.pem
   db_client_private_key.key.erb: config/db/client_private_key.key
+  director: bin/director
+  scheduler: bin/scheduler
+  sync-dns: bin/sync-dns
+  console: bin/console
+  env.erb: env
 
 packages:
 - director
