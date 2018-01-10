@@ -8,7 +8,6 @@
     ssl_mode: verify_ca
     sslverify: false
     max_connections: 32
-    pool_timeout: 100
     read_timeout: 120
     write_timeout: 120
     connect_timeout: 120
