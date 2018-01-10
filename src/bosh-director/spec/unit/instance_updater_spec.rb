@@ -348,7 +348,6 @@ module Bosh::Director
               expect(elect_active_vm_step).to receive(:perform)
               expect(state_applier).to receive(:apply)
               expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
-              expect(apply_spec_step).to receive(:perform)
 
               updater.update(instance_plan)
             end
@@ -361,7 +360,6 @@ module Bosh::Director
               it 'attaches and mounts persistent disks' do
                 expect(attach_step).to receive(:perform)
                 expect(mount_step).to receive(:perform)
-                expect(apply_spec_step).to receive(:perform)
                 expect(state_applier).to receive(:apply)
 
                 updater.update(instance_plan)

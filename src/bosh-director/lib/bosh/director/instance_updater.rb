@@ -130,8 +130,6 @@ module Bosh::Director
             DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform(instance_report)
             DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
           end
-
-          DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan).perform(instance_report)
         end
 
         instance_plan.release_obsolete_network_plans(@ip_provider)
