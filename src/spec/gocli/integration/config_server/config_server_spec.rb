@@ -69,6 +69,9 @@ describe 'using director with config server', type: :integration do
 
         let(:job_properties) do
           {
+              'smurfs' => {
+                'color' => '((i_have_a_default_value))'
+              },
               'gargamel' => {
                   'color' => '((i_am_not_here_1))',
                   'age' => '((i_am_not_here_2))',
@@ -77,7 +80,7 @@ describe 'using director with config server', type: :integration do
           }
         end
 
-        it 'raises an error' do
+        it 'raises an error, even if a property has a default value in the job spec' do
           output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
                                                   cloud_config_hash: cloud_config, failure_expected: true,
                                                   return_exit_code: true, include_credentials: false, env: client_env)
@@ -88,6 +91,7 @@ describe 'using director with config server', type: :integration do
 Error: Unable to render instance groups for deployment. Errors are:
   - Unable to render jobs for instance group 'our_instance_group'. Errors are:
     - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
+      - Failed to find variable '/TestDirector/simple/i_have_a_default_value' from config server: HTTP Code '404', Error: 'Name '/TestDirector/simple/i_have_a_default_value' not found'
       - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP Code '404', Error: 'Name '/TestDirector/simple/i_am_not_here_1' not found'
       - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP Code '404', Error: 'Name '/TestDirector/simple/i_am_not_here_2' not found'
       - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP Code '404', Error: 'Name '/TestDirector/simple/i_am_not_here_3' not found'

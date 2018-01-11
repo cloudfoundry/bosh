@@ -87,25 +87,16 @@ module Bosh::Director::ConfigServer
           )
           extracted_name = get_name_root(extracted_name)
 
-          if name_exists?(extracted_name)
-            result = provided_prop
-          else
-            if default_prop.nil?
-              variable_set = @deployment_lookup.by_name(deployment_name).current_variable_set
-
-              if type == 'certificate'
-                generate_certificate(extracted_name, deployment_name, variable_set, options)
-              elsif type
-                generate_value_and_record_event(extracted_name, type, deployment_name, variable_set, {})
-              end
-              result = provided_prop
+          if !type.nil? && !name_exists?(extracted_name)
+            if type == 'certificate'
+              generate_certificate(extracted_name, deployment_name, @deployment_lookup.by_name(deployment_name).current_variable_set, options)
             else
-              result = default_prop
+              generate_value_and_record_event(extracted_name, type, deployment_name, @deployment_lookup.by_name(deployment_name).current_variable_set, {})
             end
           end
-        else
-          result = provided_prop
         end
+
+        result = provided_prop
       end
       result
     end
