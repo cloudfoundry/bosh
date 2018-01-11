@@ -52,6 +52,8 @@ describe 'cli configs', type: :integration do
   end
 
   context 'can list configs' do
+    let(:second_config) {yaml_file('second_config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders)}
+
     it 'lists configs' do
       bosh_runner.run("update-config my-type #{config.path}")
       bosh_runner.run("update-config other-type --name=other-name #{config.path}")
@@ -69,7 +71,7 @@ describe 'cli configs', type: :integration do
 
     it 'can include outdated configs' do
       bosh_runner.run("update-config my-type --name=my-name #{config.path}")
-      bosh_runner.run("update-config my-type --name=my-name #{config.path}")
+      bosh_runner.run("update-config my-type --name=my-name #{second_config.path}")
 
       output = bosh_runner.run('configs --include-outdated')
 
