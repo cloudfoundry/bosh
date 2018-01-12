@@ -4,6 +4,8 @@ require 'bosh/director/models/deployment'
 module Bosh::Director::Models
   describe Deployment do
     subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
+    let(:db_is_mysql) { ENV['DB'] == 'mysql' }
+    let(:deadlock_exception) { Sequel::DatabaseError.new("Mysql2::Error: Deadlock found when trying to get lock") }
 
     describe '#tags' do
 
@@ -29,12 +31,13 @@ module Bosh::Director::Models
           end
 
           context 'when tags do NOT use variables' do
-            let(:manifest) { <<-HERE }
----
-tags:
-  tag1: value1
-  tag2: value2
-            HERE
+            let(:manifest) do
+              %(---
+                tags:
+                  tag1: value1
+                  tag2: value2
+              )
+            end
 
             let(:interpolated_tags) do
               {
@@ -52,12 +55,13 @@ tags:
           end
 
           context 'when tags use variables' do
-            let(:manifest) { <<-HERE }
----
-tags:
-  tagA: ((tag-var1))
-  tagO: ((/tag-var2))
-            HERE
+            let(:manifest) do
+              %(---
+                tags:
+                  tagA: ((tag-var1))
+                  tagO: ((/tag-var2))
+              )
+            end
 
             let(:tags) do
               {
@@ -203,15 +207,30 @@ tags:
 
     describe 'cloud_configs' do
       let(:manifest) { '---{}' }
+      let(:cc1) { Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc1-prop', name: 'cc1') }
+      let(:cc2) { Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc2-prop', name: 'cc2') }
 
       before do
-        cc1 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc1-prop', name: 'cc1')
-        cc2 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc2-prop', name: 'cc2')
         cc3 = Bosh::Director::Models::Config.create(type: 'cloud', content: 'cc3-prop', name: 'cc3')
 
         deployment.add_cloud_config(cc1)
         deployment.add_cloud_config(cc2)
         deployment.add_cloud_config(cc3)
+      end
+
+      it 'retries deadlocks' do
+        expect(deployment).to receive(:remove_all_cloud_configs).and_raise(deadlock_exception).once
+        expect(deployment).to receive(:remove_all_cloud_configs).and_call_original
+
+        deployment.cloud_configs = [cc1, cc2]
+        expect(deployment.cloud_configs).to eq([cc1, cc2])
+      end
+
+      it 'raises original deadlock exception on subsequent, non-retryable failures' do
+        expect(deployment).to receive(:remove_all_cloud_configs).and_raise(deadlock_exception).once
+        expect(deployment).to receive(:remove_all_cloud_configs).and_raise(Sequel::DatabaseError, 'fake foreign key constraint').once
+
+        expect { deployment.cloud_configs = [cc1, cc2] }.to raise_error(deadlock_exception)
       end
 
       it '#add_cloud_config rejects adding other config types' do
@@ -264,15 +283,30 @@ tags:
 
     describe 'runtime_configs' do
       let(:manifest) { '---{}' }
+      let(:rc1) { Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc1-prop', name: 'rc1') }
 
       before do
-        rc1 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc1-prop', name: 'rc1')
         rc2 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc2-prop', name: 'rc2')
         rc3 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc3-prop', name: 'rc3')
 
         deployment.add_runtime_config(rc1)
         deployment.add_runtime_config(rc2)
         deployment.add_runtime_config(rc3)
+      end
+
+      it 'retries deadlocks' do
+        expect(deployment).to receive(:remove_all_runtime_configs).and_raise(deadlock_exception).once
+        expect(deployment).to receive(:remove_all_runtime_configs).and_call_original
+
+        deployment.runtime_configs = [rc1]
+        expect(deployment.runtime_configs).to eq([rc1])
+      end
+
+      it 'raises original deadlock exception on subsequent, non-retryable failures' do
+        expect(deployment).to receive(:remove_all_runtime_configs).and_raise(deadlock_exception).once
+        expect(deployment).to receive(:remove_all_runtime_configs).and_raise(Sequel::DatabaseError, 'fake foreign key constraint').once
+
+        expect { deployment.runtime_configs = [rc1] }.to raise_error(deadlock_exception)
       end
 
       it '#add_runtime_config rejects adding other config types' do
@@ -323,6 +357,26 @@ tags:
 
         expect(deployment.runtime_configs.size).to eq 3
         expect(Bosh::Director::Models::Deployment[id: deployment.id].runtime_configs).not_to include(config)
+      end
+    end
+
+    describe '#teams=' do
+      let(:manifest) { nil }
+      let(:team1) { Bosh::Director::Models::Team.create(name: 'team1') }
+
+      it 'retries deadlocks' do
+        expect(deployment).to receive(:remove_all_teams).and_raise(deadlock_exception).once
+        expect(deployment).to receive(:remove_all_teams).and_call_original
+
+        deployment.teams = [team1]
+        expect(deployment.teams).to eq([team1])
+      end
+
+      it 'raises original deadlock exception on subsequent, non-retryable failures' do
+        expect(deployment).to receive(:remove_all_teams).and_raise(deadlock_exception).once
+        expect(deployment).to receive(:remove_all_teams).and_raise(Sequel::DatabaseError, 'fake foreign key constraint').once
+
+        expect { deployment.teams = [team1] }.to raise_error(deadlock_exception)
       end
     end
 
