@@ -63,18 +63,21 @@ describe 'cli: vms', type: :integration do
     manifest_hash['jobs'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
+    # Intentionally made it expect 'active' => 'false' so that this test will be again fixed in https://www.pivotaltracker.com/n/projects/2132441/stories/154263613
     expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a', 'active' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a', 'active' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a', 'active' => 'false'},
     )
 
 
     output = bosh_runner.run('vms --dns', json: true, deployment_name: 'simple')
+
+    # Intentionally made it expect 'active' => 'false' so that this test will be again fixed in https://www.pivotaltracker.com/n/projects/2132441/stories/154263613
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh", 'active' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh", 'active' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh", 'active' => 'false'},
     )
 
     output = bosh_runner.run('vms --vitals', json: true, deployment_name: 'simple')
