@@ -2,3 +2,7 @@
 - type: replace
   path: /features?/use_short_dns_addresses
   value: true
+
+- type: replace
+  path: /features?/use_dns_addresses
+  value: true

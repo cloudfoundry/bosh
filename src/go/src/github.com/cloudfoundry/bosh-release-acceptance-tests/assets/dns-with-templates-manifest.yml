@@ -14,6 +14,12 @@ instance_groups:
   jobs:
   - name: bosh-dns
     release: bosh-dns
+    properties:
+      api:
+        server:
+          tls: ((dns_api_server_tls))
+        client:
+          tls: ((dns_api_client_tls))
   - name: query-with-az-filter
     release: linked-template-release
   - name: query-all
@@ -29,6 +35,12 @@ instance_groups:
   jobs:
   - name: bosh-dns
     release: bosh-dns
+    properties:
+      api:
+        server:
+          tls: ((dns_api_server_tls))
+        client:
+          tls: ((dns_api_client_tls))
   - name: link-provider
     release: linked-template-release
   instances: 3
@@ -50,3 +62,26 @@ stemcells:
 - alias: default
   os: ubuntu-trusty
   version: latest
+
+variables:
+- name: dns_api_tls_ca
+  type: certificate
+  options:
+    is_ca: true
+    common_name: dns-api-tls-ca
+
+- name: dns_api_server_tls
+  type: certificate
+  options:
+    ca: dns_api_tls_ca
+    common_name: api.bosh-dns
+    extended_key_usage:
+      - server_auth
+
+- name: dns_api_client_tls
+  type: certificate
+  options:
+    ca: dns_api_tls_ca
+    common_name: api.bosh-dns
+    extended_key_usage:
+    - client_auth
