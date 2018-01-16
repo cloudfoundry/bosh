@@ -17,6 +17,7 @@ case $1 in
     echo $$ > $PIDFILE
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR
 
+    ulimit -n 65536
     exec chpst -u $RUNAS:$RUNAS /var/vcap/packages/gonats/bin/gnatsd \
       -c $CONFIG_FILE \
       >>  $LOG_DIR/nats.stdout.log \
