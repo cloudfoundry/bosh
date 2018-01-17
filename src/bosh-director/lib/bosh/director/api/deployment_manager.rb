@@ -13,7 +13,12 @@ module Bosh::Director
 
       def all_by_name_asc
         Bosh::Director::Models::Deployment
-          .eager(:teams, :stemcells, :cloud_configs, release_versions: :release)
+          .eager(
+            :stemcells,
+            release_versions: :release,
+            teams: proc{|ds| ds.select(:id, :name)},
+            cloud_configs: proc{|ds| ds.select(:id, :type)}
+          )
           .order_by(Sequel.asc(:name))
           .all
       end
