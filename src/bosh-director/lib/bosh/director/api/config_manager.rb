@@ -2,11 +2,12 @@ module Bosh
   module Director
     module Api
       class ConfigManager
-        def create(type, name, config_yaml)
+        def create(type, name, config_yaml, team_id = nil)
           config = Bosh::Director::Models::Config.new(
               type: type,
               name: name,
-              content: config_yaml
+              content: config_yaml,
+              team_id: team_id
           )
           config.save
         end

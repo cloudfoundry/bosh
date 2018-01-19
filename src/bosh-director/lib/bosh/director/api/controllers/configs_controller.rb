@@ -4,7 +4,7 @@ module Bosh::Director
   module Api::Controllers
     class ConfigsController < BaseController
 
-      get '/', scope: :read do
+      get '/', scope: :list_configs do
         check(params, 'latest')
 
         unless ['true', 'false'].include?(params['latest'])
@@ -15,19 +15,21 @@ module Bosh::Director
           type: params['type'],
           name: params['name'],
           latest: params['latest']
-        )
+        ).select { |config| @permission_authorizer.is_granted?(config, :read, token_scopes) }
 
         result = configs.map {|config| sql_to_hash(config)}
 
         return json_encode(result)
       end
 
-      post '/', :consumes => :json do
+      post '/', scope: :update_configs, :consumes => :json do
         begin
           config_hash = parse_request_body(request.body.read)
           validate_type_and_name(config_hash)
           validate_config_content(config_hash['content'])
-          config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
+          teams = Models::Team.transform_admin_team_scope_to_teams(token_scopes)
+          team_id = teams.empty? ? nil: teams.first.id
+          config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'], team_id)
           create_event(config_hash['type'], config_hash['name'])
         rescue => e
           type = config_hash ? config_hash['type'] : nil
@@ -40,7 +42,7 @@ module Bosh::Director
         return json_encode(sql_to_hash(config))
       end
 
-      post '/diff', :consumes => :json do
+      post '/diff', scope: :list_configs, :consumes => :json do
         config_request = parse_request_body(request.body.read)
 
         schema1, schema2 = validate_diff_request(config_request)
@@ -80,7 +82,7 @@ module Bosh::Director
         json_encode(result)
       end
 
-      delete '/' do
+      delete '/', scope: :update_configs do
         check(params, 'type')
         check(params, 'name')
 
@@ -105,12 +107,15 @@ module Bosh::Director
       end
 
       def sql_to_hash(config)
-        {
+        hash =
+          {
             content: config.content,
             id: config.id.to_s, # id should be opaque to clients (may not be an int)
             type: config.type,
-            name: config.name
-        }
+            name: config.name,
+          }
+        hash['teams'] = config.teams.map(&:name) if @permission_authorizer.is_granted?(:director, :admin, token_scopes)
+        hash
       end
 
       def check(param, name)

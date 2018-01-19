@@ -164,23 +164,10 @@ module Bosh::Director
                 'content' => config1.content,
                 'id' => "#{config1.id}",
                 'type' => config1.type,
-                'name' => config1.name
+                'name' => config1.name,
+                'teams' => []
             })
           end
-        end
-      end
-
-      context 'without an authenticated user' do
-        it 'denies access' do
-          expect(get('/').status).to eq(401)
-        end
-      end
-
-      context 'when user is reader' do
-        before { basic_authorize('reader', 'reader') }
-
-        it 'permits access' do
-          expect(get('/?type=my-type&latest=true').status).to eq(200)
         end
       end
     end
@@ -203,10 +190,11 @@ module Bosh::Director
 
           expect(JSON.parse(last_response.body)).to eq(
             {
-              'id' => "#{Bosh::Director::Models::Config.first.id}",
-              'type' => 'my-type',
-              'name' => 'my-name',
-              'content' => 'a: 1'
+                'id' => "#{Bosh::Director::Models::Config.first.id}",
+                'type' => 'my-type',
+                'name' => 'my-name',
+                'content' => 'a: 1',
+                'teams' => []
             }
           )
         end
@@ -223,7 +211,8 @@ module Bosh::Director
               'id' => "#{Bosh::Director::Models::Config.first.id}",
               'type' => 'my-type',
               'name' => 'my-name',
-              'content' => 'a: 123'
+              'content' => 'a: 123',
+              'teams' => []
             }
           )
         end
@@ -333,25 +322,9 @@ module Bosh::Director
           end
         end
       end
-
-      describe 'when user has readonly access' do
-        before { basic_authorize 'reader', 'reader' }
-
-        it 'denies access' do
-          expect(post('/', request_body, {'CONTENT_TYPE' => 'application/json'}).status).to eq(401)
-        end
-      end
     end
 
     describe 'DELETE', '/' do
-      describe 'when user has readonly access' do
-        before { basic_authorize 'reader', 'reader' }
-
-        it 'denies access' do
-          expect(delete('/?type=my-type&name=my-name').status).to eq(401)
-        end
-      end
-
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }
 
@@ -692,6 +665,161 @@ module Bosh::Director
         it 'returns 401' do
           post '/diff', {}.to_json, {'CONTENT_TYPE' => 'application/json'}
           expect(last_response.status).to eq(401)
+        end
+      end
+    end
+
+    describe 'authorization' do
+      let(:request_body) {
+        JSON.generate({'type' => 'my-type', 'content' => '{}'})
+      }
+
+      let(:dev_team) { Models::Team.create(:name => 'dev') }
+      let(:other_team) { Models::Team.create(:name => 'other') }
+
+      before do
+        Models::Config.make(
+          content: 'some-yaml',
+          name: 'dev_config',
+          created_at: Time.now - 3.days,
+          team_id: dev_team.id
+        )
+
+        Models::Config.make(
+          content: 'some-other-yaml',
+          name: 'other_config',
+          created_at: Time.now - 2.days,
+          team_id: other_team.id
+        )
+      end
+
+      context 'without an authenticated user' do
+        it 'denies read access' do
+          expect(get('/').status).to eq(401)
+        end
+
+        it 'denies write access' do
+          expect(post('/', request_body, {'CONTENT_TYPE' => 'application/json'}).status).to eq(401)
+        end
+
+        it 'does not permit delete the config' do
+          expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
+        end
+      end
+
+      context 'when user has a team admin membership' do
+        before {basic_authorize 'dev-team-member', 'dev-team-member'}
+
+        it 'permits read access to the teams config' do
+          get '/?type=my-type&latest=false'
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(1)
+          expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
+        end
+
+        it 'permits write access' do
+          expect {
+            post '/', JSON.generate({'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'}), {'CONTENT_TYPE' => 'application/json'}
+          }.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
+        end
+
+        it 'stores team_id of the autorized user' do
+          expect {
+            post '/', JSON.generate({'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'}), {'CONTENT_TYPE' => 'application/json'}
+          }.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
+          expect(Bosh::Director::Models::Config.all[2][:team_id]).to eq(dev_team.id)
+        end
+
+        it 'deletes the config' do
+          expect(delete('/?type=my-type&name=dev_config').status).to eq(204)
+          configs = JSON.parse(get('/?type=my-type&name=dev_config&latest=false').body)
+          expect(configs.count).to eq(0)
+        end
+
+        it 'does not return teams value' do
+          get '/?type=my-type&latest=false'
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(1)
+          expect(JSON.parse(last_response.body).first["teams"]).to be_nil
+        end
+      end
+
+      context 'when user has a team read membership' do
+        before {basic_authorize 'dev-team-read-member', 'dev-team-read-member'}
+
+        it 'permits read access to the teams config' do
+          get '/?type=my-type&latest=false'
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(1)
+          expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
+        end
+
+        it 'denies write access' do
+          expect(post('/', request_body, {'CONTENT_TYPE' => 'application/json'}).status).to eq(401)
+        end
+
+        it 'does not permit delete the config' do
+          expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
+        end
+
+        it 'does not return teams value' do
+          get '/?type=my-type&latest=false'
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(1)
+          expect(JSON.parse(last_response.body).first["teams"]).to be_nil
+        end
+      end
+
+      context 'when user is an admin' do
+        before {basic_authorize('admin', 'admin')}
+
+        it 'permits read access to all configs' do
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(2)
+        end
+
+        it 'permits write access' do
+          expect {
+            post '/', JSON.generate({'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'}), {'CONTENT_TYPE' => 'application/json'}
+          }.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
+        end
+
+        it 'deletes the config' do
+          expect(delete('/?type=my-type&name=dev_config').status).to eq(204)
+          configs = JSON.parse(get('/?type=my-type&name=dev_config&latest=false').body)
+          expect(configs.count).to eq(0)
+        end
+
+        it 'returns teams value' do
+          get '/?type=my-type&latest=false'
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(2)
+          expect(JSON.load(last_response.body,).map {|x| x["teams"]}).to contain_exactly(['dev'], ['other'])
+        end
+      end
+
+      context 'when user is a reader' do
+        before {basic_authorize('reader', 'reader')}
+
+        it 'permits read access to all configs' do
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(2)
+        end
+
+        it 'denies write access' do
+          expect(post('/', request_body, {'CONTENT_TYPE' => 'application/json'}).status).to eq(401)
+        end
+
+        it 'does not permit delete the config' do
+          expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
+        end
+
+        it 'does not return teams value' do
+          get '/?type=my-type&latest=false'
+          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(JSON.parse(last_response.body).count).to eq(2)
+          expect(JSON.parse(last_response.body).first["teams"]).to be_nil
+          expect(JSON.parse(last_response.body)[1]["teams"]).to be_nil
         end
       end
     end
