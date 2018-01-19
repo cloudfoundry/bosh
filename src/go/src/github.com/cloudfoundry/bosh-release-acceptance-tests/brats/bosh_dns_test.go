@@ -2,6 +2,7 @@ package brats_test
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -98,8 +99,10 @@ var _ = Describe("BoshDns", func() {
 				"-d", deploymentName,
 				manifestPath,
 				"-o", opFilePath,
+				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
+				"--vars-store", "creds.yml",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
@@ -179,9 +182,11 @@ var _ = Describe("BoshDns", func() {
 				boshBinaryPath, "deploy",
 				"-n",
 				"-d", deploymentName,
+				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				manifestPath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
+				"--vars-store", "creds.yml",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
