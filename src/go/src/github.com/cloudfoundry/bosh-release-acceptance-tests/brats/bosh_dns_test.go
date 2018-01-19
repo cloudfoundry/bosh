@@ -2,6 +2,7 @@ package brats_test
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -83,6 +84,7 @@ var _ = Describe("BoshDns", func() {
 			opFilePath := assetPath("op-enable-short-dns-addresses.yml")
 
 			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
@@ -146,6 +148,7 @@ var _ = Describe("BoshDns", func() {
 	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
 			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 				"--vars-store", "creds.yml",

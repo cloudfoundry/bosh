@@ -12,14 +12,6 @@ instance_groups:
   instances: 1
   azs: [z1]
   jobs:
-  - name: bosh-dns
-    release: bosh-dns
-    properties:
-      api:
-        server:
-          tls: ((dns_api_server_tls))
-        client:
-          tls: ((dns_api_client_tls))
   - name: query-with-az-filter
     release: linked-template-release
   - name: query-all
@@ -33,14 +25,6 @@ instance_groups:
 
 - name: provider
   jobs:
-  - name: bosh-dns
-    release: bosh-dns
-    properties:
-      api:
-        server:
-          tls: ((dns_api_server_tls))
-        client:
-          tls: ((dns_api_client_tls))
   - name: link-provider
     release: linked-template-release
   instances: 3
