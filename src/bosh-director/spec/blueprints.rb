@@ -201,7 +201,7 @@ module Bosh::Director::Models
   Config.blueprint(:cpi_with_manifest) do
     type { 'cpi' }
     name { 'default' }
-    content { YAML.dump(Bosh::Spec::NewDeployments.simple_cpi_config) }
+    content { YAML.dump(Bosh::Spec::NewDeployments.multi_cpi_config) }
   end
 
   DeploymentProperty.blueprint do

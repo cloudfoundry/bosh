@@ -19,7 +19,7 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'creates a new cpi config' do
-          cpi_config = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
+          cpi_config = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
           expect {
             post '/', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
@@ -46,7 +46,7 @@ module Bosh::Director
         end
 
         it 'creates a new event' do
-          properties = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
+          properties = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
           expect {
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
@@ -73,13 +73,13 @@ module Bosh::Director
         before { basic_authorize 'reader', 'reader' }
 
         it 'denies access' do
-          expect(post('/', YAML.dump(Bosh::Spec::Deployments.simple_cpi_config), {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
+          expect(post('/', YAML.dump(Bosh::Spec::Deployments.multi_cpi_config), {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
         end
       end
     end
 
     describe 'POST', '/diff' do
-      let(:cpi_config) { YAML.dump(Bosh::Spec::Deployments.simple_cpi_config) }
+      let(:cpi_config) { YAML.dump(Bosh::Spec::Deployments.multi_cpi_config) }
       let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    somekey: \"<redacted>\"","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    somekey2: \"<redacted>\"","added"]]}' }
 
 
