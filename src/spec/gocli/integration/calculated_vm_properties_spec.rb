@@ -12,7 +12,7 @@ describe 'calculated vm properties', type: :integration do
   }
 
   let(:cloud_config_without_vm_types) do
-    cloud_config = Bosh::Spec::Deployments.multi_cpi_config
+    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config.delete('resource_pools')
     cloud_config.delete('vm_types')
     cloud_config['compilation']['vm_resources'] = vm_resources
