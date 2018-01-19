@@ -30,6 +30,7 @@ dns_sync_broadcaster = Bosh::Director::SyncDnsScheduler.new(dns_converger, 10)
 %w(TERM INT QUIT).each do |signal|
   trap(signal) do
     dns_sync_broadcaster.stop!
+    EM.stop
   end
 end
 

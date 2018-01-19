@@ -35,6 +35,7 @@ templates:
   sync-dns: bin/sync-dns
   console: bin/console
   env.erb: env
+  trigger-one-time-sync-dns: bin/trigger-one-time-sync-dns
 
 packages:
 - director

@@ -2,5 +2,5 @@
 
 source /var/vcap/jobs/director/env
 
-/var/vcap/packages/director/bin/bosh-director-sync-dns \
+exec /var/vcap/packages/director/bin/bosh-director-sync-dns \
   -c /var/vcap/jobs/director/config/director.yml
