@@ -12,14 +12,14 @@ describe 'calculated vm properties', type: :integration do
   }
 
   let(:cloud_config_without_vm_types) do
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::Deployments.multi_cpi_config
     cloud_config.delete('resource_pools')
     cloud_config.delete('vm_types')
     cloud_config['compilation']['vm_resources'] = vm_resources
     cloud_config
   end
 
-  let(:cpi_config) { Bosh::Spec::Deployments.simple_cpi_config }
+  let(:cpi_config) { Bosh::Spec::Deployments.multi_cpi_config }
 
   let(:instance_group) do
     {
@@ -177,7 +177,7 @@ describe 'calculated vm properties', type: :integration do
       cloud_config
     end
     let(:cpi_config) do
-      cpi_config = Bosh::Spec::Deployments.simple_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI))
+      cpi_config = Bosh::Spec::Deployments.multi_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI))
       cpi_config['cpis'][0]['properties'] = { 'cvcpkey' => 'dummy1' }
       cpi_config['cpis'][1]['properties'] = { 'cvcpkey' => 'dummy2' }
       cpi_config

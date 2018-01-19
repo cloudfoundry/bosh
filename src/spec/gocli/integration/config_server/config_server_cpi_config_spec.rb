@@ -6,7 +6,7 @@ describe 'cpi config', type: :integration do
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:cpi_path) { current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI) }
-  let(:valid_cpi_config_file) {yaml_file('cpi_manifest', Bosh::Spec::Deployments.simple_cpi_config_with_variables(cpi_path)) }
+  let(:valid_cpi_config_file) {yaml_file('cpi_manifest', Bosh::Spec::Deployments.multi_cpi_config_with_variables(cpi_path)) }
 
   before do
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
@@ -98,7 +98,7 @@ describe 'cpi config', type: :integration do
 
     describe 'when multiple cpis are defined with some relative variables' do
       let(:invalid_cpi_config_file) do
-        cpis_config = Bosh::Spec::Deployments.simple_cpi_config_with_variables(cpi_path)
+        cpis_config = Bosh::Spec::Deployments.multi_cpi_config_with_variables(cpi_path)
         cpis_config['cpis'][0]['properties']['someRelKey'] = '((some-rel-val))'
         yaml_file('cpi_manifest', cpis_config)
       end

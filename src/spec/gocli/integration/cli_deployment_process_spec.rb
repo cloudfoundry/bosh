@@ -197,7 +197,7 @@ lines'}
         cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
 
         cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
-        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.simple_cpi_config(cpi_path))
+        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.multi_cpi_config(cpi_path))
 
         instance_group = Bosh::Spec::NewDeployments.simple_instance_group(:azs => ['z1', 'z2'])
         deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group])
@@ -259,7 +259,7 @@ lines'}
         # now deploy with cpi config
         cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
         cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
-        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.simple_cpi_config(cpi_path))
+        cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.multi_cpi_config(cpi_path))
 
         instance_group = Bosh::Spec::NewDeployments.simple_instance_group(:azs => ['z1', 'z2'])
         deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group])
