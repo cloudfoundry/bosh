@@ -211,7 +211,7 @@ var _ = Describe("BoshDns", func() {
 				fmt.Sprintf("%s@%s", innerDirectorUser, innerDirectorIP),
 				"-i", innerBoshJumpboxPrivateKeyPath,
 				"-oStrictHostKeyChecking=no",
-				"sudo /var/vcap/jobs/director/bin/sync_dns_ctl force")
+				"sudo /var/vcap/jobs/director/bin/trigger-one-time-sync-dns")
 			Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 
 			newVersionPerInstance := mustGetLatestDnsVersions()
