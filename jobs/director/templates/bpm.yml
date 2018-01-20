@@ -4,6 +4,8 @@ processes:
   executable: /var/vcap/jobs/director/bin/director
   ephemeral_disk: true
   persistent_disk: true
+  hooks:
+    pre_start: /var/vcap/jobs/director/bin/bpm-pre-start
 
 - name: nginx
   executable:  /var/vcap/packages/nginx/sbin/nginx
