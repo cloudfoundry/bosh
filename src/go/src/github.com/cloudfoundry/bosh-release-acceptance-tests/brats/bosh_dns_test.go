@@ -140,8 +140,9 @@ var _ = Describe("BoshDns", func() {
 
 			output := string(session.Out.Contents())
 
-			ip := knownProviders["z1"][0]
-			Expect(output).To(MatchRegexp(`q-m\d+n\d+s\d\.q-g\d\.bosh\.\s+\d+\s+IN\s+A\s+%s`, ip))
+			ip1 := knownProviders["z1"][0]
+			ip2 := knownProviders["z1"][1]
+			Expect(output).To(MatchRegexp(`q-m\d+n\d+s\d\.q-g\d\.bosh\.\s+\d+\s+IN\s+A\s+(%s|%s)`, ip1, ip2))
 		})
 	})
 
