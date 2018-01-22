@@ -2,7 +2,7 @@
 name: blobstore
 
 templates:
-  nginx_ctl: bin/nginx_ctl
+  bpm.yml: config/bpm.yml
   nginx.conf.erb: config/nginx.conf
   blobstore.conf.erb: config/sites/blobstore.conf
   mime.types: config/mime.types
@@ -10,7 +10,6 @@ templates:
   write_users.erb: config/write_users
   bbr_backup: bin/bbr/backup
   bbr_restore: bin/bbr/restore
-  utils.sh: helpers/utils.sh
   server_tls_cert.pem.erb: config/server_tls_cert.pem
   server_tls_private_key.pem.erb: config/server_tls_private_key.pem
 
@@ -47,7 +46,7 @@ properties:
     default: 2
 
   blobstore.tls.cert.certificate:
-      description: SSL cert for blobstore nginx server
+    description: SSL cert for blobstore nginx server
 
   blobstore.tls.cert.private_key:
-      description: SSL cert key for blobstore nginx server
+    description: SSL cert key for blobstore nginx server

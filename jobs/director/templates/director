@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+source /var/vcap/jobs/director/env
+
+exec /var/vcap/packages/director/bin/bosh-director \
+  -c /var/vcap/jobs/director/config/director.yml

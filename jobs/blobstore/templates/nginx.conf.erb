@@ -2,7 +2,7 @@ worker_processes <%= p('blobstore.nginx.workers') %>;
 daemon off;
 
 error_log /var/vcap/sys/log/blobstore/error.log;
-pid       /var/vcap/sys/run/blobstore/nginx.pid;
+pid       /var/vcap/data/blobstore/blobstore.pid;
 
 events {
   worker_connections 8192;

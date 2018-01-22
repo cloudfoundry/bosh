@@ -1,10 +1,10 @@
 check process health_monitor
-  with pidfile /var/vcap/sys/run/health_monitor/health_monitor.pid
-  start program "/var/vcap/jobs/health_monitor/bin/health_monitor_ctl start"
-  stop program "/var/vcap/jobs/health_monitor/bin/health_monitor_ctl stop"
+  with pidfile /var/vcap/sys/run/bpm/health_monitor/health_monitor.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start health_monitor"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop health_monitor"
   group vcap
   if failed
     port <%= p('hm.http.port') %>
     protocol http
     request "/healthz"
-  then exec "/var/vcap/jobs/health_monitor/bin/health_monitor_ctl kill"
+  then exec "/var/vcap/jobs/bpm/bin/bpm stop health_monitor"

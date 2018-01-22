@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+/var/vcap/packages/registry/bin/bosh-registry-migrate -c /var/vcap/jobs/registry/config/registry.yml
+
+exec /var/vcap/packages/registry/bin/bosh-registry -c /var/vcap/jobs/registry/config/registry.yml

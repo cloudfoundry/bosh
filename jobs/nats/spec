@@ -2,7 +2,8 @@
 name: nats
 
 templates:
-  nats_ctl.erb: bin/nats_ctl
+  pre-start: bin/pre-start
+  bpm.yml: config/bpm.yml
   nats.cfg.erb: config/nats.cfg
   nats_client_ca.pem.erb: config/nats_client_ca.pem
   nats_server_certificate.pem.erb: config/nats_server_certificate.pem

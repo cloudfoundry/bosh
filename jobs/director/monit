@@ -1,11 +1,9 @@
 check process director
-  with pidfile /var/vcap/sys/run/director/director.pid
-  start program "/var/vcap/jobs/director/bin/director_ctl start"
-  stop program "/var/vcap/jobs/director/bin/director_ctl stop"
+  with pidfile /var/vcap/sys/run/bpm/director/director.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start director -p director"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop director"
   group vcap
-  <% if properties.micro %>
-  depends on postgres,nats
-  <% end %>
+
 <% (1..(p('director.workers', 3))).each do |index| %>
 check process worker_<%= index %>
   with pidfile /var/vcap/sys/run/director/worker_<%= index %>.pid
@@ -14,21 +12,24 @@ check process worker_<%= index %>
   group vcap
   depends on director
 <% end%>
+
 check process director_scheduler
-  with pidfile /var/vcap/sys/run/director/scheduler.pid
-  start program "/var/vcap/jobs/director/bin/scheduler_ctl start"
-  stop program "/var/vcap/jobs/director/bin/scheduler_ctl stop"
+  with pidfile /var/vcap/sys/run/bpm/director/scheduler.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start director -p scheduler"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p scheduler"
   group vcap
+
 <% if_p('director.local_dns.enabled') do |enabled| %>
   <% if enabled %>
 check process director_sync_dns
-  with pidfile /var/vcap/sys/run/director/sync_dns.pid
-  start program "/var/vcap/jobs/director/bin/sync_dns_ctl start"
-  stop program "/var/vcap/jobs/director/bin/sync_dns_ctl stop"
+  with pidfile /var/vcap/sys/run/bpm/director/sync_dns.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start director -p sync_dns"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p sync_dns"
   group vcap
 <%end%><%end%>
+
 check process director_nginx
-  with pidfile /var/vcap/sys/run/director/nginx.pid
-  start program "/var/vcap/jobs/director/bin/nginx_ctl start"
-  stop program "/var/vcap/jobs/director/bin/nginx_ctl stop"
+  with pidfile /var/vcap/sys/run/bpm/director/nginx.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start director -p nginx"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p nginx"
   group vcap
