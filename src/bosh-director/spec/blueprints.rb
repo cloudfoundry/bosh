@@ -77,6 +77,11 @@ module Bosh::Director::Models
     cid       { Sham.stemcell_cid }
   end
 
+  StemcellMatch.blueprint do
+    name      { Sham.name }
+    version   { Sham.version }
+  end
+
   CompiledPackage.blueprint do
     package           { Package.make }
     build             { Sham.build }

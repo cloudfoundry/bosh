@@ -296,6 +296,12 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcells[1].operating_system).to eq("jeos-5")
           expect(stemcells[1].cpi).to eq("cloud3")
           expect(stemcells[1].cid).to eq("stemcell-cid3")
+
+          stemcell_matches = Bosh::Director::Models::StemcellMatch.where(:name => "jeos", :version => "5").all
+          expect(stemcell_matches.count).to eq(1)
+          expect(stemcell_matches[0].name).to eq("jeos")
+          expect(stemcell_matches[0].cpi).to eq("cloud2")
+          expect(stemcell_matches[0].version).to eq("5")
         end
 
         it 'still works with the default cpi' do

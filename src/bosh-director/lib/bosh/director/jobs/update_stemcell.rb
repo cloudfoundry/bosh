@@ -84,6 +84,11 @@ module Bosh::Director
           cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
           if !is_supported?(cloud, cpi)
             logger.info("#{cpi_suffix} cpi does not support stemcell format")
+            Models::StemcellMatch.create(
+              name: @name,
+              cpi: cpi,
+              version: @version,
+            )
             next
           end
           track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
