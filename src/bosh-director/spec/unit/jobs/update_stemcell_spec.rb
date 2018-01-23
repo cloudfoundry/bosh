@@ -240,15 +240,15 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       context 'when having multiple cpis' do
         let(:cloud_factory) { instance_double(BD::CloudFactory) }
+        let(:cloud1) { cloud }
+        let(:cloud2) { cloud }
+        let(:cloud3) { cloud }
+
         before {
           allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         }
 
         it 'creates multiple stemcell records with different cpi attributes' do
-          cloud1 = cloud
-          cloud2 = cloud
-          cloud3 = cloud
-
           expect(cloud1).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid1')
           expect(cloud3).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid3')
 
@@ -302,6 +302,34 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcell_matches[0].name).to eq("jeos")
           expect(stemcell_matches[0].cpi).to eq("cloud2")
           expect(stemcell_matches[0].version).to eq("5")
+        end
+
+        context 'when the stemcell has already been uploaded' do
+          before do
+            BD::Models::Stemcell.make(name: 'jeos', version: '5', cpi: 'cloud1')
+            BD::Models::StemcellMatch.make(name: 'jeos', version: '5', cpi: 'cloud2')
+          end
+
+          it 'only creates one stemcell or stemcell match per cpi' do
+            expect(cloud_factory).to receive(:all_names).twice.and_return(['cloud1', 'cloud2', 'cloud3'])
+            expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
+            expect(cloud_factory).to receive(:get).with('cloud2').and_return(cloud2)
+            expect(cloud_factory).to receive(:get).with('cloud3').and_return(cloud3)
+
+            expect(cloud1).to receive(:info).and_return({"stemcell_formats" => ["dummy"]})
+            expect(cloud2).to receive(:info).and_return({"stemcell_formats" => ["dummy1"]})
+            expect(cloud3).to receive(:info).and_return({"stemcell_formats" => ["dummy"]})
+
+            expect(cloud3).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_return('stemcell-cid3')
+
+            expect(BD::Models::Stemcell.all.count).to eq(1)
+            expect(BD::Models::StemcellMatch.all.count).to eq(1)
+
+            update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+            expect { update_stemcell_job.perform }.to change {BD::Models::Stemcell.all.count}.by(1)
+
+            expect(BD::Models::StemcellMatch.all.count).to eq(1)
+          end
         end
 
         it 'still works with the default cpi' do
