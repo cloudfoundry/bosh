@@ -28,7 +28,7 @@ module Bosh::Director
         end
 
         it 'creates a new cpi config when one exists with different content' do
-          content = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
+          content = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
           Models::Config.make(:cpi, content: content+"123")
 
           expect {
@@ -39,7 +39,7 @@ module Bosh::Director
         end
 
         it 'ignores cpi config when config already exists' do
-          content = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
+          content = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
           Models::Config.make(:cpi, content: content)
 
           expect {
