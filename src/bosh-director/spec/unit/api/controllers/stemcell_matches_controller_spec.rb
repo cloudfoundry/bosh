@@ -64,7 +64,7 @@ module Bosh::Director
             name: 'bosh-stemcell',
             version: '1234'
           )
-          BD::Models::Stemcell.make(
+          BD::Models::StemcellMatch.make(
             cpi: cpi_config['cpis'][1]['name'],
             name: 'bosh-stemcell',
             version: '1234'

@@ -19,8 +19,7 @@ module Bosh::Director
             raise ValidationMissingField, "Missing 'version' field"
           end
 
-          found_cpis = @stemcell_manager.all_by_name_and_version(name, version).map(&:cpi)
-          found_cpis += Bosh::Director::Models::StemcellMatch.where(name: name, version: version).all.map(&:cpi)
+          found_cpis = Bosh::Director::Models::StemcellMatch.where(name: name, version: version).all.map(&:cpi)
 
           cpi_config_names = CloudFactory.create_with_latest_configs.all_names
 

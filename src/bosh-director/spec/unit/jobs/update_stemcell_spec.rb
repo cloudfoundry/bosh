@@ -298,10 +298,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcells[1].cid).to eq("stemcell-cid3")
 
           stemcell_matches = Bosh::Director::Models::StemcellMatch.where(:name => "jeos", :version => "5").all
-          expect(stemcell_matches.count).to eq(1)
-          expect(stemcell_matches[0].name).to eq("jeos")
-          expect(stemcell_matches[0].cpi).to eq("cloud2")
-          expect(stemcell_matches[0].version).to eq("5")
+          expect(stemcell_matches.map(&:cpi)).to contain_exactly("cloud1", "cloud2", "cloud3")
         end
 
         context 'when the stemcell has already been uploaded' do
@@ -310,7 +307,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             BD::Models::StemcellMatch.make(name: 'jeos', version: '5', cpi: 'cloud2')
           end
 
-          it 'only creates one stemcell or stemcell match per cpi' do
+          it 'creates one stemcell and one stemcell match per cpi' do
             expect(cloud_factory).to receive(:all_names).twice.and_return(['cloud1', 'cloud2', 'cloud3'])
             expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
             expect(cloud_factory).to receive(:get).with('cloud2').and_return(cloud2)
@@ -326,9 +323,18 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(BD::Models::StemcellMatch.all.count).to eq(1)
 
             update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-            expect { update_stemcell_job.perform }.to change {BD::Models::Stemcell.all.count}.by(1)
+            update_stemcell_job.perform
 
-            expect(BD::Models::StemcellMatch.all.count).to eq(1)
+            expect(BD::Models::Stemcell.all.map {|s| {name: s.name, version: s.version, cpi: s.cpi}}).to contain_exactly(
+              {name: "jeos", version: "5", cpi: "cloud1"},
+              {name: "jeos", version: "5", cpi: "cloud3"},
+            )
+
+            expect(BD::Models::StemcellMatch.all.map {|s| {name: s.name, version: s.version, cpi: s.cpi}}).to contain_exactly(
+              {name: "jeos", version: "5", cpi: "cloud1"},
+              {name: "jeos", version: "5", cpi: "cloud2"},
+              {name: "jeos", version: "5", cpi: "cloud3"},
+            )
           end
         end
 
