@@ -251,23 +251,6 @@ module Bosh::Director
           expect(last_response.status).to eq(201)
         end
 
-        it 'creates a new config with whitespace preceding content' do
-          expect {
-            post '/', JSON.generate({ 'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123' }), {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
-
-          expect(last_response.status).to eq(201)
-
-          expect(JSON.parse(last_response.body)).to eq(
-            {
-              'id' => "#{Bosh::Director::Models::Config.first.id}",
-              'type' => 'my-type',
-              'name' => 'my-name',
-              'content' => 'a: 123'
-            }
-          )
-        end
-
         it 'gives a nice error when request body is invalid json' do
           post '/', "}}}i'm not really encoded, hah!", {'CONTENT_TYPE' => 'application/json'}
 
