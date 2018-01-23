@@ -27,6 +27,28 @@ module Bosh::Director
           expect(Bosh::Director::Models::Config.first.content).to eq(cpi_config)
         end
 
+        it 'creates a new cpi config when one exists with different content' do
+          content = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
+          Models::Config.make(:cpi, content: content+"123")
+
+          expect {
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+          }.to change(Models::Config, :count)
+
+          expect(last_response.status).to eq(201)
+        end
+
+        it 'ignores cpi config when config already exists' do
+          content = YAML.dump(Bosh::Spec::Deployments.simple_cpi_config)
+          Models::Config.make(:cpi, content: content)
+
+          expect {
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+          }.to_not change(Models::Config, :count)
+
+          expect(last_response.status).to eq(201)
+        end
+
         it 'gives a nice error when request body is not a valid yml' do
           post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 

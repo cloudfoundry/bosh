@@ -27,15 +27,26 @@ module Bosh::Director
           config_hash = parse_request_body(request.body.read)
           validate_type_and_name(config_hash)
           validate_config_content(config_hash['content'])
-          config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
-          create_event(config_hash['type'], config_hash['name'])
+
+          latest_configs = Bosh::Director::Api::ConfigManager.new.find(
+              type: config_hash['type'],
+              name: config_hash['name'],
+              latest: true
+          )
+
+          if latest_configs.empty? || latest_configs.first[:content] != config_hash['content']
+            config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
+            create_event(config_hash['type'], config_hash['name'])
+          else
+            config = latest_configs.first
+          end
+
         rescue => e
           type = config_hash ? config_hash['type'] : nil
           name = config_hash ? config_hash['name'] : nil
           create_event(type, name, e)
           raise e
         end
-
         status(201)
         return json_encode(sql_to_hash(config))
       end

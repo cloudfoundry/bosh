@@ -276,6 +276,29 @@ module Bosh::Director
           expect(Bosh::Director::Models::Config.first.name).to eq('default')
         end
 
+        it 'creates a new runtime config when one exists with different content' do
+          content = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          Models::Config.make(:runtime, content: content+"123")
+
+          expect {
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+          }.to change(Models::Config, :count)
+
+          expect(last_response.status).to eq(201)
+        end
+
+        it 'ignores runtime config when config already exists' do
+          content = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          Models::Config.make(:runtime, content: content)
+
+          expect {
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
+          }.to_not change(Models::Config, :count)
+
+          expect(last_response.status).to eq(201)
+        end
+
+
         it 'gives a nice error when request body is not a valid yml' do
           post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 

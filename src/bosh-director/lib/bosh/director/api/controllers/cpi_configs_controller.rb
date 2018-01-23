@@ -7,13 +7,18 @@ module Bosh::Director
         manifest_text = request.body.read
         begin
           validate_manifest_yml(manifest_text, nil)
-          Bosh::Director::Api::CpiConfigManager.new.update(manifest_text)
-          create_event
+
+          latest_cpi_config = Bosh::Director::Api::CpiConfigManager.new.list(1)
+
+          if latest_cpi_config.empty? || latest_cpi_config.first[:content] != manifest_text
+            Bosh::Director::Api::CpiConfigManager.new.update(manifest_text)
+            create_event
+          end
+
         rescue => e
           create_event e
           raise e
         end
-
         status(201)
       end
 
