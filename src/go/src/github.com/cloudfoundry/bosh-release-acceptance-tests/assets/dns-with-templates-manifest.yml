@@ -12,8 +12,6 @@ instance_groups:
   instances: 1
   azs: [z1]
   jobs:
-  - name: bosh-dns
-    release: bosh-dns
   - name: query-with-az-filter
     release: linked-template-release
   - name: query-all
@@ -25,8 +23,6 @@ instance_groups:
 
 - name: provider
   jobs:
-  - name: bosh-dns
-    release: bosh-dns
   - name: link-provider
     release: linked-template-release
   instances: 3
