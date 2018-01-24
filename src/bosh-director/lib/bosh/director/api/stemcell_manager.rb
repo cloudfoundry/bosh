@@ -7,9 +7,7 @@ module Bosh::Director
       include ApiHelper
 
       def all_by_name_and_version(name, version)
-        stemcells = Models::Stemcell.where(:name => name, :version => version).all
-        raise StemcellNotFound, "Stemcell '#{name}/#{version}' doesn't exist" if stemcells.empty?
-        stemcells
+        Models::Stemcell.where(:name => name, :version => version).all
       end
 
       def find_by_name_and_version_and_cpi(name, version, cpi)
@@ -68,10 +66,10 @@ module Bosh::Director
       end
 
       def all_by_os_and_version(os, version)
-        stemcells = Bosh::Director::Models::Stemcell.
-            dataset.order(:name).where(:operating_system => os, :version => version).all
-        raise StemcellNotFound, "Stemcell version '#{version}' for OS '#{os}' doesn't exist" if stemcells.empty?
-        stemcells
+        Bosh::Director::Models::Stemcell.dataset
+          .order(:name)
+          .where(:operating_system => os, :version => version)
+          .all
       end
 
       def create_stemcell_from_url(username, stemcell_url, options)

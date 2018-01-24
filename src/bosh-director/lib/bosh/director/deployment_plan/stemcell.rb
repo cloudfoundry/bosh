@@ -49,9 +49,13 @@ module Bosh::Director
       end
 
       def add_stemcell_models
-        @models = is_using_os? ?
-            @manager.all_by_os_and_version(@os, @version) :
-            @manager.all_by_name_and_version(@name, @version)
+        if is_using_os?
+          @models = @manager.all_by_os_and_version(@os, @version)
+          raise StemcellNotFound, "Stemcell version '#{@version}' for OS '#{@os}' doesn't exist" if models.empty?
+        else
+          @models = @manager.all_by_name_and_version(@name, @version)
+          raise StemcellNotFound, "Stemcell '#{@name}/#{@version}' doesn't exist" if models.empty?
+        end
 
         model = @models.first
         @name = model.name

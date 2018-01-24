@@ -386,7 +386,7 @@ module Bosh::Spec
       cpi_config
     end
 
-    def self.simple_cpi_config(exec_path=nil)
+    def self.multi_cpi_config(exec_path=nil)
       cpi_config =  {
         'cpis' => [
           {

@@ -5,9 +5,9 @@ describe 'Using multiple CPIs', type: :integration do
 
   let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
   let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis }
-  let(:cpi_config) { Bosh::Spec::Deployments.simple_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)) }
-  let(:job) { Bosh::Spec::NewDeployments.simple_job(:azs => ['z1', 'z2']) }
-  let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('jobs' => [job]) }
+  let(:cpi_config) { Bosh::Spec::Deployments.multi_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)) }
+  let(:instance_group) { Bosh::Spec::NewDeployments.simple_instance_group(:azs => ['z1', 'z2']) }
+  let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group]) }
   let(:cloud_config_manifest) { yaml_file('cloud_manifest', cloud_config) }
   let(:cpi_config_manifest) { yaml_file('cpi_manifest', cpi_config) }
   let(:deployment_manifest) { yaml_file('deployment_manifest', deployment) }
@@ -18,6 +18,37 @@ describe 'Using multiple CPIs', type: :integration do
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
     bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
     bosh_runner.run("upload-stemcell #{stemcell_filename}")
+  end
+
+  context 'when multiple cpis that support different stemcell formats are configured' do
+    let(:cpi_config) do
+      cpi_config =  Bosh::Spec::NewDeployments.multi_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI))
+      cpi_config['cpis'][0]['properties'] = { 'formats' => ['other'] }
+      cpi_config
+    end
+
+    context 'when a stemcell has been uploaded once' do
+      it 'does not re-upload the tarball to the director' do
+        output = bosh_runner.run("upload-stemcell #{stemcell_filename}")
+        expect(output).to include("Stemcell 'ubuntu-stemcell/1' already exists")
+      end
+
+      context 'after adding a second CPI that supports the format' do
+        before do
+          cpi_config['cpis'] << {'name' => 'new-cpi', 'type' => 'cpi-type', 'properties' => {}, 'exec_path' => current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI) }
+          cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
+          bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+        end
+
+        it 'reuploads the stemcell tarball to the new cpi' do
+          output = bosh_runner.run("upload-stemcell #{stemcell_filename}")
+          expect(output).to include("Uploading stemcell ubuntu-stemcell/1 to the cloud (cpi: cpi-name2) (already exists, skipped)")
+          expect(output).to match(/Save stemcell ubuntu-stemcell\/1 \(.+\) \(cpi: cpi-name2\) \(already exists, skipped\)/)
+          expect(output).to include("Uploading stemcell ubuntu-stemcell/1 to the cloud (cpi: new-cpi)")
+          expect(output).to match(/Save stemcell ubuntu-stemcell\/1 \(.+\) \(cpi: new-cpi\)/)
+        end
+      end
+    end
   end
 
   context 'when a cpi is renamed and cloud-config azs are updated' do
@@ -62,7 +93,7 @@ describe 'Using multiple CPIs', type: :integration do
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
         # reduce instance count, just to verify we can delete a vm during a live cpi transition
-        deployment['jobs'][0]['instances'] = 2
+        deployment['instance_groups'][0]['instances'] = 2
         deployment_manifest = yaml_file('deployment_manifest', deployment)
 
         # deploy so we get onto the latest cloud-config/cpi names
