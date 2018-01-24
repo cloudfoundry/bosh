@@ -534,11 +534,11 @@ module Bosh::Director
         return [] if vm.nil?
 
         # For manual and vip networks
-        result = vm.instance.ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
+        result = vm.ip_addresses.map { |ip| NetAddr::CIDR.create(ip.address).ip }
 
         # For dynamic networks
         if result.empty? && !vm.network_spec.empty?
-          result = vm.network_spec.map {|_, network| network['ip']}
+          result = vm.network_spec.map { |_, network| network['ip'] }
         end
         result
       end

@@ -266,6 +266,7 @@ module Bosh::Director::Models
   LinkProvider.blueprint {}
 
   Vm.blueprint do
+    instance { Instance.make }
     cid      { Sham.vm_cid }
     agent_id { Sham.agent_id }
     created_at { Time.now }

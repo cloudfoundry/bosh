@@ -4,6 +4,9 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlan
+        # existing_instance: Model::Instance
+        # desired_instance: DeploymentPlan::DesiredInstance
+        # instance: DeploymentPlan::Instance
         def initialize(existing_instance:, desired_instance:, instance:, network_plans: [], skip_drain: false, recreate_deployment: false, use_dns_addresses: false, use_short_dns_addresses: false, logger: Config.logger, tags: {})
           @existing_instance = existing_instance
           @desired_instance = desired_instance

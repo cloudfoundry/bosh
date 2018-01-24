@@ -130,9 +130,9 @@ module Bosh::Director
             DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform(instance_report)
             DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
           end
+        else
+          instance_plan.release_obsolete_network_plans(@ip_provider)
         end
-
-        instance_plan.release_obsolete_network_plans(@ip_provider)
 
         update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)

@@ -69,6 +69,12 @@ module Bosh::Director
         agenda.steps << DeploymentPlan::Steps::ElectActiveVmStep.new
       end
 
+      agenda.steps << DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep.new
+
+      if instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+        agenda.steps << DeploymentPlan::Steps::ReleaseObsoleteNetworksStep.new(ip_provider)
+      end
+
       if instance_plan.needs_disk? && instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
         agenda.steps << DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags)
         agenda.steps << DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model)
@@ -81,7 +87,6 @@ module Bosh::Director
         @template_blob_cache,
         @dns_encoder,
       )
-      agenda.steps << DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep.new(ip_provider)
 
       agenda
     end

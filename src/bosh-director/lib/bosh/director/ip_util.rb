@@ -1,6 +1,5 @@
 module Bosh::Director
   module IpUtil
-
     def each_ip(ranges, &block)
       if ranges.kind_of?(Array)
         ranges.each do |range|

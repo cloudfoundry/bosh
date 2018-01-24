@@ -1,20 +1,19 @@
 module Bosh::Director
   module DeploymentPlan::Steps
     class CommitInstanceNetworkSettingsStep
-      def initialize(ip_provider)
-        @ip_provider = ip_provider
-      end
-
       def perform(report)
-        report.network_plans.select(&:desired?).each { |network_plan| network_plan.existing = true }
-
-        return if @ip_provider.nil?
-
-        report.network_plans.select(&:obsolete?).each do |network_plan|
-          reservation = network_plan.reservation
-          @ip_provider.release(reservation)
+        report.network_plans.select(&:desired?).each do |network_plan|
+          network_plan.existing = true
         end
-        report.network_plans.delete_if(&:obsolete?)
+
+        report.network_plans.select(&:existing?).each do |network_plan|
+          ip = network_plan.reservation.ip
+
+          next if ip.nil?
+
+          Models::IpAddress.where(address_str: IpUtil::CIDRIP.new(network_plan.reservation.ip).to_s)
+                           .update(vm_id: report.vm.id)
+        end
       end
     end
   end

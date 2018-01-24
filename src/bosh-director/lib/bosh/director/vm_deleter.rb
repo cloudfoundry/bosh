@@ -1,6 +1,6 @@
 module Bosh::Director
   class VmDeleter
-    def initialize(logger, force=false, enable_virtual_delete_vm = false)
+    def initialize(logger, force = false, enable_virtual_delete_vm = false)
       @logger = logger
       @error_ignorer = ErrorIgnorer.new(force, @logger)
       @enable_virtual_delete_vm = enable_virtual_delete_vm

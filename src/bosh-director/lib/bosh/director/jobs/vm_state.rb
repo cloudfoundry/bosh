@@ -85,7 +85,7 @@ module Bosh::Director
 
       def ips(vm)
         # For manual and vip networks
-        ip_addresses = vm&.instance&.ip_addresses || {}
+        ip_addresses = vm&.ip_addresses || {}
         result = ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
 
         # For dynamic networks
