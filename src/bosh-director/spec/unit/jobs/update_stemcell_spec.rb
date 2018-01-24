@@ -301,6 +301,18 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcell_matches.map(&:cpi)).to contain_exactly("cloud1", "cloud2", "cloud3")
         end
 
+        it 'skips creating a stemcell match when a CPI fails' do
+          expect(cloud1).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}).and_raise('I am flaky')
+          expect(cloud1).to receive(:info).and_return({"stemcell_formats" => ["dummy"]})
+          expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
+          expect(cloud_factory).to receive(:all_names).twice.and_return(['cloud1'])
+
+          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+          expect { update_stemcell_job.perform }.to raise_error 'I am flaky'
+
+          expect(BD::Models::StemcellMatch.all.count).to eq(0)
+        end
+
         context 'when the stemcell has already been uploaded' do
           before do
             BD::Models::Stemcell.make(name: 'jeos', version: '5', cpi: 'cloud1')
