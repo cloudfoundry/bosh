@@ -722,15 +722,15 @@ resources:
     type: git
     source:
       uri: ((bosh_src_url))
-      branch: 264.x
+      branch: 265.x
       private_key: ((github_deployment_key))
 
   - name: candidate-version
     type: semver
     source:
       bucket: {{candidate_release_bucket}}
-      key: 264.x/version
-      initial_version: 264.0.0
+      key: 265.x/version
+      initial_version: 265.0.0
       access_key_id: {{candidate_release_access_key_id}}
       secret_access_key: {{candidate_release_secret_access_key}}
 
@@ -740,7 +740,7 @@ resources:
       bucket: {{candidate_release_bucket}}
       access_key_id: {{candidate_release_access_key_id}}
       secret_access_key: {{candidate_release_secret_access_key}}
-      versioned_file: "264.x/bosh-dev-release.tgz"
+      versioned_file: "265.x/bosh-dev-release.tgz"
 
   - name: davcli
     type: s3
