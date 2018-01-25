@@ -175,7 +175,7 @@ describe 'Links', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'other2',
             jobs: [
-                {'name' => 'http_proxy_with_requires', 'properties' => {'http_proxy_with_requires.listen_port' => 21}, 'consumes' => {'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, 'logs_http_endpoint' => nil}},
+                {'name' => 'http_proxy_with_requires', 'properties' => {'http_proxy_with_requires.listen_port' => 21}, 'consumes' => {'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, 'logs_http_endpoint' => {}}},
                 {'name' => 'http_server_with_provides', 'properties' => {'listen_port' => 8446}}
             ],
             instances: 1
@@ -188,7 +188,7 @@ describe 'Links', type: :integration do
         job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'new_job',
             jobs: [
-                {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'new_provides', 'shared' => true}, 'logs_http_endpoint' => nil}},
+                {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'new_provides', 'shared' => true}, 'logs_http_endpoint' => {}}},
                 {'name' => 'http_server_with_provides', 'provides'=>{'http_endpoint' => {'as' =>'new_provides'}}}
             ],
             instances: 1
@@ -220,9 +220,9 @@ describe 'Links', type: :integration do
     context 'when link is not defined in provides spec but specified in manifest' do
       let(:consume_instance_group) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
-          name: 'consume_job',
+          name: 'provider_instance_group',
           jobs: [
-            {'name' => 'consumer', 'provides'=>{'consumer_resource' => {'from' => 'consumer'}}}
+            {'name' => 'provider', 'provides'=>{'not_defined_in_release' => {}}}
           ],
           instances: 1
         )
@@ -237,7 +237,7 @@ describe 'Links', type: :integration do
       end
 
       it 'should raise an error' do
-        expect { deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(/Job 'consume_job' does not provide link 'consumer_resource' in the release spec/)
+        expect { deploy_simple_manifest(manifest_hash: manifest) }.to raise_error(/Job 'provider' does not provide link 'not_defined_in_release' in the release spec/)
       end
     end
 
@@ -317,9 +317,9 @@ describe 'Links', type: :integration do
       context 'when optional links are explicitly stated in deployment manifest' do
         let(:links) do
           {
-              'db' => {'from' => 'db'},
-              'backup_db' => {'from' => 'backup_db'},
-              'optional_link_name' => {'from' => 'backup_db'}
+            'db' => {'from' => 'db'},
+            'backup_db' => {'from' => 'backup_db'},
+            'optional_link_name' => {'from' => 'backup_db'}
           }
         end
 

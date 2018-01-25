@@ -192,8 +192,8 @@ module Bosh::Director
           consumer_id = db[:link_consumers].first[:id]
 
           expected_links_consumers_intents = [
-            {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=> nil},
-            {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=> nil}
+            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=> nil},
+            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=> nil}
           ]
 
           expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)
@@ -228,8 +228,8 @@ module Bosh::Director
             consumer_id = db[:link_consumers].first[:id]
 
             expected_links_consumers_intents = [
-              {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=>nil},
-              {:id=>Integer, :link_consumer_id=>consumer_id, :from_deployment_id=>nil, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=>nil}
+              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=>nil},
+              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=>nil}
             ]
 
             expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)

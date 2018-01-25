@@ -33,10 +33,14 @@ module Bosh::Director
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => powerdns_manager.root_domain,
-          'links' => instance_group.resolved_links,
+          # 'links' => instance_group.resolved_links,
           'address' => instance_plan.network_address,
           'update' => instance_group.update_spec
         }
+
+        links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
+        resolved_links = links_manager.get_links_from_deployment(instance.deployment_model)
+        spec['links'] = resolved_links
 
         disk_spec = instance_group.persistent_disk_collection.generate_spec
 

@@ -487,7 +487,7 @@ describe 'links api', type: :integration do
       end
 
       it 'should return a single orphaned link' do
-        expected_response = [ links_response.merge('link_provider_id' => nil) ]
+        expected_response = [ links_response.merge('link_provider_id' => Integer) ]
         expect(get_links).to match_array(expected_response)
       end
     end
@@ -527,14 +527,14 @@ describe 'links api', type: :integration do
         expected_response = [
           links_response.merge(
             {
-              'id' => 1,
+              'id' => Integer,
               'name' => 'disk_provider',
               'link_provider_id' => 1,
             }
           ),
           links_response.merge(
             {
-              'id' => 2,
+              'id' => Integer,
               'name' => 'backup_disk_provider',
               'link_consumer_id' => 2,
               'link_provider_id' => 2,

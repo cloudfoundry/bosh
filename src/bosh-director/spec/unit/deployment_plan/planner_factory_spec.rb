@@ -353,30 +353,6 @@ LOGMESSAGE
                                 jobs: [job1])
               end
 
-              let(:link_path) do
-                instance_double(
-                  'Bosh::Director::DeploymentPlan::LinkPath',
-                  deployment: 'deployment_name',
-                  instance_group: 'ig_name',
-                  job: 'provides_job',
-                  name: 'link_name',
-                  path: 'deployment_name.ig_name.provides_job.link_name',
-                  skip: false
-                )
-              end
-
-              let(:skipped_link_path) do
-                instance_double(
-                  'Bosh::Director::DeploymentPlan::LinkPath',
-                  deployment: 'deployment_name',
-                  instance_group: 'ig_name',
-                  job: 'provides_job',
-                  name: 'link_name',
-                  path: 'deployment_name.ig_name.provides_job.link_name',
-                  skip: true
-                )
-              end
-
               let(:release) do
                 instance_double(
                   'Bosh::Director::DeploymentPlan::ReleaseVersion',
@@ -384,48 +360,11 @@ LOGMESSAGE
                 )
               end
 
-              it 'should have a link_path' do
-                allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                expect(DeploymentPlan::LinkPath).to receive(:new).and_return(link_path)
-                expect(link_path).to receive(:parse)
-                expect(instance_group1).to receive(:add_link_path).with('provides_job', 'link_name', link_path)
-
-                planner
-              end
-
-              it 'should not add a link path if no links found for optional ones, and it should not fail' do
-                allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                allow(job1).to receive(:release).and_return(release)
-                allow(job1).to receive(:properties).and_return({})
-                expect(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
-                expect(skipped_link_path).to receive(:parse)
-                expect(instance_group1).to_not receive(:add_link_path)
-                planner
-              end
-
-              context 'when job properties_json has the value "null"' do
-                it 'should not throw an error' do
-                  allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                  allow(job1).to receive(:release).and_return(release)
-                  allow(job1).to receive(:properties).and_return({})
-                  allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
-                  allow(skipped_link_path).to receive(:parse)
-
-                  templateModel = Models::Template.where(name: 'provides_job').first
-                  templateModel.save
-
-                  expect(subject).to_not receive(:process_link_properties).with({}, { 'properties' => nil, 'template_name' => 'provides_job' }, ['a'], [])
-                  planner
-                end
-              end
-
               context 'when link property has no default value and no value is set in the deployment manifest' do
                 it 'should not throw an error' do
                   allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
                   allow(job1).to receive(:release).and_return(release)
                   allow(job1).to receive(:properties).and_return({})
-                  allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
-                  allow(skipped_link_path).to receive(:parse)
 
                   template_model = Models::Template.where(name: 'provides_job').first
                   template_model.spec = template_model.spec.merge(properties: { 'a' => {} })

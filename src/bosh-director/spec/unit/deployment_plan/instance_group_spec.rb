@@ -60,13 +60,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
   let(:logger) { double(:logger).as_null_object }
 
+  let(:links_manager) { Bosh::Director::Links::LinksManager.new(logger) }
+
   before do
-   allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
+    allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
     allow(plan).to receive(:networks).and_return([network])
     allow(plan).to receive(:vm_type).with('dea').and_return vm_type
     allow(plan).to receive(:stemcell).with('dea').and_return stemcell
     allow(plan).to receive(:update)
+    allow(plan).to receive(:links_manager).and_return(links_manager)
 
     allow(release1).to receive(:get_or_create_template).with('foo').and_return(release1_foo_job)
     allow(release1).to receive(:get_or_create_template).with('bar').and_return(release1_bar_job)
@@ -309,6 +312,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       context 'when templates do not depend on packages with the same name' do
+        before do
+          link_provider = instance_double(Bosh::Director::Models::Links::LinkProvider)
+          allow(links_manager).to receive(:find_or_create_provider).and_return(link_provider)
+        end
+
         it 'does not raise an exception' do
           expect { instance_group.validate_package_names_do_not_collide! }.to_not raise_error
         end

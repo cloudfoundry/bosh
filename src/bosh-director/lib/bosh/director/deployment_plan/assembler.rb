@@ -15,6 +15,7 @@ module Bosh::Director
       @logger = Config.logger
       @stemcell_manager = stemcell_manager
       @powerdns_manager = powerdns_manager
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
     end
 
     def bind_models(options = {})
@@ -43,7 +44,7 @@ module Bosh::Director
         instance_repo,
         states_by_existing_instance,
         @deployment_plan.skip_drain,
-         index_assigner,
+        index_assigner,
         network_reservation_repository,
         {
           'recreate' => @deployment_plan.recreate,
@@ -141,15 +142,51 @@ module Bosh::Director
       # Update providers with correct link content.
       # Create the links
 
-      links_resolver = DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
+      # @deployment_plan.instance_groups.each do |instance_group|
+      #   instance_group.persistent_disk_collection.non_managed_disks.each do |disk|
+      #     provider = @links_manager.find_or_create_provider(
+      #       deployment_model: @deployment_plan.model,
+      #       instance_group_name: instance_group.name,
+      #       name: instance_group.name,
+      #       type: 'instance_group'
+      #     )
+      #
+      #     provider_intent = @links_manager.find_or_create_provider_intent(
+      #       link_provider: provider,
+      #       link_original_name: disk.name,
+      #       link_type: 'disk'
+      #     )
+      #
+      #     provider_intent.shared = false
+      #     provider_intent.name = disk.name
+      #     provider_intent.content = Bosh::Director::DeploymentPlan::DiskLink.new(@deployment_plan.name, disk.name).spec.to_json
+      #     provider_intent.save
+      #   end
+      # end
 
-      @deployment_plan.instance_groups.each do |instance_group|
-        links_resolver.add_providers(instance_group)
+      # TODO LINKS: Refactor me into a links class..
+
+      providers = @links_manager.find_providers(deployment: @deployment_plan.model)
+      providers.each do |provider|
+        instance_group = @deployment_plan.instance_group(provider.instance_group)
+
+        provider.intents.each do |provider_intent|
+          metadata = {}
+          metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
+
+          if provider.type == 'manual'
+            properties = JSON.parse(provider_intent.content)['properties']
+          else
+            properties = metadata['mapped_properties']
+          end
+
+          # TODO LINKS: It should not be setting contents or heck... even modifying the provider in the case of manual. Just skip it or something?
+          provider_intent.content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties).spec.to_json
+          provider_intent.save
+        end
       end
 
-      @deployment_plan.instance_groups.each do |instance_group|
-        links_resolver.resolve(instance_group)
-      end
+      @links_manager.resolve_deployment_links(@deployment_plan)
 
       # TODO LINKS
       # we should not clean up the consumers or providers here
@@ -157,24 +194,24 @@ module Bosh::Director
       # since a deployment can fail and we'll end up with no providers and consumers
 
       # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
-      link_providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: @deployment_plan.model)
-      link_providers.each do |link_provider|
-        result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
-        if result.empty?
-          link_provider.destroy
-          # TODO: orphaning any links referring to them.
-        end
-      end
+      # link_providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: @deployment_plan.model)
+      # link_providers.each do |link_provider|
+      #   result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
+      #   if result.empty?
+      #     link_provider.destroy
+      #     # TODO: orphaning any links referring to them.
+      #   end
+      # end
 
       # this can be more efficient
-      link_consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: @deployment_plan.model)
-      link_consumers.each do |link_consumer|
-        result = @deployment_plan.link_consumers.select{ |lp| lp.id == link_consumer.id }
-        if result.empty?
-          link_consumer.destroy
-          # TODO: deleting any links referring to them.
-        end
-      end
+      # link_consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: @deployment_plan.model)
+      # link_consumers.each do |link_consumer|
+      #   result = @deployment_plan.link_consumers.select{ |lp| lp.id == link_consumer.id }
+      #   if result.empty?
+      #     link_consumer.destroy
+      #     # TODO: deleting any links referring to them.
+      #   end
+      # end
     end
 
     # Binds template models for each release spec in the deployment plan

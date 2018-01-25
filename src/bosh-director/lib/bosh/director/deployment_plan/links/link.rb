@@ -3,10 +3,9 @@ module Bosh::Director
     class Link
       attr_reader :name
 
-      def initialize(deployment_name, source_instance_group, job, mapped_properties)
+      def initialize(deployment_name, source_instance_group, mapped_properties)
         @deployment_name = deployment_name # Provider Deployment Name
         @source_instance_group = source_instance_group
-        @job = job
         @mapped_properties = mapped_properties
       end
 

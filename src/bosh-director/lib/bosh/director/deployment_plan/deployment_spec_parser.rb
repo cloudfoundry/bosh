@@ -35,6 +35,8 @@ module Bosh::Director
         parse_features
         parse_addons
 
+        # TODO LINKS: Validate links here.
+
         @deployment
       end
 

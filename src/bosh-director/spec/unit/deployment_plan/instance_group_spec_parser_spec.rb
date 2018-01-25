@@ -8,7 +8,7 @@ module Bosh::Director
       let(:deployment_plan) do
         instance_double(
           Planner,
-          model: Models::Deployment.make,
+          model: deployment_model,
           properties: {},
           update: UpdateConfig.new(
             'canaries' => 2,
@@ -22,12 +22,39 @@ module Bosh::Director
           releases: {}
         )
       end
+      let(:deployment_model) { Models::Deployment.make }
       let(:network) { ManualNetwork.new('fake-network-name', [], logger) }
       let(:task) { Models::Task.make(id: 42) }
       let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
       let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
       let(:disk_collection) { PersistentDiskCollection.new(logger) }
+
+      let(:links_manager_factory) do
+        instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
+          expect(double).to receive(:create_manager).and_return(links_manager)
+        end
+      end
+
+      let(:links_manager) do
+        instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+          allow(double).to receive(:find_providers).and_return([])
+          allow(double).to receive(:resolve_deployment_links)
+        end
+      end
+
+      let(:provider) { instance_double(Bosh::Director::Models::Links::LinkProvider) }
+      let(:consumer) { instance_double(Bosh::Director::Models::Links::LinkConsumer) }
+      let(:provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent) }
+      let(:consumer_intent) { instance_double(Bosh::Director::Models::Links::LinkConsumerIntent) }
+
+      before do
+        allow(Bosh::Director::Links::LinksManagerFactory).to receive(:create).and_return(links_manager_factory)
+        allow(links_manager).to receive(:find_or_create_provider).and_return(provider)
+        allow(links_manager).to receive(:find_or_create_consumer).and_return(consumer)
+        allow(links_manager).to receive(:find_or_create_provider_intent).and_return(provider_intent)
+        allow(links_manager).to receive(:find_or_create_consumer_intent).and_return(consumer_intent)
+      end
 
       describe '#parse' do
         before do
@@ -313,6 +340,7 @@ module Bosh::Director
         shared_examples_for 'templates/jobs key' do
           before { instance_group_spec.delete('jobs') }
 
+          # TODO LINKS: Add tests to ensure links_manager's methods get invoked.
           context 'when value is an array of hashes' do
             context 'when one of the hashes specifies a release' do
               before do
@@ -327,9 +355,13 @@ module Bosh::Director
 
                 release_model_2 = Models::Release.make(name: 'fake-release-2')
                 fake_release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model_2)
-                fake_release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model_2))
+                fake_release_version_model.add_template(Models::Template.make(
+                  name: 'job-name',
+                  release: release_model_2,
+                  spec: {consumes: [{'name' => "a", 'type' => "db"}]}
+                ))
 
-                deployment_model = Models::Deployment.make(name: 'deployment', link_spec_json: "{\"job_name\":{\"template_name\":{\"link_name\":{\"name\":\"link_name\",\"type\":\"link_type\"}}}}")
+                deployment_model = Models::Deployment.make(name: 'deployment')
                 version.add_deployment(deployment_model)
               end
 
@@ -350,11 +382,16 @@ module Bosh::Director
                   allow(rel_ver).to receive(:get_or_create_template)
                                       .with('job-name')
                                       .and_return(job)
-                  allow(job).to receive(:add_link_from_manifest)
                   allow(job).to receive(:add_properties)
                 end
 
                 it 'sets job template from release specified in a hash' do
+                  allow(consumer_intent).to receive(:name=)
+                  allow(consumer_intent).to receive(:blocked=)
+                  allow(consumer_intent).to receive(:optional=)
+                  allow(consumer_intent).to receive(:metadata=)
+                  allow(consumer_intent).to receive(:save)
+
                   instance_group = parsed_instance_group
                   expect(instance_group.jobs).to eq([job])
                 end
@@ -388,6 +425,12 @@ module Bosh::Director
                 end
 
                 it 'sets job template from release specified in a hash' do
+                  allow(consumer_intent).to receive(:name=)
+                  allow(consumer_intent).to receive(:blocked=)
+                  allow(consumer_intent).to receive(:optional=)
+                  allow(consumer_intent).to receive(:metadata=)
+                  allow(consumer_intent).to receive(:save)
+
                   instance_group = parsed_instance_group
                   expect(instance_group.jobs).to eq([job])
                 end
@@ -811,6 +854,980 @@ module Bosh::Director
                 parsed_instance_group
               end
             end
+
+            describe 'job links' do
+              context 'when a job defines a provider in its release spec' do
+                let(:release_1_spec) { {'provides' => [{name: 'link_1_name', type: 'link_1_type'}], 'properties' => {}}}
+
+                before do
+                  release_model_1 = Models::Release.make(name: 'release1')
+                  release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
+                  release_version_model_1.add_template(
+                    Models::Template.make(
+                      name: 'job-name1',
+                      release: release_model_1,
+                      spec: release_1_spec,
+                    )
+                  )
+
+                  rel_ver1 = instance_double(ReleaseVersion, name: 'release1', version: '1')
+                  allow(deployment_plan).to receive(:release)
+                                              .with('release1')
+                                              .and_return(rel_ver1)
+
+                  job1 = make_job('job1', rel_ver1)
+                  allow(job1).to receive(:add_properties)
+
+                  allow(rel_ver1).to receive(:get_or_create_template)
+                                        .with('job-name1')
+                                        .and_return(job1)
+                end
+
+                context 'when the job exposes properties in the provided link' do
+                  let(:properties_1) do
+                    {
+                      'street' => {'default' => 'Any Street'},
+                      'scope' => {},
+                      'division.router' => {'default' => 'Canada'},
+                      'division.priority' => {'default' => 'NOW!'},
+                      'division.sequence' => {},
+                    }
+                  end
+
+                  let(:release_1_spec) do
+                    {
+                      'provides' => [
+                        {name: 'link_1_name', type: 'link_1_type', properties: ['street', 'scope', 'division.priority', 'division.sequence']}
+                      ],
+                      'properties' => properties_1
+                    }
+                  end
+
+                  it 'should update the provider intent metadata with the correct mapped properties' do
+                    instance_group_spec[keyword] = [
+                      {
+                        'name' => 'job-name1',
+                        'release' => 'release1',
+                        'properties' => {
+                          'street' => 'Any Street',
+                          'division' => {
+                            'priority' => 'LOW',
+                            'sequence' => 'FIFO'
+                          }
+                        }
+                      },
+                    ]
+
+                    expected_provider_params = {
+                      deployment_model: deployment_plan.model,
+                      instance_group_name: instance_group_spec['name'],
+                      name: 'job-name1',
+                      type: 'job',
+                    }
+
+                    expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+
+                    expected_provider_intent_params = {
+                      link_provider: provider,
+                      link_original_name: 'link_1_name',
+                      link_type: 'link_1_type'
+                    }
+                    expect(links_manager).to receive(:find_or_create_provider_intent).with(expected_provider_intent_params).and_return(provider_intent)
+
+                    mapped_properties = {
+                      'street' => 'Any Street',
+                      'scope' => nil,
+                      'division' => {
+                        'priority' => 'LOW',
+                        'sequence' => 'FIFO',
+                      }
+                    }
+
+                    expect(provider_intent).to receive(:name=).with('link_1_name')
+                    expect(provider_intent).to receive(:metadata=).with({:mapped_properties => mapped_properties}.to_json)
+                    expect(provider_intent).to receive(:consumable=).with(true)
+                    expect(provider_intent).to receive(:shared=).with(false)
+                    expect(provider_intent).to receive(:save)
+                    parsed_instance_group
+                  end
+
+                  context 'when it is not in the template' do
+                    let(:properties_1) do
+                      {
+                        'street' => {'default' => 'Any Street'},
+                        'division.router' => {'default' => 'Canada'},
+                        'division.priority' => {'default' => 'NOW!'},
+                        'division.sequence' => {},
+                      }
+                    end
+
+                    it 'raise an error' do
+                      instance_group_spec[keyword] = [
+                        {
+                          'name' => 'job-name1',
+                          'release' => 'release1',
+                          'properties' => {
+                            'street' => 'Any Street',
+                            'division' => {
+                              'priority' => 'LOW',
+                              'sequence' => 'FIFO'
+                            }
+                          }
+                        },
+                      ]
+
+                      expected_provider_params = {
+                        deployment_model: deployment_plan.model,
+                        instance_group_name: instance_group_spec['name'],
+                        name: 'job-name1',
+                        type: 'job',
+                      }
+
+                      expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+                      expect(links_manager).to_not receive(:find_or_create_provider_intent)
+                      expect(provider_intent).to_not receive(:metadata=)
+                      expect(provider_intent).to_not receive(:shared=)
+                      expect(provider_intent).to_not receive(:name=)
+                      expect(provider_intent).to_not receive(:save)
+
+                      expect{ parsed_instance_group }.to raise_error(RuntimeError, 'Link property scope in template job-name1 is not defined in release spec')
+                    end
+                  end
+                end
+
+                context 'when a job does NOT define a provides section in manifest' do
+                  it 'should add correct link providers and link providers intent to the DB' do
+                    instance_group_spec[keyword] = [
+                      {'name' => 'job-name1', 'release' => 'release1'},
+                    ]
+
+                    expected_provider_params = {
+                      deployment_model: deployment_plan.model,
+                      instance_group_name: instance_group_spec['name'],
+                      name: 'job-name1',
+                      type: 'job',
+                    }
+
+                    expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+
+                    expected_provider_intent_params = {
+                      link_provider: provider,
+                      link_original_name: 'link_1_name',
+                      link_type: 'link_1_type'
+                    }
+                    expect(links_manager).to receive(:find_or_create_provider_intent).with(expected_provider_intent_params).and_return(provider_intent)
+
+                    expect(provider_intent).to receive(:name=).with('link_1_name')
+                    expect(provider_intent).to receive(:metadata=).with({'mapped_properties' => {}}.to_json)
+                    expect(provider_intent).to receive(:consumable=).with(true)
+                    expect(provider_intent).to receive(:shared=).with(false)
+                    expect(provider_intent).to receive(:save)
+                    parsed_instance_group
+                  end
+                end
+
+                context 'when a job defines a provides section in manifest' do
+                  before do
+                    instance_group_spec[keyword] = [
+                      {
+                       'name' => 'job-name1',
+                       'release' => 'release1',
+                       'provides' => {
+                         'link_1_name' => {
+                           'as' => 'link_1_name_alias',
+                           'shared' => true,
+                         }
+                       }
+                      }
+                    ]
+                  end
+
+                  it 'should add correct link providers and link providers intent to the DB' do
+                    expected_provider_params = {
+                      deployment_model: deployment_plan.model,
+                      instance_group_name: instance_group_spec['name'],
+                      name: 'job-name1',
+                      type: 'job',
+                    }
+
+                    expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+
+                    expected_provider_intent_params = {
+                      link_provider: provider,
+                      link_original_name: 'link_1_name',
+                      link_type: 'link_1_type'
+                    }
+                    expect(links_manager).to receive(:find_or_create_provider_intent).with(expected_provider_intent_params).and_return(provider_intent)
+
+                    expect(provider_intent).to receive(:name=).with('link_1_name_alias')
+                    expect(provider_intent).to receive(:metadata=).with({'mapped_properties' => {}}.to_json)
+                    expect(provider_intent).to receive(:consumable=).with(true)
+                    expect(provider_intent).to receive(:shared=).with(true)
+                    expect(provider_intent).to receive(:save)
+                    parsed_instance_group
+                  end
+                end
+
+                context 'when a job defines a nil provides section in the manifest' do
+                  before do
+                    instance_group_spec[keyword] = [
+                      {
+                        'name' => 'job-name1',
+                        'release' => 'release1',
+                        'provides' => {
+                          'link_1_name' => 'nil'
+                        }
+                      }
+                    ]
+                  end
+
+                  it 'should set the intent consumable to false' do
+                    expected_provider_params = {
+                      deployment_model: deployment_plan.model,
+                      instance_group_name: instance_group_spec['name'],
+                      name: 'job-name1',
+                      type: 'job',
+                    }
+                    expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+
+                    expected_provider_intent_params = {
+                      link_provider: provider,
+                      link_original_name: 'link_1_name',
+                      link_type: 'link_1_type'
+                    }
+                    expect(links_manager).to receive(:find_or_create_provider_intent).with(expected_provider_intent_params).and_return(provider_intent)
+
+                    expect(provider_intent).to receive(:name=).with('link_1_name')
+                    expect(provider_intent).to receive(:metadata=).with({'mapped_properties' => {}}.to_json)
+                    expect(provider_intent).to receive(:consumable=).with(false)
+                    expect(provider_intent).to receive(:shared=).with(false)
+                    expect(provider_intent).to receive(:save)
+                    parsed_instance_group
+                  end
+                end
+
+                context 'provider validation' do
+                  before do
+                    expect(links_manager).to receive(:find_or_create_provider)
+                    expect(links_manager).to_not receive(:find_or_create_provider_intent)
+                  end
+
+                  context 'when a manifest job explicitly defines name or type for a provider' do
+                    it 'should fail if there is a name' do
+                      instance_group_spec[keyword] = [
+                        {
+                          'name' => 'job-name1',
+                          'release' => 'release1',
+                          'provides' => {
+                            'link_1_name' => {
+                              'name' => 'better_link_1_name',
+                              'shared' => true,
+                            }
+                          }
+                        }
+                      ]
+
+                      expect {
+                        parsed_instance_group
+                      }.to raise_error(RuntimeError, "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'. Please provide these keys in the release only.")
+                    end
+
+                    it 'should fail if there is a type' do
+                      instance_group_spec[keyword] = [
+                        {
+                          'name' => 'job-name1',
+                          'release' => 'release1',
+                          'provides' => {
+                            'link_1_name' => {
+                              'type' => 'better_link_1_type',
+                              'shared' => true,
+                            }
+                          }
+                        }
+                      ]
+
+                      expect {
+                        parsed_instance_group
+                      }.to raise_error(RuntimeError, "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'. Please provide these keys in the release only.")
+                    end
+                  end
+
+                  context 'when the provides section is not a hash' do
+                    it "raise an error" do
+                      instance_group_spec[keyword] = [
+                        {
+                          'name' => 'job-name1',
+                          'release' => 'release1',
+                          'provides' => {
+                            'link_1_name' => ['invalid stuff']
+                          }
+                        }
+                      ]
+
+                      expect {
+                        parsed_instance_group
+                      }.to raise_error(RuntimeError, "Provider 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'")
+                    end
+
+                    context "when it is a string that is not 'nil'" do
+                      it "raise an error" do
+                        instance_group_spec[keyword] = [
+                          {
+                            'name' => 'job-name1',
+                            'release' => 'release1',
+                            'provides' => {
+                              'link_1_name' => 'invalid stuff'
+                            }
+                          }
+                        ]
+
+                        expect {
+                          parsed_instance_group
+                        }.to raise_error(RuntimeError, "Provider 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'")
+                      end
+                    end
+                  end
+                end
+
+                context 'when a manifest job defines a provider which is not specified in the release' do
+                  it 'should fail because it does not match the release' do
+                    instance_group_spec[keyword] = [
+                      {
+                        'name' => 'job-name1',
+                        'release' => 'release1',
+                        'provides' => {
+                          'new_link_name' => {
+                            'shared' => 'false',
+                          }
+                        }
+                      }
+                    ]
+
+                    expect(links_manager).to receive(:find_or_create_provider).and_return(provider)
+
+                    expect(links_manager).to receive(:find_or_create_provider_intent).and_return(provider_intent)
+
+                    expect(provider_intent).to receive(:name=).with('link_1_name')
+                    expect(provider_intent).to receive(:consumable=).with(true)
+                    expect(provider_intent).to receive(:metadata=).with({'mapped_properties' => {}}.to_json)
+                    expect(provider_intent).to receive(:shared=).with(false)
+                    expect(provider_intent).to receive(:save)
+                    expect {  parsed_instance_group }.to raise_error(RuntimeError, "Manifest defines unknown providers:\n  - Job 'job-name1' does not provide link 'new_link_name' in the release spec")
+                  end
+                end
+              end
+
+              context 'when the job does NOT define any provider in its release spec' do
+                before do
+                  release_model_1 = Models::Release.make(name: 'release1')
+                  release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
+                  release_1_spec = {'consumes' => [{name: 'link_1_name', type: 'link_1_type'}], 'properties' => {}}
+                  release_version_model_1.add_template(
+                    Models::Template.make(
+                      name: 'job-name1',
+                      release: release_model_1,
+                      spec: release_1_spec,
+                      )
+                  )
+
+                  rel_ver1 = instance_double(ReleaseVersion, name: 'release1', version: '1')
+                  allow(deployment_plan).to receive(:release)
+                                              .with('release1')
+                                              .and_return(rel_ver1)
+
+                  job1 = make_job('job1', rel_ver1)
+                  allow(job1).to receive(:add_properties)
+
+                  allow(rel_ver1).to receive(:get_or_create_template)
+                                       .with('job-name1')
+                                       .and_return(job1)
+
+                  allow(links_manager).to receive(:find_or_create_provider_intent).and_return(provider_intent)
+                end
+
+                context 'when the manifest specifies provided links for that job' do
+                  it 'raise an error' do
+                    instance_group_spec[keyword] = [
+                      {
+                        'name' => 'job-name1',
+                        'release' => 'release1',
+                        'provides' => {
+                          'link_1_name' => {
+                            'as' => 'my_link',
+                            'shared' => false,
+                          }
+                        }
+                      }
+                    ]
+
+                    expect(links_manager).to_not receive(:find_or_create_provider)
+                    expect(links_manager).to_not receive(:find_or_create_provider_intent)
+                    expect {
+                      parsed_instance_group
+                    }.to raise_error(RuntimeError, "Job 'job-name1' in instance group 'instance-group-name' specifies providers in the manifest but the job does not define any providers in the release spec")
+                  end
+                end
+              end
+
+              context 'when a job defines a consumer in its release spec' do
+
+                context 'when consumer is implicit (not specified in the deployment manifest)' do
+                  let(:release_1_spec) { {'consumes' => [{name: 'link_1_name', type: 'link_1_type'}]}}
+
+                  before do
+                    release_model_1 = Models::Release.make(name: 'release1')
+                    release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
+                    release_version_model_1.add_template(
+                      Models::Template.make(
+                        name: 'job-name1',
+                        release: release_model_1,
+                        spec: release_1_spec
+                      )
+                    )
+
+                    rel_ver1 = instance_double(ReleaseVersion, name: 'release1', version: '1')
+                    allow(deployment_plan).to receive(:release)
+                                                .with('release1')
+                                                .and_return(rel_ver1)
+
+                    job1 = make_job('job1', rel_ver1)
+                    allow(job1).to receive(:add_properties)
+
+                    allow(rel_ver1).to receive(:get_or_create_template)
+                                         .with('job-name1')
+                                         .and_return(job1)
+
+                    instance_group_spec[keyword] = [
+                      {
+                        'name' => 'job-name1',
+                        'release' => 'release1'
+                      },
+                    ]
+                  end
+
+
+                  it 'should add the consumer and consumer intent to the DB' do
+                    expected_consumer_params = {
+                      deployment_model: deployment_plan.model,
+                      instance_group_name: instance_group_spec['name'],
+                      name: 'job-name1',
+                      type: 'job',
+                    }
+
+                    expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+
+                    expected_consumer_intent_params = {
+                      link_consumer: consumer,
+                      link_original_name: 'link_1_name',
+                      link_type: 'link_1_type'
+                    }
+
+                    expect(links_manager).to receive(:find_or_create_consumer_intent).with(expected_consumer_intent_params).and_return(consumer_intent)
+
+                    expect(consumer_intent).to receive(:name=).with('link_1_name')
+                    expect(consumer_intent).to receive(:blocked=).with(false)
+                    expect(consumer_intent).to receive(:optional=).with(false)
+                    expect(consumer_intent).to receive(:metadata=).with({:explicit_link => false}.to_json)
+                    expect(consumer_intent).to receive(:save)
+                    parsed_instance_group
+                  end
+
+                  context 'when the release spec defines the link as optional' do
+                    let(:release_1_spec) { {'consumes' => [{name: 'link_1_name', type: 'link_1_type', optional: true}]}}
+
+                    it 'sets consumer intent optional field to true' do
+                      expect(links_manager).to receive(:find_or_create_consumer).and_return(consumer)
+                      expect(links_manager).to receive(:find_or_create_consumer_intent).and_return(consumer_intent)
+
+                      expect(consumer_intent).to receive(:metadata=).with({:explicit_link => false}.to_json)
+                      expect(consumer_intent).to receive(:name=).with('link_1_name')
+                      expect(consumer_intent).to receive(:blocked=).with(false)
+                      expect(consumer_intent).to receive(:optional=).with(true)
+                      expect(consumer_intent).to receive(:save)
+                      parsed_instance_group
+                    end
+                  end
+                end
+
+                context 'when consumer is explicit (specified in the deployment manifest)' do
+                  let(:release_1_spec) { {'consumes' => [{name: 'link_1_name', type: 'link_1_type'}]}}
+                  let(:consumer_options) { { 'from' => 'snoopy'} }
+                  let(:manifest_link_consumers) { {'link_1_name' => consumer_options} }
+
+                  before do
+                    release_model_1 = Models::Release.make(name: 'release1')
+                    release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
+                    release_version_model_1.add_template(
+                      Models::Template.make(
+                        name: 'job-name1',
+                        release: release_model_1,
+                        spec: release_1_spec
+                      )
+                    )
+
+                    rel_ver1 = instance_double(ReleaseVersion, name: 'release1', version: '1')
+                    allow(deployment_plan).to receive(:release)
+                                                .with('release1')
+                                                .and_return(rel_ver1)
+
+                    job1 = make_job('job1', rel_ver1)
+                    allow(job1).to receive(:add_properties)
+
+                    allow(rel_ver1).to receive(:get_or_create_template)
+                                         .with('job-name1')
+                                         .and_return(job1)
+
+                    instance_group_spec[keyword] = [
+                      {
+                        'name' => 'job-name1',
+                        'release' => 'release1',
+                        'consumes' => manifest_link_consumers
+                      },
+                    ]
+                  end
+
+                  it 'should add the consumer and consumer intent to the DB' do
+                    expected_consumer_params = {
+                      deployment_model: deployment_plan.model,
+                      instance_group_name: instance_group_spec['name'],
+                      name: 'job-name1',
+                      type: 'job',
+                    }
+
+                    expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+
+                    expected_consumer_intent_params = {
+                      link_consumer: consumer,
+                      link_original_name: 'link_1_name',
+                      link_type: 'link_1_type'
+                    }
+
+                    expect(links_manager).to receive(:find_or_create_consumer_intent).with(expected_consumer_intent_params).and_return(consumer_intent)
+
+                    expect(consumer_intent).to receive(:name=).with('snoopy')
+                    expect(consumer_intent).to receive(:blocked=).with(false)
+                    expect(consumer_intent).to receive(:metadata=).with({:explicit_link => true}.to_json)
+                    expect(consumer_intent).to receive(:optional=).with(false)
+                    expect(consumer_intent).to receive(:save)
+                    parsed_instance_group
+                  end
+
+                  context 'when the consumer is explicitly set to nil' do
+                    let(:consumer_options) { "nil" }
+
+                    before do
+                      allow(consumer_intent).to receive(:name=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:metadata=)
+                      allow(consumer_intent).to receive(:save)
+                    end
+
+                    it 'should set the consumer intent blocked' do
+                      expect(consumer_intent).to receive(:blocked=).with(true)
+
+                      parsed_instance_group
+                    end
+                  end
+
+                  #TODO LINKS: Move the it block out as the base case.
+                  context 'when the consumer does not have a from key' do
+                    let(:consumer_options) { {} }
+
+                    before do
+                      allow(consumer_intent).to receive(:blocked=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:metadata=)
+                      allow(consumer_intent).to receive(:save)
+                    end
+
+                    it 'should set the consumer intent name to original name' do
+                      expect(consumer_intent).to receive(:name=).with('link_1_name')
+
+                      parsed_instance_group
+                    end
+                  end
+
+                  context 'when the consumer specifies a specific network' do
+                    let(:consumer_options) { { 'network' => 'charlie'} }
+
+                    before do
+                      allow(consumer_intent).to receive(:name=)
+                      allow(consumer_intent).to receive(:blocked=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:save)
+                    end
+
+                    it 'will add specified network name to the metadata' do
+                      allow(consumer_intent).to receive(:metadata=).with({explicit_link: true, network: 'charlie'}.to_json)
+                      parsed_instance_group
+                    end
+                  end
+
+                  context 'when the consumer specifies to use ip addresses only' do
+                    let(:consumer_options) { { 'ip_addresses' => true} }
+
+                    before do
+                      allow(consumer_intent).to receive(:name=)
+                      allow(consumer_intent).to receive(:blocked=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:save)
+                    end
+
+                    it 'will set the ip_addresses flag in the metadata to true' do
+                      allow(consumer_intent).to receive(:metadata=).with({explicit_link: true, ip_addresses: true}.to_json)
+                      parsed_instance_group
+                    end
+                  end
+
+                  context 'when the consumer specifies to use a deployment' do
+                    let(:consumer_options) { { 'deployment' => 'some-other-deployment' } }
+
+                    before do
+                      allow(consumer_intent).to receive(:name=)
+                      allow(consumer_intent).to receive(:blocked=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:save)
+                    end
+
+                    context 'when the provider deployment exists' do
+                      before do
+                        Models::Deployment.make(name: 'some-other-deployment')
+                      end
+
+                      it 'will set the from_deployment flag in the metadata to the provider deployment name' do
+                        allow(consumer_intent).to receive(:metadata=).with({explicit_link: true, from_deployment: 'some-other-deployment'}.to_json)
+                        parsed_instance_group
+                      end
+                    end
+
+                    context 'when the provider deployment exists' do
+                      it 'raise an error' do
+                        expect {
+                          parsed_instance_group
+                        }.to raise_error "Link 'link_1_name' in job 'job-name1' from instance group 'instance-group-name' consumes from deployment 'some-other-deployment', but the deployment does not exist."
+                      end
+                    end
+                  end
+
+                  context 'when the consumer specifies the name key in the consumes section of the manifest' do
+                    let(:consumer_options) { { 'name' => 'i should not be here'} }
+
+                    before do
+                      allow(consumer_intent).to receive(:name=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:save)
+                      allow(consumer_intent).to receive(:metadata=)
+                    end
+
+                    it 'raise an error' do
+                      expect {parsed_instance_group}.to raise_error "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'. Please provide these keys in the release only."
+                    end
+                  end
+
+                  context 'when the consumer specifies the type key in the consumes section of the manifest' do
+                    let(:consumer_options) { { 'type' => 'i should not be here'} }
+
+                    before do
+                      allow(consumer_intent).to receive(:name=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:save)
+                      allow(consumer_intent).to receive(:metadata=)
+                    end
+
+                    it 'raise an error' do
+                      expect {parsed_instance_group}.to raise_error "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'. Please provide these keys in the release only."
+                    end
+                  end
+
+                  context 'when processing manual links' do
+                    let(:manual_provider) { instance_double(Bosh::Director::Models::Links::LinkProvider) }
+                    let(:manual_provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent) }
+                    let(:consumer_options) do
+                      {
+                        'instances' => 'instances definition',
+                        'properties' => 'property definitions',
+                        'address' => 'address definition'
+                      }
+                    end
+
+                    before do
+                      allow(deployment_model).to receive(:name).and_return('charlie')
+
+                      allow(consumer_intent).to receive(:name=)
+                      allow(consumer_intent).to receive(:blocked=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:metadata=)
+                      allow(consumer_intent).to receive(:save)
+
+                      allow(consumer_intent).to receive(:original_name).and_return('link_1_name')
+                      allow(consumer_intent).to receive(:type).and_return('link_1_type')
+
+                      allow(consumer).to receive(:deployment).and_return(deployment_model)
+                      allow(consumer).to receive(:instance_group).and_return('consumer_instance_group')
+                      allow(consumer).to receive(:name).and_return('consumer_name')
+
+                      allow(manual_provider_intent).to receive(:content=)
+                      allow(manual_provider_intent).to receive(:name=)
+                      expect(manual_provider_intent).to receive(:save)
+                    end
+
+                    it 'creates a manual provider in the database' do
+                      allow(links_manager).to receive(:find_or_create_provider_intent).and_return(manual_provider_intent)
+
+                      expect(links_manager).to receive(:find_or_create_provider).with(
+                        deployment_model: deployment_model,
+                        instance_group_name: 'consumer_instance_group',
+                        name: 'consumer_name',
+                        type: 'manual'
+                      ).and_return(manual_provider)
+
+                      parsed_instance_group
+                    end
+
+                    it 'creates a manual provider intent in the database' do
+                      allow(links_manager).to receive(:find_or_create_provider).and_return(manual_provider)
+
+                      expect(links_manager).to receive(:find_or_create_provider_intent).with(
+                        link_provider: manual_provider,
+                        link_original_name: 'link_1_name',
+                        link_type: 'link_1_type'
+                      ).and_return(manual_provider_intent)
+
+                      expected_content = {
+                        'instances' => 'instances definition',
+                        'properties' => 'property definitions',
+                        'address' => 'address definition',
+                        'deployment_name' => 'charlie'
+                      }
+
+                      expect(manual_provider_intent).to receive(:name=).with('link_1_name')
+                      expect(manual_provider_intent).to receive(:content=).with(expected_content.to_json)
+
+                      parsed_instance_group
+                    end
+
+                    context 'when the manual link has keys that are not whitelisted' do
+                      let(:consumer_options) do
+                        {
+                          'instances' => 'instances definition',
+                          'properties' => 'property definitions',
+                          'address' => 'address definition',
+                          'foo' => 'bar',
+                          'baz' => 'boo'
+                        }
+                      end
+
+                      it 'should only add whitelisted values' do
+                        allow(links_manager).to receive(:find_or_create_provider).and_return(manual_provider)
+
+                        expect(links_manager).to receive(:find_or_create_provider_intent).with(
+                          link_provider: manual_provider,
+                          link_original_name: 'link_1_name',
+                          link_type: 'link_1_type'
+                        ).and_return(manual_provider_intent)
+
+                        expected_content = {
+                          'instances' => 'instances definition',
+                          'properties' => 'property definitions',
+                          'address' => 'address definition',
+                          'deployment_name' => 'charlie'
+                        }
+
+                        expect(manual_provider_intent).to receive(:content=).with(expected_content.to_json)
+
+                        parsed_instance_group
+                      end
+                    end
+                  end
+
+                  context 'consumer validation' do
+                    context "when 'instances' and 'from' keywords are specified at the same time" do
+                      let(:consumer_options) { { 'from' => 'snoopy', 'instances' => ['1.2.3.4']} }
+
+                      it 'should raise an error' do
+                        expect{
+                          parsed_instance_group
+                        }.to raise_error(/Cannot specify both 'instances' and 'from' keys for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'./)
+                      end
+                    end
+
+                    context "when 'properties' and 'from' keywords are specified at the same time" do
+                      let(:consumer_options) { { 'from' => 'snoopy', 'properties' => {'meow' => 'cat'}} }
+
+                      it 'should raise an error' do
+                        expect{
+                          parsed_instance_group
+                        }.to raise_error(/Cannot specify both 'properties' and 'from' keys for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'./)
+                      end
+                    end
+
+                    context "when 'properties' is defined but 'instances' is not" do
+                      let(:consumer_options) { { 'properties' => 'snoopy'} }
+
+                      it 'should raise an error' do
+                        expect{
+                          parsed_instance_group
+                        }.to raise_error(/Cannot specify 'properties' without 'instances' for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'./)
+                      end
+                    end
+
+                    context "when 'ip_addresses' value is not a boolean" do
+                      let(:consumer_options) { { 'ip_addresses' => 'not a boolean'} }
+
+                      it 'should raise an error' do
+                        expect{
+                          parsed_instance_group
+                        }.to raise_error(/Cannot specify non boolean values for 'ip_addresses' field for link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name'./)
+                      end
+                    end
+
+                    context 'when the manifest specifies consumers that are not defined in the release spec' do
+                      before do
+                        allow(consumer_intent).to receive(:name=)
+                        allow(consumer_intent).to receive(:blocked=)
+                        allow(consumer_intent).to receive(:optional=)
+                        allow(consumer_intent).to receive(:metadata=)
+                        allow(consumer_intent).to receive(:save)
+
+                        manifest_link_consumers['first_undefined'] = {}
+                        manifest_link_consumers['second_undefined'] = {}
+                      end
+
+                      it 'should raise an error for each undefined consumer' do
+                        expected_error = [
+                          'Manifest defines unknown consumers:',
+                          " - Job 'job-name1' does not define consumer 'first_undefined' in the release spec",
+                          " - Job 'job-name1' does not define consumer 'second_undefined' in the release spec"
+                        ].join("\n")
+
+                        expect{
+                          parsed_instance_group
+                        }.to raise_error(expected_error)
+                      end
+                    end
+
+                    context 'when the manifest specifies consumers that are not hashes or "nil" string' do
+                      context 'consumer is an array' do
+                        let(:consumer_options) { ['Unaccepted type array'] }
+
+                        it 'should raise an error' do
+                          expect{
+                            parsed_instance_group
+                          }.to raise_error "Link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
+                        end
+                      end
+
+                      context 'consumer is a string that is not "nil"' do
+                        let(:consumer_options) { 'Unaccepted string value' }
+
+                        it 'should raise an error' do
+                          expect{
+                            parsed_instance_group
+                          }.to raise_error "Link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
+                        end
+                      end
+
+                      context 'consumer is empty or set to null' do
+                        let(:consumer_options) { nil }
+
+                        it 'should raise an error' do
+                          expect{
+                            parsed_instance_group
+                          }.to raise_error "Link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+
+              context 'when the job does NOT define any consumer in its release spec' do
+                before do
+                  release_model_1 = Models::Release.make(name: 'release1')
+                  release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
+                  release_1_spec = {'properties' => {}}
+                  release_version_model_1.add_template(
+                    Models::Template.make(
+                      name: 'job-name1',
+                      release: release_model_1,
+                      spec: release_1_spec,
+                      )
+                  )
+
+                  rel_ver1 = instance_double(ReleaseVersion, name: 'release1', version: '1')
+                  allow(deployment_plan).to receive(:release)
+                                              .with('release1')
+                                              .and_return(rel_ver1)
+
+                  job1 = make_job('job1', rel_ver1)
+                  allow(job1).to receive(:add_properties)
+
+                  allow(rel_ver1).to receive(:get_or_create_template)
+                                       .with('job-name1')
+                                       .and_return(job1)
+
+                  allow(links_manager).to receive(:find_or_create_provider_intent).and_return(provider_intent)
+                end
+
+                it 'should raise an error when the manifest has consumer specified' do
+                  instance_group_spec[keyword] = [
+                    {
+                      'name' => 'job-name1',
+                      'release' => 'release1',
+                      'consumes' => {
+                        'undefined_link_consumer' => {}
+                      }
+                    }
+                  ]
+
+                  expect {
+                    parsed_instance_group
+                  }.to raise_error("Job 'job-name1' in instance group 'instance-group-name' specifies consumers in the manifest but the job does not define any consumers in the release spec")
+                end
+              end
+
+              context 'when a job does NOT define any providers or consumers and it does not specify any in the manfest' do
+                before do
+                  release_model_1 = Models::Release.make(name: 'release1')
+                  release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
+                  release_1_spec = {'properties' => {}}
+                  release_version_model_1.add_template(
+                    Models::Template.make(
+                      name: 'job-name1',
+                      release: release_model_1,
+                      spec: release_1_spec,
+                      )
+                  )
+
+                  rel_ver1 = instance_double(ReleaseVersion, name: 'release1', version: '1')
+                  allow(deployment_plan).to receive(:release)
+                                              .with('release1')
+                                              .and_return(rel_ver1)
+
+                  job1 = make_job('job1', rel_ver1)
+                  allow(job1).to receive(:add_properties)
+
+                  allow(rel_ver1).to receive(:get_or_create_template)
+                                       .with('job-name1')
+                                       .and_return(job1)
+
+                  instance_group_spec[keyword] = [
+                    {
+                      'name' => 'job-name1',
+                      'release' => 'release1',
+                    }
+                  ]
+                end
+
+                it 'does not create any providers or consumers' do
+                  expect(links_manager).to_not receive(:find_or_create_provider)
+                  expect(links_manager).to_not receive(:find_or_create_consumer)
+                  expect(links_manager).to_not receive(:find_or_create_provider_intent)
+                  expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+                  parsed_instance_group
+                end
+              end
+            end
           end
 
           context 'when value is not an array' do
@@ -976,55 +1993,133 @@ module Bosh::Director
           let(:disk_type_large) { instance_double(DiskType) }
           let(:disk_collection) { instance_double(PersistentDiskCollection) }
 
-          it 'parses' do
-            instance_group_spec['persistent_disks'] = [{'name' => 'my-disk', 'type' => 'disk-type-small'},
-              {'name' => 'my-favourite-disk', 'type' => 'disk-type-large'}]
-            expect(deployment_plan).to receive(:disk_type)
-                                         .with('disk-type-small')
-                                         .and_return(disk_type_small)
-            expect(deployment_plan).to receive(:disk_type)
-                                         .with('disk-type-large')
-                                         .and_return(disk_type_large)
-            expect(disk_collection).to receive(:add_by_disk_name_and_type)
-                                         .with('my-favourite-disk', disk_type_large)
-            expect(disk_collection).to receive(:add_by_disk_name_and_type)
-                                         .with('my-disk', disk_type_small)
+          context 'when persistent disks are well formatted' do
+            before do
+              instance_group_spec['persistent_disks'] = [{'name' => 'my-disk', 'type' => 'disk-type-small'},
+                                                         {'name' => 'my-favourite-disk', 'type' => 'disk-type-large'}]
+              expect(deployment_plan).to receive(:disk_type)
+                                           .with('disk-type-small')
+                                           .and_return(disk_type_small)
+              expect(deployment_plan).to receive(:disk_type)
+                                           .with('disk-type-large')
+                                           .and_return(disk_type_large)
+              expect(disk_collection).to receive(:add_by_disk_name_and_type)
+                                           .with('my-favourite-disk', disk_type_large)
+              expect(disk_collection).to receive(:add_by_disk_name_and_type)
+                                           .with('my-disk', disk_type_small)
+            end
 
-            parsed_instance_group
+            it 'parses successfully' do
+              expect(provider_intent).to receive(:shared=).twice
+              expect(provider_intent).to receive(:name=).with('my-disk')
+              expect(provider_intent).to receive(:name=).with('my-favourite-disk')
+              expect(provider_intent).to receive(:content=).twice
+              expect(provider_intent).to receive(:save).twice
+              #  expect not to raise an error
+              parsed_instance_group
+            end
+
+            it 'adds a link provider for each persistent disk' do
+              expected_provider_params = {
+                deployment_model: deployment_plan.model,
+                instance_group_name: instance_group_spec['name'],
+                name: instance_group_spec['name'],
+                type: 'disk',
+              }
+
+              expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params)
+
+              expect(provider_intent).to receive(:shared=).twice
+              expect(provider_intent).to receive(:name=).with('my-disk')
+              expect(provider_intent).to receive(:name=).with('my-favourite-disk')
+              expect(provider_intent).to receive(:content=).twice
+              expect(provider_intent).to receive(:save).twice
+              parsed_instance_group
+            end
+
+            it 'adds a link provider intent for each persistent disk' do
+              local_link_provider = instance_double(Bosh::Director::Models::Links::LinkProvider)
+              disk_1_provider_intent = instance_double(Bosh::Director::Models::Links::LinkProviderIntent)
+              disk_2_provider_intent = instance_double(Bosh::Director::Models::Links::LinkProviderIntent)
+              disk_1_link = instance_double(Bosh::Director::DeploymentPlan::DiskLink)
+              disk_2_link = instance_double(Bosh::Director::DeploymentPlan::DiskLink)
+
+              expected_provider_params = {
+                deployment_model: deployment_plan.model,
+                instance_group_name: instance_group_spec['name'],
+                name: instance_group_spec['name'],
+                type: 'disk',
+              }
+              expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).twice.and_return(local_link_provider)
+
+              # Disk 1
+              expected_provider_intent_params = {
+                link_provider: local_link_provider,
+                link_original_name: 'my-disk',
+                link_type: 'disk',
+              }
+
+              expect(links_manager).to receive(:find_or_create_provider_intent).with(expected_provider_intent_params).and_return(disk_1_provider_intent)
+              expect(disk_1_provider_intent).to receive(:shared=).with(false)
+              expect(disk_1_provider_intent).to receive(:name=).with('my-disk')
+              expect(Bosh::Director::DeploymentPlan::DiskLink).to receive(:new).and_return(disk_1_link)
+              expect(disk_1_link).to receive(:spec).and_return({'hello'=> 'hello1'})
+              expect(disk_1_provider_intent).to receive(:content=).with({'hello'=> 'hello1'}.to_json)
+              expect(disk_1_provider_intent).to receive(:save)
+
+              # Disk 2
+              expected_provider_intent_params2 = {
+                link_provider: local_link_provider,
+                link_original_name: 'my-favourite-disk',
+                link_type: 'disk',
+              }
+
+              expect(links_manager).to receive(:find_or_create_provider_intent).with(expected_provider_intent_params2).and_return(disk_2_provider_intent)
+              expect(disk_2_provider_intent).to receive(:shared=).with(false)
+              expect(disk_2_provider_intent).to receive(:name=).with('my-favourite-disk')
+              expect(Bosh::Director::DeploymentPlan::DiskLink).to receive(:new).and_return(disk_2_link)
+              expect(disk_2_link).to receive(:spec).and_return({'hello'=> 'hello2'})
+              expect(disk_2_provider_intent).to receive(:content=).with({'hello'=> 'hello2'}.to_json)
+              expect(disk_2_provider_intent).to receive(:save)
+
+              parsed_instance_group
+            end
           end
 
-          it 'complains about empty names' do
-            instance_group_spec['persistent_disks'] = [{'name' => '', 'type' => 'disk-type-small'}]
-            expect {
-              parsed_instance_group
-            }.to raise_error InstanceGroupInvalidPersistentDisk,
-              "Instance group 'instance-group-name' persistent_disks's section contains a disk with no name"
-          end
+          context 'when persistent disks are NOT well formatted' do
+            it 'complains about empty names' do
+              instance_group_spec['persistent_disks'] = [{'name' => '', 'type' => 'disk-type-small'}]
+              expect {
+                parsed_instance_group
+              }.to raise_error InstanceGroupInvalidPersistentDisk,
+                               "Instance group 'instance-group-name' persistent_disks's section contains a disk with no name"
+            end
 
-          it 'complains about two disks with the same name' do
-            instance_group_spec['persistent_disks'] = [
-              {'name' => 'same', 'type' => 'disk-type-small'},
-              {'name' => 'same', 'type' => 'disk-type-small'}
-            ]
+            it 'complains about two disks with the same name' do
+              instance_group_spec['persistent_disks'] = [
+                {'name' => 'same', 'type' => 'disk-type-small'},
+                {'name' => 'same', 'type' => 'disk-type-small'}
+              ]
 
-            expect {
-              parsed_instance_group
-            }.to raise_error InstanceGroupInvalidPersistentDisk,
-              "Instance group 'instance-group-name' persistent_disks's section contains duplicate names"
-          end
+              expect {
+                parsed_instance_group
+              }.to raise_error InstanceGroupInvalidPersistentDisk,
+                               "Instance group 'instance-group-name' persistent_disks's section contains duplicate names"
+            end
 
-          it 'complains about unknown disk type' do
-            instance_group_spec['persistent_disks'] = [{'name' => 'disk-name-0', 'type' => 'disk-type-small'}]
-            expect(deployment_plan).to receive(:disk_type)
-                                         .with('disk-type-small')
-                                         .and_return(nil)
+            it 'complains about unknown disk type' do
+              instance_group_spec['persistent_disks'] = [{'name' => 'disk-name-0', 'type' => 'disk-type-small'}]
+              expect(deployment_plan).to receive(:disk_type)
+                                           .with('disk-type-small')
+                                           .and_return(nil)
 
-            expect {
-              parsed_instance_group
-            }.to raise_error(
-              InstanceGroupUnknownDiskType,
-              "Instance group 'instance-group-name' persistent_disks's section references an unknown disk type 'disk-type-small'"
-            )
+              expect {
+                parsed_instance_group
+              }.to raise_error(
+                     InstanceGroupUnknownDiskType,
+                     "Instance group 'instance-group-name' persistent_disks's section references an unknown disk type 'disk-type-small'"
+                   )
+            end
           end
         end
 

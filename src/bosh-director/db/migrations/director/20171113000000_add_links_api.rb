@@ -3,9 +3,13 @@ Sequel.migration do
     create_table :link_providers do
       primary_key :id
       foreign_key :deployment_id, :deployments, :null => false, :on_delete => :cascade
+      String :instance_group, :null => false
       String :name, :null => false
       String :type, :null => false
-      String :instance_group, :null => false
+    end
+
+    alter_table(:link_providers) do
+      add_index [:deployment_id, :instance_group, :name, :type], unique: true
     end
 
     create_table :link_provider_intents do
@@ -20,12 +24,20 @@ Sequel.migration do
       String :metadata #mapped properties
     end
 
+    alter_table(:link_provider_intents) do
+      add_index [:link_provider_id, :original_name], unique: true
+    end
+
     create_table :link_consumers do
       primary_key :id
       foreign_key :deployment_id, :deployments, :on_delete => :cascade
       String :instance_group
       String :name, :null => false
       String :type, :null => false
+    end
+
+    alter_table(:link_consumers) do
+      add_index [:deployment_id, :instance_group, :name], unique: true
     end
 
     create_table :link_consumer_intents do
@@ -39,6 +51,10 @@ Sequel.migration do
       String :metadata # put extra json object that has some flags, ip addresses true or false, network, from_deployment or any other potential thing
     end
 
+    alter_table(:link_consumer_intents) do
+      add_index [:link_consumer_id, :original_name], unique: true
+    end
+
     create_table :links do
       primary_key :id
       foreign_key :link_provider_intent_id, :on_delete => :set_null
@@ -48,11 +64,20 @@ Sequel.migration do
       Time :created_at
     end
 
+    # alter_table(:links) do
+    #   add_index [:link_provider_intent_id, :link_consumer_intent_id], unique: true
+    # end
+
     create_table :instances_links do
       foreign_key :link_id, :links, :on_delete => :cascade, :null => false
       foreign_key :instance_id, :instances, :on_delete => :cascade, :null => false
       unique [:instance_id, :link_id]
     end
+
+    alter_table(:instances_links) do
+      add_index [:link_id, :instance_id], unique: true
+    end
+
 
     if [:mysql, :mysql2].include? adapter_scheme
       set_column_type :link_provider_intents, :content, 'longtext'

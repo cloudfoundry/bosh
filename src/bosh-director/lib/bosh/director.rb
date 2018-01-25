@@ -139,6 +139,7 @@ require 'bosh/director/config_server/variables_interpolator'
 require 'bosh/director/config_server/config_server_helper'
 
 require 'bosh/director/links/links_manager'
+require 'bosh/director/links/links_manager_factory'
 
 require 'bosh/director/disk/persistent_disk_comparators'
 

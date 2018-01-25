@@ -458,30 +458,6 @@ module Bosh::Director
             expect(subject.team_names).to match_array(["team_1", "team_3"])
           end
         end
-
-        context 'links' do
-          describe '#add_link_providers' do
-            let(:link_provider) {instance_double(Models::Links::LinkProvider)}
-            before do
-              subject.add_link_provider link_provider
-            end
-            it 'adds link provider to list of providers' do
-              expect(subject.link_providers.count).to eq(1)
-              expect(subject.link_providers[0]).to eq(link_provider)
-            end
-          end
-
-          describe '#add_link_consumers' do
-            let(:link_consumer) {instance_double(Models::Links::LinkConsumer)}
-            before do
-              subject.add_link_consumer link_consumer
-            end
-            it 'adds link consumer to list of consumers' do
-              expect(subject.link_consumers.count).to eq(1)
-              expect(subject.link_consumers[0]).to eq(link_consumer)
-            end
-          end
-        end
       end
     end
   end

@@ -159,7 +159,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     deployment_model = Bosh::Director::Models::Deployment.make(
       name: 'other-deployment',
       manifest: deployment_manifest.to_json,
-      link_spec_json: '{"mysql":{"mysql-template":{"db":{"db":{}}}}}'
+      # link_spec_json: '{"mysql":{"mysql-template":{"db":{"db":{}}}}}'
     )
     Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
     version.add_deployment(deployment_model)
@@ -169,48 +169,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   let(:template_provides_links) {[{name: "db", type: "db", shared: true, properties: ['mysql']}]}
 
   describe '#resolve' do
-    context 'when job consumes link from the same deployment' do
-      context 'when link source is provided by some job' do
-        let(:links) {{'db' => {"from" => 'db'}}}
-
-        it 'adds link to job' do
-          links_resolver.resolve(api_server_instance_group)
-          instance1 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 0).first
-          instance2 = Bosh::Director::Models::Instance.where(job: 'mysql', index: 1).first
-
-          spec = {
-            'deployment_name' => api_server_instance_group.deployment_name,
-            'domain' => 'bosh',
-            'default_network' => 'fake-manual-network',
-            'instance_group' => 'mysql',
-            "networks" => ["fake-manual-network", "fake-dynamic-network"],
-            "properties" => {"mysql" => nil},
-            "instances" => [
-              {
-                'name' => 'mysql',
-                "index" => 0,
-                "bootstrap" => true,
-                "id" => instance1.uuid,
-                "az" => nil,
-                "address" => "127.0.0.3",
-              },
-              {
-                'name' => 'mysql',
-                "index" => 1,
-                "bootstrap" => false,
-                "id" => instance2.uuid,
-                "az" => nil,
-                "address" => "127.0.0.4",
-              }
-            ]
-          }
-
-          links_hash = {"api-server-template" => {"db" => spec}}
-          expect(api_server_instance_group.resolved_links).to eq(links_hash)
-        end
-      end
-    end
-
     context 'when job consumes link from another deployment' do
       let(:link_spec) {
         {
@@ -251,7 +209,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
       context 'when another deployment has link source' do
         before do
-          Bosh::Director::Models::Deployment.where(name: 'other-deployment').first.update(link_spec: link_spec)
+          # Bosh::Director::Models::Deployment.where(name: 'other-deployment').first.update(link_spec: link_spec)
 
           provider = Bosh::Director::Models::Links::LinkProvider.create(
             deployment: Bosh::Director::Models::Deployment.find(name: 'other-deployment'),
@@ -390,7 +348,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           it 'fails' do
             expect {
               links_resolver.resolve(api_server_instance_group)
-            }.to raise_error Bosh::Director::DeploymentInvalidLink, "Cannot resolve link path 'other-deployment.mysql.mysql-template.db' required for link 'db' in instance group 'api-server' on job 'api-server-template'"
+            }.to raise_error Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'db' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'. Please make sure the link was provided and shared."
           end
         end
       end
@@ -399,14 +357,11 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         let(:links) {{'db' => {"from" => 'bad_alias', 'deployment' => 'other-deployment'}}}
 
         it 'fails' do
-          expected_error_msg = <<-EXPECTED.strip
-Unable to process links for deployment. Errors are:
-  - Can't resolve link 'bad_alias' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'. Please make sure the link was provided and shared.
-          EXPECTED
+          expected_error_msg = "Can't resolve link 'bad_alias' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'. Please make sure the link was provided and shared."
 
           expect {
             links_resolver.resolve(api_server_instance_group)
-          }.to raise_error(expected_error_msg)
+          }.to raise_error(Bosh::Director::DeploymentInvalidLink, expected_error_msg)
         end
       end
 
@@ -415,8 +370,7 @@ Unable to process links for deployment. Errors are:
 
         it 'fails' do
           expected_error_msg = <<-EXPECTED.strip
-Unable to process links for deployment. Errors are:
-  - Can't find deployment non-existent
+Deployment non-existent not found for consumed link db
           EXPECTED
 
           expect {
@@ -435,9 +389,7 @@ Unable to process links for deployment. Errors are:
       it 'fails to find link' do
         expect {
           links_resolver.resolve(api_server_instance_group)
-        }.to raise_error Bosh::Director::DeploymentInvalidLink,
-                         "Cannot resolve link path 'fake-deployment.mysql.mysql-template.db' " +
-                           "required for link 'db' in instance group 'api-server' on job 'api-server-template'"
+        }.to raise_error Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'db' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'."
       end
     end
 
@@ -453,39 +405,21 @@ Unable to process links for deployment. Errors are:
       end
     end
 
-    context 'when links source is not provided' do
-      let(:links) {{'db' => {"from" => 'db', 'deployment' => 'non-existant'}}}
-
-      it 'fails' do
-        expected_error_msg = <<-EXPECTED.strip
-Unable to process links for deployment. Errors are:
-  - Can't find deployment non-existant
-        EXPECTED
-
-        expect {
-          links_resolver.resolve(api_server_instance_group)
-        }.to raise_error(expected_error_msg)
-      end
-    end
-
     context 'when required link is not specified in manifest' do
       let(:links) {{'other' => {"from" => 'c'}}}
       let(:template_consumes_links) {[{'name' => 'other', 'type' => 'db'}]}
 
       it 'fails' do
-        expected_error_msg = <<-EXPECTED.strip
-Unable to process links for deployment. Errors are:
-  - Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'.
-        EXPECTED
+        expected_error_msg = "Can't resolve link 'c' in instance group 'api-server' on job 'api-server-template' in deployment 'fake-deployment'."
 
         expect {
           links_resolver.resolve(api_server_instance_group)
-        }.to raise_error(expected_error_msg)
+        }.to raise_error(Bosh::Director::DeploymentInvalidLink, expected_error_msg)
       end
     end
 
     context 'when link specified in manifest is not required' do
-
+      # TODO LINKS: Move to instance_group_spec_parser_spec.
       let(:links) {{'db' => {"from" => 'db'}}}
 
       let(:template_consumes_links) {[]}
@@ -494,9 +428,7 @@ Unable to process links for deployment. Errors are:
       it 'raises unused link error' do
         expect {
           links_resolver.resolve(api_server_instance_group)
-        }.to raise_error Bosh::Director::UnusedProvidedLink,
-                         "Job 'api-server-template' in instance group 'api-server' specifies link 'db', " +
-                           "but the release job does not consume it."
+        }.to raise_error "Job 'api-server-template' does not define link 'db' in the release spec"
       end
     end
 

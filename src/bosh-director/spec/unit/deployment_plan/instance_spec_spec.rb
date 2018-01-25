@@ -4,6 +4,17 @@ module Bosh::Director::DeploymentPlan
   describe InstanceSpec do
     include Support::StemcellHelpers
     subject(:instance_spec) { described_class.create_from_instance_plan(instance_plan) }
+    let(:links_manager_factory) do
+      instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
+        expect(double).to receive(:create_manager).and_return(links_manager)
+      end
+    end
+
+    let(:links_manager) do
+      instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+        allow(double).to receive(:get_links_from_deployment).and_return([])
+      end
+    end
     let(:job_spec) { { 'name' => 'smurf-job', 'release' => 'release', 'templates' => [] } }
     let(:packages) { { 'pkg' => { 'name' => 'package', 'version' => '1.0' } } }
     let(:properties) { { 'key' => 'value' } }
@@ -87,6 +98,8 @@ module Bosh::Director::DeploymentPlan
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
     before do
+      allow(Bosh::Director::Links::LinksManagerFactory).to receive(:create).and_return(links_manager_factory)
+
       persistent_disk_collection.add_by_disk_size(0)
 
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, network)

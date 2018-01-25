@@ -67,8 +67,7 @@ module Bosh::Director
       attr_reader :cloud_configs
       attr_reader :runtime_configs
 
-      attr_reader :link_providers
-      attr_reader :link_consumers
+      attr_reader :links_manager
 
       def initialize(attrs, uninterpolated_manifest_hash, raw_manifest_text, cloud_configs, runtime_configs, deployment_model, options = {})
         @name = attrs.fetch(:name)
@@ -99,11 +98,12 @@ module Bosh::Director
         @features = DeploymentFeatures.new
 
         @addons = []
+        @logger = Config.logger
 
         @link_providers = []
         @link_consumers = []
+        @links_manager = Bosh::Director::Links::LinksManager.new(@logger)
 
-        @logger = Config.logger
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
         @vm_resources_cache = VmResourcesCache.new(CloudFactory.create_with_latest_configs(@model), @logger)
       end
