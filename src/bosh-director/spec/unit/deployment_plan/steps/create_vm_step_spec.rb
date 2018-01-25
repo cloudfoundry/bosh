@@ -6,7 +6,7 @@ module Bosh
     module DeploymentPlan
       module Steps
         describe CreateVmStep do
-          subject { CreateVmStep.new(instance_plan, agent_broadcaster, vm_deleter, disks, tags, use_existing )}
+          subject { CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing )}
           let(:use_existing) { false }
           let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
           let(:agent_client) do
@@ -18,7 +18,11 @@ module Bosh
               get_state: nil
             )
           end
-          let(:vm_deleter) { VmDeleter.new(logger, false, false) }
+          let(:vm_deleter) do
+            vm_deleter = VmDeleter.new(logger, false, false)
+            allow(VmDeleter).to receive(:new).and_return(vm_deleter)
+            vm_deleter
+          end
           let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
           let(:cloud_factory) { instance_double(CloudFactory) }
           let(:cloud) { instance_double('Bosh::Cloud') }

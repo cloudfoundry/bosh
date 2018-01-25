@@ -4,7 +4,7 @@ require 'timecop'
 module Bosh
   module Director
     describe VmCreator do
-      subject(:vm_creator) { VmCreator.new(logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster) }
+      subject(:vm_creator) { VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster) }
 
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
@@ -14,7 +14,7 @@ module Bosh
         BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
       end
       let(:dns_encoder) { instance_double(DnsEncoder) }
-      let(:ip_provider) { nil }
+      let(:ip_provider) { double(:ip_provider) }
 
       let(:instance) do
         instance_double(DeploymentPlan::Instance, model: instance_model, vm_created?: false, strategy: strategy)
@@ -100,7 +100,6 @@ module Bosh
           .with(
             instance_plan,
             agent_broadcaster,
-            vm_deleter,
             ['fake-disk-cid'],
             tags,
             false,
@@ -134,7 +133,7 @@ module Bosh
           expect(spec_apply_step).to receive(:perform).with(report).ordered
           expect(render_step).to receive(:perform).with(report).ordered
 
-          vm_creator.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+          vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
         end
 
         it 're-renders job templates after applying spec' do
@@ -142,7 +141,7 @@ module Bosh
           expect(spec_apply_step).to receive(:perform).with(report).ordered
           expect(render_step).to receive(:perform).with(report)
 
-          vm_creator.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+          vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
         end
 
         context 'when instance already has associated active_vm' do
@@ -152,7 +151,7 @@ module Bosh
             expect(create_vm_step).to receive(:perform).with(report)
             expect(elect_active_vm_step).not_to receive(:perform)
 
-            vm_creator.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+            vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
           end
         end
 
@@ -166,7 +165,7 @@ module Bosh
             expect(attach_instance_disks_step).not_to receive(:perform)
             expect(mount_instance_disks_step).not_to receive(:perform)
 
-            vm_creator.create_for_instance_plan(instance_plan, ['fake-disk-cid'], tags)
+            vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
           end
         end
       end

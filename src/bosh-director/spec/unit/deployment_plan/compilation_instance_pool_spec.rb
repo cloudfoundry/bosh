@@ -32,7 +32,7 @@ module Bosh::Director
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:dns_encoder) { DnsEncoder.new }
-    let(:vm_creator) { VmCreator.new(Config.logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster) }
+    let(:vm_creator) { VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:compilation_config) do
       compilation_spec = {
@@ -323,7 +323,29 @@ module Bosh::Director
         let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
 
         before do
-          allow(vm_creator).to receive(:create_for_instance_plan)
+          expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan, ipp, disks, tags, use_existing|
+              expect(instance_plan.network_settings_hash).to eq({"a"=>{"a"=>{"property"=>"settings"}}})
+              expect(instance_plan.instance.cloud_properties).to eq({"cloud"=>"properties"})
+              expect(instance_plan.instance.env).to eq({
+                "compilation"=>"environment",
+                "bosh"=>
+                  { "group"=>"fake-director-name-mycloud-compilation-deadbeef",
+                    "groups"=>[
+                      "fake-director-name",
+                      "mycloud",
+                      "compilation-deadbeef",
+                      "fake-director-name-mycloud",
+                      "mycloud-compilation-deadbeef",
+                      "fake-director-name-mycloud-compilation-deadbeef"
+                    ]
+                  }
+              })
+              expect(ipp).to eq(ip_provider)
+              expect(disks).to eq([])
+              expect(tags).to eq({"tag1"=>"value1"})
+              expect(use_existing).to eq(nil)
+          end
+
           allow(VmCreator).to receive(:new).with(logger, vm_deleter, template_blob_cache, agent_broadcaster).and_return(vm_creator)
         end
 
@@ -461,7 +483,7 @@ module Bosh::Director
         allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
         allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, vm_deleter, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
+        allow(VmCreator).to receive(:new).with(logger, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
         allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
         allow(DeploymentPlan::InstanceProvider).to receive(:new).with(deployment_plan, vm_creator, logger).and_return(instance_provider)
         allow(Config).to receive(:logger).and_return(logger)

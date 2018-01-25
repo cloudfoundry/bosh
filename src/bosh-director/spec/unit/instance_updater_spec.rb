@@ -310,8 +310,13 @@ module Bosh::Director
             expect(delete_step).to receive(:perform) do |report|
               expect(report.vm).to eql(instance_model.active_vm)
             end
-            expect(vm_creator).to receive(:create_for_instance_plan)
-              .with(instance_plan, [persistent_disk_model.disk_cid], tags)
+            expect(vm_creator).to receive(:create_for_instance_plan) do |i, ipp, disks, tags, use_existing|
+              expect(instance_plan).to eq(i)
+              expect(ipp).to eq(ip_provider)
+              expect(disks).to eq([persistent_disk_model.disk_cid])
+              expect(tags).to eq(tags)
+              expect(use_existing).to eq(nil)
+           end
 
             expect(state_applier).to receive(:apply)
             expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice

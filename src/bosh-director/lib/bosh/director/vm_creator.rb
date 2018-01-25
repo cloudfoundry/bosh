@@ -6,9 +6,8 @@ module Bosh::Director
   class VmCreator
     include PasswordHelper
 
-    def initialize(logger, vm_deleter, template_blob_cache, dns_encoder, agent_broadcaster)
+    def initialize(logger, template_blob_cache, dns_encoder, agent_broadcaster)
       @logger = logger
-      @vm_deleter = vm_deleter
       @template_blob_cache = template_blob_cache
       @dns_encoder = dns_encoder
       @agent_broadcaster = agent_broadcaster
@@ -30,8 +29,8 @@ module Bosh::Director
       StepExecutor.new('Creating missing vms', agendas).run
     end
 
-    def create_for_instance_plan(instance_plan, disks, tags, use_existing = false)
-      agenda = get_agenda_for_instance_plan(instance_plan, disks, tags, nil, 1, use_existing)
+    def create_for_instance_plan(instance_plan, ip_provider, disks, tags, use_existing = false)
+      agenda = get_agenda_for_instance_plan(instance_plan, disks, tags, ip_provider, 1, use_existing)
 
       StepExecutor.new('Creating VM', [agenda], track: false).run
     end
@@ -58,7 +57,6 @@ module Bosh::Director
         DeploymentPlan::Steps::CreateVmStep.new(
           instance_plan,
           @agent_broadcaster,
-          @vm_deleter,
           disks,
           tags,
           use_existing,

@@ -34,7 +34,7 @@ module Bosh::Director
           template_blob_cache = @deployment_plan.template_blob_cache
           agent_broadcaster = AgentBroadcaster.new
           vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-          @vm_creator = Bosh::Director::VmCreator.new(@logger, vm_deleter, template_blob_cache, @dns_encoder, agent_broadcaster)
+          @vm_creator = Bosh::Director::VmCreator.new(@logger, template_blob_cache, @dns_encoder, agent_broadcaster)
         end
 
         def setup_stage

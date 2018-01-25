@@ -4,14 +4,14 @@ module Bosh::Director
       class CreateVmStep
         include PasswordHelper
 
-        def initialize(instance_plan, agent_broadcaster, vm_deleter, disks, tags = {}, use_existing = false)
+        def initialize(instance_plan, agent_broadcaster, disks, tags = {}, use_existing = false)
           @instance_plan = instance_plan
           @agent_broadcaster = agent_broadcaster
-          @vm_deleter = vm_deleter
           @disks = disks
           @use_existing = use_existing
           @tags = tags
           @logger = Config.logger
+          @vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
         end
 
         def perform(report)

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemHandlers::MissingVM do
-    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false) }
+    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, ip_provider: double(:ip_provider)) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }

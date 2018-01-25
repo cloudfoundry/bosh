@@ -9,7 +9,7 @@ module Bosh::Director
         powerdns_manager = PowerDnsManagerProvider.create
         vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
         dns_encoder = LocalDnsEncoderManager.create_dns_encoder(deployment_plan.use_short_dns_addresses?)
-        vm_creator = Bosh::Director::VmCreator.new(logger, vm_deleter, deployment_plan.template_blob_cache, dns_encoder, agent_broadcaster)
+        vm_creator = Bosh::Director::VmCreator.new(logger, deployment_plan.template_blob_cache, dns_encoder, agent_broadcaster)
         instance_deleter = Bosh::Director::InstanceDeleter.new(deployment_plan.ip_provider, powerdns_manager, disk_manager)
         instance_provider = InstanceProvider.new(deployment_plan, vm_creator, logger)
 
@@ -169,7 +169,7 @@ module Bosh::Director
         instance_model = instance_plan.instance.model
         parent_id = add_event(instance_model.deployment.name, instance_model.name)
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
-        @vm_creator.create_for_instance_plan(instance_plan, [], instance_plan.tags)
+        @vm_creator.create_for_instance_plan(instance_plan, @deployment_plan.ip_provider, [], instance_plan.tags)
         instance_plan.instance
       rescue Exception => e
         raise e
