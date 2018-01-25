@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source /var/vcap/jobs/director/env
+
+export BOSH_DIRECTOR_LOG_FILE=/var/vcap/sys/log/director/console.log
+
+exec /var/vcap/packages/director/bin/bosh-director-console \
+  -c /var/vcap/jobs/director/config/director.yml

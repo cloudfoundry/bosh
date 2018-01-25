@@ -20,6 +20,17 @@ bosh$ cd src/bosh-director
 bosh/src/bosh-director$ bundle exec rspec
 ```
 
+For components like BOSH's director you can specify the database connection via environment variables. If none are given, `sqlite` will be used.
+
+- `DB`: Pick between `postgresql`, `sqlite` and `mysql`.
+- `DB_HOST`: Default is `127.0.0.1`.
+- `DB_USER`: Default is `root` for MySQL and `postgres` for PostgreSQL.
+- `DB_PASSWORD`: Default is `password` for MySQL and none for PostgreSQL.
+
+```
+bosh/src$ DB=mysql bundle exec rake spec:unit:director
+```
+
 To run unit tests for all components, use the `spec:unit` rake task from the project root:
 
 ```
@@ -33,7 +44,6 @@ You can also use a [Concourse CI](https://concourse.ci/) instance with the rake 
 ```
 bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
 ```
-
 
 ### Integration Tests
 

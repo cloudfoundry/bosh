@@ -29,29 +29,44 @@ module Bosh::Director
         end
       end
 
-      let(:db) { Bosh::Director::Config.db }
-
       before do
-        @success = false
-        @tries = 0
-
         def execute(error_message)
-          @tries += 1
-          raise Sequel::DatabaseError, error_message if @tries < 3
+          success = false
+          tries = 0
 
-          @success = true
+          allow(fake_db).to receive(:transaction) do
+            tries += 1
+            raise Sequel::DatabaseError, error_message if tries < 3
+
+            success = true
+          end
         end
+      end
+
+      it 'passes the retry count and exception' do
+        retries = []
+        allow(fake_db).to receive(:transaction).and_yield
+        expect do
+          transactor.retryable_transaction(fake_db) do |retry_count|
+            retries.push retry_count
+            raise Sequel::DatabaseError, 'Mysql2::Error: Deadlock found when trying to get lock' if retries.length < 3
+          end
+        end.to_not raise_error
+
+        expect(retries).to eq([1, 2, 3])
       end
 
       context 'when a deadlock error is raised from MySql' do
         it 'retries the transaction on deadlock' do
-          expect { transactor.retryable_transaction(db) { execute('Mysql2::Error: Deadlock found when trying to get lock') } }.to_not raise_error
+          execute('Mysql2::Error: Deadlock found when trying to get lock')
+          expect { transactor.retryable_transaction(fake_db)}.to_not raise_error
         end
       end
 
       context 'when a non deadlock mysql error is raised' do
         it 'retries the transaction on deadlock' do
-          expect { transactor.retryable_transaction(db) { execute('fail to insert') } }.to raise_error
+          execute('fail to insert')
+          expect { transactor.retryable_transaction(fake_db)}.to raise_error
         end
       end
     end

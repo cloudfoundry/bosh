@@ -224,6 +224,7 @@ require 'bosh/director/api/controllers/releases_controller'
 require 'bosh/director/api/controllers/resources_controller'
 require 'bosh/director/api/controllers/resurrection_controller'
 require 'bosh/director/api/controllers/stemcells_controller'
+require 'bosh/director/api/controllers/stemcell_matches_controller'
 require 'bosh/director/api/controllers/tasks_controller'
 require 'bosh/director/api/controllers/task_controller'
 require 'bosh/director/api/controllers/configs_controller'
@@ -238,6 +239,8 @@ require 'bosh/director/api/controllers/link_providers_controller'
 require 'bosh/director/api/controllers/link_consumers_controller'
 require 'bosh/director/api/controllers/links_controller'
 require 'bosh/director/api/route_configuration'
+
+require 'bosh/director/step_executor'
 
 require 'common/common'
 

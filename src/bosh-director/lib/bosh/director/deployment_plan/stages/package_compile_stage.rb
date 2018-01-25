@@ -79,7 +79,7 @@ module Bosh::Director
               task_result = nil
 
               prepare_vm(stemcell) do |instance|
-                metadata_updater.update_vm_metadata(instance.model, :compiling => package.name)
+                metadata_updater.update_vm_metadata(instance.model, instance.model.active_vm, :compiling => package.name)
                 agent_task =
                   instance.agent_client.compile_package(
                     package.blobstore_id,

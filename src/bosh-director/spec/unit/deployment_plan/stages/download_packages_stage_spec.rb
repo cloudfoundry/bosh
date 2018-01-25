@@ -52,9 +52,9 @@ module Bosh::Director
 
         describe '#perform' do
           it 'calls prepare for all agents with instances in deployment_plan that are newly created or hotswap' do
-            expect(swap_prepare_step).to receive :perform
-            expect(instance0_prepare_step).to receive :perform
-            expect(instance1_prepare_step).to receive :perform
+            expect(swap_prepare_step).to receive(:perform).with(an_instance_of(Report))
+            expect(instance0_prepare_step).to receive(:perform).with(an_instance_of(Report))
+            expect(instance1_prepare_step).to receive(:perform).with(an_instance_of(Report))
 
             subject.perform
           end

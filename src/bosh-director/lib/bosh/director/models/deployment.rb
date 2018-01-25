@@ -52,28 +52,28 @@ module Bosh::Director::Models
     end
 
     def cloud_configs=(cloud_configs)
-      Bosh::Director::Transactor.new.retryable_transaction(Deployment.db) do
-        self.remove_all_cloud_configs
+      with_raise_first_failure do
+        remove_all_cloud_configs
         (cloud_configs || []).each do |cc|
-          self.add_cloud_config(cc)
+          add_cloud_config(cc)
         end
       end
     end
 
     def runtime_configs=(runtime_configs)
-      Bosh::Director::Transactor.new.retryable_transaction(Deployment.db) do
-        self.remove_all_runtime_configs
+      with_raise_first_failure do
+        remove_all_runtime_configs
         (runtime_configs || []).each do |rc|
-          self.add_runtime_config(rc)
+          add_runtime_config(rc)
         end
       end
     end
 
     def teams=(teams)
-      Bosh::Director::Transactor.new.retryable_transaction(Deployment.db) do
-        self.remove_all_teams
+      with_raise_first_failure do
+        remove_all_teams
         (teams || []).each do |t|
-          self.add_team(t)
+          add_team(t)
         end
       end
     end
@@ -98,6 +98,20 @@ module Bosh::Director::Models
 
     def cleanup_variable_sets(variable_sets_to_keep)
       variable_sets_dataset.exclude(:id => variable_sets_to_keep.map(&:id)).delete
+    end
+
+    private
+
+    def with_raise_first_failure
+      first_exception = nil
+
+      Bosh::Director::Transactor.new.retryable_transaction(db) do |_, exception|
+        first_exception = exception if first_exception.nil? && exception
+
+        yield
+      end
+    rescue Exception => exception
+      raise first_exception || exception
     end
   end
 

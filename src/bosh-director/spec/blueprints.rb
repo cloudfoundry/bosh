@@ -77,6 +77,11 @@ module Bosh::Director::Models
     cid       { Sham.stemcell_cid }
   end
 
+  StemcellMatch.blueprint do
+    name      { Sham.name }
+    version   { Sham.version }
+  end
+
   CompiledPackage.blueprint do
     package           { Package.make }
     build             { Sham.build }
@@ -201,7 +206,7 @@ module Bosh::Director::Models
   Config.blueprint(:cpi_with_manifest) do
     type { 'cpi' }
     name { 'default' }
-    content { YAML.dump(Bosh::Spec::NewDeployments.simple_cpi_config) }
+    content { YAML.dump(Bosh::Spec::NewDeployments.multi_cpi_config) }
   end
 
   DeploymentProperty.blueprint do
@@ -259,6 +264,7 @@ module Bosh::Director::Models
   Variable.blueprint {}
 
   Vm.blueprint do
+    instance { Instance.make }
     cid      { Sham.vm_cid }
     agent_id { Sham.agent_id }
     created_at { Time.now }

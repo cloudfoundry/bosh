@@ -37,8 +37,5 @@ var _ = Describe("Legacy Stemcells", func() {
 
 	DescribeTable("Stemcells without NATS TLS support", testStemcellDeploy,
 		Entry("version 3445", "3445.11"),
-		Entry("version 3431", "3431.13"),
-		Entry("version 3421", "3421.26"),
-		Entry("version 3363", "3363.37"),
 	)
 })

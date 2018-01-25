@@ -18,15 +18,16 @@ module Bosh::Director::DeploymentPlan
           end
 
           desired_reservation = desired_reservations.find do |reservation|
-              reservation_contains_assigned_address?(existing_reservation, reservation) &&
-                (reservation.dynamic? || reservation.ip == existing_reservation.ip)
+            reservation_contains_assigned_address?(existing_reservation, reservation) &&
+              (reservation.dynamic? || reservation.ip == existing_reservation.ip)
           end
 
           if desired_reservation && existing_reservation.reserved?
             @logger.debug("For desired reservation #{desired_reservation} found existing reservation on the same network #{existing_reservation}")
 
-            if both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
-               both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)
+            if (both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
+                both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)) &&
+               @instance_plan.instance.strategy != UpdateConfig::STRATEGY_HOT_SWAP
 
               @logger.debug("Reusing existing reservation #{existing_reservation} for '#{desired_reservation}'")
 

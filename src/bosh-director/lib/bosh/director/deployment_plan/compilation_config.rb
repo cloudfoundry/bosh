@@ -68,7 +68,7 @@ module Bosh::Director
 
         if [vm_type_name, vm_resources, @cloud_properties].reject { |v| v.nil? || v.empty? }.count > 1
           raise Bosh::Director::CompilationConfigBadVmConfiguration,
-            "Compilation config specifies more than one of 'vm_type', 'vm_resources', and 'cloud_properties' keys, only one is allowed."
+            "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed."
         end
 
         if vm_type_name

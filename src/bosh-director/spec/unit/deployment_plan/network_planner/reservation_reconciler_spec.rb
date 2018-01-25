@@ -6,6 +6,8 @@ module Bosh::Director::DeploymentPlan
     describe :reconcile do
       let(:network_planner) { NetworkPlanner::ReservationReconciler.new(instance_plan, logger) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(availability_zone: initial_az) }
+      let(:strategy) { 'legacy' }
+      let(:instance) { instance_double(Instance, model:instance_model, strategy:strategy) }
       let(:network) { ManualNetwork.new('my-network', subnets, logger) }
       let(:subnets) do
         [
@@ -27,7 +29,7 @@ module Bosh::Director::DeploymentPlan
           desired_instance: DesiredInstance.new(nil, nil, desired_az),
           network_plans: network_plans,
           existing_instance: nil,
-          instance: instance_model
+          instance: instance,
         )
       end
       let(:initial_az) { nil }
@@ -35,7 +37,7 @@ module Bosh::Director::DeploymentPlan
       let(:existing_reservations) {
         [
           BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'manual'),
-          BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.3', 'manual')
+          BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.3', 'manual'),
         ]
       }
 
@@ -60,6 +62,41 @@ module Bosh::Director::DeploymentPlan
           expect(desired_plans.count).to eq(0)
           expect(existing_plans.count).to eq(1)
           expect(obsolete_plans.count).to eq(0)
+        end
+      end
+
+      context 'when the instance is a hotswap instance' do
+        let(:strategy) { UpdateConfig::STRATEGY_HOT_SWAP }
+        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)] }
+
+        context 'when desired reservation and existing reservations are dynamic' do
+          before { existing_reservations.map { |reservation| reservation.resolve_type(:dynamic) } }
+
+          it 'does not use the existing reservation and mark the existing reservations as placed' do
+            network_plans = network_planner.reconcile(existing_reservations)
+            obsolete_plans = network_plans.select(&:obsolete?)
+            existing_plans = network_plans.select(&:existing?)
+            desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+            expect(desired_plans.count).to eq(1)
+            expect(existing_plans.count).to eq(0)
+            expect(obsolete_plans.count).to eq(2)
+          end
+        end
+
+        context 'when desired reservation is dynamic but existing reservation is static' do
+          before { existing_reservations.map { |reservation| reservation.resolve_type(:static) } }
+
+          it 'does not use the existing reservation and mark the existing reservations as placed' do
+            network_plans = network_planner.reconcile(existing_reservations)
+            obsolete_plans = network_plans.select(&:obsolete?)
+            existing_plans = network_plans.select(&:existing?)
+            desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+            expect(desired_plans.count).to eq(1)
+            expect(existing_plans.count).to eq(0)
+            expect(obsolete_plans.count).to eq(2)
+          end
         end
       end
 

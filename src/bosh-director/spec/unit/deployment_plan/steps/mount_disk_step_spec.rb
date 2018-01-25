@@ -12,6 +12,7 @@ module Bosh::Director
         let(:agent_client) do
           instance_double(AgentClient, list_disk: [disk&.disk_cid], mount_disk: nil)
         end
+        let(:report) { Stages::Report.new }
 
         before do
           allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(agent_client)
@@ -22,7 +23,7 @@ module Bosh::Director
             expect(agent_client).to receive(:wait_until_ready)
             expect(agent_client).to receive(:mount_disk).with(disk.disk_cid)
 
-            step.perform
+            step.perform(report)
           end
 
           it 'logs that the disk is being mounted' do
@@ -31,7 +32,7 @@ module Bosh::Director
               "Mounting disk '#{disk.disk_cid}' for instance '#{instance}'",
             )
 
-            step.perform
+            step.perform(report)
           end
 
           context 'when given nil disk' do
@@ -40,7 +41,7 @@ module Bosh::Director
             it 'does not communicate with agent' do
               expect(agent_client).not_to receive(:mount_disk)
 
-              step.perform
+              step.perform(report)
             end
           end
         end

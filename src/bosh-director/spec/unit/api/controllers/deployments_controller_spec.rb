@@ -827,15 +827,17 @@ module Bosh::Director
             body.sort_by{|instance| instance['agent_id']}.each_with_index do |instance_with_vm, i|
               instance_idx = i / 2
               vm_by_instance = i % 2
+              vm_is_active = vm_by_instance == 0
               expect(instance_with_vm).to eq(
                 'agent_id' => "agent-#{instance_idx}-#{vm_by_instance}",
                 'job' => "job-#{instance_idx}",
                 'index' => instance_idx,
                 'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
                 'id' => "instance-#{instance_idx}",
+                'active' => vm_is_active,
                 'az' => {0 => "az0", 1 => "az1", nil => nil}[instance_idx],
                 'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}"],
-                'vm_created_at' => time.utc.iso8601
+                'vm_created_at' => time.utc.iso8601,
               )
             end
           end
@@ -858,8 +860,8 @@ module Bosh::Director
           end
 
           context 'ips' do
-            it 'returns instance ip addresses' do
-              15.times do |i|
+            it 'returns ip addresses for each vm' do
+              9.times do |i|
                 instance_params = {
                   'deployment_id' => deployment.id,
                   'job' => "job-#{i}",
@@ -872,42 +874,51 @@ module Bosh::Director
                 instance_params['availability_zone'] = "az0" if i == 0
                 instance_params['availability_zone'] = "az1" if i == 1
                 instance = Models::Instance.create(instance_params)
-                vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                  'instance_id' => instance.id,
-                  'created_at' => time
-                }
 
-                vm = Models::Vm.create(vm_params)
-                if i < 8
-                  instance.active_vm = vm
+                2.times do |j|
+                  vm_params = {
+                    'agent_id' => "agent-#{i}-#{j}",
+                    'cid' => "cid-#{i}-#{j}",
+                    'instance_id' => instance.id,
+                    'created_at' => time,
+                  }
+
+                  vm = Models::Vm.create(vm_params)
+
+                  if j == 0
+                    instance.active_vm = vm
+                  end
+
+                  ip_addresses_params = {
+                    'instance_id' => instance.id,
+                    'task_id' => i.to_s,
+                    'address_str' => ip_to_i("1.2.#{i}.#{j}").to_s,
+                    'vm_id' => vm.id,
+                  }
+                  Models::IpAddress.create(ip_addresses_params)
                 end
-
-                ip_addresses_params  = {
-                  'instance_id' => instance.id,
-                  'task_id' => "#{i}",
-                  'address_str' => ip_to_i("1.2.3.#{i}").to_s,
-                }
-                Models::IpAddress.create(ip_addresses_params)
               end
 
               get '/test_deployment/vms'
 
               expect(last_response.status).to eq(200)
               body = JSON.parse(last_response.body)
-              expect(body.size).to eq(15)
+              expect(body.size).to eq(18)
 
-              body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
+              body.sort_by { |instance| instance['agent_id'] }.each_with_index do |instance_with_vm, i|
+                instance_idx = i / 2
+                vm_by_instance = i % 2
+                vm_is_active = vm_by_instance == 0
                 expect(instance_with_vm).to eq(
-                  'agent_id' => "agent-#{i}",
-                  'job' => "job-#{i}",
-                  'index' => i,
-                  'cid' => "cid-#{i}",
-                  'id' => "instance-#{i}",
-                  'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
-                  'ips' => ["1.2.3.#{i}"],
-                  'vm_created_at' => time.utc.iso8601
+                  'agent_id' => "agent-#{instance_idx}-#{vm_by_instance}",
+                  'job' => "job-#{instance_idx}",
+                  'index' => instance_idx,
+                  'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
+                  'id' => "instance-#{instance_idx}",
+                  'active' => vm_is_active,
+                  'az' => { 0 => 'az0', 1 => 'az1', nil => nil }[instance_idx],
+                  'ips' => ["1.2.#{instance_idx}.#{vm_by_instance}"],
+                  'vm_created_at' => time.utc.iso8601,
                 )
               end
             end
@@ -947,12 +958,14 @@ module Bosh::Director
               expect(body.size).to eq(15)
 
               body.sort_by{|instance| instance['index']}.each_with_index do |instance_with_vm, i|
+                vm_is_active = i < 8
                 expect(instance_with_vm).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
                   'index' => i,
                   'cid' => "cid-#{i}",
                   'id' => "instance-#{i}",
+                  'active' => vm_is_active,
                   'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
                   'vm_created_at' => time.utc.iso8601

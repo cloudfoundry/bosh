@@ -23,7 +23,7 @@ describe 'blobstore.conf.erb' do
       let(:expected_content) do
         <<~HEREDOC
 server {
-  listen unix:/var/vcap/sys/run/blobstore/backend.sock;
+  listen unix:/var/vcap/data/blobstore/backend.sock;
   listen 25550 ssl;
   listen [::]:25550 ssl;
 
@@ -58,7 +58,7 @@ server {
   }
 
   location @handler {
-    proxy_pass http://unix:/var/vcap/sys/run/blobstore/backend.sock:$request_uri;
+    proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }
 }
         HEREDOC
@@ -84,7 +84,7 @@ server {
       let(:expected_content) do
         <<~HEREDOC
 server {
-  listen unix:/var/vcap/sys/run/blobstore/backend.sock;
+  listen unix:/var/vcap/data/blobstore/backend.sock;
   listen 25550 ssl;
   listen [::]:25550 ssl;
 
@@ -117,7 +117,7 @@ server {
   }
 
   location @handler {
-    proxy_pass http://unix:/var/vcap/sys/run/blobstore/backend.sock:$request_uri;
+    proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }
 }
         HEREDOC
@@ -143,7 +143,7 @@ server {
       let(:expected_content) do
         <<~HEREDOC
 server {
-  listen unix:/var/vcap/sys/run/blobstore/backend.sock;
+  listen unix:/var/vcap/data/blobstore/backend.sock;
   listen 25550 ssl;
   listen [::]:25550 ssl;
 
@@ -178,7 +178,7 @@ server {
   }
 
   location @handler {
-    proxy_pass http://unix:/var/vcap/sys/run/blobstore/backend.sock:$request_uri;
+    proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }
 }
         HEREDOC
@@ -204,7 +204,7 @@ server {
       let(:expected_content) do
         <<~HEREDOC
 server {
-  listen unix:/var/vcap/sys/run/blobstore/backend.sock;
+  listen unix:/var/vcap/data/blobstore/backend.sock;
   listen 25550 ssl;
   
 
@@ -239,7 +239,7 @@ server {
   }
 
   location @handler {
-    proxy_pass http://unix:/var/vcap/sys/run/blobstore/backend.sock:$request_uri;
+    proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }
 }
         HEREDOC
@@ -328,7 +328,7 @@ worker_processes 68;
 daemon off;
 
 error_log /var/vcap/sys/log/blobstore/error.log;
-pid       /var/vcap/sys/run/blobstore/nginx.pid;
+pid       /var/vcap/data/blobstore/blobstore.pid;
 
 events {
   worker_connections 8192;

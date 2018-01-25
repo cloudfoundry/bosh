@@ -10,12 +10,13 @@ module Bosh::Director
         let!(:managed_disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let!(:unmanaged_disk) { Models::PersistentDisk.make(instance: instance, name: 'disk-name-me') }
         let(:mount_disk_step) { instance_double(MountDiskStep) }
+        let(:report) { Stages::Report.new }
 
         it 'mounts managed disks but does not mount unmanaged disks' do
           expect(MountDiskStep).to receive(:new).with(managed_disk).and_return(mount_disk_step)
-          expect(mount_disk_step).to receive(:perform)
+          expect(mount_disk_step).to receive(:perform).with(report)
 
-          step.perform
+          step.perform(report)
         end
       end
     end

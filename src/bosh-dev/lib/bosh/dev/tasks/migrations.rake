@@ -10,10 +10,32 @@ namespace :migrations do
       new_migration_path = "bosh-director/db/migrations/#{namespace}/#{timestamp}_#{name}.rb"
       new_migration_spec_path = "bosh-director/spec/unit/db/migrations/#{namespace}/#{timestamp}_#{name}_spec.rb"
 
-      puts "Creating #{new_migration_path}"
       puts "Creating #{new_migration_spec_path}"
-      FileUtils.touch(new_migration_path)
-      FileUtils.touch(new_migration_spec_path)
+      File.write new_migration_spec_path, <<EOF
+require_relative '../../../../db_spec_helper'
+
+module Bosh::Director
+  describe '#{File.basename(new_migration_path)}' do
+    let(:db) {DBSpecHelper.db}
+
+    before do
+      DBSpecHelper.migrate_all_before(subject)
+      DBSpecHelper.migrate(subject)
+    end
+
+    # TODO
+  end
+end
+EOF
+
+      puts "Creating #{new_migration_path}"
+      File.write new_migration_path, <<EOF
+Sequel.migration do
+  up do
+    # TODO https://github.com/jeremyevans/sequel/blob/master/doc/migration.rdoc
+  end
+end
+EOF
     end
 
     desc 'Generate digest for a migration file'

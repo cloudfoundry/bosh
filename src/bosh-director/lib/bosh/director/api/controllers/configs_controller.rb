@@ -27,43 +27,52 @@ module Bosh::Director
           config_hash = parse_request_body(request.body.read)
           validate_type_and_name(config_hash)
           validate_config_content(config_hash['content'])
-          config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
-          create_event(config_hash['type'], config_hash['name'])
+
+          latest_configs = Bosh::Director::Api::ConfigManager.new.find(
+              type: config_hash['type'],
+              name: config_hash['name'],
+              latest: true
+          )
+
+          if latest_configs.empty? || latest_configs.first[:content] != config_hash['content']
+            config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
+            create_event(config_hash['type'], config_hash['name'])
+          else
+            config = latest_configs.first
+          end
+
         rescue => e
           type = config_hash ? config_hash['type'] : nil
           name = config_hash ? config_hash['name'] : nil
           create_event(type, name, e)
           raise e
         end
-
         status(201)
         return json_encode(sql_to_hash(config))
       end
 
       post '/diff', :consumes => :json do
         config_request = parse_request_body(request.body.read)
-        validate_type_and_name(config_request)
 
-        begin
-          new_config_hash = validate_config_content(config_request['content'])
-        rescue => e
-          status(400)
-          return json_encode({
-            'diff' => [],
-            'error' => e.message
-          })
-        end
+        schema1, schema2 = validate_diff_request(config_request)
 
-        old_config = Bosh::Director::Api::ConfigManager.new.find(
-            type: config_request['type'],
-            name: config_request['name'],
-            latest: true
-        ).first
-
-        old_config_hash = if old_config.nil? || old_config.raw_manifest.nil?
-          {}
+        if schema1
+          old_config_hash, new_config_hash = contents_by_id(config_request)
+        elsif schema2
+          begin
+            old_config_hash, new_config_hash = contents_from_body_and_current(config_request)
+          rescue => e
+            status(400)
+            return json_encode({
+              'diff' => [],
+              'error' => e.message
+            })
+          end
         else
-          old_config.raw_manifest
+          raise BadConfigRequest,
+              %|Only two request formats are allowed:\n| +
+              %|1. {"from":{"id":"<id>"},"to":{"id":"<id>"}}\n| +
+              %|2. {"type":"<type>","name":"<name>","content":"<content>"}|
         end
 
         begin
@@ -151,6 +160,70 @@ module Bosh::Director
        raise BadConfig, 'YAML hash expected' unless content.is_a?(Hash)
 
        content
+      end
+
+      def contents_by_id(config_request)
+        from_config = Bosh::Director::Models::Config[config_request['from']['id']]
+        unless from_config
+          raise ConfigNotFound, "Config with ID '#{config_request['from']['id']}' not found."
+        end
+
+        to_config = Bosh::Director::Models::Config[config_request['to']['id']]
+        unless to_config
+          raise ConfigNotFound, "Config with ID '#{config_request['to']['id']}' not found."
+        end
+
+        [from_config.raw_manifest, to_config.raw_manifest]
+      end
+
+      def contents_from_body_and_current(config_request)
+        validate_type_and_name(config_request)
+
+        new_config_hash = validate_config_content(config_request['content'])
+
+
+        old_config = Bosh::Director::Api::ConfigManager.new.find(
+            type: config_request['type'],
+            name: config_request['name'],
+            latest: true
+        ).first
+
+        old_config_hash = if old_config.nil? || old_config.raw_manifest.nil?
+                            {}
+                          else
+                            old_config.raw_manifest
+                          end
+
+        [old_config_hash, new_config_hash]
+      end
+
+      def validate_diff_request(config_request)
+        allowed_format_1 = {
+            'from' => { 'id' => /\d+/ },
+            'to' => { 'id' => /\d+/ }
+        }
+
+        allowed_format_2 = {
+            'type' => /.+/,
+            'name' => /.+/,
+            'content' => String
+        }
+
+        schema1 = true
+        schema2 = true
+        begin
+          Membrane::SchemaParser.parse { allowed_format_1 }.validate(config_request)
+        rescue
+          schema1 = false
+        end
+
+        begin
+          Membrane::SchemaParser.parse { allowed_format_2 }.validate(config_request)
+        rescue
+          schema2 = false
+        end
+
+        [schema1, schema2]
       end
     end
   end

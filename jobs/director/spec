@@ -3,8 +3,8 @@ name: director
 
 templates:
   pre-start.erb: bin/pre-start
-  director_ctl.erb: bin/director_ctl
-  director.yml.erb.erb: config/director.yml.erb
+  bpm-pre-start: bin/bpm-pre-start
+  director.yml.erb: config/director.yml
   worker_ctl.erb: bin/worker_ctl
   ps_utils.sh: bin/ps_utils.sh
   drain: bin/drain
@@ -16,12 +16,9 @@ templates:
   director.pem.erb: config/ssl/director.pem
   director.key.erb: config/ssl/director.key
   nginx.conf.erb: config/nginx.conf
-  nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
-  scheduler_ctl.erb: bin/scheduler_ctl
   config_server_ca.cert.erb: config/config_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
-  sync_dns_ctl.erb: bin/sync_dns_ctl
   bbr_backup: bin/bbr/backup
   bbr_restore: bin/bbr/restore
   nats_server_ca.pem.erb: config/nats_server_ca.pem
@@ -29,8 +26,17 @@ templates:
   nats_client_private_key.erb: config/nats_client_private_key
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
+  bpm.yml: config/bpm.yml
   utils.sh: helpers/utils.sh
   db_ca.pem.erb: config/db/ca.pem
+  db_client_certificate.pem.erb: config/db/client_certificate.pem
+  db_client_private_key.key.erb: config/db/client_private_key.key
+  director: bin/director
+  scheduler: bin/scheduler
+  sync-dns: bin/sync-dns
+  console: bin/console
+  env.erb: env
+  trigger-one-time-sync-dns: bin/trigger-one-time-sync-dns
 
 packages:
 - director
@@ -71,6 +77,9 @@ properties:
   director.enable_dedicated_status_worker:
     description: "Separate worker for 'bosh vms' and 'bosh ssh'"
     default: false
+  director.puma_workers:
+    description: Number of puma workers
+    default: 3
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true
@@ -134,6 +143,9 @@ properties:
   director.remove_dev_tools:
     description: When true, remove dev tool packages from non-compilation VMs
     default: false
+  director.log_level:
+    description: Log level
+    default: debug
   director.log_access_events_to_syslog:
     description: Access to api is logged to the syslog
     default: false
@@ -244,11 +256,15 @@ properties:
     default:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
-  director.db.tls.cert.ca:
-    description: Database CA certificate
   director.db.tls.enabled:
     description: Flag for enabling tls for database
     default: false
+  director.db.tls.cert.ca:
+    description: Database CA certificate
+  director.db.tls.cert.certificate:
+    description: Client certificate for mutual TLS connections to DB
+  director.db.tls.cert.private_key:
+    description: Client private key for mutual TLS connections to DB
 
   # DNS
   dns.address:

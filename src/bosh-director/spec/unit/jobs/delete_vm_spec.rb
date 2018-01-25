@@ -13,12 +13,14 @@ module Bosh::Director
     end
 
     let(:vm_cid) { 'vm_cid' }
-    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
-    let(:delete_vm_job) { instance_double(Bosh::Director::Jobs::DeleteVm, username: 'user', task_id: task.id, event_manager: event_manager) }
+    let(:delete_vm_job) do
+      instance_double(Bosh::Director::Jobs::DeleteVm, username: 'user', task_id: task.id, event_manager: event_manager)
+    end
     let(:cloud) { Config.cloud }
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-    let(:event_log){ Bosh::Director::EventLog::Log.new(task_writer) }
+    let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+    let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
 
     shared_examples_for 'vm delete' do
@@ -50,7 +52,13 @@ module Bosh::Director
       context 'when instance has reference to vm' do
         before do
           deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-          is = BD::Models::Instance.make(deployment: deployment, job: 'foo-job', uuid: 'instance_id', index: 0, ignore: true)
+          is = BD::Models::Instance.make(
+            deployment: deployment,
+            job: 'foo-job',
+            uuid: 'instance_id',
+            index: 0,
+            ignore: true,
+          )
           vm = BD::Models::Vm.make(cid: vm_cid, instance_id: is.id)
           is.active_vm = vm
           is.save
@@ -61,24 +69,24 @@ module Bosh::Director
         it 'should store event' do
           expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
-          event_1 = Bosh::Director::Models::Event.first
-          expect(event_1.user).to eq(task.username)
-          expect(event_1.action).to eq('delete')
-          expect(event_1.object_type).to eq('vm')
-          expect(event_1.object_name).to eq('vm_cid')
-          expect(event_1.instance).to eq('foo-job/instance_id')
-          expect(event_1.deployment).to eq('test_deployment')
-          expect(event_1.task).to eq("#{task.id}")
+          event1 = Bosh::Director::Models::Event.first
+          expect(event1.user).to eq(task.username)
+          expect(event1.action).to eq('delete')
+          expect(event1.object_type).to eq('vm')
+          expect(event1.object_name).to eq('vm_cid')
+          expect(event1.instance).to eq('foo-job/instance_id')
+          expect(event1.deployment).to eq('test_deployment')
+          expect(event1.task).to eq(task.id.to_s)
 
-          event_2 = Bosh::Director::Models::Event.all.last
-          expect(event_2.parent_id).to eq(event_1.id)
-          expect(event_2.user).to eq(task.username)
-          expect(event_2.action).to eq('delete')
-          expect(event_2.object_type).to eq('vm')
-          expect(event_2.object_name).to eq('vm_cid')
-          expect(event_2.instance).to eq('foo-job/instance_id')
-          expect(event_2.deployment).to eq('test_deployment')
-          expect(event_2.task).to eq("#{task.id}")
+          event2 = Bosh::Director::Models::Event.all.last
+          expect(event2.parent_id).to eq(event1.id)
+          expect(event2.user).to eq(task.username)
+          expect(event2.action).to eq('delete')
+          expect(event2.object_type).to eq('vm')
+          expect(event2.object_name).to eq('vm_cid')
+          expect(event2.instance).to eq('foo-job/instance_id')
+          expect(event2.deployment).to eq('test_deployment')
+          expect(event2.task).to eq(task.id.to_s)
         end
 
         it 'should update instance' do
@@ -94,24 +102,24 @@ module Bosh::Director
         it 'should store event' do
           expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
-          event_1 = Bosh::Director::Models::Event.first
-          expect(event_1.user).to eq(task.username)
-          expect(event_1.action).to eq('delete')
-          expect(event_1.object_type).to eq('vm')
-          expect(event_1.object_name).to eq('vm_cid')
-          expect(event_1.instance).to be_nil
-          expect(event_1.deployment).to be_nil
-          expect(event_1.task).to eq("#{task.id}")
+          event1 = Bosh::Director::Models::Event.first
+          expect(event1.user).to eq(task.username)
+          expect(event1.action).to eq('delete')
+          expect(event1.object_type).to eq('vm')
+          expect(event1.object_name).to eq('vm_cid')
+          expect(event1.instance).to be_nil
+          expect(event1.deployment).to be_nil
+          expect(event1.task).to eq(task.id.to_s)
 
-          event_2 = Bosh::Director::Models::Event.all.last
-          expect(event_2.parent_id).to eq(event_1.id)
-          expect(event_2.user).to eq(task.username)
-          expect(event_2.action).to eq('delete')
-          expect(event_2.object_type).to eq('vm')
-          expect(event_2.object_name).to eq('vm_cid')
-          expect(event_2.instance).to be_nil
-          expect(event_2.deployment).to be_nil
-          expect(event_2.task).to eq("#{task.id}")
+          event2 = Bosh::Director::Models::Event.all.last
+          expect(event2.parent_id).to eq(event1.id)
+          expect(event2.user).to eq(task.username)
+          expect(event2.action).to eq('delete')
+          expect(event2.object_type).to eq('vm')
+          expect(event2.object_name).to eq('vm_cid')
+          expect(event2.instance).to be_nil
+          expect(event2.deployment).to be_nil
+          expect(event2.task).to eq(task.id.to_s)
         end
 
         it 'does not try to delete from cloud when using multiple cpis and only vm_cid is known' do

@@ -15,35 +15,20 @@ LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
 PATH=/var/vcap/packages/mysql/bin:$PATH
 LD_LIBRARY_PATH=/var/vcap/packages/mysql/lib/mysql:$LD_LIBRARY_PATH
 
+source /var/vcap/jobs/director/env
 
-source /var/vcap/packages/ruby-2.4-r3/bosh/runtime.env
 PATH=$PATH:/var/vcap/jobs/director/bin
 export PATH LD_LIBRARY_PATH
 export LANG=en_US.UTF-8
 
-export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
-export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 
-export TMPDIR=/var/vcap/data/tmp/director
+export TMPDIR=/var/vcap/data/director/tmp
 
 export QUEUE="normal,urgent"
 <% if (p('director.enable_dedicated_status_worker')) && (p('director.workers') > 1) %>
 if [ $INDEX -eq 1 ]; then
   export QUEUE="urgent"
 fi
-<% end %>
-
-<% if_p('env.http_proxy') do |http_proxy| %>
-export HTTP_PROXY="<%= http_proxy %>"
-export http_proxy="<%= http_proxy %>"
-<% end %>
-<% if_p('env.https_proxy') do |https_proxy| %>
-export HTTPS_PROXY="<%= https_proxy %>"
-export https_proxy="<%= https_proxy %>"
-<% end %>
-<% if_p('env.no_proxy') do |no_proxy| %>
-export NO_PROXY="<%= no_proxy %>"
-export no_proxy="<%= no_proxy %>"
 <% end %>
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -57,11 +42,9 @@ case $1 in
 
     echo $$ > $PIDFILE
 
-    COMPONENT=worker_$INDEX erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/worker_$INDEX.yml
-
     exec chpst -u $RUNAS:$RUNAS \
       /var/vcap/packages/director/bin/bosh-director-worker \
-      -c /var/vcap/jobs/director/config/worker_$INDEX.yml -i $INDEX \
+      -c /var/vcap/jobs/director/config/director.yml -i $INDEX \
       >>$LOG_DIR/worker_$INDEX.stdout.log \
       2>>$LOG_DIR/worker_$INDEX.stderr.log
     ;;

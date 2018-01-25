@@ -38,7 +38,7 @@ module Bosh::Director
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder(false) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
-    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, vm_deleter, nil, template_cache, dns_encoder, agent_broadcaster) }
+    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, template_cache, dns_encoder, agent_broadcaster) }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
     let(:template_cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
     let(:agent_client) { instance_double(AgentClient) }
@@ -46,7 +46,8 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
-    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false) }
+    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, ip_provider: ip_provider) }
+    let(:ip_provider) { double(:ip_provider) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
@@ -212,10 +213,13 @@ module Bosh::Director
               expect(instance.vm_env).to eq({'key1' => 'value1'})
             end
 
-            expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan,_,_,use_existing|
+            expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan, ipp, disks, tags, use_existing|
               expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
               expect(instance_plan.instance.cloud_properties).to eq({'foo' => 'bar'})
               expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
+              expect(ipp).to eq(ip_provider)
+              expect(disks).to eq([])
+              expect(tags).to eq({})
               expect(use_existing).to eq(true)
             end
 

@@ -8,11 +8,11 @@ module Bosh::Director
           @tags = tags
         end
 
-        def perform
+        def perform(report)
           return if @instance_model.active_vm.nil?
 
           @instance_model.active_persistent_disks.collection.each do |disk|
-            AttachDiskStep.new(disk.model, @tags).perform
+            AttachDiskStep.new(disk.model, @tags).perform(report)
           end
         end
       end

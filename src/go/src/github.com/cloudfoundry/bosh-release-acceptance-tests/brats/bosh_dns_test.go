@@ -2,6 +2,7 @@ package brats_test
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -83,9 +84,11 @@ var _ = Describe("BoshDns", func() {
 			opFilePath := assetPath("op-enable-short-dns-addresses.yml")
 
 			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
+				"--vars-store", "creds.yml",
 			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
@@ -117,7 +120,7 @@ var _ = Describe("BoshDns", func() {
 			}
 		})
 
-		PIt("can find instances using the address helper with short names by network and instance ID", func() {
+		It("can find instances using the address helper with short names by network and instance ID", func() {
 			session := bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
@@ -137,16 +140,19 @@ var _ = Describe("BoshDns", func() {
 
 			output := string(session.Out.Contents())
 
-			ip := knownProviders["z1"][0]
-			Expect(output).To(MatchRegexp(`q-n\d+m\d+\.q-g\d\.bosh\.\s+\d+\s+IN\s+A\s+%s`, ip))
+			ip1 := knownProviders["z1"][0]
+			ip2 := knownProviders["z1"][1]
+			Expect(output).To(MatchRegexp(`q-m\d+n\d+s\d\.q-g\d\.bosh\.\s+\d+\s+IN\s+A\s+(%s|%s)`, ip1, ip2))
 		})
 	})
 
 	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
 			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
+				"--vars-store", "creds.yml",
 			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
@@ -209,7 +215,7 @@ var _ = Describe("BoshDns", func() {
 				fmt.Sprintf("%s@%s", innerDirectorUser, innerDirectorIP),
 				"-i", innerBoshJumpboxPrivateKeyPath,
 				"-oStrictHostKeyChecking=no",
-				"sudo /var/vcap/jobs/director/bin/sync_dns_ctl force")
+				"sudo /var/vcap/jobs/director/bin/trigger-one-time-sync-dns")
 			Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 
 			newVersionPerInstance := mustGetLatestDnsVersions()

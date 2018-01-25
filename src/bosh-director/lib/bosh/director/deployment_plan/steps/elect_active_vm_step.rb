@@ -2,12 +2,9 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class ElectActiveVmStep
-        def initialize(vm)
-          @vm = vm
-        end
-
-        def perform
-          @vm.instance.active_vm = @vm
+        def perform(report)
+          vm = report.vm
+          vm.instance.active_vm = vm
         end
       end
     end

@@ -140,7 +140,7 @@ describe 'links api', type: :integration do
   end
 
   def get(path, params)
-    send_director_api_request(path, params, 'GET')
+    send_director_get_request(path, params)
   end
 
   def get_json(*args)
@@ -320,7 +320,7 @@ describe 'links api', type: :integration do
 
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
-        response = send_director_api_request('/link_providers', 'deployment=simple', 'GET', {})
+        response = send_director_get_request('/link_providers', 'deployment=simple', {})
 
         expect(response.read_body).to include("Not authorized: '/link_providers'")
       end
@@ -387,7 +387,7 @@ describe 'links api', type: :integration do
 
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
-        response = send_director_api_request('/link_consumers', 'deployment=simple', 'GET', {})
+        response = send_director_get_request('/link_consumers', 'deployment=simple', {})
 
         expect(response.read_body).to include("Not authorized: '/link_consumers'")
       end
@@ -561,7 +561,7 @@ describe 'links api', type: :integration do
 
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
-        response = send_director_api_request('/links', 'deployment=simple', 'GET', {})
+        response = send_director_get_request('/links', 'deployment=simple', {})
 
         expect(response.read_body).to include("Not authorized: '/links'")
       end

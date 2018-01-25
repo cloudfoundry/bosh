@@ -84,23 +84,23 @@ module Bosh::Director
         @flush_arp = config.fetch('flush_arp', false)
 
         @base_dir = config['dir']
-        FileUtils.mkdir_p(@base_dir)
 
         # checkpoint task progress every 30 secs
         @task_checkpoint_interval = 30
 
         logging_config = config.fetch('logging', {})
-        if logging_config.has_key?('file')
-          @log_file_path = logging_config.fetch('file')
+        logging_file = ENV['BOSH_DIRECTOR_LOG_FILE'] || logging_config.fetch('file', nil)
+        if logging_file
+          @log_file_path = logging_file
           shared_appender = Logging.appenders.file(
-            'DirectorLogFile',
+            'Director',
             filename: @log_file_path,
             layout: ThreadFormatter.layout
           )
         else
           shared_appender = Logging.appenders.io(
-            'DirectorStdOut',
-            STDOUT,
+            'Director',
+            $stdout,
             layout: ThreadFormatter.layout
           )
         end
@@ -277,15 +277,30 @@ module Bosh::Director
         if tls_options.fetch('enabled', false)
           certificate_paths = tls_options.fetch('cert')
           db_ca_path = certificate_paths.fetch('ca')
+          db_client_cert_path = certificate_paths.fetch('certificate')
+          db_client_private_key_path = certificate_paths.fetch('private_key')
+
+          db_ca_provided = tls_options.fetch('bosh_internal').fetch('ca_provided')
+          mutual_tls_enabled = tls_options.fetch('bosh_internal').fetch('mutual_tls_enabled')
 
           case connection_config['adapter']
             when 'mysql2'
+              # http://sequel.jeremyevans.net/rdoc/files/doc/opening_databases_rdoc.html#label-mysql+
               connection_config['ssl_mode'] = 'verify_identity'
               connection_config['sslverify'] = true
-              connection_config['sslca'] = db_ca_path
+              connection_config['sslca'] = db_ca_path if db_ca_provided
+              connection_config['sslcert'] = db_client_cert_path if mutual_tls_enabled
+              connection_config['sslkey'] = db_client_private_key_path if mutual_tls_enabled
             when 'postgres'
+              # http://sequel.jeremyevans.net/rdoc/files/doc/opening_databases_rdoc.html#label-postgres
               connection_config['sslmode'] = 'verify-full'
-              connection_config['sslrootcert'] = db_ca_path
+              connection_config['sslrootcert'] = db_ca_path if db_ca_provided
+
+              postgres_driver_options = {
+                'sslcert' => db_client_cert_path,
+                'sslkey' => db_client_private_key_path,
+              }
+              connection_config['driver_options'] = postgres_driver_options if mutual_tls_enabled
           end
         end
 
@@ -411,6 +426,10 @@ module Bosh::Director
 
     def port
       hash['port']
+    end
+
+    def puma_workers
+      hash['puma_workers']
     end
 
     def version

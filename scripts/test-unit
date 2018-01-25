@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pushd "$(dirname $0)/../src"
+  bundle install
+  bundle exec rake spec:unit
+popd

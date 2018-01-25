@@ -12,6 +12,7 @@ module Bosh::Director
         let(:agent_client) do
           instance_double(AgentClient, list_disk: [disk&.disk_cid], unmount_disk: nil)
         end
+        let(:report) { Stages::Report.new }
 
         before do
           allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(agent_client)
@@ -21,7 +22,7 @@ module Bosh::Director
           it 'sends unmount_disk method to agent' do
             expect(agent_client).to receive(:unmount_disk).with(disk.disk_cid)
 
-            step.perform
+            step.perform(report)
           end
 
           it 'logs that the disk is being unmounted' do
@@ -29,7 +30,7 @@ module Bosh::Director
               "Unmounting disk '#{disk.disk_cid}' for instance '#{instance}'",
             )
 
-            step.perform
+            step.perform(report)
           end
 
           context 'when agent does not list given disk' do
@@ -40,7 +41,7 @@ module Bosh::Director
             it 'does not attempt to unmount' do
               expect(agent_client).not_to receive(:unmount_disk)
 
-              step.perform
+              step.perform(report)
             end
           end
 
@@ -50,7 +51,7 @@ module Bosh::Director
             it 'does not communicate with agent' do
               expect(agent_client).not_to receive(:unmount_disk)
 
-              step.perform
+              step.perform(report)
             end
           end
         end

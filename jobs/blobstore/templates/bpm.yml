@@ -1,0 +1,9 @@
+---
+processes:
+- name: blobstore
+  executable: /var/vcap/packages/nginx/sbin/nginx
+  persistent_disk: true
+  ephemeral_disk: true
+  args:
+  - -c
+  - /var/vcap/jobs/blobstore/config/nginx.conf

@@ -1,0 +1,7 @@
+#!/bin/bash -x
+
+(
+  sysctl -w net.ipv4.neigh.default.gc_thresh3=4096 || true
+  sysctl -w net.ipv4.neigh.default.gc_thresh2=2048 || true
+) \
+  > /etc/sysctl.d/100-bosh-nats.conf

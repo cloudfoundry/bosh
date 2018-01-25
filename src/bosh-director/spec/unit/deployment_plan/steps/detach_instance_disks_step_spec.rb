@@ -14,21 +14,23 @@ module Bosh::Director
         let(:detach_disk_1) { instance_double(DetachDiskStep) }
         let(:detach_disk_2) { instance_double(DetachDiskStep) }
 
+        let(:report) { Stages::Report.new }
+
         before do
           allow(DetachDiskStep).to receive(:new).with(disk1).and_return(detach_disk_1)
           allow(DetachDiskStep).to receive(:new).with(disk2).and_return(detach_disk_2)
 
-          allow(detach_disk_1).to receive(:perform).once
-          allow(detach_disk_2).to receive(:perform).once
+          allow(detach_disk_1).to receive(:perform).with(report).once
+          allow(detach_disk_2).to receive(:perform).with(report).once
         end
 
         it 'calls out to vms cpi to detach all attached disks' do
           expect(DetachDiskStep).to receive(:new).with(disk1)
           expect(DetachDiskStep).to receive(:new).with(disk2)
-          expect(detach_disk_1).to receive(:perform).once
-          expect(detach_disk_2).to receive(:perform).once
+          expect(detach_disk_1).to receive(:perform).with(report).once
+          expect(detach_disk_2).to receive(:perform).with(report).once
 
-          step.perform
+          step.perform(report)
         end
 
         context 'when the instance does not have an active vm' do
@@ -39,10 +41,10 @@ module Bosh::Director
           it 'does nothing' do
             expect(DetachDiskStep).not_to receive(:new)
             expect(DetachDiskStep).not_to receive(:new)
-            expect(detach_disk_1).not_to receive(:perform)
-            expect(detach_disk_2).not_to receive(:perform)
+            expect(detach_disk_1).not_to receive(:perform).with(report)
+            expect(detach_disk_2).not_to receive(:perform).with(report)
 
-            step.perform
+            step.perform(report)
           end
         end
       end

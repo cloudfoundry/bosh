@@ -12,6 +12,7 @@ module Bosh::Director
         let(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }
         let(:unmount_disk1) { instance_double(UnmountDiskStep) }
         let(:unmount_disk2) { instance_double(UnmountDiskStep) }
+        let(:report) { Stages::Report.new }
 
         before do
           allow(UnmountDiskStep).to receive(:new).with(disk1).and_return(unmount_disk1)
@@ -20,10 +21,10 @@ module Bosh::Director
 
         describe '#perform' do
           it 'unmounts managed, active persistent disk from instance model associated with instance plan' do
-            expect(unmount_disk1).to receive(:perform).once
-            expect(unmount_disk2).not_to receive(:perform)
+            expect(unmount_disk1).to receive(:perform).with(report).once
+            expect(unmount_disk2).not_to receive(:perform).with(report)
 
-            step.perform
+            step.perform(report)
           end
         end
       end

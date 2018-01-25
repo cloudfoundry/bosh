@@ -35,6 +35,12 @@ db: &bosh_db
     enabled: <%= database.tls_enabled %>
     cert:
       ca: <%= database.ca_path %>
+      certificate: "/not-used/path/in/integration/tests"
+      private_key: "/not-used/path/in/integration/tests"
+    bosh_internal:
+      ca_provided: true
+      mutual_tls_enabled: false
+
   <% else %>
   # Failure to set `sslmode` will produce following error
   # 'PG::Error: SSL error: decryption failed or bad record mac:'

@@ -803,6 +803,33 @@ jobs:
         privileged: true
         input_mapping:
           stemcell: candidate-warden-ubuntu-stemcell
+        params: &brats-dbs-params
+          RDS_MYSQL_EXTERNAL_DB_HOST: ((brats-rds-mysql-external-db-host))
+          RDS_MYSQL_EXTERNAL_DB_USER: ((brats-rds-mysql-external-db-user))
+          RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-rds-mysql-external-db-password))
+          RDS_MYSQL_EXTERNAL_DB_NAME: ((brats-rds-mysql-external-db-name))
+          RDS_POSTGRES_EXTERNAL_DB_HOST: ((brats-rds-postgres-external-db-host))
+          RDS_POSTGRES_EXTERNAL_DB_USER: ((brats-rds-postgres-external-db-user))
+          RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-rds-postgres-external-db-password))
+          RDS_POSTGRES_EXTERNAL_DB_NAME: ((brats-rds-postgres-external-db-name))
+          GCP_MYSQL_EXTERNAL_DB_HOST: ((brats-gcp-mysql-external-db-host))
+          GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
+          GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
+          GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
+          GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-mysql-external-db-client-certificate))
+          GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-mysql-external-db-client-private-key))
+          GCP_POSTGRES_EXTERNAL_DB_HOST: ((brats-gcp-postgres-external-db-host))
+          GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
+          GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
+          GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
+          GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-postgres-external-db-client-certificate))
+          GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-postgres-external-db-client-private-key))
+        ensure:
+          task: cleanup-external-dbs
+          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          params: *brats-dbs-params
+          attempts: 3
+
 
   # - name: finalize-bosh-release
   #   serial: true

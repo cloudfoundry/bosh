@@ -7,11 +7,11 @@ module Bosh::Director
           @logger = Config.logger
         end
 
-        def perform
+        def perform(report)
           return if @instance_model.active_vm.nil?
 
           @instance_model.persistent_disks.each do |disk|
-            DetachDiskStep.new(disk).perform
+            DetachDiskStep.new(disk).perform(report)
           end
         end
       end

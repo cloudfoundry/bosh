@@ -211,30 +211,42 @@ module Bosh::Director
           )
         end
 
-        it 'creates a new config with whitespace preceding content' do
+        it 'creates a new config when one exists with different content' do
+          Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123'
+          )
+
           expect {
-            post '/', JSON.generate({ 'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123' }), {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+            post '/', JSON.generate(
+                {
+                    'name' => 'my-name',
+                    'type' => 'my-type',
+                    'content' => 'b: 12345'
+                }
+            ), {'CONTENT_TYPE' => 'application/json'}
+          }.to change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
-
-          expect(JSON.parse(last_response.body)).to eq(
-            {
-              'id' => "#{Bosh::Director::Models::Config.first.id}",
-              'type' => 'my-type',
-              'name' => 'my-name',
-              'content' => 'a: 123'
-            }
-          )
         end
 
-        it 'creates new config and does not update existing ' do
-          post '/', request_body, {'CONTENT_TYPE' => 'application/json'}
-          expect(last_response.status).to eq(201)
+        it 'ignores config when config already exists' do
+          Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123'
+          )
 
           expect {
-            post '/', request_body, {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(1).to(2)
+            post '/', JSON.generate(
+                {
+                    'name' => 'my-name',
+                    'type' => 'my-type',
+                    'content' => 'a: 123'
+                }
+            ), {'CONTENT_TYPE' => 'application/json'}
+          }.to_not change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
         end
@@ -444,9 +456,64 @@ module Bosh::Director
 
         before { authorize 'admin', 'admin' }
 
+        context 'when none of the accepted request body formats is used' do
+          let(:body) do
+            JSON.dump({'I am not a valid' => 'request'})
+          end
+
+          let(:allowed_format_1) do
+            JSON.dump({
+                          'from' => {'id' => '<id>'},
+                          'to' => {'id' => '<id>'}
+                      })
+          end
+
+          let(:allowed_format_2) do
+            JSON.dump({
+                          'type' => '<type>',
+                          'name' => '<name>',
+                          'content' => '<content>'
+                      })
+          end
+
+          it 'returns 400 with error details' do
+            post '/diff', body, { 'CONTENT_TYPE' => 'application/json' }
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+          end
+
+          context 'when any of the given `id` values is not a string containing an integer' do
+            it 'returns 400 with error details' do
+              post '/diff', JSON.generate({'from' => {'id' => 'foo'}, 'to' => {'id' => '1'} }), { 'CONTENT_TYPE' => 'application/json' }
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440010)
+              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+
+              post '/diff', JSON.generate({'from' => {'id' => '1'}, 'to' => {'id' => 'foo'} }), { 'CONTENT_TYPE' => 'application/json' }
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440010)
+              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+            end
+          end
+
+          context 'when any of the given `id` values is from type integer' do
+            it 'returns 400 with error details' do
+              post '/diff', JSON.generate({'from' => {'id' => 1}, 'to' => {'id' => '1'} }), { 'CONTENT_TYPE' => 'application/json' }
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440010)
+              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+            end
+          end
+        end
+
         context 'when diffing yields an error' do
           let(:new_content) {'a: 1'}
-          it 'returns 400 with an empty diff and an error message if the diffing fails' do
+          it 'returns 400 with an empty diff and an error message' do
             allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
 
             post '/diff', new_config, { 'CONTENT_TYPE' => 'application/json' }
@@ -457,138 +524,178 @@ module Bosh::Director
           end
         end
 
-        context 'when there is a previous config with given name and type' do
+        context 'when one concrete config is given' do
+          context 'when there is a previous config with given name and type' do
 
-          before do
-            Models::Config.create(
-              type: 'myType',
-              name: 'myName',
-              raw_manifest: config_hash_with_two_azs
-            )
+            before do
+              Models::Config.create(
+                type: 'myType',
+                name: 'myName',
+                raw_manifest: config_hash_with_two_azs
+              )
+            end
+
+            context 'when uploading an empty config' do
+              let(:new_content) { "---\n" }
+
+              it 'returns the diff' do
+
+                post(
+                  '/diff',
+                  new_config,
+                  { 'CONTENT_TYPE' => 'application/json' }
+                )
+
+                expect(JSON.parse(last_response.body)['diff']).to eq([])
+                expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
+              end
+            end
+
+            context 'when there is no diff' do
+              let(:new_content) { YAML.dump(config_hash_with_two_azs) }
+
+              it 'returns empty diff' do
+
+                post(
+                  '/diff',
+                  new_config,
+                  {'CONTENT_TYPE' => 'application/json'}
+                )
+                expect(last_response.body).to eq('{"diff":[]}')
+              end
+            end
+
+            context 'when there is a diff' do
+              let(:new_content) { YAML.dump(config_hash_with_one_az) }
+
+              it 'returns the diff' do
+                post(
+                  '/diff',
+                  new_config,
+                  {'CONTENT_TYPE' => 'application/json'}
+                )
+                expect(last_response.status).to eq(200)
+                expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  properties:","removed"],["    some-key: \"<redacted>\"","removed"]]}')
+              end
+            end
+
+            context 'when invalid content YAML is given' do
+              let(:new_content) { "}}}i'm not really encoded, hah!" }
+              it 'gives a nice error when request body is not a valid yml' do
+
+                post('/diff', new_config, {'CONTENT_TYPE' => 'application/json'})
+
+                expect(last_response.status).to eq(400)
+                expect(JSON.parse(last_response.body)['diff']).to eq([])
+                expect(JSON.parse(last_response.body)['error']).to include('Config must be valid YAML')
+              end
+            end
+
+            context 'when the body is not valid YAML' do
+              it 'gives a nice error when request body is invalid json' do
+                post('/diff', "}}}i'm not really encoded, hah!", { 'CONTENT_TYPE' => 'application/json' })
+
+                expect(last_response.status).to eq(400)
+                expect(JSON.parse(last_response.body)['code']).to eq(710001)
+                expect(JSON.parse(last_response.body)['description']).to include('Invalid JSON request body: ')
+              end
+            end
+
+            context 'when config content is empty' do
+              let(:new_content) { '' }
+              it 'gives a nice error ' do
+                post '/diff', new_config, {'CONTENT_TYPE' => 'application/json'}
+
+                expect(last_response.status).to eq(400)
+                expect(JSON.parse(last_response.body)['diff']).to eq([])
+                expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
+              end
+            end
+
+            context 'when config content is not a hash' do
+              let(:new_content) { 'I am not a hash' }
+              it 'errors' do
+                post '/diff', new_config, {'CONTENT_TYPE' => 'application/json'}
+
+                expect(last_response.status).to eq(400)
+                expect(JSON.parse(last_response.body)['error']).to eq('YAML hash expected')
+              end
+            end
           end
 
-          context 'when uploading an empty config' do
-            let(:new_content) { "---\n" }
-
+          context 'when there is no previous cloud config' do
+            let(:new_content) { YAML.dump(config_hash_with_one_az) }
             it 'returns the diff' do
-
               post(
-                '/diff',
-                new_config,
-                { 'CONTENT_TYPE' => 'application/json' }
+                  '/diff',
+                  new_config,
+                  {'CONTENT_TYPE' => 'application/json'}
               )
-
-              expect(JSON.parse(last_response.body)['diff']).to eq([])
-              expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
             end
           end
 
-          context 'when there is no diff' do
-            let(:new_content) { YAML.dump(config_hash_with_two_azs) }
-
-            it 'returns empty diff' do
-
-              post(
-                '/diff',
-                new_config,
-                {'CONTENT_TYPE' => 'application/json'}
+          context 'when previous config is nil' do
+            before do
+              Models::Config.create(
+                  type: 'myType',
+                  name: 'myName',
+                  raw_manifest: nil
               )
-              expect(last_response.body).to eq('{"diff":[]}')
             end
-          end
-
-          context 'when there is a diff' do
             let(:new_content) { YAML.dump(config_hash_with_one_az) }
 
             it 'returns the diff' do
               post(
-                '/diff',
-                new_config,
-                {'CONTENT_TYPE' => 'application/json'}
+                  '/diff',
+                  new_config,
+                  {'CONTENT_TYPE' => 'application/json'}
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  properties:","removed"],["    some-key: \"<redacted>\"","removed"]]}')
-            end
-          end
-
-          context 'when invalid content YAML is given' do
-            let(:new_content) { "}}}i'm not really encoded, hah!" }
-            it 'gives a nice error when request body is not a valid yml' do
-
-              post('/diff', new_config, {'CONTENT_TYPE' => 'application/json'})
-
-              expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['diff']).to eq([])
-              expect(JSON.parse(last_response.body)['error']).to include('Config must be valid YAML')
-            end
-          end
-
-          context 'when the body is not valid YAML' do
-            it 'gives a nice error when request body is invalid json' do
-              post('/diff', "}}}i'm not really encoded, hah!", { 'CONTENT_TYPE' => 'application/json' })
-
-              expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['code']).to eq(710001)
-              expect(JSON.parse(last_response.body)['description']).to include('Invalid JSON request body: ')
-            end
-          end
-
-          context 'when config content is empty' do
-            let(:new_content) { '' }
-            it 'gives a nice error ' do
-              post '/diff', new_config, {'CONTENT_TYPE' => 'application/json'}
-
-              expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['diff']).to eq([])
-              expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
-            end
-          end
-
-          context 'when config content is not a hash' do
-            let(:new_content) { 'I am not a hash' }
-            it 'errors' do
-              post '/diff', new_config, {'CONTENT_TYPE' => 'application/json'}
-
-              expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['error']).to eq('YAML hash expected')
+              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
             end
           end
         end
 
-        context 'when there is no previous cloud config' do
-          let(:new_content) { YAML.dump(config_hash_with_one_az) }
-          it 'returns the diff' do
-            post(
-              '/diff',
-              new_config,
-              {'CONTENT_TYPE' => 'application/json'}
-            )
-            expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
-          end
-        end
-
-        context 'when previous config is nil' do
+        context 'when diffing two versions by id' do
           before do
-            Models::Config.create(
-              type: 'myType',
-              name: 'myName',
-              raw_manifest: nil
+            @first = Models::Config.create(
+                type: 'myType',
+                name: 'myName',
+                raw_manifest: { 'a' => 5 }
+            )
+            @second = Models::Config.create(
+                type: 'myType',
+                name: 'myName',
+                raw_manifest: { 'b' => 5 }
             )
           end
-          let(:new_content) { YAML.dump(config_hash_with_one_az) }
 
           it 'returns the diff' do
             post(
-              '/diff',
-              new_config,
-              {'CONTENT_TYPE' => 'application/json'}
+                '/diff',
+                JSON.dump({ from: { id: "#{@first.id}" }, to: { id: "#{@second.id}" } }),
+                {'CONTENT_TYPE' => 'application/json'}
             )
             expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
+            expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+          end
+
+          context 'when config with given "id" does not exist' do
+            it 'returns 404 with error details' do
+              post(
+                  '/diff',
+                  JSON.dump({from: { id: '5'}, to: {id: "#{@second.id}" } }),
+                  { 'CONTENT_TYPE' => 'application/json' }
+              )
+
+              expect(last_response.status).to eq(404)
+              expect(JSON.parse(last_response.body)['code']).to eq(440012)
+              expect(JSON.parse(last_response.body)['description']).to eq("Config with ID '5' not found.")
+            end
           end
         end
-
       end
 
       context 'accessing with invalid credentials' do

@@ -47,12 +47,10 @@ module Bosh::Director
         .and_return(dns_encoder)
       allow(VmCreator).to receive(:new)
         .with(
-          anything,
-          anything,
-          anything,
+          an_instance_of(Logging::Logger),
           template_blob_cache,
           dns_encoder,
-          anything,
+          an_instance_of(Bosh::Director::AgentBroadcaster),
         )
         .and_return vm_creator
       allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])

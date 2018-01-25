@@ -1,0 +1,3 @@
+#!/bin/bash -eu
+
+sysctl -w "kernel.shmmax=67108864"

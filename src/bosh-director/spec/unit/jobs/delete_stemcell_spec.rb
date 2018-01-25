@@ -3,20 +3,51 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::DeleteStemcell do
     describe 'perform' do
-      let(:blobstore) { double('Blobstore') }
-
       describe 'DJ job class expectations' do
+        let(:blobstore) { double('Blobstore') }
         let(:job_type) { :delete_stemcell }
         let(:queue) { :normal }
         it_behaves_like 'a DJ job'
       end
 
-      it 'should fail for unknown stemcells' do
-        blobstore = instance_double(Bosh::Blobstore::BaseClient)
+      let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+      let(:job) { Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore) }
 
-        job = Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore)
+      context 'when the stemcell is known' do
+        let!(:stemcell_model) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version') }
+        let(:stemcell_deleter) { instance_double(Jobs::Helpers::StemcellDeleter, delete: nil) }
 
-        expect { job.perform }.to raise_exception(StemcellNotFound)
+        before do
+          allow(Jobs::Helpers::StemcellDeleter).to receive(:new).and_return(stemcell_deleter)
+        end
+
+        it 'deletes the stemcell' do
+          expect(stemcell_deleter).to receive(:delete).with(stemcell_model, {blobstore: blobstore})
+          job.perform
+        end
+
+        context 'when a stemcell_match is found for some cpi' do
+          let!(:match) { Models::StemcellMatch.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
+          it 'deletes the stemcell match as well' do
+            job.perform
+            expect(Models::StemcellMatch.all).to be_empty
+          end
+        end
+      end
+
+      context 'when no stemcell model is found' do
+        it 'raises an error' do
+          expect { job.perform }.to raise_exception(StemcellNotFound)
+        end
+
+        context 'when there are stemcell matches' do
+          let!(:match) { Models::StemcellMatch.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
+          it 'raises an error but still deletes the stemcell_match' do
+            expect { job.perform }.to raise_exception(StemcellNotFound)
+
+            expect(Models::StemcellMatch.all).to be_empty
+          end
+        end
       end
     end
   end

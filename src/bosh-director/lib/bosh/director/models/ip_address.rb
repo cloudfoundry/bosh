@@ -1,6 +1,7 @@
 module Bosh::Director::Models
   class IpAddress < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :instance
+    many_to_one :vm
 
     def validate
       validates_presence :instance_id

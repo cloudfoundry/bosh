@@ -1,7 +1,6 @@
 module Bosh::Director
   module Jobs
     class DeleteVm < BaseJob
-
       @queue = :normal
 
       def self.job_type

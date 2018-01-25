@@ -4,7 +4,6 @@ require 'bosh/director/formatter_helper'
 
 module Bosh::Director::Core::Templates
   class JobInstanceRenderer
-
     def initialize(templates, job_template_loader)
       @templates = templates
       @job_template_loader = job_template_loader

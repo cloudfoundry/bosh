@@ -17,6 +17,7 @@ module Bosh
         @options = options
         @context = context
 
+        @supported_formats = context['formats'] || ['dummy']
         @base_dir = options['dir']
         if @base_dir.nil?
           raise ArgumentError, 'Must specify dir'
@@ -156,7 +157,7 @@ module Bosh
 
       def info
         record_inputs(__method__, nil)
-        {stemcell_formats: ["dummy"]}
+        {stemcell_formats: @supported_formats}
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }

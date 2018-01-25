@@ -1,5 +1,5 @@
 server {
-  listen unix:/var/vcap/sys/run/blobstore/backend.sock;
+  listen unix:/var/vcap/data/blobstore/backend.sock;
   listen <%= p("blobstore.port") %> ssl;
   <% if p('blobstore.ipv6_listen') %>listen [::]:<%= p('blobstore.port') %> ssl;<% end %>
 
@@ -34,6 +34,6 @@ server {
   }
 
   location @handler {
-    proxy_pass http://unix:/var/vcap/sys/run/blobstore/backend.sock:$request_uri;
+    proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }
 }

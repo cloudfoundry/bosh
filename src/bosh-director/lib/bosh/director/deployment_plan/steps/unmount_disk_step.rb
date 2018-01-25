@@ -7,7 +7,7 @@ module Bosh::Director
           @logger = Config.logger
         end
 
-        def perform
+        def perform(_report)
           return if @disk.nil?
 
           instance_model = @disk.instance

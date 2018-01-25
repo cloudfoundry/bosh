@@ -117,12 +117,6 @@ module Bosh::Director
         )
       end
 
-      it 'raises an error when no requested stemcell is found' do
-        expect {
-          subject.all_by_name_and_version('CBM BASIC V2', '1')
-        }.to raise_error(Bosh::Director::StemcellNotFound)
-      end
-
       it 'returns all stemcells' do
         stemcells = subject.all_by_name_and_version('my-stemcell-with-a-name', 'stemcell_version')
         expect(stemcells.count).to eq(2)
@@ -178,12 +172,6 @@ module Bosh::Director
             operating_system: 'stemcell_os',
             cid: 'cloud-id-a',
         )
-      end
-
-      it 'raises an error when no requested stemcell is found' do
-        expect {
-          subject.all_by_os_and_version('CBM BASIC V2', '1')
-        }.to raise_error(Bosh::Director::StemcellNotFound)
       end
 
       it 'returns all stemcells, sorted alphabetically' do

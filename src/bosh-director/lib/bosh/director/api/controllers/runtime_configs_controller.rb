@@ -8,13 +8,18 @@ module Bosh::Director
         manifest_text = request.body.read
         begin
           validate_manifest_yml(manifest_text, nil)
-          Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text, config_name)
-          create_event(config_name)
+
+          latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.list(1)
+
+          if latest_runtime_config.empty? || latest_runtime_config.first[:content] != manifest_text
+            Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text, config_name)
+            create_event(config_name)
+          end
+
         rescue => e
           create_event(config_name, e)
           raise e
         end
-
         status(201)
       end
 

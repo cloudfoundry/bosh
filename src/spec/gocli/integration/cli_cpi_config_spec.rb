@@ -8,7 +8,7 @@ describe "cli cpi config", type: :integration do
       output = bosh_runner.run('cpi-config', failure_expected: true)
       expect(output).to include('No CPI config')
 
-      cpi_yaml = yaml_file('cpi', Bosh::Spec::NewDeployments.simple_cpi_config)
+      cpi_yaml = yaml_file('cpi', Bosh::Spec::NewDeployments.multi_cpi_config)
 
       upload_output = bosh_runner.run("update-cpi-config #{cpi_yaml.path}")
 
@@ -16,7 +16,7 @@ describe "cli cpi config", type: :integration do
 
       download_output = YAML.load(bosh_runner.run('cpi-config', tty: false))
 
-      expect(download_output).to eq(Bosh::Spec::NewDeployments.simple_cpi_config)
+      expect(download_output).to eq(Bosh::Spec::NewDeployments.multi_cpi_config)
     end
   end
 
@@ -43,7 +43,7 @@ describe "cli cpi config", type: :integration do
   end
 
   it 'does not fail when cpi config is very large' do
-    cpi_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.simple_cpi_config)
+    cpi_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.multi_cpi_config)
 
     for i in 0..10001
       cpi_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

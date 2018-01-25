@@ -19,6 +19,7 @@ export BOSH_DIRECTOR_IP="10.245.0.3"
 export BOSH_DIRECTOR_RELEASE_PATH="${PWD}/bosh-release"
 export DNS_RELEASE_PATH="$(realpath $(find ${PWD}/bosh-dns-release -maxdepth 1 -path '*.tgz'))"
 export CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath ${src_dir}stemcell/*.tgz)"
+export BOSH_DNS_ADDON_OPS_FILE_PATH="/usr/local/bosh-deployment/experimental/dns-addon-with-api-certificates.yml"
 
 mkdir -p bbr-binary
 export BBR_VERSION=0.1.0-rc.254
