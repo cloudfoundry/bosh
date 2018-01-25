@@ -47,6 +47,9 @@ group :development, :test do
   gem 'sinatra'
   gem 'sinatra-contrib'
 
+  gem 'rubocop'
+  gem 'rubocop-git'
+
   gem 'eventmachine', '~>1.2'
 
   # for director
