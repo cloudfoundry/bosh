@@ -24,6 +24,14 @@ module Bosh
             .all
         end
 
+        def find_by_id(id)
+          config = Bosh::Director::Models::Config[id]
+          if config.nil?
+            raise ConfigNotFound, "Config #{id} not found"
+          end
+          config
+        end
+
         def delete(type, name)
           Bosh::Director::Models::Config
             .where(type: type, name: name, deleted: false)

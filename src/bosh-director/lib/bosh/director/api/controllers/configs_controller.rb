@@ -4,6 +4,12 @@ module Bosh::Director
   module Api::Controllers
     class ConfigsController < BaseController
 
+      get '/:id', scope: :read do
+        config = Bosh::Director::Api::ConfigManager.new.find_by_id(params[:id])
+        status(200)
+        return json_encode(sql_to_hash(config))
+      end
+
       get '/', scope: :read do
         check(params, 'latest')
 

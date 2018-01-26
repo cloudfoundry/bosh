@@ -707,5 +707,45 @@ module Bosh::Director
         end
       end
     end
+
+    describe 'id' do
+      let!(:config_example) { Bosh::Director::Models::Config.make(id: 123, type: 'my-type', name: 'default', content: '1') }
+
+      context 'with authenticated admin user' do
+        before(:each) do
+          authorize('admin', 'admin')
+        end
+
+        it 'it returns the specified config' do
+          get('/123')
+
+          expect(last_response.status).to eq(200)
+          expect(JSON.parse(last_response.body)).to eq({'id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1'})
+        end
+
+        context 'when no config is found' do
+          it 'returns a 404' do
+            get('/im-not-there')
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+      end
+
+      context 'without an authenticated user' do
+        it 'denies access' do
+          response = get('/my-fake-id')
+          expect(response.status).to eq(401)
+        end
+      end
+
+      context 'when user is reader' do
+        before { basic_authorize('reader', 'reader') }
+
+        it 'permits access' do
+          expect(get('/123').status).to eq(200)
+        end
+      end
+    end
   end
 end
