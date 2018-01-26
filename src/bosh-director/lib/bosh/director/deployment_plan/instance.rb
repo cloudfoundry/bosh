@@ -4,7 +4,6 @@ module Bosh::Director
   module DeploymentPlan
     # Represents a single Instance Group instance.
     class Instance
-
       # @return [Integer] Instance index
       attr_reader :index
 
@@ -47,7 +46,7 @@ module Bosh::Director
           instance_state,
           availability_zone,
           instance_group.strategy,
-          logger
+          logger,
         )
       end
 
@@ -93,16 +92,14 @@ module Bosh::Director
       end
 
       def bootstrap?
-        @model && @model.bootstrap
+        @model&.bootstrap
       end
 
       def compilation?
         @compilation
       end
 
-      def job_name
-        @job_name
-      end
+      attr_reader :job_name
 
       def to_s
         if @uuid.nil?
@@ -117,25 +114,23 @@ module Bosh::Director
       end
 
       def bind_new_instance_model
-        @model = Models::Instance.create({
-            deployment_id: @deployment_model.id,
-            job: @job_name,
-            index: index,
-            state: state,
-            compilation: @compilation,
-            uuid: SecureRandom.uuid,
-            availability_zone: availability_zone_name,
-            bootstrap: false,
-            variable_set_id: @deployment_model.current_variable_set.id
-          })
+        @model = Models::Instance.create(
+          deployment_id: @deployment_model.id,
+          job: @job_name,
+          index: index,
+          state: state,
+          compilation: @compilation,
+          uuid: SecureRandom.uuid,
+          availability_zone: availability_zone_name,
+          bootstrap: false,
+          variable_set_id: @deployment_model.current_variable_set.id,
+        )
         @uuid = @model.uuid
         @desired_variable_set = @model.variable_set
         @previous_variable_set = @model.variable_set
       end
 
-      def stemcell
-        @stemcell
-      end
+      attr_reader :stemcell
 
       def stemcell_cid
         @stemcell.cid_for_az(availability_zone_name)
@@ -145,9 +140,7 @@ module Bosh::Director
         @env.spec
       end
 
-      def deployment_model
-        @deployment_model
-      end
+      attr_reader :deployment_model
 
       # Updates this domain object to reflect an existing instance running on an existing vm
       def bind_existing_instance_model(existing_instance_model)
@@ -176,15 +169,15 @@ module Bosh::Director
       end
 
       def update_instance_settings
-        disk_associations = @model.reload.active_persistent_disks.collection.select do |disk|
-          !disk.model.managed?
+        disk_associations = @model.reload.active_persistent_disks.collection.reject do |disk|
+          disk.model.managed?
         end
         disk_associations.map! do |disk|
-           {'name' => disk.model.name, 'cid' => disk.model.disk_cid}
+          { 'name' => disk.model.name, 'cid' => disk.model.disk_cid }
         end
 
         agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.active_vm.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
+        @model.active_vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!
@@ -256,12 +249,12 @@ module Bosh::Director
 
       def state
         case @virtual_state
-          when 'recreate'
-            'started'
-          when 'restart'
-            'started'
-          else
-            @virtual_state
+        when 'recreate'
+          'started'
+        when 'restart'
+          'started'
+        else
+          @virtual_state
         end
       end
 
@@ -308,17 +301,16 @@ module Bosh::Director
       end
 
       private
+
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model
-        if @deployment_model.nil?
-          raise DirectorError, 'Deployment model is not bound'
-        end
+        raise DirectorError, 'Deployment model is not bound' if @deployment_model.nil?
 
         conditions = {
           deployment_id: @deployment_model.id,
           job: @job_name,
-          index: @index
+          index: @index,
         }
 
         Models::Instance.find_or_create(conditions) do |model|
@@ -336,9 +328,7 @@ module Bosh::Director
       end
 
       def check_model_bound
-        if @model.nil?
-          raise DirectorError, "Instance '#{self}' model is not bound"
-        end
+        raise DirectorError, "Instance '#{self}' model is not bound" if @model.nil?
       end
 
       def check_model_not_bound

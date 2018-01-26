@@ -22,7 +22,7 @@ module Bosh::Director
         let(:instance_plans_with_missing_vms) do
           [
             instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_0),
-            instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_1)
+            instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_1),
           ]
         end
         let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
@@ -32,14 +32,14 @@ module Bosh::Director
 
         let(:deployment_plan) do
           instance_double(DeploymentPlan::Planner,
-            instance_plans_with_hot_swap_and_needs_shutdown: instance_plans_with_hot_swap_and_needs_shutdown,
-            instance_plans_with_missing_vms: instance_plans_with_missing_vms,
-            ip_provider: ip_provider,
-            availability_zones: [
-              instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),
-              instance_double(DeploymentPlan::AvailabilityZone, name: 'zone2'),
-            ],
-            tags: tags)
+                          instance_plans_with_hot_swap_and_needs_shutdown: instance_plans_with_hot_swap_and_needs_shutdown,
+                          instance_plans_with_missing_vms: instance_plans_with_missing_vms,
+                          ip_provider: ip_provider,
+                          availability_zones: [
+                            instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),
+                            instance_double(DeploymentPlan::AvailabilityZone, name: 'zone2'),
+                          ],
+                          tags: tags)
         end
 
         before do
@@ -51,7 +51,7 @@ module Bosh::Director
 
         context 'when deployment will be using named AZs' do
           it 'registers the persistent IDs for those AZ names' do
-            expect(Bosh::Director::LocalDnsEncoderManager).to receive(:persist_az_names).with(['zone1', 'zone2'])
+            expect(Bosh::Director::LocalDnsEncoderManager).to receive(:persist_az_names).with(%w[zone1 zone2])
             subject.perform
           end
         end

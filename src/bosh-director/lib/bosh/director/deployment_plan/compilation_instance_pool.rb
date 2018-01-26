@@ -1,7 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationInstancePool
-
       def self.create(deployment_plan)
         logger = Config.logger
         disk_manager = DiskManager.new(logger)
@@ -32,41 +31,35 @@ module Bosh::Director
       end
 
       def with_reused_vm(stemcell)
-        begin
-          instance_memo = obtain_instance_memo(stemcell)
-          yield instance_memo.instance
-          release_instance(instance_memo)
-        rescue => e
-          remove_instance(instance_memo)
-          unless instance_memo.instance_plan.nil?
-            if Config.keep_unreachable_vms
-              @logger.info('Keeping reused compilation VM for debugging')
-            else
-              destroy_instance(instance_memo.instance_plan)
-            end
-          end
-          raise e
-        end
-      end
-
-      def with_single_use_vm(stemcell)
-        begin
-          keep_failing_vm = false
-          instance_memo = InstanceMemo.new(@instance_provider, stemcell)
-          yield instance_memo.instance
-        rescue => e
-          @logger.info('Keeping single-use compilation VM for debugging')
-          keep_failing_vm = Config.keep_unreachable_vms
-          raise e
-        ensure
-          unless instance_memo.instance.nil? || keep_failing_vm
+        instance_memo = obtain_instance_memo(stemcell)
+        yield instance_memo.instance
+        release_instance(instance_memo)
+      rescue StandardError => e
+        remove_instance(instance_memo)
+        unless instance_memo.instance_plan.nil?
+          if Config.keep_unreachable_vms
+            @logger.info('Keeping reused compilation VM for debugging')
+          else
             destroy_instance(instance_memo.instance_plan)
           end
         end
+        raise e
+      end
+
+      def with_single_use_vm(stemcell)
+        keep_failing_vm = false
+        instance_memo = InstanceMemo.new(@instance_provider, stemcell)
+        yield instance_memo.instance
+      rescue StandardError => e
+        @logger.info('Keeping single-use compilation VM for debugging')
+        keep_failing_vm = Config.keep_unreachable_vms
+        raise e
+      ensure
+        destroy_instance(instance_memo.instance_plan) unless instance_memo.instance.nil? || keep_failing_vm
       end
 
       def delete_instances(number_of_workers)
-        ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
+        ThreadPool.new(max_threads: number_of_workers).wrap do |pool|
           @instance_reuser.each do |instance_memo|
             pool.process do
               @instance_reuser.remove_instance(instance_memo)
@@ -74,7 +67,7 @@ module Bosh::Director
                 existing_instance: instance_memo.instance.model,
                 instance: instance_memo.instance,
                 desired_instance: DeploymentPlan::DesiredInstance.new,
-                network_plans: []
+                network_plans: [],
               )
               destroy_instance(instance_plan)
             end
@@ -112,7 +105,7 @@ module Bosh::Director
             @logger.info("Reusing compilation VM '#{instance_memo.instance.model.vm_cid}' for stemcell '#{stemcell.desc}'")
           end
         end
-        return instance_memo
+        instance_memo
       end
 
       def destroy_instance(instance_plan)
@@ -130,11 +123,11 @@ module Bosh::Director
       end
 
       def create_instance_plan(stemcell)
-        if @deployment_plan.compilation.vm_type
-          vm_type = @deployment_plan.compilation.vm_type
-        else
-          vm_type = CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
-        end
+        vm_type = if @deployment_plan.compilation.vm_type
+                    @deployment_plan.compilation.vm_type
+                  else
+                    CompilationVmType.new(@deployment_plan.compilation.cloud_properties)
+                  end
 
         vm_resources = @deployment_plan.compilation.vm_resources
         vm_extensions = @deployment_plan.compilation.vm_extensions
@@ -158,7 +151,7 @@ module Bosh::Director
           instance: instance,
           desired_instance: desired_instance,
           network_plans: [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)],
-          tags: @deployment_plan.tags
+          tags: @deployment_plan.tags,
         )
 
         compile_instance_group.add_instance_plans([instance_plan])
@@ -182,17 +175,16 @@ module Bosh::Director
       def add_event(deployment_name, instance_name = nil, parent_id = nil, error = nil)
         user = Config.current_job.username
         event = Config.current_job.event_manager.create_event(
-          {
-            parent_id: parent_id,
-            user: user,
-            action: 'create',
-            object_type: 'instance',
-            object_name: instance_name,
-            task: Config.current_job.task_id,
-            deployment: deployment_name,
-            instance: instance_name,
-            error: error
-          })
+          parent_id: parent_id,
+          user: user,
+          action: 'create',
+          object_type: 'instance',
+          object_name: instance_name,
+          task: Config.current_job.task_id,
+          deployment: deployment_name,
+          instance: instance_name,
+          error: error,
+        )
         event.id
       end
     end
@@ -246,7 +238,7 @@ module Bosh::Director
       def default_network
         {
           'dns' => @network,
-          'gateway' => @network
+          'gateway' => @network,
         }
       end
 
@@ -260,7 +252,7 @@ module Bosh::Director
 
       def spec
         {
-          'name' => @name
+          'name' => @name,
         }
       end
 

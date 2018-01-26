@@ -65,9 +65,7 @@ module Bosh
         end
 
         def persistent_disk_changed?
-          if @existing_instance && obsolete?
-            return @existing_instance.active_persistent_disks.any?
-          end
+          return @existing_instance.active_persistent_disks.any? if @existing_instance && obsolete?
 
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
@@ -76,7 +74,7 @@ module Bosh
             existing_disk_collection,
             instance.previous_variable_set,
             desired_disks_collection,
-            instance.desired_variable_set
+            instance.desired_variable_set,
           )
 
           changed_disk_pairs.each do |disk_pair|
@@ -115,12 +113,12 @@ module Bosh
 
           changed = false
           if obsolete_network_plans.any?
-            @logger.debug("#{__method__} obsolete reservations: [#{obsolete_network_plans.map(&:reservation).map(&:to_s).join(", ")}]")
+            @logger.debug("#{__method__} obsolete reservations: [#{obsolete_network_plans.map(&:reservation).map(&:to_s).join(', ')}]")
             changed = true
           end
 
           if desired_network_plans.any?
-            @logger.debug("#{__method__} desired reservations: [#{desired_network_plans.map(&:reservation).map(&:to_s).join(", ")}]")
+            @logger.debug("#{__method__} desired reservations: [#{desired_network_plans.map(&:reservation).map(&:to_s).join(', ')}]")
             changed = true
           end
 
@@ -140,7 +138,7 @@ module Bosh
 
         def state_changed?
           if instance.state == 'detached' &&
-            existing_instance.state != instance.state
+             existing_instance.state != instance.state
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
@@ -148,7 +146,7 @@ module Bosh
           return true if needs_to_fix?
 
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
-            instance.state == 'started' && instance.current_job_state != 'running'
+             instance.state == 'started' && instance.current_job_state != 'running'
             @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
             return true
           end
@@ -210,8 +208,8 @@ module Bosh
 
         def network_settings
           desired_reservations = network_plans
-                                   .reject(&:obsolete?)
-                                   .map { |network_plan| network_plan.reservation }
+                                 .reject(&:obsolete?)
+                                 .map(&:reservation)
 
           DeploymentPlan::NetworkSettings.new(
             @instance.job_name,
@@ -326,8 +324,8 @@ module Bosh
 
           modified_network_settings = Bosh::Common::DeepCopy.copy(network_settings)
 
-          modified_network_settings.each do |name, network_setting|
-            network_setting.delete_if { |key, value| key == "dns_record_name" }
+          modified_network_settings.each do |_name, network_setting|
+            network_setting.delete_if { |key, _value| key == 'dns_record_name' }
           end
           modified_network_settings
         end
@@ -335,7 +333,7 @@ module Bosh
         def env_changed?
           instance_group = @desired_instance.instance_group
 
-          if @existing_instance && @existing_instance.vm_env && instance_group.env.spec != @existing_instance.vm_env
+          if @existing_instance&.vm_env && instance_group.env.spec != @existing_instance.vm_env
             log_changes(__method__, @existing_instance.vm_env, instance_group.env.spec, @existing_instance)
             return true
           end
@@ -376,8 +374,8 @@ module Bosh
 
         def templates
           @existing_instance.templates.map do |template_model|
-            model_release_version = @instance.model.deployment.release_versions.find { |release_version| release_version.templates.map(&:id).include? (template_model.id) }
-            release_spec= {'name' => model_release_version.release.name, 'version' => model_release_version.version}
+            model_release_version = @instance.model.deployment.release_versions.find { |release_version| release_version.templates.map(&:id).include? template_model.id }
+            release_spec = { 'name' => model_release_version.release.name, 'version' => model_release_version.version }
             job_release_version = ReleaseVersion.new(@instance.model.deployment, release_spec)
             job_release_version.bind_model
             template = Job.new(job_release_version, template_model.name, @instance.model.deployment.name)

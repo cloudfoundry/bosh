@@ -35,8 +35,8 @@ module Bosh::Director
             raise RunErrandError, 'Filtering by instances is not supported when running errand by instance group name'
           end
         else
-          if !deployment_planner.instance_group(errand_name).nil?
-            Config.event_log.warn("Ambiguous request: the requested errand name '#{errand_name}' matches both a job " +
+          unless deployment_planner.instance_group(errand_name).nil?
+            Config.event_log.warn("Ambiguous request: the requested errand name '#{errand_name}' matches both a job " \
               "name and an errand instance group name. Executing errand on all relevant instances with job '#{errand_name}'.")
           end
         end
@@ -64,13 +64,14 @@ module Bosh::Director
                 errand_instance_group,
                 keep_alive,
                 deployment_name,
-                @logger)
+                @logger,
+              )
             end
           else
             matching_instances.collect do |target_instance|
               if target_instance.current_job_state.nil?
-                Config.event_log.warn("Skipping instance: #{target_instance.to_s} " +
-                                      "no matching VM reference was found")
+                Config.event_log.warn("Skipping instance: #{target_instance} " \
+                                      'no matching VM reference was found')
                 nil
               else
                 Errand::LifecycleServiceStep.new(runner, target_instance, @logger)
@@ -79,9 +80,7 @@ module Bosh::Director
           end
         end
 
-        if unmatched_filters.any?
-          raise "No instances match selection criteria: [#{ unmatched_filters.join(', ') }]"
-        end
+        raise "No instances match selection criteria: [#{unmatched_filters.join(', ')}]" if unmatched_filters.any?
 
         result = Errand::ParallelStep.new(Config.max_threads, errand_name, deployment_planner.model, errand_steps.flatten.compact)
       end
@@ -93,20 +92,17 @@ module Bosh::Director
     def must_errand_instance_group(deployment_planner, errand_name, deployment_name)
       errand_instance_group = deployment_planner.instance_group(errand_name)
 
-      if errand_instance_group.nil?
-        raise JobNotFound, "Errand '#{errand_name}' doesn't exist"
-      end
+      raise JobNotFound, "Errand '#{errand_name}' doesn't exist" if errand_instance_group.nil?
 
       unless errand_instance_group.is_errand?
         raise RunErrandError,
-          "Instance group '#{errand_instance_group.name}' is not an errand. To mark an instance group as an errand " +
-            "set its lifecycle to 'errand' in the deployment manifest."
+              "Instance group '#{errand_instance_group.name}' is not an errand. To mark an instance group as an errand " \
+              "set its lifecycle to 'errand' in the deployment manifest."
       end
 
       if errand_instance_group.instances.empty?
         raise InstanceNotFound, "Instance '#{deployment_name}/#{errand_name}/0' doesn't exist"
       end
-
 
       errand_instance_group
     end
@@ -121,9 +117,7 @@ module Bosh::Director
       instance_groups = []
       deployment_plan.instance_groups.each do |instance_group|
         instance_group.jobs.each do |job|
-          if job.name == errand_name && job.runs_as_errand?
-            instance_groups << instance_group
-          end
+          instance_groups << instance_group if job.name == errand_name && job.runs_as_errand?
         end
       end
       instance_groups

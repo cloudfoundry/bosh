@@ -6,15 +6,15 @@ module Bosh::Director
     class InstanceGroup
       include Bosh::Template::PropertyHelper
 
-      VALID_LIFECYCLE_PROFILES = %w(service errand)
-      DEFAULT_LIFECYCLE_PROFILE = 'service'
+      VALID_LIFECYCLE_PROFILES = %w[service errand].freeze
+      DEFAULT_LIFECYCLE_PROFILE = 'service'.freeze
 
       # started, stopped and detached are real states
       # (persisting in DB and reflecting target instance state)
       # recreate and restart are two virtual states
       # (both set  target instance state to "started" and set
       # appropriate instance spec modifiers)
-      VALID_STATES = %w(started stopped detached recreate restart)
+      VALID_STATES = %w[started stopped detached recreate restart].freeze
 
       # @return [String] Instance group name
       attr_accessor :name
@@ -122,7 +122,7 @@ module Bosh::Director
       end
 
       def self.is_legacy_spec?(instance_group_spec)
-        !instance_group_spec.has_key?('templates')
+        !instance_group_spec.key?('templates')
       end
 
       def add_instance_plans(instance_plans)
@@ -131,7 +131,7 @@ module Bosh::Director
 
       def sorted_instance_plans
         @sorted_instance_plans ||= InstancePlanSorter.new(@logger)
-                                   .sort(@instance_plans.reject(&:obsolete?))
+                                                     .sort(@instance_plans.reject(&:obsolete?))
       end
 
       def add_job(job_to_add)
@@ -151,12 +151,12 @@ module Bosh::Director
       # because it should be impossible for the agent to have a job spec with
       # multiple templates in legacy form.
       def self.convert_from_legacy_spec(job_spec)
-        return job_spec if !self.is_legacy_spec?(job_spec)
+        return job_spec unless is_legacy_spec?(job_spec)
         job = {
           'name' => job_spec['template'],
           'version' => job_spec['version'],
           'sha1' => job_spec['sha1'],
-          'blobstore_id' => job_spec['blobstore_id']
+          'blobstore_id' => job_spec['blobstore_id'],
         }
 
         # Supporting 'template_scoped_properties' for legacy spec is going to be messy.
@@ -165,7 +165,6 @@ module Bosh::Director
         # templates, i.e. by using the 'templates' key
         job_spec['templates'] = [job]
       end
-
 
       def obsolete_instance_plans
         @instance_plans.select(&:obsolete?)
@@ -176,7 +175,7 @@ module Bosh::Director
       end
 
       def unignored_instance_plans
-        needed_instance_plans.select { |instance_plan| !instance_plan.should_be_ignored? }
+        needed_instance_plans.reject(&:should_be_ignored?)
       end
 
       def strategy
@@ -199,18 +198,16 @@ module Bosh::Director
 
         if @jobs.size >= 1
           first_job = @jobs[0]
-          result.merge!({
+          result.merge!(
             'templates' => [],
             # --- Legacy ---
             'template' => first_job.name,
             'version' => first_job.version,
             'sha1' => first_job.sha1,
-            'blobstore_id' => first_job.blobstore_id
-          })
+            'blobstore_id' => first_job.blobstore_id,
+          )
 
-          if first_job.logs
-            result['logs'] = first_job.logs
-          end
+          result['logs'] = first_job.logs if first_job.logs
           # --- /Legacy ---
 
           @jobs.each do |job|
@@ -218,12 +215,10 @@ module Bosh::Director
               'name' => job.name,
               'version' => job.version,
               'sha1' => job.sha1,
-              'blobstore_id' => job.blobstore_id
+              'blobstore_id' => job.blobstore_id,
             }
 
-            if job.logs
-              job_entry['logs'] = job.logs
-            end
+            job_entry['logs'] = job.logs if job.logs
             result['templates'] << job_entry
           end
           result
@@ -273,7 +268,7 @@ module Bosh::Director
         @properties = {}
 
         options = {
-          :dns_record_names => get_dns_record_names
+          dns_record_names: get_dns_record_names,
         }
 
         @jobs.each do |job|
@@ -287,10 +282,10 @@ module Bosh::Director
 
         jobs.each do |job|
           job.model.package_names.each do |package_name|
-            package = job.model.release.packages.find{|p| p.name == package_name}
+            package = job.model.release.packages.find { |p| p.name == package_name }
 
             releases_by_package_names[package_name] ||= {
-              usages: []
+              usages: [],
             }
 
             releases_by_package_names[package_name][:usages] << {
@@ -303,17 +298,16 @@ module Bosh::Director
         end
 
         releases_by_package_names.each do |package_name, packages|
-          releases = packages[:usages].group_by{ |u| u[:fingerprint] + u[:dependency_set_json] }
+          releases = packages[:usages].group_by { |u| u[:fingerprint] + u[:dependency_set_json] }
 
-          if releases.size > 1
-            release1jobs, release2jobs = releases.values[0..1]
+          next unless releases.size > 1
+          release1jobs, release2jobs = releases.values[0..1]
 
-            raise JobPackageCollision,
-              "Package name collision detected in instance group '#{@name}': "\
-                  "job '#{release1jobs[0][:release]}/#{release1jobs[0][:job]}' depends on package '#{release1jobs[0][:release]}/#{package_name}', "\
-                  "job '#{release2jobs[0][:release]}/#{release2jobs[0][:job]}' depends on '#{release2jobs[0][:release]}/#{package_name}'. " +
+          raise JobPackageCollision,
+                "Package name collision detected in instance group '#{@name}': "\
+                    "job '#{release1jobs[0][:release]}/#{release1jobs[0][:job]}' depends on package '#{release1jobs[0][:release]}/#{package_name}', "\
+                    "job '#{release2jobs[0][:release]}/#{release2jobs[0][:job]}' depends on '#{release2jobs[0][:release]}/#{package_name}'. " \
                 'BOSH cannot currently collocate two packages with identical names from separate releases.'
-          end
         end
       end
 
@@ -322,7 +316,7 @@ module Bosh::Director
         bind_instance_networks(ip_provider)
       end
 
-      #TODO: Instance group should not be responsible for reserving IPs. Consider moving this somewhere else? Maybe in the consumer?
+      # TODO: Instance group should not be responsible for reserving IPs. Consider moving this somewhere else? Maybe in the consumer?
       def bind_instance_networks(ip_provider)
         needed_instance_plans
           .flat_map(&:network_plans)
@@ -406,7 +400,7 @@ module Bosh::Director
       private
 
       def run_time_dependencies
-        jobs.flat_map { |job| job.package_models }.uniq.map(&:name)
+        jobs.flat_map(&:package_models).uniq.map(&:name)
       end
 
       def get_dns_record_names

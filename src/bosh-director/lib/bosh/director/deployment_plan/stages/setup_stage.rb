@@ -32,7 +32,7 @@ module Bosh::Director
           @vm_creator.create_for_instance_plans(
             missing_plans + hotswap_plans,
             @deployment_plan.ip_provider,
-            @deployment_plan.tags
+            @deployment_plan.tags,
           )
 
           missing_plans.each do |plan|

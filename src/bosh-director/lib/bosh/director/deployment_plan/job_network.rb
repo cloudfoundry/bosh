@@ -23,7 +23,7 @@ module Bosh::Director
       end
 
       def vip?
-        deployment_network.kind_of?(VipNetwork)
+        deployment_network.is_a?(VipNetwork)
       end
 
       def default_for?(property)

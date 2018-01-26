@@ -113,22 +113,22 @@ module Bosh::Director
       end
 
       def_delegators :@cloud_planner,
-        :networks,
-        :network,
-        :deleted_network,
-        :availability_zone,
-        :availability_zones,
-        :resource_pools,
-        :resource_pool,
-        :vm_types,
-        :vm_type,
-        :vm_extensions,
-        :vm_extension,
-        :add_resource_pool,
-        :disk_types,
-        :disk_type,
-        :compilation,
-        :ip_provider
+                     :networks,
+                     :network,
+                     :deleted_network,
+                     :availability_zone,
+                     :availability_zones,
+                     :resource_pools,
+                     :resource_pool,
+                     :vm_types,
+                     :vm_type,
+                     :vm_extensions,
+                     :vm_extension,
+                     :add_resource_pool,
+                     :disk_types,
+                     :disk_type,
+                     :compilation,
+                     :ip_provider
 
       def canonical_name
         Canonicalizer.canonicalize(@name)
@@ -176,9 +176,9 @@ module Bosh::Director
       # Adds a release by name
       # @param [Bosh::Director::DeploymentPlan::ReleaseVersion] release
       def add_release(release)
-        if @releases.has_key?(release.name)
+        if @releases.key?(release.name)
           raise DeploymentDuplicateReleaseName,
-            "Duplicate release name '#{release.name}'"
+                "Duplicate release name '#{release.name}'"
         end
         @releases[release.name] = release
       end
@@ -208,21 +208,17 @@ module Bosh::Director
       end
 
       def instance_plans_with_missing_vms
-        instance_groups_starting_on_deploy.collect_concat do |instance_group|
-          instance_group.instance_plans_with_missing_vms
-        end
+        instance_groups_starting_on_deploy.collect_concat(&:instance_plans_with_missing_vms)
       end
 
       def instance_plans_with_hot_swap_and_needs_shutdown
         instance_groups_starting_on_deploy.collect_concat do |instance_group|
-          if instance_group.update.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
-            return []
-          end
+          return [] if instance_group.update.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
 
           instance_group.sorted_instance_plans
-            .select(&:needs_shutting_down?)
-            .reject(&:new?)
-            .reject { |plan| plan.instance.state == 'detached' }
+                        .select(&:needs_shutting_down?)
+                        .reject(&:new?)
+                        .reject { |plan| plan.instance.state == 'detached' }
         end
       end
 
@@ -235,7 +231,7 @@ module Bosh::Director
       def add_instance_group(instance_group)
         if @instance_groups_canonical_name_index.include?(instance_group.canonical_name)
           raise DeploymentCanonicalJobNameTaken,
-            "Invalid instance group name '#{instance_group.name}', canonical name already taken"
+                "Invalid instance group name '#{instance_group.name}', canonical name already taken"
         end
 
         @instance_groups << instance_group
@@ -257,9 +253,7 @@ module Bosh::Director
           if instance_group.is_service?
             instance_groups << instance_group
           elsif instance_group.is_errand?
-            if instance_group.instances.any? { |i| i.vm_created? }
-              instance_groups << instance_group
-            end
+            instance_groups << instance_group if instance_group.instances.any?(&:vm_created?)
           end
         end
 

@@ -10,15 +10,14 @@ module Bosh::Director
       let(:deployment_planner_provider) { instance_double(Errand::DeploymentPlannerProvider) }
       let(:deployment_planner) do
         instance_double(DeploymentPlan::Planner,
-          availability_zones: [],
-          template_blob_cache: template_blob_cache,
-          ip_provider: ip_provider,
-          use_short_dns_addresses?: false
-        )
+                        availability_zones: [],
+                        template_blob_cache: template_blob_cache,
+                        ip_provider: ip_provider,
+                        use_short_dns_addresses?: false)
       end
       let(:task_result) { instance_double(TaskDBWriter) }
       let(:instance_manager) { Api::InstanceManager.new }
-      let(:logs_fetcher) { instance_double (LogsFetcher) }
+      let(:logs_fetcher) { instance_double LogsFetcher }
       let(:event_manager) { instance_double(Bosh::Director::Api::EventManager) }
       let(:task_writer) { StringIO.new }
       let(:event_log) { EventLog::Log.new(task_writer) }
@@ -119,7 +118,7 @@ module Bosh::Director
             let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [], is_errand?: true, needed_instance_plans: needed_instance_plans) }
 
             context 'when using an instance filter' do
-              let(:instance_slugs) { [{'group' => 'service-group-name'}] }
+              let(:instance_slugs) { [{ 'group' => 'service-group-name' }] }
 
               it 'no-ops successfully on that instance group and continues' do
                 expect(Errand::Runner).to receive(:new).with(job_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
@@ -189,8 +188,8 @@ module Bosh::Director
 
               line_1_json = JSON.parse(lines[1])
               expect(line_1_json['type']).to eq('warning')
-              expect(line_1_json['message']).to eq("Ambiguous request: the requested errand name 'ambiguous-errand-name' " +
-                "matches both a job name and an errand instance group name. Executing errand on all relevant " +
+              expect(line_1_json['message']).to eq("Ambiguous request: the requested errand name 'ambiguous-errand-name' " \
+                'matches both a job name and an errand instance group name. Executing errand on all relevant ' \
                 "instances with job 'ambiguous-errand-name'.")
 
               line_2_json = JSON.parse(lines[2])
@@ -244,8 +243,8 @@ module Bosh::Director
               expect(line_0_json['stage']).to eq('Preparing deployment')
 
               line_1_json = JSON.parse(lines[1])
-              expect(line_1_json['message']).to eq("Skipping instance: #{instance2.to_s} " +
-                                                   "no matching VM reference was found")
+              expect(line_1_json['message']).to eq("Skipping instance: #{instance2} " \
+                                                   'no matching VM reference was found')
               expect(line_1_json['type']).to eq('warning')
             end
           end
@@ -265,7 +264,7 @@ module Bosh::Director
           end
 
           context 'when selecting an instance from a service group' do
-            let(:instance_slugs) { [{'group' => 'service-group-name', 'id' => instance2_model.uuid}] }
+            let(:instance_slugs) { [{ 'group' => 'service-group-name', 'id' => instance2_model.uuid }] }
 
             it 'only creates an errand for the requested slug' do
               expect(Errand::LifecycleServiceStep).to receive(:new).with(
@@ -277,7 +276,7 @@ module Bosh::Director
           end
 
           context 'when selecting an instance from a errand group' do
-            let(:instance_slugs) { [{'group' => 'errand-group-name'}] }
+            let(:instance_slugs) { [{ 'group' => 'errand-group-name' }] }
             it 'only creates an errand for the requested slug' do
               expect(Errand::LifecycleErrandStep).to receive(:new).with(
                 runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, logger
@@ -288,11 +287,11 @@ module Bosh::Director
           end
 
           context 'when selecting an instance that does not exist' do
-            let(:instance_slugs) { [{'group' => 'bogus-group-name', 'id' => '0'}] }
+            let(:instance_slugs) { [{ 'group' => 'bogus-group-name', 'id' => '0' }] }
             it 'only creates an errand for the requested slug' do
-              expect{
+              expect do
                 subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
-              }.to raise_error('No instances match selection criteria: [{"group"=>"bogus-group-name", "id"=>"0"}]')
+              end.to raise_error('No instances match selection criteria: [{"group"=>"bogus-group-name", "id"=>"0"}]')
             end
           end
         end
@@ -302,7 +301,7 @@ module Bosh::Director
         let(:instance_group_name) { 'instance-group-name' }
         let(:instance_groups) { [instance_group] }
         let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'non-errand-job', runs_as_errand?: false) }
-        let(:errand_job_name) {'errand-job'}
+        let(:errand_job_name) { 'errand-job' }
         let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name, runs_as_errand?: true) }
         let(:needed_instance_plans) { [] }
         let(:package_compile_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage) }
@@ -315,13 +314,12 @@ module Bosh::Director
           let(:dns_encoder) { instance_double(DnsEncoder) }
           let(:instance_group) do
             instance_double(DeploymentPlan::InstanceGroup,
-              name: instance_group_name,
-              jobs: [errand_job, non_errand_job],
-              instances: [instance],
-              is_errand?: true,
-              needed_instance_plans: needed_instance_plans,
-              bind_instances: nil,
-            )
+                            name: instance_group_name,
+                            jobs: [errand_job, non_errand_job],
+                            instances: [instance],
+                            is_errand?: true,
+                            needed_instance_plans: needed_instance_plans,
+                            bind_instances: nil)
           end
 
           before do
@@ -339,7 +337,8 @@ module Bosh::Director
               needed_instance_plans,
               template_blob_cache,
               an_instance_of(DnsEncoder),
-              logger)
+              logger,
+            )
             expect(Errand::Runner).to receive(:new).with(instance_group_name, false, task_result, instance_manager, logs_fetcher).and_return(runner)
             expect(Errand::LifecycleErrandStep).to receive(:new).with(
               runner, deployment_planner, instance_group_name, instance, instance_group, keep_alive, deployment_name, logger
@@ -359,7 +358,8 @@ module Bosh::Director
                 needed_instance_plans,
                 template_blob_cache,
                 an_instance_of(DnsEncoder),
-                logger)
+                logger,
+              )
               expect(Errand::Runner).to receive(:new).with(instance_group_name, true, task_result, instance_manager, logs_fetcher).and_return(runner)
               expect(Errand::LifecycleErrandStep).to receive(:new).with(
                 runner, deployment_planner, instance_group_name, instance, instance_group, keep_alive, deployment_name, logger
@@ -372,9 +372,9 @@ module Bosh::Director
           context 'and instances are specified' do
             let(:instance_slugs) { ['group_name/0'] }
             it 'raises' do
-              expect {
+              expect do
                 subject.get(deployment_name, instance_group_name, keep_alive, instance_slugs)
-              }.to raise_error(RunErrandError, 'Filtering by instances is not supported when running errand by instance group name')
+              end.to raise_error(RunErrandError, 'Filtering by instances is not supported when running errand by instance group name')
             end
           end
         end
@@ -382,38 +382,36 @@ module Bosh::Director
         context 'when there is a lifecycle: errand instance group with that name that has no instances' do
           let(:instance_group) do
             instance_double(DeploymentPlan::InstanceGroup,
-              name: instance_group_name,
-              jobs: [errand_job, non_errand_job],
-              instances: [],
-              is_errand?: true,
-              needed_instance_plans: needed_instance_plans,
-              bind_instances: nil,
-            )
+                            name: instance_group_name,
+                            jobs: [errand_job, non_errand_job],
+                            instances: [],
+                            is_errand?: true,
+                            needed_instance_plans: needed_instance_plans,
+                            bind_instances: nil)
           end
 
           it 'returns an errand object that will run on the first instance in that instance group' do
-            expect {
+            expect do
               subject.get(deployment_name, instance_group_name, keep_alive, instance_slugs)
-            }.to raise_error(InstanceNotFound, "Instance '#{deployment_name}/instance-group-name/0' doesn't exist")
+            end.to raise_error(InstanceNotFound, "Instance '#{deployment_name}/instance-group-name/0' doesn't exist")
           end
         end
 
         context 'when there is not a lifecycle: errand instance group with that name' do
           let(:instance_group) do
             instance_double(DeploymentPlan::InstanceGroup,
-              name: instance_group_name,
-              jobs: [errand_job, non_errand_job],
-              instances: [instance],
-              is_errand?: false,
-              needed_instance_plans: needed_instance_plans,
-              bind_instances: nil,
-            )
+                            name: instance_group_name,
+                            jobs: [errand_job, non_errand_job],
+                            instances: [instance],
+                            is_errand?: false,
+                            needed_instance_plans: needed_instance_plans,
+                            bind_instances: nil)
           end
 
           it 'fails' do
-            expect {
+            expect do
               subject.get(deployment_name, instance_group_name, keep_alive, instance_slugs)
-            }.to raise_error(RunErrandError, "Instance group 'instance-group-name' is not an errand. To mark an instance group as an errand set its lifecycle to 'errand' in the deployment manifest.")
+            end.to raise_error(RunErrandError, "Instance group 'instance-group-name' is not an errand. To mark an instance group as an errand set its lifecycle to 'errand' in the deployment manifest.")
           end
         end
 
@@ -422,13 +420,12 @@ module Bosh::Director
           let(:instance_groups) { [] }
 
           it 'fails' do
-            expect {
+            expect do
               subject.get(deployment_name, instance_group_name, keep_alive, instance_slugs)
-            }.to raise_error(JobNotFound, "Errand 'instance-group-name' doesn't exist")
+            end.to raise_error(JobNotFound, "Errand 'instance-group-name' doesn't exist")
           end
         end
       end
     end
   end
 end
-

@@ -9,7 +9,7 @@ module Bosh::Director::DeploymentPlan
       def reconcile(existing_reservations)
         unplaced_existing_reservations = Set.new(existing_reservations)
         existing_network_plans = []
-        desired_reservations = @instance_plan.network_plans.map { |np| np.reservation }
+        desired_reservations = @instance_plan.network_plans.map(&:reservation)
 
         existing_reservations.each do |existing_reservation|
           unless az_is_desired(existing_reservation)

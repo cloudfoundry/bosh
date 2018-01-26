@@ -316,7 +316,7 @@ module Bosh::Director
               expect(disks).to eq([persistent_disk_model.disk_cid])
               expect(tags).to eq(tags)
               expect(use_existing).to eq(nil)
-           end
+            end
 
             expect(state_applier).to receive(:apply)
             expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
