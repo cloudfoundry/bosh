@@ -99,15 +99,15 @@ module Bosh::Director
 
           describe 'when the network name matches one from the include spec' do
             it 'applies' do
-              allow(instance_group).to receive(:has_network?).with('net_1').and_return(true)
+              allow(instance_group).to receive(:network_present?).with('net_1').and_return(true)
               expect(addon_include.applies?('anything', [], instance_group)).to be(true)
             end
           end
 
           describe 'when the network name does not match any from the filter spec' do
             it 'does not apply' do
-              allow(instance_group).to receive(:has_network?).with('net_1').and_return(false)
-              allow(instance_group).to receive(:has_network?).with('net_2').and_return(false)
+              allow(instance_group).to receive(:network_present?).with('net_1').and_return(false)
+              allow(instance_group).to receive(:network_present?).with('net_2').and_return(false)
               expect(addon_include.applies?('anything', [], instance_group)).to be(false)
             end
           end

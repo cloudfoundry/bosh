@@ -162,7 +162,7 @@ module Bosh::Director
       end
 
       def instance_group_has_link_network(instance_group, link_network)
-        !link_network || instance_group.has_network?(link_network)
+        !link_network || instance_group.network_present?(link_network)
       end
 
       def find_deployment_and_get_link_path(deployment_name, name, link_network)

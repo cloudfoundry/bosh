@@ -17,7 +17,7 @@ module Bosh::Director
 
     let(:deployment_planner) { instance_double(DeploymentPlan::Planner, template_blob_cache: template_blob_cache) }
     let(:runner) { instance_double(Errand::Runner) }
-    let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, is_errand?: true) }
+    let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, errand?: true) }
     let(:errand_name) { 'errand_name' }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:deployment_name) { 'deployment-name' }

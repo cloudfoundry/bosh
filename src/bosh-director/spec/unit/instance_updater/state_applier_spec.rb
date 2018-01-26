@@ -33,7 +33,7 @@ module Bosh::Director
                       env: DeploymentPlan::Env.new('key' => 'value'),
                       package_spec: {},
                       persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(logger),
-                      is_errand?: false,
+                      errand?: false,
                       resolved_links: {},
                       compilation?: false,
                       jobs: [],

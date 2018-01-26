@@ -1,24 +1,41 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationInstancePool
-      def self.create(deployment_plan)
-        logger = Config.logger
-        disk_manager = DiskManager.new(logger)
-        agent_broadcaster = AgentBroadcaster.new
-        powerdns_manager = PowerDnsManagerProvider.create
-        vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(deployment_plan.use_short_dns_addresses?)
-        vm_creator = Bosh::Director::VmCreator.new(logger, deployment_plan.template_blob_cache, dns_encoder, agent_broadcaster)
-        instance_deleter = Bosh::Director::InstanceDeleter.new(deployment_plan.ip_provider, powerdns_manager, disk_manager)
-        instance_provider = InstanceProvider.new(deployment_plan, vm_creator, logger)
+      class << self
+        def create(deployment_plan)
+          logger = Config.logger
 
-        new(
-          InstanceReuser.new,
-          instance_provider,
-          logger,
-          instance_deleter,
-          deployment_plan.compilation.workers,
-        )
+          new(
+            InstanceReuser.new,
+            make_instance_provider(logger, deployment_plan),
+            logger,
+            make_instance_deleter(logger, deployment_plan),
+            deployment_plan.compilation.workers,
+          )
+        end
+
+        private
+
+        def make_instance_deleter(logger, deployment_plan)
+          Bosh::Director::InstanceDeleter.new(
+            deployment_plan.ip_provider,
+            PowerDnsManagerProvider.create,
+            DiskManager.new(logger),
+          )
+        end
+
+        def make_instance_provider(logger, deployment_plan)
+          InstanceProvider.new(
+            deployment_plan,
+            Bosh::Director::VmCreator.new(
+              logger,
+              deployment_plan.template_blob_cache,
+              LocalDnsEncoderManager.create_dns_encoder(deployment_plan.use_short_dns_addresses?),
+              AgentBroadcaster.new,
+            ),
+            logger,
+          )
+        end
       end
 
       def initialize(instance_reuser, instance_provider, logger, instance_deleter, max_instance_count)
@@ -78,15 +95,11 @@ module Bosh::Director
       private
 
       def remove_instance(instance_memo)
-        @mutex.synchronize do
-          @instance_reuser.remove_instance(instance_memo)
-        end
+        @mutex.synchronize { @instance_reuser.remove_instance(instance_memo) }
       end
 
       def release_instance(instance_memo)
-        @mutex.synchronize do
-          @instance_reuser.release_instance(instance_memo)
-        end
+        @mutex.synchronize { @instance_reuser.release_instance(instance_memo) }
       end
 
       def obtain_instance_memo(stemcell)
@@ -113,8 +126,6 @@ module Bosh::Director
       end
     end
 
-    private
-
     class InstanceProvider
       def initialize(deployment_plan, vm_creator, logger)
         @deployment_plan = deployment_plan
@@ -133,13 +144,34 @@ module Bosh::Director
         vm_extensions = @deployment_plan.compilation.vm_extensions
         env = Env.new(@deployment_plan.compilation.env)
 
-        compile_instance_group = CompilationInstanceGroup.new(vm_type, vm_resources, vm_extensions, stemcell, env, @deployment_plan.compilation.network_name, @logger)
+        compile_instance_group = CompilationInstanceGroup.new(
+          vm_type,
+          vm_resources,
+          vm_extensions,
+          stemcell,
+          env,
+          @deployment_plan.compilation.network_name,
+          @logger,
+        )
         availability_zone = @deployment_plan.compilation.availability_zone
-        instance = Instance.create_from_instance_group(compile_instance_group, 0, 'started', @deployment_plan.model, {}, availability_zone, @logger)
+        instance = Instance.create_from_instance_group(
+          compile_instance_group,
+          0,
+          'started',
+          @deployment_plan.model,
+          {},
+          availability_zone,
+          @logger,
+        )
         instance.bind_new_instance_model
 
         if vm_resources
-          vm_cloud_properties = @deployment_plan.vm_resources_cache.get_vm_cloud_properties(instance.availability_zone&.cpi, vm_resources.spec)
+          vm_cloud_properties = @deployment_plan.vm_resources_cache
+                                                .get_vm_cloud_properties(
+                                                  instance.availability_zone&.cpi,
+                                                  vm_resources.spec,
+                                                )
+
           instance.update_vm_cloud_properties(vm_cloud_properties)
         end
 
@@ -164,7 +196,7 @@ module Bosh::Director
         @deployment_plan.ip_provider.reserve(instance_plan.network_plans.first.reservation)
         @vm_creator.create_for_instance_plan(instance_plan, @deployment_plan.ip_provider, [], instance_plan.tags)
         instance_plan.instance
-      rescue Exception => e
+      rescue StandardError => e
         raise e
       ensure
         add_event(instance_model.deployment.name, instance_model.name, parent_id, e)
@@ -276,8 +308,12 @@ module Bosh::Director
         nil
       end
 
-      def strategy
-        UpdateConfig::STRATEGY_LEGACY
+      def hot_swap?
+        false
+      end
+
+      def should_hot_swap?
+        false
       end
 
       def persistent_disk_collection

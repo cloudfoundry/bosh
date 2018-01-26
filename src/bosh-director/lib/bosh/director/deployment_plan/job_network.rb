@@ -19,7 +19,7 @@ module Bosh::Director
       end
 
       def static?
-        !!@static_ips
+        Array(@static_ips).any?
       end
 
       def vip?

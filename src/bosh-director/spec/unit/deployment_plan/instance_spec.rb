@@ -27,7 +27,7 @@ module Bosh::Director::DeploymentPlan
                       name: 'fake-job',
                       persistent_disk_collection: PersistentDiskCollection.new(logger),
                       compilation?: false,
-                      is_errand?: false,
+                      errand?: false,
                       strategy: 'hot-swap',
                       vm_extensions: vm_extensions)
     end

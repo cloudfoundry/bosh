@@ -451,7 +451,7 @@ module Bosh::Director
       get '/:deployment/errands', authorization: :read do
         deployment_plan = load_deployment_plan
 
-        errands_instance_groups = deployment_plan.instance_groups.select(&:is_errand?)
+        errands_instance_groups = deployment_plan.instance_groups.select(&:errand?)
         errands = errands_instance_groups.map(&:name)
 
         deployment_plan.instance_groups.each do |instance_group|

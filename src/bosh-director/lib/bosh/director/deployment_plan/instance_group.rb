@@ -121,7 +121,7 @@ module Bosh::Director
         @deployment_name = nil
       end
 
-      def self.is_legacy_spec?(instance_group_spec)
+      def self.legacy_spec?(instance_group_spec)
         !instance_group_spec.key?('templates')
       end
 
@@ -132,6 +132,13 @@ module Bosh::Director
       def sorted_instance_plans
         @sorted_instance_plans ||= InstancePlanSorter.new(@logger)
                                                      .sort(@instance_plans.reject(&:obsolete?))
+      end
+
+      def instance_plans_needing_shutdown
+        sorted_instance_plans
+          .select(&:needs_shutting_down?)
+          .reject(&:new?)
+          .reject { |plan| plan.instance.state == 'detached' }
       end
 
       def add_job(job_to_add)
@@ -151,7 +158,7 @@ module Bosh::Director
       # because it should be impossible for the agent to have a job spec with
       # multiple templates in legacy form.
       def self.convert_from_legacy_spec(job_spec)
-        return job_spec unless is_legacy_spec?(job_spec)
+        return job_spec unless legacy_spec?(job_spec)
         job = {
           'name' => job_spec['template'],
           'version' => job_spec['version'],
@@ -170,7 +177,8 @@ module Bosh::Director
         @instance_plans.select(&:obsolete?)
       end
 
-      def instances # to preserve interface for UpdateStage -- switch to instance_plans eventually
+      # to preserve interface for UpdateStage -- switch to instance_plans eventually
+      def instances
         needed_instance_plans.map(&:instance)
       end
 
@@ -180,6 +188,14 @@ module Bosh::Director
 
       def strategy
         update&.strategy
+      end
+
+      def hot_swap?
+        strategy == UpdateConfig::STRATEGY_HOT_SWAP
+      end
+
+      def should_hot_swap?
+        Array(networks).none?(&:static?) && hot_swap?
       end
 
       def needed_instance_plans
@@ -196,33 +212,33 @@ module Bosh::Director
       def spec
         result = { 'name' => @name }
 
-        if @jobs.size >= 1
-          first_job = @jobs[0]
-          result.merge!(
-            'templates' => [],
-            # --- Legacy ---
-            'template' => first_job.name,
-            'version' => first_job.version,
-            'sha1' => first_job.sha1,
-            'blobstore_id' => first_job.blobstore_id,
-          )
+        return nil if @jobs.empty?
 
-          result['logs'] = first_job.logs if first_job.logs
-          # --- /Legacy ---
+        first_job = @jobs[0]
+        result.merge!(
+          'templates' => [],
+          # --- Legacy ---
+          'template' => first_job.name,
+          'version' => first_job.version,
+          'sha1' => first_job.sha1,
+          'blobstore_id' => first_job.blobstore_id,
+        )
 
-          @jobs.each do |job|
-            job_entry = {
-              'name' => job.name,
-              'version' => job.version,
-              'sha1' => job.sha1,
-              'blobstore_id' => job.blobstore_id,
-            }
+        result['logs'] = first_job.logs if first_job.logs
+        # --- /Legacy ---
 
-            job_entry['logs'] = job.logs if job.logs
-            result['templates'] << job_entry
-          end
-          result
+        @jobs.each do |job|
+          job_entry = {
+            'name' => job.name,
+            'version' => job.version,
+            'sha1' => job.sha1,
+            'blobstore_id' => job.blobstore_id,
+          }
+
+          job_entry['logs'] = job.logs if job.logs
+          result['templates'] << job_entry
         end
+        result
       end
 
       def update_spec
@@ -304,9 +320,11 @@ module Bosh::Director
           release1jobs, release2jobs = releases.values[0..1]
 
           raise JobPackageCollision,
-                "Package name collision detected in instance group '#{@name}': "\
-                    "job '#{release1jobs[0][:release]}/#{release1jobs[0][:job]}' depends on package '#{release1jobs[0][:release]}/#{package_name}', "\
-                    "job '#{release2jobs[0][:release]}/#{release2jobs[0][:job]}' depends on '#{release2jobs[0][:release]}/#{package_name}'. " \
+                "Package name collision detected in instance group '#{@name}': " \
+                    "job '#{release1jobs[0][:release]}/#{release1jobs[0][:job]}' " \
+                    "depends on package '#{release1jobs[0][:release]}/#{package_name}', " \
+                    "job '#{release2jobs[0][:release]}/#{release2jobs[0][:job]}' " \
+                    "depends on '#{release2jobs[0][:release]}/#{package_name}'. " \
                 'BOSH cannot currently collocate two packages with identical names from separate releases.'
         end
       end
@@ -316,7 +334,8 @@ module Bosh::Director
         bind_instance_networks(ip_provider)
       end
 
-      # TODO: Instance group should not be responsible for reserving IPs. Consider moving this somewhere else? Maybe in the consumer?
+      # TODO: Instance group should not be responsible for reserving IPs.
+      # Consider moving this somewhere else? Maybe in the consumer?
       def bind_instance_networks(ip_provider)
         needed_instance_plans
           .flat_map(&:network_plans)
@@ -334,17 +353,17 @@ module Bosh::Director
         end
       end
 
-      def has_network?(network_name)
+      def network_present?(network_name)
         networks.any? do |network|
           network.name == network_name
         end
       end
 
-      def is_service?
+      def service?
         @lifecycle == 'service'
       end
 
-      def is_errand?
+      def errand?
         @lifecycle == 'errand'
       end
 

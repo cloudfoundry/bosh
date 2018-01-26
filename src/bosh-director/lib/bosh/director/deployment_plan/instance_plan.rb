@@ -36,6 +36,10 @@ module Bosh
           !changes.empty?
         end
 
+        def should_hot_swap?
+          @desired_instance.instance_group&.should_hot_swap?
+        end
+
         def needs_to_fix?
           return false if @instance.nil?
           @instance.current_job_state == 'unresponsive'

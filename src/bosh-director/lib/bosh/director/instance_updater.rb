@@ -111,7 +111,7 @@ module Bosh::Director
                                 .map(&:model)
                                 .map(&:disk_cid).compact
 
-          if instance_plan.instance.strategy == DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+          if instance_plan.should_hot_swap?
             instance_report.vm = new_vm
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
           else
@@ -125,7 +125,7 @@ module Bosh::Director
 
         instance_report.vm = instance_model.active_vm
 
-        if instance_plan.instance.strategy == DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+        if instance_plan.should_hot_swap?
           if instance_plan.needs_disk?
             DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform(instance_report)
             DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)

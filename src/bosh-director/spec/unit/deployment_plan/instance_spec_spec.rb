@@ -49,7 +49,7 @@ module Bosh::Director::DeploymentPlan
                       env: env,
                       package_spec: packages,
                       persistent_disk_collection: persistent_disk_collection,
-                      is_errand?: false,
+                      errand?: false,
                       resolved_links: links,
                       compilation?: false,
                       update_spec: {},

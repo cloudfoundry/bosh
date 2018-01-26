@@ -34,6 +34,7 @@ module Bosh::Director
           instance_double(DeploymentPlan::Planner,
                           instance_plans_with_hot_swap_and_needs_shutdown: instance_plans_with_hot_swap_and_needs_shutdown,
                           instance_plans_with_missing_vms: instance_plans_with_missing_vms,
+                          skipped_instance_plans_with_hot_swap_and_needs_shutdown: [],
                           ip_provider: ip_provider,
                           availability_zones: [
                             instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),

@@ -12,14 +12,20 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
                     model: deployment,
                     name: deployment.name,
                     ip_provider: fake_ip_provider,
-                    releases: {},
-                   )
+                    releases: {})
   end
-  let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new({ 'name' => 'dea' }) }
+  let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new('name' => 'dea') }
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
 
-  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network-name', validate_reference_from_job!: true, has_azs?: true) }
+  let(:network) do
+    instance_double(
+      'Bosh::Director::DeploymentPlan::Network',
+      name: 'fake-network-name',
+      validate_reference_from_job!: true,
+      has_azs?: true,
+    )
+  end
 
   let(:foo_properties) do
     {
@@ -50,37 +56,40 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:release1_package1_model) { Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'abc123') }
 
   let(:release1) do
-    Bosh::Director::DeploymentPlan::ReleaseVersion.new(deployment, 
-                                                         'name' => 'release1',
+    Bosh::Director::DeploymentPlan::ReleaseVersion.new(
+      deployment,
+      'name' => 'release1',
       'version' => '1',
-                                                       )
+    )
   end
 
   let(:release1_model) { Bosh::Director::Models::Release.make(name: 'release1') }
   let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
-  let(:logger) { double(:logger).as_null_object }
+  let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
+  subject { described_class.new(logger) }
 
   before do
-    allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
+    allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new).and_return update_config
 
-   allow(plan).to receive(:networks).and_return([network])
-   allow(plan).to receive(:vm_type).with('dea').and_return vm_type
-   allow(plan).to receive(:stemcell).with('dea').and_return stemcell
-   allow(plan).to receive(:update)
+    allow(plan).to receive(:networks).and_return([network])
+    allow(plan).to receive(:vm_type).with('dea').and_return vm_type
+    allow(plan).to receive(:stemcell).with('dea').and_return stemcell
+    allow(plan).to receive(:update)
 
-   allow(release1).to receive(:get_or_create_template).with('foo').and_return(release1_foo_job)
-   allow(release1).to receive(:get_or_create_template).with('bar').and_return(release1_bar_job)
+    allow(release1).to receive(:get_or_create_template).with('foo').and_return(release1_foo_job)
+    allow(release1).to receive(:get_or_create_template).with('bar').and_return(release1_bar_job)
 
-   allow(release1_foo_job).to receive(:properties)
-   allow(release1_bar_job).to receive(:properties)
+    allow(release1_foo_job).to receive(:properties)
+    allow(release1_bar_job).to receive(:properties)
 
-   allow(release1_foo_job).to receive(:add_properties)
-   allow(release1_bar_job).to receive(:add_properties)
-   allow(deployment).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make)
+    allow(release1_foo_job).to receive(:add_properties)
+    allow(release1_bar_job).to receive(:add_properties)
+    allow(deployment).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make)
 
-   release1_version_model.add_template(release1_foo_job_model)
-   release1_version_model.add_template(release1_bar_job_model)
-   release1_version_model.add_package(release1_package1_model)
+    release1_version_model.add_template(release1_foo_job_model)
+    release1_version_model.add_template(release1_bar_job_model)
+    release1_version_model.add_package(release1_package1_model)
+    subject.update = update_config
   end
 
   describe '#parse' do
@@ -204,17 +213,17 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance_group.bind_properties
 
       expect(instance_group.properties).to eq(
-          'foo' => {
-            'cc_url' => 'www.cc.com',
-            'deep_property' => {
-              'unneeded' => 'abc',
-              'dont_override' => 'def',
-            },
+        'foo' => {
+          'cc_url' => 'www.cc.com',
+          'deep_property' => {
+            'unneeded' => 'abc',
+            'dont_override' => 'def',
           },
-          'bar' => {
-            'vroom' => 'smurf',
-            'dea_max_memory' => 1024,
-          },
+        },
+        'bar' => {
+          'vroom' => 'smurf',
+          'dea_max_memory' => 1024,
+        },
       )
     end
   end
@@ -258,10 +267,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when the templates are from different releases' do
       let(:release2) do
-        Bosh::Director::DeploymentPlan::ReleaseVersion.new(deployment, 
-                                                             'name' => 'release2',
-          'version' => '1',
-                                                           )
+        Bosh::Director::DeploymentPlan::ReleaseVersion.new(deployment,
+                                                           'name' => 'release2',
+                                                           'version' => '1')
       end
       let(:release2_bar_job) do
         r = Bosh::Director::DeploymentPlan::Job.new(release2, 'bar', 'story-152729032')
@@ -386,31 +394,31 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     context "when a template has 'logs'" do
       before do
         allow(release1_foo_job).to receive(:logs).and_return(
-            'filter_name1' => 'foo/*',
+          'filter_name1' => 'foo/*',
         )
       end
 
       it 'contains name, release for the job, and logs spec for each template' do
         expect(instance_group.spec).to eq(
-            'name' => 'job1',
-            'templates' => [
-              {
-                'name' => 'foo',
-                'version' => '200',
-                'sha1' => 'fake_sha1',
-                'blobstore_id' => 'blobstore_id_for_foo_job',
-                'logs' => {
-                  'filter_name1' => 'foo/*',
-                },
+          'name' => 'job1',
+          'templates' => [
+            {
+              'name' => 'foo',
+              'version' => '200',
+              'sha1' => 'fake_sha1',
+              'blobstore_id' => 'blobstore_id_for_foo_job',
+              'logs' => {
+                'filter_name1' => 'foo/*',
               },
-            ],
-            'template' => 'foo',
-            'version' => '200',
-            'sha1' => 'fake_sha1',
-            'blobstore_id' => 'blobstore_id_for_foo_job',
-            'logs' => {
-              'filter_name1' => 'foo/*',
             },
+          ],
+          'template' => 'foo',
+          'version' => '200',
+          'sha1' => 'fake_sha1',
+          'blobstore_id' => 'blobstore_id_for_foo_job',
+          'logs' => {
+            'filter_name1' => 'foo/*',
+          },
         )
       end
     end
@@ -422,20 +430,19 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
       it 'contains name, release and information for each template' do
         expect(instance_group.spec).to eq(
-            'name' => 'job1',
-            'templates' => [
-              {
-                'name' => 'foo',
-                'version' => '200',
-                'sha1' => 'fake_sha1',
-                'blobstore_id' => 'blobstore_id_for_foo_job',
-              },
-            ],
-            'template' => 'foo',
-            'version' => '200',
-            'sha1' => 'fake_sha1',
-            'blobstore_id' => 'blobstore_id_for_foo_job',
-          ,
+          'name' => 'job1',
+          'templates' => [
+            {
+              'name' => 'foo',
+              'version' => '200',
+              'sha1' => 'fake_sha1',
+              'blobstore_id' => 'blobstore_id_for_foo_job',
+            },
+          ],
+          'template' => 'foo',
+          'version' => '200',
+          'sha1' => 'fake_sha1',
+          'blobstore_id' => 'blobstore_id_for_foo_job',
         )
       end
     end
@@ -449,9 +456,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
       instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
-      instance_plan0 = BD::DeploymentPlan::InstancePlan.new({ desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0 })
-      instance_plan1 = BD::DeploymentPlan::InstancePlan.new({ desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1 })
-      obsolete_plan = BD::DeploymentPlan::InstancePlan.new({ desired_instance: nil, existing_instance: nil, instance: instance1 })
+      instance_plan0 = BD::DeploymentPlan::InstancePlan.new(desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0)
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1)
+      obsolete_plan = BD::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1)
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
     end
@@ -470,15 +477,15 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)
       instance1_existing_reservation = BD::ExistingNetworkReservation.new(instance1.model, network, '10.0.0.1', 'manual')
       instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new(
-                                                                          desired_instance: BD::DeploymentPlan::DesiredInstance.new,
-          existing_instance: nil,
-          instance: instance0,
-                                                                        )
+        desired_instance: BD::DeploymentPlan::DesiredInstance.new,
+        existing_instance: nil,
+        instance: instance0,
+      )
       instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new(
-                                                                          desired_instance: BD::DeploymentPlan::DesiredInstance.new,
-          existing_instance: nil,
-          instance: instance1,
-                                                                        )
+        desired_instance: BD::DeploymentPlan::DesiredInstance.new,
+        existing_instance: nil,
+        instance: instance1,
+      )
       instance_plan0.network_plans = [
         BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_reservation),
         BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_obsolete_reservation, obsolete: true),
@@ -488,7 +495,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance1_existing_reservation),
       ]
 
-      obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new({ desired_instance: nil, existing_instance: nil, instance: instance1 })
+      obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1)
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
 
@@ -505,31 +512,74 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#is_service?' do
-    subject { described_class.new(logger) }
-
+  describe '#service?' do
     context "when lifecycle profile is 'service'" do
       before { subject.lifecycle = 'service' }
-      its(:is_service?) { should be(true) }
+      its(:service?) { should be(true) }
     end
 
     context 'when lifecycle profile is not service' do
       before { subject.lifecycle = 'other' }
-      its(:is_service?) { should be(false) }
+      its(:service?) { should be(false) }
     end
   end
 
-  describe '#is_errand?' do
-    subject { described_class.new(logger) }
-
+  describe '#errand?' do
     context "when lifecycle profile is 'errand'" do
       before { subject.lifecycle = 'errand' }
-      its(:is_errand?) { should be(true) }
+      its(:errand?) { should be(true) }
     end
 
     context 'when lifecycle profile is not errand' do
       before { subject.lifecycle = 'other' }
-      its(:is_errand?) { should be(false) }
+      its(:errand?) { should be(false) }
+    end
+  end
+
+  describe '#hot_swap?' do
+    context 'when strategy is hot-swap' do
+      before do
+        allow(update_config).to receive(:strategy).and_return 'hot-swap'
+      end
+
+      it { should be_hot_swap }
+    end
+
+    context 'when strategy is not hot-swap' do
+      before do
+        allow(update_config).to receive(:strategy).and_return 'something-else'
+      end
+
+      it { should_not be_hot_swap }
+    end
+  end
+
+  describe '#should_hot_swap?' do
+    context 'when strategy is hot-swap' do
+      before do
+        allow(update_config).to receive(:strategy).and_return 'hot-swap'
+        subject.networks = [job_network]
+      end
+
+      context 'when instance_group does not have static ips' do
+        let(:job_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork, static?: false) }
+
+        it { should be_should_hot_swap }
+      end
+
+      context 'when instance_group has static ips' do
+        let(:job_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork, static?: true) }
+
+        it { should_not be_should_hot_swap }
+      end
+    end
+
+    context 'when strategy is not hot-swap' do
+      before do
+        allow(update_config).to receive(:strategy).and_return 'something-else'
+      end
+
+      it { should_not be_should_hot_swap }
     end
   end
 
@@ -613,8 +663,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#add_job' do
-    subject { described_class.new(logger) }
-
     context 'when job does not exist in instance group' do
       it 'adds job' do
         subject.add_job(release1_foo_job_model)
@@ -634,8 +682,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#add_resolved_link' do
-    subject { described_class.new(logger) }
-
     let(:link_spec_1) do
       {
         'deployment_name' => 'my_dep_name_1',
@@ -646,11 +692,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         },
         'instances' => [{
           'name' => 'provider_1',
-                          'index' => 0,
-                          'bootstrap' => true,
-                          'id' => 'vroom',
-                          'az' => 'z1',
-                          'address' => '10.244.0.4',
+          'index' => 0,
+          'bootstrap' => true,
+          'id' => 'vroom',
+          'az' => 'z1',
+          'address' => '10.244.0.4',
         }],
       }
     end
@@ -665,11 +711,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         },
         'instances' => [{
           'name' => 'provider_2',
-                         'index' => 0,
-                         'bootstrap' => false,
-                         'id' => 'hello',
-                         'az' => 'z2',
-                         'address' => '10.244.0.5',
+          'index' => 0,
+          'bootstrap' => false,
+          'id' => 'hello',
+          'az' => 'z2',
+          'address' => '10.244.0.5',
         }],
       }
     end
@@ -728,13 +774,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:spec) do
       {
         'name' => 'foobar',
-          'release' => 'appcloud',
-          'instances' => 1,
-          'vm_type' => 'dea',
-          'stemcell' => 'dea',
-          'networks' => [{ 'name' => 'fake-network-name' }],
-          'properties' => {},
-          'template' => %w[foo bar],
+        'release' => 'appcloud',
+        'instances' => 1,
+        'vm_type' => 'dea',
+        'stemcell' => 'dea',
+        'networks' => [{ 'name' => 'fake-network-name' }],
+        'properties' => {},
+        'template' => %w[foo bar],
       }
     end
     let(:variable_set1) { instance_double(Bosh::Director::Models::VariableSet) }
@@ -827,8 +873,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#default_network_name' do
-    subject { described_class.new(logger) }
-
     before do
       subject.default_network['gateway'] = 'gateway-default-network'
       subject.default_network['dns'] = 'dns-default-network'
@@ -836,6 +880,35 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'returns the gateway network name' do
       expect(subject.default_network_name).to eq('gateway-default-network')
+    end
+  end
+
+  describe '#instance_plans_needing_shutdown' do
+    let(:instance_plan_instance) { instance_double(Instance, state: 'started') }
+    let(:instance_plan) { instance_double(InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true) }
+
+    context 'when instance group contains detached instance plan' do
+      let(:instance_plan_instance) { instance_double(Instance, state: 'detached') }
+
+      it 'should filter detached instance plans' do
+        expect(subject.instance_plans_needing_shutdown).to eq([])
+      end
+    end
+
+    context 'when a new instance is added to a deployment' do
+      let(:instance_plan) { instance_double(InstancePlan, new?: true, needs_shutting_down?: true) }
+
+      it 'should not be considered for hot swap' do
+        expect(subject.instance_plans_needing_shutdown).to be_empty
+      end
+    end
+
+    context 'when the instance does not need shutting down' do
+      let(:instance_plan) { instance_double(InstancePlan, new?: false, needs_shutting_down?: false) }
+
+      it 'should not be considered for hot swap' do
+        expect(subject.instance_plans_needing_shutdown).to be_empty
+      end
     end
   end
 end

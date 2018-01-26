@@ -17,9 +17,8 @@ module Bosh
       let(:ip_provider) { double(:ip_provider) }
 
       let(:instance) do
-        instance_double(DeploymentPlan::Instance, model: instance_model, vm_created?: false, strategy: strategy)
+        instance_double(DeploymentPlan::Instance, model: instance_model, vm_created?: false)
       end
-      let(:strategy) { 'legacy' }
       let(:reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, manual_network) }
       let(:instance_plan) do
         desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)

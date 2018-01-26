@@ -6,8 +6,7 @@ module Bosh::Director::DeploymentPlan
     describe :reconcile do
       let(:network_planner) { NetworkPlanner::ReservationReconciler.new(instance_plan, logger) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(availability_zone: initial_az) }
-      let(:strategy) { 'legacy' }
-      let(:instance) { instance_double(Instance, model: instance_model, strategy: strategy) }
+      let(:instance) { instance_double(Instance, model: instance_model) }
       let(:network) { ManualNetwork.new('my-network', subnets, logger) }
       let(:subnets) do
         [
@@ -46,7 +45,12 @@ module Bosh::Director::DeploymentPlan
       let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
       let(:static_network_reservation) { BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2') }
 
-      before { existing_reservations.each(&:mark_reserved) }
+      let(:should_hot_swap?) { false }
+
+      before do
+        existing_reservations.each(&:mark_reserved)
+        allow(instance_plan).to receive(:should_hot_swap?).and_return(should_hot_swap?)
+      end
 
       context 'when the instance group is on a dynamic network' do
         let(:network) { DynamicNetwork.new('my-network', subnets, logger) }
@@ -68,7 +72,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the instance is a hotswap instance' do
-        let(:strategy) { UpdateConfig::STRATEGY_HOT_SWAP }
+        let(:should_hot_swap?) { true }
         let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)] }
 
         context 'when desired reservation and existing reservations are dynamic' do

@@ -47,7 +47,6 @@ module Bosh::Director
         deployment_model,
         {},
         az,
-        'fake-strat',
         logger,
       )
       instance.bind_existing_instance_model(instance_model)
@@ -55,7 +54,7 @@ module Bosh::Director
       instance
     end
     let(:instance_desired_state) { 'stopped' }
-    let(:job) { instance_double(DeploymentPlan::InstanceGroup, default_network: {}) }
+    let(:job) { instance_double(DeploymentPlan::InstanceGroup, default_network: {}, should_hot_swap?: false) }
     let(:instance_plan) do
       desired_instance = DeploymentPlan::DesiredInstance.new(job)
       instance_plan = DeploymentPlan::InstancePlan.new(
@@ -332,7 +331,7 @@ module Bosh::Director
             let(:apply_spec_step) { instance_double(DeploymentPlan::Steps::ApplyVmSpecStep, perform: nil) }
 
             before do
-              allow(instance).to receive(:strategy).and_return(DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP)
+              allow(instance_plan).to receive(:should_hot_swap?).and_return(true)
               allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
                 .and_return(elect_active_vm_step)
               allow(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)

@@ -110,7 +110,7 @@ module Bosh::Director
         let(:errand_instance_group) do
           instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                           instances: [instance],
-                          is_errand?: false,
+                          errand?: false,
                           jobs: [errand_job],
                           bind_instances: nil)
         end
@@ -189,7 +189,7 @@ module Bosh::Director
             before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(deployment_instance_group) }
 
             context 'when instance group can run as an errand (usually means lifecycle: errand)' do
-              before { allow(deployment_instance_group).to receive(:is_errand?).and_return(true) }
+              before { allow(deployment_instance_group).to receive(:errand?).and_return(true) }
               before { allow(deployment_instance_group).to receive(:bind_instances) }
 
               context 'when instance group has at least 1 instance' do
@@ -467,7 +467,7 @@ module Bosh::Director
             end
 
             context 'when instance group cannot run as an errand' do
-              before { allow(deployment_instance_group).to receive(:is_errand?).and_return(false) }
+              before { allow(deployment_instance_group).to receive(:errand?).and_return(false) }
 
               it 'raises an error because non-errand jobs cannot be used with run errand cmd' do
                 expect do

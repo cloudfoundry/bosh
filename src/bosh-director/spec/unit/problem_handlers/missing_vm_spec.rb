@@ -2,7 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemHandlers::MissingVM do
-    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, ip_provider: double(:ip_provider)) }
+    let(:planner) do
+      instance_double(
+        Bosh::Director::DeploymentPlan::Planner,
+        use_short_dns_addresses?: false,
+        ip_provider: double(:ip_provider),
+      )
+    end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
@@ -110,7 +116,15 @@ module Bosh::Director
         expect(fake_cloud).to receive(:delete_vm).with(instance.vm_cid)
         expect(fake_cloud)
           .to receive(:create_vm)
-          .with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, { 'foo' => 'bar' }, anything, [], 'key1' => 'value1', 'bosh' => { 'group' => String, 'groups' => anything })
+          .with(
+            'agent-222',
+            Bosh::Director::Models::Stemcell.all.first.cid,
+            { 'foo' => 'bar' },
+            anything,
+            [],
+            'key1' => 'value1',
+            'bosh' => { 'group' => String, 'groups' => anything },
+          )
           .and_return('new-vm-cid')
 
         fake_job_context

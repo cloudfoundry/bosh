@@ -43,7 +43,7 @@ module Bosh::Director
       context 'when running an errand by release job name' do
         let(:job_name) { 'errand-job-name' }
         let(:job) { instance_double(DeploymentPlan::Job, name: job_name, runs_as_errand?: true) }
-        let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], bind_instances: nil, is_errand?: false) }
+        let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], bind_instances: nil, errand?: false) }
         let(:instance_groups) { [instance_group] }
 
         it 'provides an errand that will run on the instance in that group' do
@@ -99,8 +99,8 @@ module Bosh::Director
             )
           end
 
-          let(:instance_group1) { instance_double(DeploymentPlan::InstanceGroup, name: service_group_name, jobs: [job], bind_instances: nil, instances: [instance1, instance2], is_errand?: false) }
-          let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [instance3], is_errand?: true, needed_instance_plans: needed_instance_plans) }
+          let(:instance_group1) { instance_double(DeploymentPlan::InstanceGroup, name: service_group_name, jobs: [job], bind_instances: nil, instances: [instance1, instance2], errand?: false) }
+          let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [instance3], errand?: true, needed_instance_plans: needed_instance_plans) }
           let(:instance_groups) { [instance_group1, instance_group2] }
           let(:errand_step1) { instance_double(Errand::LifecycleServiceStep) }
           let(:errand_step2) { instance_double(Errand::LifecycleServiceStep) }
@@ -115,7 +115,7 @@ module Bosh::Director
           end
 
           context 'when a matching instance group has 0 instances' do
-            let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [], is_errand?: true, needed_instance_plans: needed_instance_plans) }
+            let(:instance_group2) { instance_double(DeploymentPlan::InstanceGroup, name: errand_group_name, jobs: [job], bind_instances: nil, instances: [], errand?: true, needed_instance_plans: needed_instance_plans) }
 
             context 'when using an instance filter' do
               let(:instance_slugs) { [{ 'group' => 'service-group-name' }] }
@@ -317,7 +317,7 @@ module Bosh::Director
                             name: instance_group_name,
                             jobs: [errand_job, non_errand_job],
                             instances: [instance],
-                            is_errand?: true,
+                            errand?: true,
                             needed_instance_plans: needed_instance_plans,
                             bind_instances: nil)
           end
@@ -385,7 +385,7 @@ module Bosh::Director
                             name: instance_group_name,
                             jobs: [errand_job, non_errand_job],
                             instances: [],
-                            is_errand?: true,
+                            errand?: true,
                             needed_instance_plans: needed_instance_plans,
                             bind_instances: nil)
           end
@@ -403,7 +403,7 @@ module Bosh::Director
                             name: instance_group_name,
                             jobs: [errand_job, non_errand_job],
                             instances: [instance],
-                            is_errand?: false,
+                            errand?: false,
                             needed_instance_plans: needed_instance_plans,
                             bind_instances: nil)
           end

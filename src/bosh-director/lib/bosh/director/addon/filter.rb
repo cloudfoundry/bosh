@@ -106,7 +106,7 @@ module Bosh::Director
 
       def has_applicable_network?(deployment_instance_group)
         @applicable_networks.any? do |network_name|
-          deployment_instance_group.has_network?(network_name)
+          deployment_instance_group.network_present?(network_name)
         end
       end
 

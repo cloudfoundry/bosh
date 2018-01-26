@@ -115,52 +115,70 @@ module Bosh::Director
 
         describe '#instance_plans_with_hot_swap_and_needs_shutdown' do
           before { subject.add_instance_group(instance_group) }
-          let(:update_config) { instance_double(UpdateConfig, strategy: 'hot-swap') }
-          let(:instance_plan_instance) { instance_double(Instance, state: 'started') }
-          let(:instance_plan) { instance_double(InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true) }
+          let(:instance_plan) { instance_double(InstancePlan) }
+          let(:should_hot_swap?) { true }
           let(:instance_group) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-                            name: 'fake-job1-name',
-                            canonical_name: 'fake-job1-cname',
-                            is_service?: true,
-                            is_errand?: false,
-                            update: update_config,
-                            sorted_instance_plans: [instance_plan])
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
+              name: 'fake-job1-name',
+              canonical_name: 'fake-job1-cname',
+              service?: true,
+              errand?: false,
+              should_hot_swap?: should_hot_swap?,
+              instance_plans_needing_shutdown: [instance_plan],
+            )
           end
 
           it 'should return instance groups that are hot-swap enabled' do
             expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
           end
 
-          context 'when instance group contains detached instance plan' do
-            let(:instance_plan_instance) { instance_double(Instance, state: 'detached') }
-
-            it 'should filter detached instance plans' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([])
-            end
-          end
-
           context 'when no instance groups have hot-swap enabled' do
-            let(:update_config) { instance_double(UpdateConfig, strategy: 'not-hot-swap-enabled') }
+            let(:should_hot_swap?) { false }
 
             it 'should return empty array' do
               expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
             end
           end
+        end
 
-          context 'when a new, hot-swap instance group is added to a deployment' do
-            let(:instance_plan) { instance_double(InstancePlan, new?: true, needs_shutting_down?: true) }
+        describe '#skipped_instance_plans_with_hot_swap_and_needs_shutdown' do
+          before { subject.add_instance_group(instance_group) }
+          let(:instance_plan) { instance_double(InstancePlan) }
+          let(:should_hot_swap?) { false }
+          let(:hot_swap?) { true }
+          let(:instance_group) do
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
+              name: 'fake-job1-name',
+              canonical_name: 'fake-job1-cname',
+              service?: true,
+              errand?: false,
+              should_hot_swap?: should_hot_swap?,
+              hot_swap?: hot_swap?,
+              instance_plans_needing_shutdown: [instance_plan],
+            )
+          end
 
-            it 'should not be considered for hot swap' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+          it 'returns instances that want hot-swap but cannot be' do
+            expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+          end
+
+          context 'when instance_group does not want hot-swap' do
+            let(:should_hot_swap?) { false }
+            let(:hot_swap?) { false }
+
+            it 'should return empty array' do
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
             end
           end
 
-          context 'when a hot-swap instance group does not need shutting down' do
-            let(:instance_plan) { instance_double(InstancePlan, new?: false, needs_shutting_down?: false) }
+          context 'when instance_group wants hot-swap and can be' do
+            let(:should_hot_swap?) { true }
+            let(:hot_swap?) { true }
 
-            it 'should not be considered for hot swap' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+            it 'should return empty array' do
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
             end
           end
         end
@@ -199,8 +217,8 @@ module Bosh::Director
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                             name: 'fake-job1-name',
                             canonical_name: 'fake-job1-cname',
-                            is_service?: true,
-                            is_errand?: false)
+                            service?: true,
+                            errand?: false)
           end
 
           before { subject.add_instance_group(job2) }
@@ -209,8 +227,8 @@ module Bosh::Director
                             name: 'fake-job2-name',
                             canonical_name: 'fake-job2-cname',
                             lifecycle: 'errand',
-                            is_service?: false,
-                            is_errand?: true)
+                            service?: false,
+                            errand?: true)
           end
 
           context 'with errand running via keep-alive' do
@@ -245,24 +263,24 @@ module Bosh::Director
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                             name: 'fake-instance-group-1-name',
                             canonical_name: 'fake-instance-group-1-cname',
-                            is_service?: true,
-                            is_errand?: false)
+                            service?: true,
+                            errand?: false)
           end
 
           let(:instance_group_2) do
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                             name: 'fake-instance-group-2-name',
                             canonical_name: 'fake-instance-group-2-cname',
-                            is_service?: false,
-                            is_errand?: true)
+                            service?: false,
+                            errand?: true)
           end
 
           let(:instance_group_3) do
             instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                             name: 'fake-instance-group-3-name',
                             canonical_name: 'fake-instance-group-3-cname',
-                            is_service?: false,
-                            is_errand?: true)
+                            service?: false,
+                            errand?: true)
           end
 
           before do

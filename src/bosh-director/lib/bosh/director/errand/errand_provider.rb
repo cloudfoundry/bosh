@@ -48,7 +48,7 @@ module Bosh::Director
             instances.map(&:uuid).include?(instance.uuid)
           end
 
-          if errand_instance_group.is_errand?
+          if errand_instance_group.errand?
             errand_instance_group.bind_instances(deployment_planner.ip_provider)
 
             render_templates(errand_instance_group, template_blob_cache, dns_encoder)
@@ -94,7 +94,7 @@ module Bosh::Director
 
       raise JobNotFound, "Errand '#{errand_name}' doesn't exist" if errand_instance_group.nil?
 
-      unless errand_instance_group.is_errand?
+      unless errand_instance_group.errand?
         raise RunErrandError,
               "Instance group '#{errand_instance_group.name}' is not an errand. To mark an instance group as an errand " \
               "set its lifecycle to 'errand' in the deployment manifest."

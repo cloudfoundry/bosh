@@ -213,12 +213,16 @@ module Bosh::Director
 
       def instance_plans_with_hot_swap_and_needs_shutdown
         instance_groups_starting_on_deploy.collect_concat do |instance_group|
-          return [] if instance_group.update.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+          return [] unless instance_group.should_hot_swap?
+          instance_group.instance_plans_needing_shutdown
+        end
+      end
 
-          instance_group.sorted_instance_plans
-                        .select(&:needs_shutting_down?)
-                        .reject(&:new?)
-                        .reject { |plan| plan.instance.state == 'detached' }
+      def skipped_instance_plans_with_hot_swap_and_needs_shutdown
+        instance_groups_starting_on_deploy.collect_concat do |instance_group|
+          return [] if instance_group.hot_swap? == instance_group.should_hot_swap?
+
+          instance_group.instance_plans_needing_shutdown
         end
       end
 
@@ -250,9 +254,9 @@ module Bosh::Director
         instance_groups = []
 
         @instance_groups.each do |instance_group|
-          if instance_group.is_service?
+          if instance_group.service?
             instance_groups << instance_group
-          elsif instance_group.is_errand?
+          elsif instance_group.errand?
             instance_groups << instance_group if instance_group.instances.any?(&:vm_created?)
           end
         end
@@ -262,7 +266,7 @@ module Bosh::Director
 
       # @return [Array<Bosh::Director::DeploymentPlan::InstanceGroup>] InstanceGroups with errand lifecycle
       def errand_instance_groups
-        @instance_groups.select(&:is_errand?)
+        @instance_groups.select(&:errand?)
       end
 
       def using_global_networking?

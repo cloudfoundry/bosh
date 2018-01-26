@@ -84,22 +84,19 @@ module Bosh::Spec
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
         'properties' => {},
-        'jobs' => opts.fetch(:jobs, [{
-                               'name' => opts.fetch(:job_name, 'foobar'),
-                               'properties' => {},
-                             }]),
+        'jobs' => opts.fetch(
+          :jobs, [{
+            'name' => opts.fetch(:job_name, 'foobar'),
+            'properties' => {},
+          }]
+        ),
       }
 
       instance_group_hash['env'] = opts[:env] if opts.key?(:env)
-
       instance_group_hash['persistent_disk_pool'] = opts[:persistent_disk_pool] if opts[:persistent_disk_pool]
-
       instance_group_hash['persistent_disk_type'] = opts[:persistent_disk_type] if opts[:persistent_disk_type]
-
       instance_group_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)
-
       instance_group_hash['azs'] = opts[:azs] if opts.key?(:azs)
-
       instance_group_hash['properties'] = opts[:properties] if opts.key?(:properties)
 
       if opts.key?(:vm_resources)
@@ -239,16 +236,18 @@ module Bosh::Spec
       networks = [
         {
           'name' => 'a',
-          'subnets' => [subnet('az' => 'z1'),
-                        {
-                          'range' => '192.168.2.0/24',
-                          'gateway' => '192.168.2.1',
-                          'dns' => ['192.168.2.1', '192.168.2.2'],
-                          'static' => ['192.168.2.10'],
-                          'reserved' => [],
-                          'cloud_properties' => {},
-                          'az' => 'z2',
-                        }],
+          'subnets' => [
+            subnet('az' => 'z1'),
+            {
+              'range' => '192.168.2.0/24',
+              'gateway' => '192.168.2.1',
+              'dns' => ['192.168.2.1', '192.168.2.2'],
+              'static' => ['192.168.2.10'],
+              'reserved' => [],
+              'cloud_properties' => {},
+              'az' => 'z2',
+            },
+          ],
         },
       ]
 
@@ -496,9 +495,25 @@ module Bosh::Spec
             'version' => '0.2-dev' },
         ],
         'instance_groups' => [
-          simple_instance_group(vm_type: 'b', name: 'has-rc-addon-vm', jobs: [{ 'name' => 'foobar', 'release' => 'bosh-release' }], instances: 1, stemcell: 'centos'),
-          simple_instance_group(vm_type: 'a', name: 'has-depl-rc-addons-vm', jobs: [{ 'name' => 'foobar', 'release' => 'bosh-release' }], instances: 1),
-          simple_instance_group(vm_type: 'a', name: 'has-depl-addon-vm', jobs: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }], instances: 1),
+          simple_instance_group(
+            vm_type: 'b',
+            name: 'has-rc-addon-vm',
+            jobs: [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
+            instances: 1,
+            stemcell: 'centos',
+          ),
+          simple_instance_group(
+            vm_type: 'a',
+            name: 'has-depl-rc-addons-vm',
+            jobs: [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
+            instances: 1,
+          ),
+          simple_instance_group(
+            vm_type: 'a',
+            name: 'has-depl-addon-vm',
+            jobs: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }],
+            instances: 1,
+          ),
         ],
         'addons' => [
           'name' => 'addon1',
