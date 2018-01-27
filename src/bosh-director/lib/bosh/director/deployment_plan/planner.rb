@@ -73,7 +73,13 @@ module Bosh::Director
       attr_reader :link_providers
       attr_reader :link_consumers
 
-      def initialize(attrs, uninterpolated_manifest_hash, raw_manifest_text, cloud_configs, runtime_configs, deployment_model, options = {})
+      def initialize(attrs,
+                     uninterpolated_manifest_hash,
+                     raw_manifest_text,
+                     cloud_configs,
+                     runtime_configs,
+                     deployment_model,
+                     options = {})
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}

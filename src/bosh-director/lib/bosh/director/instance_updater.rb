@@ -25,7 +25,14 @@ module Bosh::Director
       )
     end
 
-    def initialize(logger, ip_provider, blobstore, dns_state_updater, vm_deleter, vm_creator, disk_manager, rendered_templates_persistor)
+    def initialize(logger,
+                   ip_provider,
+                   blobstore,
+                   dns_state_updater,
+                   vm_deleter,
+                   vm_creator,
+                   disk_manager,
+                   rendered_templates_persistor)
       @logger = logger
       @blobstore = blobstore
       @dns_state_updater = dns_state_updater
@@ -154,12 +161,22 @@ module Bosh::Director
         state_applier.apply(instance_plan.desired_instance.instance_group.update)
       end
 
-      InstanceUpdater::InstanceState.with_instance_update_and_event_creation(instance.model, parent_id, instance.deployment_model.name, action, &update_procedure)
+      InstanceUpdater::InstanceState
+        .with_instance_update_and_event_creation(
+          instance.model,
+          parent_id,
+          instance.deployment_model.name,
+          action,
+          &update_procedure)
     end
 
     private
 
-    def add_event(deployment_name, action, instance_name = nil, context = nil, parent_id = nil, error = nil)
+    def add_event(deployment_name,
+                  action, instance_name = nil,
+                  context = nil,
+                  parent_id = nil,
+                  error = nil)
       event = Config.current_job.event_manager.create_event(
         parent_id: parent_id,
         user: Config.current_job.username,

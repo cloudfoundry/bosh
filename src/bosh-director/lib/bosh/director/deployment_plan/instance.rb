@@ -32,35 +32,33 @@ module Bosh::Director
 
       attr_reader :existing_network_reservations
 
-      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, availability_zone, logger)
+      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, az, logger)
         new(
           instance_group.name,
           index,
           virtual_state,
-          MergedCloudProperties.new(availability_zone, instance_group.vm_type, instance_group.vm_extensions).get,
+          MergedCloudProperties.new(az, instance_group.vm_type, instance_group.vm_extensions).get,
           instance_group.stemcell,
           instance_group.env,
           instance_group.compilation?,
           deployment_model,
           instance_state,
-          availability_zone,
+          az,
           logger,
         )
       end
 
-      def initialize(
-        job_name,
-        index,
-        virtual_state,
-        merged_cloud_properties,
-        stemcell,
-        env,
-        compilation,
-        deployment_model,
-        instance_state,
-        availability_zone,
-        logger
-      )
+      def initialize(job_name,
+                     index,
+                     virtual_state,
+                     merged_cloud_properties,
+                     stemcell,
+                     env,
+                     compilation,
+                     deployment_model,
+                     instance_state,
+                     availability_zone,
+                     logger)
         @index = index
         @availability_zone = availability_zone
         @logger = logger

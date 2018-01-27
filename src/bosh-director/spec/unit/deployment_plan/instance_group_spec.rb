@@ -53,7 +53,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
   let(:release1_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_model) }
 
-  let(:release1_package1_model) { Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'abc123') }
+  let(:release1_package1_model) do
+    Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'abc123')
+  end
 
   let(:release1) do
     Bosh::Director::DeploymentPlan::ReleaseVersion.new(
@@ -195,7 +197,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       }
     end
 
-    let(:network2) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network-name2', validate_reference_from_job!: true, has_azs?: true) }
+    let(:network2) do
+      instance_double(
+        'Bosh::Director::DeploymentPlan::Network',
+        name: 'fake-network-name2',
+        validate_reference_from_job!: true,
+        has_azs?: true,
+      )
+    end
 
     before do
       allow(plan).to receive(:networks).and_return([network, network2])
@@ -279,7 +288,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       let(:release2_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release2_model) }
       let(:release2_model) { Bosh::Director::Models::Release.make(name: 'release2') }
       let(:release2_version_model) { Bosh::Director::Models::ReleaseVersion.make(release: release2_model, version: 1) }
-      let(:release2_package1_model) { Bosh::Director::Models::Package.make(name: release2_package1_name, release: release2_model, fingerprint: release2_package1_fingerprint, dependency_set_json: JSON.dump(release2_package1_dependencies)) }
+      let(:release2_package1_model) do
+        Bosh::Director::Models::Package.make(
+          name: release2_package1_name,
+          release: release2_model,
+          fingerprint: release2_package1_fingerprint,
+          dependency_set_json: JSON.dump(release2_package1_dependencies),
+        )
+      end
       let(:release2_package1_fingerprint) { '987asd' }
       let(:release2_package1_name) { 'another-name' }
       let(:release2_package1_dependencies) { [] }
@@ -331,8 +347,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
               instance_group.validate_package_names_do_not_collide!
             end.to raise_error(
               Bosh::Director::JobPackageCollision,
-              "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
-              " job 'release2/bar' depends on 'release2/same-name'. BOSH cannot currently collocate two packages with identical names from separate releases.",
+              "Package name collision detected in instance group 'foobar': "\
+              "job 'release1/foo' depends on package 'release1/same-name',"\
+              " job 'release2/bar' depends on 'release2/same-name'. "\
+              'BOSH cannot currently collocate two packages with identical names from separate releases.',
             )
           end
         end
@@ -354,8 +372,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
                 instance_group.validate_package_names_do_not_collide!
               end.to raise_error(
                 Bosh::Director::JobPackageCollision,
-                "Package name collision detected in instance group 'foobar': job 'release1/foo' depends on package 'release1/same-name',"\
-                " job 'release2/bar' depends on 'release2/same-name'. BOSH cannot currently collocate two packages with identical names from separate releases.",
+                "Package name collision detected in instance group 'foobar': "\
+                "job 'release1/foo' depends on package 'release1/same-name',"\
+                " job 'release2/bar' depends on 'release2/same-name'. "\
+                'BOSH cannot currently collocate two packages with identical names from separate releases.',
               )
             end
           end
@@ -456,8 +476,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
       instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
-      instance_plan0 = BD::DeploymentPlan::InstancePlan.new(desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance0)
-      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance), existing_instance: nil, instance: instance1)
+      instance_plan0 = BD::DeploymentPlan::InstancePlan.new(
+        desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
+        existing_instance: nil,
+        instance: instance0,
+      )
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(
+        desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
+        existing_instance: nil,
+        instance: instance1,
+      )
       obsolete_plan = BD::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1)
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
@@ -495,7 +523,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance1_existing_reservation),
       ]
 
-      obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1)
+      obsolete_plan = Bosh::Director::DeploymentPlan::InstancePlan.new(
+        desired_instance: nil,
+        existing_instance: nil,
+        instance: instance1,
+      )
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
 
@@ -602,18 +634,54 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment, {}, nil, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(
+        instance_group,
+        1,
+        'started',
+        deployment,
+        {},
+        nil,
+        logger,
+      )
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
-      instance2 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 2, 'started', deployment, {}, nil, logger)
+      instance2 = BD::DeploymentPlan::Instance.create_from_instance_group(
+        instance_group,
+        2,
+        'started',
+        deployment,
+        {},
+        nil,
+        logger,
+      )
       instance2.bind_new_instance_model
-      instance3 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 3, 'started', deployment, {}, nil, logger)
+      instance3 = BD::DeploymentPlan::Instance.create_from_instance_group(
+        instance_group,
+        3,
+        'started',
+        deployment,
+        {},
+        nil,
+        logger,
+      )
       instance3.bind_new_instance_model
 
       desired_instance = BD::DeploymentPlan::DesiredInstance.new
-      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: desired_instance)
-      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
-      instance_plan3 = BD::DeploymentPlan::InstancePlan.new(instance: instance3, existing_instance: nil, desired_instance: nil)
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(
+        instance: instance1,
+        existing_instance: nil,
+        desired_instance: desired_instance,
+      )
+      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(
+        instance: instance2,
+        existing_instance: nil,
+        desired_instance: desired_instance,
+      )
+      instance_plan3 = BD::DeploymentPlan::InstancePlan.new(
+        instance: instance3,
+        existing_instance: nil,
+        desired_instance: nil,
+      )
 
       unsorted_plans = [instance_plan3, instance_plan1, instance_plan2]
       instance_group.add_instance_plans(unsorted_plans)
@@ -644,17 +712,41 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2')
 
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment, {}, nil, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(
+        instance_group,
+        1,
+        'started',
+        deployment,
+        {},
+        nil,
+        logger,
+      )
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
-      instance2 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 2, 'started', deployment, {}, nil, logger)
+      instance2 = BD::DeploymentPlan::Instance.create_from_instance_group(
+        instance_group,
+        2,
+        'started',
+        deployment,
+        {},
+        nil,
+        logger,
+      )
       instance2.bind_new_instance_model
 
       instance2.model.update(ignore: true)
 
       desired_instance = BD::DeploymentPlan::DesiredInstance.new
-      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(instance: instance1, existing_instance: nil, desired_instance: desired_instance)
-      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(instance: instance2, existing_instance: nil, desired_instance: desired_instance)
+      instance_plan1 = BD::DeploymentPlan::InstancePlan.new(
+        instance: instance1,
+        existing_instance: nil,
+        desired_instance: desired_instance,
+      )
+      instance_plan2 = BD::DeploymentPlan::InstancePlan.new(
+        instance: instance2,
+        existing_instance: nil,
+        desired_instance: desired_instance,
+      )
       instance_group.add_instance_plans([instance_plan1, instance_plan2])
 
       unignored_instance_plans = [instance_plan1]
@@ -676,7 +768,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     context 'when job does exists in instance group' do
       it 'throws an exception' do
         subject.add_job(release1_foo_job_model)
-        expect { subject.add_job(release1_foo_job_model) }.to raise_error "Colocated job '#{release1_foo_job_model.name}' is already added to the instance group '#{subject.name}'."
+        expect { subject.add_job(release1_foo_job_model) }.to raise_error(
+          "Colocated job '#{release1_foo_job_model.name}' is already added "\
+          "to the instance group '#{subject.name}'.",
+        )
       end
     end
   end
@@ -885,7 +980,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   describe '#instance_plans_needing_shutdown' do
     let(:instance_plan_instance) { instance_double(Instance, state: 'started') }
-    let(:instance_plan) { instance_double(InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true) }
+    let(:instance_plan) do
+      instance_double(InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true)
+    end
 
     context 'when instance group contains detached instance plan' do
       let(:instance_plan_instance) { instance_double(Instance, state: 'detached') }

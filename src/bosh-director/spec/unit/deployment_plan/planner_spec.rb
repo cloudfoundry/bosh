@@ -3,7 +3,17 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options) }
+      subject(:planner) do
+        described_class.new(
+          planner_attributes,
+          minimal_manifest,
+          YAML.dump(minimal_manifest),
+          cloud_configs,
+          runtime_config_consolidator,
+          deployment_model,
+          options,
+        )
+      end
 
       let(:options) { {} }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
@@ -97,7 +107,15 @@ module Bosh::Director
         end
 
         it 'manifest should be immutable' do
-          subject = Planner.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options)
+          subject = Planner.new(
+            planner_attributes,
+            minimal_manifest,
+            YAML.dump(minimal_manifest),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            options,
+          )
           minimal_manifest['name'] = 'new_name'
           expect(subject.uninterpolated_manifest_hash['name']).to eq('minimal')
         end
@@ -105,7 +123,15 @@ module Bosh::Director
         it 'should parse recreate' do
           expect(planner.recreate).to be_falsey
 
-          plan = described_class.new(planner_attributes, manifest_text, YAML.dump(manifest_text), cloud_configs, runtime_config_consolidator, deployment_model, 'recreate' => true)
+          plan = described_class.new(
+            planner_attributes,
+            manifest_text,
+            YAML.dump(manifest_text),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            'recreate' => true,
+          )
           expect(plan.recreate).to be_truthy
         end
 
@@ -260,27 +286,33 @@ module Bosh::Director
 
         describe '#errand_instance_groups' do
           let(:instance_group_1) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-                            name: 'fake-instance-group-1-name',
-                            canonical_name: 'fake-instance-group-1-cname',
-                            service?: true,
-                            errand?: false)
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
+              name: 'fake-instance-group-1-name',
+              canonical_name: 'fake-instance-group-1-cname',
+              service?: true,
+              errand?: false,
+            )
           end
 
           let(:instance_group_2) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-                            name: 'fake-instance-group-2-name',
-                            canonical_name: 'fake-instance-group-2-cname',
-                            service?: false,
-                            errand?: true)
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
+              name: 'fake-instance-group-2-name',
+              canonical_name: 'fake-instance-group-2-cname',
+              service?: false,
+              errand?: true,
+            )
           end
 
           let(:instance_group_3) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-                            name: 'fake-instance-group-3-name',
-                            canonical_name: 'fake-instance-group-3-cname',
-                            service?: false,
-                            errand?: true)
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
+              name: 'fake-instance-group-3-name',
+              canonical_name: 'fake-instance-group-3-cname',
+              service?: false,
+              errand?: true,
+            )
           end
 
           before do
@@ -414,7 +446,17 @@ module Bosh::Director
           end
 
           context 'when cloud configs are not empty' do
-            let(:cloud_configs) { [Models::Config.make(:cloud, content: '--- {"networks": [{"name":"test","subnets":[]}],"compilation":{"workers":1,"canary_watch_time":1,"update_watch_time":1,"serial":false,"network":"test"}}')] }
+            let(:cloud_configs) do
+              [
+                Models::Config.make(
+                  :cloud,
+                  content: \
+                    '--- {"networks":[{"name":"test","subnets":[]}],'\
+                    '"compilation":{"workers":1,"canary_watch_time":1,'\
+                    '"update_watch_time":1,"serial":false,"network":"test"}}',
+                ),
+              ]
+            end
 
             it 'returns true' do
               expect(subject.using_global_networking?).to be_truthy
@@ -457,7 +499,11 @@ module Bosh::Director
         end
 
         describe '#team_names' do
-          let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
+          let(:teams) do
+            Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(
+              ['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin'],
+            )
+          end
           before { deployment_model.teams = teams }
 
           it 'returns team names from the deployment' do

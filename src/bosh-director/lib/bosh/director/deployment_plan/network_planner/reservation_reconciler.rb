@@ -13,7 +13,10 @@ module Bosh::Director::DeploymentPlan
 
         existing_reservations.each do |existing_reservation|
           unless az_is_desired(existing_reservation)
-            @logger.debug("Can't reuse reservation #{existing_reservation}, existing reservation az does not match desired az '#{@instance_plan.desired_instance.availability_zone}'")
+            @logger.debug(
+              "Can't reuse reservation #{existing_reservation}, existing reservation az does not match " \
+              "desired az '#{@instance_plan.desired_instance.availability_zone}'",
+            )
             next
           end
 
@@ -23,7 +26,10 @@ module Bosh::Director::DeploymentPlan
           end
 
           if desired_reservation && existing_reservation.reserved?
-            @logger.debug("For desired reservation #{desired_reservation} found existing reservation on the same network #{existing_reservation}")
+            @logger.debug(
+              "For desired reservation #{desired_reservation} found existing reservation " \
+              "on the same network #{existing_reservation}",
+            )
 
             if (both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
                 both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)) &&
@@ -34,10 +40,16 @@ module Bosh::Director::DeploymentPlan
               unplaced_existing_reservations.delete(existing_reservation)
 
               if existing_reservation.network != desired_reservation.network
-                @logger.debug("Switching reservation from network '#{existing_reservation.network.name}' to '#{desired_reservation.network.name}'")
+                @logger.debug(
+                  "Switching reservation from network '#{existing_reservation.network.name}' " \
+                  "to '#{desired_reservation.network.name}'",
+                )
                 existing_reservation_ip = existing_reservation.ip
 
-                existing_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_reservation.instance_model, desired_reservation.network)
+                existing_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(
+                  existing_reservation.instance_model,
+                  desired_reservation.network,
+                )
                 existing_reservation.resolve_ip(existing_reservation_ip)
               end
 

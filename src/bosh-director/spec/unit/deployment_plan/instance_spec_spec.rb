@@ -37,32 +37,42 @@ module Bosh::Director::DeploymentPlan
     end
     let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
     let(:instance_group) do
-      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-                      name: 'fake-job',
-                      spec: job_spec,
-                      canonical_name: 'job',
-                      instances: ['instance0'],
-                      default_network: { 'gateway' => 'default' },
-                      vm_type: vm_type,
-                      vm_extensions: [],
-                      stemcell: stemcell,
-                      env: env,
-                      package_spec: packages,
-                      persistent_disk_collection: persistent_disk_collection,
-                      errand?: false,
-                      resolved_links: links,
-                      compilation?: false,
-                      update_spec: {},
-                      properties: properties,
-                      lifecycle: lifecycle,
-                      vm_resources: nil,
-                      strategy: 'legacy')
+      instance_double(
+        'Bosh::Director::DeploymentPlan::InstanceGroup',
+        name: 'fake-job',
+        spec: job_spec,
+        canonical_name: 'job',
+        instances: ['instance0'],
+        default_network: { 'gateway' => 'default' },
+        vm_type: vm_type,
+        vm_extensions: [],
+        stemcell: stemcell,
+        env: env,
+        package_spec: packages,
+        persistent_disk_collection: persistent_disk_collection,
+        errand?: false,
+        resolved_links: links,
+        compilation?: false,
+        update_spec: {},
+        properties: properties,
+        lifecycle: lifecycle,
+        vm_resources: nil,
+        strategy: 'legacy',
+      )
     end
     let(:index) { 0 }
     let(:instance_state) { {} }
     let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
     let(:instance) do
-      instance = Instance.create_from_instance_group(instance_group, index, 'started', plan, instance_state, availability_zone, logger)
+      instance = Instance.create_from_instance_group(
+        instance_group,
+        index,
+        'started',
+        plan,
+        instance_state,
+        availability_zone,
+        logger,
+      )
       instance.desired_variable_set = desired_variable_set
       instance
     end
@@ -78,7 +88,9 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_name) { 'fake-deployment' }
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
-    let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(instance_group), instance: instance) }
+    let(:instance_plan) do
+      InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(instance_group), instance: instance)
+    end
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
     before do
@@ -198,8 +210,12 @@ module Bosh::Director::DeploymentPlan
 
       before do
         allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
-        allow(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', instance.desired_variable_set).and_return(properties)
-        allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, instance.desired_variable_set).and_return(smurf_job_links)
+        allow(variables_interpolator).to receive(:interpolate_template_spec_properties)
+          .with(properties, 'fake-deployment', instance.desired_variable_set)
+          .and_return(properties)
+        allow(variables_interpolator).to receive(:interpolate_link_spec_properties)
+          .with(smurf_job_links, instance.desired_variable_set)
+          .and_return(smurf_job_links)
       end
 
       context 'links specs whitelisting' do
@@ -217,11 +233,21 @@ module Bosh::Director::DeploymentPlan
         end
 
         let(:first_link) do
-          { 'deployment_name' => 'dep1', 'instances' => [{ 'name' => 'v1' }], 'networks' => 'foo', 'properties' => { 'smurf' => '((smurf_val1))' } }
+          {
+            'deployment_name' => 'dep1',
+            'instances' => [{ 'name' => 'v1' }],
+            'networks' => 'foo',
+            'properties' => { 'smurf' => '((smurf_val1))' },
+          }
         end
 
         let(:second_link) do
-          { 'deployment_name' => 'dep2', 'instances' => [{ 'name' => 'v2' }], 'networks' => 'foo2', 'properties' => { 'smurf' => '((smurf_val2))' } }
+          {
+            'deployment_name' => 'dep2',
+            'instances' => [{ 'name' => 'v2' }],
+            'networks' => 'foo2',
+            'properties' => { 'smurf' => '((smurf_val2))' },
+          }
         end
 
         let(:links) do
@@ -260,8 +286,12 @@ module Bosh::Director::DeploymentPlan
         let(:resolved_smurf_job_links) { resolved_links['smurf-job'] }
 
         it 'resolves properties and links properties' do
-          expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(properties, 'fake-deployment', instance.desired_variable_set).and_return(resolved_properties)
-          expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(smurf_job_links, instance.desired_variable_set).and_return(resolved_smurf_job_links)
+          expect(variables_interpolator).to receive(:interpolate_template_spec_properties)
+            .with(properties, 'fake-deployment', instance.desired_variable_set)
+            .and_return(resolved_properties)
+          expect(variables_interpolator).to receive(:interpolate_link_spec_properties)
+            .with(smurf_job_links, instance.desired_variable_set)
+            .and_return(resolved_smurf_job_links)
 
           spec = instance_spec.as_template_spec
           expect(spec['properties']).to eq(resolved_properties)
@@ -358,6 +388,7 @@ module Bosh::Director::DeploymentPlan
               },
             }
           end
+
           it 'returns a valid instance template_spec' do
             network_name = network_spec['name']
             spec = instance_spec.as_template_spec

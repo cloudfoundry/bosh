@@ -78,7 +78,9 @@ module Bosh::Director
           deployment
         end
 
-        let(:deployment_planner_factory) { instance_double('Bosh::Director::DeploymentPlan::PlannerFactory', create_from_model: planner) }
+        let(:deployment_planner_factory) do
+          instance_double('Bosh::Director::DeploymentPlan::PlannerFactory', create_from_model: planner)
+        end
 
         before do
           allow(DeploymentPlan::PlannerFactory).to receive(:new)
@@ -115,7 +117,16 @@ module Bosh::Director
                           bind_instances: nil)
         end
 
-        let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, uuid: 'instance-uuid', configuration_hash: 'hash', current_packages: {}, current_job_state: {}) }
+        let(:instance) do
+          instance_double(
+            'Bosh::Director::DeploymentPlan::Instance',
+            model: instance_model,
+            uuid: 'instance-uuid',
+            configuration_hash: 'hash',
+            current_packages: {},
+            current_job_state: {},
+          )
+        end
 
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
@@ -185,7 +196,14 @@ module Bosh::Director
           end
 
           context 'when instance group representing an errand exists' do
-            let(:deployment_instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
+            let(:deployment_instance_group) do
+              instance_double(
+                'Bosh::Director::DeploymentPlan::InstanceGroup',
+                name: 'fake-errand-name',
+                needed_instance_plans: [],
+              )
+            end
+
             before { allow(planner).to receive(:instance_group).with('fake-errand-name').and_return(deployment_instance_group) }
 
             context 'when instance group can run as an errand (usually means lifecycle: errand)' do
@@ -195,9 +213,24 @@ module Bosh::Director
               context 'when instance group has at least 1 instance' do
                 before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
                 let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance-uuid') }
-                let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, to_s: 'foo-job/instance-uuid', uuid: 'instance-uuid', configuration_hash: 'hash', current_packages: {}) }
+                let(:instance) do
+                  instance_double(
+                    'Bosh::Director::DeploymentPlan::Instance',
+                    model: instance_model,
+                    to_s: 'foo-job/instance-uuid',
+                    uuid: 'instance-uuid',
+                    configuration_hash: 'hash',
+                    current_packages: {},
+                  )
+                end
 
-                before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10, deployment_name: 'fake-dep-name').and_return(lock) }
+                before do
+                  allow(Lock).to receive(:new).with(
+                    'lock:deployment:fake-dep-name',
+                    timeout: 10,
+                    deployment_name: 'fake-dep-name',
+                  ).and_return(lock)
+                end
 
                 let(:lock) { instance_double('Bosh::Director::Lock') }
 
@@ -331,7 +364,8 @@ module Bosh::Director
 
                 context 'when errand is run with when-changed' do
                   before do
-                    allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, anything, logger)
+                    allow(JobRenderer).to receive(:render_job_instances_with_cache)
+                      .with([instance_plan], template_blob_cache, anything, logger)
                     allow(deployment_instance_group).to receive(:needed_instance_plans).and_return([instance_plan])
                   end
 
@@ -345,7 +379,9 @@ module Bosh::Director
                         successful_state_hash: successful_state_hash,
                       )
                     end
-                    let(:single_errand_state_hash) { ::Digest::SHA1.hexdigest('instance-uuid' + successful_configuration_hash + successful_packages_spec.to_s) }
+                    let(:single_errand_state_hash) do
+                      ::Digest::SHA1.hexdigest('instance-uuid' + successful_configuration_hash + successful_packages_spec.to_s)
+                    end
                     let(:successful_state_hash) { ::Digest::SHA1.hexdigest(single_errand_state_hash) }
 
                     context 'when errand succeeded on the previous run' do

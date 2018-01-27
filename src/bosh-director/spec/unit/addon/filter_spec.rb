@@ -14,8 +14,11 @@ module Bosh::Director
           it 'raises' do
             expect do
               addon_include.applies?('anything', [], instance_group)
-            end.to raise_error AddonIncompleteFilterJobSection,
-                               "Job {\"name\"=>\"\", \"release\"=>\"release_name\"} in runtime config's #{type} section must have both name and release."
+            end.to raise_error(
+              AddonIncompleteFilterJobSection,
+              'Job {"name"=>"", "release"=>"release_name"} in runtime '\
+              "config's #{type} section must have both name and release.",
+            )
           end
         end
 
@@ -25,8 +28,11 @@ module Bosh::Director
           it 'raises' do
             expect do
               addon_include.applies?('anything', [], instance_group)
-            end.to raise_error AddonIncompleteFilterJobSection,
-                               "Job {\"name\"=>\"job-name\", \"release\"=>\"\"} in runtime config's #{type} section must have both name and release."
+            end.to raise_error(
+              AddonIncompleteFilterJobSection,
+              'Job {"name"=>"job-name", "release"=>""} in runtime '\
+              "config's #{type} section must have both name and release.",
+            )
           end
         end
 
@@ -226,7 +232,8 @@ module Bosh::Director
       end
 
       describe 'include' do
-        let (:type) { :include }
+        let(:type) { :include }
+
         describe 'applies?' do
           describe 'when the include hash is nil' do
             let(:filter_hash) { nil }
@@ -275,8 +282,8 @@ module Bosh::Director
       end
 
       describe 'exclude' do
-        let (:type) { :exclude }
-        let (:addon_exclude) { addon_include }
+        let(:type) { :exclude }
+        let(:addon_exclude) { addon_include }
         describe 'applies?' do
           describe 'when the exclude hash is nil' do
             let(:filter_hash) { nil }

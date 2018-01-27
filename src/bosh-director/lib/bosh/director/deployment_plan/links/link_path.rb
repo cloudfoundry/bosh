@@ -71,28 +71,48 @@ module Bosh::Director
 
         @instance_groups.each do |provides_instance_group|
           next unless instance_group_has_link_network(provides_instance_group, link_network)
+
           provides_instance_group.jobs.each do |provides_job|
-            next unless provides_job.link_infos.key?(provides_instance_group.name) && provides_job.link_infos[provides_instance_group.name].key?('provides')
-            matching_links = provides_job.link_infos[provides_instance_group.name]['provides'].select { |_, v| v['type'] == link_type }
-            matching_links.each do |_, matching_link_values|
+            next unless provides_job.link_infos.key?(provides_instance_group.name) &&
+                        provides_job.link_infos[provides_instance_group.name].key?('provides')
+
+            matching_links = provides_job.link_infos[provides_instance_group.name]['provides'].select do |_, v|
+              v['type'] == link_type
+            end
+
+            matching_links.each_value do |matching_link_values|
               link_name = matching_link_values.key?('as') ? matching_link_values['as'] : matching_link_values['name']
-              found_link_paths.push(deployment: @deployment_plan_name, instance_group: provides_instance_group.name, job: provides_job.name, name: link_name)
+              found_link_paths.push(
+                deployment: @deployment_plan_name,
+                instance_group: provides_instance_group.name,
+                job: provides_job.name,
+                name: link_name,
+              )
             end
           end
         end
 
-        if found_link_paths.size == 1
-          return found_link_paths[0]
-        elsif found_link_paths.size > 1
+        return found_link_paths[0] if found_link_paths.size == 1
+
+        if found_link_paths.size > 1
           all_link_paths = ''
           found_link_paths.each do |link_path|
-            all_link_paths += "\n   #{link_path[:deployment]}.#{link_path[:instance_group]}.#{link_path[:job]}.#{link_path[:name]}"
+            deployment_path = link_path[:deployment]
+            instance_group_path = link_path[:instance_group]
+            job_path = link_path[:job]
+            name_path = link_path[:name]
+
+            all_link_paths += "\n   #{deployment_path}.#{instance_group_path}.#{job_path}.#{name_path}"
           end
-          raise "Multiple instance groups provide links of type '#{link_type}'. Cannot decide which one to use for instance group '#{@consumes_instance_group_name}'.#{all_link_paths}"
+          raise "Multiple instance groups provide links of type '#{link_type}'. "\
+                "Cannot decide which one to use for instance group '#{@consumes_instance_group_name}'.#{all_link_paths}"
         else
           # Only raise an exception if no linkpath was found, and the link is not optional
           unless link_info['optional']
-            raise "Can't find link with type '#{link_type}' for instance_group '#{@consumes_instance_group_name}' in deployment '#{@deployment_plan_name}'#{" and network '#{link_network}''" unless link_network.to_s.empty?}"
+            error_string = "Can't find link with type '#{link_type}' for instance_group '#{@consumes_instance_group_name}' "\
+                  "in deployment '#{@deployment_plan_name}'"
+            error_string += " and network '#{link_network}'" unless link_network.to_s.empty?
+            raise error_string
           end
         end
       end
@@ -102,15 +122,14 @@ module Bosh::Director
         link_network = link_info['network']
         deployment_name = link_info['deployment']
 
-        if !deployment_name.nil?
-          link_path = if deployment_name == @deployment_plan_name
-                        get_link_path_from_deployment_plan(from_name, link_network)
-                      else
-                        find_deployment_and_get_link_path(deployment_name, from_name, link_network)
-                      end
-        else # given no deployment name
-          link_path = get_link_path_from_deployment_plan(from_name, link_network) # search the jobs for the current deployment for a provides
-        end
+        link_path = if deployment_name.nil?
+                      # search the jobs for the current deployment for a provides
+                      get_link_path_from_deployment_plan(from_name, link_network)
+                    elsif deployment_name == @deployment_plan_name
+                      get_link_path_from_deployment_plan(from_name, link_network)
+                    else
+                      find_deployment_and_get_link_path(deployment_name, from_name, link_network)
+                    end
 
         link_path[:name] = from_name
         link_path
@@ -123,9 +142,15 @@ module Bosh::Director
             instance_group.jobs.each do |job|
               job.provides_links_for_instance_group_name(instance_group.name).each do |_, source|
                 link_name = source.key?('as') ? source['as'] : source['name']
-                if link_name == name
-                  found_link_paths.push(deployment: @deployment_plan_name, instance_group: instance_group.name, job: job.name, name: source['name'], as: source['as'])
-                end
+                next if link_name != name
+
+                found_link_paths.push(
+                  deployment: @deployment_plan_name,
+                  instance_group: instance_group.name,
+                  job: job.name,
+                  name: source['name'],
+                  as: source['as'],
+                )
               end
             end
           end
@@ -153,11 +178,22 @@ module Bosh::Director
         elsif found_link_paths.size > 1
           all_link_paths = ''
           found_link_paths.each do |link_path|
-            all_link_paths += "\n   #{link_path[:name]}#{" aliased as '#{link_path[:as]}'" unless link_path[:as].nil?} (job: #{link_path[:job]}, instance group: #{link_path[:instance_group]})"
+            name_path = link_path[:name]
+            as_path = link_path[:as]
+            job_path = link_path[:job]
+            instance_group_path = link_path[:instance_group]
+
+            all_link_paths += "\n   #{name_path}"
+            all_link_paths += " aliased as '#{as_path}'" unless as_path.nil?
+            all_link_paths += " (job: #{job_path}, instance group: #{instance_group_path})"
           end
-          raise "Cannot resolve ambiguous link '#{name}' (job: #{@consumes_job_name}, instance group: #{@consumes_instance_group_name}). All of these match: #{all_link_paths}"
+          raise "Cannot resolve ambiguous link '#{name}' (job: #{@consumes_job_name}, "\
+                "instance group: #{@consumes_instance_group_name}). All of these match: #{all_link_paths}"
         else
-          raise "Can't resolve link '#{name}' in instance group '#{@consumes_instance_group_name}' on job '#{@consumes_job_name}' in deployment '#{@deployment_plan_name}'#{" and network '#{link_network}'" unless link_network.to_s.empty?}."
+          error_string = "Can't resolve link '#{name}' in instance group '#{@consumes_instance_group_name}' "\
+                         "on job '#{@consumes_job_name}' in deployment '#{@deployment_plan_name}'"
+          error_string += " and network '#{link_network}'" unless link_network.to_s.empty?
+          raise error_string + '.'
         end
       end
 
@@ -178,22 +214,36 @@ module Bosh::Director
 
         Models::LinkProvider.where(deployment: deployment, name: name).each do |lp|
           content = JSON.parse(lp.content)
-          if lp.shared && (!link_network || (content['networks'].include? link_network))
-            # TODO: extract instance_group name from top level element from `link_provider`
-            found_link_paths.push(deployment: deployment.name, instance_group: lp.instance_group, job: lp.owner_object_name, name: name)
-          end
+          next unless lp.shared && (!link_network || (content['networks'].include? link_network))
+          # TODO: extract instance_group name from top level element from `link_provider`
+          found_link_paths.push(
+            deployment: deployment.name,
+            instance_group: lp.instance_group,
+            job: lp.owner_object_name,
+            name: name,
+          )
         end
-        if found_link_paths.size == 1
-          return found_link_paths[0]
-        elsif found_link_paths.size > 1
+
+        return found_link_paths[0] if found_link_paths.size == 1
+
+        if found_link_paths.size > 1
           all_link_paths = ''
           found_link_paths.each do |link_path|
-            all_link_paths += "\n   #{link_path[:deployment]}.#{link_path[:instance_group]}.#{link_path[:job]}.#{link_path[:name]}"
+            deployment_path = link_path[:deployment]
+            instance_group_path = link_path[:instance_group]
+            job_path = link_path[:job]
+            name_path = link_path[:name]
+
+            all_link_paths += "\n   #{deployment_path}.#{instance_group_path}.#{job_path}.#{name_path}"
           end
           link_str = "#{@deployment_plan_name}.#{@consumes_instance_group_name}.#{@consumes_job_name}.#{name}"
           raise "Cannot resolve ambiguous link '#{link_str}' in deployment #{deployment.name}:#{all_link_paths}"
         else
-          raise "Can't resolve link '#{name}' in instance group '#{@consumes_instance_group_name}' on job '#{@consumes_job_name}' in deployment '#{@deployment_plan_name}'#{" and network '#{link_network}''" unless link_network.to_s.empty?}. Please make sure the link was provided and shared."
+          error_string = "Can't resolve link '#{name}' in instance group '#{@consumes_instance_group_name}' "\
+            "on job '#{@consumes_job_name}' in deployment '#{@deployment_plan_name}'"
+          error_string += " and network '#{link_network}'" unless link_network.to_s.empty?
+          error_string += '. Please make sure the link was provided and shared'
+          raise error_string + '.'
         end
       end
     end

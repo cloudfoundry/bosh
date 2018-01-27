@@ -94,7 +94,14 @@ module Bosh::Director
           latest_runtime_configs = Models::Config.latest_set('runtime')
         end
 
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
+        task = @deployment_manager.create_deployment(
+          current_user,
+          manifest,
+          latest_cloud_configs,
+          latest_runtime_configs,
+          deployment,
+          options,
+        )
         redirect "/tasks/#{task.id}"
       end
 
@@ -130,7 +137,14 @@ module Bosh::Director
           latest_runtime_configs = Models::Config.latest_set('runtime')
         end
 
-        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
+        task = @deployment_manager.create_deployment(
+          current_user,
+          manifest,
+          latest_cloud_configs,
+          latest_runtime_configs,
+          deployment,
+          options,
+        )
         redirect "/tasks/#{task.id}"
       end
 
@@ -165,7 +179,12 @@ module Bosh::Director
 
       put '/:deployment/jobs/:job/:index_or_id/resurrection', consumes: :json do
         payload = json_decode(request.body.read)
-        @resurrector_manager.set_pause_for_instance(deployment, params[:job], params[:index_or_id], payload['resurrection_paused'])
+        @resurrector_manager.set_pause_for_instance(
+          deployment,
+          params[:job],
+          params[:index_or_id],
+          payload['resurrection_paused'],
+        )
         status(200)
       end
 
@@ -202,9 +221,11 @@ module Bosh::Director
 
       get '/', authorization: :list_deployments do
         latest_cloud_configs = Models::Config.latest_set('cloud').map(&:id).sort
-        deployments = @deployment_manager.all_by_name_asc
-                                         .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
-                                         .map do |deployment|
+        all_deployments = @deployment_manager.all_by_name_asc
+        my_deployments = all_deployments.select do |deployment|
+          @permission_authorizer.is_granted?(deployment, :read, token_scopes)
+        end
+        deployments = my_deployments.map do |deployment|
           cloud_config = if deployment.cloud_configs.empty?
                            'none'
                          elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
@@ -212,10 +233,13 @@ module Bosh::Director
                          else
                            'outdated'
                          end
+          sorted_releases = deployment.release_versions.sort do |a, b|
+            [a.release.name, a.version] <=> [b.release.name, b.version]
+          end
 
           {
             'name' => deployment.name,
-            'releases' => deployment.release_versions.sort { |a, b| [a.release.name, a.version] <=> [b.release.name, b.version] } .map do |rv|
+            'releases' => sorted_releases.map do |rv|
               {
                 'name' => rv.release.name,
                 'version' => rv.version.to_s,
@@ -382,7 +406,15 @@ module Bosh::Director
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, manifest_text, cloud_configs, runtime_configs, deployment_model, options, @current_context_id)
+        task = @deployment_manager.create_deployment(
+          current_user,
+          manifest_text,
+          cloud_configs,
+          runtime_configs,
+          deployment_model,
+          options,
+          @current_context_id,
+        )
 
         redirect "/tasks/#{task.id}"
       end
@@ -404,7 +436,14 @@ module Bosh::Director
           after_cloud_configs = ignore_cc ? nil : Bosh::Director::Models::Config.latest_set('cloud')
           after_runtime_configs = Bosh::Director::Models::Config.latest_set('runtime')
 
-          after_manifest = Manifest.load_from_hash(manifest_hash, manifest_text, after_cloud_configs, after_runtime_configs, resolve_interpolation: false)
+          after_manifest = Manifest.load_from_hash(
+            manifest_hash,
+            manifest_text,
+            after_cloud_configs,
+            after_runtime_configs,
+            resolve_interpolation:
+            false,
+          )
           after_manifest.resolve_aliases
 
           redact = params['redact'] != 'false'

@@ -3,13 +3,13 @@ module Bosh::Director
     class Filter
       extend ValidationHelper
 
-      def initialize(applicable_jobs, applicable_deployment_names, applicable_stemcells, applicable_networks, applicable_teams, applicable_availability_zones, filter_type)
-        @applicable_jobs = applicable_jobs
-        @applicable_deployment_names = applicable_deployment_names
-        @applicable_stemcells = applicable_stemcells
-        @applicable_networks = applicable_networks
-        @applicable_teams = applicable_teams
-        @applicable_availability_zones = applicable_availability_zones
+      def initialize(jobs, deployment_names, stemcells, networks, teams, availability_zones, filter_type)
+        @applicable_jobs = jobs
+        @applicable_deployment_names = deployment_names
+        @applicable_stemcells = stemcells
+        @applicable_networks = networks
+        @applicable_teams = teams
+        @applicable_availability_zones = availability_zones
         @filter_type = filter_type
       end
 
@@ -30,7 +30,15 @@ module Bosh::Director
 
         verify_stemcells_section(applicable_stemcells, filter_type, addon_level)
 
-        new(applicable_jobs, applicable_deployment_names, applicable_stemcells, applicable_networks, applicable_teams, applicable_availability_zones, filter_type)
+        new(
+          applicable_jobs,
+          applicable_deployment_names,
+          applicable_stemcells,
+          applicable_networks,
+          applicable_teams,
+          applicable_availability_zones,
+          filter_type,
+        )
       end
 
       def applies?(deployment_name, deployment_teams, deployment_instance_group)
@@ -48,8 +56,9 @@ module Bosh::Director
         else
           return true if @filter_type == :include
           # cases with `has_stemcells? && !has_applicable_stemcell?`, `has_networks? && !has_applicable_network?`,
-          # `has_team? && !has_applicable_team?`, has_availability_zones? && !has_applicable_availability_zones? are checked before.
-          # all other cases are covered by simple check `has_stemcells? || has_networks? || has_teams?` || has_availability_zones?.
+          # `has_team? && !has_applicable_team?`, has_availability_zones? && !has_applicable_availability_zones?
+          # are checked before. all other cases are covered by simple check
+          # `has_stemcells? || has_networks? || has_teams?` || has_availability_zones?
           return @filter_type == :exclude && (has_stemcells? || has_networks? || has_teams? || has_availability_zones?)
         end
       end

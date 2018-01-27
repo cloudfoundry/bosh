@@ -12,7 +12,9 @@ module Bosh::Director
 
         let(:instance_model_hot_swap) { instance_double(Models::Instance) }
         let(:deployment_plan_instance_hot_swap) { instance_double(DeploymentPlan::Instance, model: instance_model_hot_swap) }
-        let(:instance_plans_with_hot_swap_and_needs_shutdown) { [instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_hot_swap)] }
+        let(:instance_plans_with_hot_swap_and_needs_shutdown) do
+          [instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_hot_swap)]
+        end
 
         let(:instance_model_0) { instance_double(Models::Instance) }
         let(:deployment_plan_instance_0) { instance_double(DeploymentPlan::Instance, model: instance_model_0) }

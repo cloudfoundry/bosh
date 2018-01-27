@@ -326,7 +326,8 @@ module Bosh::Director::DeploymentPlan
           it 'does not raise an error' do
             allow(logger).to receive(:debug)
 
-            expect(logger).to receive(:debug).with(/Can't reuse reservation .*, existing reservation az does not match desired az ''/)
+            expect(logger).to receive(:debug)
+              .with(/Can't reuse reservation .*, existing reservation az does not match desired az ''/)
             network_planner.reconcile(existing_reservations)
           end
         end
