@@ -36,6 +36,7 @@ require 'securerandom'
 require 'delayed_job_sequel'
 
 require 'common/thread_formatter'
+require 'bosh/director/openssl_ipv6_monkey_patch'
 require 'bosh/director/cloud_factory'
 require 'bosh/director/az_cloud_factory.rb'
 require 'bosh/director/api'
