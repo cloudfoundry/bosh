@@ -6,8 +6,9 @@ rm -rf /var/vcap/store/blobstore/*
 
 cp -rl $ARTIFACT_DIRECTORY/store /var/vcap/store/blobstore/
 
+chown -R vcap:vcap /var/vcap/store/blobstore/
+
 if [ -n "$(ls -A /var/vcap/store/blobstore/store)" ]; then
   find /var/vcap/store/blobstore/store -type d | xargs -n 127 chmod 0700
   find /var/vcap/store/blobstore/store -type f | xargs -n 127 chmod 0600
-  chown -R vcap:vcap /var/vcap/store/blobstore/
 fi
