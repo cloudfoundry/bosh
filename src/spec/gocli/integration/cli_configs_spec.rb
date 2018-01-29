@@ -11,7 +11,7 @@ describe 'cli configs', type: :integration do
 
       it 'replaces placeholders' do
         expect(bosh_runner.run("update-config -v placeholder=my-data my-type #{config.path}")).to include('Succeeded')
-        expect(bosh_runner.run("config my-type")).to include('my-data')
+        expect(bosh_runner.run('config --type=my-type --name=default')).to include('my-data')
       end
     end
 
