@@ -114,7 +114,7 @@ module Bosh::Director
               job_vitals = agent_state['vitals']
             end
             processes = agent_state['processes'] if agent_state['processes']
-          rescue Bosh::Director::RpcTimeout
+          rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException
             job_state = 'unresponsive agent'
           end
         end

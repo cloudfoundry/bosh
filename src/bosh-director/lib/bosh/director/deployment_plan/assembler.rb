@@ -111,11 +111,11 @@ module Bosh::Director
                 # getting current state to obtain IP of dynamic networks
                 begin
                   state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(existing_instance)
-                rescue Bosh::Director::RpcTimeout => e
+                rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
                   if fix
                     state = {'job_state' => 'unresponsive'}
                   else
-                    raise e
+                    raise e, "#{existing_instance.name}: #{e.message}"
                   end
                 end
                 lock.synchronize do

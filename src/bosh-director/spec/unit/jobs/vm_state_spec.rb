@@ -152,22 +152,29 @@ module Bosh::Director
         expect(status['dns']).to eq(['d824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh', '0.job.network.deployment.microbosh'])
       end
 
-      it 'should handle unresponsive agents' do
-        instance.update(resurrection_paused: true, job: 'dea', index: 50)
 
-        expect(agent).to receive(:get_state).with('full').and_raise(RpcTimeout)
+      [RpcTimeout, RpcRemoteException].each do |error|
 
-        job.perform
+        context "when get_state raises an #{error}" do
 
-        status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['vm_cid']).to eq('fake-vm-cid')
-        expect(status['active']).to eq(true)
-        expect(status['vm_created_at']).to eq(time.utc.iso8601)
-        expect(status['agent_id']).to eq('fake-agent-id')
-        expect(status['job_state']).to eq('unresponsive agent')
-        expect(status['resurrection_paused']).to be_truthy
-        expect(status['job_name']).to eq('dea')
-        expect(status['index']).to eq(50)
+          it 'should handle unresponsive agents' do
+            instance.update(resurrection_paused: true, job: 'dea', index: 50)
+
+            expect(agent).to receive(:get_state).with('full').and_raise(error)
+
+            job.perform
+
+            status = JSON.parse(Models::Task.first(id: task.id).result_output)
+            expect(status['vm_cid']).to eq('fake-vm-cid')
+            expect(status['active']).to eq(true)
+            expect(status['vm_created_at']).to eq(time.utc.iso8601)
+            expect(status['agent_id']).to eq('fake-agent-id')
+            expect(status['job_state']).to eq('unresponsive agent')
+            expect(status['resurrection_paused']).to be_truthy
+            expect(status['job_name']).to eq('dea')
+            expect(status['index']).to eq(50)
+          end
+        end
       end
 
       it 'should get the resurrection paused status' do
