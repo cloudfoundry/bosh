@@ -1571,6 +1571,14 @@ module Bosh::Director
                       expect(manual_provider_intent).to receive(:save)
                     end
 
+                    it 'adds manual_link flag as true to the consumer intents metadata' do
+                      allow(links_manager).to receive(:find_or_create_provider_intent).and_return(manual_provider_intent)
+
+                      expect(consumer_intent).to receive(:metadata=).with({explicit_link: true, manual_link: true}.to_json)
+
+                      parsed_instance_group
+                    end
+
                     it 'creates a manual provider in the database' do
                       allow(links_manager).to receive(:find_or_create_provider_intent).and_return(manual_provider_intent)
 

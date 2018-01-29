@@ -327,6 +327,7 @@ module Bosh::Director
               consumer_intent_params[:blocked] = true
             else
               if is_manual_link? manifest_source
+                metadata[:manual_link] = true
                 process_manual_link(consumer, consumer_intent_params, manifest_source)
               else
                 consumer_intent_params[:alias] = manifest_source['from'] if manifest_source.has_key?('from')

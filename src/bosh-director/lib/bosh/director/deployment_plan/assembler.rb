@@ -186,7 +186,11 @@ module Bosh::Director
         end
       end
 
-      @links_manager.resolve_deployment_links(@deployment_plan)
+      resolve_link_options = {
+        dry_run: false,
+        global_use_dns_entry: @deployment_plan.use_dns_addresses?
+      }
+      @links_manager.resolve_deployment_links(@deployment_plan.model, resolve_link_options)
 
       # TODO LINKS
       # we should not clean up the consumers or providers here

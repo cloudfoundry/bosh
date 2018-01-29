@@ -11,5 +11,9 @@ module Bosh::Director::Models::Links
         :type
       ]
     end
+
+    def find_intent_by_name(name)
+      intents_dataset.where(original_name: name).limit(1).first
+    end
   end
 end

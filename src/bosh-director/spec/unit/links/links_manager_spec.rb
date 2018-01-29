@@ -482,8 +482,15 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
-  describe '#resolve_consumer' do
+  describe '#resolve_deployment_links' do
     let(:global_use_dns_entry) {true}
+
+    let(:options) do
+      {
+        :global_use_dns_entry => global_use_dns_entry,
+        :dry_run => dry_run
+      }
+    end
 
     context 'when dry_run flag is true' do
       let(:dry_run) {true}
@@ -530,16 +537,42 @@ describe Bosh::Director::Links::LinksManager do
           end
 
           it 'does not create a link' do
-            subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+            expect(deployment_model.link_consumers.count).to be > 0
+            subject.resolve_deployment_links(deployment_model, options)
             expect(Bosh::Director::Models::Links::Link.count).to eq(0)
           end
         end
 
         context 'and the provider does NOT exist' do
           it 'raises an error' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment'.")
+              subject.resolve_deployment_links(deployment_model, options)
+            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment'")
+          end
+
+          context 'when link consumer intent is optional' do
+            before do
+              link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+                link_consumer: consumer,
+                original_name: 'ci1',
+                type: 'foo',
+                )
+
+              link_consumer_intent.optional = true
+              link_consumer_intent.save
+            end
+
+            it 'should raise an error' do
+              expect(consumer.find_intent_by_name('ci1').optional).to eq(true)
+
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment'")
+
+              expect(Bosh::Director::Models::Links::Link.count).to eq(0)
+            end
           end
         end
 
@@ -569,10 +602,36 @@ describe Bosh::Director::Links::LinksManager do
 
           it 'raises an error' do
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+              expect(deployment_model.link_consumers.count).to be > 0
+              subject.resolve_deployment_links(deployment_model, options)
             }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias 'provider_alias' found for job 'c1' and instance group 'ig1'. All of these match:
    pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
    pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
+          end
+
+          context 'when link consumer intent is optional' do
+            before do
+              link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+                link_consumer: consumer,
+                original_name: 'ci1',
+                type: 'foo',
+                )
+
+              link_consumer_intent.optional = true
+              link_consumer_intent.save
+            end
+
+            it 'raises an error' do
+              expect(consumer.find_intent_by_name('ci1').optional).to eq(true)
+
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias 'provider_alias' found for job 'c1' and instance group 'ig1'. All of these match:
+   pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
+   pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
+
+              expect(Bosh::Director::Models::Links::Link.count).to eq(0)
+            end
           end
         end
       end
@@ -618,7 +677,8 @@ describe Bosh::Director::Links::LinksManager do
           end
 
           it 'does not create a link' do
-            subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+            expect(deployment_model.link_consumers.count).to be > 0
+            subject.resolve_deployment_links(deployment_model, options)
             expect(Bosh::Director::Models::Links::Link.count).to eq(0)
           end
         end
@@ -626,8 +686,32 @@ describe Bosh::Director::Links::LinksManager do
         context 'and the provider does NOT exist' do
           it 'raises an error' do
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't find link with type 'foo' for instance_group 'ig1' in deployment 'test_deployment'")
+              expect(deployment_model.link_consumers.count).to be > 0
+              subject.resolve_deployment_links(deployment_model, options)
+            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link with type 'foo' in instance_group 'ig1' in deployment 'test_deployment'")
+          end
+
+          context 'when link consumer intent is optional' do
+            before do
+              link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+                link_consumer: consumer,
+                original_name: 'ci1',
+                type: 'foo'
+              )
+
+              link_consumer_intent.optional = true
+              link_consumer_intent.save
+            end
+
+            it 'should NOT raise an error' do
+              expect(consumer.find_intent_by_name('ci1').optional).to eq(true)
+
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to_not raise_error
+
+              expect(Bosh::Director::Models::Links::Link.count).to eq(0)
+            end
           end
         end
 
@@ -657,10 +741,36 @@ describe Bosh::Director::Links::LinksManager do
 
           it 'raises an error' do
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+              expect(deployment_model.link_consumers.count).to be > 0
+              subject.resolve_deployment_links(deployment_model, options)
             }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Multiple providers of type 'foo' found for  job 'c1' and instance group 'ig1. All of these match:
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
+          end
+
+          context 'when link consumer intent is optional' do
+            before do
+              link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+                link_consumer: consumer,
+                original_name: 'ci1',
+                type: 'foo'
+              )
+
+              link_consumer_intent.optional = true
+              link_consumer_intent.save
+            end
+
+            it 'should raise an error' do
+              expect(consumer.find_intent_by_name('ci1').optional).to eq(true)
+
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Multiple providers of type 'foo' found for  job 'c1' and instance group 'ig1. All of these match:
+   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
+   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
+
+              expect(Bosh::Director::Models::Links::Link.count).to eq(0)
+            end
           end
         end
       end
@@ -702,7 +812,8 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         it 'does not create a link' do
-          subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+          expect(deployment_model.link_consumers.count).to be > 0
+          subject.resolve_deployment_links(deployment_model, options)
           expect(Bosh::Director::Models::Links::Link.count).to eq(0)
         end
       end
@@ -722,7 +833,9 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         let(:metadata) do
-          {'explicit_link' => true}
+          {
+            'explicit_link' => true
+          }
         end
 
         before do
@@ -735,34 +848,61 @@ describe Bosh::Director::Links::LinksManager do
           )
         end
 
-        context 'and the provider exists' do
-          before do
-            provider = Bosh::Director::Models::Links::LinkProvider.create(
+        context 'and a provider exists' do
+          let!(:provider) do
+            Bosh::Director::Models::Links::LinkProvider.create(
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
               instance_group: 'ig1'
             )
-
-            Bosh::Director::Models::Links::LinkProviderIntent.create(
-              link_provider: provider,
-              original_name: 'pi1',
-              name: 'provider_alias',
-              type: 'foo'
-            )
           end
 
-          it 'creates a link' do
-            subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-            expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+          context 'and the provider intent has matching "type" and "name"' do
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: provider,
+                original_name: 'pi1',
+                name: 'provider_alias',
+                type: 'foo',
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+              )
+            end
+
+            it 'creates a link' do
+              expect(deployment_model.link_consumers.count).to be > 0
+              subject.resolve_deployment_links(deployment_model, options)
+              expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+              expect(Bosh::Director::Models::Links::Link.first.link_content).to eq({default_network: 'netb', instances: [{address: 'dns2'}]}.to_json)
+            end
+          end
+
+          context 'and the provider intent has matching "type" but not "name"' do
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: provider,
+                original_name: 'pi1',
+                name: 'non-matching-alias',
+                type: 'foo',
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+              )
+            end
+
+            it 'should raise an error' do
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment'")
+            end
           end
         end
 
-        context 'and the provider does NOT exist' do
+        context 'and a provider does NOT exist' do
           it 'raises an error' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment'.")
+              subject.resolve_deployment_links(deployment_model, options)
+            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment'")
           end
         end
 
@@ -791,16 +931,18 @@ describe Bosh::Director::Links::LinksManager do
           end
 
           it 'raises an error' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+              subject.resolve_deployment_links(deployment_model, options)
             }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias 'provider_alias' found for job 'c1' and instance group 'ig1'. All of these match:
    pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
    pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
           end
         end
 
-        context 'and the provider is a different deployment' do
-          let(:second_deployment_model) do
+        context 'and requesting provider from different deployment' do
+          let!(:second_deployment_model) do
             Bosh::Director::Models::Deployment.create(
               name: 'second_deployment'
             )
@@ -813,7 +955,7 @@ describe Bosh::Director::Links::LinksManager do
             }
           end
 
-          context 'and the deployment has a matching shared provider' do
+          context 'and the specified deployment has a matching shared provider intent' do
             before do
               provider = Bosh::Director::Models::Links::LinkProvider.create(
                 deployment: second_deployment_model,
@@ -833,12 +975,14 @@ describe Bosh::Director::Links::LinksManager do
             end
 
             it 'should create a link' do
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+              expect(deployment_model.link_consumers.count).to be > 0
+              subject.resolve_deployment_links(deployment_model, options)
               expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+              expect(Bosh::Director::Models::Links::Link.first.link_content).to eq({default_network: 'netb', instances: [{address: 'dns2'}]}.to_json)
             end
           end
 
-          context 'and the deployment has an matching non-shared provider' do
+          context 'and the specified deployment has a matching non-shared provider intent' do
             before do
               provider = Bosh::Director::Models::Links::LinkProvider.create(
                 deployment: second_deployment_model,
@@ -852,14 +996,42 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'pi2',
                 name: 'provider_alias',
                 type: 'foo',
+                shared: false,
                 content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
               )
             end
 
             it 'should raise an error' do
+              expect(deployment_model.link_consumers.count).to be > 0
+
               expect {
-                subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-              }.to raise_error Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'second_deployment'."
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'second_deployment'"
+            end
+          end
+
+          context 'and the specified deployment has no providers' do
+            it 'should raise an error' do
+              expect(deployment_model.link_consumers.count).to be > 0
+
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'second_deployment'"
+            end
+          end
+
+          context 'and the specified deployment is not found' do
+            let(:metadata) do
+              {
+                'explicit_link' => true,
+                'from_deployment' => 'not_found_deployment'
+              }
+            end
+
+            it 'raises an error' do
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error Bosh::Director::DeploymentNotFound, "Can't find deployment 'not_found_deployment'"
             end
           end
         end
@@ -872,36 +1044,16 @@ describe Bosh::Director::Links::LinksManager do
             }
           end
 
-          before do
-            provider = Bosh::Director::Models::Links::LinkProvider.create(
-              deployment: deployment_model,
-              name: 'p1',
-              type: 'job',
-              instance_group: 'ig1'
-            )
-
-            Bosh::Director::Models::Links::LinkProviderIntent.create(
-              link_provider: provider,
-              original_name: 'pi1',
-              name: 'provider_alias',
-              type: 'foo',
-              content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
-            )
-          end
-
-          it 'creates a link where "address" is an IP address' do
-            subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-            links = Bosh::Director::Models::Links::Link.all
-            expect(links.size).to eq(1)
-            expect(JSON.parse(links.first.link_content)).to eq({'default_network' => 'netb', 'instances' => [{'address' => 'ip2'}]})
-          end
-        end
-
-        context 'and requesting for DNS entries' do
-          let(:metadata) do
+          let(:provider_intent_content) do
             {
-              'explicit_link' => true,
-              'ip_addresses' => false,
+              default_network: 'netb',
+              networks: ['neta', 'netb'],
+              instances: [
+                {
+                  dns_addresses: {neta: 'dns1', netb: 'dns2'},
+                  addresses: {neta: 'ip1', netb: 'ip2'}
+                }
+              ]
             }
           end
 
@@ -918,15 +1070,355 @@ describe Bosh::Director::Links::LinksManager do
               original_name: 'pi1',
               name: 'provider_alias',
               type: 'foo',
-              content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+              content: provider_intent_content.to_json
+            )
+          end
+
+          it 'creates a link where "address" is an IP address' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
+            expected_hash = {
+              'default_network' => 'netb',
+              'networks' => ['neta', 'netb'],
+              'instances' => [{'address' => 'ip2'}]
+            }
+
+            subject.resolve_deployment_links(deployment_model, options)
+            links = Bosh::Director::Models::Links::Link.all
+            expect(links.size).to eq(1)
+            expect(JSON.parse(links.first.link_content)).to eq(expected_hash)
+          end
+
+          context 'and "default_network" is not defined in the provider content' do
+            let(:provider_intent_content) do
+              {
+                networks: ['neta', 'netb'],
+                instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]
+              }
+            end
+
+            it 'should raise an error' do
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'
+            end
+          end
+
+          context 'and requesting a specific network' do
+            let(:metadata) do
+              {
+                'explicit_link' => true,
+                'ip_addresses' => true,
+                'network' => 'neta'
+              }
+            end
+
+            context 'and the provider intent has the requested network' do
+              it 'creates a link where "address" is from the specified network' do
+                expect(deployment_model.link_consumers.count).to be > 0
+
+                subject.resolve_deployment_links(deployment_model, options)
+                links = Bosh::Director::Models::Links::Link.all
+                expect(links.size).to eq(1)
+                expect(JSON.parse(links.first.link_content)).to match({'default_network' => String, 'networks' => ['neta', 'netb'], 'instances' => [{'address' => 'ip1'}]})
+              end
+
+              context 'and an instance in the provider does not contain the preferred network' do
+                let(:provider_intent_content) do
+                  {
+                    default_network: 'netb',
+                    networks: ['neta', 'netb'],
+                    instances: [
+                      {dns_addresses: {netb: 'dns2'}, addresses: {netb: 'ip2'}}
+                    ]
+                  }
+                end
+
+                it 'should raise an error' do
+                  expect {
+                    subject.resolve_deployment_links(deployment_model, options)
+                  }.to raise_error(Bosh::Director::LinkLookupError, "Provider link does not have network: 'neta'")
+                end
+              end
+            end
+
+            context 'and the provider intent does not have the requested network' do
+              let(:provider_intent_content) do
+                {
+                  default_network: 'netb',
+                  networks: ['netb'],
+                  instances: [
+                    {
+                      dns_addresses: {neta: 'dns1', netb: 'dns2'},
+                      addresses: {neta: 'ip1', netb: 'ip2'}
+                    }
+                  ]
+                }
+              end
+
+              it 'raises an error' do
+                expect {
+                  subject.resolve_deployment_links(deployment_model, options)
+                }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment' with network 'neta'")
+              end
+            end
+          end
+        end
+
+        context 'and requesting for DNS entries' do
+          let(:metadata) do
+            {
+              'explicit_link' => true,
+              'ip_addresses' => false,
+            }
+          end
+
+          let(:provider_intent_content) do
+            {
+              default_network: 'netb',
+              networks: ['neta', 'netb'],
+              instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}
+          end
+
+          before do
+            provider = Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment_model,
+              name: 'p1',
+              type: 'job',
+              instance_group: 'ig1'
+            )
+
+            Bosh::Director::Models::Links::LinkProviderIntent.create(
+              link_provider: provider,
+              original_name: 'pi1',
+              name: 'provider_alias',
+              type: 'foo',
+              content: provider_intent_content.to_json
             )
           end
 
           it 'creates a link where "address" is a DNS entry' do
-            subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+            expect(deployment_model.link_consumers.count).to be > 0
+            subject.resolve_deployment_links(deployment_model, options)
+
             links = Bosh::Director::Models::Links::Link.all
             expect(links.size).to eq(1)
-            expect(JSON.parse(links.first.link_content)).to eq({'default_network' => 'netb', 'instances' => [{'address' => 'dns2'}]})
+            expect(JSON.parse(links.first.link_content)).to eq({'default_network' => 'netb', 'networks' => ['neta', 'netb'], 'instances' => [{'address' => 'dns2'}]})
+          end
+
+          context 'and "default_network" is not defined in the provider content' do
+            let(:provider_intent_content) do
+              {
+                networks: ['neta', 'netb'],
+                instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]
+              }
+            end
+
+            it 'should raise an error' do
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'
+            end
+          end
+
+          context 'and requesting a specific network' do
+            let(:metadata) do
+              {
+                'explicit_link' => true,
+                'ip_addresses' => false,
+                'network' => 'neta'
+              }
+            end
+
+            context 'and the provider intent has the requested network' do
+              it 'creates a link where "address" is from the specified network' do
+                expect(deployment_model.link_consumers.count).to be > 0
+
+                subject.resolve_deployment_links(deployment_model, options)
+                links = Bosh::Director::Models::Links::Link.all
+                expect(links.size).to eq(1)
+                expect(JSON.parse(links.first.link_content)).to match({'default_network' => String, 'networks' => ['neta', 'netb'], 'instances' => [{'address' => 'dns1'}]})
+              end
+
+              context 'and an instance in the provider does not contain the preferred network' do
+                let(:provider_intent_content) do
+                  {
+                    default_network: 'netb',
+                    networks: ['neta', 'netb'],
+                    instances: [
+                      {dns_addresses: {netb: 'dns2'}, addresses: {netb: 'ip2'}}
+                    ]
+                  }
+                end
+
+                it 'should raise an error' do
+                  expect {
+                    subject.resolve_deployment_links(deployment_model, options)
+                  }.to raise_error(Bosh::Director::LinkLookupError, "Provider link does not have network: 'neta'")
+                end
+              end
+            end
+
+            context 'and the provider intent does not have the requested network' do
+              let(:provider_intent_content) do
+                {
+                  default_network: 'netb',
+                  networks: ['netb'],
+                  instances: [
+                    {
+                      dns_addresses: {neta: 'dns1', netb: 'dns2'},
+                      addresses: {neta: 'ip1', netb: 'ip2'}
+                    }
+                  ]
+                }
+              end
+
+              it 'raises an error' do
+                expect {
+                  subject.resolve_deployment_links(deployment_model, options)
+                }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment' with network 'neta'")
+              end
+            end
+          end
+        end
+
+        context 'and ip_addresses is not defined in the consumer options in the manifest' do
+          let(:metadata) do
+            {
+              'explicit_link' => true,
+              'ip_addresses' => nil,
+            }
+          end
+          let(:provider_intent_content) do
+            {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}
+          end
+
+          before do
+            provider = Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment_model,
+              name: 'p1',
+              type: 'job',
+              instance_group: 'ig1'
+            )
+
+            Bosh::Director::Models::Links::LinkProviderIntent.create(
+              link_provider: provider,
+              original_name: 'pi1',
+              name: 'provider_alias',
+              type: 'foo',
+              content: provider_intent_content.to_json
+            )
+          end
+
+          context 'and the global_use_dns setting is TRUE' do
+            let(:global_use_dns_entry) {true}
+
+            it 'should honor the global setting' do
+              subject.resolve_deployment_links(deployment_model, options)
+              links = Bosh::Director::Models::Links::Link.all
+              expect(links.size).to eq(1)
+              expect(JSON.parse(links.first.link_content)).to eq({'default_network' => 'netb', 'instances' => [{'address' => 'dns2'}]})
+            end
+          end
+
+          context 'and the global_use_dns setting is FALSE' do
+            let(:global_use_dns_entry) {false}
+
+            it 'should honor the global setting' do
+              subject.resolve_deployment_links(deployment_model, options)
+              links = Bosh::Director::Models::Links::Link.all
+              expect(links.size).to eq(1)
+              expect(JSON.parse(links.first.link_content)).to eq({'default_network' => 'netb', 'instances' => [{'address' => 'ip2'}]})
+            end
+          end
+        end
+
+        context 'and requesting a specific network' do
+          let(:metadata) do
+            {
+              explicit_link: true,
+              network: 'neta'
+            }
+          end
+
+          let(:provider) do
+            Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment_model,
+              name: 'p1',
+              type: 'job',
+              instance_group: 'ig1'
+            )
+          end
+
+          context 'and the provider intent has the requested network' do
+            let(:link_provider_content) do
+              {
+                default_network: 'netb',
+                networks: ['neta', 'netb'],
+                instances: [
+                  {dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}
+                ]
+              }
+            end
+
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: provider,
+                original_name: 'pi1',
+                name: 'provider_alias',
+                type: 'foo',
+                content: link_provider_content.to_json
+              )
+            end
+
+            it 'creates a link where "address" is from the specified network' do
+              expect(deployment_model.link_consumers.count).to be > 0
+
+              subject.resolve_deployment_links(deployment_model, options)
+              links = Bosh::Director::Models::Links::Link.all
+              expect(links.size).to eq(1)
+              expect(JSON.parse(links.first.link_content)).to match({'default_network' => String, 'networks' => ['neta', 'netb'], 'instances' => [{'address' => 'dns1'}]})
+            end
+
+            context 'and an instance in the provider does not contain the preferred network' do
+              let(:link_provider_content) do
+                {
+                  networks: ['neta', 'netb'],
+                  instances: [
+                    {dns_addresses: {netb: 'dns2'}, addresses: {netb: 'ip2'}}
+                  ]
+                }
+              end
+
+              it 'should raise an error' do
+                expect {
+                  subject.resolve_deployment_links(deployment_model, options)
+                }.to raise_error(Bosh::Director::LinkLookupError, "Provider link does not have network: 'neta'")
+              end
+            end
+          end
+
+          context 'and the provider intent does not have the requested network' do
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: provider,
+                original_name: 'pi1',
+                name: 'provider_alias',
+                type: 'foo',
+                content: {
+                  default_network: 'netb',
+                  networks: [],
+                  instances: [
+                    {dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}
+                  ]}.to_json
+              )
+            end
+
+            it 'raises an error' do
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment' with network 'neta'")
+            end
           end
         end
       end
@@ -951,33 +1443,61 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         context 'and the provider exists' do
-          before do
-            provider = Bosh::Director::Models::Links::LinkProvider.create(
+          let(:provider) do
+            Bosh::Director::Models::Links::LinkProvider.create(
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
               instance_group: 'ig1'
             )
-
-            Bosh::Director::Models::Links::LinkProviderIntent.create(
-              link_provider: provider,
-              original_name: 'pi1',
-              name: 'provider_alias',
-              type: 'foo'
-            )
           end
 
-          it 'creates a link' do
-            subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-            expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+          context 'and the provider intent has matching "type"' do
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: provider,
+                original_name: 'pi1',
+                name: 'provider_alias',
+                type: 'foo',
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+              )
+            end
+
+            it 'creates a link' do
+              expect(deployment_model.link_consumers.count).to be > 0
+
+              subject.resolve_deployment_links(deployment_model, options)
+              expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+              expect(Bosh::Director::Models::Links::Link.first.link_content).to eq({default_network: 'netb', instances: [{address: 'dns2'}]}.to_json)
+            end
+          end
+
+          context 'and the provider intent has non-matching "type"' do
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: provider,
+                original_name: 'ci1',
+                name: 'ci1',
+                type: 'non-matching-type',
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+              )
+            end
+
+            it 'should raise an error' do
+              expect {
+                subject.resolve_deployment_links(deployment_model, options)
+              }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link with type 'foo' in instance_group 'ig1' in deployment 'test_deployment'")
+            end
           end
         end
 
         context 'and the provider does NOT exist' do
           it 'raises an error' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't find link with type 'foo' for instance_group 'ig1' in deployment 'test_deployment'")
+              subject.resolve_deployment_links(deployment_model, options)
+            }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Can't resolve link with type 'foo' in instance_group 'ig1' in deployment 'test_deployment'")
           end
         end
 
@@ -1006,8 +1526,10 @@ describe Bosh::Director::Links::LinksManager do
           end
 
           it 'raises an error' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
             expect {
-              subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
+              subject.resolve_deployment_links(deployment_model, options)
             }.to raise_error(Bosh::Director::DeploymentInvalidLink, "Multiple providers of type 'foo' found for  job 'c1' and instance group 'ig1. All of these match:
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
@@ -1025,31 +1547,80 @@ describe Bosh::Director::Links::LinksManager do
           )
         end
 
+        let(:metadata) do
+          {
+            explicit_link: true,
+            manual_link: true
+          }
+        end
+
+        let(:manual_link_contents) do
+          {
+            :deployment_name => 'meow-deployment',
+            :properties => {
+              :port => 6
+            },
+            :instances => ['a', 'b']
+          }
+        end
+
         before do
           Bosh::Director::Models::Links::LinkConsumerIntent.create(
             link_consumer: consumer,
             original_name: 'ci1',
             type: 'foo',
-            metadata: {explicit_link: true}.to_json
-          )
-
-          provider = Bosh::Director::Models::Links::LinkProvider.create(
-            deployment: deployment_model,
-            instance_group: 'ig1',
-            name: 'c1',
-            type: 'manual'
-          )
-
-          Bosh::Director::Models::Links::LinkProviderIntent.create(
-            link_provider: provider,
-            original_name: 'ci1',
-            type: 'foo'
+            metadata: metadata.to_json
           )
         end
 
-        it 'creates a link' do
-          subject.resolve_consumer(consumer, global_use_dns_entry, dry_run)
-          expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+        context 'when there is no manual link provider' do
+          it 'should raise an error' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
+            expect {
+              subject.resolve_deployment_links(deployment_model, options)
+            }.to raise_error "Failed to find manual link provider for consumer 'ci1' in job 'c1' in instance group 'ci1'"
+          end
+        end
+
+        context 'when there is a manual link provider' do
+          let!(:manual_link_provider) do
+            Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment_model,
+              instance_group: 'ig1',
+              name: 'c1',
+              type: 'manual'
+            )
+          end
+
+          it 'should raise an error when there is no satisfying provider intent' do
+            expect(deployment_model.link_consumers.count).to be > 0
+
+            expect {
+              subject.resolve_deployment_links(deployment_model, options)
+            }.to raise_error "Failed to find manual link provider for consumer 'ci1' in job 'c1' in instance group 'ci1'"
+          end
+
+          context 'when there is a manual link provider intent that satisfies the manual consumer' do
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: manual_link_provider,
+                original_name: 'ci1',
+                type: 'foo',
+                content: manual_link_contents.to_json
+              )
+            end
+
+            it 'creates a link' do
+              expect(deployment_model.link_consumers.count).to be > 0
+              subject.resolve_deployment_links(deployment_model, options)
+
+              links_created = Bosh::Director::Models::Links::Link.all
+
+              expect(links_created.size).to eq(1)
+              expect(links_created.first.link_content).to eq(manual_link_contents.to_json)
+            end
+          end
         end
       end
     end
@@ -1161,15 +1732,14 @@ describe Bosh::Director::Links::LinksManager do
 
     it 'should return a JSON string with the links encoded within it.' do
       result = subject.get_links_from_deployment(deployment_model)
-      expect(result).to match(
-        {
-          "c1" => {
-            "ci1" => {
-              "foo" => "bar"
-            }
+      expected_result = {
+        "c1" => {
+          "ci1" => {
+            "foo" => "bar"
           }
         }
-      )
+      }
+      expect(result).to match(expected_result)
     end
   end
 end

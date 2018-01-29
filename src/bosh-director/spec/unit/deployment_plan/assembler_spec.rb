@@ -194,8 +194,10 @@ module Bosh::Director
         end
 
         context 'links binding' do
+          let(:resolver_options) {{dry_run: false, global_use_dns_entry: boolean}}
+
           it 'should bind links by default' do
-            expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan)
+            expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options)
             expect(links_manager).to receive(:find_providers).with(deployment: deployment_plan.model)
 
             assembler.bind_models
