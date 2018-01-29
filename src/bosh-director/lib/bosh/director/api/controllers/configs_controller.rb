@@ -5,7 +5,9 @@ module Bosh::Director
     class ConfigsController < BaseController
 
       get '/:id', scope: :read do
-        config = Bosh::Director::Api::ConfigManager.new.find_by_id(params[:id])
+        id = params[:id].to_i
+        return status(400) if params[:id] != id.to_s
+        config = Bosh::Director::Api::ConfigManager.new.find_by_id(id)
         status(200)
         return json_encode(sql_to_hash(config))
       end

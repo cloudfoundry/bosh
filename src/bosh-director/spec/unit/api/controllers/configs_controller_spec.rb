@@ -725,9 +725,17 @@ module Bosh::Director
 
         context 'when no config is found' do
           it 'returns a 404' do
-            get('/im-not-there')
+            get('/999')
 
             expect(last_response.status).to eq(404)
+          end
+        end
+
+        context 'when `id` is not a string containing an integer' do
+          it 'returns a 400' do
+            get('/invalid-id')
+
+            expect(last_response.status).to eq(400)
           end
         end
       end
