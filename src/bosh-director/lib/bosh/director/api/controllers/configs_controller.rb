@@ -6,7 +6,7 @@ module Bosh::Director
 
       get '/:id', scope: :read do
         id = params[:id].to_i
-        return status(400) if params[:id] != id.to_s
+        return status(404) if params[:id] != id.to_s
         config = Bosh::Director::Api::ConfigManager.new.find_by_id(id)
         status(200)
         return json_encode(sql_to_hash(config))

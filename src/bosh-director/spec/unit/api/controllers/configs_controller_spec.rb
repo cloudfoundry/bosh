@@ -732,10 +732,10 @@ module Bosh::Director
         end
 
         context 'when `id` is not a string containing an integer' do
-          it 'returns a 400' do
+          it 'returns a 404' do
             get('/invalid-id')
 
-            expect(last_response.status).to eq(400)
+            expect(last_response.status).to eq(404)
           end
         end
       end
