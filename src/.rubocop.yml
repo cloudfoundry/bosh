@@ -15,17 +15,23 @@ Style/Documentation:
   Enabled: false
 
 Metrics/LineLength:
-  Max: 120
+  Max: 130
 
 Metrics/ModuleLength:
   Exclude: ['**/*_spec.rb']
 
+Metrics/ModuleLength:
+  Max: 250
+
+Metrics/ClassLength:
+  Max: 200
+
 Metrics/MethodLength:
-  Max: 25
+  Max: 30
 
 Metrics/BlockLength:
   Max: 25
-  ExcludedMethods: ['describe', 'context']
+  ExcludedMethods: [describe, context, let, it]
 
 Style/TrailingCommaInLiteral:
   Enabled: true
@@ -34,3 +40,15 @@ Style/TrailingCommaInLiteral:
 Style/TrailingCommaInArguments:
   Enabled: true
   EnforcedStyleForMultiline: comma
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: aligned
+
+Metrics/AbcSize:
+  Enabled: false
+
+Style/BracesAroundHashParameters:
+  EnforcedStyle: context_dependent
+
+Layout/IndentHash:
+  EnforcedStyle: consistent
