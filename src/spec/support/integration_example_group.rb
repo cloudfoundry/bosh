@@ -230,7 +230,7 @@ module IntegrationExampleGroup
 
   def expect_table(cmd, expected, options={})
     options[:json] = true
-    expect(table(bosh_runner.run(cmd, options))).to eq(expected)
+    expect(table(bosh_runner.run(cmd, options))).to contain_exactly(*expected)
   end
 
   def check_for_unknowns(vms)

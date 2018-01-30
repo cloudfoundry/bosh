@@ -211,23 +211,25 @@ lines'}
         expect(output).to include("Using deployment 'simple'")
         expect(output).to include('Succeeded')
 
-        expect_table('stemcells', [
+        expect_table(
+          'stemcells',
+          [
             {
-                'name' => 'ubuntu-stemcell',
-                'os' => 'toronto-os',
-                'version' => '1*',
-                'cpi' => 'cpi-name1',
-                'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1*',
+              'cpi' => 'cpi-name1',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             },
             {
-                'name' => 'ubuntu-stemcell',
-                'os' => 'toronto-os',
-                'version' => '1*',
-                'cpi' => 'cpi-name2',
-                'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1*',
+              'cpi' => 'cpi-name2',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             },
-
-        ])
+          ],
+        )
       end
     end
 
@@ -246,15 +248,18 @@ lines'}
         expect(output).to include("Using deployment 'simple'")
         expect(output).to include('Succeeded')
 
-        expect_table('stemcells', [
+        expect_table(
+          'stemcells',
+          [
             {
-                'name' => 'ubuntu-stemcell',
-                'os' => 'toronto-os',
-                'version' => '1*',
-                'cpi' => '',
-                'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1*',
+              'cpi' => '',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             },
-        ])
+          ],
+        )
 
         # now deploy with cpi config
         cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
@@ -278,30 +283,32 @@ lines'}
         expect(output).to include("Using deployment 'simple'")
         expect(output).to include('Succeeded')
 
-        expect_table('stemcells', [
+        expect_table(
+          'stemcells',
+          [
             {
-                'name' => 'ubuntu-stemcell',
-                'os' => 'toronto-os',
-                'version' => '1*',
-                'cpi' => '',
-                'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1*',
+              'cpi' => '',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             },
             {
-                'name' => 'ubuntu-stemcell',
-                'os' => 'toronto-os',
-                'version' => '1*',
-                'cpi' => 'cpi-name1',
-                'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1*',
+              'cpi' => 'cpi-name1',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             },
             {
-                'name' => 'ubuntu-stemcell',
-                'os' => 'toronto-os',
-                'version' => '1*',
-                'cpi' => 'cpi-name2',
-                'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+              'name' => 'ubuntu-stemcell',
+              'os' => 'toronto-os',
+              'version' => '1*',
+              'cpi' => 'cpi-name2',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             },
-
-        ])
+          ],
+        )
       end
     end
   end
@@ -345,15 +352,18 @@ lines'}
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
 
-        expect_table('deployments', [
+        expect_table(
+          'deployments',
+          [
             {
-                'name' => 'simple',
-                'release_s' => 'bosh-release/0+dev.1',
-                'stemcell_s' => 'ubuntu-stemcell/1',
-                'team_s' => '',
-                'cloud_config' => 'outdated'
-            }
-        ])
+              'name' => 'simple',
+              'release_s' => 'bosh-release/0+dev.1',
+              'stemcell_s' => 'ubuntu-stemcell/1',
+              'team_s' => '',
+              'cloud_config' => 'outdated',
+            },
+          ],
+        )
       end
     end
 

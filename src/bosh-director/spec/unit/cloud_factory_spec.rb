@@ -124,6 +124,12 @@ module Bosh::Director
         expect(cloud_factory.uses_cpi_config?).to eq(false)
       end
 
+      describe '#get_cpi_aliases' do
+        it 'returns the empty cpi' do
+          expect(cloud_factory.get_cpi_aliases('')).to eq([''])
+        end
+      end
+
       describe '#all_names' do
         it 'returns the default cpi' do
           expect(cloud_factory.all_names).to eq([''])

@@ -58,6 +58,8 @@ module Bosh::Director
     end
 
     def get_cpi_aliases(cpi_name)
+      return [''] unless uses_cpi_config?
+
       cpi_config = get_cpi_config(cpi_name)
 
       [cpi_name] + cpi_config.migrated_from_names
