@@ -5,16 +5,16 @@ processes:
 
   env:
     <% if_p('env.http_proxy') do |http_proxy| %>
-    HTTP_PROXY: =<%= http_proxy %>
-    http_proxy: =<%= http_proxy %>
+    HTTP_PROXY: <%= http_proxy %>
+    http_proxy: <%= http_proxy %>
     <% end %>
     <% if_p('env.https_proxy') do |https_proxy| %>
-    HTTPS_PROXY: =<%= https_proxy %>
-    https_proxy: =<%= https_proxy %>
+    HTTPS_PROXY: <%= https_proxy %>
+    https_proxy: <%= https_proxy %>
     <% end %>
     <% if_p('env.no_proxy') do |no_proxy| %>
-    NO_PROXY: =<%= no_proxy %>
-    no_proxy: =<%= no_proxy %>
+    NO_PROXY: <%= no_proxy %>
+    no_proxy: <%= no_proxy %>
     <% end %>
     BUNDLE_GEMFILE: /var/vcap/packages/registry/Gemfile
     GEM_HOME: /var/vcap/packages/registry/gem_home/ruby/2.4.0
