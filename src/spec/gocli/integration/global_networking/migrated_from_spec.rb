@@ -399,7 +399,6 @@ describe 'migrated from', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
 
         new_instances = director.instances
-        puts new_instances.map(&:inspect)
         etcd_instance_1 = new_instances.find { |vm| vm.job_name == 'etcd' && vm.index == '0' }
         expect(etcd_instance_1).to_not be_nil
         expect(etcd_instance_1.bootstrap).to be_truthy

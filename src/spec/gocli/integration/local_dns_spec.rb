@@ -157,7 +157,6 @@ describe 'local DNS', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_deployment)
 
       output = bosh_runner.run('task --debug 5')
-      puts output
 
       logpos = /Deleting local dns records for /.match(output).begin(0)
       expect(logpos).to be > 0

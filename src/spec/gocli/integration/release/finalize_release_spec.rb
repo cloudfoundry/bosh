@@ -21,7 +21,6 @@ describe 'finalize release', type: :integration do
           bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
 
           job_index = Psych.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
-          puts job_index
           expect(job_index).to include('builds')
           expect(job_index['builds']).to include('a2f501d07c3e96689185ee6ebe26c15d54d4849a')
           expect(job_index['builds']['a2f501d07c3e96689185ee6ebe26c15d54d4849a']).to include('version', 'blobstore_id', 'sha1')
