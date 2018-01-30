@@ -159,7 +159,7 @@ describe 'cli runtime config', type: :integration do
     runtime_config = yaml_file('runtime_config.yml', un_named_rc)
     bosh_runner.run("update-config runtime #{runtime_config.path}")
     output = bosh_runner.run("update-runtime-config #{runtime_config.path}")
-    expect(output).to match(/no changes in config, nothing to update\n+Succeeded/)
+    expect(output).to match(/Using environment 'https:\/\/.+' as client 'test'\n\nSucceeded/)
   end
 
 end
