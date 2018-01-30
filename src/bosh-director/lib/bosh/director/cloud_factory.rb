@@ -59,18 +59,20 @@ module Bosh::Director
       @parsed_cpi_config.cpis.map(&:name)
     end
 
+    def get_cpi_aliases(cpi_name)
+      cpi_config = get_cpi_config(cpi_name)
+
+      [cpi_name] + cpi_config.migrated_from_names
+    end
+
     def get(cpi_name)
       if cpi_name == nil || cpi_name == '' then
         return @default_cloud
-      elsif !uses_cpi_config?
-        raise "CPI '#{cpi_name}' not found in cpi-config (because cpi-config is not set)"
       end
-
-      cpi_config = @parsed_cpi_config.find_cpi_by_name(cpi_name)
-      raise "CPI '#{cpi_name}' not found in cpi-config" if cpi_config.nil?
-
+      cpi_config = get_cpi_config(cpi_name)
       Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, Config.uuid, cpi_config.properties)
     end
+
 
     def get_for_az(az_name)
       cpi_name = get_name_for_az(az_name)
@@ -93,6 +95,19 @@ module Bosh::Director
       raise "AZ '#{az_name}' not found in cloud config" if az.nil?
 
       az.cpi.nil? ? '' : az.cpi
+    end
+
+    private
+
+    def get_cpi_config(cpi_name)
+      if !uses_cpi_config?
+        raise "CPI '#{cpi_name}' not found in cpi-config (because cpi-config is not set)"
+      end
+
+      cpi_config = @parsed_cpi_config.find_cpi_by_name(cpi_name)
+      raise "CPI '#{cpi_name}' not found in cpi-config" if cpi_config.nil?
+
+      cpi_config
     end
   end
 end

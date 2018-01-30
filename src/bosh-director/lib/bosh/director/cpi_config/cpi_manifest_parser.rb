@@ -23,9 +23,11 @@ module Bosh::Director
           CpiConfig::Cpi.parse(cpi)
         end
 
-        duplicates = detect_duplicates(parsed_cpis) { |cpi| cpi.name }
+        all_present_names = parsed_cpis.map {|c| c.migrated_from_names + [c.name]}.flatten
+
+        duplicates = detect_duplicates(all_present_names, &:itself)
         unless duplicates.empty?
-          raise CpiDuplicateName, "Duplicate cpi name '#{duplicates.first.name}'"
+          raise CpiDuplicateName, "Duplicate cpi name '#{duplicates.first}'"
         end
 
         parsed_cpis

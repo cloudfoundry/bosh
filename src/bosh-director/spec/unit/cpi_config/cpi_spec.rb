@@ -64,6 +64,41 @@ module Bosh::Director
           end
         end
 
+        context 'when cpi has valid migrated_from' do
+          let(:cpi_hash) do
+            {
+                'name' => 'cpi-name',
+                'type' => 'cpi-type',
+                'exec_path' => 'cpi-path',
+                'properties' => {
+                    'somekey' => 'someproperty'
+                },
+                'migrated_from' => [{'name' => 'legit'}]
+            }
+          end
+
+          it 'parses' do
+            expect(cpi.migrated_from_names).to eq(['legit'])
+          end
+        end
+
+        context 'when cpi hash has malformed migrated_from' do
+          let(:cpi_hash) do
+            {
+                'name' => 'cpi-name',
+                'type' => 'cpi-type',
+                'exec_path' => 'cpi-path',
+                'properties' => {
+                    'somekey' => 'someproperty'
+                },
+                'migrated_from' => ['not', 'legit']
+            }
+          end
+
+          it 'errors' do
+            expect { cpi }.to raise_error ValidationInvalidType, %Q(Object ("not") did not match the required type 'Hash')
+          end
+        end
         context 'when cpi properties have absolute variables' do
           let(:cpi_hash) do
             {

@@ -116,11 +116,11 @@ module Bosh::Director
 
     context 'when not using cpi config' do
       let(:config_error_hint) { ' (because cpi-config is not set)' }
-
       let(:parsed_cpi_config) { nil }
-      before {
-        expect(cloud_factory.uses_cpi_config?).to be_falsey
-      }
+
+      before do
+        expect(cloud_factory.uses_cpi_config?).to eq(false)
+      end
 
       describe '#all_names' do
         it 'returns the default cpi' do
@@ -136,9 +136,9 @@ module Bosh::Director
 
       let(:cpis) {
         [
-            CpiConfig::Cpi.new('name1', 'type1', nil, {'prop1' => 'val1'}),
-            CpiConfig::Cpi.new('name2', 'type2', nil, {'prop2' => 'val2'}),
-            CpiConfig::Cpi.new('name3', 'type3', nil, {'prop3' => 'val3'}),
+            CpiConfig::Cpi.new('name1', 'type1', nil, {'prop1' => 'val1'}, {}),
+            CpiConfig::Cpi.new('name2', 'type2', nil, {'prop2' => 'val2'}, {}),
+            CpiConfig::Cpi.new('name3', 'type3', nil, {'prop3' => 'val3'}, {}),
         ]
       }
 
@@ -222,6 +222,15 @@ module Bosh::Director
             cloud_factory.get_name_for_az('some-az')
           }.to raise_error 'Deployment plan must be given to lookup cpis from AZ'
         end
+      end
+    end
+
+    describe '#get_cpi_aliases' do
+      let(:cpis) { [ CpiConfig::Cpi.new('name1', 'type1', nil, {'prop1' => 'val1'}, migrated_from) ]}
+      let(:migrated_from) { [{'name' => 'some-cpi'}, {'name' => 'another-cpi'}] }
+
+      it 'returns the migrated_from names for the given cpi with the official name first' do
+        expect(cloud_factory.get_cpi_aliases('name1')).to contain_exactly('name1', 'some-cpi', 'another-cpi')
       end
     end
 

@@ -23,6 +23,17 @@ module Bosh::Director
         cpi_manifest['cpis'][1]['name'] = cpi_manifest['cpis'][0]['name']
         expect { subject.parse(cpi_manifest) }.to raise_error(Bosh::Director::CpiDuplicateName)
       end
+
+      it "raises CpiDuplicateName if a cpi name also appears in a migrated_from" do
+        cpi_manifest['cpis'][1]['migrated_from'] = [{'name' => cpi_manifest['cpis'][0]['name']}]
+        expect { subject.parse(cpi_manifest) }.to raise_error(Bosh::Director::CpiDuplicateName)
+      end
+
+      it "raises CpiDuplicateName if a migrated_from name is duplicated" do
+        cpi_manifest['cpis'][0]['migrated_from'] = [{'name' => 'migratory'}]
+        cpi_manifest['cpis'][1]['migrated_from'] = [{'name' => 'migratory'}]
+        expect { subject.parse(cpi_manifest) }.to raise_error(Bosh::Director::CpiDuplicateName)
+      end
     end
 
     describe '#merge_configs' do

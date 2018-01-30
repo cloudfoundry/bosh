@@ -250,7 +250,8 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell = make({'name' => 'foo', 'version' => '42-dev'})
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return(nil)
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('').and_return([''])
         expect(stemcell.cid_for_az('az-example')).to eq('cid1')
       end
     end
@@ -266,6 +267,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell.bind_model(deployment)
 
         allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi2')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('cpi2').and_return(['cpi2'])
         expect(stemcell.cid_for_az('az-example')).to eq('cid2')
       end
 
@@ -277,8 +279,41 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell = make({'name' => 'foo', 'version' => '42-dev'})
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi-notexisting')
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('garbage')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('garbage').and_return(['garbage'])
         expect {  stemcell.cid_for_az('az-example')  }.to raise_error BD::StemcellNotFound
+      end
+
+      context 'when cpi has migrated_from names with stemcells' do
+        let(:deployment) { make_deployment('mycloud') }
+
+        before do
+          make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1')
+        end
+
+        it 'can return a cid for stemcell associated with migrated_from names' do
+          stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+          stemcell.bind_model(deployment)
+
+          expect(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi1')
+          expect(cloud_factory).to receive(:get_cpi_aliases).with('cpi1').and_return(['cpi1', ''])
+          expect(stemcell.cid_for_az('az-example')).to eq('cid1')
+        end
+
+        context 'when the cpi also has a stemcell' do
+          before do
+            make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
+          end
+
+          it 'returns the cid for the specified cpi' do
+            stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+            stemcell.bind_model(deployment)
+
+            expect(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi1')
+            expect(cloud_factory).to receive(:get_cpi_aliases).with('cpi1').and_return(['cpi1', ''])
+            expect(stemcell.cid_for_az('az-example')).to eq('cid2')
+          end
+        end
       end
     end
 
@@ -294,6 +329,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         stemcell.bind_model(deployment)
 
         allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi2')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('cpi2').and_return(['cpi2'])
         expect(stemcell.cid_for_az('az-example')).to eq('cid3')
       end
     end
