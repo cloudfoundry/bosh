@@ -62,6 +62,7 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -70,6 +71,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -78,6 +80,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'stopped',
                                 'az' => 'z2',
@@ -134,6 +137,7 @@ describe 'Using multiple CPIs', type: :integration do
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
       expect(output).to contain_exactly(
                             {
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -142,6 +146,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -150,6 +155,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
