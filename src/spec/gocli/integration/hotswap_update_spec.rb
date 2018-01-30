@@ -7,12 +7,11 @@ describe 'deploy with hotswap', type: :integration do
     instance_slug_regex = %r/foobar\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
 
     let(:manifest) do
-      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1, static_ips: static_ips)
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
       manifest['update'] = manifest['update'].merge('strategy' => 'hot-swap')
       manifest
     end
     let(:network_type) { 'dynamic' }
-    let(:static_ips) { nil }
 
     before do
       cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
@@ -144,8 +143,9 @@ describe 'deploy with hotswap', type: :integration do
         expect(vm0).to match(vm_pattern)
         expect(vm1).to match(vm_pattern)
 
-        expect(vm0['active']).to eq('false')
-        expect(vm1['active']).to eq('true')
+        vm_states = vms.map { |vm| vm['active'] }.sort
+        expect(vm_states[0]).to eq('false')
+        expect(vm_states[1]).to eq('true')
         expect(vm0['az']).to eq(vm1['az'])
         expect(vm0['vm_type']).to eq(vm1['vm_type'])
         expect(vm0['instance']).to eq(vm1['instance'])
@@ -155,7 +155,10 @@ describe 'deploy with hotswap', type: :integration do
       end
 
       context 'when using instances with static ip addresses' do
-        let(:static_ips) { %w[192.168.1.10] }
+        before do
+          manifest['instance_groups'][0]['networks'][0]['static_ips'] = ['192.168.1.10']
+          deploy_simple_manifest(manifest_hash: manifest)
+        end
 
         it 'should not hotswap vms' do
           task_id = nil
