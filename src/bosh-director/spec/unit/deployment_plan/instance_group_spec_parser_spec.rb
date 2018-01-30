@@ -404,7 +404,6 @@ module Bosh::Director
                 let(:deployment_rel_ver) { instance_double(ReleaseVersion, name: '') }
                 let(:job) { make_job('job-name', nil) }
 
-                let(:provides_link) { instance_double(Link, name: 'zz') }
                 let(:provides_job) { instance_double(Job, name: 'z') }
                 let(:provides_instance_group) { instance_double(InstanceGroup, name: 'y') }
 
@@ -413,7 +412,6 @@ module Bosh::Director
                                               .with('fake-release')
                                               .and_return(rel_ver)
 
-                  allow(provides_job).to receive(:provided_links).and_return([provides_link])
                   allow(provides_instance_group).to receive(:jobs).and_return([provides_job])
                   allow(deployment_plan).to receive(:instance_groups).and_return([provides_instance_group])
 
@@ -1410,6 +1408,22 @@ module Bosh::Director
                     expect(consumer_intent).to receive(:optional=).with(false)
                     expect(consumer_intent).to receive(:save)
                     parsed_instance_group
+                  end
+
+                  context 'when the consumer alias is separated by "."' do
+                    let(:consumer_options) { { 'from' => 'foo.bar.baz'} }
+
+                    before do
+                      allow(consumer_intent).to receive(:blocked=)
+                      allow(consumer_intent).to receive(:metadata=)
+                      allow(consumer_intent).to receive(:optional=)
+                      allow(consumer_intent).to receive(:save)
+                    end
+
+                    it 'should use the last segment in "from" as the alias' do
+                      expect(consumer_intent).to receive(:name=).with('baz')
+                      parsed_instance_group
+                    end
                   end
 
                   context 'when the consumer is explicitly set to nil' do

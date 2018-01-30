@@ -93,30 +93,6 @@ module Bosh::Director
         present_model.logs
       end
 
-      # return [Array]
-      def model_consumed_links
-        present_model.consumes.to_a.map { |l| TemplateLink.parse('consumes', l) }
-      end
-
-      # return [Array]
-      def model_provided_links
-        present_model.provides.to_a.map { |l| TemplateLink.parse('provides', l) }
-      end
-
-      # return [Array]
-      def consumed_links(instance_group_name)
-        consumes_links_for_instance_group_name(instance_group_name).map do |_, link_info|
-          TemplateLink.parse('consumes', link_info)
-        end
-      end
-
-      # return [Array]
-      def provided_links(instance_group_name)
-        provides_links_for_instance_group_name(instance_group_name).map do |_, link_info|
-          TemplateLink.parse('provides', link_info)
-        end
-      end
-
       def runs_as_errand?
         @release.bind_model
         @release.bind_templates

@@ -115,25 +115,57 @@ module Bosh::Director
     end
 
     def validate_links(job_manifest)
-      parse_links(job_manifest['provides'], 'provides') if job_manifest['provides']
-      parse_links(job_manifest['consumes'], 'consumes') if job_manifest['consumes']
+      validate_provide_links(job_manifest['provides'])
+      validate_consume_links(job_manifest['consumes'])
     end
 
-    def parse_links(links, kind)
-      if !links.is_a?(Array)
-        raise JobInvalidLinkSpec,
-          "Job '#{name}' has invalid spec format: '#{kind}' must be an array of hashes with name and type"
-      end
+    def validate_provide_links(provider_links)
+      return if provider_links.nil?
+      raise JobInvalidLinkSpec, "Job '#{name}' has invalid spec format: 'provides' must be an array of hashes with name and type" unless provider_links.is_a?(Array)
 
       parsed_links = {}
-      links.each do |link_spec|
-        parsed_link = DeploymentPlan::TemplateLink.parse(kind, link_spec)
-        if parsed_links[parsed_link.name]
-          raise JobDuplicateLinkName,
-            "Job '#{name}' '#{kind}' specifies links with duplicate name '#{parsed_link.name}'"
+      provider_links.each do |spec|
+        raise JobInvalidLinkSpec, "Provides section in the release spec must be a list of hashes" unless spec.is_a?(Hash)
+
+        if !spec.has_key?('type') || !spec.has_key?('name')
+          raise JobInvalidLinkSpec, "Each provides item in the provides section of the release spec must contain 'name' and 'type'"
         end
 
-        parsed_links[parsed_link.name] = true
+        provider_name = spec['name']
+
+        if spec.has_key?('optional')
+          raise JobInvalidLinkSpec, "Link '#{provider_name}' of type '#{spec['type']}' is a provides link, not allowed to have 'optional' key"
+        end
+
+        if parsed_links[provider_name]
+          raise JobDuplicateLinkName, "Job '#{name}' specifies duplicate provides link with name '#{provider_name}'"
+        end
+        parsed_links[provider_name] = true
+      end
+    end
+
+    def validate_consume_links(consume_links)
+      return if consume_links.nil?
+      raise JobInvalidLinkSpec, "Job '#{name}' has invalid spec format: 'consumes' must be an array of hashes with name and type" unless consume_links.is_a?(Array)
+
+      parsed_links = {}
+      consume_links.each do |spec|
+        raise JobInvalidLinkSpec, "Consumes section in the release spec must be a list of hashes" unless spec.is_a?(Hash)
+
+        if !spec.has_key?('type') || !spec.has_key?('name')
+          raise JobInvalidLinkSpec, "Each consumes item in the consumes section of the release spec must contain 'name' and 'type'"
+        end
+
+        consumer_name = spec['name']
+
+        if spec.has_key?('optional')
+          raise JobInvalidLinkSpec, "Link '#{consumer_name}' of type '#{spec['type']}' is a consumes link, not allowed to have 'optional' key"
+        end
+
+        if parsed_links[consumer_name]
+          raise JobDuplicateLinkName, "Job '#{name}' specifies duplicate consumes link with name '#{consumer_name}'"
+        end
+        parsed_links[consumer_name] = true
       end
     end
 
