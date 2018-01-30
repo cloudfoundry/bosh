@@ -172,10 +172,9 @@ describe 'Using multiple CPIs', type: :integration do
       # Bosh can't delete VM since its CPI no longer exists
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
 
-      # Intentionally made it expect 'active' => 'false' so that this test will be again fixed in https://www.pivotaltracker.com/n/projects/2132441/stories/154263613
       expect(output).to contain_exactly(
                             {
-                                'active' => 'false',
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -184,7 +183,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
-                                'active' => 'false',
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -193,7 +192,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
-                                'active' => 'false',
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'stopped',
                                 'az' => 'z2',
@@ -249,10 +248,9 @@ describe 'Using multiple CPIs', type: :integration do
 
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
 
-      # Intentionally made it expect 'active' => 'false' so that this test will be again fixed in https://www.pivotaltracker.com/n/projects/2132441/stories/154263613
       expect(output).to contain_exactly(
                             {
-                                'active' => 'false',
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -261,7 +259,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
-                                'active' => 'false',
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
@@ -270,7 +268,7 @@ describe 'Using multiple CPIs', type: :integration do
                                 'vm_type' => 'a',
                             },
                             {
-                                'active' => 'false',
+                                'active' => '-',
                                 'instance' => /foobar\/.*/,
                                 'process_state' => 'running',
                                 'az' => 'z1',
