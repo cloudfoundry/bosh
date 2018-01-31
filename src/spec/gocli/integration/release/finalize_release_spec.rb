@@ -11,7 +11,7 @@ describe 'finalize release', type: :integration do
 
   let(:sha_generator) do
     path = File.expand_path('../../../../tmp/verify-multidigest/verify-multidigest', File.dirname(__FILE__))
-    Bosh::Director::Digest::MultiDigest.new(logger, path)
+    Bosh::Director::BoshDigest::MultiDigest.new(logger, path)
   end
 
   describe 'release finalization' do
@@ -168,7 +168,7 @@ describe 'finalize release', type: :integration do
       end
 
       describe 'when using sha1', sha1: true do
-        let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA1] }
+        let(:digest_algorithms) { [Bosh::Director::BoshDigest::MultiDigest::SHA1] }
 
         it 'includes the LICENSE file' do
           includes_the_LICENSE_file('7a59f7973cddfa0301ca34a29d4cc876247dd7de')
@@ -185,7 +185,7 @@ describe 'finalize release', type: :integration do
 
 
       describe 'when using sha2', sha2: true do
-        let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA256] }
+        let(:digest_algorithms) { [Bosh::Director::BoshDigest::MultiDigest::SHA256] }
 
         it 'includes the LICENSE file' do
           includes_the_LICENSE_file('24f59b89c3a9f4eed2f4b9b07bc754891fadc49d8ec0dda25c562d90e568b375')

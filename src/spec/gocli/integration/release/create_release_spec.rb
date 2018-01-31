@@ -14,7 +14,7 @@ describe 'create-release', type: :integration do
 
   let(:sha_generator) do
     path = File.expand_path('../../../../tmp/verify-multidigest/verify-multidigest', File.dirname(__FILE__))
-    Bosh::Director::Digest::MultiDigest.new(logger, path)
+    Bosh::Director::BoshDigest::MultiDigest.new(logger, path)
   end
   let!(:release_file) { Tempfile.new('release.tgz') }
   after { release_file.delete }
@@ -207,14 +207,14 @@ describe 'create-release', type: :integration do
   describe 'release creation in sha1 mode', sha1: true do
     let(:sha_regex) {SHA1_REGEXP}
     let(:sha_regex_prefixed) {SHA1_REGEXP}
-    let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA1] }
+    let(:digest_algorithms) { [Bosh::Director::BoshDigest::MultiDigest::SHA1] }
     it_behaves_like :release_creation
   end
 
   describe 'release creation in sha2 mode', sha2: true do
     let(:sha_regex) {SHA2_REGEXP}
     let(:sha_regex_prefixed) {SHA2_PREFIXED_REGEXP}
-    let(:digest_algorithms) { [Bosh::Director::Digest::MultiDigest::SHA256] }
+    let(:digest_algorithms) { [Bosh::Director::BoshDigest::MultiDigest::SHA256] }
     it_behaves_like :release_creation
   end
 

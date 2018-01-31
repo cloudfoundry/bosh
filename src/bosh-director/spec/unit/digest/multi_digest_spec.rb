@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Director::Digest
+module Bosh::Director::BoshDigest
   describe MultiDigest do
     context 'when sha1 of downloaded file matches expected sha1' do
       subject(:multi_digest) { MultiDigest.new(logger) }

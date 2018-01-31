@@ -9,7 +9,7 @@ module Bosh
 
       def initialize(client, logger)
         @client = client
-        @multi_digest_verifier = Bosh::Director::Digest::MultiDigest.new(logger)
+        @multi_digest_verifier = Bosh::Director::BoshDigest::MultiDigest.new(logger)
       end
 
       def get(id, file = nil, options = {})
@@ -36,7 +36,7 @@ module Bosh
       def check_sha1(expected_sha1, file_to_check)
         begin
           @multi_digest_verifier.verify(file_to_check.path, expected_sha1)
-        rescue Bosh::Director::Digest::ShaMismatchError => e
+        rescue Bosh::Director::BoshDigest::ShaMismatchError => e
           raise Bosh::Blobstore::BlobstoreError.new(e)
         end
       end
