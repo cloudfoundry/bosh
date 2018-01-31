@@ -17,16 +17,14 @@ module Bosh::Director
       end
 
       def perform
-        logger.info("Processing delete stemcell")
+        logger.info('Processing delete stemcell')
 
         logger.info("Looking up stemcell: #{@name}/#{@version}")
 
-        Models::StemcellMatch.where(name: @name, version: @version).delete
+        Models::StemcellUpload.where(name: @name, version: @version).delete
 
         stemcells_to_delete = @stemcell_manager.all_by_name_and_version(@name, @version)
-        if stemcells_to_delete.empty?
-          raise StemcellNotFound, "Stemcell '#{@name}/#{@version}' doesn't exist"
-        end
+        raise StemcellNotFound, "Stemcell '#{@name}/#{@version}' doesn't exist" if stemcells_to_delete.empty?
         stemcells_to_delete.each do |stemcell|
           logger.info("Found: #{stemcell.pretty_inspect}")
           @stemcell_deleter.delete(stemcell, @options)
