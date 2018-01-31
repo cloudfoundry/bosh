@@ -10,10 +10,10 @@ gnatsd/gnatsd-0.9.6-bosh.12-linux-amd64:
   size: 9505349
   object_id: 54d32ad0-9d4a-4b5d-7431-7f504bd9fb9a
   sha: a801c9fa84f29f9885d54739a3c284c7f58d56bb
-mysql/mariadb-connector-c-3.0.2-src.tar.gz:
-  size: 662569
-  object_id: 852fcdf2-221f-49cf-61b6-7ab8b2d9d585
-  sha: bc1fd6c20610822abdb67fe300bd723fe9225e50
+mysql/mariadb-connector-c-3.0.3-src.tar.gz:
+  size: 666928
+  object_id: 0d20e9e3-1a7d-4872-6ea3-28246c579ca8
+  sha: 62893066d6fcd2d63075ca04a2a389b3ea6009fc
 mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
   size: 4639216
   object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1

@@ -10,7 +10,7 @@ tar zxvf mysql/server-$MYSQL_VERSION.tar.gz
   cp -a bin ${BOSH_INSTALL_TARGET}/
 )
 
-MARIADB_VERSION='3.0.2'
+MARIADB_VERSION='3.0.3'
 (
   set -e
   tar xzf mysql/mariadb-connector-c-${MARIADB_VERSION}-src.tar.gz
