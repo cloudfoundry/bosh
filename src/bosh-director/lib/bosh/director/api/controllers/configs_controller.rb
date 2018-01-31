@@ -128,7 +128,8 @@ module Bosh::Director
             content: config.content,
             id: config.id.to_s, # id should be opaque to clients (may not be an int)
             type: config.type,
-            name: config.name
+            name: config.name,
+            created_at: config.created_at.to_s
         }
       end
 

@@ -164,7 +164,8 @@ module Bosh::Director
                 'content' => config1.content,
                 'id' => "#{config1.id}",
                 'type' => config1.type,
-                'name' => config1.name
+                'name' => config1.name,
+                'created_at' => config1.created_at.to_s
             })
           end
         end
@@ -201,12 +202,14 @@ module Bosh::Director
 
           expect(last_response.status).to eq(201)
 
+          config = Bosh::Director::Models::Config.first
           expect(JSON.parse(last_response.body)).to eq(
             {
-              'id' => "#{Bosh::Director::Models::Config.first.id}",
+              'id' => "#{config.id}",
               'type' => 'my-type',
               'name' => 'my-name',
-              'content' => 'a: 1'
+              'content' => 'a: 1',
+              'created_at' => config.created_at.to_s,
             }
           )
         end
@@ -720,7 +723,7 @@ module Bosh::Director
           get('/123')
 
           expect(last_response.status).to eq(200)
-          expect(JSON.parse(last_response.body)).to eq({'id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1'})
+          expect(JSON.parse(last_response.body)).to eq({'id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1', 'created_at' => config_example.created_at.to_s})
         end
 
         context 'when no config is found' do
