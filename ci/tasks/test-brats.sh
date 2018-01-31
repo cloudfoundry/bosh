@@ -25,7 +25,7 @@ mkdir -p bbr-binary
 export BBR_VERSION=1.1.4
 curl -L -o bbr-binary/bbr https://s3.amazonaws.com/bosh-dependencies/bbr-$BBR_VERSION
 
-export BBR_SHA256=9dd791b0c521d3138711a1c5a7f9dcb3b627066d9728fb54cf9de9c5337a5c6b
+export BBR_SHA256=a6ac6809de3a241b2744c5c2a28eb4ecdf9e2264764eb8687e4b723743ccd2d4
 export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr"
 
 echo "${BBR_SHA256} ${BBR_BINARY_PATH}" | sha256sum -c -
