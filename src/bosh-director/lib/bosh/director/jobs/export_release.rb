@@ -23,7 +23,7 @@ module Bosh::Director
         @stemcell_os = stemcell_os
         @stemcell_version = stemcell_version
         @sha2 = sha2
-        @multi_digest = Digest::MultiDigest.new(logger)
+        @multi_digest = BoshDigest::MultiDigest.new(logger)
         @jobs = options.fetch('jobs', [])
       end
 
@@ -113,7 +113,7 @@ module Bosh::Director
 
         oid = blobstore_client.create(tarball_file)
 
-        algorithm = @sha2 ? Digest::MultiDigest::SHA256 : Digest::MultiDigest::SHA1
+        algorithm = @sha2 ? BoshDigest::MultiDigest::SHA256 : BoshDigest::MultiDigest::SHA1
         tarball_hexdigest = @multi_digest.create([algorithm], output_path)
 
         Bosh::Director::Models::Blob.new(

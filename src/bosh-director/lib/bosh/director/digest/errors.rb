@@ -1,6 +1,6 @@
 module Bosh
   module Director
-    module Digest
+    module BoshDigest
 
       class ShaMismatchError < StandardError; end
       class DigestCreationError < StandardError; end

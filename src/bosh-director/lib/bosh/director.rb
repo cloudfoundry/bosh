@@ -69,7 +69,7 @@ require 'bosh/director/task_db_writer'
 require 'bosh/director/task_appender'
 require 'bosh/director/blob_util'
 
-require 'bosh/director/digest/digest'
+require 'bosh/director/digest/bosh_digest'
 
 require 'bosh/director/agent_client'
 require 'cloud'

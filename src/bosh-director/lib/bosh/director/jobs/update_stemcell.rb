@@ -28,7 +28,7 @@ module Bosh::Director
           @stemcell_sha1 = options['sha1']
         end
 
-        @multi_digest_verifier = Digest::MultiDigest.new(logger)
+        @multi_digest_verifier = BoshDigest::MultiDigest.new(logger)
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
         @fix = options['fix']
@@ -147,7 +147,7 @@ module Bosh::Director
       def verify_sha1
         begin
           @multi_digest_verifier.verify(@stemcell_path, @stemcell_sha1)
-        rescue Bosh::Director::Digest::ShaMismatchError => e
+        rescue Bosh::Director::BoshDigest::ShaMismatchError => e
           raise Bosh::Director::StemcellSha1DoesNotMatch.new(e)
         end
       end

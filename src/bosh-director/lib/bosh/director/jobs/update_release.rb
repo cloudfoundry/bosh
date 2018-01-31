@@ -31,7 +31,7 @@ module Bosh::Director
           # file already exists at the release_path
           @release_path = release_path
         end
-        @multi_digest_verifier = Digest::MultiDigest.new(logger)
+        @multi_digest_verifier = BoshDigest::MultiDigest.new(logger)
         @rebase = !!options['rebase']
         @fix = !!options['fix']
       end
@@ -112,7 +112,7 @@ module Bosh::Director
       def verify_sha
         begin
           @multi_digest_verifier.verify(release_path, sha1)
-        rescue Bosh::Director::Digest::ShaMismatchError => e
+        rescue Bosh::Director::BoshDigest::ShaMismatchError => e
           raise Bosh::Director::ReleaseSha1DoesNotMatch.new(e)
         end
       end
