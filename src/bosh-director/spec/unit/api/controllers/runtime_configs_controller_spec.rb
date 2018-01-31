@@ -298,7 +298,6 @@ module Bosh::Director
           expect(last_response.status).to eq(201)
         end
 
-
         it 'gives a nice error when request body is not a valid yml' do
           post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -356,20 +355,28 @@ module Bosh::Director
 
         context 'when a name is passed in via a query param' do
           let(:path) { '/?name=smurf' }
+          let(:content) { YAML.dump(Bosh::Spec::Deployments.simple_runtime_config) }
 
           it 'creates a new named runtime config' do
-            properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
-
-            post path, properties, {'CONTENT_TYPE' => 'text/yaml'}
+            post path, content, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(201)
             expect(Bosh::Director::Models::Config.first.name).to eq('smurf')
           end
 
-          it 'creates a new event and add name to event context' do
-            properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          it 'ignores named runtime config when config already exists' do
+            Models::Config.make(:runtime, content: content, name: 'smurf')
+
             expect {
-              post path, properties, {'CONTENT_TYPE' => 'text/yaml'}
+              post path, content, {'CONTENT_TYPE' => 'text/yaml'}
+            }.to_not change(Models::Config, :count)
+
+            expect(last_response.status).to eq(201)
+          end
+
+          it 'creates a new event and add name to event context' do
+            expect {
+              post path, content, {'CONTENT_TYPE' => 'text/yaml'}
             }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
 
             event = Bosh::Director::Models::Event.first

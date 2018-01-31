@@ -9,7 +9,7 @@ module Bosh::Director
         begin
           validate_manifest_yml(manifest_text, nil)
 
-          latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.list(1)
+          latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.list(1, config_name)
 
           if latest_runtime_config.empty? || latest_runtime_config.first[:content] != manifest_text
             Bosh::Director::Api::RuntimeConfigManager.new.update(manifest_text, config_name)
