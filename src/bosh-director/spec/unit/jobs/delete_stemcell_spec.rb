@@ -22,15 +22,15 @@ module Bosh::Director
         end
 
         it 'deletes the stemcell' do
-          expect(stemcell_deleter).to receive(:delete).with(stemcell_model, {blobstore: blobstore})
+          expect(stemcell_deleter).to receive(:delete).with(stemcell_model, blobstore: blobstore)
           job.perform
         end
 
-        context 'when a stemcell_match is found for some cpi' do
-          let!(:match) { Models::StemcellMatch.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
+        context 'when a stemcell_upload is found for some cpi' do
+          let!(:match) { Models::StemcellUpload.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
           it 'deletes the stemcell match as well' do
             job.perform
-            expect(Models::StemcellMatch.all).to be_empty
+            expect(Models::StemcellUpload.all).to be_empty
           end
         end
       end
@@ -41,11 +41,11 @@ module Bosh::Director
         end
 
         context 'when there are stemcell matches' do
-          let!(:match) { Models::StemcellMatch.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
-          it 'raises an error but still deletes the stemcell_match' do
+          let!(:match) { Models::StemcellUpload.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
+          it 'raises an error but still deletes the stemcell_upload' do
             expect { job.perform }.to raise_exception(StemcellNotFound)
 
-            expect(Models::StemcellMatch.all).to be_empty
+            expect(Models::StemcellUpload.all).to be_empty
           end
         end
       end

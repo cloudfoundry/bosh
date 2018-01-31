@@ -2,7 +2,6 @@ module Bosh
   module Director
     module Api
       class RouteConfiguration
-
         def initialize(config)
           @config = config
         end
@@ -26,11 +25,11 @@ module Bosh
           controllers['/releases'] = Bosh::Director::Api::Controllers::ReleasesController.new(@config)
           controllers['/resources'] = Bosh::Director::Api::Controllers::ResourcesController.new(
             @config,
-            Bosh::Director::Api::ResourceManager.new(director_app.blobstores.blobstore)
+            Bosh::Director::Api::ResourceManager.new(director_app.blobstores.blobstore),
           )
           controllers['/resurrection'] = Bosh::Director::Api::Controllers::ResurrectionController.new(@config)
           controllers['/stemcells'] = Bosh::Director::Api::Controllers::StemcellsController.new(@config)
-          controllers['/stemcell_matches'] = Bosh::Director::Api::Controllers::StemcellMatchesController.new(@config)
+          controllers['/stemcell_uploads'] = Bosh::Director::Api::Controllers::StemcellUploadsController.new(@config)
           controllers['/task'] = Bosh::Director::Api::Controllers::TaskController.new(@config)
           controllers['/tasks'] = Bosh::Director::Api::Controllers::TasksController.new(@config)
           controllers['/events'] = Bosh::Director::Api::Controllers::EventsController.new(@config)
@@ -45,5 +44,3 @@ module Bosh
     end
   end
 end
-
-

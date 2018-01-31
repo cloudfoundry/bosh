@@ -8,7 +8,7 @@ Sham.define do
   version          { |index| "version-#{index}" }
   fingerprint      { |index| "fingerprint-#{index}" }
   manifest         { |index| "manifest-#{index}" }
-  job              { |index| "job-#{index}"}
+  job              { |index| "job-#{index}" }
   vm_cid           { |index| "vm-cid-#{index}" }
   disk_cid         { |index| "disk-cid-#{index}" }
   snapshot_cid     { |index| "snapshot-cid-#{index}" }
@@ -25,19 +25,18 @@ Sham.define do
   type             { |index| "type #{index}" }
   sha1             { |index| "sha1-#{index}" }
   build            { |index| index }
-  ip               { |index|
-                     octet = index % 255
-                     "#{octet}.#{octet}.#{octet}.#{octet}"
-                   }
-  ptr              { |index|
-                     octet = index % 255
-                     "#{octet}.#{octet}.#{octet}.in-addr.arpa"
-                   }
-  lock_name     { |index| "lock-resource-entity#{index}" }
+  ip               do |index|
+    octet = index % 255
+    "#{octet}.#{octet}.#{octet}.#{octet}"
+  end
+  ptr do |index|
+    octet = index % 255
+    "#{octet}.#{octet}.#{octet}.in-addr.arpa"
+  end
+  lock_name { |index| "lock-resource-entity#{index}" }
 end
 
 module Bosh::Director::Models
-
   DirectorAttribute.blueprint do
     name { 'uuid' }
     value { Sham.director_uuid }
@@ -58,7 +57,7 @@ module Bosh::Director::Models
     version             { Sham.version }
     blobstore_id        { Sham.blobstore_id }
     sha1                { Sham.sha1 }
-    dependency_set_json { "[]" }
+    dependency_set_json { '[]' }
   end
 
   Template.blueprint do
@@ -67,7 +66,7 @@ module Bosh::Director::Models
     version             { Sham.version }
     blobstore_id        { Sham.blobstore_id }
     sha1                { Sham.sha1 }
-    package_names_json  { "[]" }
+    package_names_json  { '[]' }
     fingerprint         { Sham.fingerprint }
   end
 
@@ -77,7 +76,7 @@ module Bosh::Director::Models
     cid       { Sham.stemcell_cid }
   end
 
-  StemcellMatch.blueprint do
+  StemcellUpload.blueprint do
     name      { Sham.name }
     version   { Sham.version }
   end
@@ -89,7 +88,7 @@ module Bosh::Director::Models
     sha1              { Sham.sha1 }
     stemcell_os       { Sham.stemcell_os }
     stemcell_version  { Sham.stemcell_version }
-    dependency_key    { "[]" }
+    dependency_key    { '[]' }
   end
 
   Deployment.blueprint do
@@ -108,7 +107,7 @@ module Bosh::Director::Models
 
   IpAddress.blueprint do
     address_str { NetAddr::CIDR.create(Sham.ip).to_i.to_s }
-    instance  { Instance.make }
+    instance { Instance.make }
     static { false }
     network_name { Sham.name }
     task_id { Sham.name }
@@ -116,7 +115,7 @@ module Bosh::Director::Models
   end
 
   Task.blueprint do
-    state       { "queued" }
+    state       { 'queued' }
     type        { Sham.type }
     timestamp   { Time.now }
     description { Sham.description }
@@ -155,10 +154,10 @@ module Bosh::Director::Models
 
   DeploymentProblem.blueprint do
     deployment  { Deployment.make }
-    type        { "inactive_disk" }
+    type        { 'inactive_disk' }
     resource_id { PersistentDisk.make.id }
-    data_json   { "{}" }
-    state       { "open" }
+    data_json   { '{}' }
+    state       { 'open' }
   end
 
   RenderedTemplatesArchive.blueprint do
@@ -212,7 +211,7 @@ module Bosh::Director::Models
   DeploymentProperty.blueprint do
     deployment { Deployment.make }
     name       { Sham.name }
-    value      { "value" }
+    value      { 'value' }
   end
 
   Lock.blueprint do
@@ -227,15 +226,15 @@ module Bosh::Director::Models
   end
 
   Event.blueprint do
-    action      { 'create'}
-    object_type {'deployment' }
+    action      { 'create' }
+    object_type { 'deployment' }
     object_name { Sham.object_name }
     user        { Sham.username }
     timestamp   { Time.now }
   end
 
   Team.blueprint do
-    name      { Sham.name }
+    name { Sham.name }
   end
 
   ErrandRun.blueprint {}
@@ -257,9 +256,9 @@ module Bosh::Director::Models
     instance_id { Sham.instance_id }
   end
 
-  VariableSet.blueprint {
+  VariableSet.blueprint do
     deployment { Deployment.make }
-  }
+  end
 
   Variable.blueprint {}
 
@@ -275,20 +274,20 @@ module Bosh::Director::Models
   module Dns
     Domain.blueprint do
       name     { Sham.name }
-      type     { "NATIVE" }
+      type     { 'NATIVE' }
     end
 
     Record.blueprint do
       domain   { Domain.make }
       name     { Sham.name }
-      type     { "A" }
+      type     { 'A' }
       content  { Sham.ip }
     end
 
     Record.blueprint(:PTR) do
       domain   { Domain.make }
       name     { Sham.ptr }
-      type     { "PTR" }
+      type     { 'PTR' }
       content  { Sham.name }
     end
   end

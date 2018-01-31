@@ -1,7 +1,6 @@
 module Bosh
   module Director
     module BoshDigest
-
     end
   end
 end

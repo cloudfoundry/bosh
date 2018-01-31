@@ -24,9 +24,7 @@ module Bosh::Director
           @stemcell_path = stemcell_path
         end
 
-        if options['sha1']
-          @stemcell_sha1 = options['sha1']
-        end
+        @stemcell_sha1 = options['sha1'] if options['sha1']
 
         @multi_digest_verifier = BoshDigest::MultiDigest.new(logger)
         @cloud = Config.cloud
@@ -35,46 +33,44 @@ module Bosh::Director
       end
 
       def perform
-        logger.info("Processing update stemcell")
+        logger.info('Processing update stemcell')
 
         # adjust numbers in update_steps if you change how many times `track_and_log` are invoked below.
-        begin_stage("Update stemcell", update_steps)
+        begin_stage('Update stemcell', update_steps)
 
-        track_and_log("Downloading remote stemcell") { download_remote_stemcell } if @stemcell_url
+        track_and_log('Downloading remote stemcell') { download_remote_stemcell } if @stemcell_url
 
-        stemcell_dir = Dir.mktmpdir("stemcell")
+        stemcell_dir = Dir.mktmpdir('stemcell')
 
-        track_and_log("Verifying remote stemcell") { verify_sha1 } if @stemcell_sha1
+        track_and_log('Verifying remote stemcell') { verify_sha1 } if @stemcell_sha1
 
-        track_and_log("Extracting stemcell archive") do
-          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_path} 2>&1", :on_error => :return)
+        track_and_log('Extracting stemcell archive') do
+          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_path} 2>&1", on_error: :return)
           if result.failed?
-            logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " +
-                         "tar returned #{result.exit_status}, " +
+            logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " \
+                         "tar returned #{result.exit_status}, " \
                          "output: #{result.output}")
-            raise StemcellInvalidArchive, "Extracting stemcell archive failed. Check task debug log for details."
+            raise StemcellInvalidArchive, 'Extracting stemcell archive failed. Check task debug log for details.'
           end
         end
 
-        track_and_log("Verifying stemcell manifest") do
-          stemcell_manifest_file = File.join(stemcell_dir, "stemcell.MF")
+        track_and_log('Verifying stemcell manifest') do
+          stemcell_manifest_file = File.join(stemcell_dir, 'stemcell.MF')
           stemcell_manifest = YAML.load_file(stemcell_manifest_file)
 
-          @name = safe_property(stemcell_manifest, "name", :class => String)
-          @operating_system = safe_property(stemcell_manifest, "operating_system", :class => String, :optional => true, :default => @name)
-          @version = safe_property(stemcell_manifest, "version", :class => String)
-          @stemcell_formats = safe_property(stemcell_manifest, "stemcell_formats", :class => Array, :optional => true)
-          @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
-          @sha1 = safe_property(stemcell_manifest, "sha1", :class => String)
+          @name = safe_property(stemcell_manifest, 'name', class: String)
+          @operating_system = safe_property(stemcell_manifest, 'operating_system', class: String, optional: true, default: @name)
+          @version = safe_property(stemcell_manifest, 'version', class: String)
+          @stemcell_formats = safe_property(stemcell_manifest, 'stemcell_formats', class: Array, optional: true)
+          @cloud_properties = safe_property(stemcell_manifest, 'cloud_properties', class: Hash, optional: true)
+          @sha1 = safe_property(stemcell_manifest, 'sha1', class: String)
 
-          logger.info("Found stemcell image '#{@name}/#{@version}', " +
+          logger.info("Found stemcell image '#{@name}/#{@version}', " \
                       "cloud properties are #{@cloud_properties.inspect}")
 
-          logger.info("Verifying stemcell image")
-          @stemcell_image = File.join(stemcell_dir, "image")
-          unless File.file?(@stemcell_image)
-            raise StemcellImageNotFound, "Stemcell image not found"
-          end
+          logger.info('Verifying stemcell image')
+          @stemcell_image = File.join(stemcell_dir, 'image')
+          raise StemcellImageNotFound, 'Stemcell image not found' unless File.file?(@stemcell_image)
         end
 
         stemcell = nil
@@ -83,9 +79,9 @@ module Bosh::Director
           cloud = cloud_factory.get(cpi)
           cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
 
-          if !is_supported?(cloud, cpi)
+          unless is_supported?(cloud, cpi)
             logger.info("#{cpi_suffix} cpi does not support stemcell format")
-            Models::StemcellMatch.find_or_create(
+            Models::StemcellUpload.find_or_create(
               name: @name,
               cpi: cpi,
               version: @version,
@@ -107,7 +103,7 @@ module Bosh::Director
           end
 
           needs_upload = @fix || !stemcell.cid
-          upload_suffix = " (already exists, skipped)" unless needs_upload
+          upload_suffix = ' (already exists, skipped)' unless needs_upload
           track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
             if needs_upload
               stemcell.cid = cloud.create_stemcell(@stemcell_image, @cloud_properties)
@@ -125,7 +121,7 @@ module Bosh::Director
             end
           end
 
-          Models::StemcellMatch.find_or_create(
+          Models::StemcellUpload.find_or_create(
             name: @name,
             cpi: cpi,
             version: @version,
@@ -133,7 +129,7 @@ module Bosh::Director
         end
 
         if stemcell.nil?
-          raise StemcellNotSupported, "stemcell_formats of this stemcell are not supported by available cpis"
+          raise StemcellNotSupported, 'stemcell_formats of this stemcell are not supported by available cpis'
         else
           "/stemcells/#{stemcell.name}/#{stemcell.version}"
         end
@@ -145,11 +141,9 @@ module Bosh::Director
       private
 
       def verify_sha1
-        begin
-          @multi_digest_verifier.verify(@stemcell_path, @stemcell_sha1)
-        rescue Bosh::Director::BoshDigest::ShaMismatchError => e
-          raise Bosh::Director::StemcellSha1DoesNotMatch.new(e)
-        end
+        @multi_digest_verifier.verify(@stemcell_path, @stemcell_sha1)
+      rescue Bosh::Director::BoshDigest::ShaMismatchError => e
+        raise Bosh::Director::StemcellSha1DoesNotMatch, e
       end
 
       def download_remote_stemcell
@@ -165,12 +159,10 @@ module Bosh::Director
 
       def is_supported?(cloud, cpi)
         info = cloud.info
-        if @stemcell_formats && info["stemcell_formats"]
-          return (info["stemcell_formats"] & @stemcell_formats).any?
-        else
-          logger.info("There is no enough information to check if stemcell format is supported")
-          return true
-        end
+        return (info['stemcell_formats'] & @stemcell_formats).any? if @stemcell_formats && info['stemcell_formats']
+
+        logger.info('There is no enough information to check if stemcell format is supported')
+        return true
       rescue Bosh::Clouds::NotImplemented
         cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
         logger.info("info method is not supported by cpi #{cpi_suffix}")
