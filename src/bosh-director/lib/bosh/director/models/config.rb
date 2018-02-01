@@ -25,7 +25,7 @@ module Bosh
         end
 
         def raw_manifest
-          YAML.safe_load content
+          YAML.safe_load(content, [Symbol], [], true)
         end
 
         def teams

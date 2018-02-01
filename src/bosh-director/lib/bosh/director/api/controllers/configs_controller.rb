@@ -165,7 +165,7 @@ module Bosh::Director
 
       def validate_config_content(content)
         content = begin
-           YAML.safe_load(content)
+           YAML.safe_load(content, [Symbol], [], true)
          rescue StandardError => e
            raise BadConfig, "Config must be valid YAML: #{e.message}"
          end

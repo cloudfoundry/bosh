@@ -207,22 +207,18 @@ module Bosh::Director
           )
 
           expect do
-            post '/', JSON.generate(
-              'name' => 'my-name',
-              'type' => 'my-type',
-              'content' => 'b: 12345',
-            ), 'CONTENT_TYPE' => 'application/json'
+            post(
+              '/',
+              JSON.generate(
+                'name' => 'my-name',
+                'type' => 'my-type',
+                'content' => 'b: 12345',
+              ),
+              'CONTENT_TYPE' => 'application/json',
+            )
           end.to change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
-
-          expect(JSON.parse(last_response.body)).to eq(
-            'id' => Bosh::Director::Models::Config.first.id.to_s,
-            'type' => 'my-type',
-            'name' => 'my-name',
-            'content' => 'a: 123',
-            'teams' => [],
-          )
         end
 
         it 'ignores config when config already exists' do
