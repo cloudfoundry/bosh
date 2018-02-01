@@ -210,6 +210,67 @@ module Bosh::Director
           end
         end
 
+        describe 'checking list_configs rights' do
+          let(:acl_right) { :list_configs }
+          it 'allows bosh.read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.read'])).to eq(true)
+          end
+
+          it 'allows bosh.teams.X.read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.anything.read'])).to eq(true)
+          end
+
+          it 'allows bosh.X.read scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.read'])).to eq(true)
+          end
+
+          it 'allows bosh.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows bosh.teams.X.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.anything.admin'])).to eq(true)
+          end
+
+          it 'allows bosh.X.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+              'bosh.unexpected-uuid.admin',
+              'bosh.unexpected-uuid.read',
+              'bosh.teams.security.unexpected',
+            ])).to eq(false)
+          end
+        end
+
+        describe 'checking update_configs rights' do
+          let(:acl_right) { :update_configs }
+          it 'allows bosh.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows bosh.teams.X.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.teams.anything.admin'])).to eq(true)
+          end
+
+          it 'allows bosh.X.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+              'bosh.unexpected-uuid.admin',
+              'bosh.read',
+              'bosh.teams.anything.read',
+              'bosh.fake-director-uuid.read',
+              'bosh.unexpected-uuid.read',
+              'bosh.teams.security.unexpected',
+            ])).to eq(false)
+          end
+        end
+
         describe 'checking for list_tasks rights' do
           let(:acl_right) { :list_tasks }
           it_behaves_like :admin_read_team_admin_scopes
@@ -368,6 +429,78 @@ module Bosh::Director
             }.to raise_error ArgumentError, "Unexpected permission for deployment: #{acl_right}"
           end
         end
+      end
+
+      describe 'config' do
+          let(:acl_subject) {
+            team = Models::Team.make(name: 'security')
+
+            Models::Config.make(
+              content: 'some-yaml',
+              created_at: Time.now - 3.days,
+              team_id: team.id.to_s
+            )
+          }
+
+          describe 'admin rights' do
+            let(:acl_right) { :admin }
+
+            it 'allows global scopes' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.admin' ])).to eq(true)
+            end
+
+            it 'allows director-specific scopes' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.fake-director-uuid.admin' ])).to eq(true)
+            end
+
+            it 'allows team scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.teams.security.admin' ])).to eq(true)
+            end
+
+            it 'denies others' do
+              expect(subject.is_granted?(acl_subject, acl_right, [
+                'bosh.unexpected-uuid.admin',   # other director-specific admin scope
+                'bosh.teams.fraud.admin',       # unrelated team specific admins
+                'bosh.teams.security.haha',     # team specific unsupported scope
+              ])).to eq(false)
+            end
+          end
+
+          describe 'read rights' do
+            let(:acl_right) { :read }
+
+            it 'allows global admin scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.admin' ])).to eq(true)
+            end
+
+            it 'allows global read scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.read' ])).to eq(true)
+            end
+
+            it 'allows director-specific admin scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.fake-director-uuid.admin' ])).to eq(true)
+            end
+
+            it 'allows director-specific read scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.fake-director-uuid.read' ])).to eq(true)
+            end
+
+            it 'allows team scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.teams.security.admin' ])).to eq(true)
+            end
+
+            it 'allows team scope' do
+              expect(subject.is_granted?(acl_subject, acl_right, [ 'bosh.teams.security.read' ])).to eq(true)
+            end
+
+            it 'denies others' do
+              expect(subject.is_granted?(acl_subject, acl_right, [
+                'bosh.unexpected-uuid.admin',   # other director-specific admin scope
+                'bosh.teams.fraud.admin',       # unrelated team specific admins
+                'bosh.teams.security.haha',     # team specific unsupported scope
+              ])).to eq(false)
+            end
+          end
       end
 
       describe 'unexpected subject' do

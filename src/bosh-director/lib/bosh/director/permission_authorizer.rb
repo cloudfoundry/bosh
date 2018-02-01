@@ -42,6 +42,19 @@ module Bosh::Director
             else
               raise ArgumentError, "Unexpected permission for deployment: #{permission}"
           end
+        when lambda { |s| s.instance_of?(Models::Config) }
+          expected_scope << subject_team_scopes(subject, 'admin')
+
+          case permission
+            when :admin
+              # already allowed with initial expected_scope
+            when :read
+              expected_scope << subject_team_scopes(subject, 'read')
+              expected_scope << director_permissions[:read]
+            else
+              raise ArgumentError, "Unexpected permission for config: #{permission}"
+          end
+
         else
           raise ArgumentError, "Unexpected subject: #{subject}"
       end
@@ -57,11 +70,13 @@ module Bosh::Director
           # already allowed with initial expected_scope
         when :create_deployment
           expected_scope << add_bosh_admin_scopes(user_scopes)
-        when :read_events
+        when :read_events, :list_configs
           expected_scope << director_permissions[:read]
           expected_scope << add_bosh_team_scopes(user_scopes)
         when :read_releases, :list_deployments, :read_stemcells, :list_tasks
           expected_scope << director_permissions[:read]
+          expected_scope << add_bosh_admin_scopes(user_scopes)
+        when :update_configs
           expected_scope << add_bosh_admin_scopes(user_scopes)
         when :read, :upload_releases, :upload_stemcells
           expected_scope << director_permissions[permission]

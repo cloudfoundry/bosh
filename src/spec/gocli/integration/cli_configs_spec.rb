@@ -67,6 +67,96 @@ describe 'cli configs', type: :integration do
       expect(output).to_not include('other-type','other-name')
       expect(output).to include('my-type', 'my-name')
     end
+
+    it 'can include outdated configs' do
+      bosh_runner.run("update-config my-type --name=my-name #{config.path}")
+      bosh_runner.run("update-config my-type --name=my-name #{second_config.path}")
+
+      output = bosh_runner.run('configs --include-outdated')
+
+      expect(output.scan('my-type').length).to be(2)
+      expect(output.scan('my-name').length).to be(2)
+    end
+  end
+
+  context 'when teams are used' do
+    with_reset_sandbox_before_each(user_authentication: 'uaa')
+
+    let(:production_env) {{'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}}
+    let(:admin_env) {{'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}}
+    let(:team_read_env){{'BOSH_CLIENT' => 'team-client-read-access', 'BOSH_CLIENT_SECRET' => 'team-secret'}}
+    let(:team_admin_env){{'BOSH_CLIENT' => 'team-client', 'BOSH_CLIENT_SECRET' => 'team-secret'}}
+
+    it 'shows configs of the same team only' do
+      bosh_runner.run("update-config production-type #{config.path}", client: production_env['BOSH_CLIENT'], client_secret: production_env['BOSH_CLIENT_SECRET'])
+      bosh_runner.run("update-config team-type #{config.path}", client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])
+
+      production_configs = table(bosh_runner.run('configs', json: true, client: production_env['BOSH_CLIENT'],
+        client_secret: production_env['BOSH_CLIENT_SECRET']))
+      expect(production_configs.length).to eq(1)
+      expect(production_configs).to contain_exactly({'name'=>'default', 'teams'=>'', 'type'=>'production-type'})
+
+      team_configs = table(bosh_runner.run('configs', json: true, client: team_read_env['BOSH_CLIENT'],
+        client_secret: team_read_env['BOSH_CLIENT_SECRET']))
+      expect(team_configs.length).to eq(1)
+      expect(team_configs).to contain_exactly({'name'=>'default', 'teams'=>'', 'type'=>'team-type'})
+    end
+
+    it 'shows teams only for admin' do
+      bosh_runner.run("update-config production-type #{config.path}", client: production_env['BOSH_CLIENT'], client_secret: production_env['BOSH_CLIENT_SECRET'])
+      bosh_runner.run("update-config team-type #{config.path}", client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])
+
+      configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'],
+        client_secret: admin_env['BOSH_CLIENT_SECRET']))
+      expect(configs.length).to eq(2)
+
+      expect(configs).to contain_exactly(
+        {"name"=>"default", "teams"=>"production_team", "type"=>"production-type"},
+        {"name"=>"default", "teams"=>"ateam", "type"=>"team-type"})
+
+      configs = table(bosh_runner.run('configs', json: true, client: team_admin_env['BOSH_CLIENT'],
+        client_secret: team_admin_env['BOSH_CLIENT_SECRET']))
+
+      expect(configs).to contain_exactly({'name'=>'default', 'teams'=>'', 'type'=>'team-type'})
+    end
+
+    it 'allows to create/delete team only for admin or team admin' do
+      output = bosh_runner.run("update-config team-type #{config.path}", failure_expected: true, client: team_read_env['BOSH_CLIENT'], client_secret: team_read_env['BOSH_CLIENT_SECRET'])
+      expect(output).to include('Retry: Post')
+
+      bosh_runner.run("update-config team-type --name=team-name1 #{config.path}", client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])
+      bosh_runner.run("update-config team-type --name=team-name2 #{config.path}", client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])
+
+      admin_configs = table(bosh_runner.run('configs', json: true, client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET']))
+      expect(admin_configs.length).to eq(2)
+
+      expect(admin_configs).to contain_exactly(
+        {'name'=>'team-name1', 'teams'=>'', 'type'=>'team-type'},
+        {'name'=>'team-name2', 'teams'=>'', 'type'=>'team-type'}
+      )
+
+      output = bosh_runner.run("delete-config team-type --name=team-name1", failure_expected: true, client: team_read_env['BOSH_CLIENT'], client_secret: team_read_env['BOSH_CLIENT_SECRET'])
+      expect(output).to include('Require one of the scopes: bosh.admin, bosh.deadbeef.admin')
+
+      expect(bosh_runner.run('delete-config team-type --name=team-name1', client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET'])).to include('Succeeded')
+      expect(bosh_runner.run('delete-config team-type --name=team-name2', client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])).to include('Succeeded')
+
+      admin_configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET']))
+      expect(admin_configs.length).to eq(0)
+    end
+  end
+
+  context 'can diff configs' do
+    let(:other_config) {yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders)}
+
+    it 'diffs two configs' do
+      bosh_runner.run("update-config my-type #{config.path}")
+      bosh_runner.run("update-config other-type --name=other-name #{other_config.path}")
+
+      output = bosh_runner.run('configs --include-outdated --json')
+      from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
+      expect(bosh_runner.run("diff-config #{from} #{to}")).to include('- vm_types:', '+ releases:', 'Succeeded')
+    end
   end
 
   context 'can delete a config' do

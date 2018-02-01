@@ -86,5 +86,18 @@ module Bosh::Director::Models
         expect(Bosh::Director::Models::Config.find_by_ids(nil)).to eq([])
       end
     end
+
+    describe '#teams' do
+      it 'returns teams array' do
+        team = Team.create(:name => 'dev')
+        Config.new(type: 'fake-cloud', content: 'v1', name: 'one', team_id: team.id).save
+        expect(Config.first.teams).to eq([team])
+      end
+
+      it 'returns empty teams when no team_id' do
+        Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
+        expect(Bosh::Director::Models::Config.first.teams).to eq([])
+      end
+    end
   end
 end

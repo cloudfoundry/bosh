@@ -27,6 +27,11 @@ module Bosh
         def raw_manifest
           YAML.load content
         end
+
+        def teams
+          return [] if self.team_id.nil?
+          Team.where(id: [self.team_id]).all
+        end
       end
     end
   end
