@@ -2,18 +2,18 @@ require_relative '../spec_helper'
 
 describe 'cli runtime config', type: :integration do
   with_reset_sandbox_before_each
-  let(:un_named_rc) {Bosh::Spec::Deployments.simple_runtime_config}
-  let(:named_rc_1) {
+  let(:un_named_rc) { Bosh::Spec::Deployments.simple_runtime_config }
+  let(:named_rc_1) do
     rc = Bosh::Spec::Deployments.simple_runtime_config
     rc['releases'][0] = { 'name' => 'named_rc_1', 'version' => '1' }
     rc
-  }
+  end
 
-  let(:named_rc_2) {
+  let(:named_rc_2) do
     rc = Bosh::Spec::Deployments.simple_runtime_config
     rc['releases'][0] = { 'name' => 'named_rc_2', 'version' => '1' }
     rc
-  }
+  end
 
   it 'can upload a default (unnamed) runtime config' do
     runtime_config = yaml_file('runtime_config.yml', un_named_rc)
@@ -38,7 +38,7 @@ describe 'cli runtime config', type: :integration do
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{named_runtime_config_file_1.path}")
     bosh_runner.run("update-runtime-config --name=named_rc_2 #{named_runtime_config_file_2.path}")
 
-    expect(YAML.load(bosh_runner.run('runtime-config', tty: false))).to eq(un_named_rc)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config', tty: false))).to eq(un_named_rc)
   end
 
   it 'can download a named runtime config' do
@@ -52,8 +52,8 @@ describe 'cli runtime config', type: :integration do
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{named_runtime_config_file_1.path}")
     bosh_runner.run("update-runtime-config --name=named_rc_2  #{named_runtime_config_file_2.path}")
 
-    expect(YAML.load(bosh_runner.run('runtime-config --name=named_rc_1', tty: false))).to eq(named_rc_1)
-    expect(YAML.load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false))).to eq(named_rc_2)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_1', tty: false))).to eq(named_rc_1)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false))).to eq(named_rc_2)
   end
 
   it 'downloads the latest version of each runtime config' do
@@ -69,9 +69,9 @@ describe 'cli runtime config', type: :integration do
     bosh_runner.run("update-runtime-config #{yaml_file('runtime_config.yml', un_named_rc_v2).path}")
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{yaml_file('runtime_config.yml', named_rc_1_v2).path}")
 
-    expect(YAML.load(bosh_runner.run('runtime-config', tty: false))).to eq(un_named_rc_v2)
-    expect(YAML.load(bosh_runner.run('runtime-config --name=named_rc_1', tty: false))).to eq(named_rc_1_v2)
-    expect(YAML.load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false))).to eq(named_rc_2)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config', tty: false))).to eq(un_named_rc_v2)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_1', tty: false))).to eq(named_rc_1_v2)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false))).to eq(named_rc_2)
   end
 
   it 'gives nice errors for common problems when uploading', no_reset: true do
@@ -107,12 +107,13 @@ describe 'cli runtime config', type: :integration do
       manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
       cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       failure_expected: true,
-      return_exit_code: true
+      return_exit_code: true,
     )
 
     expect(exit_code).to_not eq(0)
     expect(output).to include(
-      "Runtime manifest contains the release 'bosh-release' with version as 'latest'. Please specify the actual version string.")
+      "Runtime manifest contains the release 'bosh-release' with version as 'latest'. Please specify the actual version string.",
+    )
   end
 
   it 'gives an error when release for addon does not exist in releases section' do
@@ -123,7 +124,7 @@ describe 'cli runtime config', type: :integration do
       manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
       cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       failure_expected: true,
-      return_exit_code: true
+      return_exit_code: true,
     )
 
     expect(exit_code).to_not eq(0)
@@ -133,7 +134,7 @@ describe 'cli runtime config', type: :integration do
   it 'does not fail when runtime config is very large' do
     runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
 
-    for i in 0..10001
+    (0..10_001).each do |i|
       runtime_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
     end
 
@@ -147,12 +148,12 @@ describe 'cli runtime config', type: :integration do
     runtime_config = yaml_file('runtime_config.yml', un_named_rc)
     bosh_runner.run("update-runtime-config #{runtime_config.path}")
 
-    output = JSON.load(bosh_runner.run("configs --type=runtime --json"))
+    output = JSON.parse(bosh_runner.run('configs --type=runtime --json'))
 
     configs = output['Tables'].first['Rows']
 
-    expect(configs.count).to eq (1)
-    expect(configs.first).to eq('name' => 'default', 'type' => 'runtime')
+    expect(configs.count).to eq 1
+    expect(configs.first).to eq('name' => 'default', 'type' => 'runtime', 'teams' => '')
   end
 
   it 'shows no diff when uploading same unnamed runtime config as with generic config command' do
@@ -161,5 +162,4 @@ describe 'cli runtime config', type: :integration do
     output = bosh_runner.run("update-runtime-config #{runtime_config.path}")
     expect(output).to match(/Using environment 'https:\/\/.+' as client 'test'\n\nSucceeded/)
   end
-
 end
