@@ -9,7 +9,7 @@ source /var/vcap/packages/ruby-2.4-r3/bosh/runtime.env
 PATH=$PATH:/var/vcap/jobs/director/bin
 
 # Postgres
-PATH=/var/vcap/packages/postgres-9.4/bin:/var/vcap/packages/postgres/bin:$PATH
+PATH=/var/vcap/packages/postgres-9.4/bin:$PATH
 LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
 
 # MySQL
