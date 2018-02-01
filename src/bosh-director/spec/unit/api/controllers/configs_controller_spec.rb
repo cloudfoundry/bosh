@@ -164,7 +164,8 @@ module Bosh::Director
                 'content' => config1.content,
                 'id' => "#{config1.id}",
                 'type' => config1.type,
-                'name' => config1.name
+                'name' => config1.name,
+                'created_at' => config1.created_at.to_s
             })
           end
         end
@@ -201,12 +202,14 @@ module Bosh::Director
 
           expect(last_response.status).to eq(201)
 
+          config = Bosh::Director::Models::Config.first
           expect(JSON.parse(last_response.body)).to eq(
             {
-              'id' => "#{Bosh::Director::Models::Config.first.id}",
+              'id' => "#{config.id}",
               'type' => 'my-type',
               'name' => 'my-name',
-              'content' => 'a: 1'
+              'content' => 'a: 1',
+              'created_at' => config.created_at.to_s,
             }
           )
         end
@@ -704,6 +707,54 @@ module Bosh::Director
         it 'returns 401' do
           post '/diff', {}.to_json, {'CONTENT_TYPE' => 'application/json'}
           expect(last_response.status).to eq(401)
+        end
+      end
+    end
+
+    describe 'id' do
+      let!(:config_example) { Bosh::Director::Models::Config.make(id: 123, type: 'my-type', name: 'default', content: '1') }
+
+      context 'with authenticated admin user' do
+        before(:each) do
+          authorize('admin', 'admin')
+        end
+
+        it 'it returns the specified config' do
+          get('/123')
+
+          expect(last_response.status).to eq(200)
+          expect(JSON.parse(last_response.body)).to eq({'id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1', 'created_at' => config_example.created_at.to_s})
+        end
+
+        context 'when no config is found' do
+          it 'returns a 404' do
+            get('/999')
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+
+        context 'when `id` is not a string containing an integer' do
+          it 'returns a 404' do
+            get('/invalid-id')
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+      end
+
+      context 'without an authenticated user' do
+        it 'denies access' do
+          response = get('/my-fake-id')
+          expect(response.status).to eq(401)
+        end
+      end
+
+      context 'when user is reader' do
+        before { basic_authorize('reader', 'reader') }
+
+        it 'permits access' do
+          expect(get('/123').status).to eq(200)
         end
       end
     end

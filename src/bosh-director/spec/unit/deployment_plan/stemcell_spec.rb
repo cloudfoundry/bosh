@@ -6,17 +6,17 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   end
 
   def make_deployment(name)
-    BD::Models::Deployment.make(:name => name)
+    BD::Models::Deployment.make(name: name)
   end
 
   def make_stemcell(name, version, os = 'os1', params = {})
-    BD::Models::Stemcell.make({:name => name, :operating_system=>os, :version => version}.merge(params))
+    BD::Models::Stemcell.make({ name: name, operating_system: os, version: version }.merge(params))
   end
 
   let(:valid_spec) do
     {
       'name' => 'stemcell-name',
-      'version' => '0.5.2'
+      'version' => '0.5.2',
     }
   end
 
@@ -28,11 +28,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     it 'requires version' do
-        valid_spec.delete('version')
-        expect {
-          make(valid_spec)
-        }.to raise_error(BD::ValidationMissingField,
-            "Required property 'version' was not specified in object ({\"name\"=>\"stemcell-name\"})")
+      valid_spec.delete('version')
+      expect do
+        make(valid_spec)
+      end.to raise_error(BD::ValidationMissingField,
+                         "Required property 'version' was not specified in object ({\"name\"=>\"stemcell-name\"})")
     end
 
     context 'os and name' do
@@ -56,16 +56,21 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         it 'raises' do
           valid_spec.delete('name')
           valid_spec.delete('os')
-          expect { make(valid_spec) }.to raise_error(BD::ValidationMissingField,
-              "Required property 'os' or 'name' was not specified in object ({\"version\"=>\"0.5.2\"})")
+          expect { make(valid_spec) }.to raise_error(
+            BD::ValidationMissingField,
+            "Required property 'os' or 'name' was not specified in object ({\"version\"=>\"0.5.2\"})",
+          )
         end
       end
       context 'when both os and name are specified' do
         it 'raises' do
           valid_spec['name'] = 'stemcell-name'
           valid_spec['os'] = 'os1'
-          expect { make(valid_spec) }.to raise_error(BD::StemcellBothNameAndOS,
-              "Properties 'os' and 'name' are both specified for stemcell, choose one. ({\"name\"=>\"stemcell-name\", \"version\"=>\"0.5.2\", \"os\"=>\"os1\"})")
+          expect { make(valid_spec) }.to raise_error(
+            BD::StemcellBothNameAndOS,
+            "Properties 'os' and 'name' are both specified for stemcell, choose one. "\
+            '({"name"=>"stemcell-name", "version"=>"0.5.2", "os"=>"os1"})',
+          )
         end
       end
     end
@@ -74,7 +79,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       let(:valid_spec) do
         {
           'name' => 'stemcell-name',
-          'version' => 'latest'
+          'version' => 'latest',
         }
       end
 
@@ -110,10 +115,10 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       stemcell_model = make_stemcell('stemcell-name', '0.5.0', 'os2')
       make_stemcell('stemcell-name', '0.5.2', 'os2')
 
-      stemcell = make({
+      stemcell = make(
         'os' => 'os2',
-        'version' => '0.5.0'
-      })
+        'version' => '0.5.0',
+      )
       stemcell.bind_model(deployment)
 
       expect(stemcell.models.first).to eq(stemcell_model)
@@ -121,17 +126,16 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     context 'when stemcell cannot be found' do
-
       it 'returns error out if specified OS and version is not found' do
         deployment = make_deployment('mycloud')
 
         make_stemcell('stemcell-name', '0.5.0', 'os2')
         make_stemcell('stemcell-name', '0.5.2', 'os2')
 
-        stemcell = make({
+        stemcell = make(
           'os' => 'os2',
-          'version' => '0.5.5'
-        })
+          'version' => '0.5.5',
+        )
         expect { stemcell.bind_model(deployment) }.to raise_error BD::StemcellNotFound
       end
 
@@ -141,10 +145,10 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         make_stemcell('stemcell-name1', '0.5.0')
         make_stemcell('stemcell-name2', '0.5.2')
 
-        stemcell = make({
+        stemcell = make(
           'name' => 'stemcell-name3',
-          'version' => '0.5.2'
-        })
+          'version' => '0.5.2',
+        )
         expect { stemcell.bind_model(deployment) }.to raise_error BD::StemcellNotFound
       end
 
@@ -152,9 +156,9 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         deployment = make_deployment('mycloud')
 
         stemcell = make(valid_spec)
-        expect {
+        expect do
           stemcell.bind_model(deployment)
-        }.to raise_error(BD::StemcellNotFound)
+        end.to raise_error(BD::StemcellNotFound)
       end
     end
 
@@ -166,7 +170,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
       make_stemcell('stemcell1', '0.5.2', 'os2')
 
-      stemcell = make({'os' => 'os2', 'version' => '0.5.2'})
+      stemcell = make('os' => 'os2', 'version' => '0.5.2')
 
       stemcell.bind_model(deployment)
 
@@ -177,54 +181,55 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     it 'binds stemcells to the deployment DB' do
       deployment = make_deployment('mycloud')
 
-      stemcell_1 = make_stemcell('foo', '42-dev')
-      stemcell_2 = make_stemcell('bar', '55-dev')
+      stemcell1 = make_stemcell('foo', '42-dev')
+      stemcell2 = make_stemcell('bar', '55-dev')
 
-      spec_1 = {'name' => 'foo', 'version' => '42-dev'}
-      spec_2 = {'name' => 'bar', 'version' => '55-dev'}
+      spec1 = { 'name' => 'foo', 'version' => '42-dev' }
+      spec2 = { 'name' => 'bar', 'version' => '55-dev' }
 
-      make(spec_1).bind_model(deployment)
-      make(spec_2).bind_model(deployment)
+      make(spec1).bind_model(deployment)
+      make(spec2).bind_model(deployment)
 
-      expect(deployment.stemcells).to match_array([stemcell_1, stemcell_2])
+      expect(deployment.stemcells).to match_array([stemcell1, stemcell2])
     end
 
     it "doesn't bind model if deployment plan has unbound deployment" do
-      expect {
-        stemcell = make({'name' => 'foo', 'version' => '42'})
+      expect do
+        stemcell = make('name' => 'foo', 'version' => '42')
         stemcell.bind_model(nil)
-      }.to raise_error(BD::DirectorError, 'Deployment not bound in the deployment plan')
+      end.to raise_error(BD::DirectorError, 'Deployment not bound in the deployment plan')
     end
   end
 
   describe '#cid_for_az' do
     let(:cloud_factory) { instance_double(BD::CloudFactory) }
-    before {
+    before do
       allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
-    }
+    end
 
     it 'raises an error if no stemcell model was bound' do
-      stemcell = make({'name' => 'foo', 'version' => '42-dev'})
-      expect {  stemcell.cid_for_az('doesntmatter')  }.to raise_error /please bind model first/
+      stemcell = make('name' => 'foo', 'version' => '42-dev')
+      expect { stemcell.cid_for_az('doesntmatter') }.to raise_error(/please bind model first/)
     end
 
     context 'if not using cpi config' do
       it 'can not create multiple stemcells with same name and version' do
         make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid1', 'cpi' => '')
-        expect {
+        expect do
           make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid2', 'cpi' => '')
-        }.to raise_error Sequel::ValidationFailed, "name and version and cpi unique"
+        end.to raise_error Sequel::ValidationFailed, 'name and version and cpi unique'
       end
 
       it 'raises an error if no stemcell for the default cpi exists' do
         deployment = make_deployment('mycloud')
 
-        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1') # there's only a stemcell for another cpi
+        # there's only a stemcell for another cpi
+        make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1')
 
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell = make('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
 
-        expect {  stemcell.cid_for_az(nil)  }.to raise_error BD::StemcellNotFound
+        expect { stemcell.cid_for_az(nil) }.to raise_error BD::StemcellNotFound
       end
 
       it 'returns the cid of the default stemcell when not using AZs' do
@@ -234,7 +239,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
 
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell = make('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
 
         expect(stemcell.cid_for_az(nil)).to eq('cid1')
@@ -247,10 +252,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
 
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell = make('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return(nil)
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('').and_return([''])
         expect(stemcell.cid_for_az('az-example')).to eq('cid1')
       end
     end
@@ -262,10 +268,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid2')
 
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell = make('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
 
         allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi2')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('cpi2').and_return(['cpi2'])
         expect(stemcell.cid_for_az('az-example')).to eq('cid2')
       end
 
@@ -274,11 +281,44 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1')
 
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell = make('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
 
-        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi-notexisting')
-        expect {  stemcell.cid_for_az('az-example')  }.to raise_error BD::StemcellNotFound
+        allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('garbage')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('garbage').and_return(['garbage'])
+        expect { stemcell.cid_for_az('az-example') }.to raise_error BD::StemcellNotFound
+      end
+
+      context 'when cpi has migrated_from names with stemcells' do
+        let(:deployment) { make_deployment('mycloud') }
+
+        before do
+          make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1')
+        end
+
+        it 'can return a cid for stemcell associated with migrated_from names' do
+          stemcell = make('name' => 'foo', 'version' => '42-dev')
+          stemcell.bind_model(deployment)
+
+          expect(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi1')
+          expect(cloud_factory).to receive(:get_cpi_aliases).with('cpi1').and_return(['cpi1', ''])
+          expect(stemcell.cid_for_az('az-example')).to eq('cid1')
+        end
+
+        context 'when the cpi also has a stemcell' do
+          before do
+            make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
+          end
+
+          it 'returns the cid for the specified cpi' do
+            stemcell = make('name' => 'foo', 'version' => '42-dev')
+            stemcell.bind_model(deployment)
+
+            expect(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi1')
+            expect(cloud_factory).to receive(:get_cpi_aliases).with('cpi1').and_return(['cpi1', ''])
+            expect(stemcell.cid_for_az('az-example')).to eq('cid2')
+          end
+        end
       end
     end
 
@@ -290,10 +330,11 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid3')
 
-        stemcell = make({'name' => 'foo', 'version' => '42-dev'})
+        stemcell = make('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
 
         allow(cloud_factory).to receive(:get_name_for_az).with('az-example').and_return('cpi2')
+        allow(cloud_factory).to receive(:get_cpi_aliases).with('cpi2').and_return(['cpi2'])
         expect(stemcell.cid_for_az('az-example')).to eq('cid3')
       end
     end

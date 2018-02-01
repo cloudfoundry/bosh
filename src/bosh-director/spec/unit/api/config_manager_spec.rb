@@ -126,6 +126,23 @@ describe Bosh::Director::Api::ConfigManager do
     end
   end
 
+  describe '#find_by_Id' do
+    let!(:config) { Bosh::Director::Models::Config.make(id: 123, type: 'my-type', name: 'b', content: '1') }
+
+    it 'returns config with specified id' do
+      result = manager.find_by_id(123)
+      expect(result).to eq(config)
+    end
+
+    context 'when config is missing' do
+      it 'raises ConfigNotFound' do
+        expect {
+          manager.find_by_id(124)
+        }.to raise_error(Bosh::Director::ConfigNotFound, 'Config 124 not found')
+      end
+    end
+  end
+
   describe '#delete' do
     context 'when config entry exists' do
       it "sets deleted to 'true'" do

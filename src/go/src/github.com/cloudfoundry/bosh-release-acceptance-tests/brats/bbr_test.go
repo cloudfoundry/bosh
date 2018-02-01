@@ -6,6 +6,7 @@ import (
 
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -14,14 +15,17 @@ import (
 )
 
 var _ = Describe("Bosh Backup and Restore BBR", func() {
+	var backupDir []string
+
 	BeforeEach(func() {
 		startInnerBosh()
 	})
 
 	AfterEach(func() {
-		err := os.RemoveAll(directorBackupName)
-		Expect(err).ToNot(HaveOccurred())
-
+		for _, dir := range backupDir {
+			err := os.RemoveAll(dir)
+			Expect(err).ToNot(HaveOccurred())
+		}
 		stopInnerBosh()
 	})
 
@@ -49,7 +53,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
 				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
@@ -67,12 +70,17 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("restore inner director from backup", func() {
+				var err error
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
+
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore")
+					"restore",
+					"--artifact-path", backupDir[0])
 				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
@@ -135,7 +143,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
@@ -146,12 +153,17 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"ssh", "bosh", "sudo rm -rf /var/vcap/store/blobstore/*")
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
+				var err error
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
+
 				session = bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore")
+					"restore",
+					"--artifact-path", backupDir[0])
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
@@ -186,19 +198,23 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("Restore deployment", func() {
+				var err error
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
+
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore")
+					"restore",
+					"--artifact-path", backupDir[0])
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
@@ -218,7 +234,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
@@ -236,12 +251,17 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("Restore deployment", func() {
+				var err error
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
+
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore")
+					"restore",
+					"--artifact-path", backupDir[0])
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)

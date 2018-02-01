@@ -4,6 +4,14 @@ module Bosh::Director
   module Api::Controllers
     class ConfigsController < BaseController
 
+      get '/:id', scope: :read do
+        id = params[:id].to_i
+        return status(404) if params[:id] != id.to_s
+        config = Bosh::Director::Api::ConfigManager.new.find_by_id(id)
+        status(200)
+        return json_encode(sql_to_hash(config))
+      end
+
       get '/', scope: :read do
         check(params, 'latest')
 
@@ -120,7 +128,8 @@ module Bosh::Director
             content: config.content,
             id: config.id.to_s, # id should be opaque to clients (may not be an int)
             type: config.type,
-            name: config.name
+            name: config.name,
+            created_at: config.created_at.to_s
         }
       end
 

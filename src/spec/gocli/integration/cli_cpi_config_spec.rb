@@ -22,7 +22,7 @@ describe "cli cpi config", type: :integration do
 
   context 'when using multiple named cpi configs' do
     it 'can upload and download them' do
-      output = bosh_runner.run('config cpi', failure_expected: true)
+      output = bosh_runner.run('config --type cpi --name default', failure_expected: true)
       expect(output).to include('No config')
 
       cpi1_yaml = yaml_file('cpi1', Bosh::Spec::NewDeployments.single_cpi_config('cpi-name1'))
@@ -34,11 +34,11 @@ describe "cli cpi config", type: :integration do
       expect(upload1_output).to include('Succeeded')
       expect(upload2_output).to include('Succeeded')
 
-      download1_output = YAML.load(bosh_runner.run('config --name cpi_config_1 cpi', tty: false))
-      download2_output = YAML.load(bosh_runner.run('config --name cpi_config_2 cpi', tty: false))
+      download1_output = bosh_runner.run('config --name cpi_config_1 --type cpi', tty: false)
+      download2_output = bosh_runner.run('config --name cpi_config_2 --type cpi', tty: false)
 
-      expect(download1_output).to eq(Bosh::Spec::NewDeployments.single_cpi_config('cpi-name1'))
-      expect(download2_output).to eq(Bosh::Spec::NewDeployments.single_cpi_config('cpi-name2'))
+      expect(download1_output).to include('cpi-name1')
+      expect(download2_output).to include('cpi-name2', 'somekey: someval')
     end
   end
 

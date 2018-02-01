@@ -7,17 +7,17 @@ module Bosh::Director
       cpi_configs = Bosh::Director::Models::Config.latest_set('cpi')
       cloud_configs = Bosh::Director::Models::Config.latest_set('cloud')
 
-      if deployment.nil?
-        planner = create_cloud_planner(cloud_configs)
-      else
-        planner = create_cloud_planner(cloud_configs, deployment.name)
-      end
+      planner = if deployment.nil?
+                  create_cloud_planner(cloud_configs)
+                else
+                  create_cloud_planner(cloud_configs, deployment.name)
+                end
 
       new(planner, parse_cpi_configs(cpi_configs))
     end
 
     def self.create_from_deployment(deployment,
-      cpi_configs = Bosh::Director::Models::Config.latest_set('cpi'))
+                                    cpi_configs = Bosh::Director::Models::Config.latest_set('cpi'))
       planner = create_cloud_planner(deployment.cloud_configs, deployment.name) unless deployment.nil?
 
       new(planner, parse_cpi_configs(cpi_configs))
@@ -26,7 +26,7 @@ module Bosh::Director
     def self.parse_cpi_configs(cpi_configs)
       return nil if cpi_configs.nil? || cpi_configs.empty?
 
-      cpi_configs_raw_manifests = cpi_configs.map {|config| config.raw_manifest}
+      cpi_configs_raw_manifests = cpi_configs.map(&:raw_manifest)
       manifest_parser = Bosh::Director::CpiConfig::CpiManifestParser.new
       merged_cpi_configs_hash = manifest_parser.merge_configs(cpi_configs_raw_manifests)
       manifest_parser.parse(merged_cpi_configs_hash)
@@ -52,23 +52,22 @@ module Bosh::Director
     end
 
     def all_names
-      if !uses_cpi_config?
-        return ['']
-      end
+      return [''] unless uses_cpi_config?
 
       @parsed_cpi_config.cpis.map(&:name)
     end
 
+    def get_cpi_aliases(cpi_name)
+      return [''] unless uses_cpi_config?
+
+      cpi_config = get_cpi_config(cpi_name)
+
+      [cpi_name] + cpi_config.migrated_from_names
+    end
+
     def get(cpi_name)
-      if cpi_name == nil || cpi_name == '' then
-        return @default_cloud
-      elsif !uses_cpi_config?
-        raise "CPI '#{cpi_name}' not found in cpi-config (because cpi-config is not set)"
-      end
-
-      cpi_config = @parsed_cpi_config.find_cpi_by_name(cpi_name)
-      raise "CPI '#{cpi_name}' not found in cpi-config" if cpi_config.nil?
-
+      return @default_cloud if cpi_name.nil? || cpi_name == ''
+      cpi_config = get_cpi_config(cpi_name)
       Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, Config.uuid, cpi_config.properties)
     end
 
@@ -83,9 +82,7 @@ module Bosh::Director
     end
 
     def get_name_for_az(az_name)
-      if az_name == '' || az_name == nil then
-        return ''
-      end
+      return '' if az_name == '' || az_name.nil?
 
       raise 'Deployment plan must be given to lookup cpis from AZ' if @cloud_planner.nil?
 
@@ -93,6 +90,17 @@ module Bosh::Director
       raise "AZ '#{az_name}' not found in cloud config" if az.nil?
 
       az.cpi.nil? ? '' : az.cpi
+    end
+
+    private
+
+    def get_cpi_config(cpi_name)
+      raise "CPI '#{cpi_name}' not found in cpi-config (because cpi-config is not set)" unless uses_cpi_config?
+
+      cpi_config = @parsed_cpi_config.find_cpi_by_name(cpi_name)
+      raise "CPI '#{cpi_name}' not found in cpi-config" if cpi_config.nil?
+
+      cpi_config
     end
   end
 end

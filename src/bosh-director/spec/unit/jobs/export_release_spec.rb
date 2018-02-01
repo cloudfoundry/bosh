@@ -6,7 +6,7 @@ module Bosh::Director
   describe Jobs::ExportRelease do
     include Support::FakeLocks
 
-    let(:multi_digest) { instance_double(Digest::MultiDigest) }
+    let(:multi_digest) { instance_double(BoshDigest::MultiDigest) }
     let(:sha2) { nil }
 
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
@@ -20,7 +20,7 @@ module Bosh::Director
 
     before do
       fake_locks
-      allow(Digest::MultiDigest).to receive(:new).and_return(multi_digest)
+      allow(BoshDigest::MultiDigest).to receive(:new).and_return(multi_digest)
       Bosh::Director::Config.current_job = job
       Bosh::Director::Config.current_job.task_id = task.id
       allow(job).to receive(:task_cancelled?) { false }

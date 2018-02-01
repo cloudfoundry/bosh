@@ -1,0 +1,2 @@
+unset GIT_DIR
+scripts/rubocop-staged

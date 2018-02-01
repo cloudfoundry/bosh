@@ -3,11 +3,6 @@ require_relative '../spec_helper'
 describe 'cli: stemcell', type: :integration do
   with_reset_sandbox_before_each
 
-  # NOTE: The dummy CPI derives stemcell IDs from the SHA1 of the contained
-  # "image" file. If that file changes, update the value here using:
-  # `shasum image`
-  let(:expected_id) { '68aab7c44c857217641784806e2eeac4a3a99d1c' }
-
   # ~65s (possibly includes sandbox start)
   it 'can upload a stemcell and capture its metadata' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
@@ -17,17 +12,15 @@ describe 'cli: stemcell', type: :integration do
     expect(out).to match /Succeeded/
 
     out = table(bosh_runner.run('stemcells', json: true))
-    expect(out).to eq([
-      {
-        'name' => 'ubuntu-stemcell',
-        'version' => '1',
-        'os' => 'toronto-os',
-        'cpi' => '',
-        'cid' => "#{expected_id}"
-      }
-    ])
+    expect(out).to contain_exactly(
+      'name' => 'ubuntu-stemcell',
+      'version' => '1',
+      'os' => 'toronto-os',
+      'cpi' => '',
+      'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+    )
 
-    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
     expect(File).to be_exists(stemcell_path)
   end
 
@@ -52,22 +45,25 @@ describe 'cli: stemcell', type: :integration do
       expect(out).to include('Save stemcell')
       expect(out).to include('Succeeded')
 
-      expect_table('stemcells', [
+      expect_table(
+        'stemcells',
+        [
           {
-              'name' => 'ubuntu-stemcell',
-              'os' => 'toronto-os',
-              'version' => '1',
-              'cpi' => 'cpi-name1',
-              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+            'name' => 'ubuntu-stemcell',
+            'os' => 'toronto-os',
+            'version' => '1',
+            'cpi' => 'cpi-name1',
+            'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
           },
           {
-              'name' => 'ubuntu-stemcell',
-              'os' => 'toronto-os',
-              'version' => '1',
-              'cpi' => 'cpi-name2',
-              'cid' => '68aab7c44c857217641784806e2eeac4a3a99d1c'
+            'name' => 'ubuntu-stemcell',
+            'os' => 'toronto-os',
+            'version' => '1',
+            'cpi' => 'cpi-name2',
+            'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
           },
-      ])
+        ],
+      )
     end
   end
 
@@ -79,11 +75,20 @@ describe 'cli: stemcell', type: :integration do
     expect(out).to match /Save stemcell/
     expect(out).to match /Succeeded/
 
-    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+    out = table(bosh_runner.run('stemcells', json: true))
+    expect(out).to contain_exactly(
+      'name' => 'ubuntu-stemcell',
+      'version' => '1',
+      'os' => 'toronto-os',
+      'cpi' => '',
+      'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+    )
+
+    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
     expect(File).to be_exists(stemcell_path)
     out = bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
     expect(out).to match /Succeeded/
-    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+    stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
     expect(File).not_to be_exists(stemcell_path)
   end
 
@@ -124,21 +129,19 @@ describe 'cli: stemcell', type: :integration do
         it 'uploads stemcell' do
           # Check existing stemcell information
           out = table(bosh_runner.run('stemcells', json: true))
-          expect(out).to eq([
-            {
-              'name' => 'ubuntu-stemcell',
-              'version' => '1',
-              'os' => 'toronto-os',
-              'cpi' => '',
-              'cid' => "#{expected_id}"
-            }
-          ])
+          expect(out).to contain_exactly(
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'os' => 'toronto-os',
+            'cpi' => '',
+            'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          )
+          old_cid = out[0]['cid']
 
-          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
           expect(File).to be_exists(stemcell_path)
 
           # Upload a new stemcell with same version and name as the existing one, but is of different image content
-          new_id = 'adc4232dcd3e06779c058224054d3d3238041367'
           new_local_stemcell_path = spec_asset('valid_stemcell_with_different_content.tgz')
           output = bosh_runner.run("upload-stemcell #{new_local_stemcell_path} --fix")
           expect(output).to match /Save stemcell/
@@ -146,21 +149,20 @@ describe 'cli: stemcell', type: :integration do
 
           # Re-check the stemcell list and should return the new stemcell CID
           out = table(bosh_runner.run('stemcells', json: true))
-          expect(out).to eq([
-            {
-              'name' => 'ubuntu-stemcell',
-              'version' => '1',
-              'os' => 'toronto-os',
-              'cpi' => '',
-              'cid' => "#{new_id}"
-            }
-          ])
+          expect(out).to contain_exactly(
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'os' => 'toronto-os',
+            'cpi' => '',
+            'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          )
+          new_cid = out[0]['cid']
 
           # Check both old stemcell and new stemcll are in the storage
-          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
           expect(File).to be_exists(stemcell_path)
 
-          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_id}")
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_cid}")
           expect(File).to be_exists(stemcell_path)
         end
       end
@@ -181,17 +183,15 @@ describe 'cli: stemcell', type: :integration do
         expect(out).to match /Succeeded/
 
         out = table(bosh_runner.run('stemcells', json: true))
-        expect(out).to eq([
-          {
-            'name' => 'ubuntu-stemcell',
-            'version' => '1',
-            'os' => 'toronto-os',
-            'cpi' => '',
-            'cid' => "#{expected_id}"
-          }
-        ])
+        expect(out).to contain_exactly(
+          'name' => 'ubuntu-stemcell',
+          'version' => '1',
+          'os' => 'toronto-os',
+          'cpi' => '',
+          'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+        )
 
-        stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+        stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
         expect(File).to be_exists(stemcell_path)
       end
 
@@ -203,7 +203,16 @@ describe 'cli: stemcell', type: :integration do
           expect(out).to match /Save stemcell/
           expect(out).to match /Succeeded/
 
-          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+          out = table(bosh_runner.run('stemcells', json: true))
+          expect(out).to contain_exactly(
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'os' => 'toronto-os',
+            'cpi' => '',
+            'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+          )
+
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
           expect(File).to be_exists(stemcell_path)
         end
       end
@@ -220,21 +229,19 @@ describe 'cli: stemcell', type: :integration do
           it 'uploads stemcell' do
             # Check existing stemcell information
             out = table(bosh_runner.run('stemcells', json: true))
-            expect(out).to eq([
-              {
-                'name' => 'ubuntu-stemcell',
-                'version' => '1',
-                'os' => 'toronto-os',
-                'cpi' => '',
-                'cid' => "#{expected_id}"
-              }
-            ])
+            expect(out).to contain_exactly(
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            )
+            old_cid = out[0]['cid']
 
-            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
             expect(File).to be_exists(stemcell_path)
 
             # Upload a new stemcell with same version and name as the existing one, but is of different image content
-            new_id = 'adc4232dcd3e06779c058224054d3d3238041367'
             new_stemcell_url = file_server.http_url('valid_stemcell_with_different_content.tgz')
             output = bosh_runner.run("upload-stemcell #{new_stemcell_url} --fix")
             expect(output).to match /Save stemcell/
@@ -243,21 +250,20 @@ describe 'cli: stemcell', type: :integration do
 
             # Re-check the stemcell list and should return the new stemcell CID
             out = table(bosh_runner.run('stemcells', json: true))
-            expect(out).to eq([
-            {
-                'name' => 'ubuntu-stemcell',
-                'version' => '1',
-                'os' => 'toronto-os',
-                'cpi' => '',
-                'cid' => "#{new_id}"
-              }
-            ])
+            expect(out).to contain_exactly(
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'os' => 'toronto-os',
+              'cpi' => '',
+              'cid' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            )
+            new_cid = out[0]['cid']
 
             # Check both old stemcell and new stemcll are in the storage
-            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
             expect(File).to be_exists(stemcell_path)
 
-            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_id}")
+            stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_cid}")
             expect(File).to be_exists(stemcell_path)
           end
         end

@@ -1,6 +1,6 @@
 module Bosh
   module Director
-    module Digest
+    module BoshDigest
       class MultiDigest
         SHA1 = 'sha1'
         SHA256 = 'sha256'

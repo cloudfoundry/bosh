@@ -32,7 +32,7 @@ require 'bosh/director/models/release_version'
 require 'bosh/director/models/rendered_templates_archive'
 require 'bosh/director/models/snapshot'
 require 'bosh/director/models/stemcell'
-require 'bosh/director/models/stemcell_match'
+require 'bosh/director/models/stemcell_upload'
 require 'bosh/director/models/task'
 require 'bosh/director/models/team'
 require 'bosh/director/models/template'
@@ -48,4 +48,3 @@ module Bosh::Director
     autoload :Dns, 'bosh/director/models/dns'
   end
 end
-

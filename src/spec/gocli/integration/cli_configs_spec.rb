@@ -11,7 +11,7 @@ describe 'cli configs', type: :integration do
 
       it 'replaces placeholders' do
         expect(bosh_runner.run("update-config -v placeholder=my-data my-type #{config.path}")).to include('Succeeded')
-        expect(bosh_runner.run("config my-type")).to include('my-data')
+        expect(bosh_runner.run('config --type=my-type --name=default')).to include('my-data')
       end
     end
 
@@ -48,6 +48,14 @@ describe 'cli configs', type: :integration do
       output, exit_code = bosh_runner.run("update-config large-config #{cloud_config_file.path}", return_exit_code: true)
       expect(output).to include('Succeeded')
       expect(exit_code).to eq(0)
+    end
+  end
+
+  context 'can get a config' do
+    it 'by id' do
+      bosh_runner.run("update-config my-type #{config.path}")
+      id = JSON.parse(bosh_runner.run("configs --include-outdated --json")).dig('Tables', 0, 'Rows', 0, 'id')
+      expect(bosh_runner.run("config #{id}")).to include('Succeeded')
     end
   end
 

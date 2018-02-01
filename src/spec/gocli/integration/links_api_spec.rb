@@ -217,7 +217,6 @@ describe 'links api', type: :integration do
         end
 
         before do
-          puts updated_manifest_hash
           deploy_simple_manifest(manifest_hash: updated_manifest_hash)
         end
 

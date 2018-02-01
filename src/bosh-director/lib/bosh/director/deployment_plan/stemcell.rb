@@ -9,10 +9,10 @@ module Bosh::Director
       attr_reader :models
 
       def self.parse(spec)
-        name_alias = safe_property(spec, "alias", :class => String, :optional => true)
-        name = safe_property(spec, "name", :class => String, :optional => true)
-        os = safe_property(spec, "os", :class => String, :optional => true)
-        version = safe_property(spec, "version", :class => String)
+        name_alias = safe_property(spec, 'alias', class: String, optional: true)
+        name = safe_property(spec, 'name', class: String, optional: true)
+        os = safe_property(spec, 'os', class: String, optional: true)
+        version = safe_property(spec, 'version', class: String)
 
         if name.nil? && os.nil?
           raise ValidationMissingField, "Required property 'os' or 'name' was not specified in object (#{spec})"
@@ -38,9 +38,7 @@ module Bosh::Director
       end
 
       def bind_model(deployment_model)
-        if deployment_model.nil?
-          raise DirectorError, "Deployment not bound in the deployment plan"
-        end
+        raise DirectorError, 'Deployment not bound in the deployment plan' if deployment_model.nil?
 
         add_stemcell_models
         add_deployment_to_models(deployment_model)
@@ -65,15 +63,11 @@ module Bosh::Director
 
       def add_deployment_to_models(deployment_model)
         @models.each do |model|
-          unless model.deployments.include?(deployment_model)
-            model.add_deployment(deployment_model)
-          end
+          model.add_deployment(deployment_model) unless model.deployments.include?(deployment_model)
         end
       end
 
-      def deployment_model=(deployment_model)
-        @deployment_model = deployment_model
-      end
+      attr_writer :deployment_model
 
       def desc
         return nil unless @models
@@ -87,8 +81,8 @@ module Bosh::Director
 
       def spec
         {
-          "name" => @name,
-          "version" => @version
+          'name' => @name,
+          'version' => @version,
         }
       end
 
@@ -99,23 +93,30 @@ module Bosh::Director
         # stemcell might have no AZ, pick default model then
         return model_for_default_cpi.cid if az.nil?
 
-        cpi = CloudFactory.create_with_latest_configs.get_name_for_az(az)
+        cloud_factory = CloudFactory.create_with_latest_configs
+        cpi_name = cloud_factory.get_name_for_az(az)
         # stemcell might have AZ without cpi, pick default model then
-        return model_for_default_cpi.cid if cpi.nil?
+        return model_for_default_cpi.cid if cpi_name.nil?
 
-        model_for_cpi(cpi).cid
+        cpi_aliases = cloud_factory.get_cpi_aliases(cpi_name)
+
+        model_for_cpi(cpi_aliases).cid
       end
 
       private
+
       def model_for_default_cpi
-        stemcell = @models.find{|sc|sc.cpi.blank?}
+        stemcell = @models.find { |sc| sc.cpi.blank? }
         raise StemcellNotFound, "Required stemcell #{spec} not found for default cpi, please upload again" if stemcell.nil?
         stemcell
       end
 
-      def model_for_cpi(cpi)
-        stemcell = @models.find{|model|model.cpi == cpi}
-        raise StemcellNotFound, "Required stemcell #{spec} not found for cpi #{cpi}, please upload again" if stemcell.nil?
+      def model_for_cpi(cpi_aliases)
+        stemcell = @models.find { |m| m.cpi == cpi_aliases[0] }
+        stemcell = @models.find { |m| cpi_aliases.include?(m.cpi) } if stemcell.nil? && cpi_aliases.length > 1
+        if stemcell.nil?
+          raise StemcellNotFound, "Required stemcell #{spec} not found for cpi #{cpi_aliases[0]}, please upload again"
+        end
         stemcell
       end
     end
