@@ -37,14 +37,6 @@ module Bosh::Director::Links
       )
     end
 
-    def find_providers(
-      deployment:
-    )
-      Bosh::Director::Models::Links::LinkProvider.where(
-        deployment: deployment
-      ).all
-    end
-
     # Used by provider, not using alias because want to update existing provider intent when alias changes
     def find_or_create_provider_intent(
       link_provider:,

@@ -138,36 +138,9 @@ module Bosh::Director
     end
 
     def bind_links
-      # TODO LINKS
-      # Update providers with correct link content.
-      # Create the links
-
-      # @deployment_plan.instance_groups.each do |instance_group|
-      #   instance_group.persistent_disk_collection.non_managed_disks.each do |disk|
-      #     provider = @links_manager.find_or_create_provider(
-      #       deployment_model: @deployment_plan.model,
-      #       instance_group_name: instance_group.name,
-      #       name: instance_group.name,
-      #       type: 'instance_group'
-      #     )
-      #
-      #     provider_intent = @links_manager.find_or_create_provider_intent(
-      #       link_provider: provider,
-      #       link_original_name: disk.name,
-      #       link_type: 'disk'
-      #     )
-      #
-      #     provider_intent.shared = false
-      #     provider_intent.name = disk.name
-      #     provider_intent.content = Bosh::Director::DeploymentPlan::DiskLink.new(@deployment_plan.name, disk.name).spec.to_json
-      #     provider_intent.save
-      #   end
-      # end
-
       # TODO LINKS: Refactor me into a links class..
 
-      providers = @links_manager.find_providers(deployment: @deployment_plan.model)
-      providers.each do |provider|
+      @deployment_plan.model.link_providers.each do |provider|
         instance_group = @deployment_plan.instance_group(provider.instance_group)
 
         provider.intents.each do |provider_intent|

@@ -38,7 +38,6 @@ module Bosh::Director
 
       let(:links_manager) do
         instance_double(Bosh::Director::Links::LinksManager).tap do |double|
-          allow(double).to receive(:find_providers).and_return([])
           allow(double).to receive(:resolve_deployment_links)
         end
       end

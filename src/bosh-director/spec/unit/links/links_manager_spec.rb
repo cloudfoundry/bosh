@@ -89,41 +89,6 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
-  describe '#find_providers' do
-    context 'link providers exist' do
-      it 'returns the existing providers for deployment' do
-        expected_providers = [
-          Bosh::Director::Models::Links::LinkProvider.create(
-            deployment: deployment_model,
-            instance_group: 'control_instance_group',
-            name: 'control_owner_object_name',
-            type: 'control_owner_object_type'
-          ),
-          Bosh::Director::Models::Links::LinkProvider.create(
-            deployment: deployment_model,
-            instance_group: 'control_instance_group',
-            name: 'control_owner_object_name2',
-            type: 'control_owner_object_type2'
-          )
-        ]
-
-        actual_providers = subject.find_providers(
-          deployment: deployment_model
-        )
-        expect(actual_providers).to eq(expected_providers)
-      end
-    end
-
-    context 'no link providers exist' do
-      it 'does not return a provider for deployment' do
-        actual_providers = subject.find_providers(
-          deployment: deployment_model
-        )
-        expect(actual_providers).to eq([])
-      end
-    end
-  end
-
   describe '#find_or_create_provider_intent' do
     let(:link_provider) do
       Bosh::Director::Models::Links::LinkProvider.create(

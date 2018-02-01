@@ -99,14 +99,6 @@ module Bosh::Director
         !@model.nil? && @model.runs_as_errand?
       end
 
-      def consumes_links_for_instance_group_name(instance_group_name)
-        links_of_kind_for_instance_group_name(instance_group_name, 'consumes')
-      end
-
-      def provides_links_for_instance_group_name(instance_group_name)
-        links_of_kind_for_instance_group_name(instance_group_name, 'provides')
-      end
-
       def add_link_from_release(instance_group_name, kind, link_name, source)
         @link_infos[instance_group_name] ||= {}
         @link_infos[instance_group_name][kind] ||= {}
