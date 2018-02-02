@@ -5,21 +5,21 @@ module Bosh::Director
     def stub_agent_get_state_to_return_state_with_vitals
       expect(agent).to receive(:get_state).with('full').and_return(
         'vm_cid' => 'fake-vm-cid',
-        'networks' => {'test' => {'ip' => '1.1.1.1'}},
+        'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
         'agent_id' => 'fake-agent-id',
         'job_state' => 'running',
         'resource_pool' => {},
         'processes' => [
-          {'name' => 'fake-process-1', 'state' => 'running'},
-          {'name' => 'fake-process-2', 'state' => 'failing'},
+          { 'name' => 'fake-process-1', 'state' => 'running' },
+          { 'name' => 'fake-process-2', 'state' => 'failing' },
         ],
         'cloud_properties' => {},
         'vitals' => {
-          'load' => ['1', '5', '15'],
-          'cpu' => {'user' => 'u', 'sys' => 's', 'wait' => 'w'},
-          'mem' => {'percent' => 'p', 'kb' => 'k'},
-          'swap' => {'percent' => 'p', 'kb' => 'k'},
-          'disk' => {'system' => {'percent' => 'p'}, 'ephemeral' => {'percent' => 'p'}},
+          'load' => %w[1 5 15],
+          'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
+          'mem' => { 'percent' => 'p', 'kb' => 'k' },
+          'swap' => { 'percent' => 'p', 'kb' => 'k' },
+          'disk' => { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } },
         },
       )
     end
@@ -27,13 +27,13 @@ module Bosh::Director
 
     let(:instance_details) { false }
     let(:deployment) { Models::Deployment.make }
-    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
-    let(:time) {Time.now}
+    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:time) { Time.now }
     let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
     let(:instance) { Models::Instance.make(deployment: deployment) }
 
     before do
-      allow(Config).to receive(:dns).and_return({'domain_name' => 'microbosh', 'db' => {}})
+      allow(Config).to receive(:dns).and_return('domain_name' => 'microbosh', 'db' => {})
       allow(Config).to receive(:result).and_return(TaskDBWriter.new(:result_output, task.id))
     end
 
@@ -53,13 +53,18 @@ module Bosh::Director
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state WITHOUT vitals' do
-        Models::IpAddress.make(instance_id: instance.id, vm_id: vm.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
+        Models::IpAddress.make(
+          instance_id: instance.id,
+          vm_id: vm.id,
+          address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+          task_id: '12345',
+        )
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
-          'networks' => {'test' => {'ip' => '1.1.1.1'}},
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           'agent_id' => 'fake-agent-id',
           'job_state' => 'running',
-          'resource_pool' => {}
+          'resource_pool' => {},
         )
 
         job.perform
@@ -77,10 +82,20 @@ module Bosh::Director
       end
 
       context 'when there are two networks' do
-        before {
-          Models::IpAddress.make(instance_id: instance.id, vm_id: vm.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
-          Models::IpAddress.make(instance_id: instance.id, vm_id: vm.id, address_str: NetAddr::CIDR.create('2.2.2.2').to_i.to_s, task_id: '12345')
-        }
+        before do
+          Models::IpAddress.make(
+            instance_id: instance.id,
+            vm_id: vm.id,
+            address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+            task_id: '12345',
+          )
+          Models::IpAddress.make(
+            instance_id: instance.id,
+            vm_id: vm.id,
+            address_str: NetAddr::CIDR.create('2.2.2.2').to_i.to_s,
+            task_id: '12345',
+          )
+        end
 
         it "returns the ip addresses from 'Models::Instance.ip_addresses'" do
           allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
@@ -93,9 +108,9 @@ module Bosh::Director
 
       context "when 'ip_addresses' is empty for instance" do
         before do
-          vm.network_spec = {'a' => {'ip' => '3.3.3.3'}, 'b' => {'ip' => '4.4.4.4'}}
+          vm.network_spec = { 'a' => { 'ip' => '3.3.3.3' }, 'b' => { 'ip' => '4.4.4.4' } }
           vm.save
-          instance.spec = {'networks' => {'a' => {'ip' => '1.1.1.1'}, 'b' => {'ip' => '2.2.2.2'}}}
+          instance.spec = { 'networks' => { 'a' => { 'ip' => '1.1.1.1' }, 'b' => { 'ip' => '2.2.2.2' } } }
           instance.save
         end
 
@@ -110,7 +125,12 @@ module Bosh::Director
       end
 
       it 'parses agent info into vm_state WITH vitals' do
-        Models::IpAddress.make(instance_id: instance.id, vm_id: vm.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
+        Models::IpAddress.make(
+          instance_id: instance.id,
+          vm_id: vm.id,
+          address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+          task_id: '12345',
+        )
         stub_agent_get_state_to_return_state_with_vitals
 
         job.perform
@@ -124,11 +144,11 @@ module Bosh::Director
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to be_nil
         expect(status['vm_created_at']).to eq(time.utc.iso8601)
-        expect(status['vitals']['load']).to eq(['1', '5', '15'])
-        expect(status['vitals']['cpu']).to eq({'user' => 'u', 'sys' => 's', 'wait' => 'w'})
-        expect(status['vitals']['mem']).to eq({'percent' => 'p', 'kb' => 'k'})
-        expect(status['vitals']['swap']).to eq({'percent' => 'p', 'kb' => 'k'})
-        expect(status['vitals']['disk']).to eq({'system' => {'percent' => 'p'}, 'ephemeral' => {'percent' => 'p'}})
+        expect(status['vitals']['load']).to eq(%w[1 5 15])
+        expect(status['vitals']['cpu']).to eq('user' => 'u', 'sys' => 's', 'wait' => 'w')
+        expect(status['vitals']['mem']).to eq('percent' => 'p', 'kb' => 'k')
+        expect(status['vitals']['swap']).to eq('percent' => 'p', 'kb' => 'k')
+        expect(status['vitals']['disk']).to eq('system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' })
       end
 
       it 'should return DNS A records if they exist' do
@@ -143,20 +163,24 @@ module Bosh::Director
       end
 
       it 'should return DNS A records ordered by instance id records first' do
-        instance.update(dns_record_names: ['0.job.network.deployment.microbosh', 'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh'])
+        instance.update(
+          dns_record_names: [
+            '0.job.network.deployment.microbosh',
+            'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh',
+          ],
+        )
         stub_agent_get_state_to_return_state_with_vitals
 
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['dns']).to eq(['d824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh', '0.job.network.deployment.microbosh'])
+        expect(status['dns']).to eq(
+          ['d824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh', '0.job.network.deployment.microbosh'],
+        )
       end
 
-
       [RpcTimeout, RpcRemoteException].each do |error|
-
         context "when get_state raises an #{error}" do
-
           it 'should handle unresponsive agents' do
             instance.update(resurrection_paused: true, job: 'dea', index: 50)
 
@@ -255,7 +279,6 @@ module Bosh::Director
         )
         stub_agent_get_state_to_return_state_with_vitals
 
-
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
@@ -269,17 +292,15 @@ module Bosh::Director
         instance.update(uuid: 'blarg')
         stub_agent_get_state_to_return_state_with_vitals
 
-
         job.perform
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['id']).to eq('blarg')
       end
 
       it 'should return vm_type' do
-        instance.update(spec: {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}, 'networks' => []})
+        instance.update(spec: { 'vm_type' => { 'name' => 'fake-vm-type', 'cloud_properties' => {} }, 'networks' => [] })
 
         stub_agent_get_state_to_return_state_with_vitals
-
 
         job.perform
 
@@ -288,14 +309,14 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        instance #trigger the let
+        instance # trigger the let
         stub_agent_get_state_to_return_state_with_vitals
 
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
-          {'name' => 'fake-process-2', 'state' => 'failing'}])
+        expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'running' },
+                                           { 'name' => 'fake-process-2', 'state' => 'failing' }])
       end
 
       context 'when including instances missing vms' do
@@ -337,21 +358,26 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        Models::IpAddress.make(instance_id: instance.id, vm_id: vm.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
-        instance.update(spec: {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}})
+        Models::IpAddress.make(
+          instance_id: instance.id,
+          vm_id: vm.id,
+          address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+          task_id: '12345',
+        )
+        instance.update(spec: { 'vm_type' => { 'name' => 'fake-vm-type', 'cloud_properties' => {} } })
 
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
-          'networks' => {'test' => {'ip' => '1.1.1.1'}},
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           'agent_id' => 'fake-agent-id',
           'index' => 0,
-          'job' => {'name' => 'dea'},
+          'job' => { 'name' => 'dea' },
           'job_state' => 'running',
           'processes' => [
-            {'name' => 'fake-process-1', 'state' => 'running'},
-            {'name' => 'fake-process-2', 'state' => 'failing'},
+            { 'name' => 'fake-process-1', 'state' => 'running' },
+            { 'name' => 'fake-process-2', 'state' => 'failing' },
           ],
-          'resource_pool' => {}
+          'resource_pool' => {},
         )
 
         job.perform
@@ -364,15 +390,15 @@ module Bosh::Director
         expect(status['job_state']).to eq('running')
         expect(status['resource_pool']).to eq('fake-vm-type')
         expect(status['vitals']).to be_nil
-        expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
-          {'name' => 'fake-process-2', 'state' => 'failing'}])
+        expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'running' },
+                                           { 'name' => 'fake-process-2', 'state' => 'failing' }])
       end
 
       context 'with exclude filter and instances without vms' do
         it 'excludes those instances missing vms' do
-          allow(agent).to receive(:get_state).with('full').and_return({
-            'networks' => {'test' => {'ip' => '1.1.1.1'}},
-          })
+          allow(agent).to receive(:get_state).with('full').and_return(
+            'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          )
 
           expect(job.task_result).to receive(:write).once
 
@@ -381,40 +407,58 @@ module Bosh::Director
       end
 
       context 'when instance has multiple vms' do
-        let!(:inactive_vm) { Models::Vm.make(instance: instance, active: false, agent_id: 'other_agent_id', cid: 'fake-vm-cid-2') }
+        let!(:inactive_vm) do
+          Models::Vm.make(instance: instance, active: false, agent_id: 'other_agent_id', cid: 'fake-vm-cid-2')
+        end
         let(:lazy_agent) { instance_double('Bosh::Director::AgentClient') }
-
-        before do
-          Models::IpAddress.make(instance_id: instance.id, vm_id: vm.id, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s, task_id: '12345')
-          Models::IpAddress.make(instance_id: instance.id, vm_id: inactive_vm.id, address_str: NetAddr::CIDR.create('1.1.1.2').to_i.to_s, task_id: '12345')
-          allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', timeout: 5).and_return(lazy_agent)
-          allow(lazy_agent).to receive(:get_state).with('full').and_return(
+        let(:lazy_agent_state) do
+          {
             'vm_cid' => 'fake-vm-cid-2',
-            'networks' => {'test' => {'ip' => '1.1.1.1'}},
+            'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
             'agent_id' => 'other_agent_id',
             'index' => 0,
-            'job' => {'name' => 'dea'},
+            'job' => { 'name' => 'dea' },
             'job_state' => 'stopped',
             'processes' => [
-              {'name' => 'fake-process-1', 'state' => 'stopped'},
-              {'name' => 'fake-process-2', 'state' => 'stopped'},
+              { 'name' => 'fake-process-1', 'state' => 'stopped' },
+              { 'name' => 'fake-process-2', 'state' => 'stopped' },
             ],
-            'resource_pool' => {}
-          )
-          allow(agent).to receive(:get_state).with('full').and_return(
+            'resource_pool' => {},
+          }
+        end
+        let(:agent_state) do
+          {
             'vm_cid' => 'fake-vm-cid',
-            'networks' => {'test' => {'ip' => '1.1.1.2'}},
+            'networks' => { 'test' => { 'ip' => '1.1.1.2' } },
             'agent_id' => 'fake-agent-id',
             'index' => 0,
-            'job' => {'name' => 'dea'},
+            'job' => { 'name' => 'dea' },
             'job_state' => 'running',
             'processes' => [
-              {'name' => 'fake-process-1', 'state' => 'running'},
-              {'name' => 'fake-process-2', 'state' => 'failing'},
+              { 'name' => 'fake-process-1', 'state' => 'running' },
+              { 'name' => 'fake-process-2', 'state' => 'failing' },
             ],
-            'resource_pool' => {}
+            'resource_pool' => {},
+          }
+        end
+
+        before do
+          Models::IpAddress.make(
+            instance_id: instance.id,
+            vm_id: vm.id,
+            address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+            task_id: '12345',
           )
-          instance.update(spec: {'vm_type' => {'name' => 'fake-vm-type', 'cloud_properties' => {}}})
+          Models::IpAddress.make(
+            instance_id: instance.id,
+            vm_id: inactive_vm.id,
+            address_str: NetAddr::CIDR.create('1.1.1.2').to_i.to_s,
+            task_id: '12345',
+          )
+          allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', timeout: 5).and_return(lazy_agent)
+          allow(lazy_agent).to receive(:get_state).with('full').and_return(lazy_agent_state)
+          allow(agent).to receive(:get_state).with('full').and_return(agent_state)
+          instance.update(spec: { 'vm_type' => { 'name' => 'fake-vm-type', 'cloud_properties' => {} } })
         end
 
         context 'when getting vm states' do
@@ -434,8 +478,8 @@ module Bosh::Director
             expect(status['job_state']).to eq('running')
             expect(status['resource_pool']).to eq('fake-vm-type')
             expect(status['vitals']).to be_nil
-            expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
-              {'name' => 'fake-process-2', 'state' => 'failing'}])
+            expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'running' },
+                                               { 'name' => 'fake-process-2', 'state' => 'failing' }])
 
             status = results[1]
             expect(status['ips']).to eq(['1.1.1.2'])
@@ -445,8 +489,8 @@ module Bosh::Director
             expect(status['job_state']).to eq('stopped')
             expect(status['resource_pool']).to eq('fake-vm-type')
             expect(status['vitals']).to be_nil
-            expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'stopped'},
-              {'name' => 'fake-process-2', 'state' => 'stopped'}])
+            expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'stopped' },
+                                               { 'name' => 'fake-process-2', 'state' => 'stopped' }])
           end
         end
 
@@ -466,8 +510,8 @@ module Bosh::Director
             expect(status['job_state']).to eq('running')
             expect(status['resource_pool']).to eq('fake-vm-type')
             expect(status['vitals']).to be_nil
-            expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
-              {'name' => 'fake-process-2', 'state' => 'failing'}])
+            expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'running' },
+                                               { 'name' => 'fake-process-2', 'state' => 'failing' }])
           end
         end
       end
