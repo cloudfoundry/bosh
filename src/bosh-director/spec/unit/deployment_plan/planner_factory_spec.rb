@@ -321,61 +321,6 @@ LOGMESSAGE
             end
           end
 
-          describe 'links' do
-            context 'when a job consumes a link' do
-              before do
-                manifest_hash.merge!(
-                  'jobs' => [
-                    { 'name' => 'job1-name',
-                      'templates' => [{
-                        'name' => 'provides_template',
-                        'consumes' => {
-                          'link_name' => { 'from' => 'link_name' }
-                        }
-                      }] }
-                  ]
-                )
-              end
-
-              let(:deployment_name) { 'deployment_name' }
-
-              let(:job1) do
-                job = Bosh::Director::DeploymentPlan::Job.new(release, 'provides_job', deployment_name)
-                job.add_link_from_release('job1-name', 'consumes', 'link_name', 'name' => 'link_name', 'type' => 'link_type')
-                job.add_link_from_release('job1-name', 'provides', 'link_name_2', 'properties' => ['a'])
-                job
-              end
-
-              let(:instance_group1) do
-                instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-                                name: 'job1-name',
-                                canonical_name: 'job1-canonical-name',
-                                jobs: [job1])
-              end
-
-              let(:release) do
-                instance_double(
-                  'Bosh::Director::DeploymentPlan::ReleaseVersion',
-                  name: 'bosh-release'
-                )
-              end
-
-              context 'when link property has no default value and no value is set in the deployment manifest' do
-                it 'should not throw an error' do
-                  allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                  allow(job1).to receive(:release).and_return(release)
-                  allow(job1).to receive(:properties).and_return({})
-
-                  template_model = Models::Template.where(name: 'provides_job').first
-                  template_model.spec = template_model.spec.merge(properties: { 'a' => {} })
-                  template_model.save
-
-                  planner
-                end
-              end
-            end
-          end
-
           context 'runtime config' do
             before do
               allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(true)

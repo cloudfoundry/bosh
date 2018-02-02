@@ -99,69 +99,6 @@ module Bosh::Director
         !@model.nil? && @model.runs_as_errand?
       end
 
-      def add_link_from_release(instance_group_name, kind, link_name, source)
-        @link_infos[instance_group_name] ||= {}
-        @link_infos[instance_group_name][kind] ||= {}
-        @link_infos[instance_group_name][kind][link_name] ||= {}
-
-        if source.eql? 'nil'
-          # This is the case where the user set link source to nil explicitly in the deployment manifest
-          # We should skip the binding of this link, even if it exist. This is used only when the link
-          # is optional
-          @link_infos[instance_group_name][kind][link_name]['skip_link'] = true
-        else
-          source.to_a.each do |key, value|
-            if key == "properties"
-              key = "link_properties_exported"
-            end
-            @link_infos[instance_group_name][kind][link_name][key] = value
-          end
-        end
-      end
-
-      def add_link_from_manifest(instance_group_name, kind, link_name, source)
-        @link_infos[instance_group_name] ||= {}
-        @link_infos[instance_group_name][kind] ||= {}
-        @link_infos[instance_group_name][kind][link_name] ||= {}
-
-        if source.eql? 'nil'
-          # This is the case where the user set link source to nil explicitly in the deployment manifest
-          # We should skip the binding of this link, even if it exist. This is used only when the link
-          # is optional
-          @link_infos[instance_group_name][kind][link_name]['skip_link'] = true
-        else
-          errors = []
-          if kind == "consumes"
-            errors = validate_consume_link(source, link_name, instance_group_name)
-          elsif kind == "provides"
-            errors.concat(validate_provide_link(link_name, instance_group_name))
-          end
-          errors.concat(validate_link_def(source, link_name, instance_group_name))
-
-          if errors.size > 0
-            raise errors.join("\n")
-          end
-
-          source_hash = source.to_a
-          source_hash.each do |key, value|
-            @link_infos[instance_group_name][kind][link_name][key] = value
-          end
-        end
-      end
-
-      def consumes_link_info(instance_group_name, link_name)
-        @link_infos.fetch(instance_group_name, {}).fetch('consumes', {}).fetch(link_name, {})
-      end
-
-      def provides_link_info(instance_group_name, link_name)
-        @link_infos.fetch(instance_group_name, {}).fetch('provides', {}).each do |index, link|
-          if link['as'] == link_name
-            return link
-          end
-        end
-        return @link_infos.fetch(instance_group_name, {}).fetch('provides', {}).fetch(link_name, {})
-      end
-
       def add_properties(properties, instance_group_name)
         @properties[instance_group_name] = properties
       end
@@ -188,51 +125,6 @@ module Bosh::Director
       end
 
       private
-
-      def validate_consume_link(source, link_name, instance_group_name)
-        blacklist = [ ['instances', 'from'], ['properties', 'from'] ]
-        errors = []
-        if source == nil
-          return errors
-        end
-
-        blacklist.each do |invalid_props|
-          if invalid_props.all? { |prop| source.has_key?(prop) }
-            errors.push("Cannot specify both '#{invalid_props[0]}' and '#{invalid_props[1]}' keys for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
-          end
-        end
-
-        if source.has_key?('properties') && !source.has_key?('instances')
-          errors.push("Cannot specify 'properties' without 'instances' for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
-        end
-
-        if source.has_key?('ip_addresses')
-          unless !!source['ip_addresses'] == source['ip_addresses']
-            errors.push("Cannot specify non boolean values for 'ip_addresses' field for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'.")
-          end
-        end
-
-        errors
-      end
-
-      def validate_provide_link(link_name, instance_group_name)
-        # Assumption: release spec has been parsed prior to the manifest being
-        # parsed. This way, we can check to see if there are any provides link being provided.
-        errors = []
-        if @link_infos[instance_group_name]["provides"][link_name].empty?
-          errors.push("Job '#{instance_group_name}' does not provide link '#{link_name}' in the release spec")
-        end
-
-        return errors
-      end
-
-      def validate_link_def(source, link_name, instance_group_name)
-        errors = []
-        if !source.nil? && (source.has_key?('name') || source.has_key?('type'))
-          errors.push("Cannot specify 'name' or 'type' properties in the manifest for link '#{link_name}' in job '#{@name}' in instance group '#{instance_group_name}'. Please provide these keys in the release only.")
-        end
-        errors
-      end
 
       # Returns model only if it's present, fails otherwise
       # @return [Models::Template]
