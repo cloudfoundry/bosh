@@ -35,7 +35,7 @@ describe 'cli configs', type: :integration do
         expect(bosh_runner.run("update-config my-type #{empty_config_filename}")).to include('Succeeded')
       end
     end
-    
+
     it 'does not fail if the uploaded config is a large file' do
       config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -52,6 +52,8 @@ describe 'cli configs', type: :integration do
   end
 
   context 'can list configs' do
+    let(:second_config) { yaml_file('second_config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
+
     it 'lists configs' do
       bosh_runner.run("update-config my-type #{config.path}")
       bosh_runner.run("update-config other-type --name=other-name #{config.path}")
@@ -143,19 +145,6 @@ describe 'cli configs', type: :integration do
 
       admin_configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET']))
       expect(admin_configs.length).to eq(0)
-    end
-  end
-
-  context 'can diff configs' do
-    let(:other_config) {yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders)}
-
-    it 'diffs two configs' do
-      bosh_runner.run("update-config my-type #{config.path}")
-      bosh_runner.run("update-config other-type --name=other-name #{other_config.path}")
-
-      output = bosh_runner.run('configs --include-outdated --json')
-      from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
-      expect(bosh_runner.run("diff-config #{from} #{to}")).to include('- vm_types:', '+ releases:', 'Succeeded')
     end
   end
 
