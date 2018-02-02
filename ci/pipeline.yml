@@ -240,6 +240,7 @@ jobs:
               DB_VERSION: 9.6
 
         on_failure:
+          do:
           - task: prep-slack-alert
             file: bosh-src/ci/tasks/prep-slack-alert.yml
           - put: slack-alert
