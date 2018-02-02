@@ -1,12 +1,8 @@
 #!/bin/bash -e
 
 PACKAGE_DIR=/var/vcap/packages/postgres-9.4
-PACKAGE_DIR_OLD=/var/vcap/packages/postgres
 
 STORE_DIR=/var/vcap/store
-
-# historically we have used `postgres`
-DATA_DIR_OLD=$STORE_DIR/postgres
 
 # then we switched to including version so it is easier to detect version changes
 DATA_DIR=$STORE_DIR/postgres-9.4
@@ -66,8 +62,6 @@ case "$1" in
       chown vcap:vcap $DATA_DIR/pg_log
     fi
 
-    $JOB_DIR/bin/postgres_db_backup.sh
-
     cp $JOB_DIR/config/postgresql.conf $DATA_DIR
     chown vcap:vcap $DATA_DIR/postgresql.conf
 
@@ -108,8 +102,7 @@ case "$1" in
     PID=$(head -1 $PIDFILE)
 
     # Stop both old & new versions, checking for existence of PID first
-    su - vcap -c "[ -f $DATA_DIR/postmaster.pid ] && $PACKAGE_DIR/bin/pg_ctl stop -m fast -w -D $DATA_DIR
-      [ -f $DATA_DIR_OLD/postmaster.pid ] && $PACKAGE_DIR_OLD/bin/pg_ctl stop -m fast -w -D $DATA_DIR_OLD"
+    su - vcap -c "[ -f $DATA_DIR/postmaster.pid ] && $PACKAGE_DIR/bin/pg_ctl stop -m fast -w -D $DATA_DIR"
 
     while [ -e /proc/$PID ]; do sleep 0.1; done
 :    ;;
