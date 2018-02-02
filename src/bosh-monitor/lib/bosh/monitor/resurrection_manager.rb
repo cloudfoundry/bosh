@@ -25,7 +25,7 @@ module Bosh::Monitor
         if @active_id != id
           @logger.info("Resurrection config update starting...")
 
-          resurrection_rule_hashes = content_hash.fetch('resurrection', [])
+          resurrection_rule_hashes = content_hash.fetch('rules', [])
           resurrection_rule_hashes.each do |resurrection_rule_hash|
             begin
               new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)

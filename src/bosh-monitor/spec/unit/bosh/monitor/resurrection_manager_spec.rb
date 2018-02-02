@@ -22,7 +22,7 @@ module Bhm
     describe '#update_rules' do
       let(:resurrection_config_content) {
         {
-          'resurrection' => [
+          'rules' => [
             {
               'options' => { 'enabled' => true },
               'include' => include_spec
@@ -46,13 +46,13 @@ module Bhm
       end
 
       it 'shows missing `enabled` value in the resurrection config error' do
-        wrong_resurrection_config = [{'content' => YAML.dump('resurrection' => ['options' => {'include' => {'deployments' => ["test"]}}]), 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name'}]
+        wrong_resurrection_config = [{'content' => YAML.dump('rules' => ['options' => {'include' => {'deployments' => ["test"]}}]), 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name'}]
         expect(logger).to receive(:error).with("Failed to parse resurrection config rule {\"options\"=>{\"include\"=>{\"deployments\"=>[\"test\"]}}}: #<Bosh::Monitor::ConfigProcessingError: Invalid format for resurrection config: expected 'enabled' option, got Hash: {\"include\"=>{\"deployments\"=>[\"test\"]}}>")
         manager.update_rules(wrong_resurrection_config)
       end
 
       it 'shows missing `options` in the resurrection config error' do
-        wrong_resurrection_config = [{'content' => YAML.dump('resurrection' => [{'include' => {'deployments' => ["test"]}}]), 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name'}]
+        wrong_resurrection_config = [{'content' => YAML.dump('rules' => [{'include' => {'deployments' => ["test"]}}]), 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name'}]
         expect(logger).to receive(:error).with("Failed to parse resurrection config rule {\"include\"=>{\"deployments\"=>[\"test\"]}}: #<Bosh::Monitor::ConfigProcessingError: Invalid format for resurrection config: expected 'options' to be presented>")
         manager.update_rules(wrong_resurrection_config)
       end
@@ -74,7 +74,7 @@ module Bhm
     describe '#resurrection_enabled?' do
       let(:resurrection_config_content) {
         {
-          'resurrection' => [
+          'rules' => [
             {
               'options' => enabled,
               'include' => include_spec,
@@ -196,7 +196,7 @@ module Bhm
       context 'when several rules are applied' do
         let(:resurrection_config_content) {
           {
-            'resurrection' => [
+            'rules' => [
               {
                 'options' => {
                   'enabled' => true

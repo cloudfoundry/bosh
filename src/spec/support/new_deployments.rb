@@ -576,7 +576,7 @@ module Bosh::Spec
 
     def self.resurrection_config
       {
-        'resurrection' => [
+        'rules' => [
           {
             'options' => {
               'enabled' => true
