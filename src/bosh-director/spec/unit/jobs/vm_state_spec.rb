@@ -423,7 +423,10 @@ module Bosh::Director
             results = Models::Task.first(id: task.id).result_output.split("\n")
 
             expect(results.length).to eq(2)
-            status = JSON.parse(results[0])
+            results = results.map { |r| JSON.parse(r) }
+            results.sort_by! { |r| r['ips'][0] }
+
+            status = results[0]
             expect(status['ips']).to eq(['1.1.1.1'])
             expect(status['vm_cid']).to eq('fake-vm-cid')
             expect(status['active']).to eq(true)
@@ -434,7 +437,7 @@ module Bosh::Director
             expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'running'},
               {'name' => 'fake-process-2', 'state' => 'failing'}])
 
-            status = JSON.parse(results[1])
+            status = results[1]
             expect(status['ips']).to eq(['1.1.1.2'])
             expect(status['vm_cid']).to eq('fake-vm-cid-2')
             expect(status['active']).to eq(false)
