@@ -38,6 +38,17 @@ module Bosh::Director::ConfigServer
         client_secret,
         options,
       )
+
+      uaa_uri = URI(uaa_url)
+
+      @uaa_token_issuer.set_request_handler do |url, method, body, headers|
+        if uaa_uri.hostname.include?(":")
+          headers = headers.merge('Host' => "[#{uaa_uri.hostname}]")
+        end
+        return @uaa_token_issuer.send(:net_http_request, url, method, body, headers)
+      end
+
+      @uaa_token_issuer.logger = logger
       @logger = logger
     end
 
