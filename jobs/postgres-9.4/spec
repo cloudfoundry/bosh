@@ -6,7 +6,6 @@ templates:
   postgresql.conf.erb: config/postgresql.conf
 
 packages:
-  - postgres
   - postgres-9.4
 
 properties:
