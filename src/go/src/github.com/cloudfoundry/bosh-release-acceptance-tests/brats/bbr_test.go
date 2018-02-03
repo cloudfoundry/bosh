@@ -16,12 +16,17 @@ import (
 )
 
 var _ = Describe("Bosh Backup and Restore BBR", func() {
-	BeforeEach(startInnerBosh)
+	var backupDir []string
+
+	BeforeEach(func() {
+		startInnerBosh()
+	})
 
 	AfterEach(func() {
-		err := os.RemoveAll(directorBackupName)
-		Expect(err).ToNot(HaveOccurred())
-
+		for _, dir := range backupDir {
+			err := os.RemoveAll(dir)
+			Expect(err).ToNot(HaveOccurred())
+		}
 		stopInnerBosh()
 	})
 
@@ -67,7 +72,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -91,13 +95,17 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("restore inner director from backup", func() {
+				var err error
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
+
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore"), GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
+					"restore",
+					"--artifact-path", backupDir[0]), GinkgoWriter, GinkgoWriter)
 				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
@@ -187,7 +195,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -200,12 +207,16 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
+
 				session, err = gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore"), GinkgoWriter, GinkgoWriter)
+					"restore",
+					"--artifact-path", backupDir[0]), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
@@ -249,7 +260,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -257,13 +267,19 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("Restore deployment", func() {
+				var err error
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
+
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore"), GinkgoWriter, GinkgoWriter)
+					"restore",
+					"--artifact-path", backupDir[0]), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
+
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
@@ -286,7 +302,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup"), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
@@ -306,12 +321,16 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("Restore deployment", func() {
+				var err error
+				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupDir).To(HaveLen(1))
 				session, err := gexec.Start(exec.Command(bbrBinaryPath, "director",
 					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 					"--username", innerDirectorUser,
-					"--name", directorBackupName,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore"), GinkgoWriter, GinkgoWriter)
+					"restore",
+					"--artifact-path", backupDir[0]), GinkgoWriter, GinkgoWriter)
 				Expect(err).ToNot(HaveOccurred())
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
