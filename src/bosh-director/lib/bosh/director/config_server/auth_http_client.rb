@@ -20,6 +20,7 @@ module Bosh::Director::ConfigServer
 
       auth_retryable.retryer do |try_num, _|
         refresh_token if try_num > 1
+        header = add_host_header_if_ipv6(header)
         header['Authorization'] = @token.auth_header
         response = @http.get(path, header, dest, &block)
         raise Bosh::Director::UAAAuthorizationError if response.kind_of? Net::HTTPUnauthorized
@@ -32,6 +33,7 @@ module Bosh::Director::ConfigServer
 
       auth_retryable.retryer do |try_num, _|
         refresh_token if try_num > 1
+        header = add_host_header_if_ipv6(header)
         header['Authorization'] = @token.auth_header
         response = @http.post(path, data, header, dest, &block)
         raise Bosh::Director::UAAAuthorizationError if response.kind_of? Net::HTTPUnauthorized
@@ -40,6 +42,13 @@ module Bosh::Director::ConfigServer
     end
 
     private
+
+    def add_host_header_if_ipv6(headers)
+      if @config_server_uri.hostname.include?(":")
+        headers = headers.merge('Host' => "[#{@config_server_uri.hostname}]")
+      end
+      headers
+    end
 
     def refresh_token
       @token = @auth_provider.get_token
