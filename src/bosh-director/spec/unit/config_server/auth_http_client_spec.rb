@@ -78,6 +78,20 @@ describe Bosh::Director::ConfigServer::AuthHTTPClient do
       subject.get("url", {'Key' => 'value'})
     end
 
+    context 'when config server url has IPv6 hostname' do
+      let(:config_server_hash) { {'url' => 'http://[2001:4860:4860:0000:0000:0000:0000:0088]:8080'} }
+
+      it 'should add "Host" header with port and call through to actual http client' do
+        expected_headers = {
+            'Key' => 'value',
+            'Authorization' => 'fake-auth-header',
+            'Host' => '[2001:4860:4860:0000:0000:0000:0000:0088]',
+        }
+        expect(http_client).to receive(:get).with("url", expected_headers, anything).and_return(successful_response)
+        subject.get("url", {'Key' => 'value'})
+      end
+    end
+
     context 'when `get` call fails with 401 unauthorized' do
       it 'throws an unauthorized error after retrying 2 times' do
         expect(http_client).to receive(:get).with('url', anything, anything).and_return(unauthorized_response).exactly(2).times
@@ -106,6 +120,20 @@ describe Bosh::Director::ConfigServer::AuthHTTPClient do
       }
       expect(http_client).to receive(:post).with("url", 'data!!', expected_headers, anything).and_return(successful_response)
       subject.post("url", 'data!!', {'Key' => 'value'})
+    end
+
+    context 'when config server url has IPv6 hostname' do
+      let(:config_server_hash) { {'url' => 'http://[2001:4860:4860:0000:0000:0000:0000:0088]:8080'} }
+
+      it 'should add "Host" header with port and call through to actual http client' do
+        expected_headers = {
+            'Key' => 'value',
+            'Authorization' => 'fake-auth-header',
+            'Host' => '[2001:4860:4860:0000:0000:0000:0000:0088]',
+        }
+        expect(http_client).to receive(:post).with("url", 'data!!', expected_headers, anything).and_return(successful_response)
+        subject.post("url", 'data!!', {'Key' => 'value'})
+      end
     end
 
     context 'when `get` call fails with 401 unauthorized' do
