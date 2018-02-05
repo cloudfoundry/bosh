@@ -241,7 +241,6 @@ jobs:
 
         on_failure:
           do:
-          - get: build-metadata
           - task: prep-slack-alert
             file: bosh-src/ci/tasks/prep-slack-alert.yml
           - put: slack-alert
@@ -249,6 +248,8 @@ jobs:
               channel: ((slack_channel_name))
               icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
               text_file: slack-message/message
+              attachments:
+              - text: ((slack_failure_message))
 
   - name: unit-2.4-db-migrations-rds
     serial: true
@@ -1006,9 +1007,3 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
-
-  - name: build-metadata
-    type: docker-image
-    source:
-      repository: relintdockerhubpushbot/build-metadata-resource
-      tag: latest
