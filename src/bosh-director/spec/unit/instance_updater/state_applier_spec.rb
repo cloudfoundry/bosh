@@ -4,58 +4,67 @@ module Bosh::Director
   describe InstanceUpdater::StateApplier do
     include Support::StemcellHelpers
 
-    subject(:state_applier) { InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options) }
+    subject(:state_applier) do
+      InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
+    end
 
     let(:options) { {} }
     let(:instance_plan) do
-      DeploymentPlan::InstancePlan.new({
-          existing_instance: instance_model,
-          desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
-          instance: instance,
-        })
+      DeploymentPlan::InstancePlan.new(
+        existing_instance: instance_model,
+        desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
+        instance: instance,
+      )
     end
 
     let(:network_spec) do
-      {'name' => 'default', 'subnets' => [{'cloud_properties' => {'foo' => 'bar'}, 'az' => 'foo-az'}]}
+      { 'name' => 'default', 'subnets' => [{ 'cloud_properties' => { 'foo' => 'bar' }, 'az' => 'foo-az' }] }
     end
     let(:network) { DeploymentPlan::DynamicNetwork.parse(network_spec, [availability_zone], logger) }
 
     let(:instance_group) do
-      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+      instance_double(
+        'Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'fake-job',
-        spec: {'name' => 'job'},
+        spec: { 'name' => 'job' },
         canonical_name: 'job',
         instances: ['instance0'],
-        default_network: {'gateway' => 'default'},
-        vm_type: DeploymentPlan::VmType.new({'name' => 'fake-vm-type'}),
+        default_network: { 'gateway' => 'default' },
+        vm_type: DeploymentPlan::VmType.new('name' => 'fake-vm-type'),
         vm_extensions: [],
-        stemcell: make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}),
-        env: DeploymentPlan::Env.new({'key' => 'value'}),
+        stemcell: make_stemcell(name: 'fake-stemcell-name', version: '1.0'),
+        env: DeploymentPlan::Env.new('key' => 'value'),
         package_spec: {},
         persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(logger),
-        is_errand?: false,
+        errand?: false,
         resolved_links: {},
         compilation?: false,
         jobs: [],
         update_spec: update_config.to_hash,
         properties: {},
-        vm_resources: DeploymentPlan::VmResources.new({'cpu' => 1, 'ephemeral_disk_size' => 1, 'ram' => 1}),
+        vm_resources: DeploymentPlan::VmResources.new('cpu' => 1, 'ephemeral_disk_size' => 1, 'ram' => 1),
         lifecycle: DeploymentPlan::InstanceGroup::DEFAULT_LIFECYCLE_PROFILE,
         strategy: 'fake-strat',
       )
     end
     let(:update_config) do
-      DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => update_watch_time})
+      DeploymentPlan::UpdateConfig.new(
+        'canaries' => 1,
+        'max_in_flight' => 1,
+        'canary_watch_time' => '1000-2000',
+        'update_watch_time' => update_watch_time,
+      )
     end
     let(:plan) do
-      instance_double('Bosh::Director::DeploymentPlan::Planner', {
-          name: 'fake-deployment',
-          model: deployment,
-        })
+      instance_double('Bosh::Director::DeploymentPlan::Planner',
+                      name: 'fake-deployment',
+                      model: deployment)
     end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
-    let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 0, instance_state, plan, {}, availability_zone, logger) }
+    let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
+    let(:instance) do
+      DeploymentPlan::Instance.create_from_instance_group(instance_group, 0, instance_state, plan, {}, availability_zone, logger)
+    end
     let(:instance_model) { Models::Instance.make(deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
@@ -89,7 +98,7 @@ module Bosh::Director
       allow(agent_client).to receive(:apply)
       allow(agent_client).to receive(:run_script)
       allow(agent_client).to receive(:start)
-      allow(agent_client).to receive(:get_state).and_return({'job_state' => job_state})
+      allow(agent_client).to receive(:get_state).and_return('job_state' => job_state)
       allow(rendered_job_templates_cleaner).to receive(:clean)
       allow(state_applier).to receive(:sleep)
     end
@@ -125,7 +134,7 @@ module Bosh::Director
     end
 
     it 'should stop execution if task was canceled' do
-      task = Bosh::Director::Models::Task.make(:id => 42, :state => 'cancelling')
+      task = Bosh::Director::Models::Task.make(id: 42, state: 'cancelling')
       base_job = Jobs::BaseJob.new
       allow(base_job).to receive(:task_id).and_return(task.id)
       allow(Config).to receive(:current_job).and_return(base_job)
@@ -182,14 +191,27 @@ module Bosh::Director
       context 'when trying to start a job' do
         context 'when job does not start within max_watch_time' do
           before do
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]}, {'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]})
+            allow(agent_client).to receive(:get_state)
+              .and_return(
+                {
+                  'job_state' => 'stopped',
+                  'processes' => [{ 'state' => 'failing', 'name' => 'broken_template' }],
+                },
+                {
+                  'job_state' => 'stopped',
+                  'processes' => [{ 'state' => 'failing', 'name' => 'broken_template' }],
+                },
+              )
           end
 
           it 'raises AgentJobNotRunning' do
             expect(state_applier).to receive(:sleep).with(1.0).twice
             expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
-            expect { state_applier.apply(update_config) }.to raise_error AgentJobNotRunning, "'fake-job/uuid-1 (0)' is not running after update. Review logs for failed jobs: broken_template"
+            expect { state_applier.apply(update_config) }.to raise_error(
+              AgentJobNotRunning,
+              "'fake-job/uuid-1 (0)' is not running after update. Review logs for failed jobs: broken_template",
+            )
           end
 
           it 'does not update state on the instance model' do
@@ -202,17 +224,30 @@ module Bosh::Director
 
         context 'when a stopped job does not have processes defined' do
           before do
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped'})
+            allow(agent_client).to receive(:get_state).and_return('job_state' => 'stopped')
           end
 
           it 'raises AgentJobNotRunning with no failing jobs' do
-            expect { state_applier.apply(update_config) }.to raise_error AgentJobNotRunning, "'fake-job/uuid-1 (0)' is not running after update."
+            expect { state_applier.apply(update_config) }.to raise_error(
+              AgentJobNotRunning,
+              "'fake-job/uuid-1 (0)' is not running after update.",
+            )
           end
         end
 
         context 'when the job successfully starts' do
           before do
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]}, {'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]})
+            allow(agent_client).to receive(:get_state)
+              .and_return(
+                {
+                  'job_state' => 'stopped',
+                  'processes' => [{ 'state' => 'failing', 'name' => 'broken_template' }],
+                },
+                {
+                  'job_state' => 'running',
+                  'processes' => [{ 'state' => 'starting', 'name' => 'template' }],
+                },
+              )
             allow(state_applier).to receive(:sleep)
             allow(agent_client).to receive(:run_script)
           end
@@ -239,12 +274,16 @@ module Bosh::Director
 
           it 'updates state on the instance model after agent reports that job is in desired state' do
             allow(agent_client).to receive(:run_script)
-            allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]}).ordered
-            expect {
+            allow(agent_client).to receive(:get_state)
+              .and_return(
+                'job_state' => 'running',
+                'processes' => [{ 'state' => 'starting', 'name' => 'template' }],
+              ).ordered
+            expect do
               state_applier.apply(update_config)
-            }.to change(instance.model, :state)
-                   .from('stopped')
-                   .to('started')
+            end.to change(instance.model, :state)
+              .from('stopped')
+              .to('started')
           end
         end
 
@@ -254,14 +293,27 @@ module Bosh::Director
 
           context 'when job does not stop within max_watch_time' do
             before do
-              allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]}, {'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]})
+              allow(agent_client).to receive(:get_state)
+                .and_return(
+                  {
+                    'job_state' => 'running',
+                    'processes' => [{ 'state' => 'starting', 'name' => 'template' }],
+                  },
+                  {
+                    'job_state' => 'running',
+                    'processes' => [{ 'state' => 'starting', 'name' => 'template' }],
+                  },
+                )
             end
 
             it 'raises AgentJobNotStopped' do
               expect(state_applier).to receive(:sleep).with(1.0).twice
               expect(agent_client).to_not receive(:run_script).with('post-start', {})
 
-              expect { state_applier.apply(update_config) }.to raise_error AgentJobNotStopped, "'fake-job/uuid-1 (0)' is still running despite the stop command"
+              expect { state_applier.apply(update_config) }.to raise_error(
+                AgentJobNotStopped,
+                "'fake-job/uuid-1 (0)' is still running despite the stop command",
+              )
             end
 
             it 'does not update state on the instance model' do
@@ -274,7 +326,15 @@ module Bosh::Director
 
           context 'when the job successfully stops' do
             before do
-              allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running', 'processes' => [{'state' => 'starting', 'name' => 'template'}]}, {'job_state' => 'stopped', 'processes' => [{'state' => 'failing', 'name' => 'broken_template'}]})
+              allow(agent_client).to receive(:get_state).and_return(
+                {
+                  'job_state' => 'running',
+                  'processes' => [{ 'state' => 'starting', 'name' => 'template' }],
+                }, {
+                  'job_state' => 'stopped',
+                  'processes' => [{ 'state' => 'failing', 'name' => 'broken_template' }],
+                }
+              )
             end
 
             it 'does not run the post-start script after instance is in desired state' do

@@ -28,13 +28,9 @@ module Bosh::Director
 
     def delete_vm(instance)
       # Paranoia: don't blindly delete VMs with persistent disk
-      disk_list = agent_timeout_guard(instance.vm_cid, instance.agent_id) do |agent|
-        agent.list_disk
-      end
+      disk_list = agent_timeout_guard(instance.vm_cid, instance.agent_id, &:list_disk)
 
-      if disk_list.size != 0
-        handler_error('VM has persistent disk attached')
-      end
+      handler_error('VM has persistent disk attached') unless disk_list.empty?
 
       vm_deleter.delete_for_instance(instance)
     end
@@ -42,9 +38,7 @@ module Bosh::Director
     def delete_vm_reference(instance)
       vm_model = instance.active_vm
       instance.active_vm = nil
-      if vm_model != nil
-        vm_model.delete
-      end
+      vm_model&.delete
     end
 
     def delete_vm_from_cloud(instance_model)
@@ -72,11 +66,12 @@ module Bosh::Director
       instance_plan_to_create = create_instance_plan(instance_model)
 
       Bosh::Director::Core::Templates::TemplateBlobCache.with_fresh_cache do |template_cache|
-        vm_creator(template_cache, dns_encoder).create_for_instance_plan(instance_plan_to_create,
+        vm_creator(template_cache, dns_encoder).create_for_instance_plan(
+          instance_plan_to_create,
           planner.ip_provider,
           Array(instance_model.managed_persistent_disk_cid),
           instance_plan_to_create.tags,
-          true
+          true,
         )
 
         powerdns_manager = PowerDnsManagerProvider.create
@@ -138,16 +133,18 @@ module Bosh::Director
     private
 
     def create_instance_plan(instance_model)
-      env = DeploymentPlan::Env.new(instance_model.vm_env)
       stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
       stemcell.add_stemcell_models
       stemcell.deployment_model = instance_model.deployment
-      # FIXME cpi is not passed here (otherwise, we would need to parse the CPI using the cloud config & cloud manifest parser)
-      # it is not a problem, since all interactions with cpi go over cloud factory (which uses only az name)
-      # but still, it is ugly and dangerous...
-      availability_zone = DeploymentPlan::AvailabilityZone.new(instance_model.availability_zone,
+      # FIXME: cpi is not passed here (otherwise, we would need to parse the
+      # CPI using the cloud config & cloud manifest parser) it is not a
+      # problem, since all interactions with cpi go over cloud factory (which
+      # uses only az name) but still, it is ugly and dangerous...
+      availability_zone = DeploymentPlan::AvailabilityZone.new(
+        instance_model.availability_zone,
         instance_model.cloud_properties_hash,
-        nil)
+        nil,
+      )
 
       instance_from_model = DeploymentPlan::Instance.new(
         instance_model.job,
@@ -155,13 +152,12 @@ module Bosh::Director
         instance_model.state,
         instance_model.cloud_properties_hash,
         stemcell,
-        env,
+        DeploymentPlan::Env.new(instance_model.vm_env),
         false,
         instance_model.deployment,
         instance_model.spec,
         availability_zone,
-        'legacy',
-        @logger
+        @logger,
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
@@ -170,7 +166,7 @@ module Bosh::Director
         instance: instance_from_model,
         desired_instance: DeploymentPlan::DesiredInstance.new,
         recreate_deployment: true,
-        tags: instance_from_model.deployment_model.tags
+        tags: instance_from_model.deployment_model.tags,
       )
     end
 
@@ -180,14 +176,14 @@ module Bosh::Director
 
     def agent_client(agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
-        :timeout => timeout,
-        :retry_methods => {:get_state => retries}
+        timeout: timeout,
+        retry_methods: { get_state: retries },
       }
       @clients ||= {}
       @clients[agent_id] ||= AgentClient.with_agent_id(agent_id, options)
     end
 
-    def agent_timeout_guard(vm_cid, agent_id, &block)
+    def agent_timeout_guard(vm_cid, agent_id)
       yield agent_client(agent_id)
     rescue Bosh::Director::RpcTimeout
       handler_error("VM '#{vm_cid}' is not responding")
@@ -205,15 +201,11 @@ module Bosh::Director
     def validate_spec(spec)
       handler_error('Unable to look up VM apply spec') unless spec
 
-      unless spec.kind_of?(Hash)
-        handler_error('Invalid apply spec format')
-      end
+      handler_error('Invalid apply spec format') unless spec.is_a?(Hash)
     end
 
     def validate_env(env)
-      unless env.kind_of?(Hash)
-        handler_error('Invalid VM environment format')
-      end
+      handler_error('Invalid VM environment format') unless env.is_a?(Hash)
     end
 
     def generate_agent_id

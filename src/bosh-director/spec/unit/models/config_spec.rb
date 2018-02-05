@@ -13,7 +13,7 @@ module Bosh::Director::Models
 
     describe '#raw_manifest=' do
       it 'returns updated content' do
-        config_model.raw_manifest = {'key' => 'value2'}
+        config_model.raw_manifest = { 'key' => 'value2' }
         expect(config_model.raw_manifest.fetch('key')).to eq('value2')
       end
     end
@@ -40,7 +40,7 @@ module Bosh::Director::Models
       end
 
       it 'returns empty list when there are no records' do
-        expect(Bosh::Director::Models::Config.latest_set('type')).to be_empty()
+        expect(Bosh::Director::Models::Config.latest_set('type')).to be_empty
       end
 
       context 'deleted config name' do
@@ -76,7 +76,7 @@ module Bosh::Director::Models
         configs = [
           Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'default').save,
           Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'default').save,
-          Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'default').save
+          Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'default').save,
         ]
 
         expect(Bosh::Director::Models::Config.find_by_ids(configs.map(&:id))).to eq(configs)
@@ -84,6 +84,19 @@ module Bosh::Director::Models
 
       it 'returns empty array when passed nil' do
         expect(Bosh::Director::Models::Config.find_by_ids(nil)).to eq([])
+      end
+    end
+
+    describe '#teams' do
+      it 'returns teams array' do
+        team = Team.create(name: 'dev')
+        Config.new(type: 'fake-cloud', content: 'v1', name: 'one', team_id: team.id).save
+        expect(Config.first.teams).to eq([team])
+      end
+
+      it 'returns empty teams when no team_id' do
+        Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
+        expect(Bosh::Director::Models::Config.first.teams).to eq([])
       end
     end
   end

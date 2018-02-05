@@ -6,12 +6,9 @@ templates:
   pre-start: bin/pre-start
   create-database.erb: bin/create-database
   postgres.erb: bin/postgres
-  postgres_db_backup.sh.erb: bin/postgres_db_backup.sh
-  postgres_db_upgrade.sh.erb: bin/postgres_db_upgrade.sh
   postgresql.conf.erb: config/postgresql.conf
 
 packages:
-  - postgres
   - postgres-9.4
 
 properties:

@@ -9,7 +9,7 @@ module Bosh::Director::Models
       context 'when the cloud_properties are not nil' do
         it 'should return the parsed json' do
           subject.cloud_properties = '{"foo":"bar"}'
-          expect(subject.cloud_properties_hash).to eq({'foo' => 'bar'})
+          expect(subject.cloud_properties_hash).to eq('foo' => 'bar')
         end
       end
 
@@ -22,14 +22,14 @@ module Bosh::Director::Models
 
         context 'when the vm_type has cloud_properties' do
           it 'should return cloud_properties from vm_type' do
-            subject.spec = {'vm_type' => {'cloud_properties' => {'foo' => 'bar'}}}
-            expect(subject.cloud_properties_hash).to eq({'foo' => 'bar'})
+            subject.spec = { 'vm_type' => { 'cloud_properties' => { 'foo' => 'bar' } } }
+            expect(subject.cloud_properties_hash).to eq('foo' => 'bar')
           end
         end
 
         context 'when the vm_type has no cloud properties' do
           it 'does not error' do
-            subject.spec = {'vm_type' => {'cloud_properties' => nil}}
+            subject.spec = { 'vm_type' => { 'cloud_properties' => nil } }
             expect(subject.cloud_properties_hash).to eq({})
           end
         end
@@ -52,7 +52,7 @@ module Bosh::Director::Models
           RenderedTemplatesArchive.make(
             blobstore_id: 'fake-latest-blob-id',
             instance: subject,
-            created_at: Time.new(2013, 02, 01),
+            created_at: Time.new(2013, 2, 1),
           )
         end
 
@@ -60,7 +60,7 @@ module Bosh::Director::Models
           RenderedTemplatesArchive.make(
             blobstore_id: 'fake-stale-blob-id',
             instance: subject,
-            created_at: Time.new(2013, 01, 01),
+            created_at: Time.new(2013, 1, 1),
           )
         end
 
@@ -96,7 +96,7 @@ module Bosh::Director::Models
           RenderedTemplatesArchive.make(
             blobstore_id: 'fake-latest-blob-id',
             instance: subject,
-            created_at: Time.new(2013, 02, 01),
+            created_at: Time.new(2013, 2, 1),
           )
         end
 
@@ -104,7 +104,7 @@ module Bosh::Director::Models
           RenderedTemplatesArchive.make(
             blobstore_id: 'fake-stale-blob-id',
             instance: subject,
-            created_at: Time.new(2013, 01, 01),
+            created_at: Time.new(2013, 1, 1),
           )
         end
 
@@ -132,34 +132,33 @@ module Bosh::Director::Models
 
     context 'apply' do
       before do
-        subject.spec=({
+        subject.spec = ({
           'resource_pool' =>
-            {'name' => 'a',
+            { 'name' => 'a',
               'cloud_properties' => {},
               'stemcell' => {
                 'name' => 'ubuntu-stemcell',
-                'version' => '1'
-              }
-            }
+                'version' => '1',
+              } },
         })
       end
 
       it 'should have vm_type' do
-        expect(subject.spec_p('vm_type')).to eq({'name' => 'a', 'cloud_properties' => {}})
+        expect(subject.spec_p('vm_type')).to eq('name' => 'a', 'cloud_properties' => {})
       end
 
       it 'should have stemcell' do
-        expect(subject.spec_p('stemcell')).to eq({
+        expect(subject.spec_p('stemcell')).to eq(
           'alias' => 'a',
           'name' => 'ubuntu-stemcell',
-          'version' => '1'
-        })
+          'version' => '1',
+        )
       end
     end
 
     context 'spec_p' do
       it 'should return the property at the given dot separated path' do
-        subject.spec=({'foo' => {'bar' => 'baz'}})
+        subject.spec = ({ 'foo' => { 'bar' => 'baz' } })
         expect(subject.spec_p('foo.bar')).to eq('baz')
       end
 
@@ -174,21 +173,21 @@ module Bosh::Director::Models
 
       context 'when the path does not exist' do
         it 'returns nil' do
-          subject.spec=({'foo' => 'bar'})
+          subject.spec = ({ 'foo' => 'bar' })
           expect(subject.spec_p('nothing')).to eq(nil)
         end
       end
 
       context 'when none of the path exists' do
         it 'returns nil' do
-          subject.spec=({'foo' => 'bar'})
+          subject.spec = ({ 'foo' => 'bar' })
           expect(subject.spec_p('nothing.anywhere')).to eq(nil)
         end
       end
 
       context 'when the path refers to a value that is not a hash' do
         it 'returns nil' do
-          subject.spec=({'foo' => 'bar'})
+          subject.spec = ({ 'foo' => 'bar' })
           expect(subject.spec_p('foo.bar')).to eq(nil)
         end
       end
@@ -197,9 +196,9 @@ module Bosh::Director::Models
     context 'spec' do
       context 'when spec_json persisted in database has no resource pool' do
         it 'returns spec_json as is' do
-          subject.spec=({
+          subject.spec = ({
             'vm_type' => 'stuff',
-            'stemcell' => 'stuff'
+            'stemcell' => 'stuff',
           })
 
           expect(subject.spec['vm_type']).to eq('stuff')
@@ -210,44 +209,39 @@ module Bosh::Director::Models
       context 'when spec_json has resource pool persisted in database' do
         context 'when resource_pool has vm_type and stemcell information' do
           it 'returns vm_type and stemcell values' do
-            subject.spec=({
+            subject.spec = ({
               'resource_pool' =>
-                {'name' => 'a',
+                { 'name' => 'a',
                   'cloud_properties' => {},
                   'stemcell' => {
                     'name' => 'ubuntu-stemcell',
-                    'version' => '1'
-                  }
-                }
+                    'version' => '1',
+                  } },
             })
 
             expect(subject.spec['vm_type']).to eq(
-              {'name' => 'a',
-                'cloud_properties' => {}
-              }
+              'name' => 'a',
+              'cloud_properties' => {},
             )
 
             expect(subject.spec['stemcell']).to eq(
-              {'name' => 'ubuntu-stemcell',
-                'version' => '1',
-                'alias' => 'a'
-              }
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+              'alias' => 'a',
             )
           end
         end
 
         context 'when resource_pool DOES NOT have vm_type and stemcell information' do
           it 'returns vm_type only' do
-            subject.spec=({
+            subject.spec = ({
               'resource_pool' =>
-                {'name' => 'a',
-                  'cloud_properties' => {},
-                }
+                { 'name' => 'a',
+                  'cloud_properties' => {} },
             })
             expect(subject.spec['vm_type']).to eq(
-              {'name' => 'a',
-                'cloud_properties' => {}
-              }
+              'name' => 'a',
+              'cloud_properties' => {},
             )
           end
         end
@@ -256,26 +250,25 @@ module Bosh::Director::Models
 
     context 'vm_env' do
       it 'returns env contents' do
-        subject.spec=({'env' => {'a' => 'a_value'}})
-        expect(subject.vm_env).to eq({'a' => 'a_value'})
+        subject.spec = ({ 'env' => { 'a' => 'a_value' } })
+        expect(subject.vm_env).to eq('a' => 'a_value')
       end
 
       it 'returns empty hash when env is nil' do
-        subject.spec=({'env' => nil})
+        subject.spec = ({ 'env' => nil })
         expect(subject.vm_env).to eq({})
       end
 
       it 'returns empty hash when spec is nil' do
-        subject.spec=(nil)
+        subject.spec = nil
         expect(subject.vm_env).to eq({})
       end
     end
 
     describe '#lifecycle' do
-
       context "when spec has 'lifecycle'" do
         context "and it is 'service'" do
-          before(:each) { subject.spec=({'lifecycle' => 'service'}) }
+          before(:each) { subject.spec = ({ 'lifecycle' => 'service' }) }
 
           it "returns 'service'" do
             expect(subject.lifecycle).to eq('service')
@@ -283,7 +276,7 @@ module Bosh::Director::Models
         end
 
         context "and it is 'errand'" do
-          before(:each) { subject.spec=({'lifecycle' => 'errand'}) }
+          before(:each) { subject.spec = ({ 'lifecycle' => 'errand' }) }
 
           it "returns 'errand'" do
             expect(subject.lifecycle).to eq('errand')
@@ -293,7 +286,7 @@ module Bosh::Director::Models
 
       context "when spec has 'lifecycle=nil'" do
         before(:each) do
-          subject.spec=({'lifecycle' => nil})
+          subject.spec = ({ 'lifecycle' => nil })
         end
 
         it 'returns nil without falling back to parsing the manifest' do
@@ -302,7 +295,7 @@ module Bosh::Director::Models
       end
 
       context 'when model has no spec' do
-        before(:each) { subject.spec=(nil) }
+        before(:each) { subject.spec = nil }
         it 'returns nil' do
           expect(subject.spec).to be_nil
           expect(subject.lifecycle).to be_nil
@@ -311,7 +304,6 @@ module Bosh::Director::Models
     end
 
     describe '#expects_vm?' do
-
       context "when lifecycle is 'errand'" do
         before(:each) { allow(subject).to receive(:lifecycle).and_return('errand') }
 
@@ -323,8 +315,7 @@ module Bosh::Director::Models
       context "when lifecycle is 'service'" do
         before(:each) { allow(subject).to receive(:lifecycle).and_return('service') }
 
-        ['started', 'stopped'].each do |state|
-
+        %w[started stopped].each do |state|
           context "when state is '#{state}'" do
             before(:each) { allow(subject).to receive(:state).and_return(state) }
 
@@ -414,7 +405,12 @@ module Bosh::Director::Models
 
     context 'with active vm' do
       before do
-        vm = BD::Models::Vm.make(agent_id: 'my-agent-id', cid: 'my-cid', trusted_certs_sha1: 'trusted-sha', instance_id: subject.id)
+        vm = BD::Models::Vm.make(
+          agent_id: 'my-agent-id',
+          cid: 'my-cid',
+          trusted_certs_sha1: 'trusted-sha',
+          instance_id: subject.id,
+        )
         subject.active_vm = vm
         subject.save
       end
@@ -489,7 +485,7 @@ module Bosh::Director::Models
 
     describe '#most_recent_inactive_vm' do
       let!(:vm) { BD::Models::Vm.make(instance_id: instance.id, active: true) }
-      let(:instance) {BD::Models::Instance.make(state: 'started', ignore: false)}
+      let(:instance) { BD::Models::Instance.make(state: 'started', ignore: false) }
 
       context 'has one active and two inactive vms' do
         let!(:old_inactive_vm) { BD::Models::Vm.make(instance_id: instance.id, active: false) }

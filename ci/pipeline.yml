@@ -240,7 +240,14 @@ jobs:
               DB_VERSION: 9.6
 
         on_failure:
-          <<: *slack-alert
+          do:
+          - task: prep-slack-alert
+            file: bosh-src/ci/tasks/prep-slack-alert.yml
+          - put: slack-alert
+            params:
+              channel: ((slack_channel_name))
+              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+              text_file: slack-message/message
 
   - name: unit-2.4-db-migrations-rds
     serial: true

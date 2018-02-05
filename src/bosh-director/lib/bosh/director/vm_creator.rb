@@ -15,7 +15,7 @@ module Bosh::Director
       @config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
     end
 
-    def create_for_instance_plans(instance_plans, ip_provider, tags={})
+    def create_for_instance_plans(instance_plans, ip_provider, tags = {})
       return @logger.info('No missing vms to create') if instance_plans.empty?
 
       total = instance_plans.size
@@ -63,17 +63,13 @@ module Bosh::Director
         ),
       ]
 
-      unless already_had_active_vm
-        agenda.steps << DeploymentPlan::Steps::ElectActiveVmStep.new
-      end
+      agenda.steps << DeploymentPlan::Steps::ElectActiveVmStep.new unless already_had_active_vm
 
       agenda.steps << DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep.new
 
-      if instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
-        agenda.steps << DeploymentPlan::Steps::ReleaseObsoleteNetworksStep.new(ip_provider)
-      end
+      agenda.steps << DeploymentPlan::Steps::ReleaseObsoleteNetworksStep.new(ip_provider) unless instance_plan.should_hot_swap?
 
-      if instance_plan.needs_disk? && instance_plan.instance.strategy != DeploymentPlan::UpdateConfig::STRATEGY_HOT_SWAP
+      if instance_plan.needs_disk? && !instance_plan.should_hot_swap?
         agenda.steps << DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags)
         agenda.steps << DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model)
       end

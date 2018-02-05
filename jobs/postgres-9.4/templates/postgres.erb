@@ -1,18 +1,11 @@
 #!/bin/bash -e
 
 PACKAGE_DIR=/var/vcap/packages/postgres-9.4
-PACKAGE_DIR_OLD=/var/vcap/packages/postgres
 
 STORE_DIR=/var/vcap/store
 
-# historically we have used `postgres`
-DATA_DIR_OLD=$STORE_DIR/postgres
-
 # then we switched to including version so it is easier to detect version changes
 DATA_DIR=$STORE_DIR/postgres-9.4
-
-# and we'll keep the previous version's data intact to easy recovery, if necessary
-DATA_DIR_PREVIOUS=$STORE_DIR/postgres-previous
 
 JOB_DIR=/var/vcap/jobs/postgres-9.4
 RUN_DIR=/var/vcap/sys/run/bpm/postgres-9.4
@@ -23,10 +16,6 @@ USER='<%= p("postgres.user") %>'
 
 export LD_LIBRARY_PATH="$PACKAGE_DIR/lib:$LD_LIBRARY_PATH"
 
-if [ -d $DATA_DIR -a -f $STORE_DIR/FLAG_POSTGRES_UPGRADE ]; then
-  echo "FAIL: DB upgrade stopped in the middle, manual intervention required, quitting..."
-  exit 1
-fi
 
 # We cannot kill the following conditional
 # because initdb is very picky about looking at an empty dir
@@ -43,8 +32,6 @@ if [ ! -d $DATA_DIR -o ! -f $DATA_DIR/postgresql.conf ]; then
 
   mkdir -p $DATA_DIR/pg_log
 fi
-
-$JOB_DIR/bin/postgres_db_backup.sh
 
 cp $JOB_DIR/config/postgresql.conf $DATA_DIR
 

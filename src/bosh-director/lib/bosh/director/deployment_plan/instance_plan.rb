@@ -7,7 +7,16 @@ module Bosh
         # existing_instance: Model::Instance
         # desired_instance: DeploymentPlan::DesiredInstance
         # instance: DeploymentPlan::Instance
-        def initialize(existing_instance:, desired_instance:, instance:, network_plans: [], skip_drain: false, recreate_deployment: false, use_dns_addresses: false, use_short_dns_addresses: false, logger: Config.logger, tags: {})
+        def initialize(existing_instance:,
+                       desired_instance:,
+                       instance:,
+                       network_plans: [],
+                       skip_drain: false,
+                       recreate_deployment: false,
+                       use_dns_addresses: false,
+                       use_short_dns_addresses: false,
+                       logger: Config.logger,
+                       tags: {})
           @existing_instance = existing_instance
           @desired_instance = desired_instance
           @instance = instance
@@ -34,6 +43,10 @@ module Bosh
         #   differ from the ones provided by the VM
         def changed?
           !changes.empty?
+        end
+
+        def should_hot_swap?
+          @desired_instance.instance_group&.should_hot_swap?
         end
 
         def needs_to_fix?
@@ -65,9 +78,7 @@ module Bosh
         end
 
         def persistent_disk_changed?
-          if @existing_instance && obsolete?
-            return @existing_instance.active_persistent_disks.any?
-          end
+          return @existing_instance.active_persistent_disks.any? if @existing_instance && obsolete?
 
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
@@ -76,7 +87,7 @@ module Bosh
             existing_disk_collection,
             instance.previous_variable_set,
             desired_disks_collection,
-            instance.desired_variable_set
+            instance.desired_variable_set,
           )
 
           changed_disk_pairs.each do |disk_pair|
@@ -115,23 +126,36 @@ module Bosh
 
           changed = false
           if obsolete_network_plans.any?
-            @logger.debug("#{__method__} obsolete reservations: [#{obsolete_network_plans.map(&:reservation).map(&:to_s).join(", ")}]")
+            @logger.debug(
+              "#{__method__} obsolete reservations: [#{obsolete_network_plans.map(&:reservation).map(&:to_s).join(', ')}]",
+            )
             changed = true
           end
 
           if desired_network_plans.any?
-            @logger.debug("#{__method__} desired reservations: [#{desired_network_plans.map(&:reservation).map(&:to_s).join(", ")}]")
+            @logger.debug(
+              "#{__method__} desired reservations: [#{desired_network_plans.map(&:reservation).map(&:to_s).join(', ')}]",
+            )
             changed = true
           end
 
           old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
           new_network_settings = network_settings_hash
 
-          interpolated_old_network_settings = @config_server_client.interpolate_with_versioning(old_network_settings, @instance.previous_variable_set)
-          interpolated_new_network_settings = @config_server_client.interpolate_with_versioning(new_network_settings, @instance.desired_variable_set)
+          interpolated_old_network_settings = @config_server_client.interpolate_with_versioning(
+            old_network_settings,
+            @instance.previous_variable_set,
+          )
+          interpolated_new_network_settings = @config_server_client.interpolate_with_versioning(
+            new_network_settings,
+            @instance.desired_variable_set,
+          )
 
           if network_settings_changed?(interpolated_old_network_settings, interpolated_new_network_settings)
-            @logger.debug("#{__method__} network settings changed FROM: #{old_network_settings} TO: #{new_network_settings} on instance #{@existing_instance}")
+            @logger.debug(
+              "#{__method__} network settings changed FROM: #{old_network_settings} " \
+              "TO: #{new_network_settings} on instance #{@existing_instance}",
+            )
             changed = true
           end
 
@@ -140,7 +164,7 @@ module Bosh
 
         def state_changed?
           if instance.state == 'detached' &&
-            existing_instance.state != instance.state
+             existing_instance.state != instance.state
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
@@ -148,7 +172,7 @@ module Bosh
           return true if needs_to_fix?
 
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
-            instance.state == 'started' && instance.current_job_state != 'running'
+             instance.state == 'started' && instance.current_job_state != 'running'
             @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
             return true
           end
@@ -162,7 +186,14 @@ module Bosh
           if @powerdns_manager.dns_enabled?
             power_dns_changed = network_settings.dns_record_info.any? do |name, ip|
               not_found = @powerdns_manager.find_dns_record(name, ip).nil?
-              @logger.debug("#{__method__} The requested dns record with name '#{name}' and ip '#{ip}' was not found in the db.") if not_found
+
+              if not_found
+                @logger.debug(
+                  "#{__method__} The requested dns record with name '#{name}' " \
+                  "and ip '#{ip}' was not found in the db.",
+                )
+              end
+
               not_found
             end
           end
@@ -210,8 +241,8 @@ module Bosh
 
         def network_settings
           desired_reservations = network_plans
-                                   .reject(&:obsolete?)
-                                   .map { |network_plan| network_plan.reservation }
+                                 .reject(&:obsolete?)
+                                 .map(&:reservation)
 
           DeploymentPlan::NetworkSettings.new(
             @instance.instance_group_name,
@@ -326,8 +357,8 @@ module Bosh
 
           modified_network_settings = Bosh::Common::DeepCopy.copy(network_settings)
 
-          modified_network_settings.each do |name, network_setting|
-            network_setting.delete_if { |key, value| key == "dns_record_name" }
+          modified_network_settings.each do |_name, network_setting|
+            network_setting.delete_if { |key, _value| key == 'dns_record_name' }
           end
           modified_network_settings
         end
@@ -335,7 +366,7 @@ module Bosh
         def env_changed?
           instance_group = @desired_instance.instance_group
 
-          if @existing_instance && @existing_instance.vm_env && instance_group.env.spec != @existing_instance.vm_env
+          if @existing_instance&.vm_env && instance_group.env.spec != @existing_instance.vm_env
             log_changes(__method__, @existing_instance.vm_env, instance_group.env.spec, @existing_instance)
             return true
           end
@@ -349,7 +380,12 @@ module Bosh
           end
 
           if @existing_instance && @instance.stemcell.version != @existing_instance.spec_p('stemcell.version')
-            log_changes(__method__, "version: #{@existing_instance.spec_p('stemcell.version')}", "version: #{@instance.stemcell.version}", @existing_instance)
+            log_changes(
+              __method__,
+              "version: #{@existing_instance.spec_p('stemcell.version')}",
+              "version: #{@instance.stemcell.version}",
+              @existing_instance,
+            )
             return true
           end
 
@@ -376,8 +412,10 @@ module Bosh
 
         def templates
           @existing_instance.templates.map do |template_model|
-            model_release_version = @instance.model.deployment.release_versions.find { |release_version| release_version.templates.map(&:id).include? (template_model.id) }
-            release_spec= {'name' => model_release_version.release.name, 'version' => model_release_version.version}
+            model_release_version = @instance.model.deployment.release_versions.find do |release_version|
+              release_version.templates.map(&:id).include? template_model.id
+            end
+            release_spec = { 'name' => model_release_version.release.name, 'version' => model_release_version.version }
             job_release_version = ReleaseVersion.new(@instance.model.deployment, release_spec)
             job_release_version.bind_model
             template = Job.new(job_release_version, template_model.name, @instance.model.deployment.name)

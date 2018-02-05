@@ -1287,7 +1287,6 @@ Error: Unable to process links for deployment. Errors are:
        end
 
        context 'when user specifies an invalid network for consumes' do
-
          let(:second_deployment_consumed_links) do
            {
                'node1' => {'from' => 'node1', 'deployment'=>'first', 'network' => 'invalid-network'},
@@ -1300,7 +1299,15 @@ Error: Unable to process links for deployment. Errors are:
 
            expect {
              deploy_simple_manifest(manifest_hash: second_manifest)
-           }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second' and network 'invalid-network''. Please make sure the link was provided and shared\./)
+           }.to raise_error(
+             RuntimeError,
+             Regexp.new(
+               "Can't resolve link 'node1' in instance group "\
+               "'second_deployment_node' on job 'node' in deployment 'second' and "\
+               "network 'invalid-network'\. Please make sure the link was provided "\
+               'and shared\.',
+             ),
+           )
          end
 
          context 'when provider job has 0 instances' do
@@ -1320,7 +1327,15 @@ Error: Unable to process links for deployment. Errors are:
 
              expect {
                deploy_simple_manifest(manifest_hash: second_manifest)
-             }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second' and network 'invalid-network''. Please make sure the link was provided and shared\./)
+             }.to raise_error(
+               RuntimeError,
+               Regexp.new(
+                 "Can't resolve link 'node1' in instance group "\
+                 "'second_deployment_node' on job 'node' in deployment 'second' and "\
+                 "network 'invalid-network'\. Please make sure the link was provided "\
+                 'and shared\.',
+               ),
+             )
            end
          end
        end

@@ -2,7 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemHandlers::MissingVM do
-    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, ip_provider: double(:ip_provider)) }
+    let(:planner) do
+      instance_double(
+        Bosh::Director::DeploymentPlan::Planner,
+        use_short_dns_addresses?: false,
+        ip_provider: double(:ip_provider),
+      )
+    end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
     let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
@@ -14,13 +20,13 @@ module Bosh::Director
         index: 0,
         uuid: '1234-5678',
         deployment: deployment_model,
-        cloud_properties_hash: {'foo' => 'bar'},
-        spec: spec.merge({env: {'key1' => 'value1'}}),
+        cloud_properties_hash: { 'foo' => 'bar' },
+        spec: spec.merge(env: { 'key1' => 'value1' }),
       )
       vm = Models::Vm.make(
         agent_id: 'agent-007',
         cid: vm_cid,
-        instance_id: instance.id
+        instance_id: instance.id,
       )
 
       instance.active_vm = vm
@@ -31,17 +37,17 @@ module Bosh::Director
     let(:spec) do
       {
         'deployment' => 'simple',
-        'job' => {'name' => 'job'},
+        'job' => { 'name' => 'job' },
         'index' => 0,
         'vm_type' => {
           'name' => 'steve',
           'cloud_properties' => { 'foo' => 'bar' },
         },
         'stemcell' => manifest['resource_pools'].first['stemcell'],
-        'networks' => networks
+        'networks' => networks,
       }
     end
-    let(:networks) { {'a' => {'ip' => '192.168.1.2'}} }
+    let(:networks) { { 'a' => { 'ip' => '192.168.1.2' } } }
 
     before do
       allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
@@ -80,8 +86,8 @@ module Bosh::Director
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
 
       before do
-        allow(fake_new_agent).to receive(:sync_dns) do |_,_,_,&blk|
-          blk.call({'value' => 'synced'})
+        allow(fake_new_agent).to receive(:sync_dns) do |_, _, _, &blk|
+          blk.call('value' => 'synced')
         end.and_return(0)
       end
 
@@ -93,7 +99,7 @@ module Bosh::Director
       end
 
       def expect_vm_to_be_created
-        Bosh::Director::Models::Task.make(:id => 42, :username => 'user')
+        Bosh::Director::Models::Task.make(id: 42, username: 'user')
         prepare_deploy(manifest)
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
@@ -108,10 +114,18 @@ module Bosh::Director
         expect(fake_new_agent).to receive(:start).ordered
 
         expect(fake_cloud).to receive(:delete_vm).with(instance.vm_cid)
-        expect(fake_cloud).
-          to receive(:create_vm).
-            with('agent-222', Bosh::Director::Models::Stemcell.all.first.cid, {'foo' => 'bar'}, anything, [], {'key1' => 'value1', 'bosh' => {'group' => String, 'groups' => anything}}).
-            and_return('new-vm-cid')
+        expect(fake_cloud)
+          .to receive(:create_vm)
+          .with(
+            'agent-222',
+            Bosh::Director::Models::Stemcell.all.first.cid,
+            { 'foo' => 'bar' },
+            anything,
+            [],
+            'key1' => 'value1',
+            'bosh' => { 'group' => String, 'groups' => anything },
+          )
+          .and_return('new-vm-cid')
 
         fake_job_context
 
@@ -130,7 +144,7 @@ module Bosh::Director
         let(:spec) do
           {
             'deployment' => 'simple',
-            'job' => {'name' => 'job'},
+            'job' => { 'name' => 'job' },
             'index' => 0,
             'vm_type' => {
               'name' => 'steve',
@@ -142,13 +156,12 @@ module Bosh::Director
               'canaries' => 1,
               'max_in_flight' => 10,
               'canary_watch_time' => '1000-30000',
-              'update_watch_time' => '1000-30000'
-            }
+              'update_watch_time' => '1000-30000',
+            },
           }
         end
 
         describe 'recreate_vm_skip_post_start' do
-
           it 'has a plan' do
             plan_summary = handler.instance_eval(&ProblemHandlers::MissingVM.plan_for(:recreate_vm_skip_post_start))
             expect(plan_summary).to eq('Recreate VM without waiting for processes to start')
@@ -165,14 +178,13 @@ module Bosh::Director
         end
 
         describe 'recreate_vm' do
-
           it 'has a plan' do
             plan_summary = handler.instance_eval(&ProblemHandlers::MissingVM.plan_for(:recreate_vm))
             expect(plan_summary).to eq('Recreate VM and wait for processes to start')
           end
 
           it 'recreates a VM and runs post_start script' do
-            allow(fake_new_agent).to receive(:get_state).and_return({'job_state' => 'running'})
+            allow(fake_new_agent).to receive(:get_state).and_return('job_state' => 'running')
 
             expect_vm_to_be_created
             expect(fake_new_agent).to receive(:run_script).with('post-start', {}).ordered
@@ -182,13 +194,12 @@ module Bosh::Director
             expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil
           end
         end
-
       end
 
       it 'deletes VM reference' do
-        expect {
+        expect do
           handler.apply_resolution(:delete_vm_reference)
-        }.to change {
+        end.to change {
           vm = Models::Vm.where(cid: 'vm-cid').first
           vm.nil? ? 0 : Models::Vm.where(instance_id: instance.id, active: true).count
         }.from(1).to(0)

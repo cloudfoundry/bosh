@@ -11,23 +11,23 @@ module Bosh::Director
         instance_group,
         keep_alive,
         deployment_name,
-        logger
+        logger,
       )
     end
 
     let(:deployment_planner) { instance_double(DeploymentPlan::Planner, template_blob_cache: template_blob_cache) }
     let(:runner) { instance_double(Errand::Runner) }
-    let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, is_errand?: true) }
+    let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, errand?: true) }
     let(:errand_name) { 'errand_name' }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:deployment_name) { 'deployment-name' }
     let(:errand_result) { Errand::Result.new(instance, errand_name, exit_code, nil, nil, nil) }
-    let(:instance) {
+    let(:instance) do
       instance_double(DeploymentPlan::Instance,
-        uuid: '321-cba',
-        configuration_hash: instance_configuration_hash,
-        current_packages: {'successful' => 'package_spec'})
-    }
+                      uuid: '321-cba',
+                      configuration_hash: instance_configuration_hash,
+                      current_packages: { 'successful' => 'package_spec' })
+    end
     let(:instance_configuration_hash) { 'abc123' }
     let(:keep_alive) { 'maybe' }
     let(:instance_group_manager) { instance_double(Errand::InstanceGroupManager) }
@@ -35,11 +35,11 @@ module Bosh::Director
 
     before do
       allow(Errand::InstanceGroupManager).to receive(:new)
-                                               .with(deployment_planner, instance_group, logger)
-                                               .and_return(instance_group_manager)
+        .with(deployment_planner, instance_group, logger)
+        .and_return(instance_group_manager)
       allow(Errand::ErrandInstanceUpdater).to receive(:new)
-                                                .with(instance_group_manager, logger, errand_name, deployment_name)
-                                                .and_return(errand_instance_updater)
+        .with(instance_group_manager, logger, errand_name, deployment_name)
+        .and_return(errand_instance_updater)
     end
 
     describe '#prepare' do
@@ -98,7 +98,7 @@ module Bosh::Director
         it 'cleans the cache' do
           expect(template_blob_cache).to receive(:clean_cache!)
           expect(errand_instance_updater).to receive(:with_updated_instances).and_raise('omg')
-          expect { errand_step.run(&lambda{}) }.to raise_error 'omg'
+          expect { errand_step.run(&-> {}) }.to raise_error 'omg'
         end
       end
     end

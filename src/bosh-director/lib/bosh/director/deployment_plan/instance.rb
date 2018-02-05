@@ -4,7 +4,6 @@ module Bosh::Director
   module DeploymentPlan
     # Represents a single Instance Group instance.
     class Instance
-
       # @return [Integer] Instance index
       attr_reader :index
 
@@ -32,39 +31,40 @@ module Bosh::Director
       attr_reader :availability_zone
 
       attr_reader :existing_network_reservations
-      attr_reader :strategy
 
-      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, availability_zone, logger)
+      attr_reader :instance_group_name
+
+      attr_reader :stemcell
+
+      attr_reader :deployment_model
+
+      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, az, logger)
         new(
           instance_group.name,
           index,
           virtual_state,
-          MergedCloudProperties.new(availability_zone, instance_group.vm_type, instance_group.vm_extensions).get,
+          MergedCloudProperties.new(az, instance_group.vm_type, instance_group.vm_extensions).get,
           instance_group.stemcell,
           instance_group.env,
           instance_group.compilation?,
           deployment_model,
           instance_state,
-          availability_zone,
-          instance_group.strategy,
-          logger
+          az,
+          logger,
         )
       end
 
-      def initialize(
-        instance_group_name,
-        index,
-        virtual_state,
-        merged_cloud_properties,
-        stemcell,
-        env,
-        compilation,
-        deployment_model,
-        instance_state,
-        availability_zone,
-        strategy,
-        logger
-      )
+      def initialize(instance_group_name,
+                     index,
+                     virtual_state,
+                     merged_cloud_properties,
+                     stemcell,
+                     env,
+                     compilation,
+                     deployment_model,
+                     instance_state,
+                     availability_zone,
+                     logger)
         @index = index
         @availability_zone = availability_zone
         @logger = logger
@@ -74,7 +74,6 @@ module Bosh::Director
         @env = env
         @compilation = compilation
         @merged_cloud_properties = merged_cloud_properties
-        @strategy = strategy
 
         @configuration_hash = nil
         @template_hashes = nil
@@ -93,15 +92,11 @@ module Bosh::Director
       end
 
       def bootstrap?
-        @model && @model.bootstrap
+        @model&.bootstrap
       end
 
       def compilation?
         @compilation
-      end
-
-      def instance_group_name
-        @instance_group_name
       end
 
       def to_s
@@ -117,25 +112,22 @@ module Bosh::Director
       end
 
       def bind_new_instance_model
-        @model = Models::Instance.create({
-            deployment_id: @deployment_model.id,
-            job: @instance_group_name,
-            index: index,
-            state: state,
-            compilation: @compilation,
-            uuid: SecureRandom.uuid,
-            availability_zone: availability_zone_name,
-            bootstrap: false,
-            variable_set_id: @deployment_model.current_variable_set.id
-          })
+        @model = Models::Instance.create(
+          deployment_id: @deployment_model.id,
+          job: @instance_group_name,
+          index: index,
+          state: state,
+          compilation: @compilation,
+          uuid: SecureRandom.uuid,
+          availability_zone: availability_zone_name,
+          bootstrap: false,
+          variable_set_id: @deployment_model.current_variable_set.id
+        )
         @uuid = @model.uuid
         @desired_variable_set = @model.variable_set
         @previous_variable_set = @model.variable_set
       end
 
-      def stemcell
-        @stemcell
-      end
 
       def stemcell_cid
         @stemcell.cid_for_az(availability_zone_name)
@@ -143,10 +135,6 @@ module Bosh::Director
 
       def env
         @env.spec
-      end
-
-      def deployment_model
-        @deployment_model
       end
 
       # Updates this domain object to reflect an existing instance running on an existing vm
@@ -176,15 +164,16 @@ module Bosh::Director
       end
 
       def update_instance_settings
-        disk_associations = @model.reload.active_persistent_disks.collection.select do |disk|
-          !disk.model.managed?
+        disk_associations = @model.reload.active_persistent_disks.collection.reject do |disk|
+          disk.model.managed?
         end
+
         disk_associations.map! do |disk|
-           {'name' => disk.model.name, 'cid' => disk.model.disk_cid}
+          { 'name' => disk.model.name, 'cid' => disk.model.disk_cid }
         end
 
         agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.active_vm.update(:trusted_certs_sha1 => ::Digest::SHA1.hexdigest(Config.trusted_certs))
+        @model.active_vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!
@@ -256,12 +245,12 @@ module Bosh::Director
 
       def state
         case @virtual_state
-          when 'recreate'
-            'started'
-          when 'restart'
-            'started'
-          else
-            @virtual_state
+        when 'recreate'
+          'started'
+        when 'restart'
+          'started'
+        else
+          @virtual_state
         end
       end
 
@@ -308,17 +297,16 @@ module Bosh::Director
       end
 
       private
+
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model
-        if @deployment_model.nil?
-          raise DirectorError, 'Deployment model is not bound'
-        end
+        raise DirectorError, 'Deployment model is not bound' if @deployment_model.nil?
 
         conditions = {
           deployment_id: @deployment_model.id,
           job: @instance_group_name,
-          index: @index
+          index: @index,
         }
 
         Models::Instance.find_or_create(conditions) do |model|
@@ -336,9 +324,7 @@ module Bosh::Director
       end
 
       def check_model_bound
-        if @model.nil?
-          raise DirectorError, "Instance '#{self}' model is not bound"
-        end
+        raise DirectorError, "Instance '#{self}' model is not bound" if @model.nil?
       end
 
       def check_model_not_bound

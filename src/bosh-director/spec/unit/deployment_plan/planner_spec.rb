@@ -3,14 +3,24 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options) }
+      subject(:planner) do
+        described_class.new(
+          planner_attributes,
+          minimal_manifest,
+          YAML.dump(minimal_manifest),
+          cloud_configs,
+          runtime_config_consolidator,
+          deployment_model,
+          options,
+        )
+      end
 
       let(:options) { {} }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
       let(:cloud_configs) { [] }
       let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
       let(:manifest_text) { generate_manifest_text }
-      let(:planner_attributes) { {name: 'mycloud', properties: {}} }
+      let(:planner_attributes) { { name: 'mycloud', properties: {} } }
       let(:deployment_model) { Models::Deployment.make }
 
       def generate_manifest_text
@@ -43,8 +53,8 @@ module Bosh::Director
             'canaries' => 2,
             'canary_watch_time' => 4000,
             'max_in_flight' => 1,
-            'update_watch_time' => 20
-          }
+            'update_watch_time' => 20,
+          },
         }
       end
 
@@ -52,9 +62,9 @@ module Bosh::Director
         it 'raises an error if name are not given' do
           planner_attributes.delete(:name)
 
-          expect {
+          expect do
             planner
-          }.to raise_error KeyError
+          end.to raise_error KeyError
         end
       end
 
@@ -69,17 +79,17 @@ module Bosh::Director
             'network' => 'default',
             'stemcell' => {
               'name' => 'default',
-              'version' => '1'
-            }
+              'version' => '1',
+            },
           }
         end
         let(:resource_pools) { [ResourcePool.new(resource_pool_spec)] }
-        let(:vm_type) { VmType.new({'name' => 'vm_type'}) }
+        let(:vm_type) { VmType.new('name' => 'vm_type') }
 
         before do
           deployment_model.add_stemcell(stemcell_model)
           deployment_model.add_variable_set(Models::VariableSet.make(deployment: deployment_model))
-          cloud_planner = CloudPlanner.new({
+          cloud_planner = CloudPlanner.new(
             networks: [Network.new('default', logger)],
             global_network_resolver: GlobalNetworkResolver.new(planner, [], logger),
             ip_provider_factory: IpProviderFactory.new(true, logger),
@@ -89,7 +99,7 @@ module Bosh::Director
             resource_pools: resource_pools,
             compilation: nil,
             logger: logger,
-          })
+          )
           planner.cloud_planner = cloud_planner
           allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
           task = Models::Task.make(state: 'processing')
@@ -97,7 +107,15 @@ module Bosh::Director
         end
 
         it 'manifest should be immutable' do
-          subject = Planner.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options)
+          subject = Planner.new(
+            planner_attributes,
+            minimal_manifest,
+            YAML.dump(minimal_manifest),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            options,
+          )
           minimal_manifest['name'] = 'new_name'
           expect(subject.uninterpolated_manifest_hash['name']).to eq('minimal')
         end
@@ -105,7 +123,15 @@ module Bosh::Director
         it 'should parse recreate' do
           expect(planner.recreate).to be_falsey
 
-          plan = described_class.new(planner_attributes, manifest_text, YAML.dump(manifest_text), cloud_configs, runtime_config_consolidator, deployment_model, 'recreate' => true)
+          plan = described_class.new(
+            planner_attributes,
+            manifest_text,
+            YAML.dump(manifest_text),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            'recreate' => true,
+          )
           expect(plan.recreate).to be_truthy
         end
 
@@ -115,53 +141,70 @@ module Bosh::Director
 
         describe '#instance_plans_with_hot_swap_and_needs_shutdown' do
           before { subject.add_instance_group(instance_group) }
-          let(:update_config) { instance_double(UpdateConfig, strategy: 'hot-swap') }
-          let(:instance_plan_instance) {instance_double(Instance, state: 'started')}
-          let(:instance_plan) { instance_double(InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true) }
+          let(:instance_plan) { instance_double(InstancePlan) }
+          let(:should_hot_swap?) { true }
           let(:instance_group) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
               name: 'fake-job1-name',
               canonical_name: 'fake-job1-cname',
-              is_service?: true,
-              is_errand?: false,
-              update: update_config,
-              sorted_instance_plans: [instance_plan]
-            })
+              service?: true,
+              errand?: false,
+              should_hot_swap?: should_hot_swap?,
+              instance_plans_needing_shutdown: [instance_plan],
+            )
           end
 
           it 'should return instance groups that are hot-swap enabled' do
             expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
           end
 
-          context 'when instance group contains detached instance plan' do
-            let(:instance_plan_instance) {instance_double(Instance, state: 'detached')}
-
-            it 'should filter detached instance plans' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([])
-            end
-          end
-
           context 'when no instance groups have hot-swap enabled' do
-            let(:update_config) { instance_double(UpdateConfig, strategy: 'not-hot-swap-enabled') }
+            let(:should_hot_swap?) { false }
 
             it 'should return empty array' do
               expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
             end
           end
+        end
 
-          context 'when a new, hot-swap instance group is added to a deployment' do
-            let(:instance_plan) { instance_double(InstancePlan, new?: true, needs_shutting_down?: true) }
+        describe '#skipped_instance_plans_with_hot_swap_and_needs_shutdown' do
+          before { subject.add_instance_group(instance_group) }
+          let(:instance_plan) { instance_double(InstancePlan) }
+          let(:should_hot_swap?) { false }
+          let(:hot_swap?) { true }
+          let(:instance_group) do
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
+              name: 'fake-job1-name',
+              canonical_name: 'fake-job1-cname',
+              service?: true,
+              errand?: false,
+              should_hot_swap?: should_hot_swap?,
+              hot_swap?: hot_swap?,
+              instance_plans_needing_shutdown: [instance_plan],
+            )
+          end
 
-            it 'should not be considered for hot swap' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+          it 'returns instances that want hot-swap but cannot be' do
+            expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+          end
+
+          context 'when instance_group does not want hot-swap' do
+            let(:should_hot_swap?) { false }
+            let(:hot_swap?) { false }
+
+            it 'should return empty array' do
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
             end
           end
 
-          context 'when a hot-swap instance group does not need shutting down' do
-            let(:instance_plan) { instance_double(InstancePlan, new?: false, needs_shutting_down?: false) }
+          context 'when instance_group wants hot-swap and can be' do
+            let(:should_hot_swap?) { true }
+            let(:hot_swap?) { true }
 
-            it 'should not be considered for hot swap' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+            it 'should return empty array' do
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
             end
           end
         end
@@ -170,17 +213,15 @@ module Bosh::Director
           let(:options) do
             {
               'fix' => true,
-              'tags' => {'key1' => 'value1'},
+              'tags' => { 'key1' => 'value1' },
               'some_other_option' => 'disappears',
             }
           end
 
           it 'returns fix and tags values set on planner' do
             expect(subject.deployment_wide_options).to eq(
-              {
-                fix: true,
-                tags: {'key1' => 'value1'},
-              }
+              fix: true,
+              tags: { 'key1' => 'value1' },
             )
           end
 
@@ -189,10 +230,8 @@ module Bosh::Director
 
             it 'returns fix: false and empty tags hash' do
               expect(subject.deployment_wide_options).to eq(
-                {
-                  fix: false,
-                  tags: {},
-                }
+                fix: false,
+                tags: {},
               )
             end
           end
@@ -201,32 +240,29 @@ module Bosh::Director
         describe '#instance_groups_starting_on_deploy' do
           before { subject.add_instance_group(job1) }
           let(:job1) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-              name: 'fake-job1-name',
-              canonical_name: 'fake-job1-cname',
-              is_service?: true,
-              is_errand?: false,
-            })
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+                            name: 'fake-job1-name',
+                            canonical_name: 'fake-job1-cname',
+                            service?: true,
+                            errand?: false)
           end
 
           before { subject.add_instance_group(job2) }
           let(:job2) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-              name: 'fake-job2-name',
-              canonical_name: 'fake-job2-cname',
-              lifecycle: 'errand',
-              is_service?: false,
-              is_errand?: true,
-            })
+            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+                            name: 'fake-job2-name',
+                            canonical_name: 'fake-job2-cname',
+                            lifecycle: 'errand',
+                            service?: false,
+                            errand?: true)
           end
 
           context 'with errand running via keep-alive' do
             before do
               allow(job2).to receive(:instances).and_return([
-                instance_double('Bosh::Director::DeploymentPlan::Instance', {
-		  vm_created?: true,
-                })
-              ])
+                                                              instance_double('Bosh::Director::DeploymentPlan::Instance',
+                                                                              vm_created?: true),
+                                                            ])
             end
 
             it 'returns both the regular job and keep-alive errand' do
@@ -237,10 +273,9 @@ module Bosh::Director
           context 'with errand not running' do
             before do
               allow(job2).to receive(:instances).and_return([
-                instance_double('Bosh::Director::DeploymentPlan::Instance', {
-		  vm_created?: false,
-                })
-              ])
+                                                              instance_double('Bosh::Director::DeploymentPlan::Instance',
+                                                                              vm_created?: false),
+                                                            ])
             end
 
             it 'returns only the regular job' do
@@ -251,30 +286,33 @@ module Bosh::Director
 
         describe '#errand_instance_groups' do
           let(:instance_group_1) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
               name: 'fake-instance-group-1-name',
               canonical_name: 'fake-instance-group-1-cname',
-              is_service?: true,
-              is_errand?: false,
-            })
+              service?: true,
+              errand?: false,
+            )
           end
 
           let(:instance_group_2) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
               name: 'fake-instance-group-2-name',
               canonical_name: 'fake-instance-group-2-cname',
-              is_service?: false,
-              is_errand?: true,
-            })
+              service?: false,
+              errand?: true,
+            )
           end
 
           let(:instance_group_3) do
-            instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
+            instance_double(
+              'Bosh::Director::DeploymentPlan::InstanceGroup',
               name: 'fake-instance-group-3-name',
               canonical_name: 'fake-instance-group-3-cname',
-              is_service?: false,
-              is_errand?: true,
-            })
+              service?: false,
+              errand?: true,
+            )
           end
 
           before do
@@ -408,7 +446,17 @@ module Bosh::Director
           end
 
           context 'when cloud configs are not empty' do
-            let(:cloud_configs) { [Models::Config.make(:cloud, content: '--- {"networks": [{"name":"test","subnets":[]}],"compilation":{"workers":1,"canary_watch_time":1,"update_watch_time":1,"serial":false,"network":"test"}}')] }
+            let(:cloud_configs) do
+              [
+                Models::Config.make(
+                  :cloud,
+                  content: \
+                    '--- {"networks":[{"name":"test","subnets":[]}],'\
+                    '"compilation":{"workers":1,"canary_watch_time":1,'\
+                    '"update_watch_time":1,"serial":false,"network":"test"}}',
+                ),
+              ]
+            end
 
             it 'returns true' do
               expect(subject.using_global_networking?).to be_truthy
@@ -451,11 +499,15 @@ module Bosh::Director
         end
 
         describe '#team_names' do
-          let(:teams) { Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin']) }
+          let(:teams) do
+            Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(
+              ['bosh.teams.team_1.admin', 'bosh.teams.team_3.admin'],
+            )
+          end
           before { deployment_model.teams = teams }
 
           it 'returns team names from the deployment' do
-            expect(subject.team_names).to match_array(["team_1", "team_3"])
+            expect(subject.team_names).to match_array(%w[team_1 team_3])
           end
         end
       end

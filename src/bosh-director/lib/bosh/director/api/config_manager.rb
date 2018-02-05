@@ -2,11 +2,12 @@ module Bosh
   module Director
     module Api
       class ConfigManager
-        def create(type, name, config_yaml)
+        def create(type, name, config_yaml, team_id = nil)
           config = Bosh::Director::Models::Config.new(
-              type: type,
-              name: name,
-              content: config_yaml
+            type: type,
+            name: name,
+            content: config_yaml,
+            team_id: team_id,
           )
           config.save
         end
@@ -15,10 +16,10 @@ module Bosh
           dataset = Bosh::Director::Models::Config.where(deleted: false)
           dataset = dataset.where(type: type) if type
           dataset = dataset.where(name: name) if name
-          dataset = dataset.where(id: dataset.select{max(:id)}.group(:type, :name)) if latest == 'true'
+          dataset = dataset.where(id: dataset.select { max(:id) }.group(:type, :name)) if latest == 'true'
           dataset
             .order(:type)
-            .order_append {Sequel.case([[{name: 'default'}, 1]], 2)}
+            .order_append { Sequel.case([[{ name: 'default' }, 1]], 2) }
             .order_append(:name)
             .order_append(Sequel.desc(:id))
             .all
@@ -26,9 +27,7 @@ module Bosh
 
         def find_by_id(id)
           config = Bosh::Director::Models::Config[id]
-          if config.nil?
-            raise ConfigNotFound, "Config #{id} not found"
-          end
+          raise ConfigNotFound, "Config #{id} not found" if config.nil?
           config
         end
 

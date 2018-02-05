@@ -3,7 +3,6 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class ConfigsController < BaseController
-
       get '/:id', scope: :read do
         id = params[:id].to_i
         return status(404) if params[:id] != id.to_s
@@ -12,44 +11,48 @@ module Bosh::Director
         return json_encode(sql_to_hash(config))
       end
 
-      get '/', scope: :read do
+      get '/', scope: :list_configs do
         check(params, 'latest')
 
-        unless ['true', 'false'].include?(params['latest'])
-          raise ValidationInvalidValue, "'latest' must be 'true' or 'false'"
-        end
+        raise ValidationInvalidValue, "'latest' must be 'true' or 'false'" unless %w[true false].include?(params['latest'])
 
         configs = Bosh::Director::Api::ConfigManager.new.find(
           type: params['type'],
           name: params['name'],
-          latest: params['latest']
-        )
+          latest: params['latest'],
+        ).select { |config| @permission_authorizer.is_granted?(config, :read, token_scopes) }
 
-        result = configs.map {|config| sql_to_hash(config)}
+        result = configs.map { |config| sql_to_hash(config) }
 
         return json_encode(result)
       end
 
-      post '/', :consumes => :json do
+      post '/', scope: :update_configs, consumes: :json do
         begin
           config_hash = parse_request_body(request.body.read)
           validate_type_and_name(config_hash)
           validate_config_content(config_hash['content'])
 
           latest_configs = Bosh::Director::Api::ConfigManager.new.find(
-              type: config_hash['type'],
-              name: config_hash['name'],
-              latest: true
+            type: config_hash['type'],
+            name: config_hash['name'],
+            latest: true,
           )
 
           if latest_configs.empty? || latest_configs.first[:content] != config_hash['content']
-            config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'])
+            teams = Models::Team.transform_admin_team_scope_to_teams(token_scopes)
+            team_id = teams.empty? ? nil : teams.first.id
+            config = Bosh::Director::Api::ConfigManager.new.create(
+              config_hash['type'],
+              config_hash['name'],
+              config_hash['content'],
+              team_id,
+            )
             create_event(config_hash['type'], config_hash['name'])
           else
             config = latest_configs.first
           end
-
-        rescue => e
+        rescue StandardError => e
           type = config_hash ? config_hash['type'] : nil
           name = config_hash ? config_hash['name'] : nil
           create_event(type, name, e)
@@ -59,7 +62,7 @@ module Bosh::Director
         return json_encode(sql_to_hash(config))
       end
 
-      post '/diff', :consumes => :json do
+      post '/diff', scope: :list_configs, consumes: :json do
         config_request = parse_request_body(request.body.read)
 
         schema1, schema2 = validate_diff_request(config_request)
@@ -69,29 +72,29 @@ module Bosh::Director
         elsif schema2
           begin
             old_config_hash, new_config_hash = contents_from_body_and_current(config_request)
-          rescue => e
+          rescue StandardError => e
             status(400)
-            return json_encode({
+            return json_encode(
               'diff' => [],
-              'error' => e.message
-            })
+              'error' => e.message,
+            )
           end
         else
           raise BadConfigRequest,
-              %|Only two request formats are allowed:\n| +
-              %|1. {"from":{"id":"<id>"},"to":{"id":"<id>"}}\n| +
-              %|2. {"type":"<type>","name":"<name>","content":"<content>"}|
+                %(Only two request formats are allowed:\n) +
+                %(1. {"from":{"id":"<id>"},"to":{"id":"<id>"}}\n) +
+                %(2. {"type":"<type>","name":"<name>","content":"<content>"})
         end
 
         begin
           diff = Changeset.new(old_config_hash, new_config_hash).diff(true).order
           result = {
-            'diff' => diff.map { |l| [l.to_s, l.status] }
+            'diff' => diff.map { |l| [l.to_s, l.status] },
           }
-        rescue => error
+        rescue StandardError => error
           result = {
             'diff' => [],
-            'error' => "Unable to diff config content: #{error.inspect}\n#{error.backtrace.join("\n")}"
+            'error' => "Unable to diff config content: #{error.inspect}\n#{error.backtrace.join("\n")}",
           }
           status(400)
         end
@@ -99,7 +102,7 @@ module Bosh::Director
         json_encode(result)
       end
 
-      delete '/' do
+      delete '/', scope: :update_configs do
         check(params, 'type')
         check(params, 'name')
 
@@ -114,29 +117,30 @@ module Bosh::Director
       private
 
       def create_event(type, name, error = nil)
-        @event_manager.create_event({
+        @event_manager.create_event(
           user:        current_user,
           action:      'create',
           object_type: "config/#{type}",
           object_name: name,
-          error:       error
-        })
+          error:       error,
+        )
       end
 
       def sql_to_hash(config)
-        {
+        hash =
+          {
             content: config.content,
             id: config.id.to_s, # id should be opaque to clients (may not be an int)
             type: config.type,
             name: config.name,
-            created_at: config.created_at.to_s
-        }
+            created_at: config.created_at.to_s,
+          }
+        hash['teams'] = config.teams.map(&:name) if @permission_authorizer.is_granted?(:director, :admin, token_scopes)
+        hash
       end
 
       def check(param, name)
-        if param[name].nil? || param[name].empty?
-          raise BadConfigRequest, "'#{name}' is required"
-        end
+        raise BadConfigRequest, "'#{name}' is required" if param[name].nil? || param[name].empty?
       end
 
       def check_name_and_type(manifest, name, type)
@@ -152,7 +156,7 @@ module Bosh::Director
       def parse_request_body(body)
         config_request = begin
           JSON.parse(body)
-        rescue => e
+        rescue StandardError => e
           raise InvalidJsonError, "Invalid JSON request body: #{e.message}"
         end
         raise BadConfigRequest, 'JSON object expected' if !config_request.is_a?(Hash) || config_request.nil?
@@ -160,27 +164,23 @@ module Bosh::Director
       end
 
       def validate_config_content(content)
-       content = begin
-          YAML.load(content)
-        rescue => e
-          raise BadConfig, "Config must be valid YAML: #{e.message}"
-        end
+        content = begin
+           YAML.safe_load(content, [Symbol], [], true)
+         rescue StandardError => e
+           raise BadConfig, "Config must be valid YAML: #{e.message}"
+         end
 
-       raise BadConfig, 'YAML hash expected' unless content.is_a?(Hash)
+        raise BadConfig, 'YAML hash expected' unless content.is_a?(Hash)
 
-       content
+        content
       end
 
       def contents_by_id(config_request)
         from_config = Bosh::Director::Models::Config[config_request['from']['id']]
-        unless from_config
-          raise ConfigNotFound, "Config with ID '#{config_request['from']['id']}' not found."
-        end
+        raise ConfigNotFound, "Config with ID '#{config_request['from']['id']}' not found." unless from_config
 
         to_config = Bosh::Director::Models::Config[config_request['to']['id']]
-        unless to_config
-          raise ConfigNotFound, "Config with ID '#{config_request['to']['id']}' not found."
-        end
+        raise ConfigNotFound, "Config with ID '#{config_request['to']['id']}' not found." unless to_config
 
         [from_config.raw_manifest, to_config.raw_manifest]
       end
@@ -190,11 +190,10 @@ module Bosh::Director
 
         new_config_hash = validate_config_content(config_request['content'])
 
-
         old_config = Bosh::Director::Api::ConfigManager.new.find(
-            type: config_request['type'],
-            name: config_request['name'],
-            latest: true
+          type: config_request['type'],
+          name: config_request['name'],
+          latest: true,
         ).first
 
         old_config_hash = if old_config.nil? || old_config.raw_manifest.nil?
@@ -208,27 +207,27 @@ module Bosh::Director
 
       def validate_diff_request(config_request)
         allowed_format_1 = {
-            'from' => { 'id' => /\d+/ },
-            'to' => { 'id' => /\d+/ }
+          'from' => { 'id' => /\d+/ },
+          'to' => { 'id' => /\d+/ },
         }
 
         allowed_format_2 = {
-            'type' => /.+/,
-            'name' => /.+/,
-            'content' => String
+          'type' => /.+/,
+          'name' => /.+/,
+          'content' => String,
         }
 
         schema1 = true
         schema2 = true
         begin
           Membrane::SchemaParser.parse { allowed_format_1 }.validate(config_request)
-        rescue
+        rescue StandardError
           schema1 = false
         end
 
         begin
           Membrane::SchemaParser.parse { allowed_format_2 }.validate(config_request)
-        rescue
+        rescue StandardError
           schema2 = false
         end
 

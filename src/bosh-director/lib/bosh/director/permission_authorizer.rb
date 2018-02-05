@@ -5,9 +5,11 @@ module Bosh::Director
     end
 
     def granted_or_raise(subject, permission, user_scopes)
-      if !is_granted?(subject, permission, user_scopes)
-        raise UnauthorizedToAccessDeployment, "Require one of the scopes: #{list_expected_scope(subject, permission, user_scopes).join(', ')}"
-      end
+      return if is_granted?(subject, permission, user_scopes)
+      raise(
+        UnauthorizedToAccessDeployment,
+        "Require one of the scopes: #{list_expected_scope(subject, permission, user_scopes).join(', ')}",
+      )
     end
 
     def is_granted?(subject, permission, user_scopes)
@@ -18,34 +20,50 @@ module Bosh::Director
       expected_scope = director_permissions[:admin]
 
       case subject
-        when :director
-          get_director_scopes(expected_scope, permission, user_scopes)
-        when lambda { |s| s.instance_of?(Models::Task) }
-          expected_scope << subject_team_scopes(subject, 'admin')
+      when :director
+        get_director_scopes(expected_scope, permission, user_scopes)
+      when ->(s) { s.instance_of?(Models::Task) }
+        expected_scope << subject_team_scopes(subject, 'admin')
 
-          case permission
-            when :admin
-              # already allowed with initial expected_scope
-            when :read
-              expected_scope << subject_team_scopes(subject, 'read')
-              expected_scope << director_permissions[:read]
-            else
-              raise ArgumentError, "Unexpected permission for task: #{permission}"
-          end
-        when lambda { |s| s.instance_of?(Models::Deployment) }
-          expected_scope << subject_team_scopes(subject, 'admin')
-
-          case permission
-            when :admin
-              # already allowed with initial expected_scope
-            when :read
-              expected_scope << subject_team_scopes(subject, 'read')
-              expected_scope << director_permissions[:read]
-            else
-              raise ArgumentError, "Unexpected permission for deployment: #{permission}"
-          end
+        case permission
+        when :admin
+          # already allowed with initial expected_scope
+          expected_scope
+        when :read
+          expected_scope << subject_team_scopes(subject, 'read')
+          expected_scope << director_permissions[:read]
         else
-          raise ArgumentError, "Unexpected subject: #{subject}"
+          raise ArgumentError, "Unexpected permission for task: #{permission}"
+        end
+      when ->(s) { s.instance_of?(Models::Deployment) }
+        expected_scope << subject_team_scopes(subject, 'admin')
+
+        case permission
+        when :admin
+          # already allowed with initial expected_scope
+          expected_scope
+        when :read
+          expected_scope << subject_team_scopes(subject, 'read')
+          expected_scope << director_permissions[:read]
+        else
+          raise ArgumentError, "Unexpected permission for deployment: #{permission}"
+        end
+      when ->(s) { s.instance_of?(Models::Config) }
+        expected_scope << subject_team_scopes(subject, 'admin')
+
+        case permission
+        when :admin
+          # already allowed with initial expected_scope
+          expected_scope
+        when :read
+          expected_scope << subject_team_scopes(subject, 'read')
+          expected_scope << director_permissions[:read]
+        else
+          raise ArgumentError, "Unexpected permission for config: #{permission}"
+        end
+
+      else
+        raise ArgumentError, "Unexpected subject: #{subject}"
       end
 
       expected_scope.flatten.uniq
@@ -55,20 +73,23 @@ module Bosh::Director
 
     def get_director_scopes(expected_scope, permission, user_scopes)
       case permission
-        when :admin
-          # already allowed with initial expected_scope
-        when :create_deployment
-          expected_scope << add_bosh_admin_scopes(user_scopes)
-        when :read_events
-          expected_scope << director_permissions[:read]
-          expected_scope << add_bosh_team_scopes(user_scopes)
-        when :read_releases, :list_deployments, :read_stemcells, :list_tasks
-          expected_scope << director_permissions[:read]
-          expected_scope << add_bosh_admin_scopes(user_scopes)
-        when :read, :upload_releases, :upload_stemcells
-          expected_scope << director_permissions[permission]
-        else
-          raise ArgumentError, "Unexpected permission for director: #{permission}"
+      when :admin
+        # already allowed with initial expected_scope
+        expected_scope
+      when :create_deployment
+        expected_scope << add_bosh_admin_scopes(user_scopes)
+      when :read_events, :list_configs
+        expected_scope << director_permissions[:read]
+        expected_scope << add_bosh_team_scopes(user_scopes)
+      when :read_releases, :list_deployments, :read_stemcells, :list_tasks
+        expected_scope << director_permissions[:read]
+        expected_scope << add_bosh_admin_scopes(user_scopes)
+      when :update_configs
+        expected_scope << add_bosh_admin_scopes(user_scopes)
+      when :read, :upload_releases, :upload_stemcells
+        expected_scope << director_permissions[permission]
+      else
+        raise ArgumentError, "Unexpected permission for director: #{permission}"
       end
     end
 
