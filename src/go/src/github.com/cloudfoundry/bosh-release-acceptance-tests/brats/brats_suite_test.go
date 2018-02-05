@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 
 	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/gbytes"
 )
 
 const BLOBSTORE_ACCESS_LOG = "/var/vcap/sys/log/blobstore/blobstore_access.log"
@@ -74,13 +75,23 @@ func assertEnvExists(envName string) string {
 }
 
 func startInnerBosh(args ...string) {
+	startInnerBoshWithExpectation(false, "", args...)
+}
+
+func startInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch string, args ...string) {
 	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), args...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
 
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
-	Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
+
+	if expectedFailure {
+		Eventually(session, 25*time.Minute).Should(gbytes.Say(expectedErrorToMatch))
+		Eventually(session, 25*time.Minute).Should(gexec.Exit(1))
+	} else {
+		Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
+	}
 }
 
 func stopInnerBosh() {
