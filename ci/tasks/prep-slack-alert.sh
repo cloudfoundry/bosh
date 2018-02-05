@@ -2,8 +2,8 @@
 
 set -e
 
-echo '<!here>: ${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME} failed in
-<https://main.bosh-ci.cf-app.com/teams/main/pipelines/${BUILD_PIPELINE_NAME}/jobs/${BUILD_JOB_NAME}/builds/${BUILD_NAME}|build ${BUILD_NAME}>' > slack-message/message
+echo '<!here>: $(cat build-metadata/build-pipeline-name)/$(cat build-metadata/build-job-name) failed in
+<https://main.bosh-ci.cf-app.com/teams/main/pipelines/$(cat build-metadata/build-pipeline-name)/jobs/$(cat build-metadata/build-job-name)/builds/$(cat build-metadata/build-name)|build $(cat build-metadata/build-name)>' > slack-message/message
 
 pushd bosh-src
   echo '```' >> ../slack-message/message

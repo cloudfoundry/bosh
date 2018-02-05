@@ -241,6 +241,7 @@ jobs:
 
         on_failure:
           do:
+          - get: build-metadata
           - task: prep-slack-alert
             file: bosh-src/ci/tasks/prep-slack-alert.yml
           - put: slack-alert
@@ -1005,3 +1006,12 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
+
+  - name: build-metadata
+    type: build-metadata-resource
+
+resource_types:
+- name: build-metadata-resource
+  type: docker-image
+  source:
+    repository: vito/build-metadata-resource
