@@ -214,7 +214,7 @@ module Bosh
                                    .map { |network_plan| network_plan.reservation }
 
           DeploymentPlan::NetworkSettings.new(
-            @instance.job_name,
+            @instance.instance_group_name,
             @instance.model.deployment.name,
             @desired_instance.instance_group.default_network,
             desired_reservations,

@@ -25,7 +25,7 @@ describe 'vm delete', type: :integration do
       expect(output).to match /Succeeded/
 
       #wait for resurrection
-      resurrected_instance = director.wait_for_vm(instance.job_name, instance.index, 300, deployment_name: 'simple')
+      resurrected_instance = director.wait_for_vm(instance.instance_group_name, instance.index, 300, deployment_name: 'simple')
       expect(resurrected_instance.vm_cid).to_not eq(instance.vm_cid)
       expect(director.vms.count).to eq(1)
 

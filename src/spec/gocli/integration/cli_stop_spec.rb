@@ -150,7 +150,7 @@ describe 'stop command', type: :integration do
 
   def vm_states
     director.instances.inject({}) do |result, instance|
-      result["#{instance.job_name}/#{instance.index}"] = instance.last_known_state unless instance.last_known_state.empty?
+      result["#{instance.instance_group_name}/#{instance.index}"] = instance.last_known_state unless instance.last_known_state.empty?
       result
     end
   end

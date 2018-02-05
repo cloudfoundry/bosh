@@ -21,7 +21,7 @@ module Bosh::Director
           'index' => instance.index,
           'bootstrap' => instance.bootstrap?,
           'lifecycle' => instance_group.lifecycle,
-          'name' => instance.job_name,
+          'name' => instance.instance_group_name,
           'id' => instance.uuid,
           'az' => instance.availability_zone_name,
           'networks' => instance_plan.network_settings_hash,

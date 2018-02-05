@@ -16,8 +16,8 @@ describe 'Changing ip ranges', type: :integration do
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
       instances = director.instances
-      original_instance_0 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '0' }
-      original_instance_1 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '1' }
+      original_instance_0 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '0' }
+      original_instance_1 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '1' }
 
       expect(original_instance_0.ips).to contain_exactly('192.168.1.2')
       expect(original_instance_1.ips).to contain_exactly('192.168.1.3')
@@ -28,8 +28,8 @@ describe 'Changing ip ranges', type: :integration do
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
       instances = director.instances
-      new_instance_0 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '0' }
-      new_instance_1 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '1' }
+      new_instance_0 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '0' }
+      new_instance_1 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '1' }
 
       expect(new_instance_0.ips).to contain_exactly('192.168.1.4')
       expect(new_instance_1.ips).to contain_exactly('192.168.1.3')
@@ -44,8 +44,8 @@ describe 'Changing ip ranges', type: :integration do
         deploy_simple_manifest(manifest_hash: deployment_manifest)
 
         instances = director.instances
-        original_instance_0 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '0' }
-        original_instance_1 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '1' }
+        original_instance_0 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '0' }
+        original_instance_1 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '1' }
 
         expect(original_instance_0.ips).to contain_exactly('192.168.1.2')
         expect(original_instance_1.ips).to contain_exactly('192.168.1.3')
@@ -54,8 +54,8 @@ describe 'Changing ip ranges', type: :integration do
         deploy_simple_manifest(manifest_hash: deployment_manifest)
 
         instances = director.instances
-        new_instance_0 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '0' }
-        new_instance_1 = instances.find { |instance| instance.job_name == 'foobar' && instance.index == '1' }
+        new_instance_0 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '0' }
+        new_instance_1 = instances.find { |instance| instance.instance_group_name == 'foobar' && instance.index == '1' }
 
         expect(new_instance_0.ips).to contain_exactly('192.168.1.4')
         expect(new_instance_1.ips).to contain_exactly('192.168.1.3')

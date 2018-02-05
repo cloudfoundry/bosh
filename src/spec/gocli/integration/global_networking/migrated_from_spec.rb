@@ -529,7 +529,7 @@ describe 'migrated from', type: :integration do
 
         deploy_simple_manifest(manifest_hash: new_manifest_hash)
 
-        db_instances = director.instances.select { |i| i.job_name =='db' }
+        db_instances = director.instances.select { |i| i.instance_group_name =='db' }
         expect(db_instances.map(&:index)).to match_array(['0', '1', '2', '3'])
       end
     end
@@ -627,14 +627,14 @@ describe 'migrated from', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_with_azs)
 
       new_instance = director.instances
-      etcd_instance_1 = new_instance.find { |instance| instance.job_name == 'etcd' && instance.index == '0' }
+      etcd_instance_1 = new_instance.find { |instance| instance.instance_group_name == 'etcd' && instance.index == '0' }
       template = etcd_instance_1.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('az=my-az-1')
       expect(template).to include('job_name=etcd')
       expect(template).to include('index=0')
       expect(template).to include('bootstrap=true')
 
-      etcd_instance_2 = new_instance.find { |instance| instance.job_name == 'etcd' && instance.index == '1' }
+      etcd_instance_2 = new_instance.find { |instance| instance.instance_group_name == 'etcd' && instance.index == '1' }
       template = etcd_instance_2.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('az=my-az-2')
       expect(template).to include('job_name=etcd')

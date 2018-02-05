@@ -69,7 +69,7 @@ module Bosh::Director
             instance_double(
               DeploymentPlan::Instance,
               model: instance1_model,
-              job_name: instance1_model.job,
+              instance_group_name: instance1_model.job,
               uuid: instance1_model.uuid,
               index: 1,
               current_job_state: job_state1,
@@ -81,7 +81,7 @@ module Bosh::Director
             instance_double(
               DeploymentPlan::Instance,
               model: instance2_model,
-              job_name: instance2_model.job,
+              instance_group_name: instance2_model.job,
               uuid: instance2_model.uuid,
               index: 2,
               current_job_state: job_state2,
@@ -93,7 +93,7 @@ module Bosh::Director
             instance_double(
               DeploymentPlan::Instance,
               model: instance3_model,
-              job_name: instance3_model.job,
+              instance_group_name: instance3_model.job,
               uuid: instance3_model.uuid,
               index: 3,
               current_job_state: job_state3,

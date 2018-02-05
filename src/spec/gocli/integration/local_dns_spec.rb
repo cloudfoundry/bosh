@@ -389,7 +389,7 @@ describe 'local DNS', type: :integration do
       [
         instance.id,
         Regexp.new(/\d/),
-        Bosh::Director::Canonicalizer.canonicalize(instance.job_name),
+        Bosh::Director::Canonicalizer.canonicalize(instance.instance_group_name),
         ['1'],
         az,
         az_index,

@@ -52,7 +52,7 @@ module Bosh::Director
       end
 
       def initialize(
-        job_name,
+        instance_group_name,
         index,
         virtual_state,
         merged_cloud_properties,
@@ -69,7 +69,7 @@ module Bosh::Director
         @availability_zone = availability_zone
         @logger = logger
         @deployment_model = deployment_model
-        @job_name = job_name
+        @instance_group_name = instance_group_name
         @stemcell = stemcell
         @env = env
         @compilation = compilation
@@ -100,15 +100,15 @@ module Bosh::Director
         @compilation
       end
 
-      def job_name
-        @job_name
+      def instance_group_name
+        @instance_group_name
       end
 
       def to_s
         if @uuid.nil?
-          "#{@job_name}/#{@index}"
+          "#{@instance_group_name}/#{@index}"
         else
-          "#{@job_name}/#{@uuid} (#{@index})"
+          "#{@instance_group_name}/#{@uuid} (#{@index})"
         end
       end
 
@@ -119,7 +119,7 @@ module Bosh::Director
       def bind_new_instance_model
         @model = Models::Instance.create({
             deployment_id: @deployment_model.id,
-            job: @job_name,
+            job: @instance_group_name,
             index: index,
             state: state,
             compilation: @compilation,
@@ -233,7 +233,7 @@ module Bosh::Director
       end
 
       def update_description
-        @model.update(job: job_name, index: index)
+        @model.update(job: instance_group_name, index: index)
       end
 
       def mark_as_bootstrap
@@ -317,7 +317,7 @@ module Bosh::Director
 
         conditions = {
           deployment_id: @deployment_model.id,
-          job: @job_name,
+          job: @instance_group_name,
           index: @index
         }
 

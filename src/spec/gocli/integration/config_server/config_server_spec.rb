@@ -609,10 +609,10 @@ Error: Unable to render instance groups for deployment. Errors are:
 
             instance = director.instance('foobar', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
 
-            bosh_runner.run("stop --hard #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+            bosh_runner.run("stop --hard #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
             pre_start_invocations_size = current_sandbox.cpi.invocations.size
 
-            bosh_runner.run("start #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+            bosh_runner.run("start #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
 
             invocations = current_sandbox.cpi.invocations.drop(pre_start_invocations_size)
             set_vm_metadata_invocation = invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last
@@ -924,7 +924,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
                 generated_cert_response = config_server_helper.get_value(prepend_namespace('gargamel_certificate_placeholder'))
 
-                instances = director.instances(deployment_name: 'simple', include_credentials: false,  env: client_env).select{ |instance|  instance.job_name == 'our_instance_group' }
+                instances = director.instances(deployment_name: 'simple', include_credentials: false,  env: client_env).select{ |instance|  instance.instance_group_name == 'our_instance_group' }
 
                 instances.each do |instance|
                   generated_cert = instance.read_job_template('job_with_property_types', 'generated_cert.pem')

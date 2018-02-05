@@ -61,9 +61,9 @@ module Bosh::Spec
       find_instance(instances(options), job_name, index_or_id)
     end
 
-    def find_instance(instances, job_name, index_or_id)
-      instance = instances.detect { |instance| instance.job_name == job_name && (instance.index == index_or_id || instance.id == index_or_id)}
-      instance || raise("Failed to find instance #{job_name}/#{index_or_id}. Found instances: #{instances.inspect}")
+    def find_instance(instances, instance_group_name, index_or_id)
+      instance = instances.detect { |instance| instance.instance_group_name == instance_group_name && (instance.index == index_or_id || instance.id == index_or_id)}
+      instance || raise("Failed to find instance #{instance_group_name}/#{index_or_id}. Found instances: #{instances.inspect}")
     end
 
     # wait_for_vm either returns a vm or nil after waiting for X seconds

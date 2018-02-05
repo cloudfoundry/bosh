@@ -29,7 +29,7 @@ module Bosh::Director
           index: 0,
           configuration_hash: 'configuration_hash',
           current_packages: {'current' => 'packages'},
-          job_name: 'fake-job-name',
+          instance_group_name: 'fake-job-name',
           to_s: 'fake-job-name/fake-id (0)'
         )
       end

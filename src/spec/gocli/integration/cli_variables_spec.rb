@@ -152,7 +152,7 @@ describe 'cli: variables', type: :integration do
         instance = director.instance('ig1', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
         assert_count_variable_id_and_name(2, 2)
 
-        bosh_runner.run("ignore #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+        bosh_runner.run("ignore #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
 
         config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop2')
         config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop2')
@@ -173,7 +173,7 @@ describe 'cli: variables', type: :integration do
         instance = director.instance('ig1', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
         assert_count_variable_id_and_name(2, 2)
 
-        bosh_runner.run("stop --hard #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
+        bosh_runner.run("stop --hard #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, return_exit_code: true, include_credentials: false, env: client_env)
 
         config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop2')
         config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop2')

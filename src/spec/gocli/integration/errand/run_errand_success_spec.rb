@@ -27,7 +27,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
       expect(output['Tables'][0]['Rows']).to include({'type' => 'deployment', 'resource' => 'errand', 'expires_at' => anything, 'task_id' => /^[\d]*$/})
 
-      errand_instance = director.instances(deployment_name: deployment_name).find { |instance| instance.job_name == 'fake-errand-name' && instance.index == '0' }
+      errand_instance = director.instances(deployment_name: deployment_name).find { |instance| instance.instance_group_name == 'fake-errand-name' && instance.index == '0' }
       expect(errand_instance).to_not be_nil
 
       errand_instance.unblock_errand('errand1')
@@ -519,7 +519,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     context 'running with /first' do
       it 'runs the errand on the first instance (ordered by uuid)' do
         deploy_from_scratch(manifest_hash: manifest_hash)
-        first = director.instances.select{ |i| i.job_name == 'service-with-errand' }.map(&:id).sort.first
+        first = director.instances.select{ |i| i.instance_group_name == 'service-with-errand' }.map(&:id).sort.first
 
         # with keep alive, does not delete/create errand vms (always exactly 1 fake-errand-name/0)
         output, exit_code = bosh_runner.run('run-errand errand1 --instance service-with-errand/first', return_exit_code: true, deployment_name: deployment_name)

@@ -298,7 +298,7 @@ module Bosh::Director::DeploymentPlan
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
 
               allow(mock_instance).to receive_message_chain(:model, :deployment, :name)
-              allow(mock_instance).to receive(:job_name)
+              allow(mock_instance).to receive(:instance_group_name)
               allow(mock_instance).to receive(:current_networks)
               allow(mock_instance).to receive(:availability_zone)
               allow(mock_instance).to receive(:index)

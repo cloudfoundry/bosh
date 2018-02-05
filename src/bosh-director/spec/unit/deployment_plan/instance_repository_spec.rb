@@ -131,7 +131,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.index).to eq(existing_instance.index)
       expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
       expect(instance.compilation?).to eq(existing_instance.compilation)
-      expect(instance.job_name).to eq(existing_instance.job)
+      expect(instance.instance_group_name).to eq(existing_instance.job)
       expect(instance.stemcell.models.first).to eq(stemcell)
       expect(instance.env).to eq(env)
     end
@@ -152,7 +152,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         expect(instance.index).to eq(existing_instance.index)
         expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
         expect(instance.compilation?).to eq(existing_instance.compilation)
-        expect(instance.job_name).to eq(existing_instance.job)
+        expect(instance.instance_group_name).to eq(existing_instance.job)
         expect(instance.stemcell).to be_nil
         expect(instance.env).to eq({})
       end

@@ -78,11 +78,11 @@ describe 'deploy job with addons', type: :integration do
 
       instances = director.instances
 
-      addon_instance = instances.detect { |instance| instance.job_name == 'has-addon-vm' }
+      addon_instance = instances.detect { |instance| instance.instance_group_name == 'has-addon-vm' }
       expect(File.exist?(addon_instance.job_path('foobar'))).to eq(true)
       expect(File.exist?(addon_instance.job_path('dummy'))).to eq(true)
 
-      no_addon_instance = instances.detect { |instance| instance.job_name == 'no-addon-vm' }
+      no_addon_instance = instances.detect { |instance| instance.instance_group_name == 'no-addon-vm' }
       expect(File.exist?(no_addon_instance.job_path('foobar'))).to eq(true)
       expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
     end
@@ -112,11 +112,11 @@ describe 'deploy job with addons', type: :integration do
 
       instances = director.instances
 
-      addon_instance = instances.detect { |instance| instance.job_name == 'has-addon-vm' }
+      addon_instance = instances.detect { |instance| instance.instance_group_name == 'has-addon-vm' }
       expect(File.exist?(addon_instance.job_path('foobar'))).to eq(true)
       expect(File.exist?(addon_instance.job_path('dummy'))).to eq(true)
 
-      no_addon_instance = instances.detect { |instance| instance.job_name == 'no-addon-vm' }
+      no_addon_instance = instances.detect { |instance| instance.instance_group_name == 'no-addon-vm' }
       expect(File.exist?(no_addon_instance.job_path('foobar'))).to eq(true)
       expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
     end
@@ -397,9 +397,9 @@ describe 'deploy job with addons', type: :integration do
 
       instances = director.instances
 
-      rc_addon_instance = instances.detect { |instance| instance.job_name == 'has-rc-addon-vm' }
-      depl_rc_addons_instance = instances.detect { |instance| instance.job_name == 'has-depl-rc-addons-vm' }
-      depl_addon_instance = instances.detect { |instance| instance.job_name == 'has-depl-addon-vm' }
+      rc_addon_instance = instances.detect { |instance| instance.instance_group_name == 'has-rc-addon-vm' }
+      depl_rc_addons_instance = instances.detect { |instance| instance.instance_group_name == 'has-depl-rc-addons-vm' }
+      depl_addon_instance = instances.detect { |instance| instance.instance_group_name == 'has-depl-addon-vm' }
 
       expect(File.exist?(rc_addon_instance.job_path('dummy_with_properties'))).to eq(true)
       expect(File.exist?(rc_addon_instance.job_path('foobar'))).to eq(true)

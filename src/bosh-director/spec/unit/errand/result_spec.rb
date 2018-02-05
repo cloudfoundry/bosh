@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::Result do
-    let(:instance) { instance_double(DeploymentPlan::Instance, job_name: 'instance-group', uuid: 'dead-beef') }
+    let(:instance) { instance_double(DeploymentPlan::Instance, instance_group_name: 'instance-group', uuid: 'dead-beef') }
 
     describe '.from_agent_task_result' do
       let(:errand_name) { 'errand-name' }

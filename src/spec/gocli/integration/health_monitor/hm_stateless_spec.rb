@@ -170,7 +170,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'timestamp' => anything,
           'deployment' => deployment_hash['name'],
           'agent_id' => instance.agent_id,
-          'job' => instance.job_name,
+          'job' => instance.instance_group_name,
           'index' => instance.index,
           'instance_id' => instance.id,
           'job_state' => 'running',
