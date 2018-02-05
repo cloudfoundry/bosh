@@ -1008,10 +1008,7 @@ resources:
       branch: master
 
   - name: build-metadata
-    type: build-metadata-resource
-
-resource_types:
-- name: build-metadata-resource
-  type: docker-image
-  source:
-    repository: vito/build-metadata-resource
+    type: docker-image
+    source:
+      repository: relintdockerhubpushbot/build-metadata-resource
+      tag: latest
