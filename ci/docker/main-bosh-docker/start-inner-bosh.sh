@@ -7,7 +7,9 @@ bosh_path="${bosh_release_path:-${script_dir}/../../../}"
 bosh_release_path=""
 
 src_dir="${script_dir}/../../../"
-stemcell="${src_dir}/../stemcell/*.tgz"
+
+default_stemcell_path="${src_dir}/../stemcell/*.tgz"
+stemcell="${CANDIDATE_STEMCELL_TARBALL_PATH:-$default_stemcell_path}"
 
 pushd "${bosh_path}" > /dev/null
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then

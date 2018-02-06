@@ -1,3 +1,8 @@
 #!/bin/bash -eu
 
 sysctl -w "kernel.shmmax=67108864"
+
+if [[ -d /var/vcap/store/postgres ]]; then
+  echo "Please use a previous bosh release version (264.x or lower) to migrate data from postgres to postgres-9.4."
+  exit 1
+fi
