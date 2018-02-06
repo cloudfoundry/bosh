@@ -16,17 +16,15 @@ SLACK_ATTACHMENT_TEMPLATE='{
 
 function main() {
   local attachments="[]"
-  for repo in ${ROOT}/bosh-src; do
-    local attachment="$(jq -n \
-      --arg title "$(basename "${repo}") $(get_commit_link "${repo}") - $(get_commit_message "${repo}") ($(get_commit_date "${repo}"))" \
-      --arg author "$(get_author_name "${repo}")" \
-      --arg committer "$(get_committer_name "${repo}")" \
-      "${SLACK_ATTACHMENT_TEMPLATE}")"
+  local attachment="$(jq -n \
+    --arg title "$(basename "bosh-src") $(get_commit_link "bosh-src") - $(get_commit_message "bosh-src") ($(get_commit_date "bosh-src"))" \
+    --arg author "$(get_author_name "bosh-src")" \
+    --arg committer "$(get_committer_name "bosh-src")" \
+    "${SLACK_ATTACHMENT_TEMPLATE}")"
 
-    attachments="$(echo "${attachments}" | jq \
-        --argjson attachment "${attachment}" \
-        '. += [$attachment]')"
-  done
+  attachments="$(echo "${attachments}" | jq \
+      --argjson attachment "${attachment}" \
+      '. += [$attachment]')"
 
   echo "${attachments}" \
     > "${ROOT}/slack-notification/attachments"
@@ -68,7 +66,7 @@ function get_committer_name() {
 }
 
 function get_slacker_name() {
-  echo "<@here>"
+  echo "<${1}>"
 }
 
 main
