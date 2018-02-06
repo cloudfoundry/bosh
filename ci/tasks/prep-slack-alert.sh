@@ -38,7 +38,7 @@ function get_repo_ref() {
 function get_commit_link() {
   local repo="${1}"
   local ref="$(get_repo_ref ${repo})"
-  echo "<https://$(git -C "${repo}" remote get-url origin | cut -d@ -f2 | sed -e 's|:|/|' -e 's|.git$||')/commit/${ref}|${ref}>"
+  echo "<https://github.com/cloudfoundry/bosh/commit/${ref}|${ref}>"
 }
 
 function get_commit_date() {
