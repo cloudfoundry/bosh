@@ -76,11 +76,15 @@ shared:
     file: bosh-src/ci/bats/tasks/destroy-director.yml
 
   - &slack-alert
-    put: slack-alert
-    params:
-      channel: ((slack_channel_name))
-      icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-      text: ((slack_failure_message))
+    do:
+      - task: prep-slack-alert
+        file: bosh-src/ci/tasks/prep-slack-alert.yml
+      - put: slack-alert
+        params:
+          channel: ((slack_channel_name))
+          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+          attachments_file: slack-notification/attachments
+          text: ((slack_failure_message))
 
 jobs:
   - name: unit-2.4
@@ -240,16 +244,7 @@ jobs:
               DB_VERSION: 9.6
 
         on_failure:
-          do:
-          - task: prep-slack-alert
-            file: bosh-src/ci/tasks/prep-slack-alert.yml
-          - put: slack-alert
-            params:
-              channel: ((slack_channel_name))
-              icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-              text_file: slack-message/message
-              attachments:
-              - text: ((slack_failure_message))
+          <<: *slack-alert
 
   - name: unit-2.4-db-migrations-rds
     serial: true
@@ -1007,3 +1002,10 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
+
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
