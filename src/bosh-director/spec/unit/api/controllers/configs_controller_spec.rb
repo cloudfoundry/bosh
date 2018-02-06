@@ -723,24 +723,15 @@ module Bosh::Director
       context 'when user has a team admin membership' do
         before { basic_authorize 'dev-team-member', 'dev-team-member' }
 
-        it 'permits read access to the teams config' do
+        it 'returns team configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
+          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
         end
 
-        it 'permits write access' do
-          expect do
-            post(
-              '/',
-              JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'),
-              'CONTENT_TYPE' => 'application/json',
-            )
-          end.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
-        end
-
-        it 'stores team_id of the autorized user' do
+        it 'stores team-specific configs' do
           expect do
             post(
               '/',
@@ -757,11 +748,18 @@ module Bosh::Director
           expect(configs.count).to eq(0)
         end
 
-        it 'returns team configs' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
-          expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
+        it "cannot overwrite another team's config" do
+          expect(
+            post(
+              '/',
+              JSON.generate('name' => 'other_config', 'type' => 'my-type', 'content' => 'a: 123'),
+              'CONTENT_TYPE' => 'application/json',
+            ).status,
+          ).to eq(401)
+        end
+
+        it "cannot delete another team's config" do
+          expect(delete('/?type=my-type&name=other_config').status).to eq(401)
         end
       end
 
