@@ -329,7 +329,6 @@ module Bosh::Director
             let(:attach_step) { instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep, perform: nil) }
             let(:mount_step) { instance_double(DeploymentPlan::Steps::MountInstanceDisksStep, perform: nil) }
             let(:apply_spec_step) { instance_double(DeploymentPlan::Steps::ApplyVmSpecStep, perform: nil) }
-            let(:orphan_vm_step) { instance_double(DeploymentPlan::Steps::OrphanVmStep, perform: nil) }
 
             before do
               allow(instance_plan).to receive(:should_hot_swap?).and_return(true)
@@ -341,10 +340,6 @@ module Bosh::Director
                 .with(instance_model).and_return(mount_step)
               allow(DeploymentPlan::Steps::ApplyVmSpecStep).to receive(:new)
                 .with(instance_plan).and_return(apply_spec_step)
-              allow(DeploymentPlan::Steps::OrphanVmStep).to receive(:new)
-                .with(instance_model.active_vm).and_return(orphan_vm_step)
-
-              allow(state_applier).to receive(:apply)
             end
 
             it 'activates the vm but does not delete the old one or create another vm' do
@@ -357,13 +352,6 @@ module Bosh::Director
               expect(elect_active_vm_step).to receive(:perform)
               expect(state_applier).to receive(:apply)
               expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
-
-              updater.update(instance_plan)
-            end
-
-            it 'orphans the old vm after activating the new one' do
-              expect(elect_active_vm_step).to receive(:perform)
-              expect(orphan_vm_step).to receive(:perform)
 
               updater.update(instance_plan)
             end
