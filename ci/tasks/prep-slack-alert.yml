@@ -10,7 +10,7 @@ inputs:
 - name: bosh-src
 
 outputs:
-- name: slack-message
+- name: slack-notification
 
 run:
   path: bosh-src/ci/tasks/prep-slack-alert.sh
