@@ -135,7 +135,7 @@ module Bosh::Director
             name: config.name,
             created_at: config.created_at.to_s,
           }
-        hash['teams'] = config.teams.map(&:name) if @permission_authorizer.is_granted?(:director, :admin, token_scopes)
+        hash['teams'] = config.teams.map(&:name)
         hash
       end
 

@@ -98,12 +98,13 @@ describe 'cli configs', type: :integration do
 
     it 'shows configs of the same team only' do
       bosh_runner.run(
-        "update-config production-type #{config.path}",
+        "update-config --name=prod cloud #{config.path}",
         client: production_env['BOSH_CLIENT'],
         client_secret: production_env['BOSH_CLIENT_SECRET'],
       )
+
       bosh_runner.run(
-        "update-config team-type #{config.path}",
+        "update-config --name=team cloud #{config.path}",
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
@@ -111,39 +112,12 @@ describe 'cli configs', type: :integration do
       production_configs = table(bosh_runner.run('configs', json: true, client: production_env['BOSH_CLIENT'],
                                                             client_secret: production_env['BOSH_CLIENT_SECRET']))
       expect(production_configs.length).to eq(1)
-      expect(production_configs).to contain_exactly('name' => 'default', 'teams' => '', 'type' => 'production-type')
+      expect(production_configs).to contain_exactly('name' => 'prod', 'teams' => 'production_team', 'type' => 'cloud')
 
       team_configs = table(bosh_runner.run('configs', json: true, client: team_read_env['BOSH_CLIENT'],
                                                       client_secret: team_read_env['BOSH_CLIENT_SECRET']))
       expect(team_configs.length).to eq(1)
-      expect(team_configs).to contain_exactly('name' => 'default', 'teams' => '', 'type' => 'team-type')
-    end
-
-    it 'shows teams only for admin' do
-      bosh_runner.run(
-        "update-config production-type #{config.path}",
-        client: production_env['BOSH_CLIENT'],
-        client_secret: production_env['BOSH_CLIENT_SECRET'],
-      )
-      bosh_runner.run(
-        "update-config team-type #{config.path}",
-        client: team_admin_env['BOSH_CLIENT'],
-        client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
-      )
-
-      configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'],
-                                                 client_secret: admin_env['BOSH_CLIENT_SECRET']))
-      expect(configs.length).to eq(2)
-
-      expect(configs).to contain_exactly(
-        { 'name' => 'default', 'teams' => 'production_team', 'type' => 'production-type' },
-        { 'name' => 'default', 'teams' => 'ateam', 'type' => 'team-type' },
-      )
-
-      configs = table(bosh_runner.run('configs', json: true, client: team_admin_env['BOSH_CLIENT'],
-                                                 client_secret: team_admin_env['BOSH_CLIENT_SECRET']))
-
-      expect(configs).to contain_exactly('name' => 'default', 'teams' => '', 'type' => 'team-type')
+      expect(team_configs).to contain_exactly('name' => 'team', 'teams' => 'ateam', 'type' => 'cloud')
     end
 
     it 'allows to create/delete team only for admin or team admin' do
@@ -177,8 +151,8 @@ describe 'cli configs', type: :integration do
       expect(admin_configs.length).to eq(2)
 
       expect(admin_configs).to contain_exactly(
-        { 'name' => 'team-name1', 'teams' => '', 'type' => 'team-type' },
-        { 'name' => 'team-name2', 'teams' => '', 'type' => 'team-type' },
+        { 'name' => 'team-name1', 'teams' => 'ateam', 'type' => 'team-type' },
+        { 'name' => 'team-name2', 'teams' => 'ateam', 'type' => 'team-type' },
       )
 
       output = bosh_runner.run(

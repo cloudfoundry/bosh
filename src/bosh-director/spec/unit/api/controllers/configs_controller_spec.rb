@@ -757,11 +757,11 @@ module Bosh::Director
           expect(configs.count).to eq(0)
         end
 
-        it 'does not return teams value' do
+        it 'returns team configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first['teams']).to be_nil
+          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
         end
       end
 
@@ -783,11 +783,11 @@ module Bosh::Director
           expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
         end
 
-        it 'does not return teams value' do
+        it 'returns team configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first['teams']).to be_nil
+          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
         end
       end
 
@@ -823,7 +823,7 @@ module Bosh::Director
         end
       end
 
-      context 'when user is a reader' do
+      context 'when user has read-only access to director' do
         before { basic_authorize('reader', 'reader') }
 
         it 'permits read access to all configs' do
@@ -839,12 +839,12 @@ module Bosh::Director
           expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
         end
 
-        it 'does not return teams value' do
+        it 'returns all configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).first['teams']).to be_nil
-          expect(JSON.parse(last_response.body)[1]['teams']).to be_nil
+          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
+          expect(JSON.parse(last_response.body)[1]['teams']).to eq(['other'])
         end
       end
     end
