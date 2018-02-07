@@ -1591,6 +1591,132 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
+  describe '#bind_links_to_instance' do
+    let(:instance_model) do
+      Bosh::Director::Models::Instance.make(deployment: deployment_model)
+    end
+
+    let(:instance) do
+      instance_double(Bosh::Director::DeploymentPlan::Instance).tap do |mock|
+        allow(mock).to receive(:instance_group_name).and_return('instance-group-name')
+        allow(mock).to receive(:deployment_model).and_return(deployment_model)
+        allow(mock).to receive(:model).and_return(instance_model)
+      end
+    end
+
+    context 'when an instance does not use links' do
+      it 'should not create an association between any links to the instance' do
+        subject.bind_links_to_instance(instance)
+
+        expect(instance_model.links).to be_empty
+      end
+    end
+
+    context 'when an instance uses links' do
+      before do
+        # Create consumer
+        consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'instance-group-name',
+          name: 'job-1',
+          type: 'job'
+        )
+
+        consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer,
+          original_name: 'foo',
+          type: 'bar',
+          name: 'foo-alias'
+        )
+
+        Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: consumer_intent,
+          name: 'foo',
+          link_content: '{}'
+        )
+      end
+
+      it 'should create an association between the instance and the links' do
+        subject.bind_links_to_instance(instance)
+        expect(instance_model.links.size).to eq(1)
+      end
+    end
+  end
+
+  describe '#get_links_for_instance' do
+    let(:instance_model) do
+      Bosh::Director::Models::Instance.make(deployment: deployment_model)
+    end
+
+    let(:instance) do
+      instance_double(Bosh::Director::DeploymentPlan::Instance).tap do |mock|
+        allow(mock).to receive(:instance_group_name).and_return('instance-group-name')
+        allow(mock).to receive(:deployment_model).and_return(deployment_model)
+        allow(mock).to receive(:model).and_return(instance_model)
+      end
+    end
+
+    context 'when an instance does not use links' do
+      it 'should not create an association between any links to the instance' do
+        links = subject.get_links_for_instance(instance)
+
+        expect(links).to be_empty
+      end
+    end
+
+    context 'when an instance uses links' do
+      before do
+        # Create consumer
+        control_consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'control-instance-group-name',
+          name: 'control-job-1',
+          type: 'job'
+        )
+
+        control_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: control_consumer,
+          original_name: 'control-foo',
+          type: 'control-bar',
+          name: 'control-foo-alias'
+        )
+
+        Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: control_consumer_intent,
+          name: 'control-foo',
+          link_content: '{}'
+        )
+
+        consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'instance-group-name',
+          name: 'job-1',
+          type: 'job'
+        )
+
+        consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer,
+          original_name: 'foo',
+          type: 'bar',
+          name: 'foo-alias'
+        )
+
+        Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: consumer_intent,
+          name: 'foo',
+          link_content: '{"properties": {"fizz": "buzz"}}'
+        )
+      end
+
+      it 'should create an association between the instance and the links' do
+        links = subject.get_links_for_instance(instance)
+        expect(links.size).to eq(1)
+        expect(links['job-1'].size).to eq(1)
+        expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
+      end
+    end
+  end
+
   xdescribe '#cleanup_deployment' do
     let(:consumer) do
       Bosh::Director::Models::Links::LinkConsumer.create(
