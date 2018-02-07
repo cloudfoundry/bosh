@@ -42,7 +42,7 @@ module Bosh::Dev::Sandbox
 
     def describe_db
       @logger.info("Describing postgres database tables for #{db_name}")
-      @runner.run(%Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} -d "#{db_name}" -c '\\d+ public.*'})
+      @runner.run(%(PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} -d "#{db_name}" -c '\\d+ public.*'))
     end
 
     def load_db_initial_state(initial_state_assets_dir)

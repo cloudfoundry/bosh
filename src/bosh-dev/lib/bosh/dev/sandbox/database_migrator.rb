@@ -1,4 +1,5 @@
 require 'bosh/dev'
+require 'open3'
 
 module Bosh::Dev::Sandbox
   class DatabaseMigrator
