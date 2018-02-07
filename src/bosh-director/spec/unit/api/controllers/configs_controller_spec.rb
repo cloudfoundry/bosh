@@ -165,7 +165,7 @@ module Bosh::Director
               'type' => config1.type,
               'name' => config1.name,
               'created_at' => config1.created_at.to_s,
-              'teams' => [],
+              'team' => nil,
             )
           end
         end
@@ -195,7 +195,7 @@ module Bosh::Director
             'name' => 'my-name',
             'content' => 'a: 1',
             'created_at' => config.created_at.to_s,
-            'teams' => [],
+            'team' => nil,
           )
         end
 
@@ -728,7 +728,7 @@ module Bosh::Director
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
-          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
         end
 
         it 'stores team-specific configs' do
@@ -785,7 +785,7 @@ module Bosh::Director
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
         end
       end
 
@@ -817,7 +817,7 @@ module Bosh::Director
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).map { |x| x['teams'] }).to contain_exactly(['dev'], ['other'])
+          expect(JSON.parse(last_response.body).map { |x| x['team'] }).to contain_exactly('dev', 'other')
         end
       end
 
@@ -841,8 +841,8 @@ module Bosh::Director
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).first['teams']).to eq(['dev'])
-          expect(JSON.parse(last_response.body)[1]['teams']).to eq(['other'])
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
+          expect(JSON.parse(last_response.body)[1]['team']).to eq('other')
         end
       end
     end

@@ -152,9 +152,10 @@ module Bosh::Director
             id: config.id.to_s, # id should be opaque to clients (may not be an int)
             type: config.type,
             name: config.name,
+            team: nil,
             created_at: config.created_at.to_s,
           }
-        hash['teams'] = config.teams.map(&:name)
+        hash['team'] = config.team.name unless config.team.nil?
         hash
       end
 

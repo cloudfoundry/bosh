@@ -23,27 +23,27 @@ module Bosh::Director
       when :director
         get_director_scopes(expected_scope, permission, user_scopes)
       when ->(s) { s.instance_of?(Models::Task) }
-        expected_scope << subject_team_scopes(subject, 'admin')
+        expected_scope << subject_teams_scopes(subject, 'admin')
 
         case permission
         when :admin
           # already allowed with initial expected_scope
           expected_scope
         when :read
-          expected_scope << subject_team_scopes(subject, 'read')
+          expected_scope << subject_teams_scopes(subject, 'read')
           expected_scope << director_permissions[:read]
         else
           raise ArgumentError, "Unexpected permission for task: #{permission}"
         end
       when ->(s) { s.instance_of?(Models::Deployment) }
-        expected_scope << subject_team_scopes(subject, 'admin')
+        expected_scope << subject_teams_scopes(subject, 'admin')
 
         case permission
         when :admin
           # already allowed with initial expected_scope
           expected_scope
         when :read
-          expected_scope << subject_team_scopes(subject, 'read')
+          expected_scope << subject_teams_scopes(subject, 'read')
           expected_scope << director_permissions[:read]
         else
           raise ArgumentError, "Unexpected permission for deployment: #{permission}"
@@ -115,7 +115,14 @@ module Bosh::Director
     end
 
     def subject_team_scopes(subject, permission)
-      teams = subject.teams.nil? ? [] : subject.teams
+      map_teams_scopes(subject.team.nil? ? [] : [subject.team], permission)
+    end
+
+    def subject_teams_scopes(subject, permission)
+      map_teams_scopes(subject.teams.nil? ? [] : subject.teams, permission)
+    end
+
+    def map_teams_scopes(teams, permission)
       teams.map { |team| "bosh.teams.#{team.name}.#{permission}" }
     end
 

@@ -28,9 +28,9 @@ module Bosh
           YAML.safe_load(content, [Symbol], [], true)
         end
 
-        def teams
-          return [] if team_id.nil?
-          Team.where(id: [team_id]).all
+        def team
+          return nil if team_id.nil?
+          Team.where(id: team_id).first
         end
       end
     end
