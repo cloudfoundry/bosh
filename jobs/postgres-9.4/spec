@@ -4,6 +4,7 @@ name: postgres-9.4
 templates:
   postgres_ctl.erb:  bin/postgres_ctl
   postgresql.conf.erb: config/postgresql.conf
+  pre-start:  bin/pre-start
 
 packages:
   - postgres-9.4

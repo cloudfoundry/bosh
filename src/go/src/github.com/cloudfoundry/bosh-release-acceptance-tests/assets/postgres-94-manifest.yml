@@ -1,0 +1,36 @@
+---
+name: postgres
+instance_groups:
+- name: bosh
+  azs: [z1]
+  instances: 1
+  jobs:
+  - {name: postgres-9.4, release: bosh}
+  vm_type: default
+  stemcell: default
+  persistent_disk_type: default
+  networks:
+  - name: default
+  properties:
+    postgres:
+      listen_address: 127.0.0.1
+      host: 127.0.0.1
+      user: postgres
+      password: c1oudc0w
+      database: bosh
+      adapter: postgres
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+releases:
+- name: bosh
+  version: latest
+
+update:
+  canaries: 1
+  max_in_flight: 10
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000

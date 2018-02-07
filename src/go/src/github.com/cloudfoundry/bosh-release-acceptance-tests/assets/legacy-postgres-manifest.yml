@@ -1,0 +1,38 @@
+---
+name: postgres
+instance_groups:
+- name: bosh
+  azs: [z1]
+  instances: 1
+  jobs:
+  - {name: postgres, release: bosh}
+  vm_type: default
+  stemcell: default
+  persistent_disk_type: default
+  networks:
+  - name: default
+  properties:
+    postgres:
+      listen_address: 127.0.0.1
+      host: 127.0.0.1
+      user: postgres
+      password: c1oudc0w
+      database: bosh
+      adapter: postgres
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+releases:
+- name: bosh
+  version: "261.5"
+  url: https://bosh.io/d/github.com/cloudfoundry/bosh?v=261.5
+  sha1: 14cc92601a746e41e9b1fc1e27f94099b51426ce
+
+update:
+  canaries: 1
+  max_in_flight: 10
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000

@@ -88,3 +88,26 @@ func stopInnerBosh() {
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 }
+
+func execCommand(binaryPath string, args ...string) *gexec.Session {
+	session, err := gexec.Start(
+		exec.Command(binaryPath, args...),
+		GinkgoWriter,
+		GinkgoWriter,
+	)
+
+	Expect(err).ToNot(HaveOccurred())
+
+	return session
+}
+
+func outerBosh(args ...string) *gexec.Session {
+	return execCommand(outerBoshBinaryPath, args...)
+}
+
+func assetPath(filename string) string {
+	path, err := filepath.Abs("../assets/" + filename)
+	Expect(err).ToNot(HaveOccurred())
+
+	return path
+}
