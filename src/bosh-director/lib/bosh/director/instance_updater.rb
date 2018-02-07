@@ -13,6 +13,7 @@ module Bosh::Director
       vm_creator = VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster)
       blobstore_client = App.instance.blobstores.blobstore
       rendered_templates_persistor = RenderedTemplatesPersister.new(blobstore_client, logger)
+      links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
       new(
         logger,
         ip_provider,
@@ -22,6 +23,7 @@ module Bosh::Director
         vm_creator,
         disk_manager,
         rendered_templates_persistor,
+        links_manager
       )
     end
 
@@ -32,7 +34,8 @@ module Bosh::Director
                    vm_deleter,
                    vm_creator,
                    disk_manager,
-                   rendered_templates_persistor)
+                   rendered_templates_persistor,
+                   links_manager)
       @logger = logger
       @blobstore = blobstore
       @dns_state_updater = dns_state_updater
@@ -42,6 +45,7 @@ module Bosh::Director
       @ip_provider = ip_provider
       @rendered_templates_persistor = rendered_templates_persistor
       @current_state = {}
+      @links_manager = links_manager
     end
 
     def update(instance_plan, options = {})
@@ -150,6 +154,7 @@ module Bosh::Director
 
         @rendered_templates_persistor.persist(instance_plan)
         instance.update_variable_set
+        @links_manager.bind_links_to_instance(instance) unless recreated
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,

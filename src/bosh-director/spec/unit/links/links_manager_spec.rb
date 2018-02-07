@@ -522,8 +522,8 @@ describe Bosh::Director::Links::LinksManager do
               link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
                 link_consumer: consumer,
                 original_name: 'ci1',
-                type: 'foo',
-                )
+                type: 'foo'
+              )
 
               link_consumer_intent.optional = true
               link_consumer_intent.save

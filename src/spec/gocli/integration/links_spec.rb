@@ -159,12 +159,17 @@ describe 'Links', type: :integration do
     context 'properties with aliased links' do
       let(:db3_instance_group) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
-            name: 'db3',
-            jobs: [
-                {'name' => 'http_server_with_provides', 'provides' => {'http_endpoint' => {'as' => 'http_endpoint2', 'shared' => true}}},
-                {'name' => 'kv_http_server'}
-            ],
-            instances: 1
+          name: 'db3',
+          jobs: [
+            {
+              'name' => 'http_server_with_provides',
+              'provides' => {
+                'http_endpoint' => {'as' => 'http_endpoint2', 'shared' => true}
+              }
+            },
+            {'name' => 'kv_http_server'}
+          ],
+          instances: 1
         )
         spec['azs'] = ['z1']
         spec['properties'] = {'listen_port' => 8082, 'kv_http_server' => {'listen_port' => 8081}, 'name_space' => {'prop_a' => 'job_value', 'fibonacci' => 1}}
@@ -173,12 +178,19 @@ describe 'Links', type: :integration do
 
       let(:other2_instance_group) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
-            name: 'other2',
-            jobs: [
-                {'name' => 'http_proxy_with_requires', 'properties' => {'http_proxy_with_requires.listen_port' => 21}, 'consumes' => {'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, 'logs_http_endpoint' => {}}},
-                {'name' => 'http_server_with_provides', 'properties' => {'listen_port' => 8446}}
-            ],
-            instances: 1
+          name: 'other2',
+          jobs: [
+            {
+              'name' => 'http_proxy_with_requires',
+              'properties' => {'http_proxy_with_requires.listen_port' => 21},
+              'consumes' => {
+                'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, # TODO LINKS: Why are you sharing? Sharing is not caring.
+                'logs_http_endpoint' => 'nil'
+              }
+            },
+            {'name' => 'http_server_with_provides', 'properties' => {'listen_port' => 8446}}
+          ],
+          instances: 1
         )
         spec['azs'] = ['z1']
         spec
@@ -188,8 +200,19 @@ describe 'Links', type: :integration do
         job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'new_job',
             jobs: [
-                {'name' => 'http_proxy_with_requires', 'consumes' => {'proxied_http_endpoint' => {'from' => 'new_provides', 'shared' => true}, 'logs_http_endpoint' => {}}},
-                {'name' => 'http_server_with_provides', 'provides'=>{'http_endpoint' => {'as' =>'new_provides'}}}
+              {
+                'name' => 'http_proxy_with_requires',
+                'consumes' => {
+                  'proxied_http_endpoint' => {'from' => 'new_provides', 'shared' => true},
+                  'logs_http_endpoint' => 'nil'
+                }
+              },
+              {
+                'name' => 'http_server_with_provides',
+                'provides' => {
+                  'http_endpoint' => {'as' => 'new_provides'}
+                }
+              }
             ],
             instances: 1
         )
@@ -310,7 +333,11 @@ describe 'Links', type: :integration do
 
       let(:manifest) do
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['instance_groups'] = [api_instance_group_with_optional_links_spec_1, mysql_instance_group_spec, postgres_instance_group_spec]
+        manifest['instance_groups'] = [
+          api_instance_group_with_optional_links_spec_1,
+          mysql_instance_group_spec,
+          postgres_instance_group_spec
+        ]
         manifest
       end
 
@@ -326,7 +353,7 @@ describe 'Links', type: :integration do
         it 'throws an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
-          expect(out).to include("Error: Cannot resolve link path 'simple.postgres.backup_database.backup_db' required for link 'optional_link_name' in instance group 'my_api' on job 'api_server_with_optional_links_1'")
+          expect(out).to include("Error: Can't resolve link 'backup_db' in instance group 'my_api' on job 'api_server_with_optional_links_1' in deployment 'simple'")
         end
       end
 
@@ -408,7 +435,7 @@ describe 'Links', type: :integration do
           it 'should throw an error' do
             out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
             expect(exit_code).not_to eq(0)
-            expect(out).to include("Error: Link path was not provided for required link 'db' in instance group 'my_api'")
+            expect(out).to include("Can't resolve link 'db' in instance group 'my_api' on job 'api_server_with_optional_links_1' in deployment 'simple'")
           end
         end
       end
@@ -493,10 +520,9 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
-Error: Unable to process links for deployment. Errors are:
-  - Multiple instance groups provide links of type 'db'. Cannot decide which one to use for instance group 'optional_db'.
-     simple.mysql.database.db
-     simple.postgres.backup_database.backup_db
+Error: Multiple providers of type 'db' found for job 'api_server_with_optional_db_link' and instance group 'optional_db'. All of these match:
+   Deployment: simple, instance group: mysql, job: database, link name/alias: db
+   Deployment: simple, instance group: postgres, job: backup_database, link name/alias: backup_db
           EOF
         end
       end
@@ -1133,14 +1159,37 @@ Error: Unable to process links for deployment. Errors are:
         }
       end
 
-      it 'catches broken link before updating vms' do
-        output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
-        expect(exit_code).not_to eq(0)
-        expect(director.instances).to eq([])
-        expect(output).to include("Cannot resolve ambiguous link 'node1' (job: node, instance group: first_node). All of these match:")
-        expect(output).to include("Cannot resolve ambiguous link 'alias2' (job: node, instance group: first_node). All of these match:")
-        expect(output).to include("Can't find deployment broken")
-        expect(output).to include("Can't find deployment other")
+      context 'when parsing fails' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['instance_groups'] = [first_consumer_instance]
+          manifest
+        end
+
+        let(:first_consumer_instance) do
+          Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'first_consumer',
+            jobs: [{'name' => 'node', 'consumes' => consume_links}],
+            instances: 1,
+            static_ips: ['192.168.1.10'],
+            azs: ['z1']
+          )
+        end
+
+        let(:consume_links) do
+          {
+            'node1' => {'deployment' => 'broken'},
+            'node2' => {'deployment' => 'other'}
+          }
+        end
+
+        it 'should raise an error listing all issues before updating vms' do
+          output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+          expect(exit_code).not_to eq(0)
+          expect(director.instances).to eq([])
+          expect(output).to include("Link 'node1' in job 'node' from instance group 'first_consumer' consumes from deployment 'broken', but the deployment does not exist.")
+          expect(output).to include("Link 'node2' in job 'node' from instance group 'first_consumer' consumes from deployment 'other', but the deployment does not exist.")
+        end
       end
   end
 
@@ -2085,7 +2134,7 @@ Error: Unable to process links for deployment. Errors are:
 
           it 'should fail to create the link' do
             output = deploy_simple_manifest(manifest_hash: consumer_manifest, failure_expected: true)
-            expect(output).to include(%Q{Error: Cannot resolve link path 'provider_deployment.provider_ig.provider_job.provider_login' required for link 'login' in instance group 'consumer_ig' on job 'consumer_job'})
+            expect(output).to include(%Q{Can't resolve link 'provider_login' in instance group 'consumer_ig' on job 'consumer_job' in deployment 'consumer_deployment'})
           end
         end
       end

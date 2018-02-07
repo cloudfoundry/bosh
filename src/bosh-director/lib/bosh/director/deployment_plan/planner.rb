@@ -106,8 +106,6 @@ module Bosh::Director
         @addons = []
         @logger = Config.logger
 
-        @link_providers = []
-        @link_consumers = []
         @links_manager = Bosh::Director::Links::LinksManager.new(@logger)
 
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
@@ -273,14 +271,6 @@ module Bosh::Director
 
       def using_global_networking?
         CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(@cloud_configs)
-      end
-
-      def add_link_provider(link_provider)
-        @link_providers << link_provider unless @link_providers.include?(link_provider)
-      end
-
-      def add_link_consumer(link_consumer)
-        @link_consumers << link_consumer unless @link_consumers.include?(link_consumer)
       end
 
       def set_variables(variables_obj)

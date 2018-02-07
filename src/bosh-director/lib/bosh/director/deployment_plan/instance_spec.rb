@@ -33,14 +33,9 @@ module Bosh::Director
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => powerdns_manager.root_domain,
-          # 'links' => instance_group.resolved_links,
           'address' => instance_plan.network_address,
           'update' => instance_group.update_spec
         }
-
-        links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
-        resolved_links = links_manager.get_links_from_deployment(instance.deployment_model)
-        spec['links'] = resolved_links
 
         disk_spec = instance_group.persistent_disk_collection.generate_spec
 
@@ -56,7 +51,7 @@ module Bosh::Director
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @variables_interpolator, @instance.desired_variable_set).spec
+        TemplateSpec.new(full_spec, @variables_interpolator, @instance.desired_variable_set, @instance).spec
       end
 
       def as_apply_spec
@@ -103,10 +98,12 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec, variables_interpolator, variable_set)
+      def initialize(full_spec, variables_interpolator, variable_set, instance)
         @full_spec = full_spec
         @variables_interpolator = variables_interpolator
         @variable_set = variable_set
+        @instance = instance
+        @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
       end
 
       def spec
@@ -141,7 +138,8 @@ module Bosh::Director
         template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'], @variable_set)
 
         template_hash['links'] = {}
-        links_hash = @full_spec.fetch('links', {})
+
+        links_hash = @links_manager.get_links_for_instance(@instance)
         links_hash.each do |job_name, links|
           template_hash['links'][job_name] ||= {}
           interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(links, @variable_set)

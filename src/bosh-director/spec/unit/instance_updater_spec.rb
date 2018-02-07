@@ -75,6 +75,9 @@ module Bosh::Director
     let(:rendered_templates_persistor) { instance_double(RenderedTemplatesPersister) }
     let(:disk_manager) { instance_double(DiskManager) }
     let(:dns_encoder) { instance_double(DnsEncoder) }
+    let(:links_manager) do
+      instance_double(Bosh::Director::Links::LinksManager)
+    end
 
     before do
       Models::VariableSet.create(deployment: deployment_model)
@@ -89,6 +92,7 @@ module Bosh::Director
       allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
       allow(rendered_templates_persistor).to receive(:persist)
       allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
+      allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
     end
 
     context 'for any state' do
@@ -121,6 +125,8 @@ module Bosh::Director
       end
 
       it 'updates the variable_set_id on the instance' do
+        allow(links_manager).to receive(:bind_links_to_instance)
+
         expect(instance).to receive(:update_variable_set)
         updater.update(instance_plan)
       end
@@ -257,7 +263,7 @@ module Bosh::Director
           allow(instance).to receive(:update_instance_settings)
         end
 
-        it 'does NOT drain, stop, post-stop, snapshot, but persists rendered templates to the blobstore and updates DNS' do
+        it 'does NOT drain, stop, post-stop, snapshot, but persists rendered templates to the blobstore, updates DNS and bind links' do
           # https://www.pivotaltracker.com/story/show/121721619
           expect(Api::SnapshotManager).to_not receive(:take_snapshot)
           expect(agent_client).to_not receive(:run_script).with('post-stop', {})
@@ -266,6 +272,7 @@ module Bosh::Director
 
           expect(state_applier).to receive(:apply)
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+          expect(links_manager).to receive(:bind_links_to_instance).with(instance)
 
           subnet_spec = {
             'range' => '10.10.10.0/24',
@@ -319,6 +326,17 @@ module Bosh::Director
 
             expect(state_applier).to receive(:apply)
             expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+
+            updater.update(instance_plan)
+          end
+
+          it 'does not try to bind links to instance' do
+            allow(delete_step).to receive(:perform)
+            allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).and_return delete_step
+            allow(state_applier).to receive(:apply)
+            allow(vm_creator).to receive(:create_for_instance_plan)
+
+            expect(links_manager).to_not receive(:bind_links_to_instance)
 
             updater.update(instance_plan)
           end
@@ -413,12 +431,14 @@ module Bosh::Director
 
     context 'when the VM does not get recreated' do
       let(:disk_manager) { instance_double(DiskManager) }
-      before { allow(DiskManager).to receive(:new).and_return(disk_manager) }
-
       let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
-      before { allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier) }
 
-      it 'updates the instance settings' do
+      before do
+        allow(DiskManager).to receive(:new).and_return(disk_manager)
+        allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
+      end
+
+      it 'updates the instance settings and bind links' do
         allow(instance_plan).to receive(:changes).and_return([:trusted_certs])
         allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
 
@@ -432,6 +452,7 @@ module Bosh::Director
 
         allow(logger).to receive(:debug)
 
+        expect(links_manager).to receive(:bind_links_to_instance).with(instance)
         expect(instance).to receive(:update_instance_settings)
         updater.update(instance_plan)
       end

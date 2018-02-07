@@ -29,6 +29,7 @@ module Bosh::Director
           # instance updater will not do so
           instance_plan.persist_current_spec
           instance_plan.instance.update_variable_set
+          # linksmanager.bind_links_to_instance(instance_plan.instance)
           false
         end
       end

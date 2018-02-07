@@ -171,7 +171,7 @@ module Bosh::Director::Links
       consumers.each do |consumer|
         links[consumer.name] = {}
         consumer.intents.each do |consumer_intent|
-          Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).all.each do |link|
+          consumer_intent.links.each do |link|
             next if link.link_content.nil?
             content = JSON.parse(link.link_content)
             links[consumer.name][consumer_intent.original_name] = content
@@ -180,6 +180,40 @@ module Bosh::Director::Links
       end
 
       links
+    end
+
+    def get_links_for_instance(instance)
+      links = {}
+      consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: instance.deployment_model, instance_group: instance.instance_group_name)
+
+      instance_model = instance.model
+      consumers.each do |consumer|
+        links[consumer.name] = {}
+        consumer.intents.each do |consumer_intent|
+          # next if consumer_intent.blocked
+
+          consumer_intent.links.each do |link|
+            next if link.link_content.nil?
+            content = JSON.parse(link.link_content)
+            links[consumer.name][consumer_intent.original_name] = content
+          end
+        end
+      end
+
+      links
+    end
+
+    def bind_links_to_instance(instance)
+      consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: instance.deployment_model, instance_group: instance.instance_group_name)
+
+      instance_model = instance.model
+      consumers.each do |consumer|
+        consumer.intents.each do |consumer_intent|
+          consumer_intent.links.each do |link|
+            instance_model.add_link(link)
+          end
+        end
+      end
     end
 
     private
@@ -200,48 +234,48 @@ module Bosh::Director::Links
           consumer_intent: consumer_intent,
           link_content: link_content
         ) unless dry_run
-
-        # TODO LINKS: Remove this when we clean up instance group. This was used by the instance_spec class.
-        # instance_group.add_resolved_link(provider_intent.link_provider.name, consumer_intent.original_name, JSON.parse(provider_intent.content))
       else
         consumer = consumer_intent.link_consumer
+        found_provider_intents = []
 
+        current_deployment_name = consumer.deployment.name
         deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
         link_network = consumer_intent_metadata['network']
         is_explicit_link = !!consumer_intent_metadata['explicit_link']
         is_cross_deployment = (consumer.deployment.name != deployment_name)
 
-        if is_cross_deployment
-          deployment = Bosh::Director::Models::Deployment.find(name: deployment_name)
-          raise Bosh::Director::DeploymentNotFound, "Can't find deployment '#{deployment_name}'" if deployment.nil?
-        else
-          deployment = consumer.deployment
-        end
+        unless consumer_intent.blocked
+          if is_cross_deployment
+            deployment = Bosh::Director::Models::Deployment.find(name: deployment_name)
+            raise Bosh::Director::DeploymentNotFound, "Can't find deployment '#{deployment_name}'" if deployment.nil? # TODO LINKS: Maybe we should just collect errors and blow up later.
+          else
+            deployment = consumer.deployment
+          end
 
-        found_provider_intents = []
-        providers = deployment.link_providers
+          providers = deployment.link_providers
 
-        # This is lazy loading
-        providers.each do |provider|
-          provider.intents.each do |provider_intent|
-            next if provider_intent.type != consumer_intent.type
+          # This is lazy loading
+          providers.each do |provider|
+            provider.intents.each do |provider_intent|
+              next if provider_intent.type != consumer_intent.type
 
-            if is_explicit_link
-              next if provider_intent.name != consumer_intent.name
-              next if is_cross_deployment && !provider_intent.shared
+              if is_explicit_link
+                next if provider_intent.name != consumer_intent.name
+                next if is_cross_deployment && !provider_intent.shared
 
-              # Shared providers would already have contents populated.
-              # We are likely within the same deployment if it is empty and just validating.
-              # Let the validation be a bit more loose.
+                # Shared providers would already have contents populated.
+                # We are likely within the same deployment if it is empty and just validating.
+                # Let the validation be a bit more loose.
 
-              # TODO Links: Do not run when dry run is true
-              if !provider_intent.content.nil?
-                provider_intent_networks = JSON.parse(provider_intent.content)['networks']
-                next if link_network && !provider_intent_networks.include?(link_network)
+                # TODO Links: Do not run when dry run is true
+                if !provider_intent.content.nil?
+                  provider_intent_networks = JSON.parse(provider_intent.content)['networks']
+                  next if link_network && !provider_intent_networks.include?(link_network)
+                end
               end
-            end
 
-            found_provider_intents << provider_intent
+              found_provider_intents << provider_intent
+            end
           end
         end
 
@@ -254,7 +288,9 @@ module Bosh::Director::Links
               end
               raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias '#{consumer_intent.name}' found for job '#{consumer_intent.link_consumer.name}' and instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
             else
-              raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' in instance group '#{consumer.instance_group}' on job '#{consumer.name}' in deployment '#{deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
+              if !consumer_intent.optional || !consumer_intent.blocked
+                raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' in instance group '#{consumer.instance_group}' on job '#{consumer.name}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
+              end
             end
           else
             if found_provider_intents.size > 1
@@ -262,10 +298,10 @@ module Bosh::Director::Links
               found_provider_intents.each do |provider_intent|
                 all_link_paths = all_link_paths + "\n   Deployment: #{provider_intent.link_provider.deployment.name}, instance group: #{provider_intent.link_provider[:instance_group]}, job: #{provider_intent.link_provider[:name]}, link name/alias: #{provider_intent[:name]}"
               end
-              raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of type '#{consumer_intent.type}' found for  job '#{consumer_intent.link_consumer.name}' and instance group '#{consumer_intent.link_consumer.instance_group}. All of these match:#{all_link_paths}"
+              raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of type '#{consumer_intent.type}' found for job '#{consumer_intent.link_consumer.name}' and instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
             else
               unless consumer_intent.optional
-                raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link with type '#{consumer_intent.type}' in instance_group '#{consumer_intent.link_consumer.instance_group}' in deployment '#{deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
+                raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link with type '#{consumer_intent.type}' in instance_group '#{consumer_intent.link_consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
               end
             end
           end
@@ -286,9 +322,6 @@ module Bosh::Director::Links
             consumer_intent: consumer_intent,
             link_content: link_content
           ) unless dry_run
-
-          # TODO LINKS: Eventually remove the stored links from instance group and only rely on database. Otherwise this means we are only using the links model for recreates.
-          # instance_group.add_resolved_link(provider_intent.link_provider.name, consumer_intent.original_name, link_spec)
         end
       end
     end

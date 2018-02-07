@@ -158,10 +158,6 @@ module Bosh::Director
 
         consumer_name = spec['name']
 
-        if spec.has_key?('optional')
-          raise JobInvalidLinkSpec, "Link '#{consumer_name}' of type '#{spec['type']}' is a consumes link, not allowed to have 'optional' key"
-        end
-
         if parsed_links[consumer_name]
           raise JobDuplicateLinkName, "Job '#{name}' specifies duplicate consumes link with name '#{consumer_name}'"
         end
