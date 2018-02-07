@@ -8,7 +8,7 @@ describe 'deploy with hotswap', type: :integration do
 
     let(:manifest) do
       manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
-      manifest['update'] = manifest['update'].merge('strategy' => 'hot-swap')
+      manifest['update'] = manifest['update'].merge('strategy' => 'duplicate-and-replace-vm')
       manifest
     end
     let(:network_type) { 'dynamic' }

@@ -1694,12 +1694,11 @@ module Bosh::Director
           end
 
           context 'when provided an instance_group_spec with a strategy' do
-            let(:update) { {'strategy' => 'hot-swap'} }
+            let(:update) { { 'strategy' => 'duplicate-and-replace-vm' } }
 
-            it 'should set the instance_group strategy as hot-swap' do
-              expect(parsed_instance_group.update.strategy).to eq('hot-swap')
+            it 'should set the instance_group strategy as duplicate-and-replace-vm' do
+              expect(parsed_instance_group.update.strategy).to eq('duplicate-and-replace-vm')
             end
-
           end
         end
 

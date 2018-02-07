@@ -107,7 +107,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'properties' => props,
         'template' => %w[foo bar],
         'update' => update,
-        'strategy' => 'hot-swap',
+        'strategy' => 'duplicate-and-replace-vm',
       }
     end
 
@@ -569,15 +569,15 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#hot_swap?' do
-    context 'when strategy is hot-swap' do
+    context 'when strategy is duplicate-and-replace-vm' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'hot-swap'
+        allow(update_config).to receive(:strategy).and_return 'duplicate-and-replace-vm'
       end
 
       it { should be_hot_swap }
     end
 
-    context 'when strategy is not hot-swap' do
+    context 'when strategy is not duplicate-and-replace-vm' do
       before do
         allow(update_config).to receive(:strategy).and_return 'something-else'
       end
@@ -587,9 +587,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#should_hot_swap?' do
-    context 'when strategy is hot-swap' do
+    context 'when strategy is duplicate-and-replace-vm' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'hot-swap'
+        allow(update_config).to receive(:strategy).and_return 'duplicate-and-replace-vm'
         subject.networks = [job_network]
       end
 
@@ -606,7 +606,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
     end
 
-    context 'when strategy is not hot-swap' do
+    context 'when strategy is not duplicate-and-replace-vm' do
       before do
         allow(update_config).to receive(:strategy).and_return 'something-else'
       end

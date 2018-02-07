@@ -1,8 +1,8 @@
 module Bosh::Director
   module DeploymentPlan
     class UpdateConfig
-      STRATEGY_HOT_SWAP = 'hot-swap'.freeze
-      STRATEGY_LEGACY = 'legacy'.freeze
+      STRATEGY_HOT_SWAP = 'duplicate-and-replace-vm'.freeze
+      STRATEGY_LEGACY = 'in-place-replace-vm'.freeze
       ALLOWED_STRATEGY = [STRATEGY_HOT_SWAP, STRATEGY_LEGACY].freeze
 
       include ValidationHelper
