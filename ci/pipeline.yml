@@ -325,6 +325,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
+          trigger: true
         - get: bosh-agent
       - aggregate:
         - task: test-group-1
@@ -372,6 +373,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
+          trigger: true
         - get: bosh-agent
       - aggregate:
         - task: test-group-1
@@ -416,6 +418,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
+          trigger: true
         - get: bosh-agent
       - aggregate:
         - task: test-group-1
@@ -464,6 +467,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
+          trigger: true
         - get: bosh-agent
       - aggregate:
         - task: test-group-1
@@ -545,6 +549,7 @@ jobs:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
+          trigger: true
         - get: bosh-agent
       - aggregate:
         - task: upgrade-with-postgres
