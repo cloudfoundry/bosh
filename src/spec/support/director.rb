@@ -68,10 +68,10 @@ module Bosh::Spec
 
     # wait_for_vm either returns a vm or nil after waiting for X seconds
     # (Do not add default timeout value to be more explicit in tests)
-    def wait_for_vm(job_name, index, timeout_seconds, options = {deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+    def wait_for_vm(instance_group_name, index, timeout_seconds, options = {deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
       start_time = Time.now
       loop do
-        vm = instances(options).detect { |vm| !vm.vm_cid.empty? && vm.job_name == job_name && vm.index == index && vm.last_known_state != 'unresponsive agent' && vm.last_known_state != nil }
+        vm = instances(options).detect { |vm| !vm.vm_cid.empty? && vm.instance_group_name == instance_group_name && vm.index == index && vm.last_known_state != 'unresponsive agent' && vm.last_known_state != nil }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)
@@ -157,7 +157,7 @@ module Bosh::Spec
 
     def kill_vm_and_wait_for_resurrection(vm, options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
       vm.kill_agent
-      resurrected_vm = wait_for_vm(vm.job_name, vm.index, 300, options)
+      resurrected_vm = wait_for_vm(vm.instance_group_name, vm.index, 300, options)
 
       wait_for_resurrection_to_finish
 

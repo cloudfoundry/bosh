@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs
     describe UpdateDeployment do
-      subject(:job) { UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options) }
+      subject(:job) {UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options)}
 
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
@@ -23,9 +23,17 @@ module Bosh::Director
       let(:zone_2) { DeploymentPlan::AvailabilityZone.new('zone_2', {}) }
       let(:logger) { instance_double(Logging::Logger) }
       let(:dns_encoder) { instance_double(DnsEncoder) }
+      let(:resolved_links) { [] }
+      let(:links_manager) do
+        instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+          allow(double).to receive(:get_links_for_instance_group).and_return(resolved_links)
+        end
+      end
+      let(:deployment_name) { 'deployment-name'}
 
       before do
         App.new(config)
+        allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
         allow(job).to receive(:task_id).and_return(task.id)
         allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
       end
@@ -42,7 +50,7 @@ module Bosh::Director
             create_from_manifest: planner,
           )
         end
-        let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: 'dep', manifest: '{}') }
+        let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: deployment_name, manifest: '{}') }
         let(:planner) do
           instance_double(
             DeploymentPlan::Planner,
@@ -269,11 +277,11 @@ module Bosh::Director
 
             before do
               allow(errand_instance_group).to receive(:properties).and_return(errand_properties)
-              allow(errand_instance_group).to receive(:resolved_links).and_return(resolved_links)
+              allow(links_manager).to receive(:get_links_for_instance_group).and_return(resolved_links)
             end
 
             it 'versions the variables in errands' do
-              expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, 'deployment-name', variable_set_1)
+              expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, deployment_name, variable_set_1)
               expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_1_links, variable_set_1)
               expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_2_links, variable_set_1)
 
@@ -563,7 +571,7 @@ Unable to render instance groups for deployment. Errors are:
 
             before do
               allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variable_interpolator)
-              allow(errand_instance_group).to receive(:resolved_links).and_return( {'job_1' => {'link_1' =>{}}} )
+              allow(links_manager).to receive(:get_links_for_instance_group).and_return({'job_1' => {'link_1' =>{}}})
               allow(variable_interpolator).to receive(:interpolate_template_spec_properties).and_raise(errand_properties_error)
               allow(variable_interpolator).to receive(:interpolate_link_spec_properties).and_raise(errand_link_error)
             end

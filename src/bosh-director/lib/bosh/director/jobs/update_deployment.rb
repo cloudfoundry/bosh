@@ -17,6 +17,7 @@ module Bosh::Director
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
+        @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
       end
 
       def dry_run?
@@ -248,7 +249,13 @@ module Bosh::Director
             instance_group_errors.push e
           end
 
-          instance_group_links = instance_group.resolved_links || {}
+          # TODO LINKS: Update interpolation to use links from DB.
+          # Use links manager to get links
+          # instance_group_links = instance_group.resolved_links || {}
+          #
+
+          deployment = Bosh::Director::Models::Deployment.where(name: @deployment_name).first
+          instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
             begin
               variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)

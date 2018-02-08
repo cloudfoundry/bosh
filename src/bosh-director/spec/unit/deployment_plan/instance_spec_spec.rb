@@ -229,7 +229,7 @@ module Bosh::Director::DeploymentPlan
           .with(smurf_job_links, instance.desired_variable_set)
           .and_return(smurf_job_links)
 
-        expect(links_manager).to receive(:get_links_for_instance).and_return(links)
+        expect(links_manager).to receive(:get_links_for_instance_group).and_return(links)
       end
 
       context 'links specs whitelisting' do

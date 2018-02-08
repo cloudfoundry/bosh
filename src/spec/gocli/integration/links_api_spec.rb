@@ -101,7 +101,7 @@ describe 'links api', type: :integration do
       },
       'owner_object' => {
         'name' => 'foobar',
-        'type' => 'instance_group',
+        'type' => 'disk',
         'info' => {
           'instance_group' => 'foobar',
         }

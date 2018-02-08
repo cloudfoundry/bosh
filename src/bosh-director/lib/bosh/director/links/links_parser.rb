@@ -148,7 +148,8 @@ module Bosh::Director::Links
                 if from_deployment
                   metadata[:from_deployment] = manifest_source['deployment']
                 else
-                  raise "Link '#{consumed_link_original_name}' in job '#{job_name}' from instance group '#{instance_group_name}' consumes from deployment '#{manifest_source['deployment']}', but the deployment does not exist."
+                  errors.push("Link '#{consumed_link_original_name}' in job '#{job_name}' from instance group '#{instance_group_name}' consumes from deployment '#{manifest_source['deployment']}', but the deployment does not exist.")
+                  next
                 end
               end
             end

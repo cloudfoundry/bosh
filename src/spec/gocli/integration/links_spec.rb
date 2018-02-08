@@ -353,7 +353,7 @@ describe 'Links', type: :integration do
         it 'throws an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
-          expect(out).to include("Error: Can't resolve link 'backup_db' in instance group 'my_api' on job 'api_server_with_optional_links_1' in deployment 'simple'")
+          expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Can't resolve link 'backup_db' in instance group 'my_api' on job 'api_server_with_optional_links_1' in deployment 'simple'")
         end
       end
 
@@ -520,7 +520,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
-Error: Multiple providers of type 'db' found for job 'api_server_with_optional_db_link' and instance group 'optional_db'. All of these match:
+Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Multiple providers of type 'db' found for job 'api_server_with_optional_db_link' and instance group 'optional_db'. All of these match:
    Deployment: simple, instance group: mysql, job: database, link name/alias: db
    Deployment: simple, instance group: postgres, job: backup_database, link name/alias: backup_db
           EOF
@@ -1073,29 +1073,50 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
         manifest
       end
 
+      let(:api_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'my_api',
+          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          instances: 1
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
       let(:new_api_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
-            name: 'new_api_job',
-            jobs: [{'name' => 'api_server', 'consumes' => links}],
-            instances: 1,
-            migrated_from: ['name' => 'my_api']
+          name: 'new_api_job',
+          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          instances: 1,
+          migrated_from: ['name' => 'my_api']
         )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:aliased_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'aliased_postgres',
+          jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+          instances: 1,
+          )
         spec['azs'] = ['z1']
         spec
       end
 
       let(:new_aliased_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
-            name: 'new_aliased_job',
-            jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
-            instances: 1,
-            migrated_from: ['name' => 'aliased_postgres']
+          name: 'new_aliased_job',
+          jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+          instances: 1,
+          migrated_from: ['name' => 'aliased_postgres']
         )
         spec['azs'] = ['z1']
         spec
       end
 
       it 'deploys migrated_from jobs' do
+        # TODO LINKS: This should pass once we isolate reading objects created by current deploy only.
         deploy_simple_manifest(manifest_hash: manifest)
         manifest['instance_groups'] = [new_api_instance_group_spec, new_aliased_instance_group_spec]
         deploy_simple_manifest(manifest_hash: manifest)
@@ -1157,6 +1178,35 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
           'node1' => {'from' => 'broken', 'deployment' => 'broken'},
           'node2' => {'from' =>'blah', 'deployment' => 'other'}
         }
+      end
+
+      context 'when validation of link resolution fails' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['instance_groups'] = [first_consumer_instance, first_provider_instance]
+          manifest
+        end
+
+        let(:first_consumer_instance) do
+          Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'first_consumer',
+            jobs: [{'name' => 'node', 'consumes' => consume_links}],
+            instances: 1,
+            static_ips: ['192.168.1.10'],
+            azs: ['z1']
+          )
+        end
+
+        let(:consume_links) do
+          {
+            'node1' => {'from' => 'alias1'},
+            'node2' => {'from' => 'alias2'}
+          }
+        end
+
+        it 'should raise an error listing all issues before updating vms' do
+          # TODO LINKS: Make this a test for ambiguous providers
+        end
       end
 
       context 'when parsing fails' do
@@ -1351,10 +1401,10 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
            }.to raise_error(
              RuntimeError,
              Regexp.new(
-               "Can't resolve link 'node1' in instance group "\
-               "'second_deployment_node' on job 'node' in deployment 'second' and "\
-               "network 'invalid-network'\. Please make sure the link was provided "\
-               'and shared\.',
+               "Failed to resolve links from deployment 'second'. See errors below:\n" \
+               "  - Can't resolve link 'node1' in instance group "\
+               "'second_deployment_node' on job 'node' in deployment 'second' with "\
+               "network 'invalid-network'",
              ),
            )
          end
@@ -1379,10 +1429,10 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
              }.to raise_error(
                RuntimeError,
                Regexp.new(
-                 "Can't resolve link 'node1' in instance group "\
-                 "'second_deployment_node' on job 'node' in deployment 'second' and "\
-                 "network 'invalid-network'\. Please make sure the link was provided "\
-                 'and shared\.',
+                 "Failed to resolve links from deployment 'second'. See errors below:\n" \
+                 "  - Can't resolve link 'node1' in instance group "\
+                 "'second_deployment_node' on job 'node' in deployment 'second' with "\
+                 "network 'invalid-network'",
                ),
              )
            end
@@ -1401,7 +1451,7 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
 
          expect {
            deploy_simple_manifest(manifest_hash: second_manifest)
-         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second'. Please make sure the link was provided and shared\./)
+         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second'/)
        end
      end
 
@@ -1449,7 +1499,7 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
               'backup_db' => {'from' => 'backup_db', 'network' => 'a'}
           }
 
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' and network 'invalid_network'./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' with network 'invalid_network'/)
         end
 
         it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
@@ -1465,7 +1515,7 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
           }
 
           upload_cloud_config(cloud_config_hash: cloud_config)
-          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' and network 'global_network'./)
+          expect{deploy_simple_manifest(manifest_hash: manifest)}.to raise_error(RuntimeError, /Can't resolve link 'db' in instance group 'my_api' on job 'api_server' in deployment 'simple' with network 'global_network'/)
         end
 
         context 'user has duplicate implicit links provided in two jobs over separate networks' do
@@ -2089,7 +2139,8 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
         it 'should fail to create the link' do
           bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
           output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
-          expect(output).to include(%Q{Error: Cannot resolve link path 'minimal.provider_ig.provider_job.provider_login' required for link 'login' in instance group 'consumer_ig' on job 'consumer_job'})
+          expect(output).to include("Error: Failed to resolve links from deployment 'minimal'. See errors below:\n" \
+          "  - Can't resolve link 'provider_login' in instance group 'consumer_ig' on job 'consumer_job' in deployment 'minimal'")
         end
 
         context 'and the link is shared from another deployment' do
@@ -2286,6 +2337,7 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
     end
 
     it 'should show all errors' do
+      # Will be fixed with story #154604546
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
       manifest['releases'][0]['version'] = '0+dev.1'
       manifest['instance_groups'] = [bad_properties_instance_group_spec]
@@ -2293,7 +2345,7 @@ Error: Multiple providers of type 'db' found for job 'api_server_with_optional_d
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include('Error: Unable to process links for deployment. Errors are:')
+      expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
       expect(out).to include("- Can't find link with type 'bad_link' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
       expect(out).to include("- Can't find link with type 'bad_link_2' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
       expect(out).to include("- Can't find link with type 'bad_link_3' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")

@@ -156,10 +156,22 @@ module Bosh::Director::Links
       links_consumers = deployment_model.link_consumers
       return if links_consumers.empty?
 
+      errors = []
+
       links_consumers.each do |consumer|
         consumer.intents.each do |consumer_intent|
-          resolve_consumer_intent(consumer_intent, global_use_dns_entry, dry_run)
+          begin
+            resolve_consumer_intent(consumer_intent, global_use_dns_entry, dry_run)
+          rescue => e
+            errors.push e.message
+          end
         end
+      end
+
+      unless errors.empty?
+        message = "Failed to resolve links from deployment '#{deployment_model.name}'. See errors below:\n  - "
+        message += errors.join("\n  - ")
+        raise message
       end
     end
 
@@ -182,11 +194,10 @@ module Bosh::Director::Links
       links
     end
 
-    def get_links_for_instance(instance)
+    def get_links_for_instance_group(deployment_model, instance_group_name)
       links = {}
-      consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: instance.deployment_model, instance_group: instance.instance_group_name)
+      consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment_model, instance_group: instance_group_name)
 
-      instance_model = instance.model
       consumers.each do |consumer|
         links[consumer.name] = {}
         consumer.intents.each do |consumer_intent|
