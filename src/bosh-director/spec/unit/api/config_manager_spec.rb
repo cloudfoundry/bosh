@@ -9,9 +9,9 @@ describe Bosh::Director::Api::ConfigManager do
     let(:valid_yaml) { YAML.dump("---\n{key: value") }
 
     it 'saves the config' do
-      expect {
+      expect do
         manager.create(type, name, valid_yaml)
-      }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+      end.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
       config = Bosh::Director::Models::Config.first
       expect(config.created_at).to_not be_nil
@@ -30,7 +30,7 @@ describe Bosh::Director::Api::ConfigManager do
       Bosh::Director::Models::Config.make(type: '3total-2names', name: 'a', content: '7')
     end
 
-    context "when limit is greater one" do
+    context 'when limit is greater one' do
       before do
         Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '9')
         Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '10')
@@ -62,19 +62,19 @@ describe Bosh::Director::Api::ConfigManager do
         it 'sorts type -> name `default` first -> name -> id' do
           configs = manager.find(limit: 3)
 
-          filtered_configs = configs.map(&:values).map{|e| e.select {|k,_| k == :name || k == :type || k == :content} }
+          filtered_configs = configs.map(&:values).map { |e| e.select { |k, _| k == :name || k == :type || k == :content } }
           expect(filtered_configs).to eq([
-            {:name=> 'a', :type=> '3total-1name', :content => '11'},
-            {:name=> 'a', :type=> '3total-1name', :content => '10'},
-            {:name=> 'a', :type=> '3total-1name', :content => '9'},
-            {:name=> 'default', :type=> '3total-2names', :content => '3'},
-            {:name=> 'a', :type=> '3total-2names', :content => '7'},
-            {:name=> 'a', :type=> '3total-2names', :content => '6'},
-            {:name=> 'default', :type=> '4total-4names', :content => '4'},
-            {:name=> 'a', :type=> '4total-4names', :content => '5'},
-            {:name=> 'b', :type=> '4total-4names', :content => '1'},
-            {:name=> 'e', :type=> '4total-4names', :content => '2'},
-          ])
+                                           { type: '3total-1name', name: 'a', content: '11' },
+                                           { type: '3total-1name', name: 'a', content: '10' },
+                                           { type: '3total-1name', name: 'a', content: '9' },
+                                           { type: '3total-2names', name: 'default', content: '3' },
+                                           { type: '3total-2names', name: 'a', content: '7' },
+                                           { type: '3total-2names', name: 'a', content: '6' },
+                                           { type: '4total-4names', name: 'default', content: '4' },
+                                           { type: '4total-4names', name: 'a', content: '5' },
+                                           { type: '4total-4names', name: 'b', content: '1' },
+                                           { type: '4total-4names', name: 'e', content: '2' },
+                                         ])
         end
       end
 
@@ -101,13 +101,13 @@ describe Bosh::Director::Api::ConfigManager do
       end
     end
 
-    context "when limit is one" do
+    context 'when limit is one' do
       context 'when no filtering' do
         it 'returns the latest config for each type/name combination' do
           configs = manager.find
           expect(configs.count).to eq(6)
 
-          [0,1,2,3,4,6].each do |val|
+          [0, 1, 2, 3, 4, 6].each do |val|
             expect(configs).to include(Bosh::Director::Models::Config.all[val])
           end
         end
@@ -157,9 +157,9 @@ describe Bosh::Director::Api::ConfigManager do
 
     context 'when config is missing' do
       it 'raises ConfigNotFound' do
-        expect {
+        expect do
           manager.find_by_id(124)
-        }.to raise_error(Bosh::Director::ConfigNotFound, 'Config 124 not found')
+        end.to raise_error(Bosh::Director::ConfigNotFound, 'Config 124 not found')
       end
     end
   end
@@ -199,7 +199,7 @@ describe Bosh::Director::Api::ConfigManager do
         expect(configs.first.deleted).to eq(false)
       end
 
-      it "does not delete a deleted config again" do
+      it 'does not delete a deleted config again' do
         Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name', deleted: true)
         Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name')
 
