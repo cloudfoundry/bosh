@@ -451,7 +451,8 @@ module Bosh::Director
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-            expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+            expect(JSON.parse(last_response.body)['description'])
+              .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
           end
 
           context 'when any of the given `id` values is not a string containing an integer' do
@@ -464,7 +465,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description'])
+                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
 
               post(
                 '/diff',
@@ -474,7 +476,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description'])
+                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
             end
           end
 
@@ -484,7 +487,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description'])
+                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
             end
           end
         end
@@ -550,7 +554,15 @@ module Bosh::Director
                   'CONTENT_TYPE' => 'application/json',
                 )
                 expect(last_response.status).to eq(200)
-                expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  properties:","removed"],["    some-key: \"<redacted>\"","removed"]]}')
+                json_response = JSON.parse(last_response.body)
+                expect(json_response).to eq(
+                  'diff' => [
+                    ['azs:', nil],
+                    ['- name: az2', 'removed'],
+                    ['  properties:', 'removed'],
+                    ['    some-key: "<redacted>"', 'removed'],
+                  ],
+                )
               end
             end
 
@@ -592,7 +604,7 @@ module Bosh::Director
                 post '/diff', new_config, 'CONTENT_TYPE' => 'application/json'
 
                 expect(last_response.status).to eq(400)
-                expect(JSON.parse(last_response.body)['error']).to eq('YAML hash expected')
+                expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
               end
             end
           end
@@ -633,40 +645,102 @@ module Bosh::Director
         end
 
         context 'when diffing two versions by id' do
-          before do
-            @first = Models::Config.create(
-              type: 'myType',
-              name: 'myName',
+          let(:dev_team) { Models::Team.create(name: 'dev') }
+          let(:dev_team_config) do
+            Models::Config.create(
+              type: 'custom',
+              name: 'dev-team',
               raw_manifest: { 'a' => 5 },
+              team_id: dev_team.id,
             )
-            @second = Models::Config.create(
-              type: 'myType',
-              name: 'myName',
+          end
+
+          let(:other_team) { Models::Team.create(name: 'other') }
+          let(:other_team_config) do
+            Models::Config.create(
+              type: 'custom',
+              name: 'other-team',
               raw_manifest: { 'b' => 5 },
+              team_id: other_team.id,
             )
           end
 
           it 'returns the diff' do
             post(
               '/diff',
-              JSON.dump(from: { id: @first.id.to_s }, to: { id: @second.id.to_s }),
+              JSON.dump(from: { id: dev_team_config.id.to_s }, to: { id: other_team_config.id.to_s }),
               'CONTENT_TYPE' => 'application/json',
             )
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
           end
 
+          context "when referencing another team's config" do
+            context 'without a team-specific user' do
+              before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+              it 'should return an error when the old config is unauthorized' do
+                post(
+                  '/diff',
+                  JSON.dump(from: { id: other_team_config.id.to_s }, to: { id: dev_team_config.id.to_s }),
+                  'CONTENT_TYPE' => 'application/json',
+                )
+                expect(last_response.status).to eq(401)
+                json_response = JSON.parse(last_response.body)
+                expect(json_response['code']).to eq(600_000)
+                expect(json_response['description'])
+                  .to eq('Require one of the scopes: bosh.admin, bosh..admin, bosh.teams.other.admin')
+              end
+
+              it 'should return an error when the new config is unauthorized' do
+                post(
+                  '/diff',
+                  JSON.dump(from: { id: dev_team_config.id.to_s }, to: { id: other_team_config.id.to_s }),
+                  'CONTENT_TYPE' => 'application/json',
+                )
+                expect(last_response.status).to eq(401)
+                json_response = JSON.parse(last_response.body)
+                expect(json_response['code']).to eq(600_000)
+                expect(json_response['description'])
+                  .to eq('Require one of the scopes: bosh.admin, bosh..admin, bosh.teams.other.admin')
+              end
+
+              let(:new_config) do
+                JSON.generate(
+                  'type' => other_team_config.type,
+                  'name' => other_team_config.name,
+                  'content' => YAML.dump(other_team_config.raw_manifest),
+                )
+              end
+
+              it 'should return an error when the config is unauthorized and we post data to diff' do
+                post(
+                  '/diff',
+                  new_config,
+                  'CONTENT_TYPE' => 'application/json',
+                )
+
+                expect(last_response.status).to eq(401)
+
+                json_response = JSON.parse(last_response.body)
+                expect(json_response['code']).to eq(600_000)
+                expect(json_response['description'])
+                  .to eq('Require one of the scopes: bosh.admin, bosh..admin, bosh.teams.other.admin')
+              end
+            end
+          end
+
           context 'when config with given "id" does not exist' do
             it 'returns 404 with error details' do
               post(
                 '/diff',
-                JSON.dump(from: { id: '5' }, to: { id: @second.id.to_s }),
+                JSON.dump(from: { id: '5' }, to: { id: other_team.id.to_s }),
                 'CONTENT_TYPE' => 'application/json',
               )
 
               expect(last_response.status).to eq(404)
               expect(JSON.parse(last_response.body)['code']).to eq(440_012)
-              expect(JSON.parse(last_response.body)['description']).to eq("Config with ID '5' not found.")
+              expect(JSON.parse(last_response.body)['description']).to eq('Config 5 not found')
             end
           end
         end
