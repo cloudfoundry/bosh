@@ -160,7 +160,7 @@ describe 'cli runtime config', type: :integration do
     configs = output['Tables'].first['Rows']
 
     expect(configs.count).to eq 1
-    expect(configs.first).to eq('name' => 'default', 'type' => 'runtime', 'team' => '')
+    expect(configs.first).to include('name' => 'default', 'type' => 'runtime', 'team' => '')
   end
 
   it 'shows no diff when uploading same unnamed runtime config as with generic config command' do
