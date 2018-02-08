@@ -2,11 +2,12 @@ require 'spec_helper'
 
 describe Bosh::Director::Api::ConfigManager do
   subject(:manager) { Bosh::Director::Api::ConfigManager.new }
-  let(:valid_yaml) { YAML.dump("---\n{key: value") }
-  let(:type) { 'my-type' }
-  let(:name) { 'some-name' }
 
   describe '#create' do
+    let(:type) { 'my-type' }
+    let(:name) { 'some-name' }
+    let(:valid_yaml) { YAML.dump("---\n{key: value") }
+
     it 'saves the config' do
       expect {
         manager.create(type, name, valid_yaml)
@@ -20,70 +21,90 @@ describe Bosh::Director::Api::ConfigManager do
 
   describe '#find' do
     before do
-
-      Bosh::Director::Models::Config.make(type: 'my-type', name: 'b', content: '1')
-      Bosh::Director::Models::Config.make(type: 'my-type', name: 'e', content: '2')
-      Bosh::Director::Models::Config.make(type: 'new-type', name: 'default', content: '3')
-      Bosh::Director::Models::Config.make(type: 'my-type', name: 'default', content: '4')
-      Bosh::Director::Models::Config.make(type: 'my-type', name: 'a', content: '5')
-      Bosh::Director::Models::Config.make(type: 'new-type', name: 'a', content: '6')
-      Bosh::Director::Models::Config.make(type: 'new-type', name: 'a', content: '7')
+      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'b', content: '1')
+      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'e', content: '2')
+      Bosh::Director::Models::Config.make(type: '3total-2names', name: 'default', content: '3')
+      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'default', content: '4')
+      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'a', content: '5')
+      Bosh::Director::Models::Config.make(type: '3total-2names', name: 'a', content: '6')
+      Bosh::Director::Models::Config.make(type: '3total-2names', name: 'a', content: '7')
     end
 
-    context "when 'latest' is anything but string 'true'" do
+    context "when limit is greater one" do
+      before do
+        Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '9')
+        Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '10')
+        Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '11')
+      end
+
       context 'when no filtering' do
         it 'returns all configs including outdated ones' do
-          configs = manager.find
-          expect(configs.count).to eq(7)
+          configs = manager.find(limit: 999)
+          expect(configs.count).to eq(10)
           (0..6).each do |val|
             expect(configs).to include(Bosh::Director::Models::Config.all[val])
           end
         end
 
+        it 'returns only `limit` amount per combination' do
+          configs = manager.find(limit: 2)
+
+          groups = configs.select { |config| config.type == '4total-4names' }
+          expect(groups.count).to eq(4)
+          groups = configs.select { |config| config.name == 'default' && config.type == '3total-2names' }
+          expect(groups.count).to eq(1)
+          groups = configs.select { |config| config.name == 'a' && config.type == '3total-2names' }
+          expect(groups.count).to eq(2)
+          groups = configs.select { |config| config.type == '3total-1name' }
+          expect(groups.count).to eq(2)
+        end
+
         it 'sorts type -> name `default` first -> name -> id' do
+          configs = manager.find(limit: 3)
 
-          configs = manager.find
           filtered_configs = configs.map(&:values).map{|e| e.select {|k,_| k == :name || k == :type || k == :content} }
-
           expect(filtered_configs).to eq([
-            {:name=> 'default', :type=> 'my-type', :content => '4'},
-            {:name=> 'a', :type=> 'my-type', :content => '5'},
-            {:name=> 'b', :type=> 'my-type', :content => '1'},
-            {:name=> 'e', :type=> 'my-type', :content => '2'},
-            {:name=> 'default', :type=> 'new-type', :content => '3'},
-            {:name=> 'a', :type=> 'new-type', :content => '7'},
-            {:name=> 'a', :type=> 'new-type', :content => '6'}
+            {:name=> 'a', :type=> '3total-1name', :content => '11'},
+            {:name=> 'a', :type=> '3total-1name', :content => '10'},
+            {:name=> 'a', :type=> '3total-1name', :content => '9'},
+            {:name=> 'default', :type=> '3total-2names', :content => '3'},
+            {:name=> 'a', :type=> '3total-2names', :content => '7'},
+            {:name=> 'a', :type=> '3total-2names', :content => '6'},
+            {:name=> 'default', :type=> '4total-4names', :content => '4'},
+            {:name=> 'a', :type=> '4total-4names', :content => '5'},
+            {:name=> 'b', :type=> '4total-4names', :content => '1'},
+            {:name=> 'e', :type=> '4total-4names', :content => '2'},
           ])
         end
       end
 
       context 'when filtering' do
         it 'returns only the elements with the given type' do
-          configs = manager.find(type: 'my-type')
+          configs = manager.find(type: '4total-4names', limit: 999)
           expect(configs.count).to eq(4)
         end
 
         it 'returns only the elements with the given name' do
-          configs = manager.find(name: 'a')
-          expect(configs.count).to eq(3)
+          configs = manager.find(name: 'a', limit: 999)
+          expect(configs.count).to eq(6)
         end
 
         it 'returns only the elements matching type and name' do
-          configs = manager.find(name: 'a', type: 'new-type')
+          configs = manager.find(name: 'a', type: '3total-2names', limit: 999)
           expect(configs.count).to eq(2)
         end
 
         it 'returns no elements with no matches' do
-          configs = manager.find(type: 'foo', name: 'bar')
+          configs = manager.find(type: 'foo', name: 'bar', limit: 999)
           expect(configs.count).to eq(0)
         end
       end
     end
 
-    context "when 'latest' is string 'true'" do
+    context "when limit is one" do
       context 'when no filtering' do
         it 'returns the latest config for each type/name combination' do
-          configs = manager.find(latest: 'true')
+          configs = manager.find
           expect(configs.count).to eq(6)
 
           [0,1,2,3,4,6].each do |val|
@@ -94,31 +115,31 @@ describe Bosh::Director::Api::ConfigManager do
 
       context 'when filtering' do
         it 'returns only the elements with the given type' do
-          configs = manager.find(type: 'my-type', latest: 'true')
+          configs = manager.find(type: '4total-4names')
           expect(configs.count).to eq(4)
         end
 
         it 'returns only the elements with the given name' do
-          configs = manager.find(name: 'a', latest: 'true')
+          configs = manager.find(name: 'a')
           expect(configs.count).to eq(2)
         end
 
         it 'returns only the elements matching type and name' do
-          configs = manager.find(name: 'a', type: 'new-type', latest: 'true')
+          configs = manager.find(name: 'a', type: '3total-2names')
           expect(configs.count).to eq(1)
         end
 
         it 'returns no elements with no matches' do
-          configs = manager.find(type: 'foo', name: 'bar', latest: 'true')
+          configs = manager.find(type: 'foo', name: 'bar')
           expect(configs.count).to eq(0)
         end
       end
 
       context 'when configs have been deleted' do
         it 'returns only not deleted configs' do
-          Bosh::Director::Models::Config.make(type: 'my-type', name: 'a', deleted: true)
+          Bosh::Director::Models::Config.make(type: '4total-4names', name: 'a', deleted: true)
 
-          configs = manager.find(type: 'my-type', name: 'a')
+          configs = manager.find(type: '4total-4names', name: 'a', limit: 999)
 
           expect(configs.count).to eq(1)
         end
@@ -127,7 +148,7 @@ describe Bosh::Director::Api::ConfigManager do
   end
 
   describe '#find_by_Id' do
-    let!(:config) { Bosh::Director::Models::Config.make(id: 123, type: 'my-type', name: 'b', content: '1') }
+    let!(:config) { Bosh::Director::Models::Config.make(id: 123, type: '4total-4names', name: 'b', content: '1') }
 
     it 'returns config with specified id' do
       result = manager.find_by_id(123)

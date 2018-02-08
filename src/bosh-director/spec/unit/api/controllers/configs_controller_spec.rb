@@ -39,7 +39,7 @@ module Bosh::Director
             created_at: Time.now - 1.days,
           )
 
-          get '/?&latest=true'
+          get '/?&limit=1'
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-other-yaml'))
@@ -65,7 +65,7 @@ module Bosh::Director
               created_at: Time.now - 1.days,
             )
 
-            get '/?type=my-type&name=my-config&latest=true'
+            get '/?type=my-type&name=my-config&limit=1'
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body).count).to eq(1)
             expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
@@ -89,7 +89,7 @@ module Bosh::Director
             created_at: Time.now - 1.days,
           )
 
-          get '/?type=my-type&latest=true'
+          get '/?type=my-type&limit=1'
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
@@ -97,7 +97,7 @@ module Bosh::Director
 
         context 'when no records match the filters' do
           it 'returns empty' do
-            get '/?type=my-type&name=notExisting&latest=true'
+            get '/?type=my-type&name=notExisting&limit=1'
 
             expect(last_response.status).to eq(200)
 
@@ -109,50 +109,54 @@ module Bosh::Director
 
         context 'when no type is given' do
           it 'does not filter by type' do
-            Models::Config.make(
-              content: 'some-other-yaml',
-              created_at: Time.now - 2.days,
-            )
+            Models::Config.make(content: 'some-other-yaml')
 
             newest_config = 'new_config'
-            Models::Config.make(
-              content: newest_config,
-              created_at: Time.now - 1.days,
-            )
+            Models::Config.make(content: newest_config)
 
-            get '/?latest=true'
+            get '/?limit=1'
 
             expect(JSON.parse(last_response.body).count).to eq(1)
             expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
           end
         end
 
-        context 'when no latest param is given' do
-          it 'return 400' do
+        context 'when no limit param is given' do
+          it 'defaults to 1' do
+            Models::Config.make
+            Models::Config.make(content: 'newest_config')
             get '/?type=my-type&name=some-name'
 
-            expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-            expect(JSON.parse(last_response.body)['description']).to eq("'latest' is required")
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body).count).to eq(1)
+            expect(JSON.parse(last_response.body).first['content']).to eq('newest_config')
           end
         end
 
-        context 'when latest param is given and has wrong value' do
+        context 'when limit param is given and has wrong value' do
           it 'return 400' do
-            get '/?type=my-type&name=some-name&latest=foo'
+            get '/?type=my-type&name=some-name&limit=foo'
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(40_005)
-            expect(JSON.parse(last_response.body)['description']).to eq("'latest' must be 'true' or 'false'")
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be a number")
+          end
+
+          it 'return 400 for zero' do
+            get '/?limit=0'
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be larger than zero")
           end
         end
 
-        context 'when latest is false' do
+        context 'when limit is greater one' do
           it 'returns the history of all matching configs' do
             config1 = Models::Config.make
             Models::Config.make
 
-            get '/?type=my-type&latest=false'
+            get '/?type=my-type&limit=2'
 
             expect(last_response.status).to eq(200)
 
@@ -190,7 +194,7 @@ module Bosh::Director
 
           config = Bosh::Director::Models::Config.first
           expect(JSON.parse(last_response.body)).to eq(
-            'id' => Bosh::Director::Models::Config.first.id.to_s,
+            'id' => config.id.to_s,
             'type' => 'my-type',
             'name' => 'my-name',
             'content' => 'a: 1',
@@ -351,7 +355,7 @@ module Bosh::Director
             it 'deletes the config' do
               expect(delete('/?type=my-type&name=my-name').status).to eq(204)
 
-              configs = JSON.parse(get('/?type=my-type&name=my-name&latest=false').body)
+              configs = JSON.parse(get('/?type=my-type&name=my-name&limit=10').body)
 
               expect(configs.count).to eq(0)
             end
@@ -917,6 +921,54 @@ module Bosh::Director
           expect(JSON.parse(last_response.body).count).to eq(2)
           expect(JSON.parse(last_response.body).first['team']).to eq('dev')
           expect(JSON.parse(last_response.body)[1]['team']).to eq('other')
+        end
+      end
+    end
+
+    describe 'id' do
+      let!(:config_example) { Bosh::Director::Models::Config.make(id: 123, type: 'my-type', name: 'default', content: '1') }
+
+      context 'with authenticated admin user' do
+        before(:each) do
+          authorize('admin', 'admin')
+        end
+
+        it 'it returns the specified config' do
+          get('/123')
+
+          expect(last_response.status).to eq(200)
+          expect(JSON.parse(last_response.body)).to eq({'id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1', 'created_at' => config_example.created_at.to_s, 'teams' => []})
+        end
+
+        context 'when no config is found' do
+          it 'returns a 404' do
+            get('/999')
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+
+        context 'when `id` is not a string containing an integer' do
+          it 'returns a 404' do
+            get('/invalid-id')
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+      end
+
+      context 'without an authenticated user' do
+        it 'denies access' do
+          response = get('/my-fake-id')
+          expect(response.status).to eq(401)
+        end
+      end
+
+      context 'when user is reader' do
+        before { basic_authorize('reader', 'reader') }
+
+        it 'permits access' do
+          expect(get('/123').status).to eq(200)
         end
       end
     end

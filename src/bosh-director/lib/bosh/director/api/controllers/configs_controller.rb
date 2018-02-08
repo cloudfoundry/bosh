@@ -4,22 +4,23 @@ module Bosh::Director
   module Api::Controllers
     class ConfigsController < BaseController
       get '/:id', scope: :read do
-        id = params[:id].to_i
-        return status(404) if params[:id] != id.to_s
-        config = Bosh::Director::Api::ConfigManager.new.find_by_id(id)
+        return status(404) unless integer?(params['id'])
+
+        config = Bosh::Director::Api::ConfigManager.new.find_by_id(params['id'])
         status(200)
         json_encode(sql_to_hash(config))
       end
 
       get '/', scope: :list_configs do
-        check(params, 'latest')
-
-        raise ValidationInvalidValue, "'latest' must be 'true' or 'false'" unless %w[true false].include?(params['latest'])
+        params['limit'] ||= '1'
+        raise BadConfigRequest, "'limit' must be a number" unless integer?(params['limit'])
+        limit = params['limit'].to_i
+        raise BadConfigRequest, "'limit' must be larger than zero" if limit < 1
 
         configs = Bosh::Director::Api::ConfigManager.new.find(
           type: params['type'],
           name: params['name'],
-          latest: params['latest'],
+          limit: limit,
         ).select { |config| @permission_authorizer.is_granted?(config, :read, token_scopes) }
 
         json_encode(configs.map { |config| sql_to_hash(config) })
@@ -34,7 +35,7 @@ module Bosh::Director
           config = Bosh::Director::Api::ConfigManager.new.find(
             type: config_hash['type'],
             name: config_hash['name'],
-            latest: true,
+            limit: 1,
           ).first
 
           @permission_authorizer.granted_or_raise(config, :admin, token_scopes) unless config.nil?
@@ -78,7 +79,7 @@ module Bosh::Director
         latest_configs = config_manager.find(
           type: params['type'],
           name: params['name'],
-          latest: true,
+          limit: 1,
         )
 
         config = latest_configs.first
@@ -125,6 +126,11 @@ module Bosh::Director
         raise BadConfigRequest, "'#{name}' is required" if param[name].nil? || param[name].empty?
       end
 
+      def integer?(param)
+        return true if param == param.to_i.to_s
+        false
+      end
+
       def check_name_and_type(manifest, name, type)
         check(manifest, name)
         raise BadConfigRequest, "'#{name}' must be a #{type.to_s.downcase}" unless manifest[name].is_a?(type)
@@ -165,7 +171,7 @@ module Bosh::Director
           old_config = Bosh::Director::Api::ConfigManager.new.find(
             type: config_request['type'],
             name: config_request['name'],
-            latest: true,
+            limit: 1,
           ).first
 
           old_config_hash = Hash(old_config&.raw_manifest)
