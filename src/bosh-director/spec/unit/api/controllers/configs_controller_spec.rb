@@ -937,7 +937,7 @@ module Bosh::Director
           get('/123')
 
           expect(last_response.status).to eq(200)
-          expect(JSON.parse(last_response.body)).to eq({'id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1', 'created_at' => config_example.created_at.to_s, 'teams' => []})
+          expect(JSON.parse(last_response.body)).to eq('id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1', 'created_at' => config_example.created_at.to_s, 'team' => nil)
         end
 
         context 'when no config is found' do
