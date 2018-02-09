@@ -1,10 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::Director::Links::LinksManager do
-  subject {Bosh::Director::Links::LinksManager.new(logger)}
+  subject {Bosh::Director::Links::LinksManager.new(logger, event_logger)}
 
   let(:logger) {Logging::Logger.new('TestLogger')}
-  # let(:event_logger) {Bosh::Director::EventLog::Log.new}
+  let(:event_logger) {Bosh::Director::EventLog::Log.new}
 
   let(:deployment_model) do
     Bosh::Director::Models::Deployment.create(

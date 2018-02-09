@@ -4,9 +4,10 @@ module Bosh::Director::Links
   class LinksManager
     include Bosh::Director::IpUtil
 
-    def initialize(logger)
+    def initialize(logger, event_logger)
       # @context_id = SecureRandom.uuid
       @logger = logger
+      @event_logger = event_logger
     end
 
     def find_or_create_provider(
@@ -253,9 +254,9 @@ module Bosh::Director::Links
         deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
         link_network = consumer_intent_metadata['network']
         is_explicit_link = !!consumer_intent_metadata['explicit_link']
-        is_cross_deployment = (consumer.deployment.name != deployment_name)
 
         unless consumer_intent.blocked
+          is_cross_deployment = (consumer.deployment.name != deployment_name)
           if is_cross_deployment
             deployment = Bosh::Director::Models::Deployment.find(name: deployment_name)
             raise Bosh::Director::DeploymentNotFound, "Can't find deployment '#{deployment_name}'" if deployment.nil? # TODO LINKS: Maybe we should just collect errors and blow up later.
@@ -409,12 +410,11 @@ module Bosh::Director::Links
       if dns_required && ip_address?(address)
         message = "DNS address not available for the link provider instance: #{instance_name}/#{instance_id}"
         @logger.warn(message)
-        # TODO LINKS: Add event logger?
-        # @event_logger.warn(message)
+        @event_logger.warn(message)
       elsif !dns_required && !ip_address?(address)
         message = "IP address not available for the link provider instance: #{instance_name}/#{instance_id}"
         @logger.warn(message)
-        # @event_logger.warn(message)
+        @event_logger.warn(message)
       end
     end
 

@@ -70,7 +70,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
   subject { described_class.new(logger) }
 
-  let(:links_manager) { Bosh::Director::Links::LinksManager.new(logger) }
+  let(:links_manager) { Bosh::Director::Links::LinksManager.new(logger, event_log) }
 
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new).and_return update_config
