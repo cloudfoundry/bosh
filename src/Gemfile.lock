@@ -31,7 +31,7 @@ PATH
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
       bosh_cpi (= 2.4.1)
-      cf-uaa-lib (~> 3.2.1)
+      cf-uaa-lib (~> 3.13.0)
       eventmachine (~> 1.2.0)
       httpclient (~> 2.8.3)
       logging (~> 2.2.2)
@@ -53,7 +53,7 @@ PATH
   remote: bosh-monitor
   specs:
     bosh-monitor (0.0.0)
-      cf-uaa-lib (~> 3.2.1)
+      cf-uaa-lib (~> 3.13.0)
       dogapi (~> 1.21.0)
       em-http-request (~> 0.3.0)
       eventmachine (~> 1.2.0)
@@ -118,8 +118,9 @@ GEM
       httpclient (~> 2.8.3)
       membrane (~> 1.1.0)
     builder (3.1.4)
-    cf-uaa-lib (3.2.5)
-      multi_json
+    cf-uaa-lib (3.13.0)
+      httpclient (~> 2.8, >= 2.8.2.4)
+      multi_json (~> 1.12.0, >= 1.12.1)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     daemons (1.2.4)
