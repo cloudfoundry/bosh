@@ -12,7 +12,14 @@ module Bhm
     }
     let(:exclude_spec) { { 'deployments' => ['deployment_exclude'] } }
 
-    let(:resurrection_config) { [{"content" => YAML.dump(resurrection_config_content), "id" => "1", "type" => "resurrection", "name" => "some-name"}] }
+    let(:resurrection_config) { [{ "content" => YAML.dump(resurrection_config_content), "id" => "1", "type" => "resurrection", "name" => "some-name" }] }
+    let(:resurrection_configs) do
+      [
+        {"content" => YAML.dump(resurrection_config_content), "id" => "1", "type" => "resurrection", "name" => "some-name"},
+        {"content" => YAML.dump(resurrection_config_content), "id" => "2", "type" => "resurrection", "name" => "another-name"}
+      ]
+    end
+
 
     before do
       Bhm.config = { 'director' => {} }
@@ -43,6 +50,18 @@ module Bhm
         expect(resurrection_rules.count).to eq(2)
         expect(resurrection_rules[0].enabled?).to be_truthy
         expect(resurrection_rules[1].enabled?).to be_falsey
+      end
+
+      it 'parses several resurrection configs with different names' do
+        expect(logger).to receive(:info).with('Resurrection config update starting...')
+        expect(logger).to receive(:info).with('Resurrection config update finished')
+        manager.update_rules(resurrection_configs)
+        resurrection_rules = manager.instance_variable_get(:@parsed_rules)
+        expect(resurrection_rules.count).to eq(4)
+        expect(resurrection_rules[0].enabled?).to be_truthy
+        expect(resurrection_rules[1].enabled?).to be_falsey
+        expect(resurrection_rules[2].enabled?).to be_truthy
+        expect(resurrection_rules[3].enabled?).to be_falsey
       end
 
       it 'shows missing `enabled` value in the resurrection config error' do

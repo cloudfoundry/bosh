@@ -574,7 +574,7 @@ module Bosh::Spec
       }
     end
 
-    def self.resurrection_config
+    def self.resurrection_config_enabled
       {
         'rules' => [
           {
@@ -585,7 +585,14 @@ module Bosh::Spec
               'deployments' => ['simple_enabled'],
               'instance_groups' => ['foobar']
             }
-          },
+          }
+        ]
+      }
+    end
+
+    def self.resurrection_config_disabled
+      {
+        'rules' => [
           {
             'options' => {
               'enabled' => false

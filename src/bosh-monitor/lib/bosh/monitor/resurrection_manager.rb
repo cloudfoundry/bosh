@@ -3,7 +3,7 @@ module Bosh::Monitor
     def initialize()
       @parsed_rules = []
       @logger = Bhm.logger
-      @active_id = "-1"
+      @active_ids = []
     end
 
     def resurrection_enabled?(deployment_name, instance_group)
@@ -15,17 +15,14 @@ module Bosh::Monitor
       return enabled
     end
 
-    def update_rules(resurrection_config)
+    def update_rules(resurrection_configs)
       new_parsed_rules = []
-      if !resurrection_config.nil? && !resurrection_config.empty?
-        content = resurrection_config.first['content']
-        content_hash = YAML.load(content)
-        id = resurrection_config.first['id']
-
-        if @active_id != id
+      if !resurrection_configs.nil? && !resurrection_configs.empty?
+        ids = resurrection_configs.map{ |resurrection_config| resurrection_config['id'] }
+        if @active_ids.to_set != ids.to_set
           @logger.info("Resurrection config update starting...")
 
-          resurrection_rule_hashes = content_hash.fetch('rules', [])
+          resurrection_rule_hashes = resurrection_configs.map{ |resurrection_config| YAML.load(resurrection_config['content'])['rules'] }.flatten || []
           resurrection_rule_hashes.each do |resurrection_rule_hash|
             begin
               new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)
@@ -34,7 +31,7 @@ module Bosh::Monitor
             end
           end
           @parsed_rules = new_parsed_rules
-          @active_id = id
+          @active_ids = ids
           @logger.info("Resurrection config update finished")
         else
           @logger.info("Resurrection config remains the same")

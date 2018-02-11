@@ -57,8 +57,10 @@ describe 'resurrector', type: :integration, hm: true do
   end
 
   it 'resurrects vms based on resurrection config' do
-    resurrection_config = yaml_file('config.yml', Bosh::Spec::NewDeployments.resurrection_config)
-    bosh_runner.run("update-config resurrection #{resurrection_config.path}")
+    resurrection_config_enabled = yaml_file('config.yml', Bosh::Spec::NewDeployments.resurrection_config_enabled)
+    resurrection_config_disabled = yaml_file('config.yml', Bosh::Spec::NewDeployments.resurrection_config_disabled)
+    bosh_runner.run("update-config resurrection --name enabled #{resurrection_config_enabled.path}")
+    bosh_runner.run("update-config resurrection --name disabled #{resurrection_config_disabled.path}")
     current_sandbox.reconfigure_health_monitor
 
     deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
