@@ -18,7 +18,7 @@ var _ = Describe("Director external database TLS connections", func() {
 		stopInnerBosh()
 	})
 
-	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool) {
+	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useIncorrectCA bool) {
 		external_db_host := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(databaseType)))
 		external_db_user := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(databaseType)))
 		external_db_password := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(databaseType)))
@@ -26,6 +26,10 @@ var _ = Describe("Director external database TLS connections", func() {
 
 		connectionOptions := fmt.Sprintf("external_db/%s_connection_options.yml", databaseType)
 		connectionVarFile := fmt.Sprintf("external_db/%s.yml", databaseType)
+
+		if useIncorrectCA {
+			connectionVarFile = fmt.Sprintf("external_db/%s_invalid_ca.yml", databaseType)
+		}
 
 		startInnerBoshArgs := []string{
 			fmt.Sprintf("-o %s", boshDeploymentAssetPath("misc/external-db.yml")),
@@ -68,23 +72,58 @@ var _ = Describe("Director external database TLS connections", func() {
 			startInnerBoshArgs = append(startInnerBoshArgs, mutualTLSArgs...)
 		}
 
-		startInnerBosh(startInnerBoshArgs...)
-
-		uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+		if useIncorrectCA {
+			startInnerBoshWithExpectation(true, "Error: 'bosh/[0-9a-f]{8}-[0-9a-f-]{27} \\(0\\)' is not running after update", startInnerBoshArgs...)
+		} else {
+			startInnerBosh(startInnerBoshArgs...)
+			uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+		}
 	}
 
-	DescribeTable("RDS", testDBConnectionOverTLS,
-		Entry("allows TLS connections to POSTGRES", "rds_postgres", false),
+	Context("RDS", func() {
+		var mutualTLSEnabled = false
+		var useIncorrectCA = false
 
-		// Pending. Check https://www.pivotaltracker.com/story/show/154143917 and https://www.pivotaltracker.com/story/show/153785594/comments/184377346
-		PEntry("allows TLS connections to MYSQL, refer to https://www.pivotaltracker.com/story/show/154143917", "rds_mysql", false),
-	)
+		DescribeTable("Regular TLS", testDBConnectionOverTLS,
+			Entry("allows TLS connections to POSTGRES", "rds_postgres", mutualTLSEnabled, useIncorrectCA),
 
-	DescribeTable("GCP", testDBConnectionOverTLS,
-		Entry("allows TLS connections to MYSQL", "gcp_mysql", false),
-		Entry("allows TLS connections to POSTGRES", "gcp_postgres", false),
+			// Pending. Check https://www.pivotaltracker.com/story/show/154143917 and https://www.pivotaltracker.com/story/show/153785594/comments/184377346
+			PEntry("allows TLS connections to MYSQL, refer to https://www.pivotaltracker.com/story/show/154143917", "rds_mysql", false),
+		)
+	})
 
-		Entry("allows Mutual TLS connections to MYSQL", "gcp_mysql", true),
-		Entry("allows Mutual TLS connections to POSTGRES", "gcp_postgres", true),
-	)
+	Context("GCP", func() {
+		Context("Regular TLS", func() {
+			Context("With valid CA", func() {
+				var mutualTLSEnabled = false
+				var useIncorrectCA = false
+
+				DescribeTable("DB Connections", testDBConnectionOverTLS,
+					Entry("allows TLS connections to MYSQL", "gcp_mysql", mutualTLSEnabled, useIncorrectCA),
+					Entry("allows TLS connections to POSTGRES", "gcp_postgres", mutualTLSEnabled, useIncorrectCA),
+				)
+			})
+
+			Context("With Incorrect CA", func() {
+				var mutualTLSEnabled = false
+				var useIncorrectCA = true
+
+				DescribeTable("DB Connections", testDBConnectionOverTLS,
+					// Pending https://www.pivotaltracker.com/story/show/153421636/comments/185372185
+					PEntry("fails to connect to MYSQL refer to https://www.pivotaltracker.com/story/show/153421636/comments/185372185", "gcp_mysql", mutualTLSEnabled, useIncorrectCA),
+					Entry("fails to connect to POSTGRES", "gcp_postgres", mutualTLSEnabled, useIncorrectCA),
+				)
+			})
+		})
+
+		Context("Mutual TLS", func() {
+			var mutualTLSEnabled = true
+			var useIncorrectCA = false
+
+			DescribeTable("DB Connections", testDBConnectionOverTLS,
+				Entry("allows TLS connections to MYSQL", "gcp_mysql", mutualTLSEnabled, useIncorrectCA),
+				Entry("allows TLS connections to POSTGRES", "gcp_postgres", mutualTLSEnabled, useIncorrectCA),
+			)
+		})
+	})
 })

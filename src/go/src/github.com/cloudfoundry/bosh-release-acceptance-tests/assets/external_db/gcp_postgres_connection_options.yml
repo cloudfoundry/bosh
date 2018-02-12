@@ -6,7 +6,6 @@
   path: /instance_groups/name=bosh/properties/director/db/connection_options?
   value:
     sslmode: verify-ca
-    max_connections: 32
     pool_timeout: 120
     statement_timeout: 120
     connect_timeout: 120

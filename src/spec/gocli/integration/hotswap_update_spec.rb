@@ -29,13 +29,15 @@ describe 'deploy with hotswap', type: :integration do
     end
 
     it 'should show new vms in bosh vms command' do
+      old_vm = table(bosh_runner.run('vms', json: true))[0]
+
       deploy_simple_manifest(manifest_hash: manifest, recreate: true)
       vms = table(bosh_runner.run('vms', json: true))
 
-      expect(vms.length).to eq(2)
+      expect(vms.length).to eq(1)
 
       vm_pattern = {
-        'active' => /./,
+        'active' => /true|false/,
         'az' => '',
         'instance' => instance_slug_regex,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
@@ -44,20 +46,17 @@ describe 'deploy with hotswap', type: :integration do
         'vm_type' => 'a',
       }
 
-      vm0 = vms[0]
-      vm1 = vms[1]
+      new_vm = vms[0]
 
-      expect(vm0).to match(vm_pattern)
-      expect(vm1).to match(vm_pattern)
+      expect(new_vm).to match(vm_pattern)
 
-      expect(vm0['active']).to eq('false')
-      expect(vm1['active']).to eq('true')
-      expect(vm0['az']).to eq(vm1['az'])
-      expect(vm0['vm_type']).to eq(vm1['vm_type'])
-      expect(vm0['instance']).to eq(vm1['instance'])
-      expect(vm0['vm_cid']).to_not eq(vm1['vm_cid'])
-      expect(vm0['process_state']).to_not eq(vm1['process_state'])
-      expect(vm0['ips']).to_not eq(vm1['ips'])
+      expect(new_vm['active']).to eq('true')
+      expect(new_vm['az']).to eq(old_vm['az'])
+      expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
+      expect(new_vm['instance']).to eq(old_vm['instance'])
+      expect(new_vm['vm_cid']).to_not eq(old_vm['vm_cid'])
+      expect(new_vm['process_state']).to eq('running')
+      expect(new_vm['ips']).to_not eq(old_vm['ips'])
     end
 
     it 'should show the new vm only in bosh instances command' do
@@ -122,13 +121,15 @@ describe 'deploy with hotswap', type: :integration do
       let(:network_type) { 'manual' }
 
       it 'should show new vms in bosh vms command' do
+        old_vm = table(bosh_runner.run('vms', json: true))[0]
+
         deploy_simple_manifest(manifest_hash: manifest, recreate: true)
         vms = table(bosh_runner.run('vms', json: true))
 
-        expect(vms.length).to eq(2)
+        expect(vms.length).to eq(1)
 
         vm_pattern = {
-          'active' => /./,
+          'active' => /true|false/,
           'az' => '',
           'instance' => instance_slug_regex,
           'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
@@ -137,21 +138,17 @@ describe 'deploy with hotswap', type: :integration do
           'vm_type' => 'a',
         }
 
-        vm0 = vms[0]
-        vm1 = vms[1]
+        new_vm = vms[0]
 
-        expect(vm0).to match(vm_pattern)
-        expect(vm1).to match(vm_pattern)
+        expect(new_vm).to match(vm_pattern)
 
-        vm_states = vms.map { |vm| vm['active'] }.sort
-        expect(vm_states[0]).to eq('false')
-        expect(vm_states[1]).to eq('true')
-        expect(vm0['az']).to eq(vm1['az'])
-        expect(vm0['vm_type']).to eq(vm1['vm_type'])
-        expect(vm0['instance']).to eq(vm1['instance'])
-        expect(vm0['vm_cid']).to_not eq(vm1['vm_cid'])
-        expect(vm0['process_state']).to_not eq(vm1['process_state'])
-        expect(vm0['ips']).to_not eq(vm1['ips'])
+        expect(new_vm['active']).to eq('true')
+        expect(new_vm['az']).to eq(old_vm['az'])
+        expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
+        expect(new_vm['instance']).to eq(old_vm['instance'])
+        expect(new_vm['vm_cid']).to_not eq(old_vm['vm_cid'])
+        expect(new_vm['process_state']).to eq('running')
+        expect(new_vm['ips']).to_not eq(old_vm['ips'])
       end
 
       context 'when using instances with static ip addresses' do

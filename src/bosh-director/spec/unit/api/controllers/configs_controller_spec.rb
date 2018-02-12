@@ -39,7 +39,7 @@ module Bosh::Director
             created_at: Time.now - 1.days,
           )
 
-          get '/?&latest=true'
+          get '/?&limit=1'
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-other-yaml'))
@@ -65,7 +65,7 @@ module Bosh::Director
               created_at: Time.now - 1.days,
             )
 
-            get '/?type=my-type&name=my-config&latest=true'
+            get '/?type=my-type&name=my-config&limit=1'
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body).count).to eq(1)
             expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
@@ -89,7 +89,7 @@ module Bosh::Director
             created_at: Time.now - 1.days,
           )
 
-          get '/?type=my-type&latest=true'
+          get '/?type=my-type&limit=1'
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
@@ -97,7 +97,7 @@ module Bosh::Director
 
         context 'when no records match the filters' do
           it 'returns empty' do
-            get '/?type=my-type&name=notExisting&latest=true'
+            get '/?type=my-type&name=notExisting&limit=1'
 
             expect(last_response.status).to eq(200)
 
@@ -109,50 +109,54 @@ module Bosh::Director
 
         context 'when no type is given' do
           it 'does not filter by type' do
-            Models::Config.make(
-              content: 'some-other-yaml',
-              created_at: Time.now - 2.days,
-            )
+            Models::Config.make(content: 'some-other-yaml')
 
             newest_config = 'new_config'
-            Models::Config.make(
-              content: newest_config,
-              created_at: Time.now - 1.days,
-            )
+            Models::Config.make(content: newest_config)
 
-            get '/?latest=true'
+            get '/?limit=1'
 
             expect(JSON.parse(last_response.body).count).to eq(1)
             expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
           end
         end
 
-        context 'when no latest param is given' do
-          it 'return 400' do
+        context 'when no limit param is given' do
+          it 'defaults to 1' do
+            Models::Config.make
+            Models::Config.make(content: 'newest_config')
             get '/?type=my-type&name=some-name'
 
-            expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-            expect(JSON.parse(last_response.body)['description']).to eq("'latest' is required")
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body).count).to eq(1)
+            expect(JSON.parse(last_response.body).first['content']).to eq('newest_config')
           end
         end
 
-        context 'when latest param is given and has wrong value' do
+        context 'when limit param is given and has wrong value' do
           it 'return 400' do
-            get '/?type=my-type&name=some-name&latest=foo'
+            get '/?type=my-type&name=some-name&limit=foo'
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(40_005)
-            expect(JSON.parse(last_response.body)['description']).to eq("'latest' must be 'true' or 'false'")
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be a number")
+          end
+
+          it 'return 400 for zero' do
+            get '/?limit=0'
+
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be larger than zero")
           end
         end
 
-        context 'when latest is false' do
+        context 'when limit is greater one' do
           it 'returns the history of all matching configs' do
             config1 = Models::Config.make
             Models::Config.make
 
-            get '/?type=my-type&latest=false'
+            get '/?type=my-type&limit=2'
 
             expect(last_response.status).to eq(200)
 
@@ -165,7 +169,7 @@ module Bosh::Director
               'type' => config1.type,
               'name' => config1.name,
               'created_at' => config1.created_at.to_s,
-              'teams' => [],
+              'team' => nil,
             )
           end
         end
@@ -190,12 +194,12 @@ module Bosh::Director
 
           config = Bosh::Director::Models::Config.first
           expect(JSON.parse(last_response.body)).to eq(
-            'id' => Bosh::Director::Models::Config.first.id.to_s,
+            'id' => config.id.to_s,
             'type' => 'my-type',
             'name' => 'my-name',
             'content' => 'a: 1',
             'created_at' => config.created_at.to_s,
-            'teams' => [],
+            'team' => nil,
           )
         end
 
@@ -351,7 +355,7 @@ module Bosh::Director
             it 'deletes the config' do
               expect(delete('/?type=my-type&name=my-name').status).to eq(204)
 
-              configs = JSON.parse(get('/?type=my-type&name=my-name&latest=false').body)
+              configs = JSON.parse(get('/?type=my-type&name=my-name&limit=10').body)
 
               expect(configs.count).to eq(0)
             end
@@ -451,7 +455,8 @@ module Bosh::Director
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-            expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+            expect(JSON.parse(last_response.body)['description'])
+              .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
           end
 
           context 'when any of the given `id` values is not a string containing an integer' do
@@ -464,7 +469,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description'])
+                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
 
               post(
                 '/diff',
@@ -474,7 +480,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description'])
+                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
             end
           end
 
@@ -484,7 +491,8 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description']).to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description'])
+                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
             end
           end
         end
@@ -550,7 +558,15 @@ module Bosh::Director
                   'CONTENT_TYPE' => 'application/json',
                 )
                 expect(last_response.status).to eq(200)
-                expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  properties:","removed"],["    some-key: \"<redacted>\"","removed"]]}')
+                json_response = JSON.parse(last_response.body)
+                expect(json_response).to eq(
+                  'diff' => [
+                    ['azs:', nil],
+                    ['- name: az2', 'removed'],
+                    ['  properties:', 'removed'],
+                    ['    some-key: "<redacted>"', 'removed'],
+                  ],
+                )
               end
             end
 
@@ -592,7 +608,7 @@ module Bosh::Director
                 post '/diff', new_config, 'CONTENT_TYPE' => 'application/json'
 
                 expect(last_response.status).to eq(400)
-                expect(JSON.parse(last_response.body)['error']).to eq('YAML hash expected')
+                expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
               end
             end
           end
@@ -633,40 +649,102 @@ module Bosh::Director
         end
 
         context 'when diffing two versions by id' do
-          before do
-            @first = Models::Config.create(
-              type: 'myType',
-              name: 'myName',
+          let(:dev_team) { Models::Team.create(name: 'dev') }
+          let(:dev_team_config) do
+            Models::Config.create(
+              type: 'custom',
+              name: 'dev-team',
               raw_manifest: { 'a' => 5 },
+              team_id: dev_team.id,
             )
-            @second = Models::Config.create(
-              type: 'myType',
-              name: 'myName',
+          end
+
+          let(:other_team) { Models::Team.create(name: 'other') }
+          let(:other_team_config) do
+            Models::Config.create(
+              type: 'custom',
+              name: 'other-team',
               raw_manifest: { 'b' => 5 },
+              team_id: other_team.id,
             )
           end
 
           it 'returns the diff' do
             post(
               '/diff',
-              JSON.dump(from: { id: @first.id.to_s }, to: { id: @second.id.to_s }),
+              JSON.dump(from: { id: dev_team_config.id.to_s }, to: { id: other_team_config.id.to_s }),
               'CONTENT_TYPE' => 'application/json',
             )
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
           end
 
+          context "when referencing another team's config" do
+            context 'without a team-specific user' do
+              before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+              it 'should return an error when the old config is unauthorized' do
+                post(
+                  '/diff',
+                  JSON.dump(from: { id: other_team_config.id.to_s }, to: { id: dev_team_config.id.to_s }),
+                  'CONTENT_TYPE' => 'application/json',
+                )
+                expect(last_response.status).to eq(401)
+                json_response = JSON.parse(last_response.body)
+                expect(json_response['code']).to eq(600_000)
+                expect(json_response['description'])
+                  .to eq('Require one of the scopes: bosh.admin, bosh..admin, bosh.teams.other.admin')
+              end
+
+              it 'should return an error when the new config is unauthorized' do
+                post(
+                  '/diff',
+                  JSON.dump(from: { id: dev_team_config.id.to_s }, to: { id: other_team_config.id.to_s }),
+                  'CONTENT_TYPE' => 'application/json',
+                )
+                expect(last_response.status).to eq(401)
+                json_response = JSON.parse(last_response.body)
+                expect(json_response['code']).to eq(600_000)
+                expect(json_response['description'])
+                  .to eq('Require one of the scopes: bosh.admin, bosh..admin, bosh.teams.other.admin')
+              end
+
+              let(:new_config) do
+                JSON.generate(
+                  'type' => other_team_config.type,
+                  'name' => other_team_config.name,
+                  'content' => YAML.dump(other_team_config.raw_manifest),
+                )
+              end
+
+              it 'should return an error when the config is unauthorized and we post data to diff' do
+                post(
+                  '/diff',
+                  new_config,
+                  'CONTENT_TYPE' => 'application/json',
+                )
+
+                expect(last_response.status).to eq(401)
+
+                json_response = JSON.parse(last_response.body)
+                expect(json_response['code']).to eq(600_000)
+                expect(json_response['description'])
+                  .to eq('Require one of the scopes: bosh.admin, bosh..admin, bosh.teams.other.admin')
+              end
+            end
+          end
+
           context 'when config with given "id" does not exist' do
             it 'returns 404 with error details' do
               post(
                 '/diff',
-                JSON.dump(from: { id: '5' }, to: { id: @second.id.to_s }),
+                JSON.dump(from: { id: '5' }, to: { id: other_team.id.to_s }),
                 'CONTENT_TYPE' => 'application/json',
               )
 
               expect(last_response.status).to eq(404)
               expect(JSON.parse(last_response.body)['code']).to eq(440_012)
-              expect(JSON.parse(last_response.body)['description']).to eq("Config with ID '5' not found.")
+              expect(JSON.parse(last_response.body)['description']).to eq('Config 5 not found')
             end
           end
         end
@@ -723,24 +801,15 @@ module Bosh::Director
       context 'when user has a team admin membership' do
         before { basic_authorize 'dev-team-member', 'dev-team-member' }
 
-        it 'permits read access to the teams config' do
+        it 'returns team configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
         end
 
-        it 'permits write access' do
-          expect do
-            post(
-              '/',
-              JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'),
-              'CONTENT_TYPE' => 'application/json',
-            )
-          end.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
-        end
-
-        it 'stores team_id of the autorized user' do
+        it 'stores team-specific configs' do
           expect do
             post(
               '/',
@@ -757,11 +826,18 @@ module Bosh::Director
           expect(configs.count).to eq(0)
         end
 
-        it 'does not return teams value' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
-          expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first['teams']).to be_nil
+        it "cannot overwrite another team's config" do
+          expect(
+            post(
+              '/',
+              JSON.generate('name' => 'other_config', 'type' => 'my-type', 'content' => 'a: 123'),
+              'CONTENT_TYPE' => 'application/json',
+            ).status,
+          ).to eq(401)
+        end
+
+        it "cannot delete another team's config" do
+          expect(delete('/?type=my-type&name=other_config').status).to eq(401)
         end
       end
 
@@ -783,11 +859,11 @@ module Bosh::Director
           expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
         end
 
-        it 'does not return teams value' do
+        it 'returns team configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first['teams']).to be_nil
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
         end
       end
 
@@ -819,11 +895,11 @@ module Bosh::Director
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).map { |x| x['teams'] }).to contain_exactly(['dev'], ['other'])
+          expect(JSON.parse(last_response.body).map { |x| x['team'] }).to contain_exactly('dev', 'other')
         end
       end
 
-      context 'when user is a reader' do
+      context 'when user has read-only access to director' do
         before { basic_authorize('reader', 'reader') }
 
         it 'permits read access to all configs' do
@@ -839,12 +915,60 @@ module Bosh::Director
           expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
         end
 
-        it 'does not return teams value' do
+        it 'returns all configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).first['teams']).to be_nil
-          expect(JSON.parse(last_response.body)[1]['teams']).to be_nil
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
+          expect(JSON.parse(last_response.body)[1]['team']).to eq('other')
+        end
+      end
+    end
+
+    describe 'id' do
+      let!(:config_example) { Bosh::Director::Models::Config.make(id: 123, type: 'my-type', name: 'default', content: '1') }
+
+      context 'with authenticated admin user' do
+        before(:each) do
+          authorize('admin', 'admin')
+        end
+
+        it 'it returns the specified config' do
+          get('/123')
+
+          expect(last_response.status).to eq(200)
+          expect(JSON.parse(last_response.body)).to eq('id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1', 'created_at' => config_example.created_at.to_s, 'team' => nil)
+        end
+
+        context 'when no config is found' do
+          it 'returns a 404' do
+            get('/999')
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+
+        context 'when `id` is not a string containing an integer' do
+          it 'returns a 404' do
+            get('/invalid-id')
+
+            expect(last_response.status).to eq(404)
+          end
+        end
+      end
+
+      context 'without an authenticated user' do
+        it 'denies access' do
+          response = get('/my-fake-id')
+          expect(response.status).to eq(401)
+        end
+      end
+
+      context 'when user is reader' do
+        before { basic_authorize('reader', 'reader') }
+
+        it 'permits access' do
+          expect(get('/123').status).to eq(200)
         end
       end
     end

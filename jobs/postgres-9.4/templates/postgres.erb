@@ -16,7 +16,6 @@ USER='<%= p("postgres.user") %>'
 
 export LD_LIBRARY_PATH="$PACKAGE_DIR/lib:$LD_LIBRARY_PATH"
 
-
 # We cannot kill the following conditional
 # because initdb is very picky about looking at an empty dir
 if [ ! -d $DATA_DIR -o ! -f $DATA_DIR/postgresql.conf ]; then

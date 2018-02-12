@@ -9,7 +9,7 @@ image_resource:
 inputs:
   - name: bosh-src
   - name: bosh-dns-release
-  - name: stemcell
+  - name: candidate-warden-ubuntu-stemcell
   - name: bosh-release
 
 run:

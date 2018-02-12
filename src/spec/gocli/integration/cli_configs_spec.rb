@@ -54,7 +54,7 @@ describe 'cli configs', type: :integration do
   context 'can get a config' do
     it 'by id' do
       bosh_runner.run("update-config my-type #{config.path}")
-      id = JSON.parse(bosh_runner.run('configs --include-outdated --json')).dig('Tables', 0, 'Rows', 0, 'id')
+      id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
       expect(bosh_runner.run("config #{id}")).to include('Succeeded')
     end
   end
@@ -81,7 +81,7 @@ describe 'cli configs', type: :integration do
       bosh_runner.run("update-config my-type --name=my-name #{config.path}")
       bosh_runner.run("update-config my-type --name=my-name #{second_config.path}")
 
-      output = bosh_runner.run('configs --include-outdated')
+      output = bosh_runner.run('configs --recent=99')
 
       expect(output.scan('my-type').length).to be(2)
       expect(output.scan('my-name').length).to be(2)
@@ -98,12 +98,13 @@ describe 'cli configs', type: :integration do
 
     it 'shows configs of the same team only' do
       bosh_runner.run(
-        "update-config production-type #{config.path}",
+        "update-config --name=prod cloud #{config.path}",
         client: production_env['BOSH_CLIENT'],
         client_secret: production_env['BOSH_CLIENT_SECRET'],
       )
+
       bosh_runner.run(
-        "update-config team-type #{config.path}",
+        "update-config --name=team cloud #{config.path}",
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
@@ -111,39 +112,12 @@ describe 'cli configs', type: :integration do
       production_configs = table(bosh_runner.run('configs', json: true, client: production_env['BOSH_CLIENT'],
                                                             client_secret: production_env['BOSH_CLIENT_SECRET']))
       expect(production_configs.length).to eq(1)
-      expect(production_configs).to contain_exactly('name' => 'default', 'teams' => '', 'type' => 'production-type')
+      expect(production_configs.first).to include('name' => 'prod', 'team' => 'production_team', 'type' => 'cloud')
 
       team_configs = table(bosh_runner.run('configs', json: true, client: team_read_env['BOSH_CLIENT'],
                                                       client_secret: team_read_env['BOSH_CLIENT_SECRET']))
       expect(team_configs.length).to eq(1)
-      expect(team_configs).to contain_exactly('name' => 'default', 'teams' => '', 'type' => 'team-type')
-    end
-
-    it 'shows teams only for admin' do
-      bosh_runner.run(
-        "update-config production-type #{config.path}",
-        client: production_env['BOSH_CLIENT'],
-        client_secret: production_env['BOSH_CLIENT_SECRET'],
-      )
-      bosh_runner.run(
-        "update-config team-type #{config.path}",
-        client: team_admin_env['BOSH_CLIENT'],
-        client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
-      )
-
-      configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'],
-                                                 client_secret: admin_env['BOSH_CLIENT_SECRET']))
-      expect(configs.length).to eq(2)
-
-      expect(configs).to contain_exactly(
-        { 'name' => 'default', 'teams' => 'production_team', 'type' => 'production-type' },
-        { 'name' => 'default', 'teams' => 'ateam', 'type' => 'team-type' },
-      )
-
-      configs = table(bosh_runner.run('configs', json: true, client: team_admin_env['BOSH_CLIENT'],
-                                                 client_secret: team_admin_env['BOSH_CLIENT_SECRET']))
-
-      expect(configs).to contain_exactly('name' => 'default', 'teams' => '', 'type' => 'team-type')
+      expect(team_configs.first).to include('name' => 'team', 'team' => 'ateam', 'type' => 'cloud')
     end
 
     it 'allows to create/delete team only for admin or team admin' do
@@ -176,10 +150,8 @@ describe 'cli configs', type: :integration do
       )
       expect(admin_configs.length).to eq(2)
 
-      expect(admin_configs).to contain_exactly(
-        { 'name' => 'team-name1', 'teams' => '', 'type' => 'team-type' },
-        { 'name' => 'team-name2', 'teams' => '', 'type' => 'team-type' },
-      )
+      expect(admin_configs.first).to include('name' => 'team-name1', 'team' => 'ateam', 'type' => 'team-type')
+      expect(admin_configs.last).to include('name' => 'team-name2', 'team' => 'ateam', 'type' => 'team-type')
 
       output = bosh_runner.run(
         'delete-config team-type --name=team-name1',
@@ -217,7 +189,7 @@ describe 'cli configs', type: :integration do
       bosh_runner.run("update-config my-type #{config.path}")
       bosh_runner.run("update-config other-type --name=other-name #{other_config.path}")
 
-      output = bosh_runner.run('configs --include-outdated --json')
+      output = bosh_runner.run('configs --recent=99 --json')
       from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
       expect(bosh_runner.run("diff-config #{from} #{to}")).to include('- vm_types:', '+ releases:', 'Succeeded')
     end

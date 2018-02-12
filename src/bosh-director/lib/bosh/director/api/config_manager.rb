@@ -12,17 +12,23 @@ module Bosh
           config.save
         end
 
-        def find(type: nil, name: nil, latest: nil)
+        def find(type: nil, name: nil, limit: 1)
           dataset = Bosh::Director::Models::Config.where(deleted: false)
           dataset = dataset.where(type: type) if type
           dataset = dataset.where(name: name) if name
-          dataset = dataset.where(id: dataset.select { max(:id) }.group(:type, :name)) if latest == 'true'
-          dataset
+
+          return find_latest(dataset) if limit == 1
+
+          combinations = dataset.group(:type, :name)
             .order(:type)
             .order_append { Sequel.case([[{ name: 'default' }, 1]], 2) }
-            .order_append(:name)
-            .order_append(Sequel.desc(:id))
-            .all
+            .order_append(:name).select_map([:type, :name])
+
+          combinations.flat_map do |type, name|
+            Bosh::Director::Models::Config.where(deleted: false, name: name, type: type)
+              .order(Sequel.desc(:id))
+              .limit(limit).all
+          end
         end
 
         def find_by_id(id)
@@ -36,6 +42,19 @@ module Bosh
             .where(type: type, name: name, deleted: false)
             .update(deleted: true)
         end
+
+        private
+
+        def find_latest(dataset)
+          dataset = dataset.where(id: dataset.select { max(:id) }.group(:type, :name))
+          dataset
+            .order(:type)
+            .order_append {Sequel.case([[{name: 'default'}, 1]], 2)}
+            .order_append(:name)
+            .order_append(Sequel.desc(:id))
+            .all
+        end
+
       end
     end
   end
