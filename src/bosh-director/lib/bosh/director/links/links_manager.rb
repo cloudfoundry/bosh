@@ -1,11 +1,8 @@
-require 'SecureRandom'
-
 module Bosh::Director::Links
   class LinksManager
     include Bosh::Director::IpUtil
 
     def initialize(logger, event_logger)
-      # @context_id = SecureRandom.uuid
       @logger = logger
       @event_logger = event_logger
     end
