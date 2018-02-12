@@ -1647,8 +1647,7 @@ describe Bosh::Director::Links::LinksManager do
     let(:instance_group_name) {'instance-group-name'}
 
     context 'when an instance does not use links' do
-      it 'should not create an association between any links to the instance' do
-
+      it 'returns an empty hash' do
         links = subject.get_links_for_instance_group(deployment_model,instance_group_name)
 
         expect(links).to be_empty
@@ -1685,7 +1684,7 @@ describe Bosh::Director::Links::LinksManager do
           type: 'job'
         )
 
-        consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+        consumer_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
           link_consumer: consumer,
           original_name: 'foo',
           type: 'bar',
@@ -1693,17 +1692,32 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         Bosh::Director::Models::Links::Link.create(
-          link_consumer_intent: consumer_intent,
+          link_consumer_intent: consumer_intent_1,
           name: 'foo',
           link_content: '{"properties": {"fizz": "buzz"}}'
         )
+
+        consumer_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer,
+          original_name: 'meow',
+          type: 'bar',
+          name: 'meow-alias'
+        )
+
+        Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: consumer_intent_2,
+          name: 'meow',
+          link_content: '{"properties": {"snoopy": "dog"}}'
+        )
       end
 
-      it 'should create an association between the instance and the links' do
+      it 'should return the links associated with the instance groups namespaced by job name' do
         links = subject.get_links_for_instance_group(deployment_model, instance_group_name)
         expect(links.size).to eq(1)
-        expect(links['job-1'].size).to eq(1)
+        expect(links['job-1'].size).to eq(2)
+
         expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
+        expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
       end
     end
   end

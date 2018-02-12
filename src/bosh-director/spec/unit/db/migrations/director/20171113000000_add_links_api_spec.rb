@@ -397,6 +397,16 @@ module Bosh::Director
           expect(dataset[1][:instance_id]).to eq(22)
           expect(dataset[1][:link_id]).to eq(2)
         end
+
+        it 'will remove the links key from spec_json' do
+          DBSpecHelper.migrate(migration_file)
+
+          db[:instances].all.each do |instance|
+            spec_json = instance[:spec_json]
+            spec = JSON.load(spec_json)
+            expect(spec.has_key?('links')).to be_falsey
+          end
+        end
       end
 
       context 'when multiple instances contain the same link key' do

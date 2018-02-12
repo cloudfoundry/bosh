@@ -202,10 +202,7 @@ module Bosh::Director::Links
       consumers.each do |consumer|
         links[consumer.name] = {}
         consumer.intents.each do |consumer_intent|
-          # next if consumer_intent.blocked
-
           consumer_intent.links.each do |link|
-            next if link.link_content.nil?
             content = JSON.parse(link.link_content)
             links[consumer.name][consumer_intent.original_name] = content
           end
