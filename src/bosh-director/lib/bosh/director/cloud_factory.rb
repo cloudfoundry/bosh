@@ -1,26 +1,30 @@
 # Cloud factory looks up and instantiates clouds, either taken from the director config or from the cpi config.
 # To achieve this, it uses the parsed cpis from the cpi config.
 # For lookup based on availability zone, it additionally needs the cloud planner which contains the AZ -> CPI mapping from the cloud config.
+require 'bosh/director/validation_helper'
+
 module Bosh::Director
   class CloudFactory
+    extend ValidationHelper
+
     def self.create_with_latest_configs(deployment = nil)
       cpi_configs = Bosh::Director::Models::Config.latest_set('cpi')
       cloud_configs = Bosh::Director::Models::Config.latest_set('cloud')
 
-      planner = if deployment.nil?
-                  create_cloud_planner(cloud_configs)
+      azs = if deployment.nil?
+                  create_azs(cloud_configs)
                 else
-                  create_cloud_planner(cloud_configs, deployment.name)
+                  create_azs(cloud_configs, deployment.name)
                 end
 
-      new(planner, parse_cpi_configs(cpi_configs))
+      new(azs, parse_cpi_configs(cpi_configs))
     end
 
     def self.create_from_deployment(deployment,
                                     cpi_configs = Bosh::Director::Models::Config.latest_set('cpi'))
-      planner = create_cloud_planner(deployment.cloud_configs, deployment.name) unless deployment.nil?
+      azs = create_azs(deployment.cloud_configs, deployment.name) unless deployment.nil?
 
-      new(planner, parse_cpi_configs(cpi_configs))
+      new(azs, parse_cpi_configs(cpi_configs))
     end
 
     def self.parse_cpi_configs(cpi_configs)
@@ -40,8 +44,16 @@ module Bosh::Director
       parser.parse(Api::CloudConfigManager.interpolated_manifest(cloud_configs, deployment_name), global_network_resolver, nil)
     end
 
-    def initialize(cloud_planner, parsed_cpi_config)
-      @cloud_planner = cloud_planner
+    def self.create_azs(cloud_configs, deployment_name = nil)
+      return nil unless CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(cloud_configs)
+
+      interpolated = Api::CloudConfigManager.interpolated_manifest(cloud_configs, deployment_name)
+      azs = Bosh::Director::DeploymentPlan::AvailabilityZone.parse(interpolated)
+      Bosh::Director::DeploymentPlan::CloudPlanner.index_by_name(azs)
+    end
+
+    def initialize(azs, parsed_cpi_config)
+      @azs = azs
       @parsed_cpi_config = parsed_cpi_config
       @default_cloud = Config.cloud
       @logger = Config.logger
@@ -84,9 +96,9 @@ module Bosh::Director
     def get_name_for_az(az_name)
       return '' if az_name == '' || az_name.nil?
 
-      raise 'Deployment plan must be given to lookup cpis from AZ' if @cloud_planner.nil?
+      raise 'AZs must be given to lookup cpis from AZ' if @azs.nil?
 
-      az = @cloud_planner.availability_zone(az_name)
+      az = @azs[az_name]
       raise "AZ '#{az_name}' not found in cloud config" if az.nil?
 
       az.cpi.nil? ? '' : az.cpi

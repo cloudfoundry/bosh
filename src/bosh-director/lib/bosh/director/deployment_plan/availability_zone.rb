@@ -3,13 +3,22 @@ module Bosh::Director
     class AvailabilityZone
       extend ValidationHelper
 
-      def self.parse(availability_zone_spec)
+      def self.parse(cloud_config)
+        azs = safe_property(cloud_config, 'azs', :class => Array, :optional => true, :default => [])
+        azs.map do |az|
+          parse_single(az)
+        end
+      end
+
+      def self.parse_single(availability_zone_spec)
         name = safe_property(availability_zone_spec, 'name', class: String)
         cloud_properties = safe_property(availability_zone_spec, 'cloud_properties', class: Hash, default: {})
         cpi = safe_property(availability_zone_spec, 'cpi', class: String, optional: true)
 
         new(name, cloud_properties, cpi)
       end
+
+      private_class_method :parse_single
 
       def initialize(name, cloud_properties, cpi=nil)
         @name = name
