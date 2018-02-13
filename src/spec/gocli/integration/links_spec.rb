@@ -520,7 +520,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
-Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Multiple providers of type 'db' found for job 'api_server_with_optional_db_link' and instance group 'optional_db'. All of these match:
+Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Multiple providers of type 'db' found for job 'api_server_with_optional_db_link' in instance group 'optional_db'. All of these match:
    Deployment: simple, instance group: mysql, job: database, link name/alias: db
    Deployment: simple, instance group: postgres, job: backup_database, link name/alias: backup_db
           EOF

@@ -9,7 +9,7 @@ module Bosh::Director::Links
     end
 
     def parse_providers_from_job(job_spec, deployment_model, current_template_model, job_properties, instance_group_name)
-      provides_links = safe_property(job_spec, 'provides', class: Hash, optional: true, default: {})
+      provides_links = Bosh::Common::DeepCopy.copy(safe_property(job_spec, 'provides', class: Hash, optional: true, default: {}))
       job_name = safe_property(job_spec, 'name', class: String)
 
       # TODO links: add integration test to test for it, maybe not
@@ -91,7 +91,7 @@ module Bosh::Director::Links
     end
 
     def parse_consumers_from_job(job_spec, deployment_model, current_template_model, instance_group_name)
-      consumes_links = safe_property(job_spec, 'consumes', class: Hash, optional: true, default: {})
+      consumes_links = Bosh::Common::DeepCopy.copy(safe_property(job_spec, 'consumes', class: Hash, optional: true, default: {}))
       job_name = safe_property(job_spec, 'name', class: String)
 
       if current_template_model.consumes.empty? && !consumes_links.empty?

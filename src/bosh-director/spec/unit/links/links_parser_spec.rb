@@ -264,6 +264,8 @@ describe Bosh::Director::Links::LinksParser do
         let(:job_properties) {{}}
 
         it 'should add correct link providers and link providers intent to the DB' do
+          original_job_spec = Bosh::Common::DeepCopy.copy(job_spec)
+
           expected_provider_params = {
             deployment_model: deployment_plan.model,
             instance_group_name: "instance-group-name",
@@ -286,6 +288,7 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:shared=).with(true)
           expect(provider_intent).to receive(:save)
           subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, "instance-group-name")
+          expect(job_spec).to eq(original_job_spec)
         end
       end
 
@@ -548,6 +551,8 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         it 'should add the consumer and consumer intent to the DB' do
+          original_job_spec = Bosh::Common::DeepCopy.copy(job_spec)
+
           expected_consumer_params = {
             deployment_model: deployment_plan.model,
             instance_group_name: 'instance-group-name',
@@ -572,6 +577,7 @@ describe Bosh::Director::Links::LinksParser do
           expect(consumer_intent).to receive(:save)
 
           subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
+          expect(job_spec).to eq(original_job_spec)
         end
 
         context 'when the consumer alias is separated by "."' do

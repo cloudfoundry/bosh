@@ -569,7 +569,7 @@ describe Bosh::Director::Links::LinksManager do
             expect {
               expect(deployment_model.link_consumers.count).to be > 0
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' and instance group 'ig1'. All of these match:
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
    pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
    pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
           end
@@ -591,7 +591,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' and instance group 'ig1'. All of these match:
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
    pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
    pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
 
@@ -708,7 +708,7 @@ describe Bosh::Director::Links::LinksManager do
             expect {
               expect(deployment_model.link_consumers.count).to be > 0
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for job 'c1' and instance group 'ig1'. All of these match:
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for job 'c1' in instance group 'ig1'. All of these match:
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
           end
@@ -730,7 +730,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for job 'c1' and instance group 'ig1'. All of these match:
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for job 'c1' in instance group 'ig1'. All of these match:
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
 
@@ -900,7 +900,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' and instance group 'ig1'. All of these match:
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
    pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
    pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
           end
@@ -1495,7 +1495,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for job 'c1' and instance group 'ig1'. All of these match:
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for job 'c1' in instance group 'ig1'. All of these match:
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
           end
@@ -1719,73 +1719,6 @@ describe Bosh::Director::Links::LinksManager do
         expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
         expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
       end
-    end
-  end
-
-  xdescribe '#cleanup_deployment' do
-    let(:consumer) do
-      Bosh::Director::Models::Links::LinkConsumer.create(
-        deployment: deployment_model,
-        instance_group: 'ig1',
-        name: 'c1',
-        type: 'job'
-      )
-    end
-    let(:consumer_intent) do
-      Bosh::Director::Models::Links::LinkConsumerIntent.create(
-        link_consumer: consumer,
-        original_name: 'ci1',
-        name: 'provider_alias',
-        type: 'foo',
-        metadata: metadata.to_json
-      )
-    end
-
-    let(:metadata) do
-      {
-        'explicit_link' => true
-      }
-    end
-
-    let(:provider) do
-      Bosh::Director::Models::Links::LinkProvider.create(
-        deployment: deployment_model,
-        instance_group: 'ig1',
-        name: 'p1',
-        type: 'job'
-      )
-    end
-    let(:provider_intent) do
-      Bosh::Director::Models::Links::LinkProviderIntent.create(
-        link_provider: provider,
-        original_name: 'pi1',
-        name: 'provider_alias',
-        type: 'foo'
-      )
-    end
-
-    before do
-      Bosh::Director::Models::Links::Link.create(
-        link_provider_intent: provider_intent,
-        link_consumer_intent: consumer_intent,
-        name: consumer_intent.original_name,
-        link_content: '{}'
-      )
-    end
-
-    # TODO LINKS: Update deployment should be where we do cleanup. Take a look at line
-    # /Users/pivotal/workspace/bosh/src/bosh-director/lib/bosh/director/jobs/update_deployment.rb:112
-
-    xit 'deletes all the consumers which was not created/updated in this task' do
-      # subject.cleanup_deployment(deployment_model)
-    end
-
-    xit 'deletes all the providers which was not created/updated in this task' do
-
-    end
-
-    xit 'removes all the associated links for each consumer' do
-
     end
   end
 
