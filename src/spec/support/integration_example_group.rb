@@ -233,25 +233,25 @@ module IntegrationExampleGroup
     expect(table(bosh_runner.run(cmd, options))).to contain_exactly(*expected)
   end
 
-  def check_for_unknowns(vms)
-    uniq_vm_names = vms.map(&:job_name).uniq
+  def check_for_unknowns(instances)
+    uniq_vm_names = instances.map(&:instance_group_name).uniq
     if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown'
-      bosh_runner.print_agent_debug_logs(vms.first.agent_id)
+      bosh_runner.print_agent_debug_logs(instances.first.agent_id)
     end
   end
 
-  def expect_running_vms_with_names_and_count(job_names_to_vm_counts, options={deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME})
-    vms = director.instances(options)
-    check_for_unknowns(vms)
-    names = vms.map(&:job_name)
-    total_expected_vms = job_names_to_vm_counts.values.inject(0) {|sum, count| sum + count}
-    updated_vms = vms.select { |instance| !instance.vm_cid.empty? }
+  def expect_running_vms_with_names_and_count(instance_group_names_to_instance_counts, options={deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME})
+    instances = director.instances(options)
+    check_for_unknowns(instances)
+    names = instances.map(&:instance_group_name)
+    total_expected_vms = instance_group_names_to_instance_counts.values.inject(0) {|sum, count| sum + count}
+    updated_vms = instances.select { |instance| !instance.vm_cid.empty? }
 
     expect(updated_vms.size).to eq(total_expected_vms), "Expected #{total_expected_vms} VMs, got #{updated_vms.size}. Present were VMs with job name: #{names}"
 
-    job_names_to_vm_counts.each do |job_name, expected_count|
-      actual_count = names.select { |name| name == job_name }.size
-      expect(actual_count).to eq(expected_count), "Expected job #{job_name} to have #{expected_count} VMs, got #{actual_count}"
+    instance_group_names_to_instance_counts.each do |instance_group_name, expected_count|
+      actual_count = names.select { |name| name == instance_group_name }.size
+      expect(actual_count).to eq(expected_count), "Expected instance group #{instance_group_name} to have #{expected_count} VMs, got #{actual_count}"
     end
 
     expect(updated_vms.map(&:last_known_state).uniq).to eq(['running'])

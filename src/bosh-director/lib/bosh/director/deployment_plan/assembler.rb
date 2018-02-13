@@ -140,21 +140,17 @@ module Bosh::Director
     def bind_links
       # TODO LINKS: Refactor me into a links class..
 
-      @deployment_plan.model.link_providers.each do |provider|
+      @deployment_plan.model.link_providers.select {|provider| provider.type == 'job'}.each do |provider|
         instance_group = @deployment_plan.instance_group(provider.instance_group)
 
         provider.intents.each do |provider_intent|
           metadata = {}
           metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
 
-          if provider.type == 'manual'
-            properties = JSON.parse(provider_intent.content)['properties']
-          else
-            properties = metadata['mapped_properties']
-          end
+          properties = metadata['mapped_properties']
 
-          # TODO LINKS: It should not be setting contents or heck... even modifying the provider in the case of manual. Just skip it or something?
-          provider_intent.content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties).spec.to_json
+          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties).spec.to_json
+          provider_intent.content = content
           provider_intent.save
         end
       end

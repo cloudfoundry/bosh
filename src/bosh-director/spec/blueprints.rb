@@ -269,6 +269,14 @@ module Bosh::Director::Models
     created_at { Time.now }
   end
 
+  module Links
+    LinkProvider.blueprint {}
+    LinkProviderIntent.blueprint {}
+    LinkConsumer.blueprint {}
+    LinkConsumerIntent.blueprint {}
+    Link.blueprint {}
+  end
+
   module Dns
     Domain.blueprint do
       name     { Sham.name }
