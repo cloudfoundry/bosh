@@ -115,7 +115,7 @@ module Bosh::Director
               )
             end
 
-            context 'when provided a cloud config and runtime config context to work within' do
+            context 'when provided cloud configs and runtime configs context to work within' do
               it 'should use the provided context instead of using the latest runtime and cloud config' do
                 cloud_config = Models::Config.make(:cloud_with_manifest)
                 runtime_config_1 = Models::Config.make(type: 'runtime')
@@ -134,6 +134,61 @@ module Bosh::Director
                 post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
 
                 expect_redirect_to_queued_task(last_response)
+              end
+
+              context 'with an authorized team' do
+                before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+                let(:runtime_config_1) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
+                let(:runtime_config_2) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
+                let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
+                let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
+
+                let(:dev_team) { Models::Team.make(name: 'dev') }
+                let(:other_team) { Models::Team.make(name: 'other') }
+
+                let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
+                let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
+
+                let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
+                let!(:other_cloud_config) { Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id) }
+
+                it 'should error if the user references a cloud config from another team' do
+                  deployment_context = [['context', JSON.dump({'cloud_config_ids' => [dev_cloud_config.id, other_cloud_config.id], 'runtime_config_ids' => []})]]
+
+                  response = post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                  expect(response.status).to eq(400)
+                  expect(response.body).to match(/Context includes invalid config ID/)
+                end
+
+                it 'should error if the user references a runtime config from another team' do
+                  deployment_context = [['context', JSON.dump({'cloud_config_ids' => [], 'runtime_config_ids' => [dev_runtime_config.id, other_runtime_config.id]})]]
+
+                  response = post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                  expect(response.status).to eq(400)
+                  expect(response.body).to match(/Context includes invalid config ID/)
+                end
+
+                it 'should accept global and team-specific cloud and runtime configs' do
+                  deployment_context = [['context', JSON.dump({'cloud_config_ids' => [cloud_config.id, dev_cloud_config.id], 'runtime_config_ids' => [runtime_config_3.id, dev_runtime_config.id]})]]
+
+                  allow_any_instance_of(DeploymentManager)
+                    .to receive(:create_deployment)
+                          .with(
+                            anything,
+                            anything,
+                            contain_exactly(cloud_config, dev_cloud_config),
+                            contain_exactly(runtime_config_3, dev_runtime_config),
+                            anything,
+                            anything,
+                            anything
+                          )
+                          .and_return(Models::Task.make)
+
+                  response = post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+
+                  expect(response.status).to eq(302)
+                end
               end
             end
 
@@ -161,6 +216,68 @@ module Bosh::Director
 
                 expect(Models::Task.count).to eq(1)
                 expect(Models::Task.first.description).to eq('create deployment (dry run)')
+              end
+            end
+
+            context 'no existing context provided' do
+              let(:runtime_config_1) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
+              let(:runtime_config_2) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
+              let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
+              let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
+
+              let(:dev_team) { Models::Team.make(name: 'dev') }
+              let(:other_team) { Models::Team.make(name: 'other') }
+
+              let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
+              let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
+
+              let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
+              let!(:other_cloud_config) { Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id) }
+
+              context 'with team-specific user' do
+                before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+                it 'filter cloud and runtime configs for team' do
+                  allow_any_instance_of(DeploymentManager)
+                    .to receive(:create_deployment)
+                          .with(
+                            anything,
+                            anything,
+                            [dev_cloud_config, cloud_config],
+                            [dev_runtime_config, runtime_config_2, runtime_config_3],
+                            anything,
+                            anything,
+                            anything
+                          )
+                          .and_return(Models::Task.make)
+
+                  response = post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+
+                  expect(response.status).to eq(302)
+                end
+              end
+
+              context 'existing team deployment' do
+                let!(:deployment) { Models::Deployment.make(name: 'deployment-name').tap { |d| d.teams = [dev_team] } }
+
+                it 'uses the teams of the existing deployment' do
+                  allow_any_instance_of(DeploymentManager)
+                    .to receive(:create_deployment)
+                          .with(
+                            anything,
+                            anything,
+                            contain_exactly(dev_cloud_config, cloud_config),
+                            contain_exactly(dev_runtime_config, runtime_config_2, runtime_config_3),
+                            anything,
+                            anything,
+                            anything
+                          )
+                          .and_return(Models::Task.make)
+
+                  response = post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+
+                  expect(response.status).to eq(302)
+                end
               end
             end
           end
@@ -274,6 +391,68 @@ module Bosh::Director
         end
 
         describe 'job management' do
+          context 'when team-authorized' do
+            before do
+              basic_authorize 'dev-team-member', 'dev-team-member'
+              Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id)
+              Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id)
+              Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
+            end
+
+            let!(:runtime_config) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
+            let!(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
+
+            let!(:dev_team) { Models::Team.make(name: 'dev') }
+            let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
+            let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
+            let!(:other_team) { Models::Team.make(name: 'other') }
+
+            let!(:deployment) do
+              Models::Deployment.make(name: 'foo', manifest: YAML.dump({'foo' => 'bar'})).tap { |d| d.teams = [dev_team] }
+            end
+
+            let!(:instance) do
+              Models::Instance.make(
+                deployment: deployment,
+                job: 'dea',
+                index: '2',
+                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                state: 'started',
+                :variable_set => Models::VariableSet.create(deployment: deployment)
+              )
+            end
+
+            it 'uses the correct configs when updating instance groups' do
+              expect_any_instance_of(DeploymentManager).to receive(:create_deployment).
+                with(
+                  anything,
+                  anything,
+                  contain_exactly(cloud_config, dev_cloud_config),
+                  contain_exactly(runtime_config, dev_runtime_config),
+                  deployment,
+                  anything,
+                ).and_return(Models::Task.make)
+
+              put '/foo/jobs/*?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect_redirect_to_queued_task(last_response)
+            end
+
+            it 'uses the correct configs when updating an instance' do
+              expect_any_instance_of(DeploymentManager).to receive(:create_deployment).
+                with(
+                  anything,
+                  anything,
+                  contain_exactly(cloud_config, dev_cloud_config),
+                  contain_exactly(runtime_config, dev_runtime_config),
+                  deployment,
+                  anything,
+                ).and_return(Models::Task.make)
+
+              put '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect_redirect_to_queued_task(last_response)
+            end
+          end
+
           shared_examples 'change state' do
             it 'allows to change state' do
               deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
@@ -462,73 +641,73 @@ module Bosh::Director
             end
           end
 
-        describe 'recreating' do
-          shared_examples_for "recreates with configs" do
-            it 'recreates with the latest configs if you send a manifest' do
-              cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
-              cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
-              runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
-              runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+          describe 'recreating' do
+            shared_examples_for 'recreates with configs' do
+              it 'recreates with the latest configs if you send a manifest' do
+                cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
+                cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
+                runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
+                runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
 
-              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
-              deployment.cloud_configs = [cc_old]
-              deployment.runtime_configs = [runtime_old]
+                deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
+                deployment.cloud_configs = [cc_old]
+                deployment.runtime_configs = [runtime_old]
 
-              instance = Models::Instance.create(
-                deployment: deployment,
-                job: 'dea',
-                index: '2',
-                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
-                state: 'started',
-                :variable_set => Models::VariableSet.create(deployment: deployment)
-              )
-              expect_any_instance_of(DeploymentManager)
-                  .to receive(:create_deployment)
-                          .with(anything(), anything(), [cc_new], [runtime_new], deployment, hash_including(options))
-                          .and_return(OpenStruct.new(:id => 1))
-              put "#{path}", JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
-              expect(last_response).to be_redirect
+                instance = Models::Instance.create(
+                  deployment: deployment,
+                  job: 'dea',
+                  index: '2',
+                  uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                  state: 'started',
+                  :variable_set => Models::VariableSet.create(deployment: deployment)
+                )
+                expect_any_instance_of(DeploymentManager)
+                    .to receive(:create_deployment)
+                            .with(anything(), anything(), [cc_new], [runtime_new], deployment, hash_including(options))
+                            .and_return(OpenStruct.new(:id => 1))
+                put "#{path}", JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
+                expect(last_response).to be_redirect
+              end
+
+              it 'recreates with the previous configs rather than the latest' do
+                cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
+                cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
+                runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
+                runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+
+                deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
+                deployment.cloud_configs = [cc_old]
+                deployment.runtime_configs = [runtime_old]
+
+                instance = Models::Instance.create(
+                  deployment: deployment,
+                  job: 'dea',
+                  index: '2',
+                  uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                  state: 'started',
+                  :variable_set => Models::VariableSet.create(deployment: deployment)
+                )
+                expect_any_instance_of(DeploymentManager)
+                    .to receive(:create_deployment)
+                            .with(anything(), anything(), [cc_old], [runtime_old], deployment, hash_including(options))
+                            .and_return(OpenStruct.new(:id => 1))
+                put "#{path}", '', {'CONTENT_TYPE' => 'text/yaml'}
+                expect(last_response).to be_redirect
+              end
             end
 
-            it 'recreates with the previous configs rather than the latest' do
-              cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
-              cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
-              runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
-              runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+            context 'with an instance_group' do
+              let(:path) {'/foo/jobs/dea?state=recreate'}
+              let(:options) { {'job_states' => {'dea' => {'state' => 'recreate'}}} }
+              it_behaves_like 'recreates with configs'
+            end
 
-              deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
-              deployment.cloud_configs = [cc_old]
-              deployment.runtime_configs = [runtime_old]
-
-              instance = Models::Instance.create(
-                deployment: deployment,
-                job: 'dea',
-                index: '2',
-                uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
-                state: 'started',
-                :variable_set => Models::VariableSet.create(deployment: deployment)
-              )
-              expect_any_instance_of(DeploymentManager)
-                  .to receive(:create_deployment)
-                          .with(anything(), anything(), [cc_old], [runtime_old], deployment, hash_including(options))
-                          .and_return(OpenStruct.new(:id => 1))
-              put "#{path}", '', {'CONTENT_TYPE' => 'text/yaml'}
-              expect(last_response).to be_redirect
+            context 'with an index or ID' do
+              let(:path) {'/foo/jobs/dea/2?state=recreate'}
+              let(:options) { {'job_states' => {'dea' => {'instance_states' => {2 => 'recreate'}}}} }
+              it_behaves_like 'recreates with configs'
             end
           end
-
-          context 'with an instance_group' do
-            let(:path) {'/foo/jobs/dea?state=recreate'}
-            let(:options) { {"job_states" => {"dea" => {"state" => "recreate"}}} }
-            it_behaves_like 'recreates with configs'
-          end
-
-          context 'with an index or ID' do
-            let(:path) {'/foo/jobs/dea/2?state=recreate'}
-            let(:options) { {"job_states" => {"dea" => {"instance_states" => {2 => "recreate"}}}} }
-            it_behaves_like 'recreates with configs'
-          end
-        end
 
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
@@ -765,6 +944,52 @@ module Bosh::Director
                 {'name' => 'stemcell3', 'version' => '2'}])
             expect(body.first['teams']).to eq(%w(team1 team2 team3))
           end
+
+          context 'when authorized as a team reader' do
+            let!(:permitted_deployment) do
+              Models::Deployment.create(
+                name: 'deployment-1',
+              ).tap do |deployment|
+                deployment.teams = [dev_team]
+                deployment.cloud_configs = [dev_cloud_config]
+              end
+            end
+            let!(:unauthorized_deployment) do
+              Models::Deployment.create(
+                name: 'deployment-2',
+              ).tap do |deployment|
+                deployment.teams = [other_team]
+                deployment.cloud_configs = [other_cloud_config]
+              end
+            end
+            let(:other_team) { Models::Team.make(name: 'footeam') }
+            let(:dev_team) { Models::Team.make(name: 'dev') }
+            let(:dev_cloud_config) do
+              Models::Config.make(name: 'dev-team-config', type: 'cloud', raw_manifest: {}, team_id: dev_team.id)
+            end
+            let(:other_cloud_config) do
+              Models::Config.make(name: 'other-team-config', type: 'cloud', raw_manifest: {}, team_id: other_team.id)
+            end
+
+            before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+            #TODO(tv, cd) fixup this it description
+            it 'returns the deployments that the user has access to with correct cloud-config status' do
+              get '/', {}, {}
+              expect(last_response.status).to eq(200)
+
+              body = JSON.parse(last_response.body)
+              expect(body).to eq([
+                {
+                  'name' => 'deployment-1',
+                  'releases' => [],
+                  'stemcells' => [],
+                  'cloud_config' => 'latest',
+                  'teams' => ['dev'],
+                },
+              ])
+            end
+          end
         end
 
         describe 'getting deployment info' do
@@ -799,8 +1024,8 @@ module Bosh::Director
                 'spec' => {'networks' => {'network1' => {'ip' => "#{i}.#{i}.#{i}.#{i}"}}},
               }
 
-              instance_params['availability_zone'] = "az0" if i == 0
-              instance_params['availability_zone'] = "az1" if i == 1
+              instance_params['availability_zone'] = 'az0' if i == 0
+              instance_params['availability_zone'] = 'az1' if i == 1
               instance = Models::Instance.create(instance_params)
               2.times do |j|
                 vm_params = {
@@ -835,7 +1060,7 @@ module Bosh::Director
                 'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
                 'id' => "instance-#{instance_idx}",
                 'active' => vm_is_active,
-                'az' => {0 => "az0", 1 => "az1", nil => nil}[instance_idx],
+                'az' => {0 => 'az0', 1 => 'az1', nil => nil}[instance_idx],
                 'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}"],
                 'vm_created_at' => time.utc.iso8601,
               )
@@ -871,8 +1096,8 @@ module Bosh::Director
                   'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
                 }
 
-                instance_params['availability_zone'] = "az0" if i == 0
-                instance_params['availability_zone'] = "az1" if i == 1
+                instance_params['availability_zone'] = 'az0' if i == 0
+                instance_params['availability_zone'] = 'az1' if i == 1
                 instance = Models::Instance.create(instance_params)
 
                 2.times do |j|
@@ -934,8 +1159,8 @@ module Bosh::Director
                   'uuid' => "instance-#{i}",
                 }
 
-                instance_params['availability_zone'] = "az0" if i == 0
-                instance_params['availability_zone'] = "az1" if i == 1
+                instance_params['availability_zone'] = 'az0' if i == 0
+                instance_params['availability_zone'] = 'az1' if i == 1
                 instance = Models::Instance.create(instance_params)
                 vm_params = {
                   'agent_id' => "agent-#{i}",
@@ -966,7 +1191,7 @@ module Bosh::Director
                   'cid' => "cid-#{i}",
                   'id' => "instance-#{i}",
                   'active' => vm_is_active,
-                  'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                  'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
                   'vm_created_at' => time.utc.iso8601
                 )
@@ -1012,8 +1237,8 @@ module Bosh::Director
                     'spec_json' => '{ "lifecycle": "service" }',
                 }
 
-                instance_params['availability_zone'] = "az0" if i == 0
-                instance_params['availability_zone'] = "az1" if i == 1
+                instance_params['availability_zone'] = 'az0' if i == 0
+                instance_params['availability_zone'] = 'az1' if i == 1
                 instance = Models::Instance.create(instance_params)
                 if i < 6
                   vm_params = {
@@ -1044,7 +1269,7 @@ module Bosh::Director
                     'job' => "job-#{i}",
                     'index' => i,
                     'id' => "instance-#{i}",
-                    'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                    'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                     'ips' => [],
                     'vm_created_at' => time.utc.iso8601,
                     'expects_vm' => true
@@ -1056,7 +1281,7 @@ module Bosh::Director
                     'job' => "job-#{i}",
                     'index' => i,
                     'id' => "instance-#{i}",
-                    'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                    'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                     'ips' => [],
                     'vm_created_at' => nil,
                     'expects_vm' => true
@@ -1078,8 +1303,8 @@ module Bosh::Director
                       'spec_json' => '{ "lifecycle": "service" }',
                   }
 
-                  instance_params['availability_zone'] = "az0" if i == 0
-                  instance_params['availability_zone'] = "az1" if i == 1
+                  instance_params['availability_zone'] = 'az0' if i == 0
+                  instance_params['availability_zone'] = 'az1' if i == 1
                   instance = Models::Instance.create(instance_params)
 
                   ip_addresses_params  = {
@@ -1103,7 +1328,7 @@ module Bosh::Director
                                           'job' => "job-#{i}",
                                           'index' => i,
                                           'id' => "instance-#{i}",
-                                          'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                          'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                                           'ips' => [],
                                           'vm_created_at' => nil,
                                           'expects_vm' => true
@@ -1123,8 +1348,8 @@ module Bosh::Director
                       'spec_json' => "{ \"lifecycle\": \"service\", \"networks\": [ [ \"a\", { \"ip\": \"1.2.3.#{i}\" } ] ] }",
                   }
 
-                  instance_params['availability_zone'] = "az0" if i == 0
-                  instance_params['availability_zone'] = "az1" if i == 1
+                  instance_params['availability_zone'] = 'az0' if i == 0
+                  instance_params['availability_zone'] = 'az1' if i == 1
                   Models::Instance.create(instance_params)
                 end
 
@@ -1141,7 +1366,7 @@ module Bosh::Director
                                           'job' => "job-#{i}",
                                           'index' => i,
                                           'id' => "instance-#{i}",
-                                          'az' => {0 => "az0", 1 => "az1", nil => nil}[i],
+                                          'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                                           'ips' => [],
                                           'vm_created_at' => nil,
                                           'expects_vm' => true
@@ -1545,7 +1770,7 @@ module Bosh::Director
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false, false, []],
                     deployment,
-                    ""
+                    ''
                   ).and_return(task)
 
                   perform({})
@@ -1579,7 +1804,7 @@ module Bosh::Director
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', true, false, []],
                     deployment,
-                    ""
+                    ''
                   ).and_return(task)
 
                   perform({'keep-alive' => true})
@@ -1592,7 +1817,7 @@ module Bosh::Director
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false, true, []],
                     deployment,
-                    ""
+                    ''
                   ).and_return(task)
 
                   perform({'when-changed' => true})
@@ -1605,7 +1830,7 @@ module Bosh::Director
                     'run errand fake-errand-name from deployment fake-dep-name',
                     ['fake-dep-name', 'fake-errand-name', false, false, ['group1/uuid1', 'group2/uuid2']],
                     deployment,
-                    ""
+                    ''
                   ).and_return(task)
 
                   perform({'instances' => ['group1/uuid1', 'group2/uuid2']})
@@ -1648,6 +1873,17 @@ module Bosh::Director
 
           context 'authenticated access' do
             before { authorize 'admin', 'admin' }
+
+            let(:manifest_hash) { {'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}}
+
+            let(:dev_team) { Models::Team.make(name: 'dev') }
+            let(:other_team) { Models::Team.make(name: 'other') }
+
+            let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
+            let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
+
+            let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
+            let!(:other_cloud_config) { Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id) }
 
             it 'returns diff with resolved aliases' do
               perform
@@ -1698,6 +1934,44 @@ module Bosh::Director
                 expect(diff).not_to match /very-cloudy-network/
                 expect(diff).to match /non-cloudy-network/
                 expect(diff).to match /network2/
+              end
+            end
+
+            context 'existing deployment' do
+              let(:deployment) do
+                Models::Deployment.make(name: 'existing-name', manifest: '{}').tap { |d| d.teams = [dev_team] }
+              end
+
+              it 'provides team-specific runtime and cloud configs in context' do
+                response = post "/#{deployment.name}/diff", YAML.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
+                expect(response.status).to eq(200)
+
+                diff = JSON.parse(response.body)
+
+                expect(diff['context']['cloud_config_ids']).to contain_exactly(dev_cloud_config.id, cloud_config.id)
+                expect(diff['context']['runtime_config_ids']).to contain_exactly(
+                  dev_runtime_config.id,
+                  runtime_config_2.id,
+                  runtime_config_3.id,
+                )
+              end
+            end
+
+            context 'team-specific for non-existent deployment' do
+              before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+              it 'provides team-specific runtime and cloud configs in context' do
+                response = post '/fake-dep-name-no-cloud-conf/diff', YAML.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
+                expect(response.status).to eq(200)
+
+                diff = JSON.parse(response.body)
+
+                expect(diff['context']['cloud_config_ids']).to contain_exactly(dev_cloud_config.id, cloud_config.id)
+                expect(diff['context']['runtime_config_ids']).to contain_exactly(
+                  dev_runtime_config.id,
+                  runtime_config_2.id,
+                  runtime_config_3.id,
+                )
               end
             end
           end
