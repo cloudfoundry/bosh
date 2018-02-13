@@ -409,7 +409,7 @@ describe 'using director with config server and deployments having links', type:
           'addons' => [
             {
               'name' => 'addon_job',
-              'jobs' => [
+              'jobs' => [{
                 'name' => 'http_proxy_with_requires',
                 'release' => 'bosh-release',
                 'consumes' => {
@@ -418,8 +418,7 @@ describe 'using director with config server and deployments having links', type:
                     'deployment' => 'provider_deployment_name'
                   }
                 }
-              ]
-
+              }]
             }
           ]
         }

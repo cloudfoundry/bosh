@@ -58,8 +58,8 @@ module Bosh::Director
         {
           'name' => safe_property(addon_job, 'name', :class => String),
           'release' => safe_property(addon_job, 'release', :class => String),
-          'provides_links' => safe_property(addon_job, 'provides', class: Hash, default: {}).to_a,
-          'consumes_links' => safe_property(addon_job, 'consumes', class: Hash, default: {}).to_a,
+          'provides' => safe_property(addon_job, 'provides', class: Hash, default: {}),
+          'consumes' => safe_property(addon_job, 'consumes', class: Hash, default: {}),
           'properties' => safe_property(addon_job, 'properties', class: Hash, optional: true),
         }
       end
