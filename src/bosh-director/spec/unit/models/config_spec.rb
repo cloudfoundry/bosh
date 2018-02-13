@@ -87,16 +87,117 @@ module Bosh::Director::Models
       end
     end
 
-    describe '#teams' do
+    describe '#latest_set_for_teams' do
+      let!(:red_team) { Bosh::Director::Models::Team.make(name: 'red') }
+      let!(:blue_team) { Bosh::Director::Models::Team.make(name: 'blue') }
+      let!(:global_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'default') }
+      let!(:global_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'default') }
+      let!(:red_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }
+      let!(:red_team_cloud_config2) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }
+      let!(:red_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'red-runtime-config', team_id: red_team.id) }
+      let!(:blue_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id) }
+      let!(:blue_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'blue-runtime-config', team_id: blue_team.id) }
+
+      it 'returns team-specific configs for a given type grouped by name' do
+        latest = Bosh::Director::Models::Config.latest_set_for_teams('cloud', red_team)
+        expect(latest).to contain_exactly(global_cloud_config, red_team_cloud_config2)
+      end
+
+      it 'returns configs for all given teams for a given type grouped by name' do
+        latest = Bosh::Director::Models::Config.latest_set_for_teams('cloud', red_team, blue_team)
+        expect(latest).to contain_exactly(global_cloud_config, red_team_cloud_config2, blue_team_cloud_config)
+      end
+
+      it 'returns empty list when there are no records' do
+        expect(Bosh::Director::Models::Config.latest_set_for_teams('none')).to be_empty
+      end
+
+      context 'deleted config name' do
+        before do
+          Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id, deleted: true)
+        end
+
+        it 'is not enumerated in latest' do
+          latest = Bosh::Director::Models::Config.latest_set_for_teams('cloud', blue_team)
+          expect(latest).to contain_exactly(global_cloud_config)
+        end
+
+        context 'resurrected a named config' do
+          let!(:blue_team_cloud_config_resurrected) do
+            Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id)
+          end
+
+          it 'is enumerated in latest' do
+            latest = Bosh::Director::Models::Config.latest_set_for_teams('cloud', blue_team)
+            expect(latest).to contain_exactly(global_cloud_config, blue_team_cloud_config_resurrected)
+          end
+        end
+      end
+    end
+
+    describe '#find_by_ids_for_teams' do
+      let!(:red_team) { Bosh::Director::Models::Team.make(name: 'red') }
+      let!(:blue_team) { Bosh::Director::Models::Team.make(name: 'blue') }
+      let!(:global_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'default') }
+      let!(:global_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'default') }
+      let!(:red_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }
+      let!(:red_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'red-runtime-config', team_id: red_team.id) }
+      let!(:blue_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id) }
+      let!(:blue_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'blue-runtime-config', team_id: blue_team.id) }
+      let!(:deleted_blue_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'blue-runtime-config', team_id: blue_team.id, deleted: true) }
+
+      it 'returns team-specific configs for given ids' do
+        latest = Bosh::Director::Models::Config.find_by_ids_for_teams([global_cloud_config.id, red_team_cloud_config.id], red_team)
+        expect(latest).to contain_exactly(global_cloud_config, red_team_cloud_config)
+      end
+
+      it 'returns configs for all given teams for given ids' do
+        latest = Bosh::Director::Models::Config.find_by_ids_for_teams(
+          [global_cloud_config.id, red_team_cloud_config.id, blue_team_cloud_config.id],
+          red_team,
+          blue_team,
+        )
+        expect(latest).to contain_exactly(global_cloud_config, red_team_cloud_config, blue_team_cloud_config)
+      end
+
+      it 'returns empty set of configs when given nil id' do
+        latest = Bosh::Director::Models::Config.find_by_ids_for_teams(
+          nil,
+          red_team,
+          blue_team,
+        )
+        expect(latest).to be_empty
+      end
+
+      it 'returns empty set of configs when given empty set of ids' do
+        latest = Bosh::Director::Models::Config.find_by_ids_for_teams(
+          [],
+          red_team,
+          blue_team,
+        )
+        expect(latest).to be_empty
+      end
+
+      it 'errors if any of given ids does not belong to teams' do
+        expect do
+          Bosh::Director::Models::Config.find_by_ids_for_teams(
+            [global_cloud_config.id, red_team_cloud_config.id, blue_team_runtime_config.id],
+            red_team,
+          )
+        end.to raise_error(Sequel::NoMatchingRow, /Failed to find ID: 6/)
+      end
+    end
+
+    describe '#team' do
       it 'returns teams array' do
         team = Team.create(:name => 'dev')
         Config.new(type: 'fake-cloud', content: 'v1', name: 'one', team_id: team.id).save
-        expect(Config.first.teams).to eq([team])
+        expect(Config.first.team).to eq(team)
       end
 
-      it 'returns empty teams when no team_id' do
+      it 'returns nil when no team_id' do
         Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
-        expect(Bosh::Director::Models::Config.first.teams).to eq([])
+        expect(Bosh::Director::Models::Config.first.team).to be_nil
       end
     end
   end

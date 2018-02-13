@@ -6,7 +6,7 @@ module Bosh
           cloud_config = Bosh::Director::Models::Config.new(
             type: 'cloud',
             name: 'default',
-            content: cloud_config_yaml
+            content: cloud_config_yaml,
           )
           cloud_config.save
         end

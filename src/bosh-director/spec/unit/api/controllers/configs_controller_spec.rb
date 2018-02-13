@@ -160,13 +160,14 @@ module Bosh::Director
             result = JSON.parse(last_response.body)
             expect(result.class).to be(Array)
             expect(result.size).to eq(2)
-            expect(result).to include({
-                'content' => config1.content,
-                'id' => "#{config1.id}",
-                'type' => config1.type,
-                'name' => config1.name,
-                'teams' => []
-            })
+            expect(result).to include(
+              'content' => config1.content,
+              'id' => config1.id.to_s,
+              'type' => config1.type,
+              'name' => config1.name,
+              'created_at' => config1.created_at.to_s,
+              'team' => nil,
+            )
           end
         end
       end
@@ -188,14 +189,14 @@ module Bosh::Director
 
           expect(last_response.status).to eq(201)
 
+          config_model = Bosh::Director::Models::Config.first
           expect(JSON.parse(last_response.body)).to eq(
-            {
-                'id' => "#{Bosh::Director::Models::Config.first.id}",
-                'type' => 'my-type',
-                'name' => 'my-name',
-                'content' => 'a: 1',
-                'teams' => []
-            }
+            'id' => config_model.id.to_s,
+            'type' => 'my-type',
+            'name' => 'my-name',
+            'content' => 'a: 1',
+            'created_at' => config_model.created_at.to_s,
+            'team' => nil,
           )
         end
 
@@ -626,23 +627,22 @@ module Bosh::Director
       context 'when user has a team admin membership' do
         before {basic_authorize 'dev-team-member', 'dev-team-member'}
 
-        it 'permits read access to the teams config' do
+        it 'returns team configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
         end
 
-        it 'permits write access' do
-          expect {
-            post '/', JSON.generate({'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'}), {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
-        end
-
-        it 'stores team_id of the autorized user' do
-          expect {
-            post '/', JSON.generate({'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'}), {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
+        it 'stores team-specific configs' do
+          expect do
+            post(
+              '/',
+              JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'),
+              'CONTENT_TYPE' => 'application/json',
+            )
+          end.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
           expect(Bosh::Director::Models::Config.all[2][:team_id]).to eq(dev_team.id)
         end
 
@@ -652,11 +652,18 @@ module Bosh::Director
           expect(configs.count).to eq(0)
         end
 
-        it 'does not return teams value' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
-          expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first["teams"]).to be_nil
+        it "cannot overwrite another team's config" do
+          expect(
+            post(
+              '/',
+              JSON.generate('name' => 'other_config', 'type' => 'my-type', 'content' => 'a: 123'),
+              'CONTENT_TYPE' => 'application/json',
+            ).status,
+          ).to eq(401)
+        end
+
+        it "cannot delete another team's config" do
+          expect(delete('/?type=my-type&name=other_config').status).to eq(401)
         end
       end
 
@@ -678,11 +685,11 @@ module Bosh::Director
           expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
         end
 
-        it 'does not return teams value' do
+        it 'returns team configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
-          expect(JSON.parse(last_response.body).first["teams"]).to be_nil
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
         end
       end
 
@@ -710,11 +717,11 @@ module Bosh::Director
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.load(last_response.body,).map {|x| x["teams"]}).to contain_exactly(['dev'], ['other'])
+          expect(JSON.parse(last_response.body).map { |x| x['team'] }).to contain_exactly('dev', 'other')
         end
       end
 
-      context 'when user is a reader' do
+      context 'when user has read-only access to director' do
         before {basic_authorize('reader', 'reader')}
 
         it 'permits read access to all configs' do
@@ -730,12 +737,12 @@ module Bosh::Director
           expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
         end
 
-        it 'does not return teams value' do
+        it 'returns all configs' do
           get '/?type=my-type&latest=false'
           expect(get('/?type=my-type&latest=false').status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
-          expect(JSON.parse(last_response.body).first["teams"]).to be_nil
-          expect(JSON.parse(last_response.body)[1]["teams"]).to be_nil
+          expect(JSON.parse(last_response.body).first['team']).to eq('dev')
+          expect(JSON.parse(last_response.body)[1]['team']).to eq('other')
         end
       end
     end

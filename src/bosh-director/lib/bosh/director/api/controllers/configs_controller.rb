@@ -34,13 +34,15 @@ module Bosh::Director
               latest: true
           )
 
-          if latest_configs.empty? || latest_configs.first[:content] != config_hash['content']
+          config = latest_configs.first
+
+          @permission_authorizer.granted_or_raise(config, :admin, token_scopes) unless config.nil?
+
+          if config.nil? || config[:content] != config_hash['content']
             teams = Models::Team.transform_admin_team_scope_to_teams(token_scopes)
             team_id = teams.empty? ? nil: teams.first.id
             config = Bosh::Director::Api::ConfigManager.new.create(config_hash['type'], config_hash['name'], config_hash['content'], team_id)
             create_event(config_hash['type'], config_hash['name'])
-          else
-            config = latest_configs.first
           end
         rescue => e
           type = config_hash ? config_hash['type'] : nil
@@ -49,7 +51,7 @@ module Bosh::Director
           raise e
         end
         status(201)
-        return json_encode(sql_to_hash(config))
+        json_encode(sql_to_hash(config))
       end
 
       post '/diff', scope: :list_configs, :consumes => :json do
@@ -98,7 +100,24 @@ module Bosh::Director
         check(params, 'type')
         check(params, 'name')
 
-        count = Bosh::Director::Api::ConfigManager.new.delete(params['type'], params['name'])
+        config_manager = Bosh::Director::Api::ConfigManager.new
+
+        latest_configs = config_manager.find(
+          type: params['type'],
+          name: params['name'],
+          latest: true,
+        )
+
+        config = latest_configs.first
+
+        if config.nil?
+          status(404)
+          return
+        end
+
+        @permission_authorizer.granted_or_raise(config, :admin, token_scopes)
+
+        count = config_manager.delete(params['type'], params['name'])
         if count > 0
           status(204)
         else
@@ -125,8 +144,10 @@ module Bosh::Director
             id: config.id.to_s, # id should be opaque to clients (may not be an int)
             type: config.type,
             name: config.name,
+            team: nil,
+            created_at: config.created_at.to_s,
           }
-        hash['teams'] = config.teams.map(&:name) if @permission_authorizer.is_granted?(:director, :admin, token_scopes)
+        hash['team'] = config.team.name unless config.team.nil?
         hash
       end
 

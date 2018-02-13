@@ -89,8 +89,9 @@ module Bosh::Director
         else
           manifest_hash = validate_manifest_yml(request.body.read, nil)
           manifest =  YAML.dump(manifest_hash)
-          latest_cloud_configs = Models::Config.latest_set('cloud')
-          latest_runtime_configs = Models::Config.latest_set('runtime')
+          teams = deployment.teams
+          latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *teams)
+          latest_runtime_configs = Models::Config.latest_set_for_teams('runtime', *teams)
         end
 
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
@@ -124,8 +125,9 @@ module Bosh::Director
         else
           manifest_hash = validate_manifest_yml(request.body.read, nil)
           manifest =  YAML.dump(manifest_hash)
-          latest_cloud_configs = Models::Config.latest_set('cloud')
-          latest_runtime_configs = Models::Config.latest_set('runtime')
+          teams = deployment.teams
+          latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *teams)
+          latest_runtime_configs = Models::Config.latest_set_for_teams('runtime', *teams)
         end
 
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_configs, latest_runtime_configs, deployment, options)
@@ -198,10 +200,12 @@ module Bosh::Director
       end
 
       get '/', authorization: :list_deployments do
-        latest_cloud_configs = Models::Config.latest_set('cloud').map(&:id).sort
-        deployments = @deployment_manager.all_by_name_asc
-          .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
-          .map do |deployment|
+        all_deployments = @deployment_manager.all_by_name_asc
+        my_deployments = all_deployments.select do |deployment|
+          @permission_authorizer.is_granted?(deployment, :read, token_scopes)
+        end
+        deployments = my_deployments.map do |deployment|
+          latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
           cloud_config = if deployment.cloud_configs.empty?
                            'none'
                          elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
@@ -355,6 +359,8 @@ module Bosh::Director
           raise ValidationMissingField, "Deployment manifest must have a 'name' key"
         end
 
+        deployment_name = deployment['name']
+
         options = {}
         options['dry_run'] = true if params['dry_run'] == 'true'
         options['recreate'] = true if params['recreate'] == 'true'
@@ -362,22 +368,34 @@ module Bosh::Director
         options['fix'] = true if params['fix'] == 'true'
         options.merge!('scopes' => token_scopes)
 
+        # since authorizer does not look at manifest payload for deployment name
+        @deployment = Models::Deployment[name: deployment_name]
+        if @deployment
+          teams = @deployment.teams
+        else
+          teams = Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(token_scopes)
+        end
+
         if params['context']
           @logger.debug("Deploying with context #{params['context']}")
           context = JSON.parse(params['context'])
-          cloud_configs = Models::Config.find_by_ids(context['cloud_config_ids'])
-          runtime_configs = Models::Config.find_by_ids(context['runtime_config_ids'])
+
+          begin
+            cloud_configs = Models::Config.find_by_ids_for_teams(context['cloud_config_ids'], *teams)
+            runtime_configs = Models::Config.find_by_ids_for_teams(context['runtime_config_ids'], *teams)
+          rescue Sequel::NoMatchingRow
+            raise DeploymentInvalidConfigReference, 'Context includes invalid config ID'
+          end
         else
-          cloud_configs = Models::Config.latest_set('cloud')
-          runtime_configs = Models::Config.latest_set('runtime')
+          cloud_configs = Models::Config.latest_set_for_teams('cloud', *teams)
+          runtime_configs = Models::Config.latest_set_for_teams('runtime', *teams)
         end
 
         options['cloud_configs'] = cloud_configs
         options['runtime_configs'] = runtime_configs
         options['deploy'] = true
 
-        deployment_name = deployment['name']
-        options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
+        options['new'] = @deployment.nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
         task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_configs, runtime_configs, deployment_model, options, @current_context_id)
@@ -394,12 +412,14 @@ module Bosh::Director
           if deployment
             before_manifest = Manifest.load_from_model(deployment, {:resolve_interpolation => false, :ignore_cloud_config => ignore_cc})
             before_manifest.resolve_aliases
+            teams = deployment.teams
           else
             before_manifest = Manifest.generate_empty_manifest
+            teams = Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(token_scopes)
           end
 
-          after_cloud_configs = ignore_cc ? nil : Bosh::Director::Models::Config.latest_set('cloud')
-          after_runtime_configs = Bosh::Director::Models::Config.latest_set('runtime')
+          after_cloud_configs = ignore_cc ? nil : Bosh::Director::Models::Config.latest_set_for_teams('cloud', *teams)
+          after_runtime_configs = Bosh::Director::Models::Config.latest_set_for_teams('runtime', *teams)
 
           after_manifest = Manifest.load_from_hash(manifest_hash, after_cloud_configs, after_runtime_configs, {:resolve_interpolation => false})
           after_manifest.resolve_aliases
