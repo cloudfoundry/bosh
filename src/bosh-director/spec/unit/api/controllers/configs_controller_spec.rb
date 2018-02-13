@@ -182,10 +182,10 @@ module Bosh::Director
       describe 'when user has admin access' do
         before { authorize('admin', 'admin') }
 
-        it 'creates a new config' do
-          expect {
-            post '/', request_body, {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+        it 'creates a new config and returns new config as JSON' do
+          expect do
+            post '/', request_body, 'CONTENT_TYPE' => 'application/json'
+          end.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
           expect(last_response.status).to eq(201)
 

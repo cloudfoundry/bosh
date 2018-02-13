@@ -20,7 +20,16 @@ describe 'cli configs', type: :integration do
     end
 
     it 'updates named config' do
+<<<<<<< HEAD
       expect(bosh_runner.run("update-config --name=my-name --type=my-type #{config.path}")).to include('Succeeded')
+=======
+      expect(bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")).to include('Succeeded')
+    end
+
+    it 'updates config with default name' do
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
+      expect(bosh_runner.run('configs --type=my-type --json')).to include('"name": "default"')
+>>>>>>> 58c773e07... CLI changed arguments for update-config
     end
 
     it 'uploads an empty YAML hash' do
@@ -46,6 +55,14 @@ describe 'cli configs', type: :integration do
     end
   end
 
+  context 'can get a config' do
+    it 'by id' do
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
+      id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
+      expect(bosh_runner.run("config #{id}")).to include('Succeeded')
+    end
+  end
+
   context 'can list configs' do
     it 'lists configs' do
       bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
@@ -59,8 +76,17 @@ describe 'cli configs', type: :integration do
       bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
 
       output = bosh_runner.run('configs --type=my-type --name=my-name')
-      expect(output).to_not include('other-type','other-name')
-      expect(output).to include('my-type', 'my-name')
+      expect(output).to_not include('other-type', 'other-name')
+    end
+
+    it 'can include outdated configs' do
+      bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")
+      bosh_runner.run("update-config --type=my-type --name=my-name #{second_config.path}")
+
+      output = bosh_runner.run('configs --recent=99')
+
+      expect(output.scan('my-type').length).to be(2)
+      expect(output.scan('my-name').length).to be(2)
     end
   end
 
@@ -74,12 +100,12 @@ describe 'cli configs', type: :integration do
 
     it 'shows configs of the same team only' do
       bosh_runner.run(
-        "update-config --name=prod --type=cloud #{config.path}",
+        "update-config --type=cloud --name=prod #{config.path}",
         client: production_env['BOSH_CLIENT'],
         client_secret: production_env['BOSH_CLIENT_SECRET'])
 
       bosh_runner.run(
-        "update-config --name=team --type=cloud #{config.path}",
+        "update-config --type=cloud --name=team #{config.path}",
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET']
       )
@@ -95,14 +121,22 @@ describe 'cli configs', type: :integration do
       expect(team_configs).to contain_exactly('name' => 'team', 'team' => 'ateam', 'type' => 'cloud')
     end
 
-    it 'shows teams only for admin' do
+    it 'allows to create/delete team only for admin or team admin' do
+      output = bosh_runner.run(
+        "update-config --type=team-type --name=default #{config.path}",
+        failure_expected: true,
+        client: team_read_env['BOSH_CLIENT'],
+        client_secret: team_read_env['BOSH_CLIENT_SECRET'],
+      )
+      expect(output).to include('Retry: Post')
+
       bosh_runner.run(
-        "update-config --type=production-type --name=default #{config.path}",
-        client: production_env['BOSH_CLIENT'],
-        client_secret: production_env['BOSH_CLIENT_SECRET'],
+        "update-config --type=team-type --name=team-name1 #{config.path}",
+        client: team_admin_env['BOSH_CLIENT'],
+        client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
       bosh_runner.run(
-        "update-config --type=team-type --name=default #{config.path}",
+        "update-config --type=team-type --name=team-name2 #{config.path}",
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
@@ -152,8 +186,8 @@ describe 'cli configs', type: :integration do
     let(:other_config) {yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders)}
 
     it 'diffs two configs' do
-      bosh_runner.run("update-config my-type #{config.path}")
-      bosh_runner.run("update-config other-type --name=other-name #{other_config.path}")
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
+      bosh_runner.run("update-config --type=other-type --name=other-name #{other_config.path}")
 
       output = bosh_runner.run('configs --include-outdated --json')
       from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
@@ -181,16 +215,32 @@ describe 'cli configs', type: :integration do
 
   it 'gives nice errors for common problems when uploading', no_reset: true do
     # not logged in
-    expect(bosh_runner.run("update-config --type=my-type --name=default #{config.path}", include_credentials: false, failure_expected: true)).to include('Retry: Post')
+    expect(
+      bosh_runner.run(
+        "update-config --type=my-type --name=default #{config.path}",
+        include_credentials: false,
+        failure_expected: true,
+      ),
+    ).to include('Retry: Post')
 
     # no file
-    expect(bosh_runner.run('update-config --type=my-type --name=default  /some/nonsense/file', failure_expected: true)).to include('no such file or directory')
+    expect(
+      bosh_runner.run(
+        'update-config --type=my-type --name=default /some/nonsense/file',
+        failure_expected: true,
+      ),
+    ).to include('no such file or directory')
 
     # file not yaml
     Dir.mktmpdir do |tmpdir|
       config_filename = File.join(tmpdir, 'config.yml')
       File.write(config_filename, "---\n}}}invalid yaml!")
-      expect(bosh_runner.run("update-config --type=my-type --name=default #{config_filename}", failure_expected: true)).to include('did not find expected node content')
+      expect(
+        bosh_runner.run(
+          "update-config --type=my-type --name=default #{config_filename}",
+          failure_expected: true,
+        ),
+      ).to include('did not find expected node content')
     end
   end
 end

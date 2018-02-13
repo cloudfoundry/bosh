@@ -157,7 +157,7 @@ describe 'cli runtime config', type: :integration do
 
   it 'shows no diff when uploading same unnamed runtime config as with generic config command' do
     runtime_config = yaml_file('runtime_config.yml', un_named_rc)
-    bosh_runner.run("update-config runtime #{runtime_config.path}")
+    bosh_runner.run("update-config --name=default --type=runtime #{runtime_config.path}")
     output = bosh_runner.run("update-runtime-config #{runtime_config.path}")
     expect(output).to match(/no changes in config, nothing to update\n+Succeeded/)
   end
