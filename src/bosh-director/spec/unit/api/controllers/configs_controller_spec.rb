@@ -199,31 +199,42 @@ module Bosh::Director
           )
         end
 
-        it 'creates a new config with whitespace preceding content' do
+        it 'creates a new config when one exists with different content' do
+          Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123'
+          )
+
           expect {
-            post '/', JSON.generate({ 'name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123' }), {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+            post '/', JSON.generate(
+                {
+                    'name' => 'my-name',
+                    'type' => 'my-type',
+                    'content' => 'b: 12345'
+                }
+            ), {'CONTENT_TYPE' => 'application/json'}
+          }.to change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
-
-          expect(JSON.parse(last_response.body)).to eq(
-            {
-              'id' => "#{Bosh::Director::Models::Config.first.id}",
-              'type' => 'my-type',
-              'name' => 'my-name',
-              'content' => 'a: 123',
-              'teams' => []
-            }
-          )
         end
 
-        it 'creates new config and does not update existing ' do
-          post '/', request_body, {'CONTENT_TYPE' => 'application/json'}
-          expect(last_response.status).to eq(201)
+        it 'ignores config when config already exists' do
+          Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123'
+          )
 
           expect {
-            post '/', request_body, {'CONTENT_TYPE' => 'application/json'}
-          }.to change(Bosh::Director::Models::Config, :count).from(1).to(2)
+            post '/', JSON.generate(
+                {
+                    'name' => 'my-name',
+                    'type' => 'my-type',
+                    'content' => 'a: 123'
+                }
+            ), {'CONTENT_TYPE' => 'application/json'}
+          }.to_not change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
         end
