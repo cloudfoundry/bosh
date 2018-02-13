@@ -1,0 +1,12 @@
+---
+name: job-1
+
+templates:
+  post-stop.erb: bin/post-stop
+
+packages: []
+
+properties:
+  succeed:
+    description: duh
+    default: true

@@ -72,6 +72,7 @@ module Bosh::Director
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to receive(:stop).with(no_args).ordered
+          expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
           stopper.stop
         end
       end
@@ -83,6 +84,7 @@ module Bosh::Director
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
+          expect(agent_client).to_not receive(:run_script).with('post-stop', {})
           stopper.stop
         end
       end
@@ -94,6 +96,7 @@ module Bosh::Director
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
+          expect(agent_client).to_not receive(:run_script).with('post-stop', {})
           stopper.stop
         end
       end
@@ -105,6 +108,7 @@ module Bosh::Director
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
+          expect(agent_client).to_not receive(:run_script).with('post-stop', {})
           stopper.stop
         end
       end
@@ -117,6 +121,7 @@ module Bosh::Director
             expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
             expect(subject).to receive(:sleep).with(1).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
+            expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
             subject.stop
           end
         end
@@ -126,6 +131,7 @@ module Bosh::Director
             expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(-2).ordered
             expect(subject).to receive(:wait_for_dynamic_drain).with(-2).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
+            expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
             subject.stop
           end
         end
@@ -139,6 +145,7 @@ module Bosh::Director
             expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(1).ordered
             expect(subject).to receive(:sleep).with(1).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
+            expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
             subject.stop
           end
         end
@@ -148,10 +155,12 @@ module Bosh::Director
             expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(-2).ordered
             expect(subject).to receive(:wait_for_dynamic_drain).with(-2).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
+            expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
             subject.stop
           end
 
           it 'waits on the agent' do
+            allow(agent_client).to receive(:run_script).with('post-stop', {})
             allow(agent_client).to receive(:stop)
             allow(agent_client).to receive(:drain).with('status').and_return(-1, 0)
 
@@ -171,6 +180,7 @@ module Bosh::Director
         it 'drains with shutdown' do
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
+          expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
           subject.stop
         end
       end
@@ -185,6 +195,7 @@ module Bosh::Director
         it 'drains with shutdown' do
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
+          expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
           subject.stop
         end
       end
@@ -195,6 +206,7 @@ module Bosh::Director
         it 'drains with shutdown' do
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
+          expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
           subject.stop
         end
       end
@@ -205,6 +217,7 @@ module Bosh::Director
         it 'drains with shutdown' do
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
+          expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
           subject.stop
         end
       end
@@ -220,6 +233,7 @@ module Bosh::Director
         it 'does not shutdown' do
           expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
+          expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
           subject.stop
         end
       end

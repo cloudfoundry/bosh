@@ -20,6 +20,7 @@ module Bosh::Director::DeploymentPlan::Steps
       allow(agent_client).to receive(:apply)
       allow(agent_client).to receive(:drain).and_return(0)
       allow(agent_client).to receive(:stop)
+      allow(agent_client).to receive(:run_script).with('post-stop', {})
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:get_state)
