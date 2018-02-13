@@ -1,6 +1,5 @@
 # Cloud factory looks up and instantiates clouds, either taken from the director config or from the cpi config.
 # To achieve this, it uses the parsed cpis from the cpi config.
-# For lookup based on availability zone, it additionally needs the cloud planner which contains the AZ -> CPI mapping from the cloud config.
 require 'bosh/director/validation_helper'
 
 module Bosh::Director
@@ -36,14 +35,6 @@ module Bosh::Director
       manifest_parser.parse(merged_cpi_configs_hash)
     end
 
-    def self.create_cloud_planner(cloud_configs, deployment_name = nil)
-      return nil unless CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(cloud_configs)
-
-      global_network_resolver = DeploymentPlan::NullGlobalNetworkResolver.new
-      parser = DeploymentPlan::CloudManifestParser.new(Config.logger)
-      parser.parse(Api::CloudConfigManager.interpolated_manifest(cloud_configs, deployment_name), global_network_resolver, nil)
-    end
-
     def self.create_azs(cloud_configs, deployment_name = nil)
       return nil unless CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(cloud_configs)
 
@@ -51,6 +42,8 @@ module Bosh::Director
       azs = Bosh::Director::DeploymentPlan::AvailabilityZone.parse(interpolated)
       Bosh::Director::DeploymentPlan::CloudPlanner.index_by_name(azs)
     end
+
+    private_class_method :create_azs
 
     def initialize(azs, parsed_cpi_config)
       @azs = azs
