@@ -97,7 +97,7 @@ module Bosh::Director
       make_runner(sample_job_class, 42)
 
       Config.logger.debug('before')
-      Config.logger.debug('(10.01s) SELECT NULL')
+      Config.logger.debug('(10.01s) (conn: 123123123) SELECT NULL')
       Config.logger.debug('after')
 
       log_contents = File.read(task_dir+'/debug')
