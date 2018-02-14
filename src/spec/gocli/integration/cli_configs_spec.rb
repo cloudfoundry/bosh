@@ -10,21 +10,21 @@ describe 'cli configs', type: :integration do
       let(:config) { yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
 
       it 'replaces placeholders' do
-        expect(bosh_runner.run("update-config -v placeholder=my-data my-type #{config.path}")).to include('Succeeded')
+        expect(bosh_runner.run("update-config -v placeholder=my-data --type=my-type --name=default #{config.path}")).to include('Succeeded')
         expect(bosh_runner.run('config --type=my-type --name=default')).to include('my-data')
       end
     end
 
     it 'updates config' do
-      expect(bosh_runner.run("update-config my-type #{config.path}")).to include('Succeeded')
+      expect(bosh_runner.run("update-config --type=my-type --name=default #{config.path}")).to include('Succeeded')
     end
 
     it 'updates named config' do
-      expect(bosh_runner.run("update-config --name=my-name my-type #{config.path}")).to include('Succeeded')
+      expect(bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")).to include('Succeeded')
     end
 
     it 'updates config with default name' do
-      bosh_runner.run("update-config my-type #{config.path}")
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
       expect(bosh_runner.run('configs --type=my-type --json')).to include('"name": "default"')
     end
 
@@ -32,7 +32,7 @@ describe 'cli configs', type: :integration do
       Dir.mktmpdir do |tmpdir|
         empty_config_filename = File.join(tmpdir, 'empty_config.yml')
         File.write(empty_config_filename, '{}')
-        expect(bosh_runner.run("update-config my-type #{empty_config_filename}")).to include('Succeeded')
+        expect(bosh_runner.run("update-config --type=my-type --name=default #{empty_config_filename}")).to include('Succeeded')
       end
     end
 
@@ -45,7 +45,7 @@ describe 'cli configs', type: :integration do
 
       cloud_config_file = yaml_file('config.yml', config)
 
-      output, exit_code = bosh_runner.run("update-config large-config #{cloud_config_file.path}", return_exit_code: true)
+      output, exit_code = bosh_runner.run("update-config --type=large-config --name=default #{cloud_config_file.path}", return_exit_code: true)
       expect(output).to include('Succeeded')
       expect(exit_code).to eq(0)
     end
@@ -53,7 +53,7 @@ describe 'cli configs', type: :integration do
 
   context 'can get a config' do
     it 'by id' do
-      bosh_runner.run("update-config my-type #{config.path}")
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
       id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
       expect(bosh_runner.run("config #{id}")).to include('Succeeded')
     end
@@ -63,23 +63,23 @@ describe 'cli configs', type: :integration do
     let(:second_config) { yaml_file('second_config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
 
     it 'lists configs' do
-      bosh_runner.run("update-config my-type #{config.path}")
-      bosh_runner.run("update-config other-type --name=other-name #{config.path}")
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
+      bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
 
       expect(bosh_runner.run('configs')).to include('default', 'other-name', 'my-type', 'other-type')
     end
 
     it 'can filter lists configs' do
-      bosh_runner.run("update-config my-type --name=my-name #{config.path}")
-      bosh_runner.run("update-config other-type --name=other-name #{config.path}")
+      bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")
+      bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
 
       output = bosh_runner.run('configs --type=my-type --name=my-name')
       expect(output).to_not include('other-type', 'other-name')
     end
 
     it 'can include outdated configs' do
-      bosh_runner.run("update-config my-type --name=my-name #{config.path}")
-      bosh_runner.run("update-config my-type --name=my-name #{second_config.path}")
+      bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")
+      bosh_runner.run("update-config --type=my-type --name=my-name #{second_config.path}")
 
       output = bosh_runner.run('configs --recent=99')
 
@@ -98,13 +98,13 @@ describe 'cli configs', type: :integration do
 
     it 'shows configs of the same team only' do
       bosh_runner.run(
-        "update-config --name=prod cloud #{config.path}",
+        "update-config --type=cloud --name=prod #{config.path}",
         client: production_env['BOSH_CLIENT'],
         client_secret: production_env['BOSH_CLIENT_SECRET'],
       )
 
       bosh_runner.run(
-        "update-config --name=team cloud #{config.path}",
+        "update-config --type=cloud --name=team #{config.path}",
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
@@ -122,7 +122,7 @@ describe 'cli configs', type: :integration do
 
     it 'allows to create/delete team only for admin or team admin' do
       output = bosh_runner.run(
-        "update-config team-type #{config.path}",
+        "update-config --type=team-type --name=default #{config.path}",
         failure_expected: true,
         client: team_read_env['BOSH_CLIENT'],
         client_secret: team_read_env['BOSH_CLIENT_SECRET'],
@@ -130,12 +130,12 @@ describe 'cli configs', type: :integration do
       expect(output).to include('Retry: Post')
 
       bosh_runner.run(
-        "update-config team-type --name=team-name1 #{config.path}",
+        "update-config --type=team-type --name=team-name1 #{config.path}",
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
       bosh_runner.run(
-        "update-config team-type --name=team-name2 #{config.path}",
+        "update-config --type=team-type --name=team-name2 #{config.path}",
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
@@ -186,8 +186,8 @@ describe 'cli configs', type: :integration do
     let(:other_config) { yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
 
     it 'diffs two configs' do
-      bosh_runner.run("update-config my-type #{config.path}")
-      bosh_runner.run("update-config other-type --name=other-name #{other_config.path}")
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
+      bosh_runner.run("update-config --type=other-type --name=other-name #{other_config.path}")
 
       output = bosh_runner.run('configs --recent=99 --json')
       from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
@@ -197,8 +197,8 @@ describe 'cli configs', type: :integration do
 
   context 'can delete a config' do
     it 'delete a config' do
-      bosh_runner.run("update-config my-type --name=my-name #{config.path}")
-      bosh_runner.run("update-config other-type --name=other-name #{config.path}")
+      bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")
+      bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
 
       expect(bosh_runner.run('delete-config my-type --name=my-name')).to include('Succeeded')
       output = bosh_runner.run('configs')
@@ -217,7 +217,7 @@ describe 'cli configs', type: :integration do
     # not logged in
     expect(
       bosh_runner.run(
-        "update-config my-type #{config.path}",
+        "update-config --type=my-type --name=default #{config.path}",
         include_credentials: false,
         failure_expected: true,
       ),
@@ -226,7 +226,7 @@ describe 'cli configs', type: :integration do
     # no file
     expect(
       bosh_runner.run(
-        'update-config my-type /some/nonsense/file',
+        'update-config --type=my-type --name=default /some/nonsense/file',
         failure_expected: true,
       ),
     ).to include('no such file or directory')
@@ -237,7 +237,7 @@ describe 'cli configs', type: :integration do
       File.write(config_filename, "---\n}}}invalid yaml!")
       expect(
         bosh_runner.run(
-          "update-config my-type #{config_filename}",
+          "update-config --type=my-type --name=default #{config_filename}",
           failure_expected: true,
         ),
       ).to include('did not find expected node content')

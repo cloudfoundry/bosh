@@ -9,12 +9,14 @@ module Bosh::Director::Models
 
     many_to_many :stemcells, order: [Sequel.asc(:name), Sequel.asc(:version)]
     many_to_many :release_versions
-    one_to_many  :job_instances, :class => "Bosh::Director::Models::Instance"
+    one_to_many  :job_instances, :class => 'Bosh::Director::Models::Instance'
     one_to_many  :instances
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
     one_to_many  :link_consumers, :class => 'Bosh::Director::Models::Links::LinkConsumer'
     one_to_many  :link_providers, :class => 'Bosh::Director::Models::Links::LinkProvider'
+    one_to_many  :properties, :class => 'Bosh::Director::Models::DeploymentProperty'
+    one_to_many  :problems, :class => 'Bosh::Director::Models::DeploymentProblem'
     many_to_many  :cloud_configs,
       class: Bosh::Director::Models::Config,
       join_table: :deployments_configs,

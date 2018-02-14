@@ -77,15 +77,15 @@ module Bosh::Director
         # already allowed with initial expected_scope
         expected_scope
       when :create_deployment
-        expected_scope << add_bosh_admin_scopes(user_scopes)
+        expected_scope << bosh_team_admin_scopes(user_scopes)
       when :read_events, :list_configs
         expected_scope << director_permissions[:read]
-        expected_scope << add_bosh_team_scopes(user_scopes)
+        expected_scope << bosh_team_scopes(user_scopes)
       when :read_releases, :list_deployments, :read_stemcells, :list_tasks
         expected_scope << director_permissions[:read]
-        expected_scope << add_bosh_admin_scopes(user_scopes)
+        expected_scope << bosh_team_admin_scopes(user_scopes)
       when :update_configs
-        expected_scope << add_bosh_admin_scopes(user_scopes)
+        expected_scope << bosh_team_admin_scopes(user_scopes)
       when :read, :upload_releases, :upload_stemcells
         expected_scope << director_permissions[permission]
       else
@@ -93,13 +93,13 @@ module Bosh::Director
       end
     end
 
-    def add_bosh_admin_scopes(user_scopes)
+    def bosh_team_admin_scopes(user_scopes)
       user_scopes.select do |scope|
         scope.match(/\Abosh\.teams\.([^.]*)\.admin\z/)
       end
     end
 
-    def add_bosh_team_scopes(user_scopes)
+    def bosh_team_scopes(user_scopes)
       user_scopes.select do |scope|
         scope.match(/\Abosh\.teams\.([^.])*\.(admin|read)\z/)
       end

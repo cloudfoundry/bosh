@@ -196,7 +196,7 @@ module Bosh::Director
   JobStaticIPNotSupportedOnDynamicNetwork= err(150008)
   JobInvalidStaticIPs = err(150009)
 
-  #Network
+  # Network
   NetworkOverlappingSubnets = err(160001)
   NetworkInvalidRange = err(160002)
   NetworkInvalidGateway = err(160003)
@@ -240,6 +240,7 @@ module Bosh::Director
   DeploymentDuplicateVariableName = err(190022)
   DeploymentNATSClientCertificateGenerationError= err(190023)
   DeploymentRequired = err(190024)
+  DeploymentInvalidConfigReference = err(190025)
 
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)
