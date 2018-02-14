@@ -30,6 +30,7 @@ module Bosh::Director
 
     before do
       allow(Bosh::Director::Links::LinksManagerFactory).to receive(:create).and_return(links_manager_factory)
+      allow(links_manager).to receive(:update_provider_intents_contents)
     end
 
     describe '#bind_models' do
@@ -197,8 +198,30 @@ module Bosh::Director
         context 'links binding' do
           let(:resolver_options) {{dry_run: false, global_use_dns_entry: boolean}}
 
+          let(:provider) do
+            Models::Links::LinkProvider.make(
+              deployment: deployment_model,
+              instance_group: 'foo-ig',
+              name: 'foo-provider',
+              type: 'job'
+            )
+          end
+
+          let(:provider_intent) do
+            Models::Links::LinkProviderIntent.make(
+              :link_provider => provider,
+              :original_name => 'link_original_name_1',
+              :name => 'link_name_1',
+              :type => 'link_type_1',
+              :shared => true,
+              :consumable => true,
+              :content => '{}',
+              :metadata => {'mapped_properties' => {'a' => 'foo'}}.to_json
+            )
+          end
+
           let(:link_providers) do
-            []
+            [provider]
           end
 
           before do
@@ -206,176 +229,17 @@ module Bosh::Director
           end
 
           it 'should bind links by default' do
-            expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options)
+            expect(links_manager).to receive(:update_provider_intents_contents).with(link_providers, deployment_plan).ordered
+            expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options).ordered
 
             assembler.bind_models
           end
 
           it 'should skip links binding when should_bind_links flag is passed as false' do
+            expect(links_manager).to_not receive(:update_provider_intents_contents)
+            expect(links_manager).to_not receive(:resolve_deployment_links)
+
             assembler.bind_models({:should_bind_links => false})
-          end
-
-          describe 'providers intents contents generation' do
-            before do
-              allow(provider).to receive(:intents).and_return([provider_intent])
-            end
-
-            context 'when the provider type is manual' do
-              let(:provider) do
-                Models::Links::LinkProvider.make(
-                  deployment: deployment_model,
-                  instance_group: 'manual-ig',
-                  name: 'manual-provider',
-                  type: 'manual'
-                )
-              end
-
-              let(:provider_intent) do
-                Models::Links::LinkProviderIntent.make(
-                  :link_provider => provider,
-                  :original_name => 'link_original_name_1',
-                  :type => 'link_type_1',
-                  :name => 'link_name_1',
-                  :shared => true,
-                  :consumable => true,
-                  :content => 'some link content'
-                )
-              end
-
-              let(:link_providers) do
-                [provider]
-              end
-
-              it 'does not modify the contents field of the provider intents' do
-                expect(provider_intent).to_not receive(:save)
-                expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options)
-
-                assembler.bind_models
-
-                expect(provider_intent.content).to eq('some link content')
-              end
-            end
-
-            context 'when the provider type is a disk' do
-              let(:provider) do
-                Models::Links::LinkProvider.make(
-                  deployment: deployment_model,
-                  instance_group: 'disk-ig',
-                  name: 'disk-provider',
-                  type: 'disk'
-                )
-              end
-
-              let(:provider_intent) do
-                Models::Links::LinkProviderIntent.make(
-                  :link_provider => provider,
-                  :original_name => 'link_original_name_1',
-                  :name => 'link_name_1',
-                  :type => 'link_type_1',
-                  :shared => true,
-                  :consumable => true,
-                  :content => 'some link content'
-                )
-              end
-
-              let(:link_providers) do
-                [provider]
-              end
-
-              it 'does not modify the contents field of the provider intents' do
-                expect(provider_intent).to_not receive(:save)
-                expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options)
-
-                assembler.bind_models
-
-                expect(provider_intent.content).to eq('some link content')
-              end
-            end
-
-            context 'when the provider type is a job' do
-              let(:provider) do
-                Models::Links::LinkProvider.make(
-                  deployment: deployment_model,
-                  instance_group: 'foo-ig',
-                  name: 'foo-provider',
-                  type: 'job'
-                )
-              end
-
-              let(:provider_intent) do
-                Models::Links::LinkProviderIntent.make(
-                  :link_provider => provider,
-                  :original_name => 'link_original_name_1',
-                  :name => 'link_name_1',
-                  :type => 'link_type_1',
-                  :shared => true,
-                  :consumable => true,
-                  :content => '{}',
-                  :metadata => {'mapped_properties' => {'a' => 'foo'}}.to_json
-                )
-              end
-
-              let(:link_providers) do
-                [provider]
-              end
-
-              let(:instance_group) do
-                instance_double(Bosh::Director::DeploymentPlan::InstanceGroup, name: 'ig-awesome')
-              end
-
-              let(:link) do
-                instance_double(Bosh::Director::DeploymentPlan::Link)
-              end
-
-              it 'updates the contents field of the provider intents' do
-                allow(link).to receive_message_chain(:spec, :to_json).and_return("Foo Var")
-                allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
-
-                expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).and_return(link).with(deployment_model.name, instance_group, {'a' => 'foo'})
-                expect(provider_intent).to receive(:save)
-                expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options)
-
-                assembler.bind_models
-
-                expect(provider_intent.content).to eq('Foo Var')
-              end
-            end
-
-            context 'when the provider type is NOT a disk, job, or manual' do
-              let(:provider) do
-                Models::Links::LinkProvider.create(
-                  deployment: deployment_model,
-                  instance_group: 'special-ig',
-                  name: 'special-provider',
-                  type: 'special'
-                )
-              end
-
-              let(:provider_intent) do
-                Models::Links::LinkProviderIntent.create(
-                  :link_provider => provider,
-                  :original_name => 'link_original_name_1',
-                  :name => 'link_name_1',
-                  :type => 'link_type_1',
-                  :shared => true,
-                  :consumable => true,
-                  :content => 'some link content'
-                )
-              end
-
-              let(:link_providers) do
-                [provider]
-              end
-
-              it 'does not modify the contents field of the provider intents' do
-                expect(provider_intent).to_not receive(:save)
-                expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options)
-
-                assembler.bind_models
-
-                expect(provider_intent.content).to eq('some link content')
-              end
-            end
           end
         end
 

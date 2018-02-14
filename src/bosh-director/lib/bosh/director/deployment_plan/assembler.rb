@@ -138,27 +138,13 @@ module Bosh::Director
     end
 
     def bind_links
-      # TODO LINKS: Refactor me into a links class..
-
-      @deployment_plan.model.link_providers.select {|provider| provider.type == 'job'}.each do |provider|
-        instance_group = @deployment_plan.instance_group(provider.instance_group)
-
-        provider.intents.each do |provider_intent|
-          metadata = {}
-          metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
-
-          properties = metadata['mapped_properties']
-
-          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties).spec.to_json
-          provider_intent.content = content
-          provider_intent.save
-        end
-      end
+      @links_manager.update_provider_intents_contents(@deployment_plan.model.link_providers, @deployment_plan)
 
       resolve_link_options = {
         dry_run: false,
         global_use_dns_entry: @deployment_plan.use_dns_addresses?
       }
+
       @links_manager.resolve_deployment_links(@deployment_plan.model, resolve_link_options)
 
       # TODO LINKS

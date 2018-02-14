@@ -1771,4 +1771,195 @@ describe Bosh::Director::Links::LinksManager do
       expect(result).to match(expected_result)
     end
   end
+
+  describe '#update_provider_intents_contents' do
+    let(:deployment_model) {BD::Models::Deployment.make}
+    let(:link_providers) {[]}
+    let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
+
+    context 'when the provider type is a job' do
+      let(:provider_1) do
+        Bosh::Director::Models::Links::LinkProvider.make(
+          deployment: deployment_model,
+          instance_group: 'foo-ig',
+          name: 'foo-provider',
+          type: 'job'
+        )
+      end
+
+      let(:provider_1_intent_1) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_1,
+          :original_name => 'link_original_name_1',
+          :name => 'link_name_1',
+          :type => 'link_type_1',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'a' => '1'}}.to_json
+        )
+      end
+
+      let(:provider_1_intent_2) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_1,
+          :original_name => 'link_original_name_2',
+          :name => 'link_name_2',
+          :type => 'link_type_2',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'b' => '2'}}.to_json
+        )
+      end
+
+      let(:provider_2) do
+        Bosh::Director::Models::Links::LinkProvider.make(
+          deployment: deployment_model,
+          instance_group: 'foo-ig',
+          name: 'foo-provider-2',
+          type: 'job'
+        )
+      end
+
+      let(:provider_2_intent_1) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_2,
+          :original_name => 'link_original_name_3',
+          :name => 'link_name_3',
+          :type => 'link_type_3',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'c' => '1'}}.to_json
+        )
+      end
+
+      let(:provider_2_intent_2) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_2,
+          :original_name => 'link_original_name_4',
+          :name => 'link_name_4',
+          :type => 'link_type_4',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'d' => '2'}}.to_json
+        )
+      end
+
+      let(:link_providers) do
+        [provider_1, provider_2]
+      end
+
+      let(:instance_group) do
+        instance_double(Bosh::Director::DeploymentPlan::InstanceGroup)
+      end
+
+      let(:link_1) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      let(:link_2) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      let(:link_3) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      let(:link_4) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      before do
+        allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
+        allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2])
+        allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+
+        allow(link_1).to receive_message_chain(:spec, :to_json).and_return("{'foo_1':'bar_1'}")
+        allow(link_2).to receive_message_chain(:spec, :to_json).and_return("{'foo_2':'bar_2'}")
+        allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
+        allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
+        allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
+      end
+
+      it 'updates the contents field of the provider intents' do
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'a' => '1'}).and_return(link_1)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'b' => '2'}).and_return(link_2)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'c' => '1'}).and_return(link_3)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'d' => '2'}).and_return(link_4)
+
+        expect(provider_1_intent_1).to receive(:save)
+        expect(provider_1_intent_2).to receive(:save)
+        expect(provider_2_intent_1).to receive(:save)
+        expect(provider_2_intent_2).to receive(:save)
+
+        subject.update_provider_intents_contents(link_providers, deployment_plan)
+
+        expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
+        expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
+        expect(provider_2_intent_1.content).to eq("{'foo_3':'bar_3'}")
+        expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+      end
+    end
+
+    shared_examples_for 'non-job providers' do
+      before do
+        allow(provider).to receive(:intents).and_return([provider_intent])
+        allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+        allow(deployment_plan).to receive(:model).and_return(deployment_model)
+      end
+
+      let(:provider) do
+        Bosh::Director::Models::Links::LinkProvider.make(
+          deployment: deployment_model,
+          instance_group: 'ig',
+          name: 'some-provider',
+          type: provider_type
+        )
+      end
+
+      let(:provider_intent) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider,
+          :original_name => 'link_original_name_1',
+          :name => 'link_name_1',
+          :type => 'link_type_1',
+          :shared => true,
+          :consumable => true,
+          :content => 'some link content'
+        )
+      end
+
+      let(:link_providers) do
+        [provider]
+      end
+
+      it 'does not modify the contents field of the provider intents' do
+        expect(provider_intent).to_not receive(:save)
+
+        subject.update_provider_intents_contents(link_providers, deployment_plan)
+        expect(provider_intent.content).to eq('some link content')
+      end
+    end
+
+    context 'when the provider type is manual' do
+      let(:provider_type) {'manual'}
+
+      it_behaves_like 'non-job providers'
+    end
+
+    context 'when the provider type is manual' do
+      let(:provider_type) {'disk'}
+
+      it_behaves_like 'non-job providers'
+    end
+
+    context 'when the provider type is somthing else' do
+      let(:provider_type) {'meow'}
+
+      it_behaves_like 'non-job providers'
+    end
+  end
 end

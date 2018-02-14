@@ -173,7 +173,6 @@ module Bosh::Director::Links
       end
     end
 
-    # TODO LINKS: Test me please
     def get_links_from_deployment(deployment)
       consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment).all
 
@@ -218,6 +217,23 @@ module Bosh::Director::Links
           consumer_intent.links.each do |link|
             instance_model.add_link(link)
           end
+        end
+      end
+    end
+
+    def update_provider_intents_contents(link_providers, deployment_plan)
+      link_providers.select {|provider| provider.type == 'job'}.each do |provider|
+        instance_group = deployment_plan.instance_group(provider.instance_group)
+
+        provider.intents.each do |provider_intent|
+          metadata = {}
+          metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
+
+          properties = metadata['mapped_properties']
+
+          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties).spec.to_json
+          provider_intent.content = content
+          provider_intent.save
         end
       end
     end

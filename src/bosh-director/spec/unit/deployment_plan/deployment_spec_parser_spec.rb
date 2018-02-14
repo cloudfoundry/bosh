@@ -562,8 +562,8 @@ module Bosh::Director
 
             expect(result_obj.count).to eq(1)
             expect(result_obj.first.name).to eq('addon1')
-            expect(result_obj.first.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil},
-              {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil}])
+            expect(result_obj.first.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil},
+              {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil}])
             expect(result_obj.first.properties).to eq({'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
           end
 
