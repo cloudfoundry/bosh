@@ -17,42 +17,28 @@ module Bosh::Director
       let(:parsed_cloud_planner) { subject.parse(cloud_manifest, global_network_resolver, ip_provider_factory) }
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
-      describe 'availability zones' do
-        context 'when availability zones section is specified' do
+      context 'when availability zones section is specified' do
+        describe 'availability zones' do
           let(:availability_zones) {
             {'azs' => [
               {'name' => 'z1',
-               'cloud_properties' =>
+                'cloud_properties' =>
                   {'availability_zone' =>
                     'us-east-1a'
                   }
               },
               {'name' => 'z2',
-               'cloud_properties' =>
+                'cloud_properties' =>
                   {'availability_zone' =>
                     'us-east-2a'
                   },
-               'cpi' => 'cpi1'
+                'cpi' => 'cpi1'
               }
             ]
             }
           }
+
           before { cloud_manifest.merge!(availability_zones) }
-
-          context 'if name is not present' do
-            let(:availability_zones) { {'azs' => [{'cloud_properties' => {'availability_zone' => 'us-east-1a'}}]} }
-            it 'raises error' do
-              expect { parsed_cloud_planner }.to raise_error(ValidationMissingField)
-            end
-          end
-
-          context 'if an availability zone is duplicated' do
-            let(:availability_zones) { {'azs' => [{'name' => 'z1'}, {'name' => 'z1'}]} }
-
-            it 'raises error' do
-              expect { parsed_cloud_planner }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate az name 'z1'")
-            end
-          end
 
           it 'creates AvailabilityZone for each entry' do
             expect(parsed_cloud_planner.availability_zone('z1').name).to eq('z1')
@@ -530,6 +516,50 @@ module Bosh::Director
             end
           end
         end
+      end
+    end
+
+    describe '#parse_availability_zones' do
+      let(:parsed_availability_zones) { subject.parse_availability_zones(cloud_manifest) }
+      let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
+      let(:availability_zones) {
+        {'azs' => [
+          {'name' => 'z1',
+            'cloud_properties' =>
+              {'availability_zone' =>
+                'us-east-1a'
+              }
+          },
+          {'name' => 'z2',
+            'cloud_properties' =>
+              {'availability_zone' =>
+                'us-east-2a'
+              },
+            'cpi' => 'cpi1'
+          }
+        ]
+        }
+      }
+      before { cloud_manifest.merge!(availability_zones) }
+
+      context 'if name is not present' do
+        let(:availability_zones) { {'azs' => [{'cloud_properties' => {'availability_zone' => 'us-east-1a'}}]} }
+        it 'raises error' do
+          expect { parsed_availability_zones }.to raise_error(ValidationMissingField)
+        end
+      end
+
+      context 'if an availability zone is duplicated' do
+        let(:availability_zones) { {'azs' => [{'name' => 'z1'}, {'name' => 'z1'}]} }
+
+        it 'raises error' do
+          expect { parsed_availability_zones }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate az name 'z1'")
+        end
+      end
+
+      it 'returns an array of azs' do
+        expect(parsed_availability_zones.size).to eq(2)
+        expect(parsed_availability_zones.first).to be_a(DeploymentPlan::AvailabilityZone)
       end
     end
   end
