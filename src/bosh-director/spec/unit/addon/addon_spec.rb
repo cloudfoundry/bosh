@@ -136,6 +136,7 @@ module Bosh::Director
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
 
@@ -145,6 +146,7 @@ module Bosh::Director
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
 
@@ -169,6 +171,32 @@ module Bosh::Director
             expect(links_parser).to receive(:parse_consumers_from_job).with(jobs[1], deployment_model, dummy_with_packages_template, 'foobar')
 
             addon.add_to_deployment(deployment)
+          end
+
+          context 'when there is another instance group which is excluded' do
+            let(:exclude_spec) do
+              {'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy'}]}
+            end
+
+            before do
+              instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+              jobs = [{'name' => 'dummy_with_properties', 'release' => 'dummy'}]
+              instance_group = instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(name: 'excluded_ig', jobs: jobs, azs: ['z1']), {})
+              deployment.add_instance_group(instance_group)
+            end
+
+            it 'should not parse providers and consumers for excluded instance group' do
+              links_parser = instance_double(Bosh::Director::Links::LinksParser)
+
+              allow(Bosh::Director::Links::LinksParser).to receive(:new).and_return(links_parser)
+              allow(links_parser).to receive(:parse_providers_from_job)
+              allow(links_parser).to receive(:parse_consumers_from_job)
+
+              expect(links_parser).to_not receive(:parse_providers_from_job).with(anything, anything, anything, anything, 'excluded_ig')
+              expect(links_parser).to_not receive(:parse_consumers_from_job).with(anything, anything, anything, 'excluded_ig')
+
+              addon.add_to_deployment(deployment)
+            end
           end
 
           context 'when addon job specified does not exist in release' do
@@ -244,6 +272,7 @@ module Bosh::Director
           it 'adds filtered jobs only' do
             expect(instance_group).not_to receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
 
@@ -253,6 +282,7 @@ module Bosh::Director
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
       end

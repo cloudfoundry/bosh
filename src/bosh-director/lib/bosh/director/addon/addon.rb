@@ -44,12 +44,11 @@ module Bosh::Director
       end
 
       def add_to_deployment(deployment)
-        jobs = convert_addon_jobs_to_object(deployment)
-        deployment.instance_groups.each do |instance_group|
-          if applies?(deployment.name, deployment.team_names, instance_group)
-            add_jobs_to_instance_group(instance_group, jobs)
-          end
+        eligible_instance_groups = deployment.instance_groups.select do |instance_group|
+          applies?(deployment.name, deployment.team_names, instance_group)
         end
+
+        add_addon_jobs_to_instance_groups(deployment, eligible_instance_groups) unless eligible_instance_groups.empty?
       end
 
       private
@@ -64,12 +63,7 @@ module Bosh::Director
         }
       end
 
-      def add_jobs_to_instance_group(instance_group, jobs)
-        jobs.each { |job| instance_group.add_job(job) }
-      end
-
-      def convert_addon_jobs_to_object(deployment)
-        jobs = []
+      def add_addon_jobs_to_instance_groups(deployment, eligible_instance_groups)
         @addon_job_hashes.each do |addon_job_hash|
           deployment_release_version = deployment.release(addon_job_hash['release'])
           deployment_release_version.bind_model
@@ -77,8 +71,9 @@ module Bosh::Director
           addon_job_object = DeploymentPlan::Job.new(deployment_release_version, addon_job_hash['name'], deployment.name)
           addon_job_object.bind_models
 
-          #TODO LINKS: Make same changes as in instance_group_spec_parser
-          deployment.instance_groups.map(&:name).each do |instance_group_name|
+          eligible_instance_groups.each do |instance_group|
+            instance_group_name = instance_group.name
+
             if addon_job_hash['properties']
               job_properties = addon_job_hash['properties']
             else
@@ -89,10 +84,10 @@ module Bosh::Director
 
             @links_parser.parse_providers_from_job(addon_job_hash, deployment.model, addon_job_object.model, job_properties, instance_group_name)
             @links_parser.parse_consumers_from_job(addon_job_hash, deployment.model, addon_job_object.model, instance_group_name)
+
+            instance_group.add_job(addon_job_object)
           end
-          jobs << addon_job_object
         end
-        jobs
       end
     end
   end
