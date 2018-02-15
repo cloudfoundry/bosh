@@ -30,6 +30,8 @@ module Bosh::Director
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
         @fix = options['fix']
+
+        @api_version = options['api_version'] if options['api_version']
       end
 
       def perform
@@ -64,6 +66,7 @@ module Bosh::Director
           @stemcell_formats = safe_property(stemcell_manifest, 'stemcell_formats', class: Array, optional: true)
           @cloud_properties = safe_property(stemcell_manifest, 'cloud_properties', class: Hash, optional: true)
           @sha1 = safe_property(stemcell_manifest, 'sha1', class: String)
+          @api_version = safe_property(stemcell_manifest, 'api_version', class: Integer, optional: true)
 
           logger.info("Found stemcell image '#{@name}/#{@version}', " \
                       "cloud properties are #{@cloud_properties.inspect}")
@@ -99,6 +102,7 @@ module Bosh::Director
               stemcell.version = @version
               stemcell.sha1 = @sha1
               stemcell.cpi = cpi
+              stemcell.api_version = @api_version
             end
           end
 
