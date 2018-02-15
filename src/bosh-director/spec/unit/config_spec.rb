@@ -162,6 +162,11 @@ describe Bosh::Director::Config do
       end
     end
 
+    it 'does not configure a database logger' do
+      described_class.configure(test_config)
+      expect(described_class.db.loggers).to be_empty
+    end
+
     context 'config server' do
       context 'when enabled' do
         before {

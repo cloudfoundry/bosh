@@ -1,0 +1,6 @@
+cpis:
+  - name: fakecpi
+    type: fake
+    properties:
+      password: c1oudc0w
+      user: potato
