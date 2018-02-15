@@ -105,7 +105,10 @@ module Bosh::Director
           )
         end
 
-        shared_appender.add_filters(Bosh::Common::Logging.default_filters)
+        shared_appender.add_filters(
+          Bosh::Common::Logging.null_query_filter,
+          Bosh::Common::Logging.query_redaction_filter,
+        )
 
         @logger = Logging::Logger.new('Director')
         @logger.add_appenders(shared_appender)

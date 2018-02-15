@@ -52,7 +52,7 @@ module Bosh::Director
         'DirectorJobRunnerFile',
         filename: debug_log,
         layout: ThreadFormatter.layout,
-        filters: Bosh::Common::Logging.default_filters,
+        filters: [Bosh::Common::Logging.null_query_filter],
       )
       @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level

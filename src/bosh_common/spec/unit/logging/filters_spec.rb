@@ -1,0 +1,58 @@
+require 'spec_helper'
+require 'common/logging/regex_filter'
+require 'common/logging/filters'
+require 'logging/log_event'
+
+describe Bosh::Common::Logging do
+  let(:event) { Logging::LogEvent.new(nil, 100, event_data, false) }
+
+  describe '#null_query_filter' do
+    let(:subject) { described_class.null_query_filter }
+
+    describe 'select null' do
+      let(:event_data) { '(1.0001s) SELECT NULL' }
+
+      it 'drops them' do
+        expect(subject.allow(event)).to eq(nil)
+      end
+    end
+  end
+
+  describe '#query_redaction_filter' do
+    let(:subject) { described_class.query_redaction_filter }
+
+    describe 'insert db queries' do
+      describe 'insert into statements' do
+        let(:event_data) { '(1.001s) INSERT INTO "tablefoo" VALUES ("sensitive")' }
+
+        it 'redacts them' do
+          expect(subject.allow(event).data).to eq('(1.001s) INSERT INTO "tablefoo" <redacted>')
+        end
+      end
+
+      describe 'multiline insert into statements' do
+        let(:event_data) { "(1.001s) INSERT INTO \"tablefoo\"\nVALUES (\"sensitive\")" }
+
+        it 'redacts them' do
+          expect(subject.allow(event).data).to eq('(1.001s) INSERT INTO "tablefoo" <redacted>')
+        end
+      end
+    end
+
+    describe 'update db queries' do
+      let(:event_data) { '(1.001s) UPDATE "tablefoo" SET secret = "sensitive" WHERE secret = "c1oudc0w"' }
+
+      it 'redacts them' do
+        expect(subject.allow(event).data).to eq('(1.001s) UPDATE "tablefoo" <redacted>')
+      end
+    end
+
+    describe 'delete db queries' do
+      let(:event_data) { '(1.001s) DELETE FROM "tablefoo" WHERE secret = "sensitive"' }
+
+      it 'redacts them' do
+        expect(subject.allow(event).data).to eq('(1.001s) DELETE FROM "tablefoo" <redacted>')
+      end
+    end
+  end
+end

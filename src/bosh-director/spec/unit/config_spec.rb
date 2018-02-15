@@ -179,7 +179,7 @@ describe Bosh::Director::Config do
         end
       end
 
-      it 'filters out log message that matches blacklist' do
+      it 'filters out log message that are SELECT NULL' do
         test_config['logging']['file'] = log_file
         test_config['logging']['level'] = 'debug'
 
@@ -194,6 +194,44 @@ describe Bosh::Director::Config do
         expect(log_contents).to include('before')
         expect(log_contents).to include('after')
         expect(log_contents).not_to include('SELECT NULL')
+      end
+
+      it 'redacts log messages containing INSERT queries' do
+        test_config['logging']['file'] = log_file
+        test_config['logging']['level'] = 'debug'
+
+        described_class.configure(test_config)
+
+        described_class.logger.debug('before')
+        described_class.logger.debug(
+          %((10.01s) INSERT INTO "potatoface" ("diggity", "column2") VALUES ('alice', 'bob')),
+        )
+        described_class.logger.debug('after')
+
+        log_contents = File.read(log_file)
+
+        expect(log_contents).to include('before')
+        expect(log_contents).to include('after')
+        expect(log_contents).to include('INSERT INTO "potatoface" <redacted>')
+      end
+
+      it 'redacts log messages containing UPDATE queries' do
+        test_config['logging']['file'] = log_file
+        test_config['logging']['level'] = 'debug'
+
+        described_class.configure(test_config)
+
+        described_class.logger.debug('before')
+        described_class.logger.debug(
+          %((10.01s) UPDATE "potatoface" SET "diggity" = 'bob', "column2" = 'alice', 'bob'),
+        )
+        described_class.logger.debug('after')
+
+        log_contents = File.read(log_file)
+
+        expect(log_contents).to include('before')
+        expect(log_contents).to include('after')
+        expect(log_contents).to include('UPDATE "potatoface" <redacted>')
       end
     end
 
