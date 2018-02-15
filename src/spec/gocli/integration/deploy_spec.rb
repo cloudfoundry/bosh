@@ -50,6 +50,24 @@ Error: Unable to render instance groups for deployment. Errors are:
         expect(director.vms).to eq ([])
       end
     end
+
+    it 'does not interfere with a successful deployment later' do
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+
+      deploy_from_scratch(
+        manifest_hash: manifest_hash,
+        cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+        dry_run: true,
+      )
+
+      _, exit_code = deploy_from_scratch(
+        manifest_hash: manifest_hash,
+        cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+        return_exit_code: true,
+      )
+
+      expect(exit_code).to eq(0)
+    end
   end
 
   context 'a very simple deploy' do
