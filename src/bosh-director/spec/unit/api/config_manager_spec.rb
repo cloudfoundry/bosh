@@ -217,4 +217,27 @@ describe Bosh::Director::Api::ConfigManager do
       end
     end
   end
+
+  describe '#delete_by_id' do
+    context 'when config entry exists for given id' do
+      it "sets deleted to 'true'" do
+        id = Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name').id
+
+        count = manager.delete_by_id(id)
+
+        expect(Bosh::Director::Models::Config[id].deleted).to eq(true)
+        expect(count).to eq(1)
+      end
+    end
+
+    context 'when no config entry exists for given id' do
+      it "does not update any entry" do
+        count = manager.delete_by_id(5)
+
+        expect(count).to eq(0)
+      end
+    end
+  end
+
+
 end

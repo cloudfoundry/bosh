@@ -388,6 +388,34 @@ module Bosh::Director
       end
     end
 
+    describe 'DELETE', '/:id' do
+      describe 'when user has admin access' do
+
+        before { authorize('admin', 'admin') }
+
+        context 'when config exists' do
+          let(:config_id) { Models::Config.make.id }
+
+          it 'deletes the config specified by id' do
+            expect(delete("/#{config_id}").status).to eq(204)
+            expect(Models::Config[config_id].deleted).to eq(true)
+          end
+        end
+
+        context 'when config does not exists' do
+          it 'deletes the config specified by id' do
+            expect(delete("/5").status).to eq(404)
+          end
+        end
+
+        context 'when "id" parameter is not an integer' do
+          it 'responds with 400' do
+            expect(delete('/bla').status).to eq(404)
+          end
+        end
+      end
+    end
+
     describe 'diff' do
       let(:config_hash_with_one_az) do
         {
@@ -767,15 +795,16 @@ module Bosh::Director
 
       let(:dev_team) { Models::Team.create(name: 'dev') }
       let(:other_team) { Models::Team.create(name: 'other') }
-
-      before do
+      let!(:dev_config) do
         Models::Config.make(
           content: 'some-yaml',
           name: 'dev_config',
           created_at: Time.now - 3.days,
           team_id: dev_team.id,
         )
+      end
 
+      let!(:other_config) do
         Models::Config.make(
           content: 'some-other-yaml',
           name: 'other_config',
@@ -838,6 +867,10 @@ module Bosh::Director
 
         it "cannot delete another team's config" do
           expect(delete('/?type=my-type&name=other_config').status).to eq(401)
+        end
+
+        it "cannot delete another team's config by id" do
+          expect(delete("/#{other_config.id}").status).to eq(401)
         end
       end
 

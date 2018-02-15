@@ -70,6 +70,22 @@ module Bosh::Director
         end
       end
 
+      delete '/:id', scope: :update_configs do
+        return status(404) unless integer?(params['id'])
+
+        config_manager = Bosh::Director::Api::ConfigManager.new
+
+        config = config_manager.find_by_id(params['id'])
+        @permission_authorizer.granted_or_raise(config, :admin, token_scopes)
+
+        count = config_manager.delete_by_id(params['id'])
+        if count.positive?
+          status(204)
+        else
+          status(404)
+        end
+      end
+
       delete '/', scope: :update_configs do
         check(params, 'type')
         check(params, 'name')

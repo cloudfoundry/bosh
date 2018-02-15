@@ -43,6 +43,12 @@ module Bosh
             .update(deleted: true)
         end
 
+        def delete_by_id(id)
+          Bosh::Director::Models::Config
+            .where(id: id)
+            .update(deleted: true)
+        end
+
         private
 
         def find_latest(dataset)
