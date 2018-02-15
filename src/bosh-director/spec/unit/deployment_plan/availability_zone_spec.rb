@@ -3,39 +3,42 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe AvailabilityZone do
 
-    describe '#parse' do
-      subject(:availability_zone) { AvailabilityZone.parse(availability_zone_spec) }
+    describe '.parse' do
 
-      let(:availability_zone_spec) { {'name' => 'z1', 'cloud_properties' => {'availability_zone' => 'us-east-1a'}} }
+      let(:cloud_config) { { 'azs' => [{'name' => 'z1', 'cloud_properties' => {'availability_zone' => 'us-east-1a'}}] }}
 
       describe 'creating' do
         it 'has the name and cloud properties' do
-          expect(availability_zone.name).to eq('z1')
-          expect(availability_zone.cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
+          az = AvailabilityZone.parse(cloud_config).first
+
+          expect(az.name).to eq('z1')
+          expect(az.cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
         end
 
         it 'has name, cloud properties and cpi' do
-          availability_zone_spec['cpi'] = 'cpi1'
-          expect(availability_zone.name).to eq('z1')
-          expect(availability_zone.cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
-          expect(availability_zone.cpi).to eq('cpi1')
+          cloud_config['azs'].first['cpi'] = 'cpi1'
+          az = AvailabilityZone.parse(cloud_config).first
+
+          expect(az.name).to eq('z1')
+          expect(az.cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
+          expect(az.cpi).to eq('cpi1')
         end
       end
 
       describe 'name' do
         context 'is not present' do
-          let(:availability_zone_spec) { {'cloud_properties' => {}} }
+          let(:cloud_config) { { 'azs' => [{'cloud_properties' => {}}] } }
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationMissingField)
+            expect { AvailabilityZone.parse(cloud_config) }.to raise_error(BD::ValidationMissingField)
           end
         end
 
         context 'is not a string' do
-          let(:availability_zone_spec) { {'name' => {}, 'cloud_properties' => {}} }
+          let(:cloud_config) { { 'azs' => [{'name' => {}, 'cloud_properties' => {}}] } }
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
+            expect { AvailabilityZone.parse(cloud_config) }.to raise_error(BD::ValidationInvalidType)
           end
         end
       end
@@ -45,7 +48,9 @@ module Bosh::Director::DeploymentPlan
           let(:other) { AvailabilityZone.new("z2", {}) }
 
           it 'compares based on the name' do
-            expect([other, subject].sort).to eql([subject, other])
+            azs = AvailabilityZone.parse(cloud_config)
+
+            expect([other, azs.first].sort).to eql([azs.first, other])
           end
         end
 
@@ -53,7 +58,8 @@ module Bosh::Director::DeploymentPlan
           let(:other) { AvailabilityZone.new("z0", {}) }
 
           it 'compares based on the name' do
-            expect([other, subject].sort).to eql([other, subject])
+            azs = AvailabilityZone.parse(cloud_config)
+            expect([other, azs.first].sort).to eql([other, azs.first])
           end
         end
       end
@@ -61,29 +67,64 @@ module Bosh::Director::DeploymentPlan
       describe 'cloud_properties' do
 
         context 'is not present' do
-          let(:availability_zone_spec) { {'name' => 'z1'} }
+          let(:cloud_config) { { 'azs' => [{'name' => 'z1'}] } }
 
           it 'defaults to empty hash' do
-            expect(availability_zone.cloud_properties).to eq({})
+            expect(AvailabilityZone.parse(cloud_config).first.cloud_properties).to eq({})
           end
         end
 
         context 'is not a hash' do
-          let(:availability_zone_spec) { {'name' => {}, 'cloud_properties' => 'myproperty'} }
+          let(:cloud_config) { { 'azs' => [{'name' => {}, 'cloud_properties' => 'myproperty'}] } }
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
+            expect { AvailabilityZone.parse(cloud_config) }.to raise_error(BD::ValidationInvalidType)
           end
         end
       end
 
       describe 'cpi' do
         context 'is not a string' do
-          let(:availability_zone_spec) { {'name' => 'z1', 'cpi' => [1,2]} }
+          let(:cloud_config) { { 'azs' => [{'name' => 'z1', 'cpi' => [1,2]}] } }
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
+            expect { AvailabilityZone.parse(cloud_config) }.to raise_error(BD::ValidationInvalidType)
           end
+        end
+      end
+
+      context 'when there are more than one azs' do
+        let(:cloud_config) do
+          {
+              'azs' => [
+                  {'name' => 'z1', 'cloud_properties' => {'availability_zone' => 'us-east-1a'}},
+                  {'name' => 'z2', 'cloud_properties' => {'availability_zone' => 'us-east-1a'}},
+                  {'name' => 'z3', 'cloud_properties' => {'availability_zone' => 'us-east-1a'}}
+              ]
+          }
+        end
+
+        it 'returns a list of availability_zones' do
+          azs = AvailabilityZone.parse(cloud_config)
+
+          expect(azs.length).to eq(3)
+          expect(azs.map(&:name)).to eq(['z1','z2','z3'])
+        end
+      end
+
+      context 'when cloud config does not contain azs' do
+        let(:cloud_config) {{}}
+
+        it 'returns an empty list of azs' do
+          expect(AvailabilityZone.parse(cloud_config)).to be_empty
+        end
+      end
+
+      context 'when cloud config contains empty azs' do
+        let(:cloud_config) {{ 'azs' => []}}
+
+        it 'returns an empty list of azs' do
+          expect(AvailabilityZone.parse(cloud_config)).to be_empty
         end
       end
     end
