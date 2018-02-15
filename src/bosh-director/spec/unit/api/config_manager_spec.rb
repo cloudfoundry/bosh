@@ -155,6 +155,16 @@ describe Bosh::Director::Api::ConfigManager do
       expect(result).to eq(config)
     end
 
+    context 'when config is deleted' do
+      let!(:config) { Bosh::Director::Models::Config.make(id: 12345, deleted: true) }
+
+      it 'raises ConfigNotFound' do
+        expect do
+          manager.find_by_id(12345)
+        end.to raise_error(Bosh::Director::ConfigNotFound, 'Config 12345 not found')
+      end
+    end
+
     context 'when config is missing' do
       it 'raises ConfigNotFound' do
         expect do
@@ -220,13 +230,24 @@ describe Bosh::Director::Api::ConfigManager do
 
   describe '#delete_by_id' do
     context 'when config entry exists for given id' do
+      let!(:config_id) { Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name').id }
+
       it "sets deleted to 'true'" do
-        id = Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name').id
 
-        count = manager.delete_by_id(id)
+        count = manager.delete_by_id(config_id)
 
-        expect(Bosh::Director::Models::Config[id].deleted).to eq(true)
+        expect(Bosh::Director::Models::Config[config_id].deleted).to eq(true)
         expect(count).to eq(1)
+      end
+    end
+
+    context 'when config is deleted for given id' do
+      let!(:config_id) { Bosh::Director::Models::Config.make(deleted: true).id }
+
+      it "does not update any entry" do
+        count = manager.delete_by_id(config_id)
+
+        expect(count).to eq(0)
       end
     end
 
