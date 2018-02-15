@@ -83,7 +83,7 @@ describe 'Using multiple CPIs', type: :integration do
 
       before do
         bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
-        bosh_runner.run('delete-config cpi')
+        bosh_runner.run('delete-config --type=cpi --name=default')
         bosh_runner.run("upload-stemcell #{stemcell_filename}", env: { 'BOSH_LOG_LEVEL' => 'debug' }, lol: 'wut')
       end
 

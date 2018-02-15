@@ -154,7 +154,7 @@ describe 'cli configs', type: :integration do
       expect(admin_configs.last).to include('name' => 'team-name2', 'team' => 'ateam', 'type' => 'team-type')
 
       output = bosh_runner.run(
-        'delete-config team-type --name=team-name1',
+        'delete-config --type=team-type --name=team-name1',
         failure_expected: true,
         client: team_read_env['BOSH_CLIENT'],
         client_secret: team_read_env['BOSH_CLIENT_SECRET'],
@@ -162,14 +162,14 @@ describe 'cli configs', type: :integration do
       expect(output).to include('Require one of the scopes: bosh.admin, bosh.deadbeef.admin')
 
       output = bosh_runner.run(
-        'delete-config team-type --name=team-name1',
+        'delete-config --type=team-type --name=team-name1',
         client: admin_env['BOSH_CLIENT'],
         client_secret: admin_env['BOSH_CLIENT_SECRET'],
       )
       expect(output).to include('Succeeded')
 
       output = bosh_runner.run(
-        'delete-config team-type --name=team-name2',
+        'delete-config --type=team-type --name=team-name2',
         client: team_admin_env['BOSH_CLIENT'],
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
@@ -200,14 +200,25 @@ describe 'cli configs', type: :integration do
       bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")
       bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
 
-      expect(bosh_runner.run('delete-config my-type --name=my-name')).to include('Succeeded')
+      expect(bosh_runner.run('delete-config --type=my-type --name=my-name')).to include('Succeeded')
+      output = bosh_runner.run('configs')
+      expect(output).to_not include('my-type', 'my-name')
+      expect(output).to include('other-type', 'other-name')
+    end
+
+    it 'delete a config by id' do
+      output = bosh_runner.run("update-config --type=my-type --name=my-name #{config.path} --json")
+      config_id = JSON.parse(output)['Tables'][0]['Rows'][0]['id']
+      bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
+
+      expect(bosh_runner.run("delete-config #{config_id}")).to include('Succeeded')
       output = bosh_runner.run('configs')
       expect(output).to_not include('my-type', 'my-name')
       expect(output).to include('other-type', 'other-name')
     end
 
     it 'warns if there is nothing to delete' do
-      output = bosh_runner.run('delete-config my-type')
+      output = bosh_runner.run('delete-config --type=my-type --name=default')
       expect(output).to include('Succeeded')
       expect(output).to include('No configs to delete')
     end

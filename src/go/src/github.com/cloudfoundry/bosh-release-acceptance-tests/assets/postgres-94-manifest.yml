@@ -1,7 +1,7 @@
 ---
 name: postgres
 instance_groups:
-- name: bosh
+- name: postgres
   azs: [z1]
   instances: 1
   jobs:

@@ -33,13 +33,19 @@ module Bosh
 
         def find_by_id(id)
           config = Bosh::Director::Models::Config[id]
-          raise ConfigNotFound, "Config #{id} not found" if config.nil?
+          raise ConfigNotFound, "Config #{id} not found" if config.nil? || config.deleted
           config
         end
 
         def delete(type, name)
           Bosh::Director::Models::Config
             .where(type: type, name: name, deleted: false)
+            .update(deleted: true)
+        end
+
+        def delete_by_id(id)
+          Bosh::Director::Models::Config
+            .where(id: id, deleted: false)
             .update(deleted: true)
         end
 

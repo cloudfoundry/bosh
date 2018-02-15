@@ -132,10 +132,12 @@ module SpecHelper
       Sequel.default_timezone = :utc
       @director_db = Sequel.connect(@director_db_helper.connection_string, db_opts)
       @director_db.loggers << (logger || @init_logger)
+      @director_db.log_connection_info = true
       Bosh::Director::Config.db = @director_db
 
       @dns_db = Sequel.connect(@dns_db_helper.connection_string, db_opts)
       @dns_db.loggers << (logger || @init_logger)
+      @dns_db.log_connection_info = true
       Bosh::Director::Config.dns_db = @dns_db
     end
 
