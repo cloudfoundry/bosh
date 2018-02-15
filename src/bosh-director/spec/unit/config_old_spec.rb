@@ -145,24 +145,9 @@ describe Bosh::Director::Config do
       described_class.configure_db('foo' => nil, 'bar' => '', 'baz' => 'baz')
     end
 
-    context 'when logger is available' do
-      it 'sets the database logger' do
-        expect(database_connection).to receive(:logger=)
-        expect(database_connection).to receive(:sql_log_level=)
-        described_class.configure_db(database_options)
-      end
-    end
-
-    context 'when logger is unavailable' do
-      before do
-        allow(described_class).to receive(:logger).and_return(nil)
-      end
-
-      it 'does not sets the database logger' do
-        expect(database_connection).not_to receive(:logger=)
-        expect(database_connection).not_to receive(:sql_log_level=)
-        described_class.configure_db(database_options)
-      end
+    it 'sets the database log level' do
+      expect(database_connection).to receive(:sql_log_level=).with(:debug)
+      described_class.configure_db(database_options)
     end
 
     context 'database backup' do
