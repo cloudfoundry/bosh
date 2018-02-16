@@ -32,8 +32,6 @@ module Bosh::Director
         })
       end
 
-      private
-
       def parse_availability_zones(cloud_manifest)
         availability_zones = safe_property(cloud_manifest, 'azs', :class => Array, :optional => true, :default => [])
         parsed_availability_zones = availability_zones.map do |availability_zone|
@@ -47,6 +45,8 @@ module Bosh::Director
 
         parsed_availability_zones
       end
+
+      private
 
       def parse_networks(cloud_manifest, global_network_resolver, availability_zones)
         networks = safe_property(cloud_manifest, 'networks', :class => Array)
