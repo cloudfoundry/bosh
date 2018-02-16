@@ -18,6 +18,7 @@ groups:
       - candidate-release
       - bats-centos
       - bats-ubuntu
+      - brats-ubuntu
 
   - name: mysql
     jobs:
@@ -471,6 +472,20 @@ jobs:
     - put: bosh-candidate-release-tarballs
       params:
         file: "release/bosh-dev-release.tgz"
+
+  - name: brats-ubuntu
+    serial: true
+    plan:
+    - do:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+          passed:
+          - candidate-release
+      - task: test-brats
+        file: bosh-src/ci/tasks/test-brats.yml
+        tags: ["worker-brats"]
+        privileged: true
 
   - name: bats-centos
     serial: true
