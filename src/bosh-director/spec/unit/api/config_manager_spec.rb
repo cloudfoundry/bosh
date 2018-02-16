@@ -147,6 +147,28 @@ describe Bosh::Director::Api::ConfigManager do
     end
   end
 
+  describe '#find_max_id' do
+    let!(:config) { Bosh::Director::Models::Config.make(id: 1, type: '1total-1names', name: '1', content: '1content') }
+    let!(:config) { Bosh::Director::Models::Config.make(id: 2, type: '2total-2names', name: '2', content: '2content') }
+    let!(:config) { Bosh::Director::Models::Config.make(id: 5, type: '5total-5names', name: '5', content: '5content') }
+
+    it 'returns the max ID' do
+      result = manager.find_max_id
+
+      expect(result).to eq(5)
+    end
+
+    context 'when no co config exists' do
+      let!(:config) { }
+
+      it 'returns 0' do
+        result = manager.find_max_id
+
+        expect(result).to eq(0)
+      end
+    end
+  end
+
   describe '#find_by_Id' do
     let!(:config) { Bosh::Director::Models::Config.make(id: 123, type: '4total-4names', name: 'b', content: '1') }
 

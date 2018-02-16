@@ -12,9 +12,17 @@ module Bosh::Director
       end
 
       get '/', scope: :list_configs do
-        params['limit'] ||= '1'
-        raise BadConfigRequest, "'limit' must be a number" unless integer?(params['limit'])
-        limit = params['limit'].to_i
+
+        limit = if params['limit']
+                 raise BadConfigRequest, "'limit' must be a number" unless integer?(params['limit'])
+                 params['limit'].to_i
+                elsif params['latest']
+                  raise BadConfigRequest, "'latest' must be 'true' or 'false'" unless %w[true false].include?(params['latest'])
+                  params['latest'] == 'true' ? 1 : Bosh::Director::Api::ConfigManager.new.find_max_id
+                else
+                  1
+                end
+
         raise BadConfigRequest, "'limit' must be larger than zero" if limit < 1
 
         configs = Bosh::Director::Api::ConfigManager.new.find(
