@@ -10,10 +10,10 @@ groups:
       - integration-mysql-gocli-sha1
       - integration-2.3-postgres
       - upgrade-tests
-      - load-tests-postgres
-      - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
+      # - load-tests-postgres
+      # - load-tests-mysql
+      # - legacy-load-tests-postgres
+      # - legacy-load-tests-mysql
       - fuzz-tests
       - candidate-release
       - bats-centos
@@ -324,107 +324,107 @@ jobs:
             DB: mysql
             RUBY_VERSION: 2.3.1
 
-  - name: load-tests-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
-      params:
-        BOSH_SRC_PATH: bosh-src/src
-        DB: postgresql
-        RUBY_VERSION: 2.3.1
-        LEGACY: false
-      on_failure:
-        put: slack-alert
-        params:
-          channel: {{slack_channel_name}}
-          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-          text: {{slack_failure_message}}
-
-  - name: legacy-load-tests-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
-      params:
-        BOSH_SRC_PATH: bosh-src/src
-        DB: postgresql
-        RUBY_VERSION: 2.3.1
-        LEGACY: true
-      on_failure:
-        put: slack-alert
-        params:
-          channel: {{slack_channel_name}}
-          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-          text: {{slack_failure_message}}
-
-  - name: load-tests-mysql
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
-      params:
-        BOSH_SRC_PATH: bosh-src/src
-        DB: mysql
-        RUBY_VERSION: 2.3.1
-        LEGACY: false
-      on_failure:
-        put: slack-alert
-        params:
-          channel: {{slack_channel_name}}
-          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-          text: {{slack_failure_message}}
-
-  - name: legacy-load-tests-mysql
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-    - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-integration"]
-      params:
-        BOSH_SRC_PATH: bosh-src/src
-        DB: mysql
-        RUBY_VERSION: 2.3.1
-        LEGACY: true
-      on_failure:
-        put: slack-alert
-        params:
-          channel: {{slack_channel_name}}
-          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-          text: {{slack_failure_message}}
-
+  # - name: load-tests-postgres
+  #   public: true
+  #   serial: true
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: bosh-src, trigger: true }
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: bosh-cli }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-integration"]
+  #     params:
+  #       BOSH_SRC_PATH: bosh-src/src
+  #       DB: postgresql
+  #       RUBY_VERSION: 2.3.1
+  #       LEGACY: false
+  #     on_failure:
+  #       put: slack-alert
+  #       params:
+  #         channel: {{slack_channel_name}}
+  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+  #         text: {{slack_failure_message}}
+  #
+  # - name: legacy-load-tests-postgres
+  #   public: true
+  #   serial: true
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: bosh-src, trigger: true }
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: bosh-cli }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-integration"]
+  #     params:
+  #       BOSH_SRC_PATH: bosh-src/src
+  #       DB: postgresql
+  #       RUBY_VERSION: 2.3.1
+  #       LEGACY: true
+  #     on_failure:
+  #       put: slack-alert
+  #       params:
+  #         channel: {{slack_channel_name}}
+  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+  #         text: {{slack_failure_message}}
+  #
+  # - name: load-tests-mysql
+  #   public: true
+  #   serial: true
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: bosh-src, trigger: true }
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: bosh-cli }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-integration"]
+  #     params:
+  #       BOSH_SRC_PATH: bosh-src/src
+  #       DB: mysql
+  #       RUBY_VERSION: 2.3.1
+  #       LEGACY: false
+  #     on_failure:
+  #       put: slack-alert
+  #       params:
+  #         channel: {{slack_channel_name}}
+  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+  #         text: {{slack_failure_message}}
+  #
+  # - name: legacy-load-tests-mysql
+  #   public: true
+  #   serial: true
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: fuzz-interval-trigger, trigger: true }
+  #   - { get: bosh-src, trigger: true }
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: bosh-cli }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-integration"]
+  #     params:
+  #       BOSH_SRC_PATH: bosh-src/src
+  #       DB: mysql
+  #       RUBY_VERSION: 2.3.1
+  #       LEGACY: true
+  #     on_failure:
+  #       put: slack-alert
+  #       params:
+  #         channel: {{slack_channel_name}}
+  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+  #         text: {{slack_failure_message}}
+  #
   - name: fuzz-tests
     public: true
     serial: true
@@ -462,10 +462,10 @@ jobs:
       - integration-postgres-gocli-sha2
       - blobstore-client-integration
       - fuzz-tests
-      - load-tests-postgres
-      - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
+      # - load-tests-postgres
+      # - load-tests-mysql
+      # - legacy-load-tests-postgres
+      # - legacy-load-tests-mysql
     - get: bosh-cli
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
@@ -594,11 +594,11 @@ resources:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
       branch: 261.x
 
-  - name: bosh-load-tests-workspace
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
-      branch: 261.x
+  # - name: bosh-load-tests-workspace
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
+  #     branch: 261.x
 
   - name: fuzz-interval-trigger
     type: time
