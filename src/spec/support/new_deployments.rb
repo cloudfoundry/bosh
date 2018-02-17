@@ -269,9 +269,9 @@ module Bosh::Spec
       })
     end
 
-    def self.simple_manifest_with_instance_groups
+    def self.simple_manifest_with_instance_groups(opts = {})
       test_release_manifest_with_stemcell.merge({
-        'instance_groups' => [simple_instance_group]
+        'instance_groups' => [simple_instance_group(opts)]
       })
     end
 
