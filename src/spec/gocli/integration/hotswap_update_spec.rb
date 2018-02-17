@@ -119,6 +119,44 @@ describe 'deploy with hotswap', type: :integration do
       end
     end
 
+    context 'when changing network settings' do
+      it 'hotswaps vms' do
+        old_vm = table(bosh_runner.run('vms', json: true))[0]
+
+        cloud_config['networks'][0]['name'] = 'crazy-train'
+        upload_cloud_config(cloud_config)
+        out =  deploy_simple_manifest(manifest_hash: manifest)
+        expect(out).to match /Creating missing vms: foobar/
+        expect(out).to match /Downloading packages: foobar/
+
+        vms = table(bosh_runner.run('vms', json: true))
+
+        expect(vms.length).to eq(1)
+
+        vm_pattern = {
+          'active' => /true|false/,
+          'az' => '',
+          'instance' => instance_slug_regex,
+          'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
+          'process_state' => /[a-z]{7}/,
+          'vm_cid' => /[0-9]{1,6}/,
+          'vm_type' => 'a',
+        }
+
+        new_vm = vms[0]
+
+        expect(new_vm).to match(vm_pattern)
+
+        expect(new_vm['active']).to eq('true')
+        expect(new_vm['az']).to eq(old_vm['az'])
+        expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
+        expect(new_vm['instance']).to eq(old_vm['instance'])
+        expect(new_vm['vm_cid']).to_not eq(old_vm['vm_cid'])
+        expect(new_vm['process_state']).to eq('running')
+        expect(new_vm['ips']).to_not eq(old_vm['ips'])
+      end
+    end
+
     context 'when the instance is on a manual network' do
       let(:network_type) { 'manual' }
 
@@ -151,6 +189,39 @@ describe 'deploy with hotswap', type: :integration do
         expect(new_vm['vm_cid']).to_not eq(old_vm['vm_cid'])
         expect(new_vm['process_state']).to eq('running')
         expect(new_vm['ips']).to_not eq(old_vm['ips'])
+      end
+
+      context 'when doing a no-op deploy' do
+        it 'should not create new vms' do
+          old_vm = table(bosh_runner.run('vms', json: true))[0]
+
+          deploy_simple_manifest(manifest_hash: manifest)
+          vms = table(bosh_runner.run('vms', json: true))
+
+          expect(vms.length).to eq(1)
+
+          vm_pattern = {
+            'active' => /true|false/,
+            'az' => '',
+            'instance' => instance_slug_regex,
+            'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
+            'process_state' => /[a-z]{7}/,
+            'vm_cid' => /[0-9]{1,6}/,
+            'vm_type' => 'a',
+          }
+
+          new_vm = vms[0]
+
+          expect(new_vm).to match(vm_pattern)
+
+          expect(new_vm['active']).to eq('true')
+          expect(new_vm['az']).to eq(old_vm['az'])
+          expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
+          expect(new_vm['instance']).to eq(old_vm['instance'])
+          expect(new_vm['vm_cid']).to eq(old_vm['vm_cid'])
+          expect(new_vm['process_state']).to eq('running')
+          expect(new_vm['ips']).to eq(old_vm['ips'])
+        end
       end
 
       context 'when using instances with static ip addresses' do

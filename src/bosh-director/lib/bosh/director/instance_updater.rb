@@ -137,7 +137,7 @@ module Bosh::Director
 
         if instance_plan.should_hot_swap?
           if instance_plan.needs_disk?
-            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform(instance_report)
+            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
             DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
           end
         else

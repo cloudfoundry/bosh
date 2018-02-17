@@ -279,11 +279,14 @@ module Bosh
         def needs_shutting_down?
           return true if obsolete?
 
+          recreate_for_non_network_reasons? || networks_changed?
+        end
+
+        def recreate_for_non_network_reasons?
           instance.cloud_properties_changed? ||
             stemcell_changed? ||
             env_changed? ||
-            needs_recreate? ||
-            networks_changed?
+            needs_recreate?
         end
 
         def find_existing_reservation_for_network(network)

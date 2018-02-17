@@ -78,30 +78,76 @@ module Bosh::Director::DeploymentPlan
         context 'when desired reservation and existing reservations are dynamic' do
           before { existing_reservations.map { |reservation| reservation.resolve_type(:dynamic) } }
 
-          it 'does not use the existing reservation and mark the existing reservations as placed' do
-            network_plans = network_planner.reconcile(existing_reservations)
-            obsolete_plans = network_plans.select(&:obsolete?)
-            existing_plans = network_plans.select(&:existing?)
-            desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+          context 'when instance does not need recreate' do
+            before do
+              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
+            end
 
-            expect(desired_plans.count).to eq(1)
-            expect(existing_plans.count).to eq(0)
-            expect(obsolete_plans.count).to eq(2)
+            it 'uses the existing reservation and mark the existing reservations as placed' do
+              network_plans = network_planner.reconcile(existing_reservations)
+              obsolete_plans = network_plans.select(&:obsolete?)
+              existing_plans = network_plans.select(&:existing?)
+              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+              expect(desired_plans.count).to eq(0)
+              expect(existing_plans.count).to eq(1)
+              expect(obsolete_plans.count).to eq(1)
+            end
+          end
+
+          context 'when instance needs recreate' do
+            before do
+              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(true)
+            end
+
+            it 'does not use the existing reservation and mark the existing reservations as placed' do
+              network_plans = network_planner.reconcile(existing_reservations)
+              obsolete_plans = network_plans.select(&:obsolete?)
+              existing_plans = network_plans.select(&:existing?)
+              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+              expect(desired_plans.count).to eq(1)
+              expect(existing_plans.count).to eq(0)
+              expect(obsolete_plans.count).to eq(2)
+            end
           end
         end
 
         context 'when desired reservation is dynamic but existing reservation is static' do
           before { existing_reservations.map { |reservation| reservation.resolve_type(:static) } }
 
-          it 'does not use the existing reservation and mark the existing reservations as placed' do
-            network_plans = network_planner.reconcile(existing_reservations)
-            obsolete_plans = network_plans.select(&:obsolete?)
-            existing_plans = network_plans.select(&:existing?)
-            desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+          context 'when instance does not need recreate' do
+            before do
+              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
+            end
 
-            expect(desired_plans.count).to eq(1)
-            expect(existing_plans.count).to eq(0)
-            expect(obsolete_plans.count).to eq(2)
+            it 'does not use the existing reservation and mark the existing reservations as placed' do
+              network_plans = network_planner.reconcile(existing_reservations)
+              obsolete_plans = network_plans.select(&:obsolete?)
+              existing_plans = network_plans.select(&:existing?)
+              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+              expect(desired_plans.count).to eq(1)
+              expect(existing_plans.count).to eq(0)
+              expect(obsolete_plans.count).to eq(2)
+            end
+          end
+
+          context 'when instance needs recreate' do
+            before do
+              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(true)
+            end
+
+            it 'does not use the existing reservation and mark the existing reservations as placed' do
+              network_plans = network_planner.reconcile(existing_reservations)
+              obsolete_plans = network_plans.select(&:obsolete?)
+              existing_plans = network_plans.select(&:existing?)
+              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+              expect(desired_plans.count).to eq(1)
+              expect(existing_plans.count).to eq(0)
+              expect(obsolete_plans.count).to eq(2)
+            end
           end
         end
       end

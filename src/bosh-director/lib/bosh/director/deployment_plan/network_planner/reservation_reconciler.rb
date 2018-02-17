@@ -33,7 +33,7 @@ module Bosh::Director::DeploymentPlan
 
             if (both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
                 both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)) &&
-               !@instance_plan.should_hot_swap?
+               !(@instance_plan.should_hot_swap? && @instance_plan.recreate_for_non_network_reasons?)
 
               @logger.debug("Reusing existing reservation #{existing_reservation} for '#{desired_reservation}'")
 
