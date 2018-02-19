@@ -31,6 +31,13 @@ module Bosh
           end
         end
 
+        def find_max_id
+          dataset = Bosh::Director::Models::Config
+          configs = dataset.where(id: dataset.select { max(:id) }).all
+
+          configs.empty? ? 0 : configs[0][:id]
+        end
+
         def find_by_id(id)
           config = Bosh::Director::Models::Config[id]
           raise ConfigNotFound, "Config #{id} not found" if config.nil? || config.deleted
