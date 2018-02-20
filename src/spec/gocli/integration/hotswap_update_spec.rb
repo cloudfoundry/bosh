@@ -2,21 +2,23 @@ require_relative '../spec_helper'
 require 'fileutils'
 
 describe 'deploy with hotswap', type: :integration do
+  with_reset_sandbox_before_each
+  let(:manifest) do
+    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
+    manifest['update'] = manifest['update'].merge('strategy' => 'duplicate-and-replace-vm')
+    manifest
+  end
+  let(:cloud_config) do
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config['networks'][0]['type'] = network_type
+    cloud_config
+  end
+  let(:network_type) { 'dynamic' }
+
   context 'a very simple deploy' do
-    with_reset_sandbox_before_each
     instance_slug_regex = %r/foobar\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
 
-    let(:manifest) do
-      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
-      manifest['update'] = manifest['update'].merge('strategy' => 'hot-swap')
-      manifest
-    end
-    let(:network_type) { 'dynamic' }
-
     before do
-      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
-      cloud_config['networks'][0]['type'] = network_type
-
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config)
     end
 
@@ -168,6 +170,26 @@ describe 'deploy with hotswap', type: :integration do
           expect(task_log).to match(/Skipping hotswap for static ip enabled instance #{instance_slug_regex}/)
         end
       end
+    end
+  end
+
+  context 'when running dry run initially' do
+    before do
+      deploy_from_scratch(
+        manifest_hash: manifest,
+        cloud_config_hash: cloud_config,
+        dry_run: true,
+      )
+    end
+
+    it 'does not interfere with a successful deployment later' do
+      _, exit_code = deploy_from_scratch(
+        manifest_hash: manifest,
+        cloud_config_hash: cloud_config,
+        return_exit_code: true,
+      )
+
+      expect(exit_code).to eq(0)
     end
   end
 end

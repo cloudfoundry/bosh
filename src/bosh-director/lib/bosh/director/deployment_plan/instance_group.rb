@@ -129,10 +129,10 @@ module Bosh::Director
       end
 
       def instance_plans_needing_shutdown
-        sorted_instance_plans
-          .select(&:needs_shutting_down?)
-          .reject(&:new?)
-          .reject { |plan| plan.instance.state == 'detached' }
+        @shutdown_instances ||= sorted_instance_plans.select { |plan| plan.instance&.vm_created? }
+                                                     .select(&:needs_shutting_down?)
+                                                     .reject(&:new?)
+                                                     .reject { |plan| plan.instance.state == 'detached' }
       end
 
       def add_job(job_to_add)

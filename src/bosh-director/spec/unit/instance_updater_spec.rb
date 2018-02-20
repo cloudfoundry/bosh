@@ -341,7 +341,7 @@ module Bosh::Director
             updater.update(instance_plan)
           end
 
-          context 'when the instance uses hot-swap strategy' do
+          context 'when the instance uses duplicate-and-replace-vm strategy' do
             let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
             let!(:inactive_vm_model) { Models::Vm.make(instance_id: instance_model.id) }
             let(:attach_step) { instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep, perform: nil) }

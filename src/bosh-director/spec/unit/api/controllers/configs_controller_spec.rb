@@ -131,6 +131,75 @@ module Bosh::Director
             expect(JSON.parse(last_response.body).count).to eq(1)
             expect(JSON.parse(last_response.body).first['content']).to eq('newest_config')
           end
+
+          context 'when latest is set to true' do
+            it 'defaults to 1' do
+              Models::Config.make
+              Models::Config.make(content: 'newest_config')
+              get '/?type=my-type&name=some-name&latest=true'
+
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body).count).to eq(1)
+              expect(JSON.parse(last_response.body).first['content']).to eq('newest_config')
+            end
+          end
+
+          context 'when latest is set to false' do
+            it 'returns the history of all matching configs' do
+              config1 = Models::Config.make
+              Models::Config.make
+
+              get '/?type=my-type&latest=false'
+
+              expect(last_response.status).to eq(200)
+
+              result = JSON.parse(last_response.body)
+              expect(result.class).to be(Array)
+              expect(result.size).to eq(2)
+              expect(result).to include(
+                                    'content' => config1.content,
+                                    'id' => config1.id.to_s,
+                                    'type' => config1.type,
+                                    'name' => config1.name,
+                                    'created_at' => config1.created_at.to_s,
+                                    'team' => nil,
+                                    )
+            end
+          end
+
+          context 'when latest is not set' do
+            it 'defaults to 1' do
+              Models::Config.make
+              Models::Config.make(content: 'newest_config')
+              get '/?type=my-type&name=some-name'
+
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body).count).to eq(1)
+              expect(JSON.parse(last_response.body).first['content']).to eq('newest_config')
+            end
+          end
+
+          context 'when latest param is given and has wrong value' do
+            it 'return 400' do
+              get '/?type=my-type&name=some-name&latest=foo'
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440010)
+              expect(JSON.parse(last_response.body)['description']).to eq("'latest' must be 'true' or 'false'")
+            end
+          end
+        end
+
+        context 'when latest and limit are given' do
+          it 'takes value of limit' do
+            Models::Config.make
+            Models::Config.make(content: 'newest_config')
+            get '/?type=my-type&name=some-name&latest=false&limit=1'
+
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body).count).to eq(1)
+            expect(JSON.parse(last_response.body).first['content']).to eq('newest_config')
+          end
         end
 
         context 'when limit param is given and has wrong value' do

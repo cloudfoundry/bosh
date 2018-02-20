@@ -67,7 +67,7 @@ module Bosh::Director::DeploymentPlan
         properties: properties,
         lifecycle: lifecycle,
         vm_resources: nil,
-        strategy: 'legacy',
+        strategy: UpdateConfig::STRATEGY_LEGACY,
       )
     end
     let(:index) { 0 }

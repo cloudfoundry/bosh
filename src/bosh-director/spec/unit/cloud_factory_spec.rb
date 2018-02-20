@@ -2,12 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe CloudFactory do
-    subject(:cloud_factory) { described_class.new(cloud_planner, parsed_cpi_config) }
+    subject(:cloud_factory) { described_class.new(azs, parsed_cpi_config) }
     let(:default_cloud) { Config.cloud }
-    let(:cloud_planner) { instance_double(DeploymentPlan::CloudPlanner) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
     let(:logger) { double(:logger, debug: nil) }
+    let(:azs) { { 'some-az' => az } }
+    let(:az) { instance_double(DeploymentPlan::AvailabilityZone, name: 'some-az') }
 
     context 'factory methods' do
       let(:cpi_config) { instance_double(Models::Config) }
@@ -27,11 +28,12 @@ module Bosh::Director
         allow(cpi_config).to receive(:raw_manifest).and_return({})
         allow(DeploymentPlan::CloudManifestParser).to receive(:new).and_return(cloud_manifest_parser)
         allow(cloud_manifest_parser).to receive(:parse).and_return(planner)
+        allow(cloud_manifest_parser).to receive(:parse_availability_zones).and_return([az])
       end
 
       describe '.create_from_deployment' do
         it 'constructs a cloud factory with all its dependencies from a deployment' do
-          expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
+          expect(described_class).to receive(:new).with(azs, parsed_cpi_config)
           described_class.create_from_deployment(deployment, [cpi_config])
         end
 
@@ -42,7 +44,7 @@ module Bosh::Director
         end
 
         it 'constructs a cloud factory without parsed cpis if no cpi config is used' do
-          expect(described_class).to receive(:new).with(planner, nil)
+          expect(described_class).to receive(:new).with(azs, nil)
           described_class.create_from_deployment(deployment, nil)
         end
 
@@ -63,13 +65,13 @@ module Bosh::Director
         end
 
         it 'constructs a cloud factory with all its dependencies from a deployment' do
-          expect(described_class).to receive(:new).with(planner, parsed_cpi_config)
+          expect(described_class).to receive(:new).with(azs, parsed_cpi_config)
           described_class.create_with_latest_configs(deployment)
         end
 
         context 'when no deployment is given' do
           it 'constructs a cloud factory with all its dependencies without deployment' do
-            expect(described_class).to receive(:new).with(planner, parsed_cpi_config).and_return({})
+            expect(described_class).to receive(:new).with(azs, parsed_cpi_config).and_return({})
             expect(Api::CloudConfigManager).to receive(:interpolated_manifest).with([cloud_config], nil)
 
             described_class.create_with_latest_configs
@@ -79,21 +81,25 @@ module Bosh::Director
     end
 
     shared_examples_for 'lookup for clouds' do
-      it 'returns the default cloud from director config when asking for the cloud of an existing AZ without cpi' do
-        az = DeploymentPlan::AvailabilityZone.new('some-az', {}, nil)
-        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
-        cloud = cloud_factory.get_for_az('some-az')
-        expect(cloud).to eq(default_cloud)
+      context 'when asking for the cloud of an existing AZ without cpi' do
+        let(:az) { DeploymentPlan::AvailabilityZone.new('some-az', {}, nil) }
+
+        it 'returns the default cloud from director config' do
+          cloud = cloud_factory.get_for_az('some-az')
+          expect(cloud).to eq(default_cloud)
+        end
       end
 
-      it 'raises an error if an AZ references a CPI that does not exist anymore' do
-        az = DeploymentPlan::AvailabilityZone.new('some-az', {}, 'not-existing-cpi')
-        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
-        expect do
-          cloud_factory.get_for_az('some-az')
-        end.to raise_error(
-          "Failed to load CPI for AZ 'some-az': CPI 'not-existing-cpi' not found in cpi-config#{config_error_hint}",
-        )
+      context 'when an AZ references a CPI that does not exist anymore' do
+        let(:az) { DeploymentPlan::AvailabilityZone.new('some-az', {}, 'not-existing-cpi') }
+
+        it 'raises an error' do
+          expect do
+            cloud_factory.get_for_az('some-az')
+          end.to raise_error(
+            "Failed to load CPI for AZ 'some-az': CPI 'not-existing-cpi' not found in cpi-config#{config_error_hint}",
+          )
+        end
       end
 
       it 'raises if asking for a cpi that is not defined in a cpi config' do
@@ -141,6 +147,7 @@ module Bosh::Director
 
     context 'when using cpi config' do
       let(:config_error_hint) { '' }
+      let(:az) { DeploymentPlan::AvailabilityZone.new('some-az', {}, cpis[0].name) }
 
       let(:cpis) do
         [
@@ -166,8 +173,6 @@ module Bosh::Director
       end
 
       it 'returns the cloud from cpi config when asking for a AZ with this cpi' do
-        az = DeploymentPlan::AvailabilityZone.new('some-az', {}, cpis[0].name)
-        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
         expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
 
         cloud = cloud_factory.get_for_az('some-az')
@@ -188,9 +193,6 @@ module Bosh::Director
 
       describe '#get_name_for_az' do
         it 'returns a cpi name when asking for an existing AZ' do
-          az = DeploymentPlan::AvailabilityZone.new('some-az', {}, cpis[0].name)
-          expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
-
           cpi = cloud_factory.get_name_for_az('some-az')
           expect(cpi).to eq('name1')
         end
@@ -208,27 +210,31 @@ module Bosh::Director
         expect(cloud_factory.get_name_for_az('')).to eq('')
       end
 
-      it 'raises error when asking for a non-existing AZ' do
-        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(nil)
+      context 'when asking for a non-existing AZ' do
+        let(:az) { nil }
 
-        expect do
-          cloud_factory.get_name_for_az('some-az')
-        end.to raise_error "AZ 'some-az' not found in cloud config"
+        it 'raises error' do
+          expect do
+            cloud_factory.get_name_for_az('some-az')
+          end.to raise_error "AZ 'some-az' not found in cloud config"
+        end
       end
 
-      it 'returns the default cloud from director config when asking for the cloud of an existing AZ without cpi' do
-        az = DeploymentPlan::AvailabilityZone.new('some-az', {}, nil)
-        expect(cloud_planner).to receive(:availability_zone).with('some-az').and_return(az)
-        expect(cloud_factory.get_name_for_az('some-az')).to eq('')
+      context 'when asking for the cloud of an existing AZ without cpi' do
+        let(:az) { DeploymentPlan::AvailabilityZone.new('some-az', {}, nil) }
+
+        it 'returns the default cloud from director config ' do
+          expect(cloud_factory.get_name_for_az('some-az')).to eq('')
+        end
       end
 
-      context 'without cloud planner' do
-        let(:cloud_planner) { nil }
+      context 'without azs' do
+        let(:azs) { nil }
 
         it 'raises an error if lookup of an AZ is needed' do
           expect do
             cloud_factory.get_name_for_az('some-az')
-          end.to raise_error 'Deployment plan must be given to lookup cpis from AZ'
+          end.to raise_error 'AZs must be given to lookup cpis from AZ'
         end
       end
     end
