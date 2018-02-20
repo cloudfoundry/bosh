@@ -59,7 +59,6 @@ module Bosh::Director::Links
       )
     end
 
-    # Used by consumer
     def find_provider_intent_by_alias(
       link_provider:,
       link_alias:,
@@ -245,7 +244,6 @@ module Bosh::Director::Links
       consumer_intent_metadata = JSON.parse(consumer_intent.metadata) unless consumer_intent.metadata.nil?
       is_manual_link = !!consumer_intent_metadata['manual_link']
 
-      # TODO Links: can we have more than one ??
       if is_manual_link
         provider_intent = get_manual_link_provider_for_consumer(consumer_intent)
         link_content = provider_intent.content || '{}'
@@ -261,22 +259,22 @@ module Bosh::Director::Links
         found_provider_intents = []
 
         current_deployment_name = consumer.deployment.name
-        deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
         link_network = consumer_intent_metadata['network']
         is_explicit_link = !!consumer_intent_metadata['explicit_link']
 
         unless consumer_intent.blocked
+          deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
           is_cross_deployment = (consumer.deployment.name != deployment_name)
+
           if is_cross_deployment
             deployment = Bosh::Director::Models::Deployment.find(name: deployment_name)
-            raise Bosh::Director::DeploymentNotFound, "Can't find deployment '#{deployment_name}'" if deployment.nil? # TODO LINKS: Maybe we should just collect errors and blow up later.
+            raise Bosh::Director::DeploymentNotFound, "Can't find deployment '#{deployment_name}'" if deployment.nil?
           else
             deployment = consumer.deployment
           end
 
           providers = deployment.link_providers
 
-          # This is lazy loading
           providers.each do |provider|
             provider.intents.each do |provider_intent|
               next if provider_intent.type != consumer_intent.type
@@ -284,16 +282,6 @@ module Bosh::Director::Links
               if is_explicit_link
                 next if provider_intent.name != consumer_intent.name
                 next if is_cross_deployment && !provider_intent.shared
-
-                # Shared providers would already have contents populated.
-                # We are likely within the same deployment if it is empty and just validating.
-                # Let the validation be a bit more loose.
-
-                # TODO Links: Do not run when dry run is true
-                if !provider_intent.content.nil?
-                  provider_intent_networks = JSON.parse(provider_intent.content)['networks']
-                  next if link_network && !provider_intent_networks.include?(link_network)
-                end
               end
 
               found_provider_intents << provider_intent
@@ -301,38 +289,24 @@ module Bosh::Director::Links
           end
         end
 
-        if found_provider_intents.size != 1
-          if is_explicit_link
-            if found_provider_intents.size > 1
-              all_link_paths = ''
-              found_provider_intents.each do |provider_intent|
-                all_link_paths = all_link_paths + "\n   #{provider_intent[:original_name]}#{" aliased as '#{provider_intent[:name]}'" unless provider_intent[:name].nil?} (job: #{provider_intent.link_provider[:name]}, instance group: #{provider_intent.link_provider[:instance_group]})"
-              end
-              raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias '#{consumer_intent.name}' found for job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
-            else
-              if !consumer_intent.optional || !consumer_intent.blocked
-                raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' in instance group '#{consumer.instance_group}' on job '#{consumer.name}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
-              end
-            end
-          else
-            if found_provider_intents.size > 1
-              all_link_paths = ''
-              found_provider_intents.each do |provider_intent|
-                all_link_paths = all_link_paths + "\n   Deployment: #{provider_intent.link_provider.deployment.name}, instance group: #{provider_intent.link_provider[:instance_group]}, job: #{provider_intent.link_provider[:name]}, link name/alias: #{provider_intent[:name]}"
-              end
-              raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of type '#{consumer_intent.type}' found for job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
-            else
-              unless consumer_intent.optional
-                raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link with type '#{consumer_intent.type}' in instance_group '#{consumer_intent.link_consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
-              end
-            end
-          end
+        if found_provider_intents.empty? && consumer_intent.optional
+          return unless is_explicit_link && !consumer_intent.blocked
         end
 
-        # provider_intent is either provided or (optional and not provided)
-        provider_intent = found_provider_intents.first
+        validate_found_providers(found_provider_intents, consumer, consumer_intent, is_explicit_link, current_deployment_name, link_network)
 
-        if provider_intent
+        unless dry_run
+          provider_intent = found_provider_intents.first
+
+          if is_explicit_link
+            content = provider_intent.content || '{}'
+            provider_intent_networks = JSON.parse(content)['networks']
+
+            if link_network && !provider_intent_networks.include?(link_network)
+              raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' in instance group '#{consumer.instance_group}' on job '#{consumer.name}' in deployment '#{current_deployment_name}' with network '#{link_network}'"
+            end
+          end
+
           link_use_ip_address = consumer_intent_metadata['ip_addresses']
           provider_content = provider_intent.content || '{}'
           link_spec = update_addresses(JSON.parse(provider_content), link_network, global_use_dns_entry, link_use_ip_address)
@@ -343,7 +317,7 @@ module Bosh::Director::Links
             provider_intent: provider_intent,
             consumer_intent: consumer_intent,
             link_content: link_content
-          ) unless dry_run
+          )
         end
       end
     end
@@ -369,15 +343,15 @@ module Bosh::Director::Links
       manual_provider_intent
     end
 
-    def update_addresses(link_spec, preferred_network_name, global_use_dns_entry, link_use_ip_address)
-      link_spec_copy = Bosh::Common::DeepCopy.copy(link_spec)
-      if !link_spec_copy.has_key?('default_network')
+    def update_addresses(provider_intent_content, preferred_network_name, global_use_dns_entry, link_use_ip_address)
+      provider_intent_content_copy = Bosh::Common::DeepCopy.copy(provider_intent_content)
+      if !provider_intent_content_copy.has_key?('default_network')
         unless link_use_ip_address.nil?
           raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'
         end
 
         if preferred_network_name
-          link_spec_copy['instances'].each do |instance|
+          provider_intent_content_copy['instances'].each do |instance|
             desired_addresses = instance['addresses']
             raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{preferred_network_name}'" unless desired_addresses.key?(preferred_network_name)
             instance['address'] = desired_addresses[preferred_network_name]
@@ -391,10 +365,10 @@ module Bosh::Director::Links
           use_dns_entries = !link_use_ip_address
         end
 
-        network_name = preferred_network_name || link_spec_copy['default_network']
-        link_spec_copy['default_network'] = network_name
+        network_name = preferred_network_name || provider_intent_content_copy['default_network']
+        provider_intent_content_copy['default_network'] = network_name
 
-        link_spec_copy['instances'].each do |instance|
+        provider_intent_content_copy['instances'].each do |instance|
           if use_dns_entries
             desired_addresses = instance['dns_addresses']
           else
@@ -408,12 +382,38 @@ module Bosh::Director::Links
         end
       end
 
-      link_spec_copy['instances']&.each do |instance|
+      provider_intent_content_copy['instances']&.each do |instance|
         instance.delete('addresses')
         instance.delete('dns_addresses')
       end
 
-      link_spec_copy
+      provider_intent_content_copy
+    end
+
+    def validate_found_providers(found_provider_intents, consumer, consumer_intent, is_explicit_link, current_deployment_name, link_network)
+      if found_provider_intents.empty?
+        if is_explicit_link
+          raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' for job '#{consumer.name}' in instance group '#{consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
+        else
+          raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.original_name}' with type '#{consumer_intent.type}' for job  '#{consumer.name}' in instance_group '#{consumer_intent.link_consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
+        end
+      end
+
+      if found_provider_intents.size > 1
+        if is_explicit_link
+          all_link_paths = ''
+          found_provider_intents.each do |provider_intent|
+            all_link_paths = all_link_paths + "\n   #{provider_intent.original_name}#{" aliased as '#{provider_intent.name}'" unless provider_intent.name.nil?} (job: #{provider_intent.link_provider.name}, instance group: #{provider_intent.link_provider.instance_group})"
+          end
+          raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias '#{consumer_intent.name}' found for job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
+        else
+          all_link_paths = ''
+          found_provider_intents.each do |provider_intent|
+            all_link_paths = all_link_paths + "\n   Deployment: #{provider_intent.link_provider.deployment.name}, instance group: #{provider_intent.link_provider.instance_group}, job: #{provider_intent.link_provider.name}, link name/alias: #{provider_intent.name}"
+          end
+          raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of type '#{consumer_intent.type}' found for consumer link '#{consumer_intent.original_name}' in job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
+        end
+      end
     end
 
     def log_warning_if_applicable(address, dns_required, instance_name, instance_id)
@@ -427,6 +427,5 @@ module Bosh::Director::Links
         @event_logger.warn(message)
       end
     end
-
   end
 end

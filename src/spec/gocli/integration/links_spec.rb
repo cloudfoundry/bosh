@@ -353,7 +353,7 @@ describe 'Links', type: :integration do
         it 'throws an error if the optional link was not found' do
           out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
-          expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Can't resolve link 'backup_db' in instance group 'my_api' on job 'api_server_with_optional_links_1' in deployment 'simple'")
+          expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Can't resolve link 'backup_db' for job 'api_server_with_optional_links_1' in instance group 'my_api' in deployment 'simple'")
         end
       end
 
@@ -435,7 +435,7 @@ describe 'Links', type: :integration do
           it 'should throw an error' do
             out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
             expect(exit_code).not_to eq(0)
-            expect(out).to include("Can't resolve link 'db' in instance group 'my_api' on job 'api_server_with_optional_links_1' in deployment 'simple'")
+            expect(out).to include("- Can't resolve link 'db' for job 'api_server_with_optional_links_1' in instance group 'my_api' in deployment 'simple'")
           end
         end
       end
@@ -520,7 +520,7 @@ Error: Unable to render instance groups for deployment. Errors are:
 
           expect(exit_code).not_to eq(0)
           expect(output).to include <<-EOF
-Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Multiple providers of type 'db' found for job 'api_server_with_optional_db_link' in instance group 'optional_db'. All of these match:
+Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Multiple providers of type 'db' found for consumer link 'db' in job 'api_server_with_optional_db_link' in instance group 'optional_db'. All of these match:
    Deployment: simple, instance group: mysql, job: database, link name/alias: db
    Deployment: simple, instance group: postgres, job: backup_database, link name/alias: backup_db
           EOF
@@ -766,8 +766,7 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
         it 'raises error before deploying vms' do
           _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
-          # expect(director.vms('simple')).to eq([])
-          expect(director.instances).to eq([])
+          expect(director.instances).to be_empty
         end
       end
 
@@ -791,7 +790,7 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
         it 'raises error' do
           _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
-          expect(director.instances).to eq([])
+          expect(director.instances).to be_empty
         end
 
       end
@@ -1056,7 +1055,7 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
       it 'throws an error before deploying vms' do
         _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).not_to eq(0)
-        expect(director.instances).to eq([])
+        expect(director.instances).to be_empty
       end
     end
 
@@ -1116,7 +1115,6 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
       end
 
       it 'deploys migrated_from jobs' do
-        # TODO LINKS: This should pass once we isolate reading objects created by current deploy only.
         deploy_simple_manifest(manifest_hash: manifest)
         manifest['instance_groups'] = [new_api_instance_group_spec, new_aliased_instance_group_spec]
         deploy_simple_manifest(manifest_hash: manifest)
@@ -1136,7 +1134,6 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
            }
         )
       end
-
     end
 
     context 'when link is broken' do
@@ -1183,53 +1180,59 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
       context 'when validation of link resolution fails' do
         let(:manifest) do
           manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['instance_groups'] = [first_consumer_instance, first_provider_instance]
+          manifest['instance_groups'] = [first_consumer_instance, second_consumer_instance, first_provider_instance, second_provider_instance]
           manifest
         end
 
-        let(:first_consumer_instance) do
+        let(:first_provider_instance) do
           Bosh::Spec::NewDeployments.simple_instance_group(
-            name: 'first_consumer',
-            jobs: [{'name' => 'node', 'consumes' => consume_links}],
+            name: 'first_provider',
+            jobs: [{'name' => 'provider', 'provides' => provide_links}],
             instances: 1,
-            static_ips: ['192.168.1.10'],
+            static_ips: ['192.168.1.11'],
             azs: ['z1']
           )
         end
 
-        let(:consume_links) do
+        let(:second_provider_instance) do
+          Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'second_provider',
+            jobs: [{'name' => 'provider', 'provides' => provide_links}],
+            instances: 1,
+            static_ips: ['192.168.1.12'],
+            azs: ['z1']
+          )
+        end
+
+        let(:provide_links) do
           {
-            'node1' => {'from' => 'alias1'},
-            'node2' => {'from' => 'alias2'}
+            'provider' => {'as' => 'alias1'}
           }
         end
 
-        it 'should raise an error listing all issues before updating vms' do
-          # TODO LINKS: Make this a test for ambiguous providers
-        end
-      end
-
-      context 'when parsing fails' do
-        let(:manifest) do
-          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['instance_groups'] = [first_consumer_instance]
-          manifest
-        end
-
         let(:first_consumer_instance) do
           Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'first_consumer',
-            jobs: [{'name' => 'node', 'consumes' => consume_links}],
+            jobs: [{'name' => 'consumer', 'consumes' => consume_links}],
             instances: 1,
-            static_ips: ['192.168.1.10'],
+            static_ips: ['192.168.1.13'],
+            azs: ['z1']
+          )
+        end
+
+        let(:second_consumer_instance) do
+          Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'second_consumer',
+            jobs: [{'name' => 'consumer'}],
+            instances: 1,
+            static_ips: ['192.168.1.14'],
             azs: ['z1']
           )
         end
 
         let(:consume_links) do
           {
-            'node1' => {'deployment' => 'broken'},
-            'node2' => {'deployment' => 'other'}
+            'provider' => {'from' => 'alias1'}
           }
         end
 
@@ -1237,14 +1240,17 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
           output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
           expect(exit_code).not_to eq(0)
           expect(director.instances).to eq([])
-          expect(output).to include("Link 'node1' in job 'node' from instance group 'first_consumer' consumes from deployment 'broken', but the deployment does not exist.")
-          expect(output).to include("Link 'node2' in job 'node' from instance group 'first_consumer' consumes from deployment 'other', but the deployment does not exist.")
+          expect(output).to include("Multiple providers of name/alias 'alias1' found for job 'consumer' in instance group 'first_consumer'. All of these match:
+   provider aliased as 'alias1' (job: provider, instance group: first_provider)
+   provider aliased as 'alias1' (job: provider, instance group: second_provider)")
+          expect(output).to include("Multiple providers of type 'provider' found for consumer link 'provider' in job 'consumer' in instance group 'second_consumer'. All of these match:
+   Deployment: simple, instance group: first_provider, job: provider, link name/alias: alias1
+   Deployment: simple, instance group: second_provider, job: provider, link name/alias: alias1")
         end
       end
-  end
+    end
 
     context 'when link references another deployment' do
-
      let(:first_manifest) do
        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
        manifest['name'] = 'first'
@@ -1451,7 +1457,7 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
 
          expect {
            deploy_simple_manifest(manifest_hash: second_manifest)
-         }.to raise_error(RuntimeError, /Can't resolve link 'node1' in instance group 'second_deployment_node' on job 'node' in deployment 'second'/)
+         }.to raise_error(RuntimeError, /Can't resolve link 'node1' for job 'node' in instance group 'second_deployment_node' in deployment 'second'/)
        end
      end
 
@@ -2140,7 +2146,7 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
           bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
           output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
           expect(output).to include("Error: Failed to resolve links from deployment 'minimal'. See errors below:\n" \
-          "  - Can't resolve link 'provider_login' in instance group 'consumer_ig' on job 'consumer_job' in deployment 'minimal'")
+          "  - Can't resolve link 'provider_login' for job 'consumer_job' in instance group 'consumer_ig' in deployment 'minimal'")
         end
 
         context 'and the link is shared from another deployment' do
@@ -2185,7 +2191,7 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
 
           it 'should fail to create the link' do
             output = deploy_simple_manifest(manifest_hash: consumer_manifest, failure_expected: true)
-            expect(output).to include(%Q{Can't resolve link 'provider_login' in instance group 'consumer_ig' on job 'consumer_job' in deployment 'consumer_deployment'})
+            expect(output).to include(%Q{Can't resolve link 'provider_login' for job 'consumer_job' in instance group 'consumer_ig' in deployment 'consumer_deployment'})
           end
         end
       end
@@ -2346,9 +2352,9 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
 
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
-      expect(out).to include("- Can't find link with type 'bad_link' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
-      expect(out).to include("- Can't find link with type 'bad_link_2' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
-      expect(out).to include("- Can't find link with type 'bad_link_3' for instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't resolve link 'db' with type 'bad_link' for job  'api_server_with_bad_link_types' in instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't resolve link 'backup_db' with type 'bad_link_2' for job  'api_server_with_bad_link_types' in instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
+      expect(out).to include("- Can't resolve link 'some_link_name' with type 'bad_link_3' for job  'api_server_with_bad_link_types' in instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
     end
   end
 end

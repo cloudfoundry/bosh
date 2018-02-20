@@ -249,11 +249,6 @@ module Bosh::Director
             instance_group_errors.push e
           end
 
-          # TODO LINKS: Update interpolation to use links from DB.
-          # Use links manager to get links
-          # instance_group_links = instance_group.resolved_links || {}
-          #
-
           deployment = Bosh::Director::Models::Deployment.where(name: @deployment_name).first
           instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|

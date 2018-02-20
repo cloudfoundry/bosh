@@ -146,31 +146,6 @@ module Bosh::Director
       }
 
       @links_manager.resolve_deployment_links(@deployment_plan.model, resolve_link_options)
-
-      # TODO LINKS
-      # we should not clean up the consumers or providers here
-      # need to clean them up at the end of the deployment
-      # since a deployment can fail and we'll end up with no providers and consumers
-
-      # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
-      # link_providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: @deployment_plan.model)
-      # link_providers.each do |link_provider|
-      #   result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
-      #   if result.empty?
-      #     link_provider.destroy
-      #     # TODO: orphaning any links referring to them.
-      #   end
-      # end
-
-      # this can be more efficient
-      # link_consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: @deployment_plan.model)
-      # link_consumers.each do |link_consumer|
-      #   result = @deployment_plan.link_consumers.select{ |lp| lp.id == link_consumer.id }
-      #   if result.empty?
-      #     link_consumer.destroy
-      #     # TODO: deleting any links referring to them.
-      #   end
-      # end
     end
 
     # Binds template models for each release spec in the deployment plan

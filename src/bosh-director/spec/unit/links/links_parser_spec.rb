@@ -613,7 +613,6 @@ describe Bosh::Director::Links::LinksParser do
           end
         end
 
-        #TODO LINKS: Move the it block out as the base case.
         context 'when the consumer does not have a from key' do
           let(:consumer_options) {{}}
 
@@ -906,7 +905,7 @@ describe Bosh::Director::Links::LinksParser do
               it 'should raise an error' do
                 expect {
                   subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
-                }.to raise_error "Link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
+                }.to raise_error "Consumer 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
               end
             end
 
@@ -916,7 +915,7 @@ describe Bosh::Director::Links::LinksParser do
               it 'should raise an error' do
                 expect {
                   subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
-                }.to raise_error "Link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
+                }.to raise_error "Consumer 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
               end
             end
 
@@ -926,7 +925,7 @@ describe Bosh::Director::Links::LinksParser do
               it 'should raise an error' do
                 expect {
                   subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
-                }.to raise_error "Link 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
+                }.to raise_error "Consumer 'link_1_name' in job 'job-name1' in instance group 'instance-group-name' specified in the manifest should only be a hash or string 'nil'"
               end
             end
           end

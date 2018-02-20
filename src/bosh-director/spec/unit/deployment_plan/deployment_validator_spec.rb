@@ -3,18 +3,27 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::DeploymentValidator do
     describe '#validate' do
-      let(:deployment) { instance_double(DeploymentPlan::Planner, {manifest_hash: manifest_hash, }) }
       let(:deployment_validator) { DeploymentPlan::DeploymentValidator.new }
-
       let(:cloud_config) { Models::Config.make(:cloud) }
-
+      let(:deployment_model) {  Bosh::Director::Models::Deployment.make }
       let(:deployment) do
         instance_double(DeploymentPlan::Planner,
           {
             resource_pools: resource_pools,
-            stemcells: stemcells
+            stemcells: stemcells,
+            model: deployment_model,
+            use_dns_addresses?: true
           }
         )
+      end
+
+      let(:links_manager) do
+        instance_double(Bosh::Director::Links::LinksManager)
+      end
+
+      before do
+        allow(links_manager).to receive(:resolve_deployment_links).with(deployment_model, anything)
+        allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:new, :create_manager).and_return(links_manager)
       end
 
       context 'when using stemcells' do
@@ -31,7 +40,7 @@ module Bosh::Director
         context 'when resource pool is not defined' do
           let(:resource_pools) { {} }
 
-          it 'does not raise' do
+          it 'does not raise an error' do
               expect{deployment_validator.validate(deployment)}.not_to raise_error
           end
         end
@@ -56,7 +65,7 @@ module Bosh::Director
         context 'when resource pool is not defined' do
           let(:resource_pools) { {} }
 
-          it 'raises' do
+          it 'raises an error' do
             expect{deployment_validator.validate(deployment)}.to raise_error(DeploymentInvalidResourceSpecification,
               "'stemcells' or 'resource_pools' need to be specified"
             )
@@ -71,6 +80,21 @@ module Bosh::Director
           it 'does not raise' do
             expect{deployment_validator.validate(deployment)}.not_to raise_error
           end
+        end
+      end
+
+      context 'when link validation fails' do
+        let(:stemcells) { {} }
+        let(:resource_pools) do
+          {'name' => 'resource_pool1'}
+        end
+
+        it 'should raise an error' do
+          expect(links_manager).to receive(:resolve_deployment_links).with(deployment_model, dry_run: true, global_use_dns_entry: true).and_raise("Link dry run found an error")
+
+          expect{
+            deployment_validator.validate(deployment)
+          }.to raise_error("Link dry run found an error")
         end
       end
     end

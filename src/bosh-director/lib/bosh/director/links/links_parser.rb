@@ -276,8 +276,7 @@ module Bosh::Director::Links
       end
 
       unless source.kind_of?(Hash)
-        #   TODO links: chamge me to consumer
-        return ["Link '#{link_name}' in job '#{job_name}' in instance group '#{instance_group_name}' specified in the manifest should only be a hash or string 'nil'"]
+        return ["Consumer '#{link_name}' in job '#{job_name}' in instance group '#{instance_group_name}' specified in the manifest should only be a hash or string 'nil'"]
       end
 
       errors = []
@@ -337,7 +336,5 @@ module Bosh::Director::Links
         consume_link_source.has_key? key
       end
     end
-
-
   end
 end

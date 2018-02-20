@@ -125,11 +125,6 @@ module Bosh
           runtime_config_consolidator.tags(deployment_name).merge!(tags)
         end
 
-        # TODO LINKS
-        # process link will actually try to mix and match the links, here
-        # this is done through the link path
-        # is it the right place to even do that ??????????
-
         def validate_and_get_argument(arg, type)
           raise "#{type} value should be integer or percent" unless arg =~ /^\d+%$|\A[-+]?[0-9]+\z/ || arg.nil?
           arg
