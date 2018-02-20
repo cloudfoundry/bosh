@@ -1,26 +1,25 @@
 # Cloud factory looks up and instantiates clouds, either taken from the director config or from the cpi config.
 # To achieve this, it uses the parsed cpis from the cpi config.
-# For lookup based on availability zone, it additionally needs the cloud planner which contains the AZ -> CPI mapping from the cloud config.
 module Bosh::Director
   class CloudFactory
     def self.create_with_latest_configs(deployment = nil)
       cpi_configs = Bosh::Director::Models::Config.latest_set('cpi')
       cloud_configs = Bosh::Director::Models::Config.latest_set('cloud')
 
-      planner = if deployment.nil?
-                  create_cloud_planner(cloud_configs)
-                else
-                  create_cloud_planner(cloud_configs, deployment.name)
-                end
+      azs = if deployment.nil?
+              create_azs(cloud_configs)
+            else
+              create_azs(cloud_configs, deployment.name)
+            end
 
-      new(planner, parse_cpi_configs(cpi_configs))
+      new(azs, parse_cpi_configs(cpi_configs))
     end
 
     def self.create_from_deployment(deployment,
                                     cpi_configs = Bosh::Director::Models::Config.latest_set('cpi'))
-      planner = create_cloud_planner(deployment.cloud_configs, deployment.name) unless deployment.nil?
+      azs = create_azs(deployment.cloud_configs, deployment.name) unless deployment.nil?
 
-      new(planner, parse_cpi_configs(cpi_configs))
+      new(azs, parse_cpi_configs(cpi_configs))
     end
 
     def self.parse_cpi_configs(cpi_configs)
@@ -32,16 +31,18 @@ module Bosh::Director
       manifest_parser.parse(merged_cpi_configs_hash)
     end
 
-    def self.create_cloud_planner(cloud_configs, deployment_name = nil)
+    private_class_method def self.create_azs(cloud_configs, deployment_name = nil)
       return nil unless CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(cloud_configs)
 
-      global_network_resolver = DeploymentPlan::NullGlobalNetworkResolver.new
       parser = DeploymentPlan::CloudManifestParser.new(Config.logger)
-      parser.parse(Api::CloudConfigManager.interpolated_manifest(cloud_configs, deployment_name), global_network_resolver, nil)
+      interpolated = Api::CloudConfigManager.interpolated_manifest(cloud_configs, deployment_name)
+      parser.parse_availability_zones(interpolated)
+        .map{ |az| [az.name, az]}
+        .to_h
     end
 
-    def initialize(cloud_planner, parsed_cpi_config)
-      @cloud_planner = cloud_planner
+    def initialize(azs, parsed_cpi_config)
+      @azs = azs
       @parsed_cpi_config = parsed_cpi_config
       @default_cloud = Config.cloud
       @logger = Config.logger
@@ -84,9 +85,9 @@ module Bosh::Director
     def get_name_for_az(az_name)
       return '' if az_name == '' || az_name.nil?
 
-      raise 'Deployment plan must be given to lookup cpis from AZ' if @cloud_planner.nil?
+      raise 'AZs must be given to lookup cpis from AZ' if @azs.nil?
 
-      az = @cloud_planner.availability_zone(az_name)
+      az = @azs[az_name]
       raise "AZ '#{az_name}' not found in cloud config" if az.nil?
 
       az.cpi.nil? ? '' : az.cpi

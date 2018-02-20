@@ -155,11 +155,11 @@ module Bosh::Director
             )
           end
 
-          it 'should return instance groups that are hot-swap enabled' do
+          it 'should return instance groups that are duplicate-and-replace-vm enabled' do
             expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
           end
 
-          context 'when no instance groups have hot-swap enabled' do
+          context 'when no instance groups have duplicate-and-replace-vm enabled' do
             let(:should_hot_swap?) { false }
 
             it 'should return empty array' do
@@ -186,11 +186,11 @@ module Bosh::Director
             )
           end
 
-          it 'returns instances that want hot-swap but cannot be' do
+          it 'returns instances that want duplicate-and-replace-vm but cannot be' do
             expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
           end
 
-          context 'when instance_group does not want hot-swap' do
+          context 'when instance_group does not want duplicate-and-replace-vm' do
             let(:should_hot_swap?) { false }
             let(:hot_swap?) { false }
 
@@ -199,7 +199,7 @@ module Bosh::Director
             end
           end
 
-          context 'when instance_group wants hot-swap and can be' do
+          context 'when instance_group wants duplicate-and-replace-vm and can be' do
             let(:should_hot_swap?) { true }
             let(:hot_swap?) { true }
 
