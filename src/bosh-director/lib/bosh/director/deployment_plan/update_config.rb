@@ -49,7 +49,7 @@ module Bosh::Director
         @strategy = safe_property(update_config, 'strategy',
           class: String,
           optional: true,
-          default: default_update_config ? default_update_config.strategy : nil,
+          default: default_update_config ? default_update_config.strategy : UpdateConfig::STRATEGY_HOT_SWAP, # nil,
         )
 
         unless @strategy.nil?
