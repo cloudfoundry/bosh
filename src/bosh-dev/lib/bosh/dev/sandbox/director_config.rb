@@ -28,6 +28,7 @@ module Bosh::Dev::Sandbox
                 :nats_director_tls,
                 :nats_port,
                 :nats_server_ca_path,
+                :networks,
                 :remove_dev_tools,
                 :sandbox_root,
                 :trusted_certs,
@@ -55,6 +56,8 @@ module Bosh::Dev::Sandbox
                                'enabled' => false,
                                'include_index' => false,
                                'use_dns_addresses' => false)
+
+      @networks = attrs.fetch(:networks, 'enable_cpi_management' => false)
 
       @external_cpi_config = attrs.fetch(:external_cpi_config)
 

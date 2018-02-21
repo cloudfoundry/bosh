@@ -41,6 +41,8 @@ require 'bosh/director/models/template'
 require 'bosh/director/models/variable'
 require 'bosh/director/models/variable_set'
 require 'bosh/director/models/vm'
+require 'bosh/director/models/network'
+require 'bosh/director/models/subnet'
 require 'delayed_job_sequel'
 
 module Bosh::Director
