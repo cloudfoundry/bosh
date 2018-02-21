@@ -7,6 +7,7 @@ end
 
 require 'bosh/director/deployment_plan/stages/agenda'
 require 'bosh/director/deployment_plan/stages/cleanup_stemcell_references_stage'
+require 'bosh/director/deployment_plan/stages/create_network'
 require 'bosh/director/deployment_plan/stages/download_packages_stage'
 require 'bosh/director/deployment_plan/stages/package_compile_stage'
 require 'bosh/director/deployment_plan/stages/persist_deployment_stage'

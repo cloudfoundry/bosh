@@ -224,7 +224,33 @@ module Bosh
         FileUtils.rm(disk_file(disk_id))
       end
 
-      SNAPSHOT_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, metadata: Hash} }
+      CREATE_NETWORK_SCHEMA = Membrane::SchemaParser.parse { { subnet_definition: Hash } }
+      def create_network(subnet_definition)
+        validate_and_record_inputs(CREATE_NETWORK_SCHEMA, __method__, subnet_definition)
+        if subnet_definition['cloud_properties'].has_key?("error")
+          raise subnet_definition['cloud_properties']['error']
+        end
+        network_id = SecureRandom.hex
+        file = network_file(network_id)
+        FileUtils.mkdir_p(File.dirname(file))
+        network_info = JSON.generate(subnet_definition)
+        File.write(file, network_info)
+        addr_properties = {}
+        if subnet_definition.has_key?('netmask_bits')
+          addr_properties['range'] = '192.168.10.0/24'
+          addr_properties['gateway'] = '192.168.10.1'
+          addr_properties['reserved'] = ['192.168.10.2']
+        end
+        [ network_id, addr_properties, { name: network_id } ]
+      end
+
+      DELETE_NETWORK_SCHEMA = Membrane::SchemaParser.parse { { network_id: String } }
+      def delete_network(network_id)
+        validate_and_record_inputs(DELETE_NETWORK_SCHEMA, __method__, network_id)
+        FileUtils.rm(network_file(network_id))
+      end
+
+      SNAPSHOT_DISK_SCHEMA = Membrane::SchemaParser.parse { { disk_id: String, metadata: Hash } }
       def snapshot_disk(disk_id, metadata)
         validate_and_record_inputs(SNAPSHOT_DISK_SCHEMA, __method__, disk_id, metadata)
         snapshot_id = SecureRandom.hex
@@ -296,6 +322,11 @@ module Bosh
       def disk_cids
         # Shuffle so that no one relies on the order of disks
         Dir.glob(disk_file('*')).map { |disk| File.basename(disk) }.shuffle
+      end
+
+      def network_cids
+        # Shuffle so that no one relies on the order of networks
+        Dir.glob(network_file('*')).map { |network| File.basename(network) }.shuffle
       end
 
       def kill_agents
@@ -504,6 +535,10 @@ module Bosh
 
       def disk_file(disk_id)
         File.join(@base_dir, 'disks', disk_id)
+      end
+
+      def network_file(network_id)
+        File.join(@base_dir, 'networks', network_id)
       end
 
       def disk_attached?(disk_id)

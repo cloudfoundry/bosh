@@ -82,6 +82,7 @@ module Bosh::Director
             # that's where the link path is created
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
             @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
+            create_network_stage(deployment_plan).perform unless dry_run?
 
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
@@ -118,6 +119,7 @@ module Bosh::Director
                 @links_manager.remove_unused_links(deployment_plan.model)
                 current_variable_set.update(deployed_successfully: true)
                 remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
+                mark_orphaned_networks(deployment_plan)
               end
 
               @notifier.send_end_event
@@ -150,6 +152,32 @@ module Bosh::Director
       end
 
       private
+
+      def mark_orphaned_networks(deployment_plan)
+        return unless Config.network_lifecycle_enabled?
+        deployment_model = deployment_plan.model
+        deployment_networks = []
+        deployment_plan.instance_groups.each do |inst_group|
+          inst_group.networks.each do |jobnetwork|
+            network = jobnetwork.deployment_network
+            next unless network.managed?
+            deployment_networks << jobnetwork.deployment_network.name
+          end
+        end
+
+        deployment_model.networks.each do |network|
+          with_network_lock(network.name) do
+            next if deployment_networks.include?(network.name)
+            deployment_model.remove_network(network)
+            if network.deployments.empty?
+              @logger.info("Orphaning managed network #{network.name}")
+              network.orphaned = true
+              network.orphaned_at = Time.now
+              network.save
+            end
+          end
+        end
+      end
 
       def remove_unused_variable_sets(deployment, instance_groups)
         variable_sets_to_keep = []
@@ -193,6 +221,10 @@ module Bosh::Director
 
       def compilation_step(deployment_plan)
         DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
+      end
+
+      def create_network_stage(deployment_plan)
+        DeploymentPlan::Stages::CreateNetworkStage.new(Config.logger, deployment_plan)
       end
 
       def update_stage(deployment_plan, dns_encoder)

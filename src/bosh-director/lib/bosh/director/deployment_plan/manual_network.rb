@@ -6,16 +6,19 @@ module Bosh::Director
       extend ValidationHelper
       include IpUtil
 
-      attr_reader :subnets
-
+      attr_accessor :subnets
       def self.parse(network_spec, availability_zones, global_network_resolver, logger)
-        name = safe_property(network_spec, "name", :class => String)
-
+        name = safe_property(network_spec, 'name', :class => String)
+        managed = if Config.network_lifecycle_enabled?
+                    safe_property(network_spec, 'managed', :default => false)
+                  else
+                    false
+                  end
         reserved_ranges = global_network_resolver.reserved_ranges
         subnet_specs = safe_property(network_spec, 'subnets', :class => Array)
         subnets = []
         subnet_specs.each do |subnet_spec|
-          new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, reserved_ranges)
+          new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, reserved_ranges, managed)
           subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
               raise NetworkOverlappingSubnets, "Network '#{name}' has overlapping subnets"
@@ -24,12 +27,17 @@ module Bosh::Director
           subnets << new_subnet
         end
         validate_all_subnets_use_azs(subnets, name)
-        new(name, subnets, logger)
+        new(name, subnets, logger, managed)
       end
 
-      def initialize(name, subnets, logger)
+      def managed?
+        @managed
+      end
+
+      def initialize(name, subnets, logger, managed = false)
         super(name, TaggedLogger.new(logger, 'network-configuration'))
         @subnets = subnets
+        @managed = managed
       end
 
       ##

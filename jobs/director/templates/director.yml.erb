@@ -32,6 +32,9 @@ params = {
   'remove_dev_tools' => p('director.remove_dev_tools'),
   'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
   'flush_arp' => p('director.flush_arp'),
+  'networks' => {
+      'enable_cpi_management' => p('director.networks.enable_cpi_management'),
+  },
   'local_dns' => {
       'enabled' => p('director.local_dns.enabled'),
       'include_index' => p('director.local_dns.include_index'),

@@ -220,6 +220,7 @@ module Bosh::Dev::Sandbox
         nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
         nats_director_tls: nats_certificate_paths['clients']['director'],
         nats_server_ca_path: get_nats_server_ca_path,
+        networks: @networks,
         remove_dev_tools: @remove_dev_tools,
         sandbox_root: sandbox_root,
         trusted_certs: @trusted_certs,
@@ -330,6 +331,7 @@ module Bosh::Dev::Sandbox
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
       @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false, use_dns_addresses: false})
+      @networks = options.fetch(:networks, enable_cpi_management: false)
       @nginx_service.reconfigure(options[:ssl_mode])
       @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)

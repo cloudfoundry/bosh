@@ -11,6 +11,7 @@ Sham.define do
   job              { |index| "job-#{index}" }
   vm_cid           { |index| "vm-cid-#{index}" }
   disk_cid         { |index| "disk-cid-#{index}" }
+  network_cid      { |index| "network-cid-#{index}" }
   snapshot_cid     { |index| "snapshot-cid-#{index}" }
   stemcell_cid     { |index| "stemcell-cid-#{index}" }
   stemcell_os      { |index| "stemcell-os-#{index}" }
@@ -133,6 +134,25 @@ module Bosh::Director::Models
       vm = Vm.make(instance_id: is.id)
       is.active_vm = vm
     end
+  end
+
+  Network.blueprint do
+    name { Sham.name }
+    type { 'manual' }
+    created_at { Time.now }
+    orphaned { false }
+    orphaned_at { nil }
+  end
+
+  Subnet.blueprint do
+    name { Sham.name }
+    cid { Sham.network_cid }
+    range { '192.168.10.0/24' }
+    gateway { '192.168.10.1' }
+    reserved { '[]' }
+    cloud_properties { '{}' }
+    cpi { '' }
+    network { Network.make }
   end
 
   Snapshot.blueprint do
