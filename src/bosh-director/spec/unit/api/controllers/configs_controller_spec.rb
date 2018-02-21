@@ -157,13 +157,13 @@ module Bosh::Director
               expect(result.class).to be(Array)
               expect(result.size).to eq(2)
               expect(result).to include(
-                                    'content' => config1.content,
-                                    'id' => config1.id.to_s,
-                                    'type' => config1.type,
-                                    'name' => config1.name,
-                                    'created_at' => config1.created_at.to_s,
-                                    'team' => nil,
-                                    )
+                'content' => config1.content,
+                'id' => config1.id.to_s,
+                'type' => config1.type,
+                'name' => config1.name,
+                'created_at' => config1.created_at.to_s,
+                'team' => nil,
+              )
             end
           end
 
@@ -184,7 +184,7 @@ module Bosh::Director
               get '/?type=my-type&name=some-name&latest=foo'
 
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['code']).to eq(440010)
+              expect(JSON.parse(last_response.body)['code']).to eq(440_010)
               expect(JSON.parse(last_response.body)['description']).to eq("'latest' must be 'true' or 'false'")
             end
           end
@@ -207,7 +207,7 @@ module Bosh::Director
             get '/?type=my-type&name=some-name&limit=foo'
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['code']).to eq(440_010)
             expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be a number")
           end
 
@@ -215,7 +215,7 @@ module Bosh::Director
             get '/?limit=0'
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['code']).to eq(440_010)
             expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be larger than zero")
           end
         end
@@ -459,7 +459,6 @@ module Bosh::Director
 
     describe 'DELETE', '/:id' do
       describe 'when user has admin access' do
-
         before { authorize('admin', 'admin') }
 
         context 'when config exists' do
@@ -473,7 +472,7 @@ module Bosh::Director
 
         context 'when config does not exists' do
           it 'deletes the config specified by id' do
-            expect(delete("/5").status).to eq(404)
+            expect(delete('/5').status).to eq(404)
           end
         end
 
@@ -532,19 +531,14 @@ module Bosh::Director
             JSON.dump('I am not a valid' => 'request')
           end
 
-          let(:allowed_format_1) do
-            JSON.dump(
-              'from' => { 'id' => '<id>' },
-              'to' => { 'id' => '<id>' },
-            )
-          end
+          let(:id_format) { JSON.dump('id' => '<id>') }
+          let(:content_format) { JSON.dump('content' => '<content>') }
+          let(:config_format) { JSON.dump('type' => '<type>', 'name' => '<name>', 'content' => '<content>') }
 
-          let(:allowed_format_2) do
-            JSON.dump(
-              'type' => '<type>',
-              'name' => '<name>',
-              'content' => '<content>',
-            )
+          let(:diff_err_msg) do
+            %(The following request formats are allowed:\n) +
+              %(1. {"from":<config>,"to":<config>} where <config> is either #{id_format} or #{content_format}\n) +
+              %(2. #{config_format})
           end
 
           it 'returns 400 with error details' do
@@ -552,8 +546,7 @@ module Bosh::Director
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-            expect(JSON.parse(last_response.body)['description'])
-              .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+            expect(JSON.parse(last_response.body)['description']).to eq(diff_err_msg)
           end
 
           context 'when any of the given `id` values is not a string containing an integer' do
@@ -566,8 +559,7 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description'])
-                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description']).to eq(diff_err_msg)
 
               post(
                 '/diff',
@@ -577,8 +569,7 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description'])
-                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description']).to eq(diff_err_msg)
             end
           end
 
@@ -588,8 +579,17 @@ module Bosh::Director
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
-              expect(JSON.parse(last_response.body)['description'])
-                .to eq("Only two request formats are allowed:\n1. #{allowed_format_1}\n2. #{allowed_format_2}")
+              expect(JSON.parse(last_response.body)['description']).to eq(diff_err_msg)
+            end
+          end
+
+          context 'when the `content` value is not a string' do
+            it' returns 400 with error details' do
+              post '/diff', JSON.generate('from' => { 'content' => -1 }, 'to' => { 'id' => '1' }), 'CONTENT_TYPE' => 'application/json'
+
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['code']).to eq(440_010)
+              expect(JSON.parse(last_response.body)['description']).to eq(diff_err_msg)
             end
           end
         end
@@ -745,35 +745,102 @@ module Bosh::Director
           end
         end
 
-        context 'when diffing two versions by id' do
+        context 'when diffing two configs' do
           let(:dev_team) { Models::Team.create(name: 'dev') }
+          let(:dev_team_config_manifest) { { 'a' => 5 } }
           let(:dev_team_config) do
             Models::Config.create(
               type: 'custom',
               name: 'dev-team',
-              raw_manifest: { 'a' => 5 },
+              raw_manifest: dev_team_config_manifest,
               team_id: dev_team.id,
             )
           end
 
           let(:other_team) { Models::Team.create(name: 'other') }
+          let(:other_team_config_manifest) { { 'b' => 5 } }
           let(:other_team_config) do
             Models::Config.create(
               type: 'custom',
               name: 'other-team',
-              raw_manifest: { 'b' => 5 },
+              raw_manifest: other_team_config_manifest,
               team_id: other_team.id,
             )
           end
 
-          it 'returns the diff' do
-            post(
-              '/diff',
-              JSON.dump(from: { id: dev_team_config.id.to_s }, to: { id: other_team_config.id.to_s }),
-              'CONTENT_TYPE' => 'application/json',
-            )
-            expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+          context 'from a given `id` to a given `id`' do
+            it 'returns the diff' do
+              post(
+                '/diff',
+                JSON.dump(from: { id: dev_team_config.id.to_s }, to: { id: other_team_config.id.to_s }),
+                'CONTENT_TYPE' => 'application/json',
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+            end
+          end
+
+          context 'from a given `content` to a given `content`' do
+            it 'returns the diff' do
+              post(
+                '/diff',
+                JSON.dump(from: { content: YAML.dump(dev_team_config_manifest) }, to: { content: YAML.dump(other_team_config_manifest) }),
+                'CONTENT_TYPE' => 'application/json',
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+            end
+          end
+
+          context 'from a given `content` to a given `id`' do
+            it 'returns the diff' do
+              post(
+                '/diff',
+                JSON.dump(from: { content: YAML.dump(dev_team_config_manifest) }, to: { id: other_team_config.id.to_s }),
+                'CONTENT_TYPE' => 'application/json',
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+            end
+          end
+
+          context 'from a given `id` to a given `content`' do
+            it 'returns the diff' do
+              post(
+                '/diff',
+                JSON.dump(from: { id: dev_team_config.id.to_s }, to: { content: YAML.dump(other_team_config_manifest) }),
+                'CONTENT_TYPE' => 'application/json',
+              )
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+            end
+
+            context 'where the `content` is an empty config' do
+              it 'gives a nice error' do
+                post(
+                  '/diff',
+                  JSON.dump(from: { id: dev_team_config.id.to_s }, to: { content: "---\n" }),
+                  'CONTENT_TYPE' => 'application/json',
+                )
+
+                expect(JSON.parse(last_response.body)['diff']).to eq([])
+                expect(JSON.parse(last_response.body)['error']).to include('YAML hash expected')
+              end
+            end
+
+            context 'where the `content` is invalid YAML' do
+              it 'gives a nice error' do
+                post(
+                  '/diff',
+                  JSON.dump(from: { id: dev_team_config.id.to_s }, to: { content: "}I'm not valid yaml" }),
+                  'CONTENT_TYPE' => 'application/json',
+                )
+
+                expect(last_response.status).to eq(400)
+                expect(JSON.parse(last_response.body)['diff']).to eq([])
+                expect(JSON.parse(last_response.body)['error']).to include('Config must be valid YAML')
+              end
+            end
           end
 
           context "when referencing another team's config" do

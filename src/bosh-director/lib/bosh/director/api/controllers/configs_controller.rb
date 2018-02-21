@@ -51,10 +51,10 @@ module Bosh::Director
 
       post '/diff', scope: :list_configs, consumes: :json do
         config_request = parse_request_body(request.body.read)
-        schema1, schema2 = validate_diff_request(config_request)
+        schema_name = validate_diff_request(config_request)
 
         begin
-          old_config_hash, new_config_hash = load_diff_request(config_request, schema1, schema2)
+          old_config_hash, new_config_hash = load_diff_request(config_request, schema_name)
           json_encode(generate_diff(new_config_hash, old_config_hash))
         rescue BadConfig => error
           status(400)
@@ -194,53 +194,52 @@ module Bosh::Director
       end
 
       def validate_diff_request(config_request)
-        allowed_format1 = {
-          'from' => { 'id' => /\d+/ },
-          'to' => { 'id' => /\d+/ },
+        id_schema = { 'id' => /\d+/ }
+        content_schema = { 'content' => String }
+        schemas = {
+          'from_id_to_id' => { 'from' => id_schema, 'to' => id_schema },
+          'from_id_to_content' => { 'from' => id_schema, 'to' => content_schema },
+          'from_content_to_id' => { 'from' => content_schema, 'to' => id_schema },
+          'from_content_to_content' => { 'from' => content_schema, 'to' => content_schema },
+          'from_content_to_current' => { 'type' => /.+/, 'name' => /.+/, 'content' => String },
         }
 
-        allowed_format2 = {
-          'type' => /.+/,
-          'name' => /.+/,
-          'content' => String,
-        }
-
-        schema1 = true
-        schema2 = true
-        begin
-          Membrane::SchemaParser.parse { allowed_format1 }.validate(config_request)
-        rescue StandardError
-          schema1 = false
+        schemas.each do |schema_name, schema|
+          begin
+            Membrane::SchemaParser.parse { schema }.validate(config_request)
+            return schema_name
+          rescue Membrane::SchemaValidationError
+            next
+          end
         end
 
-        begin
-          Membrane::SchemaParser.parse { allowed_format2 }.validate(config_request)
-        rescue StandardError
-          schema2 = false
-        end
-
-        [schema1, schema2]
+        raise BadConfigRequest, %(The following request formats are allowed:\n) +
+                                %(1. {"from":<config>,"to":<config>} ) +
+                                %(where <config> is either {"id":"<id>"} or {"content":"<content>"}\n) +
+                                %(2. {"type":"<type>","name":"<name>","content":"<content>"})
       end
 
-      def load_diff_request(config_request, schema1, schema2)
+      def load_config_by_id(id)
         config_manager = Bosh::Director::Api::ConfigManager.new
+        config = config_manager.find_by_id(id)
+        @permission_authorizer.granted_or_raise(config, :admin, token_scopes)
+        config.raw_manifest
+      end
 
-        if schema1
-          old_config = config_manager.find_by_id(config_request['from']['id'])
-          @permission_authorizer.granted_or_raise(old_config, :admin, token_scopes)
-          old_config_hash = old_config.raw_manifest
+      def load_diff_request(config_request, schema_name)
+        return contents_from_body_and_current(config_request) if schema_name == 'from_content_to_current'
 
-          new_config = config_manager.find_by_id(config_request['to']['id'])
-          @permission_authorizer.granted_or_raise(new_config, :admin, token_scopes)
-          new_config_hash = new_config.raw_manifest
-        elsif schema2
-          old_config_hash, new_config_hash = contents_from_body_and_current(config_request)
-        else
-          raise BadConfigRequest,
-                %(Only two request formats are allowed:\n) +
-                %(1. {"from":{"id":"<id>"},"to":{"id":"<id>"}}\n) +
-                %(2. {"type":"<type>","name":"<name>","content":"<content>"})
-        end
+        old_config_hash = if schema_name.start_with?('from_id')
+                            load_config_by_id(config_request['from']['id'])
+                          elsif schema_name.start_with?('from_content')
+                            validate_config_content(config_request['from']['content'])
+                          end
+
+        new_config_hash = if schema_name.end_with?('to_id')
+                            load_config_by_id(config_request['to']['id'])
+                          elsif schema_name.end_with?('to_content')
+                            validate_config_content(config_request['to']['content'])
+                          end
 
         [old_config_hash, new_config_hash]
       end
