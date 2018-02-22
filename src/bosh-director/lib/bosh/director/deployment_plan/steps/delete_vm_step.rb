@@ -21,7 +21,7 @@ module Bosh::Director
 
             @logger.info('Deleting VM')
             @error_ignorer.with_force_check do
-              cloud = CloudFactory.create_with_latest_configs.get(vm.cpi)
+              cloud = CloudFactory.create.get(vm.cpi)
 
               begin
                 cloud.delete_vm(vm_cid) unless @enable_virtual_delete_vm

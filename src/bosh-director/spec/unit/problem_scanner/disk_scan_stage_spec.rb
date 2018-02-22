@@ -15,7 +15,7 @@ module Bosh::Director
     let(:disk_owners) { {} }
     let(:problem_register) { instance_double('Bosh::Director::ProblemScanner::ProblemRegister') }
     let(:cloud) { Config.cloud }
-    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+    let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
     let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
     let(:thread_pool) { double(ThreadPool) }
@@ -34,7 +34,7 @@ module Bosh::Director
       allow(event_logger).to receive(:track_and_log) do |_, &blk|
         blk.call if blk
       end
-      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+      allow(Bosh::Director::AZCloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
     end
 
     describe '#scan' do

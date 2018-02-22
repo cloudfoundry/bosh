@@ -11,7 +11,7 @@ module Bosh::Director
         def perform(_report)
           return if @disk.nil?
 
-          cloud_factory = CloudFactory.create_with_latest_configs
+          cloud_factory = CloudFactory.create
           cloud = cloud_factory.get(@disk.cpi)
           @logger.info("Attaching disk #{@disk.disk_cid}")
           cloud.attach_disk(@disk.instance.vm_cid, @disk.disk_cid)

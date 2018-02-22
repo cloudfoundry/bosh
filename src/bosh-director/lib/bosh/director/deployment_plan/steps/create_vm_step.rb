@@ -64,15 +64,17 @@ module Bosh::Director
         end
 
         def choose_factory_and_stemcell_cid(instance_plan, use_existing)
-          if use_existing && !!instance_plan.existing_instance.availability_zone
-            factory = CloudFactory.create_from_deployment(instance_plan.existing_instance.deployment)
+          deployment = instance_plan.instance.model.deployment
 
+          if use_existing && !!instance_plan.existing_instance.availability_zone
+            factory = AZCloudFactory.create_from_deployment(deployment)
             stemcell = instance_plan.instance.stemcell
             cpi = factory.get_name_for_az(instance_plan.existing_instance.availability_zone)
             stemcell_cid = stemcell.models.find { |model| model.cpi == cpi }.cid
-            return factory, stemcell_cid
+            [factory, stemcell_cid]
           else
-            return CloudFactory.create_with_latest_configs, instance_plan.instance.stemcell_cid
+            factory = AZCloudFactory.create_with_latest_configs(deployment)
+            [factory, instance_plan.instance.stemcell_cid]
           end
         end
 
@@ -82,7 +84,7 @@ module Bosh::Director
           parent_id = add_event(deployment_name, instance_model.name, 'create')
           agent_id = SecureRandom.uuid
 
-          config_server_client = ConfigServer::ClientFactory.create(@logger) .create_client
+          config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
           env = config_server_client.interpolate_with_versioning(env, instance.desired_variable_set)
           cloud_properties = config_server_client.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
           network_settings = config_server_client.interpolate_with_versioning(network_settings, instance.desired_variable_set)

@@ -76,7 +76,7 @@ module Bosh
 
             before do
               instance_model.active_vm = vm_model
-              allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+              allow(CloudFactory).to receive(:create).and_return(cloud_factory)
               allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
               allow(Config).to receive(:local_dns_enabled?).and_return(true)
               allow(Config).to receive(:current_job).and_return(job)

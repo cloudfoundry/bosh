@@ -59,7 +59,8 @@ module Bosh::Director
         snapshots.each do |snapshot|
           unless keep_snapshots_in_the_cloud
             instance = snapshot.persistent_disk.instance
-            cloud = CloudFactory.create_with_latest_configs.get_for_az(instance.availability_zone)
+            factory = AZCloudFactory.create_with_latest_configs(instance.deployment)
+            cloud = factory.get_for_az(instance.availability_zone)
             cloud.delete_snapshot(snapshot.snapshot_cid)
           end
           snapshot.delete
@@ -86,7 +87,8 @@ module Bosh::Director
         tags = instance.deployment.tags
         metadata.merge!(tags) unless tags.empty?
 
-        cloud = CloudFactory.create_with_latest_configs.get_for_az(instance.availability_zone)
+        factory = AZCloudFactory.create_with_latest_configs(instance.deployment)
+        cloud = factory.get_for_az(instance.availability_zone)
         instance.persistent_disks.each do |disk|
           cid = cloud.snapshot_disk(disk.disk_cid, metadata)
           snapshot = Models::Snapshot.new(persistent_disk: disk, snapshot_cid: cid, clean: clean)

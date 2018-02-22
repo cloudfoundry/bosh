@@ -16,7 +16,7 @@ module Bosh::Director
         let(:report) { Stages::Report.new }
 
         before do
-          allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with(disk&.cpi).once.and_return(cloud)
           allow(cloud).to receive(:attach_disk)
           allow(MetadataUpdater).to receive(:build).and_return(meta_updater)
