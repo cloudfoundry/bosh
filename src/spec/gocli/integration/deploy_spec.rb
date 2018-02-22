@@ -180,7 +180,7 @@ Error: Unable to render instance groups for deployment. Errors are:
             client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
             failure_expected: true,
           )
-          expect(output).to include("Director responded with non-successful status code '403'")
+          expect(output).to include('Post https://127.0.0.1:61004/configs/diff: http: ContentLength=378 with Body length 0')
         end
 
         it "can deploy each team's configs without conflict" do

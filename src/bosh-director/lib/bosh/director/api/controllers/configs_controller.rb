@@ -58,12 +58,6 @@ module Bosh::Director
         begin
           old_config_hash, new_config_hash = load_diff_request(config_request, schema1, schema2)
           json_encode(generate_diff(new_config_hash, old_config_hash))
-        rescue UnauthorizedToAccessDeployment => error
-          status(403)
-          json_encode(
-            'diff' => [],
-            'error' => "Unable to diff config content",
-          )
         rescue BadConfig => error
           status(400)
           json_encode(
