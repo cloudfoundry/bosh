@@ -20,16 +20,12 @@ describe 'cli configs', type: :integration do
     end
 
     it 'updates named config' do
-<<<<<<< HEAD
-      expect(bosh_runner.run("update-config --name=my-name --type=my-type #{config.path}")).to include('Succeeded')
-=======
       expect(bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")).to include('Succeeded')
     end
 
     it 'updates config with default name' do
       bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
       expect(bosh_runner.run('configs --type=my-type --json')).to include('"name": "default"')
->>>>>>> 58c773e07... CLI changed arguments for update-config
     end
 
     it 'uploads an empty YAML hash' do
@@ -39,7 +35,7 @@ describe 'cli configs', type: :integration do
         expect(bosh_runner.run("update-config --type=my-type --name=default #{empty_config_filename}")).to include('Succeeded')
       end
     end
-    
+
     it 'does not fail if the uploaded config is a large file' do
       config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.simple_cloud_config)
 
