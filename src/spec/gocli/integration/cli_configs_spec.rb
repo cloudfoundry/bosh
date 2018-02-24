@@ -51,15 +51,9 @@ describe 'cli configs', type: :integration do
     end
   end
 
-  context 'can get a config' do
-    it 'by id' do
-      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
-      id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
-      expect(bosh_runner.run("config #{id}")).to include('Succeeded')
-    end
-  end
-
   context 'can list configs' do
+    let(:second_config) { yaml_file('second_config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
+
     it 'lists configs' do
       bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
       bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
@@ -109,12 +103,12 @@ describe 'cli configs', type: :integration do
       production_configs = table(bosh_runner.run('configs', json: true, client: production_env['BOSH_CLIENT'],
         client_secret: production_env['BOSH_CLIENT_SECRET']))
       expect(production_configs.length).to eq(1)
-      expect(production_configs).to contain_exactly({'name'=>'prod', 'team'=>'production_team', 'type'=>'cloud'})
+      expect(production_configs.first).to include('name'=>'prod', 'team'=>'production_team', 'type'=>'cloud')
 
       team_configs = table(bosh_runner.run('configs', json: true, client: team_read_env['BOSH_CLIENT'],
         client_secret: team_read_env['BOSH_CLIENT_SECRET']))
       expect(team_configs.length).to eq(1)
-      expect(team_configs).to contain_exactly('name' => 'team', 'team' => 'ateam', 'type' => 'cloud')
+      expect(team_configs.first).to include('name' => 'team', 'team' => 'ateam', 'type' => 'cloud')
     end
 
     it 'allows to create/delete team only for admin or team admin' do
@@ -137,19 +131,12 @@ describe 'cli configs', type: :integration do
         client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
       )
 
-      configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'],
+      admin_configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'],
                                                  client_secret: admin_env['BOSH_CLIENT_SECRET']))
-      expect(configs.length).to eq(2)
+      expect(admin_configs.length).to eq(2)
 
-      expect(configs).to contain_exactly(
-        { 'name' => 'default', 'teams' => 'production_team', 'type' => 'production-type' },
-        { 'name' => 'default', 'teams' => 'ateam', 'type' => 'team-type' },
-      )
-
-      configs = table(bosh_runner.run('configs', json: true, client: team_admin_env['BOSH_CLIENT'],
-                                                 client_secret: team_admin_env['BOSH_CLIENT_SECRET']))
-
-      expect(configs).to contain_exactly('name' => 'default', 'teams' => '', 'type' => 'team-type')
+      expect(admin_configs.first).to include('name' => 'team-name1', 'team' => 'ateam', 'type' => 'team-type')
+      expect(admin_configs.last).to include('name' => 'team-name2', 'team' => 'ateam', 'type' => 'team-type')
     end
 
     it 'allows to create/delete team only for admin or team admin' do
@@ -162,32 +149,22 @@ describe 'cli configs', type: :integration do
       admin_configs = table(bosh_runner.run('configs', json: true, client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET']))
       expect(admin_configs.length).to eq(2)
 
-      expect(admin_configs).to contain_exactly(
-        {'name'=>'team-name1', 'team'=>'ateam', 'type'=>'team-type'},
-        {'name'=>'team-name2', 'team'=>'ateam', 'type'=>'team-type'}
-      )
+      expect(admin_configs.first).to include('name' => 'team-name1', 'team' => 'ateam', 'type' => 'team-type')
+      expect(admin_configs.last).to include('name' => 'team-name2', 'team' => 'ateam', 'type' => 'team-type')
 
-      output = bosh_runner.run('delete-config team-type --name=team-name1', failure_expected: true, client: team_read_env['BOSH_CLIENT'], client_secret: team_read_env['BOSH_CLIENT_SECRET'])
+      output = bosh_runner.run(
+        'delete-config --type=team-type --name=team-name1',
+        failure_expected: true,
+        client: team_read_env['BOSH_CLIENT'],
+        client_secret: team_read_env['BOSH_CLIENT_SECRET'],
+      )
       expect(output).to include('Require one of the scopes: bosh.admin, bosh.deadbeef.admin')
 
-      expect(bosh_runner.run('delete-config team-type --name=team-name1', client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET'])).to include('Succeeded')
-      expect(bosh_runner.run('delete-config team-type --name=team-name2', client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])).to include('Succeeded')
+      expect(bosh_runner.run('delete-config --type=team-type --name=team-name1', client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET'])).to include('Succeeded')
+      expect(bosh_runner.run('delete-config --type=team-type --name=team-name2', client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])).to include('Succeeded')
 
       admin_configs = table(bosh_runner.run('configs', json: true, client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET']))
       expect(admin_configs.length).to eq(0)
-    end
-  end
-
-  context 'can diff configs' do
-    let(:other_config) {yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders)}
-
-    it 'diffs two configs' do
-      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
-      bosh_runner.run("update-config --type=other-type --name=other-name #{other_config.path}")
-
-      output = bosh_runner.run('configs --include-outdated --json')
-      from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
-      expect(bosh_runner.run("diff-config #{from} #{to}")).to include('- vm_types:', '+ releases:', 'Succeeded')
     end
   end
 
@@ -196,14 +173,14 @@ describe 'cli configs', type: :integration do
       bosh_runner.run("update-config --type=my-type --name=my-name #{config.path}")
       bosh_runner.run("update-config --type=other-type --name=other-name #{config.path}")
 
-      expect(bosh_runner.run('delete-config my-type --name=my-name')).to include('Succeeded')
+      expect(bosh_runner.run('delete-config --type=my-type --name=my-name')).to include('Succeeded')
       output = bosh_runner.run('configs')
       expect(output).to_not include('my-type','my-name')
       expect(output).to include('other-type', 'other-name')
     end
 
     it 'warns if there is nothing to delete' do
-      output = bosh_runner.run('delete-config my-type')
+      output = bosh_runner.run('delete-config --type=my-type --name=potato')
       expect(output).to include('Succeeded')
       expect(output).to include('No configs to delete')
     end
