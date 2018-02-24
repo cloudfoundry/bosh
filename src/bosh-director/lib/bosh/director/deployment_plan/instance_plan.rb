@@ -49,7 +49,7 @@ module Bosh
           @desired_instance.instance_group&.should_hot_swap?
         end
 
-        def needs_to_fix?
+        def unresponsive_agent?
           return false if @instance.nil?
           @instance.current_job_state == 'unresponsive'
         end
@@ -61,8 +61,8 @@ module Bosh
 
           @changes = Set.new
           @changes << :dirty if @instance.dirty?
-          @changes << :restart if needs_restart?
-          @changes << :recreate if needs_recreate?
+          @changes << :restart if restart_requested?
+          @changes << :recreate if recreation_requested?
           @changes << :cloud_properties if instance.cloud_properties_changed?
           @changes << :stemcell if stemcell_changed?
           @changes << :env if env_changed?
@@ -104,15 +104,15 @@ module Bosh
           !instance_model.nil? && instance_model.ignore
         end
 
-        def needs_restart?
+        def restart_requested?
           @instance.virtual_state == 'restart'
         end
 
-        def needs_recreate?
+        def recreation_requested?
           if @recreate_deployment
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
             true
-          elsif needs_to_fix?
+          elsif unresponsive_agent?
             @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")
             true
           else
@@ -169,7 +169,7 @@ module Bosh
             return true
           end
 
-          return true if needs_to_fix?
+          return true if unresponsive_agent?
 
           if instance.state == 'stopped' && instance.current_job_state == 'running' ||
              instance.state == 'started' && instance.current_job_state != 'running'
@@ -286,7 +286,7 @@ module Bosh
           instance.cloud_properties_changed? ||
             stemcell_changed? ||
             env_changed? ||
-            needs_recreate?
+            recreation_requested?
         end
 
         def find_existing_reservation_for_network(network)

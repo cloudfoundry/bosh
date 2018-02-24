@@ -73,10 +73,14 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the instance is a hotswap instance' do
         let(:should_hot_swap?) { true }
-        let(:desired_reservations) { [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)] }
+        let(:desired_reservations) do
+          [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)]
+        end
 
         context 'when desired reservation and existing reservations are dynamic' do
-          before { existing_reservations.map { |reservation| reservation.resolve_type(:dynamic) } }
+          before do
+            existing_reservations.map { |reservation| reservation.resolve_type(:dynamic) }
+          end
 
           context 'when instance does not need recreate' do
             before do
@@ -114,7 +118,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when desired reservation is dynamic but existing reservation is static' do
-          before { existing_reservations.map { |reservation| reservation.resolve_type(:static) } }
+          before do
+            existing_reservations.map { |reservation| reservation.resolve_type(:static) }
+          end
 
           context 'when instance does not need recreate' do
             before do

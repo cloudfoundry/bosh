@@ -1,6 +1,18 @@
 require_relative '../spec_helper'
 require 'fileutils'
 
+RSpec::Matchers.define :be_a_hotswapped do |old_vm|
+  match do |new_vm|
+    new_vm['active'] == 'true' &&
+      new_vm['az'] == old_vm['az'] &&
+      new_vm['vm_type'] == old_vm['vm_type'] &&
+      new_vm['instance'] == old_vm['instance'] &&
+      new_vm['process_state'] == 'running' &&
+      new_vm['vm_cid'] != old_vm['vm_cid'] &&
+      new_vm['ips'] != old_vm['ips']
+  end
+end
+
 describe 'deploy with hotswap', type: :integration do
   with_reset_sandbox_before_each
   let(:manifest) do
@@ -52,13 +64,7 @@ describe 'deploy with hotswap', type: :integration do
 
       expect(new_vm).to match(vm_pattern)
 
-      expect(new_vm['active']).to eq('true')
-      expect(new_vm['az']).to eq(old_vm['az'])
-      expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
-      expect(new_vm['instance']).to eq(old_vm['instance'])
-      expect(new_vm['vm_cid']).to_not eq(old_vm['vm_cid'])
-      expect(new_vm['process_state']).to eq('running')
-      expect(new_vm['ips']).to_not eq(old_vm['ips'])
+      expect(new_vm).to be_a_hotswapped(old_vm)
     end
 
     it 'should show the new vm only in bosh instances command' do
@@ -119,15 +125,32 @@ describe 'deploy with hotswap', type: :integration do
       end
     end
 
-    context 'when changing network settings' do
+    context 'when adding an additional network to VM' do
+      let(:network_type) { 'manual' }
+
       it 'hotswaps vms' do
         old_vm = table(bosh_runner.run('vms', json: true))[0]
 
-        cloud_config['networks'][0]['name'] = 'crazy-train'
-        upload_cloud_config(cloud_config)
-        out =  deploy_simple_manifest(manifest_hash: manifest)
-        expect(out).to match /Creating missing vms: foobar/
-        expect(out).to match /Downloading packages: foobar/
+        cloud_config['networks'] << {
+          'name' => 'crazy-train',
+          'type' => 'manual',
+          'subnets' => [
+            {
+              'range' => '10.0.1.0/24',
+              'gateway' => '10.0.1.1',
+              'dns' => ['10.0.1.1', '10.0.1.2'],
+              'static' => [],
+              'reserved' => [],
+              'cloud_properties' => {},
+            },
+          ],
+        }
+        upload_cloud_config(cloud_config_hash: cloud_config)
+        manifest['instance_groups'][0]['networks'][0]['default'] = %w[dns gateway]
+        manifest['instance_groups'][0]['networks'] << { 'name' => 'crazy-train' }
+        out = deploy_simple_manifest(manifest_hash: manifest)
+        expect(out).to match(/Creating missing vms: foobar/)
+        expect(out).to match(/Downloading packages: foobar/)
 
         vms = table(bosh_runner.run('vms', json: true))
 
@@ -147,13 +170,41 @@ describe 'deploy with hotswap', type: :integration do
 
         expect(new_vm).to match(vm_pattern)
 
-        expect(new_vm['active']).to eq('true')
-        expect(new_vm['az']).to eq(old_vm['az'])
-        expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
-        expect(new_vm['instance']).to eq(old_vm['instance'])
-        expect(new_vm['vm_cid']).to_not eq(old_vm['vm_cid'])
-        expect(new_vm['process_state']).to eq('running')
-        expect(new_vm['ips']).to_not eq(old_vm['ips'])
+        expect(new_vm).to be_a_hotswapped(old_vm)
+      end
+    end
+
+    context 'when changing network settings' do
+      let(:network_type) { 'manual' }
+
+      it 'hotswaps vms' do
+        old_vm = table(bosh_runner.run('vms', json: true))[0]
+
+        cloud_config['networks'][0]['subnets'][0]['reserved'] << old_vm['ips']
+        upload_cloud_config(cloud_config_hash: cloud_config)
+        out = deploy_simple_manifest(manifest_hash: manifest)
+        expect(out).to match(/Creating missing vms: foobar/)
+        expect(out).to match(/Downloading packages: foobar/)
+
+        vms = table(bosh_runner.run('vms', json: true))
+
+        expect(vms.length).to eq(1)
+
+        vm_pattern = {
+          'active' => /true|false/,
+          'az' => '',
+          'instance' => instance_slug_regex,
+          'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
+          'process_state' => /[a-z]{7}/,
+          'vm_cid' => /[0-9]{1,6}/,
+          'vm_type' => 'a',
+        }
+
+        new_vm = vms[0]
+
+        expect(new_vm).to match(vm_pattern)
+
+        expect(new_vm).to be_a_hotswapped(old_vm)
       end
     end
 
@@ -182,13 +233,7 @@ describe 'deploy with hotswap', type: :integration do
 
         expect(new_vm).to match(vm_pattern)
 
-        expect(new_vm['active']).to eq('true')
-        expect(new_vm['az']).to eq(old_vm['az'])
-        expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
-        expect(new_vm['instance']).to eq(old_vm['instance'])
-        expect(new_vm['vm_cid']).to_not eq(old_vm['vm_cid'])
-        expect(new_vm['process_state']).to eq('running')
-        expect(new_vm['ips']).to_not eq(old_vm['ips'])
+        expect(new_vm).to be_a_hotswapped(old_vm)
       end
 
       context 'when doing a no-op deploy' do
@@ -214,13 +259,7 @@ describe 'deploy with hotswap', type: :integration do
 
           expect(new_vm).to match(vm_pattern)
 
-          expect(new_vm['active']).to eq('true')
-          expect(new_vm['az']).to eq(old_vm['az'])
-          expect(new_vm['vm_type']).to eq(old_vm['vm_type'])
-          expect(new_vm['instance']).to eq(old_vm['instance'])
-          expect(new_vm['vm_cid']).to eq(old_vm['vm_cid'])
-          expect(new_vm['process_state']).to eq('running')
-          expect(new_vm['ips']).to eq(old_vm['ips'])
+          expect(new_vm).to eq(old_vm)
         end
       end
 
