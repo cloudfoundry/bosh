@@ -51,7 +51,7 @@ module Bosh::Director
           'strategy',
           class: String,
           optional: true,
-          default: default_update_config ? default_update_config.strategy : nil,
+          default: default_update_config ? default_update_config.strategy : Config.default_update_strategy,
         )
 
         unless @strategy.nil?
