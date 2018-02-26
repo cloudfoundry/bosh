@@ -51,7 +51,7 @@ module Bosh::Director
       end
 
       def reattach_disk(reboot = false)
-        cloud = CloudFactory.create_with_latest_configs.get_for_az(@instance.availability_zone)
+        cloud = AZCloudFactory.create_with_latest_configs(@instance.deployment).get_for_az(@instance.availability_zone)
         cloud.attach_disk(@vm_cid, @disk_cid)
         MetadataUpdater.build.update_disk_metadata(cloud, @disk, @disk.instance.deployment.tags)
         if reboot

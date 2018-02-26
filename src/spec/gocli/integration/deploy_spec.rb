@@ -107,6 +107,143 @@ Error: Unable to render instance groups for deployment. Errors are:
       expect(first_cloud_config_vms.count).to eq(3)
       expect(second_cloud_config_vms.count).to eq(3)
     end
+
+    context 'when teams are used' do
+      with_reset_sandbox_before_each(user_authentication: 'uaa')
+
+      let(:production_env) { { 'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret' } }
+      let(:admin_env) { { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' } }
+      let(:team_read_env) { { 'BOSH_CLIENT' => 'team-client-read-access', 'BOSH_CLIENT_SECRET' => 'team-secret' } }
+      let(:team_admin_env) { { 'BOSH_CLIENT' => 'team-client', 'BOSH_CLIENT_SECRET' => 'team-secret' } }
+
+      before do
+        create_and_upload_test_release(client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET'])
+        upload_stemcell(client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET'])
+      end
+
+      context 'when there are only team cloud configs' do
+        let(:team1_cc) do
+          cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+          yaml_file('team1_cc', cloud_config_hash)
+        end
+        let(:team2_cc) do
+          cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+          yaml_file('team2_cc', cloud_config_hash)
+        end
+        let(:manifest_hash1) do
+          Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups.merge!({'name' => 'team1manifest'})
+        end
+        let(:manifest_hash2) do
+          Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups.merge!({'name' => 'team2manifest'})
+        end
+
+        before do
+          bosh_runner.run(
+            "update-config --name=my-cc --type=cloud #{team1_cc.path}",
+            client: production_env['BOSH_CLIENT'],
+            client_secret: production_env['BOSH_CLIENT_SECRET'],
+          )
+          bosh_runner.run(
+            "update-config --name=my-cc1 --type=cloud #{team2_cc.path}",
+            client: team_admin_env['BOSH_CLIENT'],
+            client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
+          )
+        end
+
+        it 'denies permission to upload same-named-configs to another team' do
+          bosh_runner.run(
+            "update-config --name=should-conflict --type=cloud #{team1_cc.path}",
+            client: production_env['BOSH_CLIENT'],
+            client_secret: production_env['BOSH_CLIENT_SECRET'],
+          )
+          output, _ = bosh_runner.run(
+            "update-config --name=should-conflict --type=cloud #{team2_cc.path}",
+            client: team_admin_env['BOSH_CLIENT'],
+            client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
+            failure_expected: true,
+          )
+          expect(output).to include('Post https://127.0.0.1:61004/configs/diff: http: ContentLength=378 with Body length 0')
+        end
+
+        it "can deploy each team's configs without conflict" do
+          deploy_simple_manifest(
+            manifest_hash: manifest_hash1,
+            client: production_env['BOSH_CLIENT'],
+            client_secret: production_env['BOSH_CLIENT_SECRET'],
+          )
+          deploy_simple_manifest(
+            manifest_hash: manifest_hash2,
+            client: team_admin_env['BOSH_CLIENT'],
+            client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
+          )
+        end
+      end
+
+      context 'when an admin/global cloud config is present' do
+        let(:admin_cc) do
+          cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+          yaml_file('admin_cc', cloud_config_hash)
+        end
+
+        let(:team_cc) do
+          cloud_config_hash = { 'vm_types' => [{ 'name' => 'team_vm' }] }
+          yaml_file('team_cc', cloud_config_hash)
+        end
+
+        let(:manifest_hash) do
+          Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        end
+
+        let(:team_manifest_hash) do
+          m = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+          m['instance_groups'][0]['vm_type'] = 'team_vm'
+          m
+        end
+
+        before do
+          bosh_runner.run(
+            "update-config --name=admin_cc --type=cloud #{admin_cc.path}",
+            client: admin_env['BOSH_CLIENT'],
+            client_secret: admin_env['BOSH_CLIENT_SECRET'],
+          )
+          bosh_runner.run(
+            "update-config --name=team_cc --type=cloud #{team_cc.path}",
+            client: team_admin_env['BOSH_CLIENT'],
+            client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
+          )
+        end
+
+        context 'when deploying as an admin' do
+          it 'will successfully deploy a simple manifest' do
+            deploy_simple_manifest(
+              manifest_hash: manifest_hash,
+              client: admin_env['BOSH_CLIENT'],
+              client_secret: admin_env['BOSH_CLIENT_SECRET'],
+            )
+          end
+
+          it 'will fail when trying to use a team-specific cloud config resource' do
+            output, _ = deploy_simple_manifest(
+              manifest_hash: team_manifest_hash,
+              client: admin_env['BOSH_CLIENT'],
+              client_secret: admin_env['BOSH_CLIENT_SECRET'],
+              failure_expected: true,
+            )
+            expect(output).to include("Error: Instance group 'foobar' references an unknown vm type 'team_vm'")
+          end
+        end
+
+        context 'when deploying as team member' do
+          it 'will successfully deploy with team-specific cloud config resources' do
+            deploy_simple_manifest(
+              manifest_hash: team_manifest_hash,
+              client: team_admin_env['BOSH_CLIENT'],
+              client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
+            )
+          end
+        end
+      end
+    end
   end
 
   context 'when dns is enabled' do

@@ -85,7 +85,7 @@ module Bosh::Director
 
       begin
         @logger.info("Deleting orphan orphan disk: #{orphan_disk.disk_cid}")
-        cloud = CloudFactory.create_with_latest_configs.get(orphan_disk.cpi)
+        cloud = CloudFactory.create.get(orphan_disk.cpi)
         cloud.delete_disk(orphan_disk.disk_cid)
         orphan_disk.destroy
       rescue Bosh::Clouds::DiskNotFound
@@ -130,7 +130,7 @@ module Bosh::Director
       begin
         snapshot_cid = orphan_snapshot.snapshot_cid
         @logger.info("Deleting orphan snapshot: #{snapshot_cid}")
-        cloud = CloudFactory.create_with_latest_configs.get(orphan_snapshot.orphan_disk.cpi)
+        cloud = CloudFactory.create.get(orphan_snapshot.orphan_disk.cpi)
         cloud.delete_snapshot(snapshot_cid)
         orphan_snapshot.destroy
       rescue Bosh::Clouds::DiskNotFound

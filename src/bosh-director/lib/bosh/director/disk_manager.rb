@@ -285,7 +285,7 @@ module Bosh::Director
     end
 
     def cloud_for_cpi(cpi)
-      cloud_factory = CloudFactory.create_with_latest_configs
+      cloud_factory = CloudFactory.create
       cloud_factory.get(cpi)
     end
   end

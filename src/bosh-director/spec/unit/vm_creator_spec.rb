@@ -10,7 +10,7 @@ module Bosh
 
       let(:disk_manager) { DiskManager.new(logger) }
       let(:cloud) { instance_double('Bosh::Cloud') }
-      let(:cloud_factory) { instance_double(CloudFactory) }
+      let(:cloud_factory) { instance_double(AZCloudFactory) }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
@@ -187,14 +187,14 @@ module Bosh
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
-        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(AZCloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
         allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
         allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
       end
 
       context 'with existing cloud config' do
-        let(:non_default_cloud_factory) { instance_double(CloudFactory) }
+        let(:non_default_cloud_factory) { instance_double(AZCloudFactory) }
         let(:stemcell_model_cpi) { Models::Stemcell.make(:cid => 'old-stemcell-id', name: 'fake-stemcell', version: '123', :cpi => 'cpi1') }
         let(:stemcell) do
           stemcell_model
@@ -205,7 +205,7 @@ module Bosh
         end
 
         it 'uses the outdated cloud config from the existing deployment' do
-          expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
+          expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
           expect(non_default_cloud_factory).to receive(:get_name_for_az).with('az1').at_least(:once).and_return 'cpi1'
           expect(non_default_cloud_factory).to receive(:get).with('cpi1').at_least(:once).and_return(cloud)
           expect(cloud).to receive(:create_vm).with(
@@ -222,7 +222,7 @@ module Bosh
             expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
             expect(non_default_cloud_factory).to receive(:get).with('').at_least(:once).and_return(cloud)
 
-            expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
+            expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
             expect(cloud).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
             ).and_return('new-vm-cid')
@@ -488,7 +488,7 @@ module Bosh
         Config.keep_unreachable_vms = false
 
         expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
-        expect(cloud).to receive(:delete_vm)
+        expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
 
         expect(instance).to receive(:update_instance_settings).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 

@@ -72,7 +72,7 @@ module Bosh::Director
 
         if active_vm
           begin
-            cloud = CloudFactory.create_with_latest_configs.get(active_vm.cpi)
+            cloud = CloudFactory.create.get(active_vm.cpi)
             cloud.detach_disk(active_vm.cid, @disk.disk_cid)
           rescue => e
             # We are going to delete this disk anyway

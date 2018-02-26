@@ -576,6 +576,35 @@ module Bosh::Director
 
       end
 
+      context "when referencing another team's config" do
+        let!(:old_config) { Models::Config.make(type: 'myType', name: 'myName', team_id: other_team.id) }
+        let(:other_team) { Models::Team.make(name: 'other') }
+        let(:new_config) do
+          JSON.generate(
+            'type' => old_config.type,
+            'name' => old_config.name,
+            'content' => YAML.dump(old_config.raw_manifest),
+          )
+        end
+
+        context 'without a team-specific user' do
+          before { basic_authorize 'dev-team-member', 'dev-team-member' }
+
+          it 'should return an error when the old config is unauthorized' do
+            post(
+              '/diff',
+              new_config,
+              'CONTENT_TYPE' => 'application/json',
+            )
+            expect(last_response.status).to eq(401)
+            json_response = JSON.parse(last_response.body)
+            expect(json_response['code']).to eq(600_000)
+            expect(json_response['description'])
+              .to eq('Require one of the scopes: bosh.admin, bosh..admin, bosh.teams.other.admin')
+          end
+        end
+      end
+
       context 'accessing with invalid credentials' do
         before { authorize 'invalid-user', 'invalid-password' }
 

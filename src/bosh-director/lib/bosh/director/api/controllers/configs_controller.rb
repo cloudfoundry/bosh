@@ -60,11 +60,11 @@ module Bosh::Director
 
         begin
           new_config_hash = validate_config_content(config_request['content'])
-        rescue => e
+        rescue BadConfig => error
           status(400)
           return json_encode({
             'diff' => [],
-            'error' => e.message
+            'error' => error.message
           })
         end
 
@@ -77,6 +77,7 @@ module Bosh::Director
         old_config_hash = if old_config.nil? || old_config.raw_manifest.nil?
           {}
         else
+          @permission_authorizer.granted_or_raise(old_config, :admin, token_scopes)
           old_config.raw_manifest
         end
 

@@ -44,7 +44,7 @@ describe Bosh::Director::MetadataUpdater do
 
     context 'with global cloud factory' do
       before do
-        allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
         expect(cloud_factory).to receive(:get).with(instance.active_vm.cpi).and_return(cloud)
       end
 

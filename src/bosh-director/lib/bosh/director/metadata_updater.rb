@@ -9,9 +9,8 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update_vm_metadata(instance, metadata, factory = CloudFactory.create_with_latest_configs)
+    def update_vm_metadata(instance, metadata, factory = CloudFactory.create)
       vm = instance.active_vm
-
       cloud = factory.get(vm.cpi)
 
       if cloud.respond_to?(:set_vm_metadata)

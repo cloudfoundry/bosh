@@ -8,7 +8,7 @@ module Bosh::Director
         end
 
         def perform
-          cloud = CloudFactory.create_with_latest_configs(@deployment_plan.model)
+          cloud = AZCloudFactory.create_with_latest_configs(@deployment_plan.model)
 
           @deployment_plan.instance_groups_starting_on_deploy.each do |instance_group|
             next if instance_group.instances.nil?

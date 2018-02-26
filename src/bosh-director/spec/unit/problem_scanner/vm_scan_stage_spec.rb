@@ -30,14 +30,14 @@ module Bosh::Director
       allow(problem_register).to receive(:get_disk).and_call_original
     end
     let(:cloud) { Config.cloud }
-    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+    let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
     let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
     before do
       allow(event_logger).to receive(:track_and_log) do |_, &blk|
         blk.call if blk
       end
-      allow(Bosh::Director::CloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
+      allow(Bosh::Director::AZCloudFactory).to receive(:create_from_deployment).and_return(cloud_factory)
     end
 
     describe '#scan' do

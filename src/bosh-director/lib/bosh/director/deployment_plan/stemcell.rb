@@ -99,11 +99,12 @@ module Bosh::Director
         # stemcell might have no AZ, pick default model then
         return model_for_default_cpi.cid if az.nil?
 
-        cpi = CloudFactory.create_with_latest_configs.get_name_for_az(az)
+        cloud_factory = AZCloudFactory.create_with_latest_configs(@deployment_model)
+        cpi_name = cloud_factory.get_name_for_az(az)
         # stemcell might have AZ without cpi, pick default model then
-        return model_for_default_cpi.cid if cpi.nil?
+        return model_for_default_cpi.cid if cpi_name.nil?
 
-        model_for_cpi(cpi).cid
+        model_for_cpi(cpi_name).cid
       end
 
       private

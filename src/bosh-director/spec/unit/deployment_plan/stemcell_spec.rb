@@ -5,10 +5,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     BD::DeploymentPlan::Stemcell.parse(spec)
   end
 
-  def make_deployment(name)
-    BD::Models::Deployment.make(:name => name)
-  end
-
   def make_stemcell(name, version, os = 'os1', params = {})
     BD::Models::Stemcell.make({:name => name, :operating_system=>os, :version => version}.merge(params))
   end
@@ -19,6 +15,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       'version' => '0.5.2'
     }
   end
+  let(:deployment) { BD::Models::Deployment.make(name: 'mycloud') }
 
   describe 'creating' do
     it 'parses name and version' do
@@ -92,7 +89,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
   describe 'binding stemcell model' do
     it 'should bind stemcell models' do
-      deployment = make_deployment('mycloud')
       stemcell_model1 = make_stemcell('stemcell-name', '0.5.2', 'os1', 'cpi' => 'cpi1')
       stemcell_model2 = make_stemcell('stemcell-name', '0.5.2', 'os1', 'cpi' => 'cpi2')
 
@@ -106,7 +102,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     it 'should bind to stemcell with specified OS and version' do
-      deployment = make_deployment('mycloud')
       stemcell_model = make_stemcell('stemcell-name', '0.5.0', 'os2')
       make_stemcell('stemcell-name', '0.5.2', 'os2')
 
@@ -123,7 +118,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     context 'when stemcell cannot be found' do
 
       it 'returns error out if specified OS and version is not found' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('stemcell-name', '0.5.0', 'os2')
         make_stemcell('stemcell-name', '0.5.2', 'os2')
@@ -136,7 +130,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it 'returns error out if name and version is not found' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('stemcell-name1', '0.5.0')
         make_stemcell('stemcell-name2', '0.5.2')
@@ -149,7 +142,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it "fails if stemcell doesn't exist at all" do
-        deployment = make_deployment('mycloud')
 
         stemcell = make(valid_spec)
         expect {
@@ -159,7 +151,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     it 'binds stemcell to the first stemcell found when multiple stemcells match with OS and version' do
-      deployment = make_deployment('mycloud')
 
       make_stemcell('stemcell0', '0.5.0', 'os2')
       make_stemcell('stemcell2', '0.5.2', 'os2')
@@ -175,7 +166,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     it 'binds stemcells to the deployment DB' do
-      deployment = make_deployment('mycloud')
 
       stemcell_1 = make_stemcell('foo', '42-dev')
       stemcell_2 = make_stemcell('bar', '55-dev')
@@ -198,10 +188,13 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   end
 
   describe '#cid_for_az' do
-    let(:cloud_factory) { instance_double(BD::CloudFactory) }
-    before {
-      allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
-    }
+    let(:cloud_factory) { instance_double(BD::AZCloudFactory) }
+    before do
+      allow(BD::AZCloudFactory)
+        .to receive(:create_with_latest_configs)
+        .with(deployment)
+        .and_return(cloud_factory)
+    end
 
     it 'raises an error if no stemcell model was bound' do
       stemcell = make({'name' => 'foo', 'version' => '42-dev'})
@@ -217,7 +210,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it 'raises an error if no stemcell for the default cpi exists' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1') # there's only a stemcell for another cpi
 
@@ -228,7 +220,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it 'returns the cid of the default stemcell when not using AZs' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1') # stemcell without cpi config
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
@@ -241,7 +232,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it 'returns the cid of the default stemcell when using AZs without CPI' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1') # stemcell without cpi config
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
@@ -257,7 +247,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
     context 'if using cpi config' do
       it 'returns the cid of the stemcell of the given az' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1')
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi2', 'cid' => 'cid2')
@@ -270,7 +259,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it 'raises an error if the required stemcell for the given AZ does not exist' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid1')
 
@@ -284,7 +272,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
     context 'if switching to cpi config with prior stemcells' do
       it 'returns the cid of the stemcell of the given az' do
-        deployment = make_deployment('mycloud')
 
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => '', 'cid' => 'cid1') # stemcell without cpi config
         make_stemcell('foo', '42-dev', 'os1', 'cpi' => 'cpi1', 'cid' => 'cid2')
