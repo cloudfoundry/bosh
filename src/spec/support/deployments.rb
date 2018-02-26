@@ -315,7 +315,19 @@ module Bosh::Spec
           'name' => 'addon1',
           'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
           'include' => {
-            'networks' => ["a"]
+            'networks' => ['a']
+          }
+        ]
+      })
+    end
+
+    def self.runtime_config_with_addon_excludes_lifecycle
+      runtime_config_with_addon.merge({
+        'addons' => [
+          'name' => 'addon1',
+          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'exclude' => {
+            'lifecycle' => 'errand'
           }
         ]
       })
