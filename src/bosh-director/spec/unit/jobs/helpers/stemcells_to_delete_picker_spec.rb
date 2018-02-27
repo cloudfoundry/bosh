@@ -21,8 +21,8 @@ module Bosh::Director
       context 'when removing all stemcells' do
         it 'picks unused stemcells' do
           expect(stemcells_to_delete_picker.pick(0)).to match_array([
-                {'name' => 'stemcell-a', 'operating_system' => nil, 'version' => '1', 'cid' => '1', 'deployments' => [], 'cpi' => ''},
-                {'name' => 'stemcell-b', 'operating_system' => nil, 'version' => '2', 'cid' => '2', 'deployments' => [], 'cpi' => ''}
+                {'name' => 'stemcell-a', 'operating_system' => nil, 'version' => '1', 'cid' => '1', 'deployments' => [], 'cpi' => '', 'api_version' => nil},
+                {'name' => 'stemcell-b', 'operating_system' => nil, 'version' => '2', 'cid' => '2', 'deployments' => [], 'cpi' => '', 'api_version' => nil}
               ])
         end
       end
@@ -37,8 +37,8 @@ module Bosh::Director
 
         it 'leaves out the latest two versions of each stemcell' do
           expect(stemcells_to_delete_picker.pick(2)).to match_array([
-                {'name' => 'stemcell-a', 'operating_system' => nil, 'version' => '1', 'cid' => '1', 'deployments' => [], 'cpi' => ''},
-                {'name' => 'stemcell-b', 'operating_system' => nil, 'version' => '2', 'cid' => '2', 'deployments' => [], 'cpi' => ''}
+                {'name' => 'stemcell-a', 'operating_system' => nil, 'version' => '1', 'cid' => '1', 'deployments' => [], 'cpi' => '', 'api_version' => nil},
+                {'name' => 'stemcell-b', 'operating_system' => nil, 'version' => '2', 'cid' => '2', 'deployments' => [], 'cpi' => '', 'api_version' => nil}
               ])
         end
       end

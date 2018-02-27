@@ -16,7 +16,6 @@ module Bosh::Director
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:orphan_disk_job) { instance_double(Bosh::Director::Jobs::OrphanDiskJob, username: 'user', task_id: task.id, event_manager: event_manager) }
-    let(:cloud) { Config.cloud }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log){ Bosh::Director::EventLog::Log.new(task_writer) }
     let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
@@ -31,8 +30,8 @@ module Bosh::Director
       it 'should orphan disk' do
         persistent_disk = Models::PersistentDisk.make(disk_cid: 'disk_cid', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
         snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
-        expect(cloud).to_not receive(:delete_disk).with(disk_cid)
-        expect(cloud).to_not receive(:delete_snapshot).with(snapshot.snapshot_cid)
+        expect(Bosh::Director::CloudFactory).to_not receive(:new)
+
         expect(event_log).to receive(:begin_stage).with('Orphan disk', 1).and_return(stage)
         expect(stage).to receive(:advance_and_track).with('disk_cid')
         expect(job.perform).to eq 'disk disk_cid orphaned'

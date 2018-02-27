@@ -3,9 +3,15 @@ require 'spec_helper'
 module Bosh::Director
   describe CloudFactory do
     subject(:cloud_factory) { described_class.new(parsed_cpi_config) }
-    let(:default_cloud) { Config.cloud }
+    let(:default_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
+
+    before do
+      allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
+      allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/cpi'}})
+      allow(cloud_factory).to receive(:get_default_cloud).and_return(default_cloud)
+    end
 
     describe '.create' do
       let(:cpi_manifest_parser) { instance_double(CpiConfig::CpiManifestParser) }
@@ -54,6 +60,26 @@ module Bosh::Director
       end
     end
 
+    shared_examples_for '#get_default_cloud' do
+      before do
+        allow(cloud_factory).to receive(:get_default_cloud).and_call_original
+      end
+
+      it "returns the director's default cloud" do
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/cpi', 'snoopy-uuid').and_return(default_cloud)
+        expect(cloud_factory.get_default_cloud).to eq(default_cloud)
+      end
+
+      it "returns a new instance of the director's default cloud for each call" do
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).twice.and_return(default_cloud, instance_double(Bosh::Clouds::ExternalCpi))
+
+        cloud_1 = cloud_factory.get_default_cloud
+        cloud_2 = cloud_factory.get_default_cloud
+
+        expect(cloud_1).to_not equal(cloud_2)
+      end
+    end
+
     context 'when not using cpi config' do
       let(:config_error_hint) { ' (because cpi-config is not set)' }
       let(:parsed_cpi_config) { nil }
@@ -73,6 +99,8 @@ module Bosh::Director
           expect(cloud_factory.all_names).to eq([''])
         end
       end
+
+      it_behaves_like '#get_default_cloud'
 
       it_behaves_like 'lookup for clouds'
     end
@@ -133,6 +161,8 @@ module Bosh::Director
           end.to raise_error(RuntimeError, "CPI 'name-notexisting' not found in cpi-config")
         end
       end
+
+      it_behaves_like '#get_default_cloud'
 
       it_behaves_like 'lookup for clouds'
     end

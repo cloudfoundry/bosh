@@ -10,6 +10,9 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(event_log).to receive(:begin_stage).and_return(stage)
       allow(stage).to receive(:advance_and_track).and_yield
+
+      allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
+      allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
     end
 
     let(:vm_cid) { 'vm_cid' }
@@ -18,7 +21,8 @@ module Bosh::Director
     let(:delete_vm_job) do
       instance_double(Bosh::Director::Jobs::DeleteVm, username: 'user', task_id: task.id, event_manager: event_manager)
     end
-    let(:cloud) { Config.cloud }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
@@ -51,6 +55,8 @@ module Bosh::Director
 
       context 'when instance has reference to vm' do
         before do
+          allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+
           deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
           is = BD::Models::Instance.make(
             deployment: deployment,
@@ -97,6 +103,10 @@ module Bosh::Director
       end
 
       context 'when instance does not have reference to vm' do
+        before do
+          allow(cloud_factory).to receive(:get).with(nil).and_return(cloud)
+        end
+
         it_behaves_like 'vm delete'
 
         it 'should store event' do
@@ -123,7 +133,7 @@ module Bosh::Director
         end
 
         it 'does not try to delete from cloud when using multiple cpis and only vm_cid is known' do
-          allow_any_instance_of(CloudFactory).to receive(:uses_cpi_config?).and_return(true)
+          allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
           expect(cloud).to_not receive(:delete_vm).with(vm_cid)
           job.perform
         end

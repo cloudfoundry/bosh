@@ -130,7 +130,6 @@ module Bosh
 
           before do
             allow(Config).to receive(:current_job).and_return(update_job)
-            allow(Config).to receive(:cloud).and_return(cloud)
             Config.name = 'fake-director-name'
             Config.max_vm_create_tries = 2
             Config.flush_arp = true

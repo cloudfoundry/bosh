@@ -5,7 +5,8 @@ module Bosh::Director
     before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh') }
-    let(:cloud) { Config.cloud }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:delete_job) {Jobs::DeleteDeployment.new('test_deployment', {})}
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
 
@@ -15,6 +16,8 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(BlobstoreDnsPublisher).to receive(:new).and_return(dns_publisher)
       allow(LocalDnsRepo).to receive(:new).and_return(local_dns_repo)
+      allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
+      allow(cloud_factory).to receive(:get).with('').and_return(cloud)
     end
 
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }

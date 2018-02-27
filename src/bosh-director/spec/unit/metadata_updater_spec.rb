@@ -12,7 +12,7 @@ describe Bosh::Director::MetadataUpdater do
     BD::Models::Instance.make(deployment: deployment, uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1')
   }
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }
-  let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
   before do
     instance.active_vm = vm

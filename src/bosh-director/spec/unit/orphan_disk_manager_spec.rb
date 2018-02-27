@@ -4,7 +4,7 @@ module Bosh::Director
   describe Bosh::Director::OrphanDiskManager do
     subject(:disk_manager) { OrphanDiskManager.new(logger) }
 
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(CloudFactory) }
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }

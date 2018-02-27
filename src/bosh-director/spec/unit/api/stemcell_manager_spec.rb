@@ -124,6 +124,7 @@ module Bosh::Director
         expect(stemcells[0].cpi).to eq('cpi1')
         expect(stemcells[1].name).to eq('my-stemcell-with-a-name')
         expect(stemcells[1].cpi).to eq('cpi2')
+        expect(stemcells[1].api_version).to be_nil
       end
     end
 
@@ -204,10 +205,11 @@ module Bosh::Director
             version: 'stemcell_version-2',
             operating_system: 'stemcell_os-2',
             cid: 'cloud-id-2',
-            cpi: 'cpi2'
+            cpi: 'cpi2',
+            api_version: 2,
           )
       end
-      it 'returns a list of all stemcells' do
+      it 'returns a list of all stemcells with the api_version' do
         expect(subject.find_all_stemcells).to eq([
               {
                 'name' => 'fake-stemcell-1',
@@ -215,7 +217,8 @@ module Bosh::Director
                 'version' => 'stemcell_version-1',
                 'cid' => 'cloud-id-1',
                 'cpi' => "",
-                'deployments' => [{name: 'first'}, {name: 'second'}]
+                'deployments' => [{name: 'first'}, {name: 'second'}],
+                'api_version' => nil,
               },
               {
                 'name' => 'fake-stemcell-2',
@@ -223,7 +226,8 @@ module Bosh::Director
                 'version' => 'stemcell_version-2',
                 'cid' => 'cloud-id-2',
                 'cpi' => 'cpi2',
-                'deployments' => []
+                'deployments' => [],
+                'api_version' => 2,
               },
               {
                 'name' => 'fake-stemcell-3',
@@ -231,7 +235,8 @@ module Bosh::Director
                 'version' => 'stemcell_version-3',
                 'cid' => 'cloud-id-3',
                 'cpi' => 'cpi3',
-                'deployments' => []
+                'deployments' => [],
+                'api_version' => nil,
               },
               ])
 

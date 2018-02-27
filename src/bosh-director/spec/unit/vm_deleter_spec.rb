@@ -5,7 +5,7 @@ module Bosh
     describe VmDeleter do
       subject { VmDeleter.new(logger) }
 
-      let(:cloud) { Config.cloud }
+      let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:cloud_factory) { instance_double(CloudFactory) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }

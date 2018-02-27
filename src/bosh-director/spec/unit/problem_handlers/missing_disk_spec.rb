@@ -8,7 +8,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
     allow(cloud_factory).to receive(:get_name_for_az).with('az1').and_return('cpi1')
   end
 
-  let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
   let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
 
   let(:agent_client) { instance_double('Bosh::Director::AgentClient', unmount_disk: nil) }

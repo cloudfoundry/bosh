@@ -6,7 +6,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     Bosh::Director::ProblemHandlers::MountInfoMismatch.new(disk_id, data)
   end
 
-  let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
   let(:az_cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
   let(:base_cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
   let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}

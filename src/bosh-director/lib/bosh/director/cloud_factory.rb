@@ -20,8 +20,12 @@ module Bosh::Director
 
     def initialize(parsed_cpi_config)
       @parsed_cpi_config = parsed_cpi_config
-      @default_cloud = Config.cloud
+      @director_uuid = Config.uuid
       @logger = Config.logger
+    end
+
+    def get_default_cloud
+      Bosh::Clouds::ExternalCpi.new(Config.cloud_options['provider']['path'], @director_uuid)
     end
 
     def uses_cpi_config?
@@ -43,9 +47,9 @@ module Bosh::Director
     end
 
     def get(cpi_name)
-      return @default_cloud if cpi_name.nil? || cpi_name == ''
+      return get_default_cloud if cpi_name.nil? || cpi_name == ''
       cpi_config = get_cpi_config(cpi_name)
-      Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, Config.uuid, cpi_config.properties)
+      Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, @director_uuid, cpi_config.properties)
     end
 
     private

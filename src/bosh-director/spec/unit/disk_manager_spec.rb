@@ -4,7 +4,7 @@ module Bosh::Director
   describe Bosh::Director::DiskManager do
     subject(:disk_manager) { DiskManager.new(logger) }
 
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:enable_cpi_resize_disk) { false }
     let(:cloud_factory) { instance_double(CloudFactory) }
     let(:instance_plan) do

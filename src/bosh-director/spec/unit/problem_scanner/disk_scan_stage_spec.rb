@@ -14,7 +14,7 @@ module Bosh::Director
 
     let(:disk_owners) { {} }
     let(:problem_register) { instance_double('Bosh::Director::ProblemScanner::ProblemRegister') }
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
     let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
