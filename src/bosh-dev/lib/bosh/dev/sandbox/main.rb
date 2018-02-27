@@ -72,7 +72,7 @@ module Bosh::Dev::Sandbox
       db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
       logger = Logging.logger(STDOUT)
-      logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
+      logger.level = ENV.fetch('LOG_LEVEL', 'ERROR')
 
       new(
         db_opts,
