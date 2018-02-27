@@ -23,6 +23,10 @@ builds:
     version: 12158a8997d7447d8cd65e3766d0ef657140b7a9
     blobstore_id: 0ed44a3f-992c-4fc8-acae-d093cc56b6df
     sha1: 7f970d9d417171c70c689a9aaafcd11d4064e28d
+  12bc1e2f6979047dfbdcd636e1de605de1dd0d5e:
+    version: 12bc1e2f6979047dfbdcd636e1de605de1dd0d5e
+    blobstore_id: ac13400e-ff59-4700-692a-2de12c7ffd99
+    sha1: 8375ea02826bfa809e79d8025034980c15d0c346
   12db7a19f93a311b821cc476fe8c3c46fae2ef3c:
     version: 12db7a19f93a311b821cc476fe8c3c46fae2ef3c
     blobstore_id: 79046f68-c01f-45b0-a6a1-d4b1fd4f7efe
