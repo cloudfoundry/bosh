@@ -52,7 +52,7 @@ namespace :spec do
           end
 
           unless ENV['SKIP_CONFIG_SERVER'] == 'true'
-            Bosh::Dev::Sandbox::ConfigServerService.install(Bosh::Core::Shell.new(compilation_log))
+            Bosh::Dev::Sandbox::ConfigServerService.install
           end
 
           unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
@@ -60,11 +60,11 @@ namespace :spec do
           end
 
           unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
-            Bosh::Dev::VerifyMultidigestManager.install(Bosh::Core::Shell.new(compilation_log))
+            Bosh::Dev::VerifyMultidigestManager.install
           end
 
           unless ENV['SKIP_GNATSD'] == 'true'
-            Bosh::Dev::GnatsdManager.install(Bosh::Core::Shell.new(compilation_log))
+            Bosh::Dev::GnatsdManager.install
           end
         end
 
