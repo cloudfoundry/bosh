@@ -71,7 +71,7 @@ module Bosh::Dev::Sandbox
       }
       db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
-      logger = Logging.logger(STDOUT)
+      logger = Logging.logger(File.join(Workspace.dir, 'sandbox', 'debug_log.log'))
       logger.level = ENV.fetch('LOG_LEVEL', 'ERROR')
 
       new(
@@ -148,6 +148,7 @@ module Bosh::Dev::Sandbox
             }
           },
           'nats' => @nats_url,
+          'log_buffer' => @logger,
         },
         {}
       )
