@@ -6,7 +6,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     Bosh::Director::ProblemHandlers::InactiveDisk.new(disk_id, data)
   end
 
-  let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
   let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
 
   before(:each) do

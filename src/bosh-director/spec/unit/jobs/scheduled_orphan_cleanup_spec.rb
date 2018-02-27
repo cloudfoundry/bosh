@@ -9,7 +9,8 @@ module Bosh::Director
       }]
     end
     let(:max_orphaned_age_in_days) { 1 }
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:time) { Time.now }
     let(:one_day_seconds) { 24 * 60 * 60 }
     let(:one_day_one_second_ago) { time - one_day_seconds - 1 }
@@ -20,9 +21,12 @@ module Bosh::Director
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
-    before {
+    before do
       allow(Config).to receive(:event_log).and_return(event_log)
-    }
+      allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+      allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+    end
+
     describe '#has_work' do
       describe 'when there is work to do' do
         it 'should return true' do

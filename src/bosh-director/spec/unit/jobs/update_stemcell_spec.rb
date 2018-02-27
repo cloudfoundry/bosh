@@ -9,7 +9,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   describe '#perform' do
-    let(:cloud) { Bosh::Director::Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
     let(:event_log) { Bosh::Director::EventLog::Log.new }
     let(:event_log_stage) { instance_double(Bosh::Director::EventLog::Stage) }
@@ -17,9 +17,13 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     before do
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
+      allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid').and_return(cloud)
+
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
-      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
       allow(Open3).to receive(:capture3).and_return([nil, 'some error', verify_multidigest_exit_status])
     end
 
@@ -520,8 +524,6 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         @stemcell_file = Tempfile.new('stemcell_contents')
         File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
       end
-
-      #after { FileUtils.rm_rf(@stemcell_file.path) }
 
       it 'should update api_version' do
         expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])

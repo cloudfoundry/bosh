@@ -5,7 +5,7 @@ module Bosh::Director
     include Support::StemcellHelpers
 
     let(:job) { double('job').as_null_object }
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:dns_encoder) { instance_double(DnsEncoder) }
@@ -87,8 +87,8 @@ module Bosh::Director
       allow(instance_deleter).to receive(:delete_instance_plan)
 
       @director_job = instance_double('Bosh::Director::Jobs::BaseJob')
-      allow(Config).to receive(:current_job).and_return(@director_job)
       allow(@director_job).to receive(:task_cancelled?).and_return(false)
+      allow(Config).to receive(:current_job).and_return(@director_job)
 
       allow(plan).to receive(:network).with('default').and_return(network)
 
@@ -96,7 +96,9 @@ module Bosh::Director
 
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:name).and_return('fake-director-name')
+      allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       @all_packages = []
     end
 

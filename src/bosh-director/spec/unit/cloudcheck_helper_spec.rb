@@ -72,7 +72,7 @@ module Bosh::Director
     end
 
     describe '#reboot_vm' do
-      let(:cloud) { Config.cloud }
+      let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:cloud_factory) { instance_double(CloudFactory) }
       before do
         allow(CloudFactory).to receive(:create_from_deployment).with(deployment_model).and_return(cloud_factory)

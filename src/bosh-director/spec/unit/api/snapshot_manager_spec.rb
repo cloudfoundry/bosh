@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::SnapshotManager do
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:username) { 'username-1' }
     let(:time) { Time.now.utc.to_s }
@@ -12,8 +12,6 @@ module Bosh::Director
     let(:options) { { foo: 'bar' } }
 
     before do
-      allow(Config).to receive_messages(cloud: cloud)
-
       # instance 1: one disk with two snapshots
       @instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
       @vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0', instance: @instance, active: true)
@@ -135,8 +133,8 @@ module Bosh::Director
 
       describe '#delete_snapshots' do
         it 'deletes the snapshots' do
-          expect(Config.cloud).to receive(:delete_snapshot).with('snap0a')
-          expect(Config.cloud).to receive(:delete_snapshot).with('snap0b')
+          expect(cloud).to receive(:delete_snapshot).with('snap0a')
+          expect(cloud).to receive(:delete_snapshot).with('snap0b')
           expect(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).twice.and_return(cloud)
 
           expect {
@@ -146,7 +144,7 @@ module Bosh::Director
 
         context 'when keep_snapshots_in_cloud option is passed' do
           it 'keeps snapshots in the IaaS' do
-            expect(Config.cloud).to_not receive(:delete_snapshot)
+            expect(cloud).to_not receive(:delete_snapshot)
 
             expect {
               described_class.delete_snapshots(@disk.snapshots, keep_snapshots_in_the_cloud: true)
@@ -173,7 +171,7 @@ module Bosh::Director
         end
 
         it 'takes the snapshot' do
-          expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
+          expect(cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
 
           expect {
             expect(described_class.take_snapshot(@instance)).to eq %w[snap0c]
@@ -182,7 +180,7 @@ module Bosh::Director
 
         context 'when there is no persistent disk' do
           it 'does not take a snapshot' do
-            expect(Config.cloud).not_to receive(:snapshot_disk)
+            expect(cloud).not_to receive(:snapshot_disk)
             expect(cloud_factory).to receive(:get_for_az).with(@instance2.availability_zone).and_return(cloud)
 
             expect {
@@ -202,7 +200,7 @@ module Bosh::Director
           it 'adds the custom tags to the snapshot metadata' do
             expect(@instance.deployment).to receive(:tags).and_return(custom_tags)
 
-            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata.merge(custom_tags)).and_return('snap0c')
+            expect(cloud).to receive(:snapshot_disk).with('disk0', expected_metadata.merge(custom_tags)).and_return('snap0c')
 
             described_class.take_snapshot(@instance)
           end
@@ -210,7 +208,7 @@ module Bosh::Director
 
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
-            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
+            expect(cloud).to receive(:snapshot_disk).with('disk0', expected_metadata).and_return('snap0c')
             expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
@@ -228,7 +226,7 @@ module Bosh::Director
 
         context 'with a CPI that does not support snapshots' do
           it 'does nothing' do
-            allow(Config.cloud).to receive(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
+            allow(cloud).to receive(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end

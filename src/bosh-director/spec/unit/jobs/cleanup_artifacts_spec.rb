@@ -31,12 +31,12 @@ module Bosh::Director
       let(:release_1) { Models::Release.make(name: 'release-1') }
       let(:release_2) { Models::Release.make(name: 'release-2') }
       let(:thread_pool) { ThreadPool.new }
+      let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+      let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       subject(:cleanup_artifacts) { Jobs::CleanupArtifacts.new(config) }
 
       before do
         fake_locks
-        allow(Config.cloud).to receive(:delete_stemcell)
-        allow(Config.cloud).to receive(:delete_disk)
 
         stemcell_1 = Models::Stemcell.make(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1')
         Models::Stemcell.make(name: 'stemcell-b', version: '2')
@@ -57,6 +57,11 @@ module Bosh::Director
 
         allow(blobstore).to receive(:delete).with('blobstore-id-1')
         allow(blobstore).to receive(:delete).with('package_blob_id_1')
+
+        allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+        allow(cloud).to receive(:delete_stemcell)
+        allow(cloud).to receive(:delete_disk)
 
         Timecop.freeze(Time.now)
       end
@@ -339,7 +344,7 @@ module Bosh::Director
         end
 
         it 're-raises the error' do
-          expect(Config.cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))
+          expect(cloud).to receive(:delete_disk).and_raise(Exception.new('Bad stuff happened!'))
 
           expect {
             subject.perform

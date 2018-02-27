@@ -10,7 +10,7 @@ module Bosh::Director
         let(:instance) { Models::Instance.make }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
-        let(:cloud) { Config.cloud }
+        let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:tags) { { 'mytag' => 'myvalue' } }
         let(:meta_updater) { instance_double(MetadataUpdater, update_disk_metadata: nil) }
         let(:report) { Stages::Report.new }

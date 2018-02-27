@@ -24,7 +24,7 @@ module Bosh
           let(:report) { Stages::Report.new.tap { |r| r.vm = vm_model } }
 
           describe '#perform' do
-            let(:cloud) { Config.cloud }
+            let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
             let(:cloud_factory) { instance_double(CloudFactory) }
             let(:vm_type) do
               DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => { 'ram' => '2gb' })

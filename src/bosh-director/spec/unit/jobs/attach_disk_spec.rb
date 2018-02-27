@@ -231,6 +231,8 @@ module Bosh::Director
 
       context 'when the instance is stopped soft' do
         let(:instance_state) {'stopped'}
+        let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+        let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
         let!(:original_disk) do
           Models::PersistentDisk.make(
@@ -250,15 +252,17 @@ module Bosh::Director
           )
         end
         before do
-          allow(Config.cloud).to receive(:attach_disk)
-          allow(Config.cloud).to receive(:set_disk_metadata)
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
+          allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+          allow(cloud).to receive(:attach_disk)
+          allow(cloud).to receive(:set_disk_metadata)
         end
 
         it 'attaches the new disk and sets disk metadata' do
-          expect(Config.cloud).to receive(:attach_disk)
-          expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
-          expect(Config.cloud).to receive(:detach_disk)
+          expect(cloud).to receive(:attach_disk)
+          expect(cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
+          expect(cloud).to receive(:detach_disk)
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
@@ -268,7 +272,7 @@ module Bosh::Director
 
         it 'orphans and unmounts the previous disk' do
           expect(Models::OrphanDisk.all).to be_empty
-          expect(Config.cloud).to receive(:detach_disk).with(vm_cid, 'original-disk-cid')
+          expect(cloud).to receive(:detach_disk).with(vm_cid, 'original-disk-cid')
           expect(agent_client).to receive(:unmount_disk)
 
           attach_disk_job.perform
@@ -283,15 +287,21 @@ module Bosh::Director
         let(:original_disk) { nil }
 
         let(:agent_client) { instance_double(AgentClient, mount_disk: nil, wait_until_ready: nil) }
+
+        let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+        let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+
         before do
-          allow(Config.cloud).to receive(:attach_disk)
-          allow(Config.cloud).to receive(:set_disk_metadata)
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
+          allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+          allow(cloud).to receive(:attach_disk)
+          allow(cloud).to receive(:set_disk_metadata)
         end
 
         it 'attaches the new disk' do
-          expect(Config.cloud).to receive(:attach_disk)
-          expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
+          expect(cloud).to receive(:attach_disk)
+          expect(cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
@@ -301,7 +311,7 @@ module Bosh::Director
 
         it 'performs no action for previous disk' do
           expect(Models::OrphanDisk.all).to be_empty
-          expect(Config.cloud).to_not receive(:detach_disk)
+          expect(cloud).to_not receive(:detach_disk)
           expect(agent_client).to_not receive(:unmount_disk)
 
           attach_disk_job.perform

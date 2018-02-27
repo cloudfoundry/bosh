@@ -3,12 +3,18 @@ require 'spec_helper'
 module Bosh::Director
   describe CloudFactory do
     subject(:cloud_factory) { described_class.new(azs, parsed_cpi_config) }
-    let(:default_cloud) { Config.cloud }
+    let(:default_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
     let(:logger) { double(:logger, debug: nil) }
     let(:azs) { { 'some-az' => az } }
     let(:az) { instance_double(DeploymentPlan::AvailabilityZone, name: 'some-az') }
+
+    before do
+      allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
+      allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/cpi'}})
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(default_cloud)
+    end
 
     context 'factory methods' do
       let(:cpi_config) { instance_double(Models::Config) }
@@ -268,6 +274,22 @@ module Bosh::Director
           expect(CloudFactory.parse_cpi_configs(nil)).to be(nil)
           expect(CloudFactory.parse_cpi_configs([])).to be(nil)
         end
+      end
+    end
+
+    describe '#get_default_cloud' do
+      it "returns the director's default cloud" do
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/cpi', 'snoopy-uuid').and_return(default_cloud)
+        expect(cloud_factory.get_default_cloud).to eq(default_cloud)
+      end
+
+      it "returns a new instance of the director's default cloud for each call" do
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).twice.and_return(default_cloud, instance_double(Bosh::Clouds::ExternalCpi))
+
+        cloud_1 = cloud_factory.get_default_cloud
+        cloud_2 = cloud_factory.get_default_cloud
+
+        expect(cloud_1).to_not equal(cloud_2)
       end
     end
   end

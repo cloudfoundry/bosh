@@ -27,11 +27,8 @@ module Bosh::Director
         @stemcell_sha1 = options['sha1'] if options['sha1']
 
         @multi_digest_verifier = BoshDigest::MultiDigest.new(logger)
-        @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
         @fix = options['fix']
-
-        @api_version = options['api_version'] if options['api_version']
       end
 
       def perform

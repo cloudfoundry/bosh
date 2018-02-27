@@ -4,7 +4,8 @@ module Bosh::Director
   describe ProblemResolver do
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
     let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: task.id, event_manager: event_manager)}
-    let(:cloud) { Config.cloud }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
@@ -13,6 +14,9 @@ module Bosh::Director
       @other_deployment = Models::Deployment.make(name: 'othercloud')
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+
+      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+      allow(cloud_factory).to receive(:get).with('').and_return(cloud)
     end
 
     def make_resolver(deployment)
