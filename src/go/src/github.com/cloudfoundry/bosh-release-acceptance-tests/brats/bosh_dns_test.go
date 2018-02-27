@@ -2,14 +2,16 @@ package brats_test
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 )
 
 func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string {
@@ -44,9 +46,11 @@ var _ = Describe("BoshDns", func() {
 				boshBinaryPath, "deploy",
 				"-n",
 				"-d", deploymentName,
+				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				manifestPath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", "linked-template-release-path=../assets/linked-templates-release",
+				"--vars-store", "creds.yml",
 			), GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session, 6*time.Minute).Should(gexec.Exit(0))

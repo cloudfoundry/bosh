@@ -10,10 +10,10 @@ groups:
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
       - integration-2.3-postgres
-      - load-tests-postgres
-      - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
+      # - load-tests-postgres
+      # - load-tests-mysql
+      # - legacy-load-tests-postgres
+      # - legacy-load-tests-mysql
       - fuzz-tests
       - candidate-release
       - bats-centos
@@ -84,6 +84,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -99,6 +100,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-mysql-5.5
           privileged: true
@@ -160,6 +162,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-postgres-9.3
           privileged: true
@@ -275,6 +278,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - { get: bosh-src, trigger: true }
+      - { get: every-sunday, trigger: true }
       - task: test-s3
         file: bosh-src/ci/tasks/test-s3-blobstore-client-integration.yml
         params:
@@ -306,6 +310,7 @@ jobs:
     plan:
       - { get: bosh-src, trigger: true }
       - { get: davcli, trigger: true }
+      - { get: every-sunday, trigger: true }
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
@@ -322,6 +327,7 @@ jobs:
           trigger: true
         - get: bosh-cli
         - get: bosh-agent
+        - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -369,6 +375,7 @@ jobs:
           trigger: true
         - get: bosh-cli
         - get: bosh-agent
+        - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -410,6 +417,7 @@ jobs:
     plan:
       - { get: bosh-src, trigger: true }
       - { get: bosh-agent, trigger: true }
+      - { get: every-sunday, trigger: true }
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -454,6 +462,7 @@ jobs:
           trigger: true
         - get: bosh-cli
         - get: bosh-agent
+        - { get: every-sunday, trigger: true }
       - aggregate:
         - task: upgrade-with-postgres
           privileged: true
@@ -471,103 +480,103 @@ jobs:
             DB: mysql
             RUBY_VERSION: 2.3.6
 
-  - name: load-tests-postgres
-    public: true
-    serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
-    build_logs_to_retain: 250
-    plan:
-    - { get: bosh-load-tests-workspace }
-    - { get: warden-ubuntu-trusty }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: postgresql
-        LEGACY: false
-      on_failure:
-        <<: *slack-alert
-
-  - name: legacy-load-tests-postgres
-    public: true
-    serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
-    build_logs_to_retain: 250
-    plan:
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: postgresql
-        LEGACY: true
-      on_failure:
-        <<: *slack-alert
-
-  - name: load-tests-mysql
-    public: true
-    serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
-    build_logs_to_retain: 250
-    plan:
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: mysql
-        LEGACY: false
-      on_failure:
-        <<: *slack-alert
-
-  - name: legacy-load-tests-mysql
-    public: true
-    serial: true
-    serial_groups: ["load_tests"] # heavy footprint! run one at a time.
-    build_logs_to_retain: 250
-    plan:
-    - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: mysql
-        LEGACY: true
-      on_failure:
-        <<: *slack-alert
-
+  # - name: load-tests-postgres
+  #   public: true
+  #   serial: true
+  #   serial_groups: ["load_tests"] # heavy footprint! run one at a time.
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: warden-ubuntu-trusty }
+  #   - { get: bosh-candidate-release-tarballs }
+  #   - { get: bosh-cli }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-load-tests"]
+  #     input_mapping:
+  #       bosh-candidate-stemcell: warden-ubuntu-trusty
+  #       bosh-candidate-release: bosh-candidate-release-tarballs
+  #     params:
+  #       DB: postgresql
+  #       LEGACY: false
+  #     on_failure:
+  #       <<: *slack-alert
+  #
+  # - name: legacy-load-tests-postgres
+  #   public: true
+  #   serial: true
+  #   serial_groups: ["load_tests"] # heavy footprint! run one at a time.
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: bosh-cli }
+  #   - { get: bosh-candidate-release-tarballs }
+  #   - { get: warden-ubuntu-trusty }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-load-tests"]
+  #     input_mapping:
+  #       bosh-candidate-stemcell: warden-ubuntu-trusty
+  #       bosh-candidate-release: bosh-candidate-release-tarballs
+  #     params:
+  #       DB: postgresql
+  #       LEGACY: true
+  #     on_failure:
+  #       <<: *slack-alert
+  #
+  # - name: load-tests-mysql
+  #   public: true
+  #   serial: true
+  #   serial_groups: ["load_tests"] # heavy footprint! run one at a time.
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: bosh-cli }
+  #   - { get: bosh-candidate-release-tarballs }
+  #   - { get: warden-ubuntu-trusty }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-load-tests"]
+  #     input_mapping:
+  #       bosh-candidate-stemcell: warden-ubuntu-trusty
+  #       bosh-candidate-release: bosh-candidate-release-tarballs
+  #     params:
+  #       DB: mysql
+  #       LEGACY: false
+  #     on_failure:
+  #       <<: *slack-alert
+  #
+  # - name: legacy-load-tests-mysql
+  #   public: true
+  #   serial: true
+  #   serial_groups: ["load_tests"] # heavy footprint! run one at a time.
+  #   build_logs_to_retain: 250
+  #   plan:
+  #   - { get: fuzz-interval-trigger, trigger: true }
+  #   - { get: bosh-load-tests-workspace }
+  #   - { get: bosh-cli }
+  #   - { get: bosh-candidate-release-tarballs }
+  #   - { get: warden-ubuntu-trusty }
+  #
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
+  #     tags: ["bosh-load-tests"]
+  #     input_mapping:
+  #       bosh-candidate-stemcell: warden-ubuntu-trusty
+  #       bosh-candidate-release: bosh-candidate-release-tarballs
+  #     params:
+  #       DB: mysql
+  #       LEGACY: true
+  #     on_failure:
+  #       <<: *slack-alert
+  #
   - name: fuzz-tests
     public: true
     serial: true
@@ -706,6 +715,7 @@ jobs:
           trigger: true
           passed:
             - candidate-release
+        - { get: every-sunday, trigger: true }
       - task: test-brats
         file: bosh-src/ci/tasks/test-brats.yml
         tags: ["worker-brats"]
@@ -751,16 +761,23 @@ resources:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
       branch: master
 
-  - name: bosh-load-tests-workspace
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
-      branch: master
-
+  # - name: bosh-load-tests-workspace
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
+  #     branch: master
+  #
   - name: fuzz-interval-trigger
     type: time
     source:
       interval: 15m
+
+  - name: every-sunday
+    type: time
+    source:
+      start: 1:00 PM
+      stop: 9:00 PM
+      days: [Sunday]
 
   - name: slack-alert
     type: slack-notification
@@ -815,11 +832,11 @@ resources:
       bucket: bosh-core-stemcells-candidate
       regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
 
-  - name: warden-ubuntu-trusty
-    type: bosh-io-stemcell
-    source:
-      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-
+  # - name: warden-ubuntu-trusty
+  #   type: bosh-io-stemcell
+  #   source:
+  #     name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+  #
   - name: vsphere-esxi-centos-7
     type: bosh-io-stemcell
     source:

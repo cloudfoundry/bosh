@@ -266,10 +266,7 @@ module Bosh::Director
         end
 
         db.pool.connection_validation_timeout = -1
-        if logger
-          db.logger = logger
-          db.sql_log_level = :debug
-        end
+        db.sql_log_level = :debug
 
         db
       end
