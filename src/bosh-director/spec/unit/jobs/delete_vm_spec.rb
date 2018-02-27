@@ -11,7 +11,7 @@ module Bosh::Director
       allow(event_log).to receive(:begin_stage).and_return(stage)
       allow(stage).to receive(:advance_and_track).and_yield
 
-      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
     end
 

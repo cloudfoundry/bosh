@@ -3,11 +3,15 @@ require 'spec_helper'
 module Bosh::Director
   describe AZCloudFactory do
     subject(:az_cloud_factory) { described_class.new(parsed_cpi_config, azs) }
-    let(:default_cloud) { Config.cloud }
+    let(:default_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
     let(:azs) { { 'some-az' => az } }
     let(:az) { instance_double(DeploymentPlan::AvailabilityZone, name: 'some-az') }
+
+    before do
+      allow(az_cloud_factory).to receive(:get_default_cloud).and_return(default_cloud)
+    end
 
     context 'factory methods' do
       let(:cpi_config) { Models::Config.make(:cpi) }

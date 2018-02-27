@@ -10,7 +10,7 @@ module Bosh::Director
 
     before do
       fake_locks
-      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud_factory).to receive(:get).with('').and_return(cloud)
     end
 

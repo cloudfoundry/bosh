@@ -251,9 +251,10 @@ module Bosh::Director
             unmount_disk: nil
           )
         end
+
         before do
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
-          allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with('').and_return(cloud)
           allow(cloud).to receive(:attach_disk)
           allow(cloud).to receive(:set_disk_metadata)
@@ -293,7 +294,7 @@ module Bosh::Director
 
         before do
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
-          allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with('').and_return(cloud)
           allow(cloud).to receive(:attach_disk)
           allow(cloud).to receive(:set_disk_metadata)

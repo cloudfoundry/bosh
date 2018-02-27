@@ -23,7 +23,7 @@ module Bosh::Director
 
     before do
       allow(Config).to receive(:event_log).and_return(event_log)
-      allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+      allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud_factory).to receive(:get).with('').and_return(cloud)
     end
 

@@ -49,7 +49,7 @@ module Bosh::Director
     def get(cpi_name)
       return get_default_cloud if cpi_name.nil? || cpi_name == ''
       cpi_config = get_cpi_config(cpi_name)
-      Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, Config.uuid, cpi_config.properties)
+      Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, @director_uuid, cpi_config.properties)
     end
 
     private

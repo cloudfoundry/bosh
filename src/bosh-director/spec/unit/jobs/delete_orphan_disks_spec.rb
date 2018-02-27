@@ -35,7 +35,7 @@ module Bosh::Director
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
         allow(event_log_stage).to receive(:advance_and_track).and_yield
 
-        allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
         allow(cloud_factory).to receive(:get).with('').and_return(cloud)
       end
 

@@ -58,7 +58,7 @@ module Bosh::Director
         allow(blobstore).to receive(:delete).with('blobstore-id-1')
         allow(blobstore).to receive(:delete).with('package_blob_id_1')
 
-        allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
         allow(cloud_factory).to receive(:get).with('').and_return(cloud)
         allow(cloud).to receive(:delete_stemcell)
         allow(cloud).to receive(:delete_disk)
