@@ -13,6 +13,7 @@ require 'bosh/dev/verify_multidigest_manager'
 require 'bosh/dev/gnatsd_manager'
 require 'bosh/dev/test_runner'
 require 'parallel_tests/tasks'
+require 'fileutils'
 
 namespace :spec do
   namespace :integration do
@@ -33,39 +34,42 @@ namespace :spec do
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
-      unless ENV['SKIP_DEPS'] == 'true'
-        unless ENV['SKIP_NGINX'] == 'true'
-          nginx = Bosh::Dev::Sandbox::Nginx.new
-          install_with_retries(nginx)
+      FileUtils.mkdir_p("tmp")
+      File.open("tmp/compilation.log", "w") do |compilation_log|
+        unless ENV['SKIP_DEPS'] == 'true'
+          unless ENV['SKIP_NGINX'] == 'true'
+            nginx = Bosh::Dev::Sandbox::Nginx.new(Bosh::Core::Shell.new(compilation_log))
+            install_with_retries(nginx)
+          end
+
+          unless ENV['SKIP_TCP_PROXY_NGINX'] == 'true'
+            tcp_proxy_nginx = Bosh::Dev::Sandbox::TCPProxyNginx.new(Bosh::Core::Shell.new(compilation_log))
+            install_with_retries(tcp_proxy_nginx)
+          end
+
+          unless ENV['SKIP_UAA'] == 'true'
+            Bosh::Dev::Sandbox::UaaService.install
+          end
+
+          unless ENV['SKIP_CONFIG_SERVER'] == 'true'
+            Bosh::Dev::Sandbox::ConfigServerService.install(Bosh::Core::Shell.new(compilation_log))
+          end
+
+          unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
+            Bosh::Dev::LegacyAgentManager.install
+          end
+
+          unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
+            Bosh::Dev::VerifyMultidigestManager.install(Bosh::Core::Shell.new(compilation_log))
+          end
+
+          unless ENV['SKIP_GNATSD'] == 'true'
+            Bosh::Dev::GnatsdManager.install(Bosh::Core::Shell.new(compilation_log))
+          end
         end
 
-        unless ENV['SKIP_TCP_PROXY_NGINX'] == 'true'
-          tcp_proxy_nginx = Bosh::Dev::Sandbox::TCPProxyNginx.new
-          install_with_retries(tcp_proxy_nginx)
-        end
-
-        unless ENV['SKIP_UAA'] == 'true'
-          Bosh::Dev::Sandbox::UaaService.install
-        end
-
-        unless ENV['SKIP_CONFIG_SERVER'] == 'true'
-          Bosh::Dev::Sandbox::ConfigServerService.install
-        end
-
-        unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
-          Bosh::Dev::LegacyAgentManager.install
-        end
-
-        unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
-          Bosh::Dev::VerifyMultidigestManager.install
-        end
-
-        unless ENV['SKIP_GNATSD'] == 'true'
-          Bosh::Dev::GnatsdManager.install
-        end
+        compile_dependencies
       end
-
-      compile_dependencies
     end
 
     desc 'Download BOSH Agent. Use only for local dev environment'
