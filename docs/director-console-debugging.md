@@ -1,7 +1,9 @@
 ## Director Console debugging
 
 ```
-$ /var/vcap/jobs/director/bin/director_ctl console
+$ bosh -d dep1 ssh name/id
+$ sudo su
+# /var/vcap/jobs/director/bin/director_ctl console
 ```
 
 Potentially useful snippets:
@@ -21,4 +23,7 @@ Bosh::Director::Config.db[:schema_migrations].order(:filename).last
 
 # manually record applied migration -- super dangerous.
 Bosh::Director::Config.db[:schema_migrations] << {filename: "xxx"}
+
+# update first item in a table
+Bosh::Director::Models::Instance.first.update(boostrap: false)
 ```
