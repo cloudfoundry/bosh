@@ -9,14 +9,24 @@ module Bosh::Director
       DBSpecHelper.migrate_all_before(migration_file)
     end
 
-    it 'creates the appropriate tables' do
-      DBSpecHelper.migrate(migration_file)
-      expect(db.table_exists? :link_providers).to be_truthy
-      expect(db.table_exists? :link_provider_intents).to be_truthy
-      expect(db.table_exists? :link_consumers).to be_truthy
-      expect(db.table_exists? :link_consumer_intents).to be_truthy
-      expect(db.table_exists? :links).to be_truthy
-      expect(db.table_exists? :instances_links).to be_truthy
+
+    context 'verify all the tables columns constraints' do
+      it 'creates the appropriate tables' do
+        DBSpecHelper.migrate(migration_file)
+        expect(db.table_exists? :link_providers).to be_truthy
+        expect(db.table_exists? :link_provider_intents).to be_truthy
+        expect(db.table_exists? :link_consumers).to be_truthy
+        expect(db.table_exists? :link_consumer_intents).to be_truthy
+        expect(db.table_exists? :links).to be_truthy
+        expect(db.table_exists? :instances_links).to be_truthy
+      end
+
+      it 'adds the link_serial_id to deployment' do
+        db[:deployments] << {name: 'fake-deployment', id: 42}
+        DBSpecHelper.migrate(migration_file)
+
+        expect(db[:deployments].first[:links_serial_id]).to eq(0)
+      end
     end
 
     context 'providers migration' do
@@ -57,9 +67,9 @@ module Bosh::Director
           expect(db[:link_providers].count).to eq(3)
 
           expected_links_providers = [
-            {instance_group: 'provider_instance_group_1', deployment_id: 42, type: 'job', name: 'provider_job_1'},
-            {instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_1'},
-            {instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_2'},
+            {instance_group: 'provider_instance_group_1', deployment_id: 42, type: 'job', name: 'provider_job_1', serial_id: 0},
+            {instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_1', serial_id: 0},
+            {instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_2', serial_id: 0},
           ]
 
           db[:link_providers].order(:id).each_with_index do |provider, index|
@@ -68,19 +78,20 @@ module Bosh::Director
             expect(provider[:deployment_id]).to eq(output[:deployment_id])
             expect(provider[:instance_group]).to eq(output[:instance_group])
             expect(provider[:type]).to eq(output[:type])
+            expect(provider[:serial_id]).to eq(output[:serial_id])
           end
         end
 
         it 'will create correct links providers intents' do
-          provider_1_id = db[:link_providers].where(instance_group: 'provider_instance_group_1', deployment_id: 42, type: 'job', name: 'provider_job_1').first[:id]
-          provider_2_id = db[:link_providers].where(instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_1').first[:id]
-          provider_3_id = db[:link_providers].where(instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_2').first[:id]
+          provider_1_id = db[:link_providers].where(instance_group: 'provider_instance_group_1', deployment_id: 42, type: 'job', name: 'provider_job_1', serial_id: 0).first[:id]
+          provider_2_id = db[:link_providers].where(instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_1', serial_id: 0).first[:id]
+          provider_3_id = db[:link_providers].where(instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'job', name: 'provider_job_2', serial_id: 0).first[:id]
 
           expected_link_providers_intents = [
-            {link_provider_id: provider_1_id, original_name: 'link_name_1', type: 'link_type_1', name: 'link_name_1', content: '{"my_val":"hello"}'},
-            {link_provider_id: provider_1_id, original_name: 'link_name_2', type: 'link_type_2', name: 'link_name_2', content: '{"foo":"bar"}'},
-            {link_provider_id: provider_2_id, original_name: 'link_name_3', type: 'link_type_1', name: 'link_name_3', content: '{"bar":"baz"}'},
-            {link_provider_id: provider_3_id, original_name: 'link_name_4', type: 'link_type_2', name: 'link_name_4', content: '{"foobar":"bazbaz"}'},
+            {link_provider_id: provider_1_id, original_name: 'link_name_1', type: 'link_type_1', name: 'link_name_1', content: '{"my_val":"hello"}', serial_id: 0},
+            {link_provider_id: provider_1_id, original_name: 'link_name_2', type: 'link_type_2', name: 'link_name_2', content: '{"foo":"bar"}', serial_id: 0},
+            {link_provider_id: provider_2_id, original_name: 'link_name_3', type: 'link_type_1', name: 'link_name_3', content: '{"bar":"baz"}', serial_id: 0},
+            {link_provider_id: provider_3_id, original_name: 'link_name_4', type: 'link_type_2', name: 'link_name_4', content: '{"foobar":"bazbaz"}', serial_id: 0},
           ]
 
           expect(db[:link_provider_intents].count).to eq(4)
@@ -92,6 +103,7 @@ module Bosh::Director
             expect(provider_intent[:name]).to eq(output[:name])
             expect(provider_intent[:shared]).to eq(true)
             expect(provider_intent[:consumable]).to eq(true)
+            expect(provider_intent[:serial_id]).to eq(output[:serial_id])
           end
         end
       end
@@ -185,6 +197,7 @@ module Bosh::Director
           expect(db[:link_consumers].first[:instance_group]).to eq('provider_instance_group_1')
           expect(db[:link_consumers].first[:name]).to eq('http_proxy_with_requires')
           expect(db[:link_consumers].first[:type]).to eq('job')
+          expect(db[:link_consumers].first[:serial_id]).to eq(0)
         end
 
         it 'will create the correct link_consumers_intents' do
@@ -192,8 +205,8 @@ module Bosh::Director
           consumer_id = db[:link_consumers].first[:id]
 
           expected_links_consumers_intents = [
-            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=> nil},
-            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=> nil}
+            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=> nil, serial_id: 0},
+            {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=> nil, serial_id: 0}
           ]
 
           expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)
@@ -221,6 +234,7 @@ module Bosh::Director
             expect(db[:link_consumers].first[:instance_group]).to eq('provider_instance_group_1')
             expect(db[:link_consumers].first[:name]).to eq('http_proxy_with_requires')
             expect(db[:link_consumers].first[:type]).to eq('job')
+            expect(db[:link_consumers].first[:serial_id]).to eq(0)
           end
 
           it 'will create the correct link_consumers_intents' do
@@ -228,8 +242,8 @@ module Bosh::Director
             consumer_id = db[:link_consumers].first[:id]
 
             expected_links_consumers_intents = [
-              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=>nil},
-              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=>nil}
+              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint', :type=>'undefined-migration', :name => 'proxied_http_endpoint', :optional=>false, :blocked=>false, :metadata=>nil, serial_id: 0},
+              {:id=>Integer, :link_consumer_id=>consumer_id, :original_name=>'proxied_http_endpoint2', :type=>'undefined-migration', :name => 'proxied_http_endpoint2', :optional=>false, :blocked=>false, :metadata=>nil, serial_id: 0}
             ]
 
             expect(db[:link_consumer_intents].all).to match_array(expected_links_consumers_intents)
@@ -238,7 +252,7 @@ module Bosh::Director
       end
     end
 
-    context 'verify all the tables columns constraints'
+
 
     context 'link migration' do
       context 'when spec_json is populated with consumed links in the instances table' do
@@ -393,9 +407,11 @@ module Bosh::Director
           dataset = db[:instances_links].all
           expect(dataset[0][:instance_id]).to eq(22)
           expect(dataset[0][:link_id]).to eq(1)
+          expect(dataset[0][:serial_id]).to eq(0)
 
           expect(dataset[1][:instance_id]).to eq(22)
           expect(dataset[1][:link_id]).to eq(2)
+          expect(dataset[1][:serial_id]).to eq(0)
         end
 
         it 'will remove the links key from spec_json' do
@@ -511,9 +527,11 @@ module Bosh::Director
             dataset = db[:instances_links].all
             expect(dataset[0][:instance_id]).to eq(22)
             expect(dataset[0][:link_id]).to eq(1)
+            expect(dataset[0][:serial_id]).to eq(0)
 
             expect(dataset[1][:instance_id]).to eq(23)
             expect(dataset[1][:link_id]).to eq(1)
+            expect(dataset[1][:serial_id]).to eq(0)
           end
         end
 
@@ -617,9 +635,11 @@ module Bosh::Director
             dataset = db[:instances_links].all
             expect(dataset[0][:instance_id]).to eq(22)
             expect(dataset[0][:link_id]).to eq(1)
+            expect(dataset[0][:serial_id]).to eq(0)
 
             expect(dataset[1][:instance_id]).to eq(23)
             expect(dataset[1][:link_id]).to eq(2)
+            expect(dataset[1][:serial_id]).to eq(0)
           end
         end
       end

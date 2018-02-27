@@ -1,10 +1,15 @@
 require 'spec_helper'
 
 describe Bosh::Director::Links::LinksManager do
-  subject {Bosh::Director::Links::LinksManager.new(logger, event_logger)}
+  subject {Bosh::Director::Links::LinksManager.new(logger, event_logger, serial_id)}
 
   let(:logger) {Logging::Logger.new('TestLogger')}
   let(:event_logger) {Bosh::Director::EventLog::Log.new}
+
+  let(:serial_id) { 42 }
+  let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
+  let(:task) {Bosh::Director::Models::Task.make(:username => 'user')}
+  let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
 
   let(:deployment_model) do
     Bosh::Director::Models::Deployment.create(
@@ -12,8 +17,8 @@ describe Bosh::Director::Links::LinksManager do
     )
   end
 
-  describe '#add_provider' do
-    context
+  before do
+    allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
   end
 
   describe '#find_or_create_provider' do
@@ -22,14 +27,15 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         instance_group: 'control_instance_group',
         name: 'control_owner_object_name',
-        type: 'control_owner_object_type'
+        type: 'control_owner_object_type',
+        serial_id: serial_id,
       )
 
       actual_provider = subject.find_or_create_provider(
         deployment_model: deployment_model,
         instance_group_name: 'control_instance_group',
         name: 'control_owner_object_name',
-        type: 'control_owner_object_type'
+        type: 'control_owner_object_type',
       )
 
       expect(actual_provider).to eq(expected_provider)
@@ -52,18 +58,22 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         expect(actual_provider).to eq(expected_provider)
+        expect(actual_provider.serial_id).to_not be_nil
       end
     end
   end
 
   describe '#find_provider' do
     context 'link provider exists' do
+      let(:serial_id) { 55 }
+
       it 'returns the existing provider' do
         expected_provider = Bosh::Director::Models::Links::LinkProvider.create(
           deployment: deployment_model,
           instance_group: 'control_instance_group',
           name: 'control_owner_object_name',
-          type: 'control_owner_object_type'
+          type: 'control_owner_object_type',
+          serial_id: serial_id,
         )
 
         actual_provider = subject.find_provider(
@@ -72,7 +82,9 @@ describe Bosh::Director::Links::LinksManager do
           name: "control_owner_object_name",
           type: "control_owner_object_type"
         )
+
         expect(actual_provider).to eq(expected_provider)
+        expect(actual_provider.serial_id).to eq(serial_id)
       end
     end
 
@@ -87,6 +99,30 @@ describe Bosh::Director::Links::LinksManager do
         expect(actual_provider).to be_nil
       end
     end
+
+    context 'when link provider with wrong serial_id exist' do
+      let(:serial_id) { 55 }
+
+      it 'returns nothing' do
+        expected_provider = Bosh::Director::Models::Links::LinkProvider.create(
+          deployment: deployment_model,
+          instance_group: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type',
+          serial_id: 42,
+          )
+
+        actual_provider = subject.find_provider(
+          deployment_model: deployment_model,
+          instance_group_name: "control_instance_group",
+          name: "control_owner_object_name",
+          type: "control_owner_object_type"
+        )
+
+        expect(actual_provider).to be_nil
+      end
+    end
+
   end
 
   describe '#find_or_create_provider_intent' do
@@ -95,7 +131,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         name: 'test_deployment',
         type: 'test_deployment_type',
-        instance_group: 'test_instance_group'
+        instance_group: 'test_instance_group',
+        serial_id: serial_id
       )
     end
 
@@ -108,7 +145,8 @@ describe Bosh::Director::Links::LinksManager do
           name: 'test_link_alias',
           content: 'test_link_content',
           shared: false,
-          consumable: true
+          consumable: true,
+          serial_id: serial_id
         )
 
         actual_intent = subject.find_or_create_provider_intent(
@@ -118,6 +156,7 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         expect(actual_intent).to eq(expected_intent)
+        expect(actual_intent.serial_id).to eq(serial_id)
       end
     end
 
@@ -141,6 +180,7 @@ describe Bosh::Director::Links::LinksManager do
 
         expect(Bosh::Director::Models::Links::LinkProviderIntent.count).to eq(1)
         expect(actual_intent).to eq(expected_intent)
+        expect(actual_intent.serial_id).to eq(serial_id)
       end
     end
   end
@@ -165,7 +205,8 @@ describe Bosh::Director::Links::LinksManager do
             name: 'test_link_alias',
             content: 'test_link_content',
             shared: false,
-            consumable: true
+            consumable: true,
+            serial_id: serial_id
           )
 
           actual_intent = subject.find_provider_intent_by_alias(
@@ -175,6 +216,30 @@ describe Bosh::Director::Links::LinksManager do
           )
 
           expect(actual_intent).to eq(expected_intent)
+          expect(actual_intent.serial_id).to eq(serial_id)
+        end
+        context 'intent already exists but not with same serial_id' do
+          let(:serial_id) { 55 }
+          it 'returns nothing' do
+            expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+              link_provider: link_provider,
+              original_name: 'test_original_link_name',
+              type: 'test_link_type',
+              name: 'test_link_alias',
+              content: 'test_link_content',
+              shared: false,
+              consumable: true,
+              serial_id: 42
+            )
+
+            actual_intent = subject.find_provider_intent_by_alias(
+              link_provider: link_provider,
+              link_alias: 'test_link_alias',
+              link_type: "test_link_type"
+            )
+
+            expect(actual_intent).to be_nil
+          end
         end
       end
 
@@ -199,7 +264,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         instance_group: 'control_instance_group',
         name: 'control_owner_object_name',
-        type: 'control_owner_object_type'
+        type: 'control_owner_object_type',
+        serial_id: serial_id
       )
     end
 
@@ -212,6 +278,7 @@ describe Bosh::Director::Links::LinksManager do
       )
 
       expect(actual_consumer).to eq(control_consumer)
+      expect(actual_consumer.serial_id).to eq(serial_id)
     end
 
     context 'consumer does not exist' do
@@ -231,6 +298,7 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         expect(actual_consumer).to eq(expected_consumer)
+        expect(actual_consumer.serial_id).to eq(serial_id)
       end
     end
 
@@ -253,7 +321,8 @@ describe Bosh::Director::Links::LinksManager do
           original_name: 'test_original_link_name',
           type: 'test_link_type',
           optional: false,
-          blocked: false
+          blocked: false,
+          serial_id: serial_id
         )
 
         actual_link_consumer_intent = subject.find_or_create_consumer_intent(
@@ -263,6 +332,7 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         expect(actual_link_consumer_intent).to eq(expected_link_consumer_intent)
+        expect(actual_link_consumer_intent.serial_id).to eq(serial_id)
       end
     end
 
@@ -283,6 +353,7 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         expect(actual_intent).to eq(expected_intent)
+        expect(actual_intent.serial_id).to eq(serial_id)
       end
     end
   end
@@ -294,7 +365,8 @@ describe Bosh::Director::Links::LinksManager do
           deployment: deployment_model,
           instance_group: 'control_instance_group',
           name: 'control_owner_object_name',
-          type: 'control_owner_object_type'
+          type: 'control_owner_object_type',
+          serial_id: serial_id
         )
 
         actual_consumer = subject.find_consumer(
@@ -304,6 +376,7 @@ describe Bosh::Director::Links::LinksManager do
           type: 'control_owner_object_type'
         )
         expect(actual_consumer).to eq(expected_consumer)
+        expect(actual_consumer.serial_id).to eq(serial_id)
       end
     end
 
@@ -314,6 +387,27 @@ describe Bosh::Director::Links::LinksManager do
           instance_group_name: "control_instance_group",
           name: "control_owner_object_name",
           type: 'job'
+        )
+        expect(actual_consumer).to be_nil
+      end
+    end
+
+    context 'when link consumer with wrong serial_id exists' do
+      let(:serial_id) { 55 }
+      it 'fails returns the existing consumer' do
+        expected_consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type',
+          serial_id: 42
+        )
+
+        actual_consumer = subject.find_consumer(
+          deployment_model: deployment_model,
+          instance_group_name: "control_instance_group",
+          name: "control_owner_object_name",
+          type: 'control_owner_object_type'
         )
         expect(actual_consumer).to be_nil
       end
@@ -1587,7 +1681,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               instance_group: 'ig1',
               name: 'c1',
-              type: 'manual'
+              type: 'manual',
+              serial_id: serial_id
             )
           end
 
@@ -1605,7 +1700,8 @@ describe Bosh::Director::Links::LinksManager do
                 link_provider: manual_link_provider,
                 original_name: 'ci1',
                 type: 'foo',
-                content: manual_link_contents.to_json
+                content: manual_link_contents.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1652,17 +1748,19 @@ describe Bosh::Director::Links::LinksManager do
           deployment: deployment_model,
           instance_group: 'instance-group-name',
           name: 'job-1',
-          type: 'job'
+          type: 'job',
+          serial_id: serial_id
         )
 
         consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
           link_consumer: consumer,
           original_name: 'foo',
           type: 'bar',
-          name: 'foo-alias'
+          name: 'foo-alias',
+          serial_id: serial_id
         )
 
-        Bosh::Director::Models::Links::Link.create(
+        @link = Bosh::Director::Models::Links::Link.create(
           link_consumer_intent: consumer_intent,
           name: 'foo',
           link_content: '{}'
@@ -1673,6 +1771,13 @@ describe Bosh::Director::Links::LinksManager do
         subject.bind_links_to_instance(instance)
         expect(instance_model.links.size).to eq(1)
       end
+
+      it 'should updated intance_link with current serial_id' do
+        subject.bind_links_to_instance(instance)
+        expect(instance_model.links.size).to eq(1)
+        instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link.id)
+        expect(instance_link.first.serial_id).to eq(serial_id)
+      end
     end
   end
 
@@ -1681,7 +1786,7 @@ describe Bosh::Director::Links::LinksManager do
 
     context 'when an instance does not use links' do
       it 'returns an empty hash' do
-        links = subject.get_links_for_instance_group(deployment_model,instance_group_name)
+        links = subject.get_links_for_instance_group(deployment_model, instance_group_name)
 
         expect(links).to be_empty
       end

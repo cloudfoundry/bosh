@@ -68,9 +68,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:release1_model) { Bosh::Director::Models::Release.make(name: 'release1') }
   let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
   let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
+  let(:links_serial_id) { 7 }
   subject { described_class.new(logger) }
 
-  let(:links_manager) { Bosh::Director::Links::LinksManager.new(logger, event_log) }
+  let(:links_manager) { Bosh::Director::Links::LinksManager.new(logger, event_log, links_serial_id) }
 
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new).and_return update_config

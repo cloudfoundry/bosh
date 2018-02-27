@@ -2,9 +2,10 @@ module Bosh::Director::Links
   class LinksManager
     include Bosh::Director::IpUtil
 
-    def initialize(logger, event_logger)
+    def initialize(logger, event_logger, serial_id)
       @logger = logger
       @event_logger = event_logger
+      @serial_id = serial_id
     end
 
     def find_or_create_provider(
@@ -18,7 +19,13 @@ module Bosh::Director::Links
         instance_group: instance_group_name,
         name: name,
         type: type
-      )
+      ).tap do |result|
+        if result.serial_id != @serial_id
+          result.serial_id = @serial_id
+          result.save
+        end
+      end
+
     end
 
     def find_provider(
@@ -31,7 +38,8 @@ module Bosh::Director::Links
         deployment: deployment_model,
         instance_group: instance_group_name,
         name: name,
-        type: type
+        type: type,
+        serial_id: @serial_id,
       )
     end
 
@@ -45,7 +53,12 @@ module Bosh::Director::Links
         link_provider: link_provider,
         original_name: link_original_name,
         type: link_type
-      )
+      ).tap do |result|
+        if result.serial_id != @serial_id
+          result.serial_id = @serial_id
+          result.save
+        end
+      end
     end
 
     def find_provider_intent_by_original_name(
@@ -55,7 +68,8 @@ module Bosh::Director::Links
       Bosh::Director::Models::Links::LinkProviderIntent.find(
         link_provider: link_provider,
         original_name: link_original_name,
-        consumable: true
+        consumable: true,
+        serial_id: @serial_id
       )
     end
 
@@ -68,7 +82,8 @@ module Bosh::Director::Links
         link_provider: link_provider,
         name: link_alias,
         type: link_type,
-        consumable: true
+        consumable: true,
+        serial_id: @serial_id
       )
     end
 
@@ -83,7 +98,12 @@ module Bosh::Director::Links
         instance_group: instance_group_name,
         name: name,
         type: type
-      )
+      ).tap do |result|
+        if result.serial_id != @serial_id
+          result.serial_id = @serial_id
+          result.save
+        end
+      end
     end
 
     def find_consumer(
@@ -96,7 +116,8 @@ module Bosh::Director::Links
         deployment: deployment_model,
         instance_group: instance_group_name,
         name: name,
-        type: type
+        type: type,
+        serial_id: @serial_id
       )
     end
 
@@ -109,7 +130,12 @@ module Bosh::Director::Links
         link_consumer: link_consumer,
         original_name: link_original_name,
         type: link_type
-      )
+      ).tap do |result|
+        if result.serial_id != @serial_id
+          result.serial_id = @serial_id
+          result.save
+        end
+      end
     end
 
     def find_or_create_link(
@@ -215,6 +241,11 @@ module Bosh::Director::Links
         consumer.intents.each do |consumer_intent|
           consumer_intent.links.each do |link|
             instance_model.add_link(link)
+            instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: link.id).first
+            if instance_link.serial_id != @serial_id
+              instance_link.serial_id = @serial_id
+              instance_link.save
+            end
           end
         end
       end

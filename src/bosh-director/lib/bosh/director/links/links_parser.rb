@@ -4,11 +4,9 @@ module Bosh::Director::Links
 
     MANUAL_LINK_KEYS = ['instances', 'properties', 'address']
 
-    def initialize
-      @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
-    end
-
     def parse_providers_from_job(job_spec, deployment_model, current_template_model, job_properties, instance_group_name)
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
+
       provides_links = Bosh::Common::DeepCopy.copy(safe_property(job_spec, 'provides', class: Hash, optional: true, default: {}))
       job_name = safe_property(job_spec, 'name', class: String)
 
@@ -91,6 +89,8 @@ module Bosh::Director::Links
     end
 
     def parse_consumers_from_job(job_spec, deployment_model, current_template_model, instance_group_name)
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
+
       consumes_links = Bosh::Common::DeepCopy.copy(safe_property(job_spec, 'consumes', class: Hash, optional: true, default: {}))
       job_name = safe_property(job_spec, 'name', class: String)
 
@@ -181,6 +181,8 @@ module Bosh::Director::Links
     end
 
     def parse_provider_from_disk(disk_spec, deployment_model, instance_group_name)
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
+
       disk_name = disk_spec['name'] # All the parsing we need
 
       provider = @links_manager.find_or_create_provider(

@@ -1,14 +1,15 @@
 require 'spec_helper'
 
 describe Bosh::Director::Links::LinksManagerFactory do
+  let(:links_serial_id) { 0 }
 
   it 'has a static method to create itself' do
-    factory = Bosh::Director::Links::LinksManagerFactory.create
+    factory = Bosh::Director::Links::LinksManagerFactory.create(links_serial_id)
     expect(factory.kind_of?(Bosh::Director::Links::LinksManagerFactory)).to eq(true)
   end
 
   describe '#create_manager' do
-    subject(:manager_factory) { Bosh::Director::Links::LinksManagerFactory.create }
+    subject(:manager_factory) { Bosh::Director::Links::LinksManagerFactory.create(links_serial_id) }
 
     it 'creates a new LinksManager Instance' do
       manager_created = manager_factory.create_manager

@@ -6,6 +6,7 @@ Sequel.migration do
       String :instance_group, :null => false
       String :name, :null => false
       String :type, :null => false
+      Integer :serial_id
     end
 
     alter_table(:link_providers) do
@@ -22,6 +23,7 @@ Sequel.migration do
       Boolean :shared, :null => false, :default => false
       Boolean :consumable, :null => false, :default => true
       String :metadata #mapped properties
+      Integer :serial_id
     end
 
     alter_table(:link_provider_intents) do
@@ -34,6 +36,7 @@ Sequel.migration do
       String :instance_group
       String :name, :null => false
       String :type, :null => false
+      Integer :serial_id
     end
 
     alter_table(:link_consumers) do
@@ -49,6 +52,7 @@ Sequel.migration do
       Boolean :optional, :null => false, :default => false
       Boolean :blocked, :null => false, :default => false # intentionally blocking the consumption of the link, consume: nil
       String :metadata # put extra json object that has some flags, ip addresses true or false, network, from_deployment or any other potential thing
+      Integer :serial_id
     end
 
     alter_table(:link_consumer_intents) do
@@ -69,8 +73,10 @@ Sequel.migration do
     # end
 
     create_table :instances_links do
+      primary_key :id
       foreign_key :link_id, :links, :on_delete => :cascade, :null => false
       foreign_key :instance_id, :instances, :on_delete => :cascade, :null => false
+      Integer :serial_id
       unique [:instance_id, :link_id]
     end
 
@@ -93,6 +99,7 @@ Sequel.migration do
             name: provider_job_name,
             type: 'job',
             instance_group: instance_group_name,
+            serial_id: 0,
           })
 
           link_names.each do |link_name, link_types|
@@ -106,6 +113,7 @@ Sequel.migration do
                   shared: true,
                   consumable: true,
                   content: content.to_json,
+                  serial_id: 0,
                 }
               )
             end
@@ -133,7 +141,8 @@ Sequel.migration do
               deployment_id: instance[:deployment_id],
               instance_group: instance[:job],
               name: job_name,
-              type: 'job'
+              type: 'job',
+              serial_id: 0,
             }
           )
         end
@@ -160,7 +169,8 @@ Sequel.migration do
                 name: link_name,
                 type: 'undefined-migration',
                 optional: false,
-                blocked: false
+                blocked: false,
+                serial_id: 0
               }
             )
           end
@@ -183,7 +193,8 @@ Sequel.migration do
 
           self[:instances_links] << {
             link_id: link_detail.link_id,
-            instance_id: instance[:id]
+            instance_id: instance[:id],
+            serial_id: 0,
           }
         end
       end
@@ -192,6 +203,7 @@ Sequel.migration do
 
     alter_table(:deployments) do
       drop_column :link_spec_json
+      add_column :links_serial_id, Integer, default: 0
     end
   end
 end

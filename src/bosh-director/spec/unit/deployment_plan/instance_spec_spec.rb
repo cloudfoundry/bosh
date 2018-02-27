@@ -78,7 +78,7 @@ module Bosh::Director::DeploymentPlan
         instance_group,
         index,
         'started',
-        plan,
+        deployment,
         instance_state,
         availability_zone,
         logger,
@@ -90,11 +90,6 @@ module Bosh::Director::DeploymentPlan
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
     let(:stemcell) { make_stemcell(name: 'fake-stemcell-name', version: '1.0') }
     let(:env) { Env.new('key' => 'value') }
-    let(:plan) do
-      instance_double('Bosh::Director::DeploymentPlan::Planner',
-                      name: 'fake-deployment',
-                      model: deployment)
-    end
     let(:deployment_name) { 'fake-deployment' }
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }

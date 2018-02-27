@@ -103,7 +103,8 @@ module Bosh::Director
         @variables_interpolator = variables_interpolator
         @variable_set = variable_set
         @instance = instance
-        @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
+        links_serial_id = instance.deployment_model.links_serial_id
+        @links_manager = Bosh::Director::Links::LinksManagerFactory.create(links_serial_id).create_manager
       end
 
       def spec

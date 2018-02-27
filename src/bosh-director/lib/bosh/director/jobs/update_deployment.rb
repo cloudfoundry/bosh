@@ -17,7 +17,6 @@ module Bosh::Director
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
-        @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
       end
 
       def dry_run?
@@ -55,14 +54,19 @@ module Bosh::Director
         previous_releases, previous_stemcells = get_stemcells_and_releases
         context = {}
         parent_id = add_event
-        is_deploy_action = @options['deploy']
 
         with_deployment_lock(@deployment_name) do
+          is_deploy_action = @options['deploy']
           deployment_plan = nil
           dns_encoder = nil
 
           if is_deploy_action
-            Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
+            deployment_model = Bosh::Director::Models::Deployment.find(name: @deployment_name)
+
+            deployment_model.add_variable_set(:created_at => Time.now, :writable => true)
+
+            deployment_model.links_serial_id += 1
+            deployment_model.save
           end
 
           manifest_text = @options.fetch('manifest_text', @manifest_text)
@@ -77,6 +81,7 @@ module Bosh::Director
 
             # that's where the link path is created
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
+            @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_plan.model.links_serial_id).create_manager
 
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)

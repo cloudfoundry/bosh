@@ -161,6 +161,14 @@ module Bosh::Director
               job.perform
             end
 
+            it 'increments links_serial_id in deployment' do
+              old_links_serial_id = deployment_model.links_serial_id
+              job.perform
+              new_links_serial_id = deployment_model.links_serial_id
+
+              expect(new_links_serial_id).to eq(old_links_serial_id + 1)
+            end
+
             it 'does not fail if cleaning up old VariableSets raises an error' do
               another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])

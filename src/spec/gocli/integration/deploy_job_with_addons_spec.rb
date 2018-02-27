@@ -327,6 +327,40 @@ describe 'deploy job with addons', type: :integration do
         expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
       end
     end
+
+    context 'runtime config entries are excluded from current deployment' do
+      let(:manifest_hash) do
+        Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      end
+
+      let(:runtime_config) do
+        Bosh::Spec::Deployments.runtime_config_with_addon.tap do |config|
+          config['addons'][0].merge!(addon_exclude)
+        end
+      end
+
+      let(:addon_exclude) do
+        {
+          'exclude' => {
+            'deployments' => ['simple']
+          }
+        }
+      end
+
+      before do
+        bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      end
+
+      it 'should not associate it with the current deployment' do
+        deploy_from_scratch(
+          manifest_hash: manifest_hash,
+          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+          runtime_config_hash: runtime_config,
+        )
+
+        puts bosh_runner.run("-d simple instances --ps")
+      end
+    end
   end
 
   context 'when deployment' do

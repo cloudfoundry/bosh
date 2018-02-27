@@ -15,7 +15,7 @@ module Bosh::Director
       @logger = Config.logger
       @stemcell_manager = stemcell_manager
       @powerdns_manager = powerdns_manager
-      @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_plan.model.links_serial_id).create_manager
     end
 
     def bind_models(options = {})

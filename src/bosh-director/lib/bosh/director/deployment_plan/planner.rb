@@ -106,7 +106,7 @@ module Bosh::Director
         @addons = []
         @logger = Config.logger
 
-        @links_manager = Bosh::Director::Links::LinksManagerFactory.create.create_manager
+        @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
 
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
         @vm_resources_cache = VmResourcesCache.new(CloudFactory.create_with_latest_configs(@model), @logger)
