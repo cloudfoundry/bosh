@@ -24,7 +24,7 @@ module Bosh
             vm_deleter
           end
           let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
-          let(:cloud_factory) { instance_double(CloudFactory) }
+          let(:cloud_factory) { instance_double(AZCloudFactory) }
           let(:cloud) { instance_double('Bosh::Cloud') }
           let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
           let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
@@ -124,8 +124,9 @@ module Bosh
                 'gateway' => '192.168.1.1'
               }}
           end
-          let(:metadata_err) { "metadata_err" } 
+          let(:metadata_err) { 'metadata_err' }
           let(:report) { Stages::Report.new }
+          let(:delete_vm_step) { instance_double(DeleteVmStep) }
 
           before do
             allow(Config).to receive(:current_job).and_return(update_job)
@@ -134,11 +135,12 @@ module Bosh
             Config.flush_arp = true
             allow(agent_broadcaster).to receive(:delete_arp_entries)
             allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
-            allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+            allow(AZCloudFactory).to receive(:create_with_latest_configs).with(deployment).and_return(cloud_factory)
             allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
             allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
             allow(Models::Vm).to receive(:create).and_return(vm_model)
             allow(cloud).to receive(:create_vm)
+            allow(DeleteVmStep).to receive(:new).and_return(delete_vm_step)
           end
 
           it 'sets vm on given report' do
@@ -148,7 +150,7 @@ module Bosh
           end
 
           context 'with existing cloud config' do
-            let(:non_default_cloud_factory) { instance_double(CloudFactory) }
+            let(:non_default_cloud_factory) { instance_double(AZCloudFactory) }
             let(:stemcell_model_cpi) { Models::Stemcell.make(:cid => 'old-stemcell-id', name: 'fake-stemcell', version: '123', :cpi => 'cpi1') }
             let(:stemcell) do
               stemcell_model
@@ -160,7 +162,7 @@ module Bosh
             let(:use_existing) { true }
 
             it 'uses the outdated cloud config from the existing deployment' do
-              expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
+              expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
               expect(non_default_cloud_factory).to receive(:get_name_for_az).with('az1').at_least(:once).and_return 'cpi1'
               expect(non_default_cloud_factory).to receive(:get).with('cpi1').at_least(:once).and_return(cloud)
               expect(cloud).to receive(:create_vm).with(
@@ -178,7 +180,7 @@ module Bosh
                 expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
                 expect(non_default_cloud_factory).to receive(:get).with('').at_least(:once).and_return(cloud)
 
-                expect(CloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
+                expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
                 expect(cloud).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
                 ).and_return('new-vm-cid')
@@ -344,9 +346,9 @@ module Bosh
             expect(agent_client).to receive(:wait_until_ready).and_raise(metadata_err)
             Config.keep_unreachable_vms = false
             expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
-            expect(cloud).to receive(:delete_vm)
+            expect(delete_vm_step).to receive(:perform).with(report)
 
-            expect {subject.perform(report)}.to raise_error(metadata_err)
+            expect { subject.perform(report) }.to raise_error(metadata_err)
           end
 
           it 'should have deep copy of environment' do

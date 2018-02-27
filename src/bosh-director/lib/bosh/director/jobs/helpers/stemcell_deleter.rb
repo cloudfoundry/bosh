@@ -31,7 +31,7 @@ module Bosh::Director::Jobs
       private
 
       def cloud_for_stemcell(stemcell)
-        cloud = Bosh::Director::CloudFactory.create_with_latest_configs.get(stemcell.cpi)
+        cloud = Bosh::Director::CloudFactory.create.get(stemcell.cpi)
         raise "Stemcell has CPI defined (#{stemcell.cpi}) that is not configured anymore." if cloud.nil?
         cloud
       end

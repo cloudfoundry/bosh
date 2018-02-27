@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe VmResourcesCache do
     subject {VmResourcesCache.new(cloud_factory, logger)}
 
-    let(:cloud_factory) {Bosh::Director::CloudFactory.create_with_latest_configs}
+    let(:cloud_factory) { Bosh::Director::CloudFactory.create }
     let(:fake_cpi1) {instance_double(Bosh::Clouds::ExternalCpi)}
     let(:fake_cpi2) {instance_double(Bosh::Clouds::ExternalCpi)}
 

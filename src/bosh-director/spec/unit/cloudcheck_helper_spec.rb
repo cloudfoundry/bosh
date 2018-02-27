@@ -75,7 +75,7 @@ module Bosh::Director
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:cloud_factory) { instance_double(CloudFactory) }
       before do
-        allow(CloudFactory).to receive(:create_from_deployment).with(deployment_model).and_return(cloud_factory)
+        allow(CloudFactory).to receive(:create).and_return(cloud_factory)
         expect(cloud).to receive(:reboot_vm).with(vm.cid)
         expect(cloud_factory).to receive(:get).with(instance.active_vm.cpi).and_return(cloud)
       end

@@ -264,7 +264,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         let(:cloud3) { cloud }
 
         before do
-          allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(BD::CloudFactory).to receive(:create).and_return(cloud_factory)
         end
 
         it 'creates multiple stemcell records with different cpi attributes' do

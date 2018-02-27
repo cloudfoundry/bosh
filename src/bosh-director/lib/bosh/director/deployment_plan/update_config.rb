@@ -23,18 +23,18 @@ module Bosh::Director
       def initialize(update_config, default_update_config = nil)
         optional = !default_update_config.nil?
 
-        @canaries_before_calculation = safe_property(update_config, "canaries",
-                                  :class => String, :optional => optional)
+        @canaries_before_calculation = safe_property(update_config, 'canaries',
+                                                     class: String, optional: optional)
 
-        @max_in_flight_before_calculation = safe_property(update_config, "max_in_flight",
-                                       :class => String, :optional => optional)
+        @max_in_flight_before_calculation = safe_property(update_config, 'max_in_flight',
+                                                          class: String, optional: optional)
 
-        canary_watch_times = safe_property(update_config, "canary_watch_time",
-                                           :class => String,
-                                           :optional => optional)
-        update_watch_times = safe_property(update_config, "update_watch_time",
-                                           :class => String,
-                                           :optional => optional)
+        canary_watch_times = safe_property(update_config, 'canary_watch_time',
+                                           class: String,
+                                           optional: optional)
+        update_watch_times = safe_property(update_config, 'update_watch_time',
+                                           class: String,
+                                           optional: optional)
 
         if canary_watch_times
           @min_canary_watch_time, @max_canary_watch_time =
@@ -46,24 +46,25 @@ module Bosh::Director
             parse_watch_times(update_watch_times)
         end
 
-        @strategy = safe_property(update_config, 'strategy',
+        @strategy = safe_property(
+          update_config,
+          'strategy',
           class: String,
           optional: true,
-          default: default_update_config ? default_update_config.strategy : nil,
+          default: default_update_config ? default_update_config.strategy : Config.default_update_strategy,
         )
 
         unless @strategy.nil?
           unless UpdateConfig::ALLOWED_STRATEGY.include?(@strategy)
             raise ValidationInvalidValue,
-              "Invalid strategy '#{strategy}', valid strategies are: #{UpdateConfig::ALLOWED_STRATEGY.join(', ')}"
+                  "Invalid strategy '#{strategy}', valid strategies are: #{UpdateConfig::ALLOWED_STRATEGY.join(', ')}"
           end
         end
 
-        @serial = safe_property(update_config, "serial", {
-          class: :boolean,
-          optional: true,
-          default: default_update_config ? default_update_config.serial? : true,
-        })
+        @serial = safe_property(update_config, 'serial',
+                                class: :boolean,
+                                optional: true,
+                                default: default_update_config ? default_update_config.serial? : true)
 
         if optional
           @canaries_before_calculation ||= default_update_config.canaries_before_calculation
@@ -95,24 +96,24 @@ module Bosh::Director
 
       def max_in_flight(size)
         value = get_numerical_value(@max_in_flight_before_calculation, size)
-        (value < 1) ? 1: value
+        value < 1 ? 1 : value
       end
 
       def parse_watch_times(value)
         value = value.to_s
 
         if value =~ /^\s*(\d+)\s*\-\s*(\d+)\s*$/
-          result = [$1.to_i, $2.to_i]
+          result = [Regexp.last_match(1).to_i, Regexp.last_match(2).to_i]
         elsif value =~ /^\s*(\d+)\s*$/
-          result = [$1.to_i, $1.to_i]
+          result = [Regexp.last_match(1).to_i, Regexp.last_match(1).to_i]
         else
           raise UpdateConfigInvalidWatchTime,
-                "Watch time should be an integer or a range of two integers"
+                'Watch time should be an integer or a range of two integers'
         end
 
         if result[0] > result[1]
           raise UpdateConfigInvalidWatchTime,
-                "Min watch time cannot be greater than max watch time"
+                'Min watch time cannot be greater than max watch time'
         end
 
         result
@@ -123,14 +124,15 @@ module Bosh::Director
       end
 
       private
+
       def get_numerical_value(value, size)
         case value
-          when /^\d+%$/
-            [((/\d+/.match(value)[0].to_i * size) / 100).round, size].min
-          when /\A[-+]?[0-9]+\z/
-            value.to_i
-          else
-            raise 'cannot be calculated'
+        when /^\d+%$/
+          [((/\d+/.match(value)[0].to_i * size) / 100).round, size].min
+        when /\A[-+]?[0-9]+\z/
+          value.to_i
+        else
+          raise 'cannot be calculated'
         end
       end
     end

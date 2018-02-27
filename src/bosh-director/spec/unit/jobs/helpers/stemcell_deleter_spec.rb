@@ -106,7 +106,7 @@ module Bosh::Director
     describe 'looking up clouds for a stemcell' do
       let(:cloud_factory) { instance_double(BD::CloudFactory) }
       before {
-        allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(BD::CloudFactory).to receive(:create).and_return(cloud_factory)
       }
 
       context 'if no cpi is set on stemcell' do

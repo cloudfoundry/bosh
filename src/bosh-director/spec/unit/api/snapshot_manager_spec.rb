@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Api::SnapshotManager do
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
+    let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
     let(:username) { 'username-1' }
     let(:time) { Time.now.utc.to_s }
 
@@ -35,7 +35,10 @@ module Bosh::Director
       Models::Snapshot.make
 
       allow(JobQueue).to receive(:new).and_return(job_queue)
-      allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+      allow(Bosh::Director::AZCloudFactory)
+        .to receive(:create_with_latest_configs)
+        .with(deployment)
+        .and_return(cloud_factory)
     end
 
     let(:task) { instance_double('Bosh::Director::Models::Task', id: 'task_id') }

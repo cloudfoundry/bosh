@@ -36,7 +36,7 @@ module Bosh::Director
       before { allow(DeploymentPlan::UpdateConfig).to receive(:new).and_return(update_config) }
       let(:update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig') }
 
-      before { allow(CloudFactory).to receive(:create_with_latest_configs).with(deployment_model).and_return(:cloud) }
+      before { allow(CloudFactory).to receive(:create).and_return(:cloud) }
       let(:cloud) {instance_double(CloudFactory)}
 
       describe 'name key' do

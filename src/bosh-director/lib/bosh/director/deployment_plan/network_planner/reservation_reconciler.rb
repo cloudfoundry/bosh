@@ -10,6 +10,7 @@ module Bosh::Director::DeploymentPlan
         unplaced_existing_reservations = Set.new(existing_reservations)
         existing_network_plans = []
         desired_reservations = @instance_plan.network_plans.map(&:reservation)
+        reconciled_reservations = []
 
         existing_reservations.each do |existing_reservation|
           unless az_is_desired(existing_reservation)
@@ -31,9 +32,8 @@ module Bosh::Director::DeploymentPlan
               "on the same network #{existing_reservation}",
             )
 
-            if (both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
-                both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)) &&
-               !@instance_plan.should_hot_swap?
+            if both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
+               both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)
 
               @logger.debug("Reusing existing reservation #{existing_reservation} for '#{desired_reservation}'")
 
@@ -54,12 +54,21 @@ module Bosh::Director::DeploymentPlan
               end
 
               existing_network_plans << Plan.new(reservation: existing_reservation, existing: true)
-              desired_reservations.delete(desired_reservation)
+              reconciled_reservations << desired_reservations.delete(desired_reservation)
             else
               @logger.debug("Can't reuse reservation #{existing_reservation} for #{desired_reservation}")
             end
           else
             @logger.debug("Unneeded reservation #{existing_reservation}")
+          end
+        end
+
+        if @instance_plan.should_hot_swap? &&
+           (@instance_plan.recreate_for_non_network_reasons? || desired_reservations.length.positive?)
+          unplaced_existing_reservations += existing_network_plans.map(&:reservation)
+          existing_network_plans = []
+          reconciled_reservations.each do |reservation|
+            desired_reservations << reservation
           end
         end
 

@@ -105,11 +105,11 @@ module Bosh::Director
 
         instance_model = instance_plan.instance.model
 
-        if needs_recreate?(instance_plan)
+        if needs_recreate?(instance_plan) || (instance_plan.should_hot_swap? && instance_model.vms.count > 1)
           new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
 
           @logger.debug('Failed to update in place. Recreating VM')
-          unless instance_plan.needs_to_fix?
+          unless instance_plan.unresponsive_agent?
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
             DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
           end
@@ -137,7 +137,7 @@ module Bosh::Director
 
         if instance_plan.should_hot_swap?
           if instance_plan.needs_disk?
-            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, tags).perform(instance_report)
+            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
             DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
           end
         else

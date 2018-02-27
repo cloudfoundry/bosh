@@ -44,7 +44,8 @@ module Bosh::Director
         :local_dns,
         :verify_multidigest_path,
         :version,
-        :enable_cpi_resize_disk
+        :enable_cpi_resize_disk,
+        :default_update_strategy,
       )
 
       attr_reader(
@@ -216,6 +217,7 @@ module Bosh::Director
         end
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
+        @default_update_strategy = config.fetch('default_update_strategy', nil)
       end
 
       def agent_env

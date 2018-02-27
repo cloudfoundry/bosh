@@ -115,7 +115,7 @@ module Bosh::Director
 
         @logger = Config.logger
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
-        @vm_resources_cache = VmResourcesCache.new(CloudFactory.create_with_latest_configs(@model), @logger)
+        @vm_resources_cache = VmResourcesCache.new(AZCloudFactory.create_with_latest_configs(@model), @logger)
       end
 
       def_delegators :@cloud_planner,

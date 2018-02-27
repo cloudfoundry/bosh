@@ -17,7 +17,7 @@ module Bosh::Director
 
         found_cpis = Bosh::Director::Models::StemcellUpload.where(name: name, version: version).all.map(&:cpi)
 
-        cpi_config_names = CloudFactory.create_with_latest_configs.all_names
+        cpi_config_names = CloudFactory.create.all_names
 
         result = { 'needed' => !(cpi_config_names - found_cpis).empty? }
         json_encode(result)
