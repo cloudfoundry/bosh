@@ -73,7 +73,7 @@ shared:
             source /etc/profile.d/chruby.sh
             chruby $RUBY_VERSION
 
-            bundle install --path=vendor/cache --jobs=4 --retry=3
+            bundle install --local
             bundle exec rake spec:integration:install_dependencies
           popd
           rsync -a uninstalled-bosh-src/ bosh-src/
