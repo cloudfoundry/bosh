@@ -119,7 +119,7 @@ namespace :spec do
         if '' != spec_path
           "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
         else
-          "#{tag} https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec"
+          "#{tag} https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
         end
       end
       puts command
