@@ -90,7 +90,6 @@ cp -r bosh-agent $agent_path
 
 cd bosh-src/src
 
-set +x
 print_git_state
 
 bundle install --local

@@ -42,6 +42,42 @@ groups:
   #     - finalize-bosh-release
 
 shared:
+  - &install-dependencies
+    task: install-dependencies
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: bosh/main
+      inputs:
+      - name: uninstalled-bosh-src
+      - name: bosh-cli
+      - name: bosh-agent
+      outputs:
+      - name: bosh-src
+      params:
+        RUBY_VERSION: 2.4.2
+      run:
+        path: /bin/bash
+        args:
+        - -cex
+        - |
+          mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
+          chmod +x /usr/local/bin/bosh
+          source uninstalled-bosh-src/ci/tasks/utils.sh
+          agent_path=uninstalled-bosh-src/src/go/src/github.com/cloudfoundry/
+          mkdir -p $agent_path
+          cp -r bosh-agent $agent_path
+          pushd uninstalled-bosh-src/src
+            source /etc/profile.d/chruby.sh
+            chruby $RUBY_VERSION
+
+            bundle install --local
+            bundle exec rake spec:integration:install_dependencies
+          popd
+          rsync -a uninstalled-bosh-src/ bosh-src/
+
   - &deploy-director
     task: deploy-director
     tags: [vsphere-v5.1]
@@ -324,11 +360,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -372,11 +412,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -417,11 +461,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -466,11 +514,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -518,11 +570,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -600,11 +656,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true

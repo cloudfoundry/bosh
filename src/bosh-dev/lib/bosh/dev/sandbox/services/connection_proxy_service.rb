@@ -8,7 +8,7 @@ module Bosh::Dev::Sandbox
 
       config_path = File.join(sandbox_root, 'nginx_tcp_proxy.conf')
       nginx = TCPProxyNginx.new
-      cmd = %W[#{nginx.executable_path} -c #{config_path}]
+      cmd = %W[#{nginx.executable_path} -c #{config_path} -p #{sandbox_root}]
       @process = Service.new(cmd, {output: log_path}, logger)
       @socket_connector = SocketConnector.new('tcp_proxy_nginx', 'localhost', listen_port, 'unknown', logger)
 
