@@ -147,6 +147,7 @@ module Bosh::Dev::Sandbox
             }
           },
           'nats' => @nats_url,
+          'log_buffer' => @logger,
         },
         {}
       )
