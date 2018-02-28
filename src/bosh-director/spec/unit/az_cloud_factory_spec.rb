@@ -10,7 +10,9 @@ module Bosh::Director
     let(:az) { instance_double(DeploymentPlan::AvailabilityZone, name: 'some-az') }
 
     before do
-      allow(az_cloud_factory).to receive(:get_default_cloud).and_return(default_cloud)
+      allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
+      allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: nil).and_return(default_cloud)
     end
 
     context 'factory methods' do
@@ -137,13 +139,10 @@ module Bosh::Director
 
       before do
         expect(az_cloud_factory.uses_cpi_config?).to be_truthy
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, cpis[1].properties).and_return(clouds[1])
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, cpis[2].properties).and_return(clouds[2])
       end
 
       it 'returns the cloud from cpi config when asking for a AZ with this cpi' do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, cpis[0].properties).and_return(clouds[0])
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, properties_from_cpi_config: cpis[0].properties, stemcell_api_version: nil).and_return(clouds[0])
 
         cloud = az_cloud_factory.get_for_az('some-az')
         expect(cloud).to eq(clouds[0])

@@ -18,7 +18,7 @@ module Bosh::Director
       allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
 
       @cloud = instance_double(Bosh::Clouds::ExternalCpi)
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid').and_return(@cloud)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(@cloud)
 
       @agent = double(Bosh::Director::AgentClient)
 

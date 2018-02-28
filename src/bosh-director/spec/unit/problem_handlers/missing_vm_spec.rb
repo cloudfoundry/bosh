@@ -88,7 +88,7 @@ module Bosh::Director
       before do
         allow(Config).to receive(:uuid).and_return('woof-uuid')
         allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid').and_return(fake_cloud)
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(fake_cloud)
 
         allow(fake_new_agent).to receive(:sync_dns) do |_, _, _, &blk|
           blk.call('value' => 'synced')

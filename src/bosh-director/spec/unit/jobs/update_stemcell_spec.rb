@@ -20,7 +20,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid').and_return(cloud)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid', stemcell_api_version: nil).and_return(cloud)
 
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]

@@ -32,13 +32,15 @@ module Bosh::Director::DeploymentPlan
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(
         '/var/vcap/jobs/cpi-type_cpi/bin/cpi',
         Bosh::Director::Config.uuid,
-        cpi_config.raw_manifest['cpis'][0]['properties']
+        properties_from_cpi_config: cpi_config.raw_manifest['cpis'][0]['properties'],
+        stemcell_api_version: nil
       ).and_return(fake_cpi1)
 
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(
         '/var/vcap/jobs/cpi-type2_cpi/bin/cpi',
         Bosh::Director::Config.uuid,
-        cpi_config.raw_manifest['cpis'][1]['properties']
+        properties_from_cpi_config: cpi_config.raw_manifest['cpis'][1]['properties'],
+        stemcell_api_version: nil
       ).and_return(fake_cpi2)
 
       allow(fake_cpi1).to receive(:calculate_vm_cloud_properties).with(vm_resources).and_return(vm_cloud_properties1)

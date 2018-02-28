@@ -39,7 +39,12 @@ describe Bosh::Clouds::ExternalCpi do
       let(:director_uuid) {'fake-director-uuid'}
       let(:request_id) {'cpi-fake-request-id'}
       let(:cpi_config_properties) { {'key1' => {'nestedkey1' => 'nestedvalue1'}, 'key2' => 'value2'} }
-      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, cpi_config_properties ) }
+      let(:options) do
+        {
+          properties_from_cpi_config: cpi_config_properties
+        }
+      end
+      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
       let(:logger) { double }
       before do
         allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
@@ -105,6 +110,58 @@ describe Bosh::Clouds::ExternalCpi do
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
+      end
+    end
+
+    context 'when api_version stemcell is given' do
+      let(:director_uuid) {'fake-director-uuid'}
+      let(:request_id) {'cpi-fake-request-id'}
+      let(:stemcell_api_version) { 5 }
+      let(:options) do
+        {
+          stemcell_api_version: stemcell_api_version
+        }
+      end
+
+      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
+      let(:logger) { double }
+
+      before do
+        allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
+        allow(logger).to receive(:info)
+        allow(logger).to receive(:debug)
+      end
+
+      it 'puts api_version in context passed to cpi and logs it in CPI logs' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
+        expected_cmd = '/path/to/fake-cpi/bin/cpi'
+        context = {
+          'director_uuid' => director_uuid,
+          'request_id' => request_id,
+          'vm' => {
+            'stemcell' => {
+              'api_version' => 5
+            }
+          }
+        }
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expect(logger).to receive(:debug).with(/api_version/)
+
+        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        call_cpi_method
+      end
+
+      it 'logs requests and responses with request id' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        lines = []
+        allow(logger).to receive(:debug) { |line| lines << line }
+
+        call_cpi_method
+        expect(lines[0]).to start_with "[external-cpi] [#{request_id}] request"
+        expect(lines[1]).to start_with "[external-cpi] [#{request_id}] response"
       end
     end
 

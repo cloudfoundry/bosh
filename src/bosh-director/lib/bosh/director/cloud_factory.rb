@@ -24,10 +24,6 @@ module Bosh::Director
       @logger = Config.logger
     end
 
-    def get_default_cloud
-      Bosh::Clouds::ExternalCpi.new(Config.cloud_options['provider']['path'], @director_uuid)
-    end
-
     def uses_cpi_config?
       !@parsed_cpi_config.nil?
     end
@@ -46,13 +42,26 @@ module Bosh::Director
       [cpi_name] + cpi_config.migrated_from_names
     end
 
-    def get(cpi_name)
-      return get_default_cloud if cpi_name.nil? || cpi_name == ''
+    def get(cpi_name, stemcell_api_version = nil)
+      return get_default_cloud(stemcell_api_version) if cpi_name.nil? || cpi_name == ''
       cpi_config = get_cpi_config(cpi_name)
-      Bosh::Clouds::ExternalCpi.new(cpi_config.exec_path, @director_uuid, cpi_config.properties)
+      Bosh::Clouds::ExternalCpi.new(
+        cpi_config.exec_path,
+        @director_uuid,
+        properties_from_cpi_config: cpi_config.properties,
+        stemcell_api_version: stemcell_api_version
+      )
     end
 
     private
+
+    def get_default_cloud(stemcell_api_version)
+      Bosh::Clouds::ExternalCpi.new(
+        Config.cloud_options['provider']['path'],
+        @director_uuid,
+        stemcell_api_version: stemcell_api_version
+      )
+    end
 
     def get_cpi_config(cpi_name)
       raise "CPI '#{cpi_name}' not found in cpi-config (because cpi-config is not set)" unless uses_cpi_config?
