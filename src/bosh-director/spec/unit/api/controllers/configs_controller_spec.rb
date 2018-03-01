@@ -665,6 +665,7 @@ module Bosh::Director
         end
 
         it 'stores team-specific configs' do
+          expect(Bosh::Director::Models::Config.where(team_id: dev_team.id).count).to eq(1)
           expect do
             post(
               '/',
@@ -672,7 +673,7 @@ module Bosh::Director
               'CONTENT_TYPE' => 'application/json',
             )
           end.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
-          expect(Bosh::Director::Models::Config.all[2][:team_id]).to eq(dev_team.id)
+          expect(Bosh::Director::Models::Config.where(team_id: dev_team.id).count).to eq(2)
         end
 
         it 'deletes the config' do
