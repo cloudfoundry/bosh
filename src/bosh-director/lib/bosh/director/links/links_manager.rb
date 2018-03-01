@@ -117,7 +117,7 @@ module Bosh::Director::Links
         instance_group: instance_group_name,
         name: name,
         type: type,
-        serial_id: @serial_id
+        serial_id: deployment_model.links_serial_id
       )
     end
 
@@ -182,7 +182,9 @@ module Bosh::Director::Links
       errors = []
 
       links_consumers.each do |consumer|
+        next if consumer.serial_id != @serial_id
         consumer.intents.each do |consumer_intent|
+          next if consumer_intent.serial_id != @serial_id
           begin
             resolve_consumer_intent(consumer_intent, global_use_dns_entry, dry_run)
           rescue => e
@@ -240,7 +242,10 @@ module Bosh::Director::Links
       consumers.each do |consumer|
         consumer.intents.each do |consumer_intent|
           consumer_intent.links.each do |link|
-            instance_model.add_link(link)
+            instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: link.id).first
+            if instance_link.nil?
+              instance_model.add_link(link)
+            end
             instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: link.id).first
             if instance_link.serial_id != @serial_id
               instance_link.serial_id = @serial_id
@@ -252,9 +257,8 @@ module Bosh::Director::Links
     end
 
     def update_provider_intents_contents(link_providers, deployment_plan)
-      link_providers.select {|provider| provider.type == 'job'}.each do |provider|
+      link_providers.select {|provider| provider.type == 'job' && provider.serial_id == deployment_plan.model.links_serial_id}.each do |provider|
         instance_group = deployment_plan.instance_group(provider.instance_group)
-
         provider.intents.each do |provider_intent|
           metadata = {}
           metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
@@ -308,6 +312,7 @@ module Bosh::Director::Links
 
           providers.each do |provider|
             provider.intents.each do |provider_intent|
+              # TODO LINKS Added unit test for the following test.
               next if provider_intent.type != consumer_intent.type
 
               if is_explicit_link
@@ -315,6 +320,7 @@ module Bosh::Director::Links
                 next if is_cross_deployment && !provider_intent.shared
               end
 
+              next if provider_intent.serial_id != deployment.links_serial_id
               found_provider_intents << provider_intent
             end
           end

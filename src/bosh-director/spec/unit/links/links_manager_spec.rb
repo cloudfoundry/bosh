@@ -13,7 +13,8 @@ describe Bosh::Director::Links::LinksManager do
 
   let(:deployment_model) do
     Bosh::Director::Models::Deployment.create(
-      name: 'test_deployment'
+      name: 'test_deployment',
+      links_serial_id: serial_id
     )
   end
 
@@ -191,7 +192,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         name: 'test_deployment',
         type: 'test_deployment_type',
-        instance_group: 'test_instance_group'
+        instance_group: 'test_instance_group',
+        serial_id: serial_id
       )
     end
 
@@ -310,7 +312,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         name: 'test_deployment',
         type: 'test_deployment_type',
-        instance_group: 'test_instance_group'
+        instance_group: 'test_instance_group',
+        serial_id: serial_id
       )
     end
 
@@ -420,7 +423,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         name: 'test_provider',
         type: 'job',
-        instance_group: 'test_instance_group'
+        instance_group: 'test_instance_group',
+        serial_id: serial_id
       )
     end
 
@@ -432,7 +436,8 @@ describe Bosh::Director::Links::LinksManager do
         name: 'test_link_alias',
         content: '{}',
         shared: false,
-        consumable: true
+        consumable: true,
+        serial_id: serial_id
       )
     end
 
@@ -441,7 +446,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         name: 'test_consumer',
         type: 'job',
-        instance_group: 'test_instance_group'
+        instance_group: 'test_instance_group',
+        serial_id: serial_id
       )
     end
 
@@ -451,7 +457,8 @@ describe Bosh::Director::Links::LinksManager do
         original_name: 'test_original_link_name',
         type: 'test_link_type',
         optional: false,
-        blocked: false
+        blocked: false,
+        serial_id: serial_id
       )
     end
 
@@ -492,7 +499,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         name: 'test_deployment',
         type: 'test_deployment_type',
-        instance_group: 'test_instance_group'
+        instance_group: 'test_instance_group',
+        serial_id: serial_id
       )
     end
     let(:link_consumer) do
@@ -500,7 +508,8 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         name: 'test_deployment',
         type: 'test_deployment_type',
-        instance_group: 'test_instance_group'
+        instance_group: 'test_instance_group',
+        serial_id: serial_id
       )
     end
     let(:provider_intent) do
@@ -511,7 +520,8 @@ describe Bosh::Director::Links::LinksManager do
         name: 'test_link_alias',
         content: 'test_link_content',
         shared: false,
-        consumable: true
+        consumable: true,
+        serial_id: serial_id
       )
     end
     let(:consumer_intent) do
@@ -520,7 +530,8 @@ describe Bosh::Director::Links::LinksManager do
         original_name: 'test_original_link_name',
         type: 'test_link_type',
         optional: false,
-        blocked: false
+        blocked: false,
+        serial_id: serial_id
       )
     end
 
@@ -560,7 +571,8 @@ describe Bosh::Director::Links::LinksManager do
             deployment: deployment_model,
             instance_group: 'ig1',
             name: 'c1',
-            type: 'job'
+            type: 'job',
+            serial_id: serial_id
           )
         end
 
@@ -574,7 +586,8 @@ describe Bosh::Director::Links::LinksManager do
             original_name: 'ci1',
             name: 'provider_alias',
             type: 'foo',
-            metadata: metadata.to_json
+            metadata: metadata.to_json,
+            serial_id: serial_id
           )
         end
 
@@ -584,14 +597,16 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               instance_group: 'ig1',
               name: 'p1',
-              type: 'job'
+              type: 'job',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi1',
               name: 'provider_alias',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
           end
 
@@ -644,7 +659,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               instance_group: 'ig1',
               name: 'p1',
-              type: 'job'
+              type: 'job',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -652,7 +668,8 @@ describe Bosh::Director::Links::LinksManager do
               original_name: 'pi1',
               name: 'provider_alias',
               type: 'foo',
-              content: provider_intent_1_content
+              content: provider_intent_1_content,
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -660,7 +677,8 @@ describe Bosh::Director::Links::LinksManager do
               original_name: 'pi2',
               name: 'provider_alias',
               type: 'foo',
-              content: provider_intent_2_content
+              content: provider_intent_2_content,
+              serial_id: serial_id
             )
           end
 
@@ -734,7 +752,8 @@ describe Bosh::Director::Links::LinksManager do
             deployment: deployment_model,
             instance_group: 'ig1',
             name: 'c1',
-            type: 'job'
+            type: 'job',
+            serial_id: serial_id
           )
         end
 
@@ -747,7 +766,8 @@ describe Bosh::Director::Links::LinksManager do
             link_consumer: consumer,
             original_name: 'ci1',
             type: 'foo',
-            metadata: metadata.to_json
+            metadata: metadata.to_json,
+            serial_id: serial_id
           )
         end
 
@@ -757,14 +777,16 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               instance_group: 'ig1',
               name: 'p1',
-              type: 'job'
+              type: 'job',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi1',
               name: 'provider_alias',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
           end
 
@@ -813,21 +835,24 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               instance_group: 'ig1',
               name: 'p1',
-              type: 'job'
+              type: 'job',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi1',
               name: 'provider_alias',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi2',
               name: 'provider_alias2',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
           end
 
@@ -873,7 +898,8 @@ describe Bosh::Director::Links::LinksManager do
             deployment: deployment_model,
             instance_group: 'ig1',
             name: 'c1',
-            type: 'job'
+            type: 'job',
+            serial_id: serial_id
           )
         end
 
@@ -886,20 +912,23 @@ describe Bosh::Director::Links::LinksManager do
             link_consumer: consumer,
             original_name: 'ci1',
             type: 'foo',
-            metadata: metadata.to_json
+            metadata: metadata.to_json,
+            serial_id: serial_id
           )
 
           provider = Bosh::Director::Models::Links::LinkProvider.create(
             deployment: deployment_model,
             instance_group: 'ig1',
             name: 'c1',
-            type: 'manual'
+            type: 'manual',
+            serial_id: serial_id
           )
 
           Bosh::Director::Models::Links::LinkProviderIntent.create(
             link_provider: provider,
             original_name: 'ci1',
-            type: 'foo'
+            type: 'foo',
+            serial_id: serial_id
           )
         end
 
@@ -920,7 +949,8 @@ describe Bosh::Director::Links::LinksManager do
             deployment: deployment_model,
             name: 'c1',
             type: 'job',
-            instance_group: 'ig1'
+            instance_group: 'ig1',
+            serial_id: serial_id
           )
         end
 
@@ -936,7 +966,8 @@ describe Bosh::Director::Links::LinksManager do
             original_name: 'ci1',
             name: 'provider_alias',
             type: 'foo',
-            metadata: metadata.to_json
+            metadata: metadata.to_json,
+            serial_id: serial_id
           )
         end
 
@@ -946,7 +977,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
           end
 
@@ -957,7 +989,8 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'pi1',
                 name: 'provider_alias',
                 type: 'foo',
-                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -976,7 +1009,8 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'pi1',
                 name: 'non-matching-alias',
                 type: 'foo',
-                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1004,21 +1038,24 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi1',
               name: 'provider_alias',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi2',
               name: 'provider_alias',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
           end
 
@@ -1036,7 +1073,8 @@ describe Bosh::Director::Links::LinksManager do
         context 'and requesting provider from different deployment' do
           let!(:second_deployment_model) do
             Bosh::Director::Models::Deployment.create(
-              name: 'second_deployment'
+              name: 'second_deployment',
+              links_serial_id: serial_id
             )
           end
 
@@ -1053,7 +1091,8 @@ describe Bosh::Director::Links::LinksManager do
                 deployment: second_deployment_model,
                 name: 'p2',
                 type: 'job',
-                instance_group: 'ig2'
+                instance_group: 'ig2',
+                serial_id: serial_id
               )
 
               Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -1062,7 +1101,8 @@ describe Bosh::Director::Links::LinksManager do
                 name: 'provider_alias',
                 type: 'foo',
                 shared: true,
-                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1080,7 +1120,8 @@ describe Bosh::Director::Links::LinksManager do
                 deployment: second_deployment_model,
                 name: 'p2',
                 type: 'job',
-                instance_group: 'ig2'
+                instance_group: 'ig2',
+                serial_id: serial_id
               )
 
               Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -1089,7 +1130,8 @@ describe Bosh::Director::Links::LinksManager do
                 name: 'provider_alias',
                 type: 'foo',
                 shared: false,
-                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1154,7 +1196,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -1162,7 +1205,8 @@ describe Bosh::Director::Links::LinksManager do
               original_name: 'pi1',
               name: 'provider_alias',
               type: 'foo',
-              content: provider_intent_content.to_json
+              content: provider_intent_content.to_json,
+              serial_id: serial_id
             )
           end
 
@@ -1277,7 +1321,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -1285,7 +1330,8 @@ describe Bosh::Director::Links::LinksManager do
               original_name: 'pi1',
               name: 'provider_alias',
               type: 'foo',
-              content: provider_intent_content.to_json
+              content: provider_intent_content.to_json,
+              serial_id: serial_id
             )
           end
 
@@ -1390,7 +1436,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -1398,7 +1445,8 @@ describe Bosh::Director::Links::LinksManager do
               original_name: 'pi1',
               name: 'provider_alias',
               type: 'foo',
-              content: provider_intent_content.to_json
+              content: provider_intent_content.to_json,
+              serial_id: serial_id
             )
           end
 
@@ -1438,7 +1486,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
           end
 
@@ -1459,7 +1508,8 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'pi1',
                 name: 'provider_alias',
                 type: 'foo',
-                content: link_provider_content.to_json
+                content: link_provider_content.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1502,7 +1552,8 @@ describe Bosh::Director::Links::LinksManager do
                   networks: [],
                   instances: [
                     {dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}
-                  ]}.to_json
+                  ]}.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1521,7 +1572,8 @@ describe Bosh::Director::Links::LinksManager do
             deployment: deployment_model,
             name: 'c1',
             type: 'job',
-            instance_group: 'ig1'
+            instance_group: 'ig1',
+            serial_id: serial_id
           )
         end
 
@@ -1530,7 +1582,8 @@ describe Bosh::Director::Links::LinksManager do
             link_consumer: consumer,
             original_name: 'ci1',
             type: 'foo',
-            metadata: {explicit_link: false}.to_json
+            metadata: {explicit_link: false}.to_json,
+            serial_id: serial_id
           )
         end
 
@@ -1540,7 +1593,8 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
           end
 
@@ -1551,7 +1605,8 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'pi1',
                 name: 'provider_alias',
                 type: 'foo',
-                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1571,7 +1626,8 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'ci1',
                 name: 'ci1',
                 type: 'non-matching-type',
-                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json
+                content: {default_network: 'netb', instances: [{dns_addresses: {neta: 'dns1', netb: 'dns2'}, addresses: {neta: 'ip1', netb: 'ip2'}}]}.to_json,
+                serial_id: serial_id
               )
             end
 
@@ -1599,21 +1655,24 @@ describe Bosh::Director::Links::LinksManager do
               deployment: deployment_model,
               name: 'p1',
               type: 'job',
-              instance_group: 'ig1'
+              instance_group: 'ig1',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi1',
               name: 'provider_alias',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi2',
               name: 'provider_alias2',
-              type: 'foo'
+              type: 'foo',
+              serial_id: serial_id
             )
           end
 
@@ -1635,7 +1694,8 @@ describe Bosh::Director::Links::LinksManager do
             deployment: deployment_model,
             instance_group: 'ig1',
             name: 'c1',
-            type: 'job'
+            type: 'job',
+            serial_id: serial_id
           )
         end
 
@@ -1661,7 +1721,8 @@ describe Bosh::Director::Links::LinksManager do
             link_consumer: consumer,
             original_name: 'ci1',
             type: 'foo',
-            metadata: metadata.to_json
+            metadata: metadata.to_json,
+            serial_id: serial_id
           )
         end
 
@@ -1799,34 +1860,38 @@ describe Bosh::Director::Links::LinksManager do
           deployment: deployment_model,
           instance_group: 'control-instance-group-name',
           name: 'control-job-1',
-          type: 'job'
+          type: 'job',
+          serial_id: serial_id
         )
 
         control_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
           link_consumer: control_consumer,
           original_name: 'control-foo',
           type: 'control-bar',
-          name: 'control-foo-alias'
+          name: 'control-foo-alias',
+          serial_id: serial_id
         )
 
         Bosh::Director::Models::Links::Link.create(
           link_consumer_intent: control_consumer_intent,
           name: 'control-foo',
-          link_content: '{}'
+          link_content: '{}',
         )
 
         consumer = Bosh::Director::Models::Links::LinkConsumer.create(
           deployment: deployment_model,
           instance_group: 'instance-group-name',
           name: 'job-1',
-          type: 'job'
+          type: 'job',
+          serial_id: serial_id
         )
 
         consumer_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
           link_consumer: consumer,
           original_name: 'foo',
           type: 'bar',
-          name: 'foo-alias'
+          name: 'foo-alias',
+          serial_id: serial_id
         )
 
         Bosh::Director::Models::Links::Link.create(
@@ -1839,7 +1904,8 @@ describe Bosh::Director::Links::LinksManager do
           link_consumer: consumer,
           original_name: 'meow',
           type: 'bar',
-          name: 'meow-alias'
+          name: 'meow-alias',
+          serial_id: serial_id
         )
 
         Bosh::Director::Models::Links::Link.create(
@@ -1866,27 +1932,31 @@ describe Bosh::Director::Links::LinksManager do
         deployment: deployment_model,
         instance_group: 'ig1',
         name: 'c1',
-        type: 'job'
+        type: 'job',
+        serial_id: serial_id
       )
 
       consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
         link_consumer: consumer,
         original_name: 'ci1',
         type: 'foo',
-        metadata: {explicit_link: true}.to_json
+        metadata: {explicit_link: true}.to_json,
+        serial_id: serial_id
       )
 
       provider = Bosh::Director::Models::Links::LinkProvider.create(
         deployment: deployment_model,
         instance_group: 'ig1',
         name: 'c1',
-        type: 'manual'
+        type: 'manual',
+        serial_id: serial_id
       )
 
       provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
         link_provider: provider,
         original_name: 'ci1',
-        type: 'foo'
+        type: 'foo',
+        serial_id: serial_id
       )
 
       Bosh::Director::Models::Links::Link.create(
@@ -1911,7 +1981,7 @@ describe Bosh::Director::Links::LinksManager do
   end
 
   describe '#update_provider_intents_contents' do
-    let(:deployment_model) {BD::Models::Deployment.make}
+    let(:deployment_model) {BD::Models::Deployment.make(links_serial_id: serial_id)}
     let(:link_providers) {[]}
     let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
 
@@ -1921,7 +1991,8 @@ describe Bosh::Director::Links::LinksManager do
           deployment: deployment_model,
           instance_group: 'foo-ig',
           name: 'foo-provider',
-          type: 'job'
+          type: 'job',
+          serial_id: serial_id
         )
       end
 
@@ -1934,7 +2005,8 @@ describe Bosh::Director::Links::LinksManager do
           :shared => true,
           :consumable => true,
           :content => '{}',
-          :metadata => {'mapped_properties' => {'a' => '1'}}.to_json
+          :metadata => {'mapped_properties' => {'a' => '1'}}.to_json,
+          :serial_id => serial_id
         )
       end
 
@@ -1947,7 +2019,8 @@ describe Bosh::Director::Links::LinksManager do
           :shared => true,
           :consumable => true,
           :content => '{}',
-          :metadata => {'mapped_properties' => {'b' => '2'}}.to_json
+          :metadata => {'mapped_properties' => {'b' => '2'}}.to_json,
+          :serial_id => serial_id
         )
       end
 
@@ -1956,7 +2029,8 @@ describe Bosh::Director::Links::LinksManager do
           deployment: deployment_model,
           instance_group: 'foo-ig',
           name: 'foo-provider-2',
-          type: 'job'
+          type: 'job',
+          serial_id: serial_id
         )
       end
 
@@ -1969,7 +2043,8 @@ describe Bosh::Director::Links::LinksManager do
           :shared => true,
           :consumable => true,
           :content => '{}',
-          :metadata => {'mapped_properties' => {'c' => '1'}}.to_json
+          :metadata => {'mapped_properties' => {'c' => '1'}}.to_json,
+          :serial_id => serial_id
         )
       end
 
@@ -1982,7 +2057,8 @@ describe Bosh::Director::Links::LinksManager do
           :shared => true,
           :consumable => true,
           :content => '{}',
-          :metadata => {'mapped_properties' => {'d' => '2'}}.to_json
+          :metadata => {'mapped_properties' => {'d' => '2'}}.to_json,
+          :serial_id => serial_id
         )
       end
 
@@ -2020,7 +2096,8 @@ describe Bosh::Director::Links::LinksManager do
         allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
         allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
         allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
-      end
+        allow(deployment_plan).to receive(:model).and_return(deployment_model)
+       end
 
       it 'updates the contents field of the provider intents' do
         expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'a' => '1'}).and_return(link_1)
