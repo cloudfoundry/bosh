@@ -137,6 +137,7 @@ module Bosh
             allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
             allow(AZCloudFactory).to receive(:create_with_latest_configs).with(deployment).and_return(cloud_factory)
             allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
+            allow(cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud)
             allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
             allow(Models::Vm).to receive(:create).and_return(vm_model)
             allow(cloud).to receive(:create_vm)
@@ -164,7 +165,8 @@ module Bosh
             it 'uses the outdated cloud config from the existing deployment' do
               expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
               expect(non_default_cloud_factory).to receive(:get_name_for_az).with('az1').at_least(:once).and_return 'cpi1'
-              expect(non_default_cloud_factory).to receive(:get).with('cpi1').at_least(:once).and_return(cloud)
+              expect(non_default_cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+              expect(non_default_cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud)
               expect(cloud).to receive(:create_vm).with(
                 kind_of(String), 'old-stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
               ).and_return('new-vm-cid')
@@ -178,7 +180,8 @@ module Bosh
 
               it 'uses any cloud config if availability zones are not used, even though requested' do
                 expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
-                expect(non_default_cloud_factory).to receive(:get).with('').at_least(:once).and_return(cloud)
+                expect(non_default_cloud_factory).to receive(:get).with('').and_return(cloud)
+                expect(non_default_cloud_factory).to receive(:get).with('', nil).and_return(cloud)
 
                 expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
                 expect(cloud).to receive(:create_vm).with(
@@ -672,6 +675,24 @@ module Bosh
                 expect(network_settings_param).to eq(resolved_networks_settings)
                 expect(env_param).to eq(expected_env)
               end.and_return('new-vm-cid')
+
+              subject.perform(report)
+            end
+          end
+
+          context 'when stemcell has api_version' do
+            let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: '25') }
+
+            it 'should create a cloud associated with the stemcell api version' do
+              expect(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
+              expect(cloud).to receive(:create_vm).with(
+                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
+                                                                                                       'groups' => expected_groups
+              }}
+              ).and_return('new-vm-cid')
+
+              expect(agent_client).to receive(:wait_until_ready)
+              expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
 
               subject.perform(report)
             end

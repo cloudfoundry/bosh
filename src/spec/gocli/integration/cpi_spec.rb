@@ -223,6 +223,164 @@ describe 'CPI calls', type: :integration do
       expect(invocations.size).to eq(12)
     end
 
+    context 'when stemcell has api version' do
+      it 'sends correct CPI requests for select CPI calls' do
+        bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
+        upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+        create_and_upload_test_release
+
+        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+        manifest_hash['instance_groups'].first['env'] = {'bosh' => {'password' => 'foobar'}}
+        deploy(manifest_hash: manifest_hash)
+
+        invocations = current_sandbox.cpi.invocations
+
+        context_without_api_version = {
+          'director_uuid' => kind_of(String),
+          'request_id' => kind_of(String)
+        }
+
+        expect(invocations[0].method_name).to eq('info')
+        expect(invocations[0].context).to match(context_without_api_version)
+        
+        expect(invocations[1].method_name).to eq('create_stemcell')
+        expect(invocations[1].context).to match(context_without_api_version)
+
+        expect(invocations[2].method_name).to eq('create_vm')
+        expect(invocations[2].inputs).to match({
+                                                 'agent_id' => kind_of(String),
+                                                 'stemcell_id' => kind_of(String),
+                                                 'cloud_properties' => {},
+                                                 'networks' => {
+                                                   'a' => {
+                                                     'type' => 'manual',
+                                                     'ip' => '192.168.1.3',
+                                                     'netmask' => '255.255.255.0',
+                                                     'cloud_properties' => {},
+                                                     'default' => ['dns', 'gateway'],
+                                                     'dns' => ['192.168.1.1', '192.168.1.2'],
+                                                     'gateway' => '192.168.1.1',
+                                                   }
+                                                 },
+                                                 'disk_cids' => [],
+                                                 'env' => {
+                                                   'bosh' => {
+                                                     'mbus' => expected_mbus,
+                                                     'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
+                                                     'group' => kind_of(String),
+                                                     'groups' => kind_of(Array)
+                                                   }
+                                                 }
+                                               })
+        expect(invocations[2].context).to match({
+                                                  'director_uuid' => kind_of(String),
+                                                  'request_id' => kind_of(String),
+                                                  'vm' => {
+                                                    'stemcell' => {
+                                                      'api_version' => 25
+                                                    }
+                                                  }
+                                                })
+
+        expect(invocations[3].method_name).to eq('set_vm_metadata')
+        expect(invocations[3].context).to match(context_without_api_version)
+
+        expect(invocations[4].method_name).to eq('set_vm_metadata')
+        expect(invocations[4].context).to match(context_without_api_version)
+
+        expect(invocations[5].method_name).to eq('delete_vm')
+        expect(invocations[5].context).to match(context_without_api_version)
+
+        expect(invocations[6].method_name).to eq('create_vm')
+        expect(invocations[6].inputs).to match({
+                                                 'agent_id' => kind_of(String),
+                                                 'stemcell_id' => kind_of(String),
+                                                 'cloud_properties' => {},
+                                                 'networks' => {
+                                                   'a' => {
+                                                     'type' => 'manual',
+                                                     'ip' => '192.168.1.3',
+                                                     'netmask' => '255.255.255.0',
+                                                     'cloud_properties' => {},
+                                                     'default' => ['dns', 'gateway'],
+                                                     'dns' => ['192.168.1.1', '192.168.1.2'],
+                                                     'gateway' => '192.168.1.1',
+                                                   }
+                                                 },
+                                                 'disk_cids' => [],
+                                                 'env' => {
+                                                   'bosh' => {
+                                                     'mbus' => expected_mbus,
+                                                     'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
+                                                     'group' => kind_of(String),
+                                                     'groups' => kind_of(Array),
+                                                   }
+                                                 }
+                                               })
+        expect(invocations[6].context).to match({
+                                                  'director_uuid' => kind_of(String),
+                                                  'request_id' => kind_of(String),
+                                                  'vm' => {
+                                                    'stemcell' => {
+                                                      'api_version' => 25
+                                                    }
+                                                  }
+                                                })
+
+
+        expect(invocations[7].method_name).to eq('set_vm_metadata')
+        expect(invocations[7].context).to match(context_without_api_version)
+
+        expect(invocations[8].method_name).to eq('set_vm_metadata')
+        expect(invocations[8].context).to match(context_without_api_version)
+
+        expect(invocations[9].method_name).to eq('delete_vm')
+        expect(invocations[9].context).to match(context_without_api_version)
+
+        expect(invocations[10].method_name).to eq('create_vm')
+        expect(invocations[10].inputs).to match({
+                                                  'agent_id' => kind_of(String),
+                                                  'stemcell_id' => kind_of(String),
+                                                  'cloud_properties' =>{},
+                                                  'networks' => {
+                                                    'a' => {
+                                                      'type' => 'manual',
+                                                      'ip' => '192.168.1.2',
+                                                      'netmask' => '255.255.255.0',
+                                                      'default' => ['dns', 'gateway'],
+                                                      'cloud_properties' =>{},
+                                                      'dns' =>['192.168.1.1', '192.168.1.2'],
+                                                      'gateway' => '192.168.1.1',
+                                                    }
+                                                  },
+                                                  'disk_cids' => [],
+                                                  'env' => {
+                                                    'bosh' =>{
+                                                      'mbus' => expected_mbus,
+                                                      'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
+                                                      'password' => 'foobar',
+                                                      'group' => 'testdirector-simple-foobar',
+                                                      'groups' => ['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+                                                    }
+                                                  }
+                                                })
+        expect(invocations[10].context).to match({
+                                                   'director_uuid' => kind_of(String),
+                                                   'request_id' => kind_of(String),
+                                                   'vm' => {
+                                                     'stemcell' => {
+                                                       'api_version' => 25
+                                                     }
+                                                   }
+                                                 })
+
+        expect(invocations[11].method_name).to eq('set_vm_metadata')
+        expect(invocations[11].context).to match(context_without_api_version)
+
+        expect(invocations.size).to eq(12)
+      end
+    end
+
     context 'when deploying instances with a persistent disk' do
       it 'recreates VM with correct CPI requests' do
         manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest

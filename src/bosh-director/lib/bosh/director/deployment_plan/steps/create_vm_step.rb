@@ -17,19 +17,20 @@ module Bosh::Director
         def perform(report)
           instance = @instance_plan.instance
 
-          cpi_factory, stemcell_cid = choose_factory_and_stemcell_cid(@instance_plan, @use_existing)
+          cpi_factory, stemcell_model = choose_factory_and_stemcell_model(@instance_plan, @use_existing)
 
           instance_model = instance.model
           @logger.info('Creating VM')
 
           vm = create(
             instance,
-            stemcell_cid,
+            stemcell_model.cid,
             instance.cloud_properties,
             @instance_plan.network_settings_hash,
             @disks,
             instance.env,
             cpi_factory,
+            stemcell_model.api_version
           )
 
           begin
@@ -63,22 +64,22 @@ module Bosh::Director
           end
         end
 
-        def choose_factory_and_stemcell_cid(instance_plan, use_existing)
+        def choose_factory_and_stemcell_model(instance_plan, use_existing)
           deployment = instance_plan.instance.model.deployment
 
           if use_existing && !!instance_plan.existing_instance.availability_zone
             factory = AZCloudFactory.create_from_deployment(deployment)
             stemcell = instance_plan.instance.stemcell
             cpi = factory.get_name_for_az(instance_plan.existing_instance.availability_zone)
-            stemcell_cid = stemcell.models.find { |model| model.cpi == cpi }.cid
-            [factory, stemcell_cid]
+            stemcell_model = stemcell.models.find { |model| model.cpi == cpi }
+            [factory, stemcell_model]
           else
             factory = AZCloudFactory.create_with_latest_configs(deployment)
-            [factory, instance_plan.instance.stemcell_cid]
+            [factory, instance_plan.instance.stemcell_model]
           end
         end
 
-        def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env, cloud_factory)
+        def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env, cloud_factory, stemcell_api_version)
           instance_model = instance.model
           deployment_name = instance_model.deployment.name
           parent_id = add_event(deployment_name, instance_model.name, 'create')
@@ -129,7 +130,7 @@ module Bosh::Director
 
           count = 0
           begin
-            cloud = cloud_factory.get(vm_options[:cpi])
+            cloud = cloud_factory.get(vm_options[:cpi], stemcell_api_version)
             vm_cid = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
           rescue Bosh::Clouds::VMCreationFailed => e
             count += 1
