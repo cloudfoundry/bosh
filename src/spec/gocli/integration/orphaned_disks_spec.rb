@@ -74,52 +74,64 @@ describe 'orphaned disks', type: :integration do
     expect(result).not_to include orphaned_disk_cid
   end
 
-  describe 'cpi calls' do
-    before do
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'].first['persistent_disk'] = 3000
-      manifest_hash['instance_groups'].first['instances'] = 1
+  it 'does not detach and reattach disks unnecessarily', no_hotswap: true do
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['persistent_disk'] = 3000
+    manifest_hash['instance_groups'].first['instances'] = 1
 
-      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-      first_deploy_invocations = current_sandbox.cpi.invocations
+    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+    first_deploy_invocations = current_sandbox.cpi.invocations
 
-      disk_cids = director.instances.first.disk_cids
+    disk_cids = director.instances.first.disk_cids
 
-      cloud_config_hash['vm_types'].first['cloud_properties']['foo'] = 'bar'
-      manifest_hash['instance_groups'].first.delete('persistent_disk')
+    cloud_config_hash['vm_types'].first['cloud_properties']['foo'] = 'bar'
+    manifest_hash['instance_groups'].first.delete('persistent_disk')
 
-      upload_cloud_config(cloud_config_hash: cloud_config_hash)
-      deploy_simple_manifest(manifest_hash: manifest_hash)
-    end
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    deploy_simple_manifest(manifest_hash: manifest_hash)
 
-    it 'does not detach and reattach disks unnecessarily', no_hotswap: true do
-      expect(director.instances.first.disk_cids).to eq([])
+    expect(director.instances.first.disk_cids).to eq([])
 
-      orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
-      expect(orphaned_output[0]['disk_cid']).to eq(disk_cids.first)
+    orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
+    expect(orphaned_output[0]['disk_cid']).to eq(disk_cids.first)
 
-      cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
+    cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
 
-      # does not attach disk again, delete_vm
-      expect(cpi_invocations.map(&:method_name)).to eq(
-        %w[snapshot_disk detach_disk delete_vm create_vm set_vm_metadata detach_disk],
-      )
-    end
+    # does not attach disk again, delete_vm
+    expect(cpi_invocations.map(&:method_name)).to eq(
+      %w[snapshot_disk detach_disk delete_vm create_vm set_vm_metadata detach_disk],
+    )
+  end
 
-    it 'does not detach and reattach disks unnecessarily', hotswap: true do
-      expect(director.instances.first.disk_cids).to eq([])
+  it 'does not detach and reattach disks unnecessarily', hotswap: true do
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['persistent_disk'] = 3000
+    manifest_hash['instance_groups'].first['instances'] = 1
 
-      orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
-      expect(orphaned_output[0]['disk_cid']).to eq(disk_cids.first)
+    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+    first_deploy_invocations = current_sandbox.cpi.invocations
 
-      cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
+    disk_cids = director.instances.first.disk_cids
 
-      # does not attach disk again, delete_vm
-      expect(cpi_invocations.map(&:method_name)).to eq(
-        %w[create_vm set_vm_metadata snapshot_disk detach_disk detach_disk],
-      )
-    end
+    cloud_config_hash['vm_types'].first['cloud_properties']['foo'] = 'bar'
+    manifest_hash['instance_groups'].first.delete('persistent_disk')
+
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    expect(director.instances.first.disk_cids).to eq([])
+
+    orphaned_output = table(bosh_runner.run('disks --orphaned', json: true))
+    expect(orphaned_output[0]['disk_cid']).to eq(disk_cids.first)
+
+    cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
+
+    # does not attach disk again, delete_vm
+    expect(cpi_invocations.map(&:method_name)).to eq(
+      %w[create_vm set_vm_metadata snapshot_disk detach_disk detach_disk],
+    )
   end
 
   it 'should orhpan disk' do
