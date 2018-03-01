@@ -61,32 +61,6 @@ module Bosh::Director::Links
       end
     end
 
-    def find_provider_intent_by_original_name(
-      link_provider:,
-      link_original_name:
-    )
-      Bosh::Director::Models::Links::LinkProviderIntent.find(
-        link_provider: link_provider,
-        original_name: link_original_name,
-        consumable: true,
-        serial_id: @serial_id
-      )
-    end
-
-    def find_provider_intent_by_alias(
-      link_provider:,
-      link_alias:,
-      link_type:
-    )
-      Bosh::Director::Models::Links::LinkProviderIntent.find(
-        link_provider: link_provider,
-        name: link_alias,
-        type: link_type,
-        consumable: true,
-        serial_id: @serial_id
-      )
-    end
-
     def find_or_create_consumer(
       deployment_model:,
       instance_group_name:,
@@ -220,11 +194,12 @@ module Bosh::Director::Links
 
     def get_links_for_instance_group(deployment_model, instance_group_name)
       links = {}
-      consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment_model, instance_group: instance_group_name)
+      consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment_model, instance_group: instance_group_name, serial_id: deployment_model.links_serial_id)
 
       consumers.each do |consumer|
         links[consumer.name] = {}
         consumer.intents.each do |consumer_intent|
+          next if consumer_intent.serial_id != deployment_model.links_serial_id
           consumer_intent.links.each do |link|
             content = JSON.parse(link.link_content)
             links[consumer.name][consumer_intent.original_name] = content
@@ -241,6 +216,7 @@ module Bosh::Director::Links
       instance_model = instance.model
       consumers.each do |consumer|
         consumer.intents.each do |consumer_intent|
+          next if consumer_intent.serial_id != instance.deployment_model.links_serial_id
           consumer_intent.links.each do |link|
             instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: link.id).first
             if instance_link.nil?
@@ -260,6 +236,7 @@ module Bosh::Director::Links
       link_providers.select {|provider| provider.type == 'job' && provider.serial_id == deployment_plan.model.links_serial_id}.each do |provider|
         instance_group = deployment_plan.instance_group(provider.instance_group)
         provider.intents.each do |provider_intent|
+          next if provider_intent.serial_id != deployment_plan.model.links_serial_id
           metadata = {}
           metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
 

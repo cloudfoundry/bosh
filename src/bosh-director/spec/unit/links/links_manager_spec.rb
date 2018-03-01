@@ -186,80 +186,6 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
-  describe '#find_provider_intent_*' do
-    let(:link_provider) do
-      Bosh::Director::Models::Links::LinkProvider.create(
-        deployment: deployment_model,
-        name: 'test_deployment',
-        type: 'test_deployment_type',
-        instance_group: 'test_instance_group',
-        serial_id: serial_id
-      )
-    end
-
-    context 'when searching by alias' do
-      context 'intent already exist' do
-        it 'returns the existing link_provider_intent' do
-          expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-            link_provider: link_provider,
-            original_name: 'test_original_link_name',
-            type: 'test_link_type',
-            name: 'test_link_alias',
-            content: 'test_link_content',
-            shared: false,
-            consumable: true,
-            serial_id: serial_id
-          )
-
-          actual_intent = subject.find_provider_intent_by_alias(
-            link_provider: link_provider,
-            link_alias: 'test_link_alias',
-            link_type: "test_link_type"
-          )
-
-          expect(actual_intent).to eq(expected_intent)
-          expect(actual_intent.serial_id).to eq(serial_id)
-        end
-        context 'intent already exists but not with same serial_id' do
-          let(:serial_id) { 55 }
-          it 'returns nothing' do
-            expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-              link_provider: link_provider,
-              original_name: 'test_original_link_name',
-              type: 'test_link_type',
-              name: 'test_link_alias',
-              content: 'test_link_content',
-              shared: false,
-              consumable: true,
-              serial_id: 42
-            )
-
-            actual_intent = subject.find_provider_intent_by_alias(
-              link_provider: link_provider,
-              link_alias: 'test_link_alias',
-              link_type: "test_link_type"
-            )
-
-            expect(actual_intent).to be_nil
-          end
-        end
-      end
-
-      context 'intent is missing' do
-        it 'does not return a link_provider_intent' do
-          actual_intent = subject.find_provider_intent_by_alias(
-            link_provider: link_provider,
-            link_alias: "test_link_alias",
-            link_type: "test_link_type"
-          )
-
-          expect(actual_intent).to be_nil
-        end
-      end
-    end
-
-  end
-
   describe '#find_or_create_consumer' do
     let!(:control_consumer) do
       Bosh::Director::Models::Links::LinkConsumer.create(
@@ -626,6 +552,7 @@ describe Bosh::Director::Links::LinksManager do
             }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
           end
 
+
           context 'when link consumer intent is optional' do
             before do
               link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
@@ -647,6 +574,44 @@ describe Bosh::Director::Links::LinksManager do
 
               expect(Bosh::Director::Models::Links::Link.count).to eq(0)
             end
+          end
+        end
+
+        context 'when provider serial_id do not match deployment links_serial_id' do
+          before do
+            provider = Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment_model,
+              instance_group: 'ig1',
+              name: 'p1',
+              type: 'job',
+              serial_id: serial_id-1 #different serial id than deployment
+            )
+
+            Bosh::Director::Models::Links::LinkProviderIntent.create(
+              link_provider: provider,
+              original_name: 'pi1',
+              name: 'provider_alias',
+              type: 'foo',
+              serial_id: serial_id-1 #different serial id than deployment
+            )
+            link_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+              link_consumer: consumer,
+              original_name: 'ci1',
+              type: 'foo'
+            )
+
+            link_consumer_intent.optional = true
+            link_consumer_intent.save
+          end
+
+          it 'should raise an error' do
+            expect(consumer.find_intent_by_name('ci1').optional).to eq(true)
+
+            expect {
+              subject.resolve_deployment_links(deployment_model, options)
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+
+            expect(Bosh::Director::Models::Links::Link.count).to eq(0)
           end
         end
 
@@ -1839,6 +1804,46 @@ describe Bosh::Director::Links::LinksManager do
         instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link.id)
         expect(instance_link.first.serial_id).to eq(serial_id)
       end
+
+      context 'when consumer_intent serial_id do NOT match deployment links_serial_id' do
+        before do
+          # Create consumer
+          consumer = Bosh::Director::Models::Links::LinkConsumer.find(
+            deployment: deployment_model,
+            instance_group: 'instance-group-name',
+            name: 'job-1',
+            type: 'job',
+            serial_id: serial_id
+          )
+
+          consumer_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'foo2',
+            type: 'bar2',
+            name: 'foo-alias2',
+            serial_id: serial_id - 1 # different from current deployment links_serial_id
+          )
+
+          @link2 = Bosh::Director::Models::Links::Link.create(
+            link_consumer_intent: consumer_intent_2,
+            name: 'foo',
+            link_content: '{}'
+          )
+
+          instance_model.add_link(@link2)
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link2.id).first
+          instance_link.serial_id = serial_id - 1 # different from current deployment links_serial_id
+          instance_link.save
+        end
+
+        it 'should not update links which do NOT match links_serial_id' do
+          subject.bind_links_to_instance(instance)
+          expect(instance_model.links.size).to eq(2)
+
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link2.id)
+          expect(instance_link.first.serial_id).to eq(serial_id - 1 )
+        end
+      end
     end
   end
 
@@ -1922,6 +1927,40 @@ describe Bosh::Director::Links::LinksManager do
 
         expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
         expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
+      end
+
+      context 'when consumer_intent serial_id do NOT match with consumer serial_id' do
+        before do
+          consumer = Bosh::Director::Models::Links::LinkConsumer.find(
+            deployment: deployment_model,
+            instance_group: 'instance-group-name',
+            name: 'job-1',
+            type: 'job',
+          )
+
+          consumer_intent_2a = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'foo2',
+            type: 'bar2',
+            name: 'foo-alias2',
+            serial_id: serial_id - 1 #different serial id than consumer
+          )
+
+          Bosh::Director::Models::Links::Link.create(
+            link_consumer_intent: consumer_intent_2a,
+            name: 'tweet',
+            link_content: '{"properties": {"puddy": "tat"}}'
+          )
+        end
+
+        it 'should return the links associated with the instance groups namespaced by job name' do
+          links = subject.get_links_for_instance_group(deployment_model, instance_group_name)
+          expect(links.size).to eq(1)
+          expect(links['job-1'].size).to eq(2)
+
+          expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
+          expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
+        end
       end
     end
   end
@@ -2061,7 +2100,19 @@ describe Bosh::Director::Links::LinksManager do
           :serial_id => serial_id
         )
       end
-
+      let(:provider_2_intent_3) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_2,
+          :original_name => 'link_original_name_5',
+          :name => 'link_name_5',
+          :type => 'link_type_5',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'e' => '5'}}.to_json,
+          :serial_id => serial_id - 1 # different from current deployment links_serial_id
+        )
+      end
       let(:link_providers) do
         [provider_1, provider_2]
       end
@@ -2086,6 +2137,10 @@ describe Bosh::Director::Links::LinksManager do
         instance_double(Bosh::Director::DeploymentPlan::Link)
       end
 
+      let(:link_5) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
       before do
         allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
         allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2])
@@ -2095,6 +2150,7 @@ describe Bosh::Director::Links::LinksManager do
         allow(link_2).to receive_message_chain(:spec, :to_json).and_return("{'foo_2':'bar_2'}")
         allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
         allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
+        allow(link_5).to receive_message_chain(:spec, :to_json).and_return("{'foo_5':'bar_5'}")
         allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
         allow(deployment_plan).to receive(:model).and_return(deployment_model)
        end
@@ -2116,6 +2172,24 @@ describe Bosh::Director::Links::LinksManager do
         expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
         expect(provider_2_intent_1.content).to eq("{'foo_3':'bar_3'}")
         expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+      end
+
+      it 'should only update contents of provider_intents with matching provider serial_id' do
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'a' => '1'}).and_return(link_1)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'b' => '2'}).and_return(link_2)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'c' => '1'}).and_return(link_3)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'d' => '2'}).and_return(link_4)
+        expect(Bosh::Director::DeploymentPlan::Link).to_not receive(:new).with(deployment_model.name, instance_group, {'e' => '5'})
+
+        expect(provider_2_intent_3).to_not receive(:save)
+        allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2, provider_2_intent_3])
+
+        subject.update_provider_intents_contents(link_providers, deployment_plan)
+        expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
+        expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
+        expect(provider_2_intent_1.content).to eq("{'foo_3':'bar_3'}")
+        expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+        expect(provider_2_intent_3.content).to eq("{}")
       end
     end
 
@@ -2165,7 +2239,7 @@ describe Bosh::Director::Links::LinksManager do
       it_behaves_like 'non-job providers'
     end
 
-    context 'when the provider type is manual' do
+    context 'when the provider type is disk' do
       let(:provider_type) {'disk'}
 
       it_behaves_like 'non-job providers'
