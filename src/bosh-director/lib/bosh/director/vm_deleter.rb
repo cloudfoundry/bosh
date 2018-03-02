@@ -17,13 +17,13 @@ module Bosh::Director
       ).perform(DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance_model.active_vm })
     end
 
-    def delete_vm_by_cid(cid)
+    def delete_vm_by_cid(cid, stemcell_api_version)
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
         # if there are multiple cpis, it's too dangerous to try and delete just vm cid on every cloud.
         cloud_factory = CloudFactory.create
         unless cloud_factory.uses_cpi_config?
-          cloud_factory.get(nil).delete_vm(cid) unless @enable_virtual_delete_vm
+          cloud_factory.get(nil, stemcell_api_version).delete_vm(cid) unless @enable_virtual_delete_vm
         end
       end
     end

@@ -240,6 +240,16 @@ describe 'CPI calls', type: :integration do
           'request_id' => kind_of(String)
         }
 
+        context_with_api_version = {
+          'director_uuid' => kind_of(String),
+          'request_id' => kind_of(String),
+          'vm' => {
+            'stemcell' => {
+              'api_version' => 25
+            }
+          }
+        }
+
         expect(invocations[0].method_name).to eq('info')
         expect(invocations[0].context).to match(context_without_api_version)
         
@@ -272,15 +282,7 @@ describe 'CPI calls', type: :integration do
                                                    }
                                                  }
                                                })
-        expect(invocations[2].context).to match({
-                                                  'director_uuid' => kind_of(String),
-                                                  'request_id' => kind_of(String),
-                                                  'vm' => {
-                                                    'stemcell' => {
-                                                      'api_version' => 25
-                                                    }
-                                                  }
-                                                })
+        expect(invocations[2].context).to match(context_with_api_version)
 
         expect(invocations[3].method_name).to eq('set_vm_metadata')
         expect(invocations[3].context).to match(context_without_api_version)
@@ -289,7 +291,7 @@ describe 'CPI calls', type: :integration do
         expect(invocations[4].context).to match(context_without_api_version)
 
         expect(invocations[5].method_name).to eq('delete_vm')
-        expect(invocations[5].context).to match(context_without_api_version)
+        expect(invocations[5].context).to match(context_with_api_version)
 
         expect(invocations[6].method_name).to eq('create_vm')
         expect(invocations[6].inputs).to match({
@@ -317,15 +319,7 @@ describe 'CPI calls', type: :integration do
                                                    }
                                                  }
                                                })
-        expect(invocations[6].context).to match({
-                                                  'director_uuid' => kind_of(String),
-                                                  'request_id' => kind_of(String),
-                                                  'vm' => {
-                                                    'stemcell' => {
-                                                      'api_version' => 25
-                                                    }
-                                                  }
-                                                })
+        expect(invocations[6].context).to match(context_with_api_version)
 
 
         expect(invocations[7].method_name).to eq('set_vm_metadata')
@@ -335,7 +329,7 @@ describe 'CPI calls', type: :integration do
         expect(invocations[8].context).to match(context_without_api_version)
 
         expect(invocations[9].method_name).to eq('delete_vm')
-        expect(invocations[9].context).to match(context_without_api_version)
+        expect(invocations[9].context).to match(context_with_api_version)
 
         expect(invocations[10].method_name).to eq('create_vm')
         expect(invocations[10].inputs).to match({
@@ -364,15 +358,7 @@ describe 'CPI calls', type: :integration do
                                                     }
                                                   }
                                                 })
-        expect(invocations[10].context).to match({
-                                                   'director_uuid' => kind_of(String),
-                                                   'request_id' => kind_of(String),
-                                                   'vm' => {
-                                                     'stemcell' => {
-                                                       'api_version' => 25
-                                                     }
-                                                   }
-                                                 })
+        expect(invocations[10].context).to match(context_with_api_version)
 
         expect(invocations[11].method_name).to eq('set_vm_metadata')
         expect(invocations[11].context).to match(context_without_api_version)

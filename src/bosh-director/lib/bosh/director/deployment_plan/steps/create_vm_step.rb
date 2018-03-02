@@ -147,7 +147,7 @@ module Bosh::Director
           @logger.error("error creating vm: #{e.message}")
           if vm_cid
             parent_id = add_event(deployment_name, instance_model.name, 'delete', vm_cid)
-            @vm_deleter.delete_vm_by_cid(vm_cid)
+            @vm_deleter.delete_vm_by_cid(vm_cid, stemcell_api_version)
             add_event(deployment_name, instance_model.name, 'delete', vm_cid, parent_id)
           end
           raise e

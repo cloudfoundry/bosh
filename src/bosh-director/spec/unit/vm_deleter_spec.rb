@@ -23,7 +23,7 @@ module Bosh
         instance_model.active_vm = vm_model
 
         allow(CloudFactory).to receive(:create).and_return(cloud_factory)
-        allow(cloud_factory).to receive(:get).with(nil).and_return(cloud)
+        allow(cloud_factory).to receive(:get).with(nil, nil).and_return(cloud)
       end
 
       describe '#delete_for_instance' do
@@ -44,33 +44,52 @@ module Bosh
       end
 
       describe '#delete_vm_by_cid' do
-        it 'calls delete_vm if only one cloud is configured' do
-          allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
+        context('multiple clouds are configured') do
+          before do
+            allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
+          end
 
-          expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
-          subject.delete_vm_by_cid(vm_model.cid)
-        end
-
-        it 'does not call delete_vm if multiple clouds are configured' do
-          allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
-
-          expect(logger).to receive(:info).with('Deleting VM')
-          expect(cloud).to_not receive(:delete_vm).with(vm_model.cid)
-          subject.delete_vm_by_cid(vm_model.cid)
-        end
-
-        context 'when virtual delete is enabled' do
-          subject { VmDeleter.new(logger, false, true) }
-
-          it 'skips calling delete_vm on the cloud' do
-            allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
-
+          it 'does not call delete_vm ' do
             expect(logger).to receive(:info).with('Deleting VM')
-            expect(cloud).not_to receive(:delete_vm)
-            subject.delete_vm_by_cid(vm_model.cid)
+            expect(cloud).to_not receive(:delete_vm).with(vm_model.cid)
+            subject.delete_vm_by_cid(vm_model.cid, nil)
           end
         end
+
+        context('multiple clouds are not configured') do
+          before do
+            allow(cloud_factory).to receive(:uses_cpi_config?).and_return(false)
+          end
+
+          context('when stemcell_api_version is not nil') do
+            it 'calls delete_vm if only one cloud is configured with stemcell_api_version' do
+              allow(cloud_factory).to receive(:get).with(nil, 25).and_return(cloud)
+
+              expect(logger).to receive(:info).with('Deleting VM')
+              expect(cloud).to receive(:delete_vm).with(vm_model.cid)
+              subject.delete_vm_by_cid(vm_model.cid, 25)
+            end
+          end
+
+          context('when stemcell_api_version is nil') do
+            it 'calls delete_vm if only one cloud is configured without stemcell_api_version' do
+              expect(logger).to receive(:info).with('Deleting VM')
+              expect(cloud).to receive(:delete_vm).with(vm_model.cid)
+              subject.delete_vm_by_cid(vm_model.cid, nil)
+            end
+          end
+
+          context 'when virtual delete is enabled' do
+            subject { VmDeleter.new(logger, false, true) }
+
+            it 'skips calling delete_vm on the cloud' do
+              expect(logger).to receive(:info).with('Deleting VM')
+              expect(cloud).not_to receive(:delete_vm)
+              subject.delete_vm_by_cid(vm_model.cid, nil)
+            end
+          end
+        end
+
       end
     end
   end

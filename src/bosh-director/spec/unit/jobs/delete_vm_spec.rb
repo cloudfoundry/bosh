@@ -55,7 +55,7 @@ module Bosh::Director
 
       context 'when instance has reference to vm' do
         before do
-          allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+          allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
 
           deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
           is = BD::Models::Instance.make(
@@ -103,39 +103,43 @@ module Bosh::Director
       end
 
       context 'when instance does not have reference to vm' do
-        before do
-          allow(cloud_factory).to receive(:get).with(nil).and_return(cloud)
+        context 'when using multiple cpis' do
+          it 'does not try to delete from cloud' do
+            allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
+            expect(cloud).to_not receive(:delete_vm).with(vm_cid)
+            job.perform
+          end
         end
 
-        it_behaves_like 'vm delete'
+        context 'when NOT using multiple cpis' do
+          before do
+            expect(cloud_factory).to receive(:get).with(nil, 2).and_return(cloud)
+          end
 
-        it 'should store event' do
-          expect(cloud).to receive(:delete_vm).with(vm_cid)
-          job.perform
-          event1 = Bosh::Director::Models::Event.first
-          expect(event1.user).to eq(task.username)
-          expect(event1.action).to eq('delete')
-          expect(event1.object_type).to eq('vm')
-          expect(event1.object_name).to eq('vm_cid')
-          expect(event1.instance).to be_nil
-          expect(event1.deployment).to be_nil
-          expect(event1.task).to eq(task.id.to_s)
+          it_behaves_like 'vm delete'
 
-          event2 = Bosh::Director::Models::Event.all.last
-          expect(event2.parent_id).to eq(event1.id)
-          expect(event2.user).to eq(task.username)
-          expect(event2.action).to eq('delete')
-          expect(event2.object_type).to eq('vm')
-          expect(event2.object_name).to eq('vm_cid')
-          expect(event2.instance).to be_nil
-          expect(event2.deployment).to be_nil
-          expect(event2.task).to eq(task.id.to_s)
-        end
+          it 'should store event' do
+            expect(cloud).to receive(:delete_vm).with(vm_cid)
+            job.perform
+            event1 = Bosh::Director::Models::Event.first
+            expect(event1.user).to eq(task.username)
+            expect(event1.action).to eq('delete')
+            expect(event1.object_type).to eq('vm')
+            expect(event1.object_name).to eq('vm_cid')
+            expect(event1.instance).to be_nil
+            expect(event1.deployment).to be_nil
+            expect(event1.task).to eq(task.id.to_s)
 
-        it 'does not try to delete from cloud when using multiple cpis and only vm_cid is known' do
-          allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
-          expect(cloud).to_not receive(:delete_vm).with(vm_cid)
-          job.perform
+            event2 = Bosh::Director::Models::Event.all.last
+            expect(event2.parent_id).to eq(event1.id)
+            expect(event2.user).to eq(task.username)
+            expect(event2.action).to eq('delete')
+            expect(event2.object_type).to eq('vm')
+            expect(event2.object_name).to eq('vm_cid')
+            expect(event2.instance).to be_nil
+            expect(event2.deployment).to be_nil
+            expect(event2.task).to eq(task.id.to_s)
+          end
         end
       end
     end

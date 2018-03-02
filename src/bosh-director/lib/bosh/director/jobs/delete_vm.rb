@@ -1,6 +1,9 @@
 module Bosh::Director
   module Jobs
     class DeleteVm < BaseJob
+      UNREFERENCED_VM_STEMCELL_API_VERSION = 2.freeze
+      private_constant :UNREFERENCED_VM_STEMCELL_API_VERSION
+
       @queue = :normal
 
       def self.job_type
@@ -28,7 +31,7 @@ module Bosh::Director
               event_log_stage.advance_and_track("VM #{@vm_cid} is successfully deleted") {}
             rescue InstanceNotFound
               parent_id = add_event
-              @vm_deleter.delete_vm_by_cid(@vm_cid)
+              @vm_deleter.delete_vm_by_cid(@vm_cid, UNREFERENCED_VM_STEMCELL_API_VERSION)
               event_log_stage.advance_and_track("VM #{@vm_cid} is successfully deleted") {}
             end
           rescue Bosh::Clouds::VMNotFound

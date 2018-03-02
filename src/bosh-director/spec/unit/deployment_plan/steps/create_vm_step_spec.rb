@@ -193,7 +193,7 @@ module Bosh
             end
           end
 
-          it 'should create a vm ' do
+          it 'should create a vm' do
             expect(cloud).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
               'groups' => expected_groups
@@ -250,7 +250,7 @@ module Bosh
           it 'deletes created VM from cloud on DB failure' do
             expect(cloud).to receive(:create_vm).and_return('vm-cid')
             expect(Bosh::Director::Models::Vm).to receive(:create).and_raise('Bad DB. Bad.')
-            expect(vm_deleter).to receive(:delete_vm_by_cid).with('vm-cid')
+            expect(vm_deleter).to receive(:delete_vm_by_cid).with('vm-cid', nil)
             expect {
               subject.perform(report)
             }.to raise_error ('Bad DB. Bad.')
@@ -684,8 +684,11 @@ module Bosh
           context 'when stemcell has api_version' do
             let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: '25') }
 
-            it 'should create a cloud associated with the stemcell api version' do
+            before do
               expect(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
+            end
+
+            it 'should create a cloud associated with the stemcell api version' do
               expect(cloud).to receive(:create_vm).with(
                 kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
                                                                                                        'groups' => expected_groups
@@ -699,7 +702,6 @@ module Bosh
             end
 
             it 'should associate VM with stemcell api version' do
-              expect(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
               expect(cloud).to receive(:create_vm).with(
                 kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
                                                                                                        'groups' => expected_groups
@@ -710,6 +712,15 @@ module Bosh
               expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: 25))
 
               subject.perform(report)
+            end
+
+            it 'deletes created VM from cloud on DB failure' do
+              expect(cloud).to receive(:create_vm).and_return('vm-cid')
+              expect(Bosh::Director::Models::Vm).to receive(:create).and_raise('Bad DB. Bad.')
+              expect(vm_deleter).to receive(:delete_vm_by_cid).with('vm-cid', 25)
+              expect {
+                subject.perform(report)
+              }.to raise_error ('Bad DB. Bad.')
             end
           end
         end
