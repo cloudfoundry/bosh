@@ -49,16 +49,25 @@ module Bosh::Director::Links
       link_original_name:,
       link_type:
     )
-      Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
+      intent = Bosh::Director::Models::Links::LinkProviderIntent.find(
         link_provider: link_provider,
-        original_name: link_original_name,
-        type: link_type
-      ).tap do |result|
-        if result.serial_id != @serial_id
-          result.serial_id = @serial_id
-          result.save
-        end
+        original_name: link_original_name
+      )
+
+      if intent.nil?
+        intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+          link_provider: link_provider,
+          original_name: link_original_name,
+          type: link_type,
+          )
+      else
+        intent.type = link_type
       end
+
+      if intent.serial_id != @serial_id
+        intent.serial_id = @serial_id
+      end
+      intent.save
     end
 
     def find_or_create_consumer(
@@ -100,16 +109,25 @@ module Bosh::Director::Links
       link_original_name:,
       link_type:
     )
-      Bosh::Director::Models::Links::LinkConsumerIntent.find_or_create(
+      intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
         link_consumer: link_consumer,
-        original_name: link_original_name,
-        type: link_type
-      ).tap do |result|
-        if result.serial_id != @serial_id
-          result.serial_id = @serial_id
-          result.save
-        end
+        original_name: link_original_name
+      )
+
+      if intent.nil?
+        intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: link_consumer,
+          original_name: link_original_name,
+          type: link_type,
+        )
+      else
+        intent.type = link_type
       end
+
+      if intent.serial_id != @serial_id
+        intent.serial_id = @serial_id
+      end
+      intent.save
     end
 
     def find_or_create_link(

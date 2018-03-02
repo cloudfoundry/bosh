@@ -159,6 +159,28 @@ describe Bosh::Director::Links::LinksManager do
         expect(actual_intent).to eq(expected_intent)
         expect(actual_intent.serial_id).to eq(serial_id)
       end
+
+      it 'updates the link type of the intent' do
+        expected_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+          link_provider: link_provider,
+          original_name: 'test_original_link_name',
+          type: 'test_link_type',
+          name: 'test_link_alias',
+          content: 'test_link_content',
+          shared: false,
+          consumable: true,
+          serial_id: serial_id
+        )
+
+        actual_intent = subject.find_or_create_provider_intent(
+          link_provider: link_provider,
+          link_original_name: "test_original_link_name",
+          link_type: "my_new_link_type"
+        )
+
+        expect(actual_intent.id).to eq(expected_intent.id)
+        expect(actual_intent.type).to eq('my_new_link_type')
+      end
     end
 
     context 'intent is missing' do
@@ -262,6 +284,26 @@ describe Bosh::Director::Links::LinksManager do
 
         expect(actual_link_consumer_intent).to eq(expected_link_consumer_intent)
         expect(actual_link_consumer_intent.serial_id).to eq(serial_id)
+      end
+
+      it 'updates the link type of the intent' do
+        expected_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: link_consumer,
+          original_name: 'test_original_link_name',
+          type: 'test_link_type',
+          optional: false,
+          blocked: false,
+          serial_id: serial_id
+        )
+
+        actual_intent = subject.find_or_create_consumer_intent(
+          link_consumer: link_consumer,
+          link_original_name: 'test_original_link_name',
+          link_type: 'my_new_link_type'
+        )
+
+        expect(actual_intent.id).to eq(expected_intent.id)
+        expect(actual_intent.type).to eq('my_new_link_type')
       end
     end
 
