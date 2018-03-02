@@ -2293,4 +2293,315 @@ describe Bosh::Director::Links::LinksManager do
       it_behaves_like 'non-job providers'
     end
   end
+
+  describe '#remove_unused_links' do
+    let(:deployment_model) {BD::Models::Deployment.make(links_serial_id: serial_id)}
+    let(:link_providers) {[]}
+    let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
+    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
+
+    context 'cleanup providers' do
+      let(:provider_1) do
+        Bosh::Director::Models::Links::LinkProvider.make(
+          deployment: deployment_model,
+          instance_group: 'foo-ig',
+          name: 'foo-provider',
+          type: 'job',
+          serial_id: serial_id - 1
+        )
+      end
+
+      let(:provider_1_intent_1) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_1,
+          :original_name => 'link_original_name_1',
+          :name => 'link_name_1',
+          :type => 'link_type_1',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'a' => '1'}}.to_json,
+          :serial_id => serial_id - 1
+        )
+      end
+      let(:provider_1_intent_2) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_1,
+          :original_name => 'link_original_name_2',
+          :name => 'link_name_2',
+          :type => 'link_type_2',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'b' => '2'}}.to_json,
+          :serial_id => serial_id - 1
+        )
+      end
+
+      let(:provider_2) do
+        Bosh::Director::Models::Links::LinkProvider.make(
+          deployment: deployment_model,
+          instance_group: 'foo-ig',
+          name: 'foo-provider-2',
+          type: 'job',
+          serial_id: serial_id
+        )
+      end
+
+      let(:provider_2_intent_1) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_2,
+          :original_name => 'link_original_name_3',
+          :name => 'link_name_3',
+          :type => 'link_type_3',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'c' => '1'}}.to_json,
+          :serial_id => serial_id
+        )
+      end
+      let(:provider_2_intent_2) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_2,
+          :original_name => 'link_original_name_4',
+          :name => 'link_name_4',
+          :type => 'link_type_4',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'d' => '2'}}.to_json,
+          :serial_id => serial_id
+        )
+      end
+      let(:provider_2_intent_3) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_2,
+          :original_name => 'link_original_name_5',
+          :name => 'link_name_5',
+          :type => 'link_type_5',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :metadata => {'mapped_properties' => {'e' => '5'}}.to_json,
+          :serial_id => serial_id - 1 # different from current deployment links_serial_id
+        )
+      end
+
+      let(:link_providers) do
+        [provider_1, provider_2]
+      end
+
+      let(:instance_group) do
+        instance_double(Bosh::Director::DeploymentPlan::InstanceGroup)
+      end
+
+      let(:link_1) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      let(:link_2) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      let(:link_3) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      let(:link_4) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      let(:link_5) do
+        instance_double(Bosh::Director::DeploymentPlan::Link)
+      end
+
+      before do
+        allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
+        allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2])
+        allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+
+        allow(link_1).to receive_message_chain(:spec, :to_json).and_return("{'foo_1':'bar_1'}")
+        allow(link_2).to receive_message_chain(:spec, :to_json).and_return("{'foo_2':'bar_2'}")
+        allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
+        allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
+        allow(link_5).to receive_message_chain(:spec, :to_json).and_return("{'foo_5':'bar_5'}")
+        allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
+        allow(deployment_plan).to receive(:model).and_return(deployment_model)
+      end
+
+      it 'removes job providers with old serial_ids' do
+        subject.remove_unused_links(deployment_model)
+        providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: deployment_model)
+        expect(providers.count).to eq(1)
+        expect(providers.first.serial_id).to eq(serial_id)
+      end
+
+      it 'removes job provider_intents with old serial_ids' do
+        subject.remove_unused_links(deployment_model)
+        providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: deployment_model)
+        expect(providers.count).to eq(1)
+        expect(providers.first.intents.count).to eq(2)
+      end
+
+      #TODO LINKS: add it later
+      xit 'removes unused disk providers' do
+        subject.remove_unused_links(deployment_model)
+      end
+    end
+
+    context 'cleanup consumers' do
+      before do
+        consumer_1 = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'ig1',
+          name: 'c1',
+          type: 'job',
+          serial_id: serial_id - 1
+        )
+
+        consumer_1_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer_1,
+          original_name: 'ci1-1',
+          type: 'foo',
+          metadata: {explicit_link: true}.to_json,
+          serial_id: serial_id - 1 # different from current deployment links_serial_id
+        )
+        consumer_1_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer_1,
+          original_name: 'ci1-2',
+          type: 'foo',
+          metadata: {explicit_link: true}.to_json,
+          serial_id: serial_id - 1 # different from current deployment links_serial_id
+        )
+
+        consumer_2 = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'ig1',
+          name: 'c1-2',
+          type: 'job',
+          serial_id: serial_id
+        )
+
+        consumer_2_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer_2,
+          original_name: 'ci2-1',
+          type: 'foo',
+          metadata: {explicit_link: true}.to_json,
+          serial_id: serial_id
+        )
+        consumer_2_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer_2,
+          original_name: 'ci2-2',
+          type: 'foo',
+          metadata: {explicit_link: true}.to_json,
+          serial_id: serial_id - 1 # different from current deployment links_serial_id
+        )
+      end
+      it 'removes consumers with old serial_ids' do
+        subject.remove_unused_links(deployment_model)
+        consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment_model)
+        expect(consumers.count).to eq(1)
+        expect(consumers.first.serial_id).to eq(serial_id)
+
+      end
+
+      it 'removes consumer_intents with old serial_ids' do
+        subject.remove_unused_links(deployment_model)
+        consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment_model)
+        expect(consumers.count).to eq(1)
+        expect(consumers.first.intents.count).to eq(1)
+      end
+    end
+
+    context 'cleanup links' do
+      before do
+        consumer_1 = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'ig1',
+          name: 'c1',
+          type: 'job',
+          serial_id: serial_id
+        )
+
+        consumer_1_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer_1,
+          original_name: 'ci1-1',
+          type: 'foo',
+          metadata: {explicit_link: true}.to_json,
+          serial_id: serial_id
+        )
+        consumer_1_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer_1,
+          original_name: 'ci1-2',
+          type: 'foo',
+          metadata: {explicit_link: true}.to_json,
+          serial_id: serial_id
+        )
+
+        provider = Bosh::Director::Models::Links::LinkProvider.create(
+          deployment: deployment_model,
+          instance_group: 'ig1',
+          name: 'c1',
+          type: 'manual',
+          serial_id: serial_id - 1
+        )
+
+        provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+          link_provider: provider,
+          original_name: 'ci1',
+          type: 'foo',
+          content: '{}',
+          serial_id: serial_id - 1
+        )
+
+        link_1 = Bosh::Director::Models::Links::Link.create(
+          link_provider_intent: provider_intent,
+          link_consumer_intent: consumer_1_intent_1,
+          name: consumer_1_intent_1.original_name,
+          link_content: '{}'
+        )
+
+        provider_2 = Bosh::Director::Models::Links::LinkProvider.find_or_create(
+          deployment: deployment_model,
+          instance_group: 'ig1',
+          name: 'c1',
+          type: 'manual',
+        )
+        provider_2.serial_id = serial_id
+        provider_2.save
+
+        provider_2_intent_1 = Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
+          link_provider: provider_2,
+          original_name: 'ci1',
+          type: 'foo',
+        )
+        provider_2_intent_1.content = '{"foo": "bar"}'
+        provider_2_intent_1.serial_id = serial_id
+        provider_2_intent_1.save
+
+        link_2 = Bosh::Director::Models::Links::Link.create(
+          link_provider_intent: provider_intent,
+          link_consumer_intent: consumer_1_intent_1,
+          name: consumer_1_intent_1.original_name,
+          link_content: '{"foo": "bar"}'
+        )
+
+        instance_model.add_link(link_2)
+      end
+
+      it 'removes links with instances_link with old serial_ids' do
+        subject.remove_unused_links(deployment_model)
+        links = Bosh::Director::Models::Links::Link.all
+        expect(links.first.link_content).to eq('{"foo": "bar"}')
+      end
+    end
+
+    context 'keeps all active links related objects' do
+      it 'leaves providers, provider_intents, consumers, consumer_intents, links with instances_link with current serial_ids' do
+        subject.remove_unused_links(deployment_model)
+
+      end
+    end
+  end
 end

@@ -116,7 +116,7 @@ module Bosh::Director
 
               # only in the case of a deploy should you be cleaning up
               if is_deploy_action
-                # TODO LINKS: Clean up old providers from previous deployments. It should only happen when deployment is successful. Similar to variables.
+                @links_manager.remove_unused_links(deployment_plan.model)
                 current_variable_set.update(deployed_successfully: true)
                 remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
               end

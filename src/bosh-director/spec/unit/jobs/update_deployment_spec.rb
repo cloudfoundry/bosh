@@ -126,6 +126,7 @@ module Bosh::Director
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
+              allow(links_manager).to receive(:remove_unused_links)
 
               allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
 
@@ -150,6 +151,11 @@ module Bosh::Director
 
             it "should set the VariableSet's deployed_successfully field" do
               expect(variable_set).to receive(:update).with(:deployed_successfully => true)
+              job.perform
+            end
+
+            it "should perform links cleanup" do
+              expect(links_manager).to receive(:remove_unused_links).with(deployment_model)
               job.perform
             end
 
@@ -318,6 +324,7 @@ module Bosh::Director
                 allow(variable_set_1).to receive(:update)
                 allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
                 allow(variable_set).to receive(:update).with(:deployed_successfully => true)
+                allow(links_manager).to receive(:remove_unused_links)
                 allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
               end
 
@@ -464,6 +471,7 @@ module Bosh::Director
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(variable_set_1).to receive(:update).with(:deployed_successfully => true)
+              allow(links_manager).to receive(:remove_unused_links)
             end
             it 'should mark variable_set.writable to false' do
               expect(variable_set_1).to receive(:update).with({:writable => false})
