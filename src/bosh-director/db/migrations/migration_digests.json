@@ -138,5 +138,6 @@
   "20180119233828_add_vm_id_to_ip_addresses": "357e35ef2f0a90429ce521914a73836087710ad0",
   "20180130182844_rename_stemcell_matches_to_stemcell_uploads": "e6b72ee8aab1f46893ca25245745371defa5cbf7",
   "20180130182845_add_team_id_to_configs": "aea2f011f14db397c57df44712106f1161cb1edd",
-  "20180215152554_add_api_version_to_stemcells": "94400dcd0ec9f2eb3607e7f7483b207d4da7ce5a"
+  "20180215152554_add_api_version_to_stemcells": "94400dcd0ec9f2eb3607e7f7483b207d4da7ce5a",
+  "20180301204622_add_stemcell_api_version_to_vms": "d51e2a411900f20847ff439225c27da6b9e60f8f"
 }

@@ -7,7 +7,14 @@ module Bosh::Director
         subject(:step) { described_class.new(vm) }
 
         let(:instance) { Models::Instance.make }
-        let!(:vm) { Models::Vm.make(instance: instance, active: false, cpi: 'vm-cpi') }
+        let!(:vm) do
+          Models::Vm.make(
+            instance: instance,
+            active: false,
+            cpi: 'vm-cpi',
+            stemcell_api_version: 9876
+          )
+        end
         let(:report) { double(:report) }
 
         it 'removes the vm record' do
@@ -31,6 +38,7 @@ module Bosh::Director
           expect(orphaned_vm.cloud_properties).to eq vm.instance.cloud_properties
           expect(orphaned_vm.cpi).to eq vm.cpi
           expect(orphaned_vm.instance_id).to eq instance.id
+          expect(orphaned_vm.stemcell_api_version).to eq(9876)
           expect(orphaned_vm.orphaned_at).to be_a Time
         end
 

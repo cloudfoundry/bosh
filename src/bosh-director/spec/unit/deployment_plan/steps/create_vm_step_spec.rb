@@ -201,7 +201,7 @@ module Bosh
             ).and_return('new-vm-cid')
 
             expect(agent_client).to receive(:wait_until_ready)
-            expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
+            expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: nil))
 
             subject.perform(report)
           end
@@ -284,6 +284,7 @@ module Bosh
             expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(vm_model.cid, ['192.168.1.3'])
 
           end
+
           it 'sets vm metadata' do
             expect(cloud).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, disks, {'bosh' => {'group' => expected_group,
@@ -316,7 +317,7 @@ module Bosh
               expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
               expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
 
-              expect(Models::Vm).to receive(:create).with(hash_including(cid: 'fake-vm-cid', instance: instance_model))
+              expect(Models::Vm).to receive(:create).with(hash_including(cid: 'fake-vm-cid', instance: instance_model, stemcell_api_version: nil))
 
               subject.perform(report)
             end
@@ -693,6 +694,20 @@ module Bosh
 
               expect(agent_client).to receive(:wait_until_ready)
               expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
+
+              subject.perform(report)
+            end
+
+            it 'should associate VM with stemcell api version' do
+              expect(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
+              expect(cloud).to receive(:create_vm).with(
+                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
+                                                                                                       'groups' => expected_groups
+              }}
+              ).and_return('new-vm-cid')
+
+              expect(agent_client).to receive(:wait_until_ready)
+              expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: 25))
 
               subject.perform(report)
             end
