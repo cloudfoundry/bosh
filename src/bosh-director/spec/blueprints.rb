@@ -251,6 +251,11 @@ module Bosh::Director::Models
     version      { 1 }
   end
 
+  LocalDnsEncodedNetwork.blueprint do
+    id { 1 }
+    name { 'fake-network-1' }
+  end
+
   LocalDnsRecord.blueprint do
     ip          { Sham.ip }
     instance_id { Sham.instance_id }

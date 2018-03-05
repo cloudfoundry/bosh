@@ -2,13 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsEncoder do
-    subject { described_class.new(service_groups, az_hash, network_name_hash, instance_uuid_num_hash, short_dns_enabled) }
+    subject { described_class.new(service_groups, az_hash, short_dns_enabled) }
     let(:az_hash) {}
-    let(:network_name_hash) { {default_network => '1'} }
-    let(:instance_uuid_num_hash) { {'uuid-1' => '1'} }
     let(:short_dns_enabled) { false }
     let(:instance_group) { 'potato-group' }
     let(:default_network) { 'potato-net' }
+    let(:default_network_id) { 1 }
     let(:deployment_name) { 'fake-deployment' }
     let(:root_domain) { 'sub.bosh' }
     let(:specific_query) { {} }
@@ -29,6 +28,11 @@ module Bosh::Director
         deployment:     'fake-deployment',
       } => 7,
     }}
+
+    before(:each) do
+      Models::LocalDnsEncodedNetwork.make(id: default_network_id, name: default_network)
+      Models::Instance.make(id: 1, uuid: 'uuid-1')
+    end
 
     describe '#encode_query' do
       context 'no filters' do
@@ -85,8 +89,12 @@ module Bosh::Director
         end
 
         describe 'encoding network filter' do
-          let(:network_name_hash) { {'network1' => '4', 'network2' => '3'} }
           let(:default_network) { 'network1' }
+          let(:default_network_id) { 4 }
+          before(:each) do
+            Models::LocalDnsEncodedNetwork.make(id: 3, name: 'network2')
+          end
+
           context 'default_network is set' do
             it 'includes an n# code' do
               expect(subject.encode_query(criteria)).to eq('q-n4s0.q-g3.sub.bosh')
@@ -125,11 +133,13 @@ module Bosh::Director
     end
 
     describe '#num_for_uuid' do
-      let(:instance_uuid_num_hash) { { 'uuid1' => '1', 'uuid2' => '2' } }
+      before(:each) do
+        Models::Instance.make(id: 2, uuid: 'uuid-2')
+      end
 
       it 'matches if found' do
-        expect(subject.num_for_uuid('uuid1')).to eq('1')
-        expect(subject.num_for_uuid('uuid2')).to eq('2')
+        expect(subject.num_for_uuid('uuid-1')).to eq('1')
+        expect(subject.num_for_uuid('uuid-2')).to eq('2')
       end
 
       it 'raises exception if not found' do
@@ -163,11 +173,14 @@ module Bosh::Director
     end
 
     describe '#id_for_network' do
-      let(:network_name_hash) { { 'nw1' => '1', 'nw2' => '2' } }
+      before(:each) do
+        Models::LocalDnsEncodedNetwork.make(id: 10, name: 'nw1')
+        Models::LocalDnsEncodedNetwork.make(id: 20, name: 'nw2')
+      end
 
       it 'matches if found' do
-        expect(subject.id_for_network('nw1')).to eq('1')
-        expect(subject.id_for_network('nw2')).to eq('2')
+        expect(subject.id_for_network('nw1')).to eq('10')
+        expect(subject.id_for_network('nw2')).to eq('20')
       end
 
       it 'raises exception if not found' do
