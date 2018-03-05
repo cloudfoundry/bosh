@@ -10,7 +10,6 @@ module Bosh::Director
           {instance_group: 'instance4', deployment: 'test-deployment'} => '4',
           {instance_group: 'instance2', deployment: 'test-deployment'} => '2'},
         { 'az1' => '1', 'az2' => '2'},
-        { 'net-name1' => 1, 'net-name2' => 2, 'net-name3' => 3}
       )
     end
     let(:blobstore) {  instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
@@ -24,6 +23,9 @@ module Bosh::Director
     let(:instance1) { Models::Instance.make(uuid: 'uuid1', index: 1) }
 
     before do
+      Models::LocalDnsEncodedNetwork.make(id: 1, name: 'net-name1')
+      Models::LocalDnsEncodedNetwork.make(id: 2, name: 'net-name2')
+      Models::LocalDnsEncodedNetwork.make(id: 3, name: 'net-name3')
       allow(Config).to receive(:root_domain).and_return(domain_name)
       allow(Config).to receive(:local_dns_include_index?).and_return(false)
       allow(agent_broadcaster).to receive(:sync_dns)
