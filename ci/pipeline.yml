@@ -776,6 +776,7 @@ resources:
     type: time
     source:
       start: 9:00 AM
+      stop: 10:00 AM
       days: [Sunday]
 
   - name: slack-alert
