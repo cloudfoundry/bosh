@@ -37,6 +37,7 @@ require 'delayed_job_sequel'
 
 require 'common/thread_formatter'
 require 'bosh/director/cloud_factory'
+require 'bosh/director/az_cloud_factory.rb'
 require 'bosh/director/api'
 require 'bosh/director/dns/local_dns_repo'
 require 'bosh/director/dns/blobstore_dns_publisher'

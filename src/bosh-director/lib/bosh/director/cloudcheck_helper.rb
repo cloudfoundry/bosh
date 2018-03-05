@@ -14,7 +14,7 @@ module Bosh::Director
     def reboot_vm(instance)
       vm = instance.active_vm
 
-      cloud = CloudFactory.create_from_deployment(instance.deployment).get(vm.cpi)
+      cloud = CloudFactory.create.get(vm.cpi)
       cloud.reboot_vm(vm.cid)
 
       begin

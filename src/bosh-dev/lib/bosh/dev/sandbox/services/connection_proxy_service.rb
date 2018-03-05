@@ -8,7 +8,7 @@ module Bosh::Dev::Sandbox
 
       config_path = File.join(sandbox_root, 'nginx_tcp_proxy.conf')
       nginx = TCPProxyNginx.new
-      cmd = %W[#{nginx.executable_path} -c #{config_path}]
+      cmd = %W[#{nginx.executable_path} -c #{config_path} -p #{sandbox_root}]
       @process = Service.new(cmd, {output: log_path}, logger)
       @socket_connector = SocketConnector.new('tcp_proxy_nginx', 'localhost', listen_port, 'unknown', logger)
 
@@ -35,7 +35,8 @@ module Bosh::Dev::Sandbox
   end
 
   class TCPProxyNginx
-    def initialize
+    def initialize(runner = Bosh::Core::Shell.new)
+      @runner = runner
       @workspace = Workspace.new
       @install_dir = @workspace.repo_path(File.join('tmp', 'integration-tcp-proxy-nginx'))
     end
@@ -51,12 +52,11 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(@install_dir)
 
       Dir.mktmpdir do |working_dir|
-        runner = Bosh::Core::Shell.new
         tcp_proxy_source_dir = @workspace.asset_path('tcp_proxy_nginx')
         FileUtils.cp_r(tcp_proxy_source_dir, working_dir)
 
         Dir.chdir(File.join(working_dir, 'tcp_proxy_nginx')) do
-          runner.run('bash ./install.sh', env: {
+          @runner.run('bash ./install.sh', env: {
               'BOSH_INSTALL_TARGET' => @install_dir,
             })
         end

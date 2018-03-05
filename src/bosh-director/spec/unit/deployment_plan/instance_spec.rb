@@ -441,10 +441,12 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#stemcell_cid' do
+    describe '#stemcell_model' do
+      let(:stemcell_model) { instance_double(Bosh::Director::Models::Stemcell) }
+
       it 'asks the stemcell business object to return the cid for the given az' do
-        expect(stemcell).to receive(:cid_for_az).with(instance.availability_zone_name).and_return('test-cid')
-        expect(instance.stemcell_cid).to eq('test-cid')
+        expect(stemcell).to receive(:model_for_az).with(instance.availability_zone_name).and_return(stemcell_model)
+        expect(instance.stemcell_model).to eq(stemcell_model)
       end
     end
 

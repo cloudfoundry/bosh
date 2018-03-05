@@ -113,7 +113,7 @@ module Bosh::Director::DeploymentPlan::Stages
       }
     end
 
-    let(:cloud) { Bosh::Director::Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
@@ -125,6 +125,9 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
+      allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid', stemcell_api_version: nil).and_return(cloud)
     end
 
     before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }

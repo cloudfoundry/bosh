@@ -86,6 +86,10 @@ module Bosh::Director
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
 
       before do
+        allow(Config).to receive(:uuid).and_return('woof-uuid')
+        allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(fake_cloud)
+
         allow(fake_new_agent).to receive(:sync_dns) do |_, _, _, &blk|
           blk.call('value' => 'synced')
         end.and_return(0)
@@ -95,7 +99,6 @@ module Bosh::Director
         handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
         Bosh::Director::Config.current_job.task_id = 42
         Bosh::Director::Config.name = 'fake-director-name'
-        allow(Config).to receive_messages(cloud: fake_cloud)
       end
 
       def expect_vm_to_be_created

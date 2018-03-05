@@ -103,7 +103,8 @@ describe 'local DNS', type: :integration do
           upload_cloud_config({:cloud_config_hash => cloud_config})
         end
 
-        it 'updates /etc/hosts with the new info for an instance hostname' do
+        # Skipping in hotswap mode: we are currently not deleting orphaned VMs
+        it 'updates /etc/hosts with the new info for an instance hostname', no_hotswap: true do
           manifest_deployment = initial_deployment(5)
           old_ips = current_sandbox.cpi.all_ips
 
@@ -280,10 +281,16 @@ describe 'local DNS', type: :integration do
           bosh_runner.run('recreate job_to_test_local_dns/0', deployment_name: deployment_name)
         end
 
-        it 'renders with the same value' do
+        it 'renders with the same value', no_hotswap: true do
           instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
           template = instance.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('spec.address=192.168.1.2')
+        end
+
+        it 'renders a different value', hotswap: true do
+          instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
+          template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+          expect(template).to include('spec.address=192.168.1.3')
         end
       end
 

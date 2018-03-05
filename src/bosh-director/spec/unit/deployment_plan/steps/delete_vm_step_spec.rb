@@ -24,7 +24,7 @@ module Bosh
           let(:report) { Stages::Report.new.tap { |r| r.vm = vm_model } }
 
           describe '#perform' do
-            let(:cloud) { Config.cloud }
+            let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
             let(:cloud_factory) { instance_double(CloudFactory) }
             let(:vm_type) do
               DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => { 'ram' => '2gb' })
@@ -76,8 +76,8 @@ module Bosh
 
             before do
               instance_model.active_vm = vm_model
-              allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
-              allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+              allow(CloudFactory).to receive(:create).and_return(cloud_factory)
+              allow(cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud)
               allow(Config).to receive(:local_dns_enabled?).and_return(true)
               allow(Config).to receive(:current_job).and_return(job)
               allow(job).to receive(:event_manager).and_return(event_manager)
@@ -125,6 +125,31 @@ module Bosh
                 expect(logger).to receive(:info).with('Deleting VM')
                 expect(cloud).not_to receive(:delete_vm)
                 subject.perform(report)
+              end
+            end
+
+            context 'when VM has a stemcell API version' do
+              let(:vm_model) do
+                Models::Vm.make(
+                  cid: 'vm-cid',
+                  instance_id: instance_model.id,
+                  cpi: 'cpi1',
+                  stemcell_api_version: 25
+                )
+              end
+
+              it 'creates requests a cloud instance with that stemcell api version' do
+                expect(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
+                expect(job).to receive(:event_manager).twice.and_return(event_manager)
+                expect(job).to receive(:username).twice.and_return('fake-username')
+                expect(job).to receive(:task_id).twice.and_return('fake-task-id')
+
+                expect(logger).to receive(:info).with('Deleting VM')
+                expect(Config).to receive(:current_job).and_return(job).exactly(6).times
+                expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
+                expect(cloud).to receive(:delete_vm).with('vm-cid')
+
+                expect { subject.perform(report) }.to(change { Models::Event.count }.from(0).to(2))
               end
             end
           end

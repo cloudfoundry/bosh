@@ -9,7 +9,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   describe '#perform' do
-    let(:cloud) { Bosh::Director::Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
     let(:event_log) { Bosh::Director::EventLog::Log.new }
     let(:event_log_stage) { instance_double(Bosh::Director::EventLog::Stage) }
@@ -17,9 +17,13 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     before do
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
+      allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid', stemcell_api_version: nil).and_return(cloud)
+
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
-      allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
       allow(Open3).to receive(:capture3).and_return([nil, 'some error', verify_multidigest_exit_status])
     end
 
@@ -61,6 +65,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcell.cid).to eq('stemcell-cid')
           expect(stemcell.sha1).to eq('shawone')
           expect(stemcell.operating_system).to eq('jeos-5')
+          expect(stemcell.api_version).to be_nil
         end
 
         context 'when provided an incorrect sha1' do
@@ -96,6 +101,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(stemcell.cid).to eq('stemcell-cid')
             expect(stemcell.sha1).to eq('shawone')
             expect(stemcell.operating_system).to eq('jeos-5')
+            expect(stemcell.api_version).to be_nil
           end
         end
       end
@@ -125,6 +131,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcell).not_to be_nil
           expect(stemcell.cid).to eq('stemcell-cid')
           expect(stemcell.sha1).to eq('shawone')
+          expect(stemcell.api_version).to be_nil
         end
 
         context 'when provided an incorrect sha1' do
@@ -175,6 +182,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(stemcell).not_to be_nil
             expect(stemcell.cid).to eq('stemcell-cid')
             expect(stemcell.sha1).to eq('shawone')
+            expect(stemcell.api_version).to be_nil
           end
         end
       end
@@ -256,7 +264,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         let(:cloud3) { cloud }
 
         before do
-          allow(BD::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(BD::CloudFactory).to receive(:create).and_return(cloud_factory)
         end
 
         it 'creates multiple stemcell records with different cpi attributes' do
@@ -301,12 +309,14 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcells[0].operating_system).to eq('jeos-5')
           expect(stemcells[0].cpi).to eq('cloud1')
           expect(stemcells[0].cid).to eq('stemcell-cid1')
+          expect(stemcells[0].api_version).to be_nil
 
           expect(stemcells[1]).not_to be_nil
           expect(stemcells[1].sha1).to eq('shawone')
           expect(stemcells[1].operating_system).to eq('jeos-5')
           expect(stemcells[1].cpi).to eq('cloud3')
           expect(stemcells[1].cid).to eq('stemcell-cid3')
+          expect(stemcells[1].api_version).to be_nil
 
           stemcell_uploads = Bosh::Director::Models::StemcellUpload.where(name: 'jeos', version: '5').all
           expect(stemcell_uploads.map(&:cpi)).to contain_exactly('cloud1', 'cloud2', 'cloud3')
@@ -390,6 +400,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(stemcells[0].sha1).to eq('shawone')
           expect(stemcells[0].operating_system).to eq('jeos-5')
           expect(stemcells[0].cpi).to eq('')
+          expect(stemcells[0].api_version).to be_nil
         end
       end
     end
@@ -495,6 +506,46 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
 
         expect { update_stemcell_job.perform }.not_to raise_error
+      end
+    end
+
+    context 'when api_version is provided' do
+      before do
+        manifest = {
+          'name' => 'jeos',
+          'version' => 5,
+          'operating_system' => 'jeos-5',
+          'stemcell_formats' => ['dummy'],
+          'cloud_properties' => { 'ram' => '2gb' },
+          'sha1' => 'shawone',
+          'api_version' => 2,
+        }
+        stemcell_contents = create_stemcell(manifest, 'image contents')
+        @stemcell_file = Tempfile.new('stemcell_contents')
+        File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
+      end
+
+      it 'should update api_version' do
+        expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+        expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+          contents = File.open(image, &:read)
+          expect(contents).to eq('image contents')
+          'stemcell-cid'
+        end
+
+
+        update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(
+          @stemcell_file.path,
+          'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757',
+        )
+        update_stemcell_job.perform
+
+        stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+        expect(stemcell).not_to be_nil
+        expect(stemcell.cid).to eq('stemcell-cid')
+        expect(stemcell.sha1).to eq('shawone')
+        expect(stemcell.operating_system).to eq('jeos-5')
+        expect(stemcell.api_version).to eq(2)
       end
     end
 

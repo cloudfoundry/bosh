@@ -239,10 +239,9 @@ module Bosh::Director
 
       it 'reports all vms in that deployment and their associated instances' do
         results = subject.vms_by_instances_for_deployment(deployment)
-        expect(results).to eq({
-          instance => [ vm, inactive_vm ],
-          instance_1 => [ vm_1 ]
-        })
+        expect(results.size).to eq(2)
+        expect(results[instance]).to match_array([inactive_vm, vm])
+        expect(results[instance_1]).to match_array([vm_1])
       end
     end
   end

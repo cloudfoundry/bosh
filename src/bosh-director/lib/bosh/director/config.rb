@@ -44,7 +44,8 @@ module Bosh::Director
         :local_dns,
         :verify_multidigest_path,
         :version,
-        :enable_cpi_resize_disk
+        :enable_cpi_resize_disk,
+        :default_update_strategy,
       )
 
       attr_reader(
@@ -76,7 +77,6 @@ module Bosh::Director
         @compiled_package_cache_options = nil
 
         @nats_rpc = nil
-        @cloud = nil
       end
 
       def configure(config)
@@ -217,6 +217,7 @@ module Bosh::Director
         end
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
+        @default_update_strategy = config.fetch('default_update_strategy', nil)
       end
 
       def agent_env
@@ -349,15 +350,6 @@ module Bosh::Director
         end
       end
 
-      def cloud
-        @lock.synchronize do
-          if @cloud.nil?
-            @cloud = Bosh::Clouds::ExternalCpi.new(@cloud_options['provider']['path'], @uuid)
-          end
-        end
-        @cloud
-      end
-
       def director_pool
         @director_pool ||= Socket.gethostname
       end
@@ -375,7 +367,6 @@ module Bosh::Director
       def cloud_options=(options)
         @lock.synchronize do
           @cloud_options = options
-          @cloud = nil
         end
       end
 

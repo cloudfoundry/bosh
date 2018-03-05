@@ -94,7 +94,7 @@ module Bosh::Director
     end
 
     def has_vm?(instance)
-      cloud_factory = Bosh::Director::CloudFactory.create_from_deployment(@deployment)
+      cloud_factory = Bosh::Director::AZCloudFactory.create_from_deployment(@deployment)
       cloud = cloud_factory.get_for_az(instance.availability_zone)
       vm_cid = instance.vm_cid
       !vm_cid.nil? && cloud.has_vm(vm_cid)

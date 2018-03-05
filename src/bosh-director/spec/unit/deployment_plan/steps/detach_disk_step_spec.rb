@@ -10,11 +10,11 @@ module Bosh::Director
         let(:instance) { Models::Instance.make }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
-        let(:cloud) { Config.cloud }
+        let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:report) { Stages::Report.new }
 
         before do
-          allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+          allow(CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with(disk&.cpi).once.and_return(cloud)
           allow(cloud).to receive(:detach_disk)
         end

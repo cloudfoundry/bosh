@@ -10,7 +10,7 @@ module Bosh::Director
         def perform(_report)
           return if @disk.nil?
 
-          cloud_factory = CloudFactory.create_with_latest_configs
+          cloud_factory = CloudFactory.create
           cloud = cloud_factory.get(@disk.cpi)
           @logger.info("Detaching disk #{@disk.disk_cid}")
           cloud.detach_disk(@disk.instance.vm_cid, @disk.disk_cid)

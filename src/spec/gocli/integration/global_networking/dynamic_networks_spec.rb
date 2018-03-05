@@ -26,7 +26,7 @@ describe 'dynamic networks', type: :integration do
     manifest_hash
   end
 
-  it 'sends the IaaS the previously-assigned dynamic IP on a subsequent recreate' do
+  it 'sends the IaaS the previously-assigned dynamic IP on a subsequent recreate', no_hotswap: true do
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
     deploy_simple_manifest(manifest_hash: simple_manifest)
 

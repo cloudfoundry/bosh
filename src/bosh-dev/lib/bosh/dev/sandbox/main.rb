@@ -71,26 +71,25 @@ module Bosh::Dev::Sandbox
       }
       db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
-      logger = Logging.logger(STDOUT)
-      logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
-
       new(
         db_opts,
         ENV['DEBUG'],
         ENV['TEST_ENV_NUMBER'].to_i,
-        logger,
       )
     end
 
-    def initialize(db_opts, debug, test_env_number, logger)
+    def initialize(db_opts, debug, test_env_number)
       @debug = debug
-      @logger = logger
       @name = SecureRandom.uuid.gsub('-', '')
 
       @port_provider = PortProvider.new(test_env_number)
 
       @logs_path = sandbox_path('logs')
       FileUtils.mkdir_p(@logs_path)
+
+      @sandbox_log_file = File.open(sandbox_path('sandbox.log'), 'w+')
+      @logger = Logging.logger(@sandbox_log_file)
+      @logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
 
       @dns_db_path = sandbox_path('director-dns.sqlite')
       @task_logs_dir = sandbox_path('boshdir/tasks')
@@ -148,6 +147,7 @@ module Bosh::Dev::Sandbox
             }
           },
           'nats' => @nats_url,
+          'log_buffer' => @logger,
         },
         {}
       )
@@ -214,6 +214,7 @@ module Bosh::Dev::Sandbox
         users_in_manifest: @users_in_manifest,
         enable_post_deploy: @enable_post_deploy,
         enable_cpi_resize_disk: @enable_cpi_resize_disk,
+        default_update_strategy: @default_update_strategy,
         enable_nats_delivered_templates: @enable_nats_delivered_templates,
         generate_vm_passwords: @generate_vm_passwords,
         remove_dev_tools: @remove_dev_tools,
@@ -266,7 +267,9 @@ module Bosh::Dev::Sandbox
       @config_server_service.stop
 
       @database.drop_db
-      @database_proxy && @database_proxy.stop
+      @database_proxy&.stop
+
+      @sandbox_log_file.close
 
       FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(agent_tmp_path)
@@ -330,6 +333,7 @@ module Bosh::Dev::Sandbox
       @enable_post_deploy = options.fetch(:enable_post_deploy, false)
       @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
       @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
+      @default_update_strategy = options.fetch(:default_update_strategy, ENV['DEFAULT_UPDATE_STRATEGY'])
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])

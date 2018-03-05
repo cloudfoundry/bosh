@@ -129,8 +129,8 @@ module Bosh::Director
       end
 
 
-      def stemcell_cid
-        @stemcell.cid_for_az(availability_zone_name)
+      def stemcell_model
+        @stemcell.model_for_az(availability_zone_name)
       end
 
       def env

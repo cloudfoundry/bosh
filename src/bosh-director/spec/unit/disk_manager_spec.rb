@@ -4,7 +4,7 @@ module Bosh::Director
   describe Bosh::Director::DiskManager do
     subject(:disk_manager) { DiskManager.new(logger) }
 
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:enable_cpi_resize_disk) { false }
     let(:cloud_factory) { instance_double(CloudFactory) }
     let(:instance_plan) do
@@ -59,10 +59,7 @@ module Bosh::Director
       allow(agent_client).to receive(:update_settings)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:enable_cpi_resize_disk).and_return(enable_cpi_resize_disk)
-      allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
-
-      # orphan disk manager may be called; it's easier to mock the calls it makes
-      allow(cloud_factory).to receive(:get_name_for_az).with('az1').and_return('cpi1')
+      allow(CloudFactory).to receive(:create).and_return(cloud_factory)
     end
 
     describe '#attach_disk' do

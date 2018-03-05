@@ -12,7 +12,7 @@ describe Bosh::Director::MetadataUpdater do
     BD::Models::Instance.make(deployment: deployment, uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1')
   }
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }
-  let(:cloud) { Bosh::Director::Config.cloud }
+  let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
   before do
     instance.active_vm = vm
@@ -44,7 +44,7 @@ describe Bosh::Director::MetadataUpdater do
 
     context 'with global cloud factory' do
       before do
-        allow(Bosh::Director::CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
         expect(cloud_factory).to receive(:get).with(instance.active_vm.cpi).and_return(cloud)
       end
 

@@ -14,7 +14,12 @@ module Bosh::Director
     end
 
     before(:each) do
-      @cloud = Config.cloud
+      allow(Config).to receive(:uuid).and_return('woof-uuid')
+      allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+
+      @cloud = instance_double(Bosh::Clouds::ExternalCpi)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(@cloud)
+
       @agent = double(Bosh::Director::AgentClient)
 
       allow(@agent).to receive(:sync_dns) do |_,_,_,&blk|

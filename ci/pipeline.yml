@@ -10,6 +10,7 @@ groups:
       - integration-postgres-gocli-sha2
       - integration-mysql-gocli-sha1
       - integration-db-tls-postgres
+      - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
       - load-tests-postgres
       - load-tests-mysql
@@ -34,12 +35,49 @@ groups:
     jobs:
       - unit-2.4-postgres
       - unit-2.4-db-migrations-rds
+      - integration-db-tls-postgres-hotswap
 
   # - name: finalize
   #   jobs:
   #     - finalize-bosh-release
 
 shared:
+  - &install-dependencies
+    task: install-dependencies
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: bosh/main
+      inputs:
+      - name: uninstalled-bosh-src
+      - name: bosh-cli
+      - name: bosh-agent
+      outputs:
+      - name: bosh-src
+      params:
+        RUBY_VERSION: 2.4.2
+      run:
+        path: /bin/bash
+        args:
+        - -cex
+        - |
+          mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
+          chmod +x /usr/local/bin/bosh
+          source uninstalled-bosh-src/ci/tasks/utils.sh
+          agent_path=uninstalled-bosh-src/src/go/src/github.com/cloudfoundry/
+          mkdir -p $agent_path
+          cp -r bosh-agent $agent_path
+          pushd uninstalled-bosh-src/src
+            source /etc/profile.d/chruby.sh
+            chruby $RUBY_VERSION
+
+            bundle install --local
+            bundle exec rake spec:integration:install_dependencies
+          popd
+          rsync -a uninstalled-bosh-src/ bosh-src/
+
   - &deploy-director
     task: deploy-director
     tags: [vsphere-v5.1]
@@ -322,11 +360,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -370,11 +412,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -415,11 +461,15 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -458,17 +508,77 @@ jobs:
         on_failure:
           <<: *slack-alert
 
+  - name: integration-db-tls-postgres-hotswap
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: uninstalled-bosh-src
+          resource: bosh-src
+          trigger: true
+        - get: bosh-cli
+          trigger: true
+        - get: bosh-agent
+
+      - <<: *install-dependencies
+
+      - aggregate:
+        - task: test-group-1
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-db-tls-postgres"]
+          params:
+            DB:           postgresql
+            DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        1,4,7,10,13,16,19,22
+            SHA2_MODE:    true
+            DB_TLS:       true
+        - task: test-group-2
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-db-tls-postgres"]
+          params:
+            DB:           postgresql
+            DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        2,5,8,11,14,17,20,23
+            SHA2_MODE:    true
+            DB_TLS:       true
+        - task: test-group-3
+          privileged: true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          tags: ["bosh-integration-db-tls-postgres"]
+          params:
+            DB:           postgresql
+            DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
+            RUBY_VERSION: 2.4.2
+            NUM_GROUPS:   24
+            GROUP:        3,6,9,12,15,18,21,24
+            SHA2_MODE:    true
+            DB_TLS:       true
+
+        on_failure:
+          <<: *slack-alert
+
   - name: integration-db-tls-mysql
     public: true
     serial: true
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: bosh-src
+        - get: uninstalled-bosh-src
+          resource: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+
+      - <<: *install-dependencies
+
       - aggregate:
         - task: test-group-1
           privileged: true
@@ -578,6 +688,7 @@ jobs:
     - { get: bosh-load-tests-workspace }
     - { get: warden-ubuntu-trusty }
     - { get: bosh-candidate-release-tarballs }
+    - { get: bosh-src }
     - { get: bosh-cli }
 
     - task: test
@@ -603,6 +714,7 @@ jobs:
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
     - { get: bosh-candidate-release-tarballs }
+    - { get: bosh-src }
     - { get: warden-ubuntu-trusty }
 
     - task: test
@@ -628,6 +740,7 @@ jobs:
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
     - { get: bosh-candidate-release-tarballs }
+    - { get: bosh-src }
     - { get: warden-ubuntu-trusty }
 
     - task: test
@@ -653,6 +766,7 @@ jobs:
     - { get: bosh-load-tests-workspace }
     - { get: bosh-cli }
     - { get: bosh-candidate-release-tarballs }
+    - { get: bosh-src }
     - { get: warden-ubuntu-trusty }
 
     - task: test

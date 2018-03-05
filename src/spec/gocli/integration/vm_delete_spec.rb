@@ -6,11 +6,13 @@ describe 'vm delete', type: :integration do
   with_reset_hm_before_each
 
   before do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
+    upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    create_and_upload_test_release
 
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
-    deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
+    deploy(manifest_hash: manifest_hash)
   end
 
   context 'when bosh has deployed the vm' do
@@ -45,6 +47,32 @@ describe 'vm delete', type: :integration do
       expect(output).to match /Delete VM: [0-9]{1,6}/
       expect(output).to match /Warning: VM [0-9]{1,6} does not exist. Deletion is skipped/
       expect(output).to match /Succeeded/
+
+      cpi_invocations = current_sandbox.cpi.invocations
+
+      [13, 18].each do |cpi_call_index|
+        expect(cpi_invocations[cpi_call_index].method_name).to eq('delete_vm')
+        expect(cpi_invocations[cpi_call_index].context).to match({
+          'director_uuid' => kind_of(String),
+          'request_id' => kind_of(String),
+          'vm' => {
+            'stemcell' => {
+              'api_version' => 25
+            }
+          }
+        })
+      end
+
+      expect(cpi_invocations[20].method_name).to eq('delete_vm')
+      expect(cpi_invocations[20].context).to match({
+        'director_uuid' => kind_of(String),
+        'request_id' => kind_of(String),
+        'vm' => {
+          'stemcell' => {
+            'api_version' => 2
+          }
+        }
+      })
     end
   end
 
@@ -84,6 +112,21 @@ describe 'vm delete', type: :integration do
       expect(current_sandbox.cpi.has_vm(id)).not_to be_truthy
 
       expect { bosh_runner.run("delete-vm #{id}", deployment_name: 'simple') }.not_to raise_error
+
+      cpi_invocations = current_sandbox.cpi.invocations
+
+      [14, 16].each do |cpi_call_index|
+        expect(cpi_invocations[cpi_call_index].method_name).to eq('delete_vm')
+        expect(cpi_invocations[cpi_call_index].context).to match({
+           'director_uuid' => kind_of(String),
+           'request_id' => kind_of(String),
+           'vm' => {
+             'stemcell' => {
+               'api_version' => 2
+             }
+           }
+         })
+      end
     end
   end
 end

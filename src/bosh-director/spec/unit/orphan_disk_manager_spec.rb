@@ -4,7 +4,7 @@ module Bosh::Director
   describe Bosh::Director::OrphanDiskManager do
     subject(:disk_manager) { OrphanDiskManager.new(logger) }
 
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(CloudFactory) }
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
@@ -182,7 +182,7 @@ module Bosh::Director
       let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-b') }
       let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: Time.now, snapshot_cid: 'snap-cid-2') }
       before do
-        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
+        allow(CloudFactory).to receive(:create).and_return(cloud_factory)
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:delete_snapshot)
       end

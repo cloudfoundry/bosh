@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, instance_provider, logger, instance_deleter, max_instance_count) }
 
     let(:instance_reuser) { InstanceReuser.new }
-    let(:cloud) { Config.cloud }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
     let(:instance_provider) { DeploymentPlan::InstanceProvider.new(deployment_plan, vm_creator, logger) }
     let(:stemcell) do
@@ -103,7 +103,9 @@ module Bosh::Director
     let(:task_id) {42}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
     before do
+      allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(cloud).to receive(:create_vm)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:name).and_return('fake-director-name')
