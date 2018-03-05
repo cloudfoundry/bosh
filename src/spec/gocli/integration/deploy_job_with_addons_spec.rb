@@ -351,14 +351,14 @@ describe 'deploy job with addons', type: :integration do
         bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
       end
 
-      it 'should not associate it with the current deployment' do
+      it 'should not associate unused release with the current deployment' do
         deploy_from_scratch(
           manifest_hash: manifest_hash,
           cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
           runtime_config_hash: runtime_config,
         )
 
-        puts bosh_runner.run("-d simple instances --ps")
+        expect(bosh_runner.run("-d simple deployment")).to_not include('dummy2')
       end
     end
   end

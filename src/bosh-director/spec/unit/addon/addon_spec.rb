@@ -51,6 +51,7 @@ module Bosh::Director
       let(:excludes) { Filter.parse(exclude_spec, :exclude) }
 
       let(:exclude_spec) { nil }
+      let(:include_spec) { nil }
 
       describe '#add_to_deployment' do
         let(:include_spec) { {'deployments' => [deployment_name]} }
@@ -484,6 +485,22 @@ module Bosh::Director
                 expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
               end
             end
+          end
+        end
+      end
+
+      describe '#releases' do
+        it 'should only return unique releases' do
+          expect(addon.releases).to match_array(['dummy'])
+        end
+
+        context 'there are no jobs' do
+          let(:jobs) do
+            []
+          end
+
+          it 'should return an empty array of releases' do
+            expect(addon.releases).to be_empty
           end
         end
       end

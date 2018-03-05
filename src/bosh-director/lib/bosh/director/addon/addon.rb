@@ -51,6 +51,12 @@ module Bosh::Director
         add_addon_jobs_to_instance_groups(deployment, eligible_instance_groups) unless eligible_instance_groups.empty?
       end
 
+      def releases
+        @addon_job_hashes.map do |addon|
+          addon['release']
+        end.uniq
+      end
+
       private
 
       def self.parse_and_validate_job(addon_job)

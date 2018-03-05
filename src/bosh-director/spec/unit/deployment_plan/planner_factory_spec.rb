@@ -203,14 +203,40 @@ LOGMESSAGE
                 allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with('simple').and_return(runtime_config_hash)
               end
 
-              it 'has the releases from the deployment manifest and the addon' do
-                expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
-                  [
-                    ['bosh-release', '1'],
-                    ['bar-release', '2'],
-                    %w[test_release_2 2]
-                  ]
-                )
+              context 'and the runtime config does not have any applicable jobs' do
+                it 'has the releases from the deployment manifest' do
+                  expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
+                    [
+                      ['bosh-release', '1'],
+                      ['bar-release', '2'],
+                    ],
+                  )
+                end
+              end
+
+              context 'and the runtime config does has applicable jobs' do
+                let(:runtime_config_hash) do
+                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                    'addons' => [
+                      {
+                        'name' => 'first_addon',
+                        'jobs' => [
+                          { 'name' => 'foo', 'release' => 'test_release_2' },
+                        ],
+                      },
+                    ],
+                  )
+                end
+
+                it 'has the releases from the deployment manifest and relevant addon releases' do
+                  expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
+                    [
+                      %w[bosh-release 1],
+                      %w[bar-release 2],
+                      %w[test_release_2 2],
+                    ],
+                  )
+                end
               end
 
               context 'with runtime variables' do
