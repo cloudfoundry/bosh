@@ -25,6 +25,7 @@ module Bosh::Director
         end
 
         it 'calls out to cpi associated with disk to attach disk' do
+          expect(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk.disk_cid)
 
           step.perform(report)

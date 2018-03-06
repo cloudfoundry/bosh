@@ -420,7 +420,10 @@ describe 'CPI calls', type: :integration do
         expect(second_deploy_invocations[8].context).to match(context_without_api_version)
 
         expect(second_deploy_invocations[9].method_name).to eq('detach_disk')
-        expect(second_deploy_invocations[9].context).to match(context_without_api_version)
+        expect(second_deploy_invocations[9].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[9].inputs).to match({
+                                                               'vm_cid' => vm_cid, 'disk_id' => disk_cid
+                                                             })
 
         expect(second_deploy_invocations[10].method_name).to eq('delete_vm')
         expect(second_deploy_invocations[10].inputs).to match({

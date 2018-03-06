@@ -102,7 +102,7 @@ module Bosh::Director
     describe '#detach_disk' do
       context 'managed disks' do
         it 'unmounts + detaches disk' do
-          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).once.and_return(cloud)
+          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).once.and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
           expect(agent_client).to receive(:unmount_disk).with('disk123')
           disk_manager.detach_disk(persistent_disk)
@@ -112,7 +112,7 @@ module Bosh::Director
       context 'unmanaged disks' do
         it 'detaches the disk without unmounting' do
           persistent_disk.update(name: 'chewbacca')
-          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).at_least(:once).and_return(cloud)
+          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).at_least(:once).and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
           expect(agent_client).to_not receive(:unmount_disk)
           disk_manager.detach_disk(persistent_disk)

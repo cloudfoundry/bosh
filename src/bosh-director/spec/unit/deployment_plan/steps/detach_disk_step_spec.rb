@@ -6,7 +6,7 @@ module Bosh::Director
       describe DetachDiskStep do
         subject(:step) { DetachDiskStep.new(disk) }
 
-        let!(:vm) { Models::Vm.make(active: true, instance: instance) }
+        let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: 25) }
         let(:instance) { Models::Instance.make }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
@@ -15,11 +15,12 @@ module Bosh::Director
 
         before do
           allow(CloudFactory).to receive(:create).and_return(cloud_factory)
-          allow(cloud_factory).to receive(:get).with(disk&.cpi).once.and_return(cloud)
+          allow(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
           allow(cloud).to receive(:detach_disk)
         end
 
         it 'calls out to cpi associated with disk to detach disk' do
+          expect(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
           expect(cloud).to receive(:detach_disk).with(vm.cid, disk.disk_cid)
 
           step.perform(report)

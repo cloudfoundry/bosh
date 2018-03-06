@@ -19,7 +19,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       availability_zone: 'az1'
     )
 
-    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id)
+    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id, stemcell_api_version: 25)
     @instance.active_vm = @vm
 
     @disk = Bosh::Director::Models::PersistentDisk.
@@ -103,7 +103,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     it 'detaches disk from VM and deletes it and its snapshots from DB (if instance has VM)' do
       expect(@agent).to receive(:list_disk).and_return(['other-disk'])
       expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid')
-      expect(cloud_factory).to receive(:get).with(@instance.active_vm.cpi).and_return(cloud)
+      expect(cloud_factory).to receive(:get).with(@instance.active_vm.cpi, 25).and_return(cloud)
       @handler.apply_resolution(:delete_disk)
 
       expect(Bosh::Director::Models::PersistentDisk[@disk.id]).to be_nil
@@ -115,7 +115,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
       expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid').
         and_raise(RuntimeError.new('Cannot detach disk'))
-      expect(cloud_factory).to receive(:get).with(@instance.active_vm.cpi).and_return(cloud)
+      expect(cloud_factory).to receive(:get).with(@instance.active_vm.cpi, 25).and_return(cloud)
 
       @handler.apply_resolution(:delete_disk)
 
