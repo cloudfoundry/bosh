@@ -29,6 +29,7 @@ module Bosh::Director
       instances = options.fetch(:instances, @deployment_plan.candidate_existing_instances)
 
       bind_releases
+      bind_stemcells
 
       migrate_legacy_dns_records
 
@@ -68,7 +69,6 @@ module Bosh::Director
       instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(desired_instance_groups, @deployment_plan.existing_instances)
       @deployment_plan.mark_instance_plans_for_deletion(instance_plans_for_obsolete_instance_groups)
 
-      bind_stemcells
       bind_templates
       bind_properties if should_bind_properties
       bind_instance_networks
