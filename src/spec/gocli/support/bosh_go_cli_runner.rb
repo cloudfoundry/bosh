@@ -1,4 +1,5 @@
 require_relative '../shared/support/table_helpers'
+require 'timeout'
 
 module Bosh::Spec
   class BoshGoCliRunner
@@ -57,19 +58,16 @@ module Bosh::Spec
         Open3.popen2e(env, command, chdir: working_dir) do |stdin, stdout_and_stderr, wait_thr|
           if options.fetch(:no_track, false)
             line = "negative-ghostrider"
-            start = Time.now
-            loop do
-              line = stdout_and_stderr.gets
-              break if line =~ /Task (\d+)/
-              raise 'Failed to parse task id from output within timeout' if (Time.now - start) > 20
-            end
+
+            Timeout::timeout(20, Timeout::Error.new('Failed to parse task id from output within timeout')) {
+              loop do
+                line = stdout_and_stderr.gets
+                break if line =~ /Task (\d+)/
+              end
+            }
             output = line
             exit_code = 0
-            begin
-              Process.kill('INT', wait_thr.pid)
-            rescue
-              @logger.info("Failed to kill the cli in a :no-track scenario")
-            end
+            Process.kill('INT', wait_thr.pid)
           else
             output = stdout_and_stderr.read
             exit_code = wait_thr.value.exitstatus
