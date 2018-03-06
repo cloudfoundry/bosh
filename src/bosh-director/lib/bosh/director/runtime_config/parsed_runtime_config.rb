@@ -19,7 +19,7 @@ module Bosh::Director
 
       def get_applicable_releases(deployment_plan)
         get_applicable_addons(deployment_plan).flat_map do |addon|
-          addon.releases.select do |release_name|
+          addon.releases.flat_map do |release_name|
             @releases.select do |release|
               release.name == release_name
             end

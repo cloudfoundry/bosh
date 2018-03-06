@@ -221,7 +221,7 @@ LOGMESSAGE
                       {
                         'name' => 'first_addon',
                         'jobs' => [
-                          { 'name' => 'foo', 'release' => 'test_release_2' },
+                          { 'name' => 'my_template', 'release' => 'test_release_2' },
                         ],
                       },
                     ],
@@ -395,7 +395,9 @@ LOGMESSAGE
 
           runtime_config_hash['releases'].each do |release_entry|
             release = Models::Release.make(name: release_entry['name'])
-            Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            template = Models::Template.make(name: 'my_template', release: release)
+            release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            release_version.add_template(template)
           end
         end
 

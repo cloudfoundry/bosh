@@ -63,7 +63,7 @@ module Bosh::Director::RuntimeConfig
 
       it 'should only return unique releases applicable to the current deployment' do
         actual_releases = config.get_applicable_releases(deployment_plan)
-        expect(actual_releases).to match_array(['derpy'])
+        expect(actual_releases).to match_array(releases[0])
       end
     end
   end
