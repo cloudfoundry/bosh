@@ -111,6 +111,14 @@ module Bosh::Director
         end
       end
 
+      context 'when requesting a cloud instance associated with a specific stemcell api version' do
+        it 'requests the correct one' do
+          expect(az_cloud_factory).to receive(:get).with(anything, 432)
+
+          az_cloud_factory.get_for_az('some-az', 432)
+        end
+      end
+
       it 'returns the default cloud from director config when asking for the cloud of a nil AZ' do
         cloud = az_cloud_factory.get_for_az(nil)
         expect(cloud).to eq(default_cloud)

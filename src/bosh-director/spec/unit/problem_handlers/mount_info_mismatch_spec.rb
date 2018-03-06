@@ -19,7 +19,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
     @instance = Bosh::Director::Models::Instance.
       make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')
-    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id, cpi: 'cpi1')
+    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id, cpi: 'cpi1', stemcell_api_version: 25)
 
     @instance.active_vm = @vm
     @instance.save
@@ -35,7 +35,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     allow(Bosh::Director::AZCloudFactory).to receive(:create_with_latest_configs).and_return(az_cloud_factory)
     allow(Bosh::Director::AZCloudFactory).to receive(:create_from_deployment).and_return(az_cloud_factory)
     allow(Bosh::Director::CloudFactory).to receive(:create).and_return(base_cloud_factory)
-    allow(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud)
+    allow(az_cloud_factory).to receive(:get_for_az).with('az1', 25).and_return(cloud)
   end
 
   it 'registers under inactive_disk type' do
@@ -64,8 +64,14 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     end
 
     describe 'reattach_disk' do
+      let(:cloud_for_update_metadata) { instance_double(Bosh::Clouds::ExternalCpi) }
+
       it 'attaches disk' do
+        expect(az_cloud_factory).to receive(:get_for_az).with('az1', 25).and_return(cloud)
+        expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
         expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+        expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+        expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
         expect(cloud).not_to receive(:reboot_vm)
         expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
@@ -79,7 +85,9 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
         it 'attaches disk and reboots the vm' do
           expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
           expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
-          expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+          expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+          expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
+          expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
           expect(@agent).to receive(:wait_until_ready)
           expect(@agent).not_to receive(:mount_disk)
           @handler.apply_resolution(:reattach_disk_and_reboot)
@@ -88,9 +96,11 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
         it 'sets disk metadata with deployment information' do
           expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
           expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
-          expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
+          expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+          expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
+          expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
           expect(@agent).to receive(:wait_until_ready)
-          expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud, @disk, hash_including(manifest['tags']))
+          expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
           @handler.apply_resolution(:reattach_disk_and_reboot)
         end
       end
