@@ -14,7 +14,7 @@ groups:
       # - load-tests-mysql
       # - legacy-load-tests-postgres
       # - legacy-load-tests-mysql
-      - fuzz-tests
+      # - fuzz-tests
       - candidate-release
       - bats-centos
       - bats-ubuntu
@@ -544,26 +544,26 @@ jobs:
   #     on_failure:
   #       <<: *slack-alert
   #
-  - name: fuzz-tests
-    public: true
-    serial: true
-    build_logs_to_retain: 2500
-    plan:
-    - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
-    - { get: bosh-fuzz-tests }
-    - { get: bosh-cli }
+  # - name: fuzz-tests
+  #   public: true
+  #   serial: true
+  #   build_logs_to_retain: 2500
+  #   plan:
+  #   - { get: fuzz-interval-trigger, trigger: true }
+  #   - { get: bosh-src, trigger: true }
+  #   - { get: bosh-agent }
+  #   - { get: bosh-fuzz-tests }
+  #   - { get: bosh-cli }
 
-    - task: test
-      privileged: true
-      file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration"]
-      params:
-        BOSH_SRC_PATH: bosh-src/src
-        RUBY_VERSION: 2.3.6
-      on_failure:
-        <<: *slack-alert
+  #   - task: test
+  #     privileged: true
+  #     file: bosh-fuzz-tests/ci/tasks/test.yml
+  #     tags: ["bosh-integration"]
+  #     params:
+  #       BOSH_SRC_PATH: bosh-src/src
+  #       RUBY_VERSION: 2.3.6
+  #     on_failure:
+  #       <<: *slack-alert
 
   - name: candidate-release
     plan:
@@ -577,7 +577,7 @@ jobs:
       - integration-2.3-postgres
       - integration-postgres-gocli-sha2
       - blobstore-client-integration
-      - fuzz-tests
+      # - fuzz-tests
       - upgrade-tests
     - get: bosh-cli
     - get: candidate-version
@@ -723,11 +723,11 @@ resources:
       secret_access_key: {{candidate_release_secret_access_key}}
       versioned_file: "262.x/bosh-dev-release.tgz"
 
-  - name: bosh-fuzz-tests
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-      branch: 262.x
+  # - name: bosh-fuzz-tests
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
+  #     branch: 262.x
 
   # - name: bosh-load-tests-workspace
   #   type: git
@@ -735,10 +735,10 @@ resources:
   #     uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
   #     branch: master
   #
-  - name: fuzz-interval-trigger
-    type: time
-    source:
-      interval: 15m
+  # - name: fuzz-interval-trigger
+  #   type: time
+  #   source:
+  #     interval: 15m
 
   - name: every-sunday
     type: time
