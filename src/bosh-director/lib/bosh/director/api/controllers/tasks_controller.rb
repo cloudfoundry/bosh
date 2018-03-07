@@ -170,7 +170,7 @@ module Bosh::Director
 
         # If no checkpoint update in 3 cycles --> timeout
         (task.state == 'processing' || task.state == 'cancelling') &&
-          (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
+          (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 6)
       end
     end
   end
