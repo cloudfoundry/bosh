@@ -31,4 +31,4 @@ properties:
     default: []
   postgres.max_connections:
     description: Set max concurrent connections for database
-    default: 100
+    default: 200
