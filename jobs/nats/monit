@@ -3,5 +3,4 @@ check process nats
   start program "/var/vcap/jobs/nats/bin/nats_ctl start"
   stop program "/var/vcap/jobs/nats/bin/nats_ctl stop"
   group vcap
-  if totalmem > 500 Mb for 2 cycles then alert
   if totalmem > 3000 Mb then restart
