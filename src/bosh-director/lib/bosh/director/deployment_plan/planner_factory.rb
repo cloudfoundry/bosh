@@ -69,6 +69,7 @@ module Bosh
           }
 
           plan_options = {
+            'is_deploy_action' => !!options['deploy'],
             'recreate' => !!options['recreate'],
             'fix' => !!options['fix'],
             'skip_drain' => options['skip_drain'],

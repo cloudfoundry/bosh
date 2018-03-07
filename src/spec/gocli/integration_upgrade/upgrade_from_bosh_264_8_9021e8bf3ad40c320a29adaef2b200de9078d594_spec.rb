@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'director upgrade after refactoring links into separate database tables', type: :upgrade do
-  with_reset_sandbox_before_each(test_initial_state: 'bosh-v264.8-9021e8bf3ad40c320a29adaef2b200de9078d594', drop_database: true)
+  with_reset_sandbox_before_each(test_initial_state: 'bosh-v264.8-c2b5bf268ea6420e4a3f1f657dc45b7db3720216', drop_database: true)
 
   describe '#bosh start' do
     it 'can start the hard stopped implicit link deployment' do
@@ -1388,6 +1388,17 @@ describe 'director upgrade after refactoring links into separate database tables
 
     expect(output).to include('Creating missing vms: errand_consumer_ig')
     expect(output).to include('Updating instance errand_consumer_ig: errand_consumer_ig')
+    expect(output).to include('Stdout     normal_bar')
+  end
+
+  it 'runs the colocated errand with links' do
+    output, exit_code = bosh_runner.run('-d colocated_errand_deployment start', return_exit_code: true)
+    expect(exit_code).to eq(0)
+
+    output, exit_code = bosh_runner.run('-d colocated_errand_deployment run-errand errand_with_links', return_exit_code: true)
+    expect(exit_code).to eq(0)
+
+    expect(output).to include('Running errand: errand_ig')
     expect(output).to include('Stdout     normal_bar')
   end
 end

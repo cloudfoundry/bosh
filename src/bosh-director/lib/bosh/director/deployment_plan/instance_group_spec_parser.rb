@@ -32,7 +32,7 @@ module Bosh::Director
         merged_global_and_instance_group_properties = extract_global_and_instance_group_properties
 
         parse_legacy_template(merged_global_and_instance_group_properties)
-        parse_jobs(merged_global_and_instance_group_properties)
+        parse_jobs(merged_global_and_instance_group_properties, options['is_deploy_action'])
 
         check_job_uniqueness
         parse_disks
@@ -132,7 +132,7 @@ module Bosh::Director
         end
       end
 
-      def parse_jobs(merged_global_and_instance_group_properties)
+      def parse_jobs(merged_global_and_instance_group_properties, is_deploy_action)
         legacy_jobs = safe_property(@instance_group_spec, 'templates', class: Array, optional: true)
         jobs = safe_property(@instance_group_spec, 'jobs', class: Array, optional: true)
 
@@ -191,9 +191,10 @@ module Bosh::Director
               @instance_group.name
             )
 
-            @links_parser.parse_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name)
-            @links_parser.parse_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name)
-
+            if is_deploy_action
+              @links_parser.parse_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name)
+              @links_parser.parse_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name)
+            end
             @instance_group.jobs << job
           end
         end

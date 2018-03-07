@@ -57,7 +57,7 @@ module Bosh::Director
           allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
           allow(PersistentDiskCollection).to receive(:new).and_return(disk_collection)
         end
-        let(:parse_options) { {} }
+        let(:parse_options) { {'is_deploy_action' => true} }
         let(:parsed_instance_group) { parser.parse(instance_group_spec, parse_options) }
         let(:resource_pool_env) { { 'key' => 'value' } }
         let(:uninterpolated_resource_pool_env) { { 'key' => '((value_placeholder))' } }
@@ -862,7 +862,6 @@ module Bosh::Director
                 allow(job).to receive(:add_properties)
               end
 
-
               it 'should parse providers with LinksParser' do
                 expect(links_parser).to receive(:parse_providers_from_job)
                 parsed_instance_group
@@ -871,6 +870,20 @@ module Bosh::Director
               it 'should parse consumers with LinksParser' do
                 expect(links_parser).to receive(:parse_consumers_from_job)
                 parsed_instance_group
+              end
+
+              context 'when it is not a deploy action' do
+                let(:parse_options) { {'is_deploy_action' => false} }
+
+                it 'should skip parsing providers with LinksParser' do
+                  expect(links_parser).to_not receive(:parse_providers_from_job)
+                  parsed_instance_group
+                end
+
+                it 'should skip parsing consumers with LinksParser' do
+                  expect(links_parser).to_not receive(:parse_consumers_from_job)
+                  parsed_instance_group
+                end
               end
             end
           end

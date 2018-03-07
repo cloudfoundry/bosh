@@ -95,6 +95,7 @@ module Bosh::Director
         @unneeded_vms = []
         @instance_plans_for_obsolete_instance_groups = []
 
+        @deploy = !!options['deploy']
         @recreate = !!options['recreate']
         @fix = !!options['fix']
 
@@ -299,6 +300,10 @@ module Bosh::Director
 
       def team_names
         @model.teams.map(&:name)
+      end
+
+      def is_deploy?
+        @deploy
       end
     end
   end

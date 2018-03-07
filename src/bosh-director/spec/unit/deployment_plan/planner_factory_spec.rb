@@ -117,13 +117,16 @@ LOGMESSAGE
             let(:deployment_model) { Models::Deployment.make(name: 'simple') }
             let(:expected_attrs) { { name: 'simple', properties: {} } }
             let(:expected_plan_options) do
-              { 'recreate' => false,
+              {
+                'is_deploy_action' => false,
+                'recreate' => false,
                 'fix' => false,
                 'skip_drain' => nil,
                 'job_states' => {},
                 'max_in_flight' => nil,
                 'canaries' => nil,
-                'tags' => {} }
+                'tags' => {},
+              }
             end
 
             before do

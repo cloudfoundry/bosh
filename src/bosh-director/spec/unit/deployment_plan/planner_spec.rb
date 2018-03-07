@@ -135,6 +135,21 @@ module Bosh::Director
           expect(plan.recreate).to be_truthy
         end
 
+        it 'should parse deploy' do
+          expect(planner.is_deploy?).to be_falsey
+
+          plan = described_class.new(
+            planner_attributes,
+            manifest_text,
+            YAML.dump(manifest_text),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            'deploy' => true,
+            )
+          expect(plan.is_deploy?).to be_truthy
+        end
+
         it 'creates a vm requirements cache' do
           expect(planner.vm_resources_cache).to be_instance_of(VmResourcesCache)
         end

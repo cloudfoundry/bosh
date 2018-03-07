@@ -232,7 +232,7 @@ module Bosh::Director
             expect(links_manager).to receive(:update_provider_intents_contents).with(link_providers, deployment_plan).ordered
             expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options).ordered
 
-            assembler.bind_models
+            assembler.bind_models(is_deploy_action: true)
           end
 
           it 'should skip links binding when should_bind_links flag is passed as false' do

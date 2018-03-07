@@ -186,7 +186,7 @@ module Bosh::Director
             end
 
             it 'should bind the models with correct options in the assembler' do
-              expect(assembler).to receive(:bind_models).with({:should_bind_new_variable_set => true})
+              expect(assembler).to receive(:bind_models).with({:is_deploy_action => true, :should_bind_new_variable_set => true})
 
               job.perform
             end
@@ -202,7 +202,7 @@ module Bosh::Director
             end
 
             it 'should bind the models with correct options in the assembler' do
-              expect(assembler).to receive(:bind_models).with({:should_bind_new_variable_set => false})
+              expect(assembler).to receive(:bind_models).with({:is_deploy_action => false, :should_bind_new_variable_set => false})
 
               job.perform
             end
@@ -298,6 +298,20 @@ module Bosh::Director
               expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, deployment_name, variable_set_1)
               expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_1_links, variable_set_1)
               expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_2_links, variable_set_1)
+
+              job.perform
+            end
+
+            it 'versions the links in errands' do
+              allow(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, deployment_name, variable_set_1)
+              allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_1_links, variable_set_1)
+              allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_2_links, variable_set_1)
+
+              instance_1 = instance_double(Bosh::Director::DeploymentPlan::Instance)
+              instance_2 = instance_double(Bosh::Director::DeploymentPlan::Instance)
+              allow(errand_instance_group).to receive(:instances).and_return([instance_1, instance_2])
+              expect(links_manager).to receive(:bind_links_to_instance).with(instance_1)
+              expect(links_manager).to receive(:bind_links_to_instance).with(instance_2)
 
               job.perform
             end

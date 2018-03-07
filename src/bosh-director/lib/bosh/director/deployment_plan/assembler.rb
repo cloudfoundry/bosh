@@ -21,7 +21,7 @@ module Bosh::Director
     def bind_models(options = {})
       @logger.info('Binding models')
 
-      should_bind_links = options.fetch(:should_bind_links, true)
+      should_bind_links = options.fetch(:is_deploy_action, false) && options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
       should_bind_new_variable_set = options.fetch(:should_bind_new_variable_set, false)
       deployment_options = @deployment_plan.deployment_wide_options

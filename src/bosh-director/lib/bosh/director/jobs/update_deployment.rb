@@ -88,7 +88,7 @@ module Bosh::Director
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
 
             # that's where the links resolver is created
-            deployment_assembler.bind_models({:should_bind_new_variable_set => is_deploy_action})
+            deployment_assembler.bind_models({is_deploy_action: is_deploy_action, should_bind_new_variable_set: is_deploy_action})
           end
 
           if deployment_plan.instance_models.any?(&:ignore)
@@ -269,6 +269,12 @@ module Bosh::Director
             header = "- Unable to render jobs for instance group '#{instance_group.name}'. Errors are:"
             e = Exception.new(Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2}))
             errors << e
+          end
+
+          if errors.empty?
+            instance_group.instances.each do |instance|
+              @links_manager.bind_links_to_instance(instance)
+            end
           end
         end
         errors

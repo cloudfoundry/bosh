@@ -96,6 +96,7 @@ module Bosh::Director
                                                .perform(instance_report)
           end
           instance_plan.release_obsolete_network_plans(@ip_provider)
+          @links_manager.bind_links_to_instance(instance)
           instance.update_state
           instance.update_variable_set
           update_dns(instance_plan)

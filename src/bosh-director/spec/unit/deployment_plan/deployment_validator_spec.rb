@@ -24,6 +24,7 @@ module Bosh::Director
       before do
         allow(links_manager).to receive(:resolve_deployment_links).with(deployment_model, anything)
         allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:new, :create_manager).and_return(links_manager)
+        allow(deployment).to receive(:is_deploy?).and_return(true)
       end
 
       context 'when using stemcells' do
@@ -80,6 +81,19 @@ module Bosh::Director
           it 'does not raise' do
             expect{deployment_validator.validate(deployment)}.not_to raise_error
           end
+        end
+      end
+
+      context 'when the deployment_planner is not doing a deploy' do
+        let(:stemcells) { {} }
+        let(:resource_pools) do
+          {'name' => 'resource_pool1'}
+        end
+
+        it 'should not resolve deployment links' do
+          allow(deployment).to receive(:is_deploy?).and_return(false)
+          expect(links_manager).to_not receive(:resolve_deployment_links)
+          deployment_validator.validate(deployment)
         end
       end
 
