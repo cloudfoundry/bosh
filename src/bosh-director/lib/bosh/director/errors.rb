@@ -340,4 +340,6 @@ module Bosh::Director
 
   # Resolving Links
   LinkLookupError = err(810000)
+  LinkCreateError = err(810001)
+  LinkProviderLookupError = err(810002)
 end

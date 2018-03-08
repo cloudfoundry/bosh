@@ -76,7 +76,8 @@ module Bosh::Director
       when :admin
         # already allowed with initial expected_scope
         expected_scope
-      when :create_deployment
+          #TODO Links: add test for create_link
+      when :create_deployment, :create_link
         expected_scope << bosh_team_admin_scopes(user_scopes)
       when :read_events, :list_configs
         expected_scope << director_permissions[:read]
