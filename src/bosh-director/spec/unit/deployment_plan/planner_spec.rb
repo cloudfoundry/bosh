@@ -145,7 +145,7 @@ module Bosh::Director
             cloud_configs,
             runtime_config_consolidator,
             deployment_model,
-            'deploy' => true,
+            'is_deploy_action' => true,
             )
           expect(plan.is_deploy?).to be_truthy
         end

@@ -95,7 +95,7 @@ module Bosh::Director
         @unneeded_vms = []
         @instance_plans_for_obsolete_instance_groups = []
 
-        @deploy = !!options['deploy']
+        @is_deploy_action = !!options['is_deploy_action']
         @recreate = !!options['recreate']
         @fix = !!options['fix']
 
@@ -303,7 +303,7 @@ module Bosh::Director
       end
 
       def is_deploy?
-        @deploy
+        @is_deploy_action
       end
     end
   end

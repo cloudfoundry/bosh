@@ -197,6 +197,7 @@ module Bosh::Director
             .with(instance_model).and_return(unmount_step)
           allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new)
             .with(true, false, true).and_return delete_step
+          allow(links_manager).to receive(:bind_links_to_instance)
         end
 
         it 'should update dns' do
@@ -220,6 +221,12 @@ module Bosh::Director
 
           before do
             allow(instance_plan).to receive(:already_detached?).and_return(true)
+          end
+
+          it 'binds links to detached instance' do
+            allow(director_state_updater).to receive(:update_dns_for_instance)
+            expect(links_manager).to receive(:bind_links_to_instance).with(instance)
+            updater.update(instance_plan)
           end
 
           it 'still updates dns' do
