@@ -188,7 +188,7 @@ module Bosh::Director
                   type: 'job',
                   )
               end
-              let(:provider_1_intent_1) do
+              let!(:provider_1_intent_1) do
                 Bosh::Director::Models::Links::LinkProviderIntent.create(
                   :name => 'provider_intent_1_name_1',
                   :link_provider => provider_1,
@@ -199,11 +199,9 @@ module Bosh::Director
                   :content => 'some link content',
                   )
               end
-
               let(:provider_id) { provider_1.id }
 
               it 'creates a external consumer' do
-                pp provider_1_intent_1
                 post "/", JSON.generate(payload_json), { 'CONTENT_TYPE' => 'application/json' }
                 new_external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
                                         deployment: deployment,

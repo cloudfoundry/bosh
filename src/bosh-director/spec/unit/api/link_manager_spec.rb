@@ -11,9 +11,6 @@ module Bosh::Director
         instance_group: 'instance_group',
         name: 'provider_name_1',
         type: 'job',
-        shared: true,
-        consumable: true,
-        type: 'link_type_1',
       )
     end
     let(:provider_1_intent_1) do

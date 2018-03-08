@@ -33,7 +33,6 @@ module Bosh::Director
 
       def validate_link_payload(json_payload)
         # TODO Links: check if Integer validation is required or not?
-        pp "#{json_payload.inspect} #{json_payload["link_provider_id"]}"
         if  json_payload["link_provider_id"].nil? || !(json_payload["link_provider_id"].is_a?(Integer))
           raise "Invalid json: provide valid `link_provider_id`"
         elsif json_payload["link_consumer"].nil?
@@ -53,13 +52,10 @@ module Bosh::Director
       end
 
       def find_provider_intent(provider)
-        intent = Bosh::Director::Models::Links::LinkProviderIntent.find(
+        Bosh::Director::Models::Links::LinkProviderIntent.find(
           link_provider: provider,
           original_name: provider.name
         )
-        puts "intent: #{Bosh::Director::Models::Links::LinkProviderIntent.all}"
-        puts "provider in intent: #{provider.inspect}"
-        intent
       end
 
       def create_consumer(owner_object_name, provider)
