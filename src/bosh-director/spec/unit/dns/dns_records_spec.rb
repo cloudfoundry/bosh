@@ -14,6 +14,12 @@ module Bosh::Director
     let(:dns_encoder) { DnsEncoder.new(groups_hash, az_hash, network_name_hash) }
     let(:dns_records) { DnsRecords.new(version, include_index_records, dns_encoder) }
 
+    before(:each) do
+      network_name_hash.each do |name, id|
+        Models::LocalDnsEncodedNetwork.make(id: id, name: name)
+      end
+    end
+
     describe '#to_json' do
       context 'with records' do
         before do
