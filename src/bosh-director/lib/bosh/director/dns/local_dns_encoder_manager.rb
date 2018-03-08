@@ -13,7 +13,7 @@ module Bosh::Director
     end
 
     def self.create_dns_encoder(use_short_dns_names)
-      az_hash = Models::LocalDnsEncodedAz.as_hash(:name, :id)
+      az_hash = Models::LocalDnsEncodedAz.to_hash(:name, :id)
 
       service_groups = {}
       Bosh::Director::Models::LocalDnsEncodedInstanceGroup.
