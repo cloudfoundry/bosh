@@ -179,8 +179,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'metrics' => anything,
       }
 
-      heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|
-        hash['job'] !=~ /^compilation\-/
+      heartbeat_hashes_excluding_compilation = heartbeat_hashes.reject do |hash|
+        hash['job'] =~ /^compilation\-/
       end
 
       expect(heartbeat_hashes_excluding_compilation.length).to be > 0
