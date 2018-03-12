@@ -1332,6 +1332,43 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
          expect(second_deployment_template['instances']['node1_bootstrap_address']).to eq(first_deployment_template['instances']['node1_bootstrap_address'])
        end
 
+       context 'when the provider is updated' do
+         before do
+           deploy_simple_manifest(manifest_hash: first_manifest)
+           deploy_simple_manifest(manifest_hash: second_manifest)
+
+           first_manifest['instance_groups'][0]['jobs'][0]['provides']['node1']['shared'] = false
+           deploy_simple_manifest(manifest_hash: first_manifest)
+         end
+
+         context 'and the consumer is stopped and started' do
+           it 'should preserve the old link information' do
+             expect { bosh_runner.run("stop --hard", deployment_name: "second")}.to_not raise_error
+             expect { bosh_runner.run("start", deployment_name: "second") }.to_not raise_error
+           end
+         end
+
+         context 'and the consumer is recreated via resurrector' do
+           it 'should preserve the old link information' do
+             director.instance('second_deployment_node', '0', deployment_name: 'second').kill_agent
+
+             cck_output = bosh_run_cck_with_resolution_with_name('second', 1, 4)
+             expect(cck_output).to match(/Recreate VM and wait for processes to start/)
+             expect(cck_output).to match(/Task .* done/)
+
+             expect(bosh_runner.run('cloud-check --report', deployment_name: 'second')).to match(regexp('0 problems'))
+           end
+         end
+
+         context 'and the consumer is redeployed' do
+           it 'should fail to resolve the link' do
+             expect {
+               deploy_simple_manifest(manifest_hash: second_manifest)
+             }.to raise_error(RuntimeError, /Can't resolve link 'node1' for job 'node' in instance group 'second_deployment_node' in deployment 'second'/)
+           end
+         end
+       end
+
        context 'when user does not specify a network for consumes' do
          it 'should use default network' do
            deploy_simple_manifest(manifest_hash: first_manifest)
@@ -2357,4 +2394,26 @@ Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - 
       expect(out).to include("- Can't resolve link 'some_link_name' with type 'bad_link_3' for job  'api_server_with_bad_link_types' in instance_group 'api_server_with_bad_link_types' in deployment 'simple'")
     end
   end
+end
+
+def bosh_run_cck_with_resolution_with_name(deployment_name, num_errors, option=1, env={})
+  env.each do |key, value|
+    ENV[key] = value
+  end
+
+  output = ''
+  bosh_runner.run_interactively('cck', deployment_name: deployment_name) do |runner|
+    (1..num_errors).each do
+      expect(runner).to have_output 'Skip for now'
+
+      runner.send_keys option.to_s
+    end
+
+    expect(runner).to have_output 'Continue?'
+    runner.send_keys 'y'
+
+    expect(runner).to have_output 'Succeeded'
+    output = runner.output
+  end
+  output
 end
