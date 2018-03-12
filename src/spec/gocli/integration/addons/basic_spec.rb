@@ -43,6 +43,106 @@ describe 'basic functionality', type: :integration do
       expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
     end
 
+    it 'allows addons to be added to specific deployments listed in includes section' do
+      runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_includes_section
+
+      runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      upload_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+
+      manifest_hash['instance_groups'][1] =
+        Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'foobar_without_packages',
+          jobs: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }],
+          instances: 1,
+        )
+
+      # deploy Deployment1
+      manifest_hash['name'] = 'dep1'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
+      expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+      template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+
+      foobar_without_packages_instance = director.instance('foobar_without_packages', '0', deployment_name: 'dep1')
+      expect(File.exist?(foobar_without_packages_instance.job_path('dummy_with_properties'))).to eq(false)
+      expect(File.exist?(foobar_without_packages_instance.job_path('foobar_without_packages'))).to eq(true)
+
+      # deploy Deployment2
+      manifest_hash['name'] = 'dep2'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      foobar_instance = director.instance('foobar', '0', deployment_name: 'dep2')
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+      expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
+      template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+
+      foobar_without_packages_instance = director.instance('foobar_without_packages', '0', deployment_name: 'dep2')
+      expect(File.exist?(foobar_without_packages_instance.job_path('dummy_with_properties'))).to eq(true)
+      expect(File.exist?(foobar_without_packages_instance.job_path('foobar_without_packages'))).to eq(true)
+      template = foobar_without_packages_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+    end
+
+    it 'allows addons to be added to specific deployments not listed in excludes section' do
+      runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_excludes_section
+
+      runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      upload_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+
+      manifest_hash['instance_groups'][1] =
+        Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'foobar_without_packages',
+          jobs: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }],
+          instances: 1,
+        )
+
+      # deploy Deployment1
+      manifest_hash['name'] = 'dep1'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
+      expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
+
+      foobar_without_packages_instance = director.instance('foobar_without_packages', '0', deployment_name: 'dep1')
+      expect(File.exist?(foobar_without_packages_instance.job_path('dummy_with_properties'))).to eq(true)
+      expect(File.exist?(foobar_without_packages_instance.job_path('foobar_without_packages'))).to eq(true)
+      template = foobar_without_packages_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+
+      # deploy Deployment2
+      manifest_hash['name'] = 'dep2'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      foobar_instance = director.instance('foobar', '0', deployment_name: 'dep2')
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
+      expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
+
+      foobar_without_packages_instance = director.instance('foobar_without_packages', '0', deployment_name: 'dep2')
+      expect(File.exist?(foobar_without_packages_instance.job_path('dummy_with_properties'))).to eq(false)
+      expect(File.exist?(foobar_without_packages_instance.job_path('foobar_without_packages'))).to eq(true)
+    end
+
     it 'allows addons to be added for specific stemcell operating systems' do
       runtime_config_file = yaml_file(
         'runtime_config.yml',

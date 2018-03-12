@@ -8,12 +8,14 @@ module Bosh::Director
 
       attr_reader :name
 
-      def initialize(name, job_hashes, addon_level_properties, addon_include, addon_exclude)
+      def initialize(name, job_hashes, options)
         @name = name
         @addon_job_hashes = job_hashes
-        @addon_level_properties = addon_level_properties
-        @addon_include = addon_include
-        @addon_exclude = addon_exclude
+        @addon_level_properties = options.fetch(:addon_level_properties)
+        @addon_include = options.fetch(:addon_include)
+        @addon_exclude = options.fetch(:addon_exclude)
+        @addon_includes = options.fetch(:addon_includes)
+        @addon_excludes = options.fetch(:addon_excludes)
         @links_parser = Bosh::Director::Links::LinksParser.new
       end
 
@@ -32,15 +34,50 @@ module Bosh::Director
         addon_job_hashes.each do |addon_job_hash|
           parsed_addon_jobs << parse_and_validate_job(addon_job_hash)
         end
-        addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
-        addon_include = Filter.parse(safe_property(addon_hash, 'include', :class => Hash, :optional => true), :include, addon_level)
-        addon_exclude = Filter.parse(safe_property(addon_hash, 'exclude', :class => Hash, :optional => true), :exclude, addon_level)
 
-        new(name, parsed_addon_jobs, addon_level_properties, addon_include, addon_exclude)
+        include = safe_property(addon_hash, 'include', class: Hash, optional: true)
+        exclude = safe_property(addon_hash, 'exclude', class: Hash, optional: true)
+        includes = safe_property(addon_hash, 'includes', class: Array, default: [])
+        excludes = safe_property(addon_hash, 'excludes', class: Array, default: [])
+
+        if !include.nil? && !includes.empty?
+          raise AddonSingleAndArrayFilter, 'Include and includes sections cannot be both specified. Please remove one of them'
+        end
+        if !exclude.nil? && !excludes.empty?
+          raise AddonSingleAndArrayFilter, 'Exclude and excludes sections cannot be both specified. Please remove one of them'
+        end
+
+        options = {
+          addon_level_properties: safe_property(addon_hash, 'properties', class: Hash, optional: true),
+          addon_include: Filter.parse(include, :include, addon_level),
+          addon_exclude: Filter.parse(exclude, :exclude, addon_level),
+          addon_includes: parse_filters(includes, :include, addon_level),
+          addon_excludes: parse_filters(excludes, :exclude, addon_level),
+        }
+
+        new(name, parsed_addon_jobs, options)
       end
 
       def applies?(deployment_name, deployment_teams, deployment_instance_group)
-        @addon_include.applies?(deployment_name, deployment_teams, deployment_instance_group) && !@addon_exclude.applies?(deployment_name, deployment_teams, deployment_instance_group)
+        if !@addon_includes.empty?
+          addon_includes_applies = false
+          @addon_includes.each do |addon_include|
+            addon_includes_applies ||= addon_include.applies?(deployment_name, deployment_teams, deployment_instance_group)
+          end
+        else
+          addon_includes_applies = true
+        end
+
+        addon_excludes_applies = false
+        unless @addon_excludes.empty?
+          @addon_excludes.each do |addon_exclude|
+            addon_excludes_applies ||= addon_exclude.applies?(deployment_name, deployment_teams, deployment_instance_group)
+          end
+        end
+
+        addon_includes_applies && !addon_excludes_applies &&
+          @addon_include.applies?(deployment_name, deployment_teams, deployment_instance_group) &&
+          !@addon_exclude.applies?(deployment_name, deployment_teams, deployment_instance_group)
       end
 
       def add_to_deployment(deployment)
@@ -55,6 +92,10 @@ module Bosh::Director
         @addon_job_hashes.map do |addon|
           addon['release']
         end.uniq
+      end
+
+      def self.parse_filters(addon_filters, filter_type, addon_level)
+        addon_filters.collect { |filter_hash| Filter.parse(filter_hash, filter_type, addon_level) }
       end
 
       private

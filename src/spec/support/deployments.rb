@@ -278,21 +278,72 @@ module Bosh::Spec
       })
     end
 
-    def self.runtime_config_with_addon_excludes
-      runtime_config_with_addon.merge({
+    def self.runtime_config_with_addon_includes_section
+      runtime_config_with_addon.merge(
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
-            'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
+            'jobs' => [
+              { 'name' => 'dummy_with_properties', 'release' => 'dummy2' },
+            ],
+            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+            'includes' => [
+              {
+                'deployments' => ['dep2'],
+              },
+              {
+                'jobs' => [
+                  { 'name' => 'foobar', 'release' => 'bosh-release' },
+                ],
+              },
+            ],
+          },
+        ],
+      )
+    end
+
+    def self.runtime_config_with_addon_excludes_section
+      runtime_config_with_addon.merge(
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [
+              { 'name' => 'dummy_with_properties', 'release' => 'dummy2' },
+            ],
+            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+            'excludes' => [
+              {
+                'deployments' => ['dep2'],
+              },
+              {
+                'jobs' => [
+                  { 'name' => 'foobar', 'release' => 'bosh-release' },
+                ],
+              },
+            ],
+          },
+        ],
+      )
+    end
+
+    def self.runtime_config_with_addon_excludes
+      runtime_config_with_addon.merge(
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [
+              { 'name' => 'dummy_with_properties', 'release' => 'dummy2' },
+            ],
+            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
             'exclude' => {
               'deployments' => ['dep1'],
               'jobs' => [
-                {'name'=> 'foobar', 'release' => 'bosh-release'}
-              ]
-            }
-          }]
-        })
+                { 'name' => 'foobar', 'release' => 'bosh-release' },
+              ],
+            },
+          },
+        ],
+      )
     end
 
     def self.runtime_config_with_addon_includes_stemcell_os

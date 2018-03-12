@@ -3,7 +3,17 @@ require 'spec_helper'
 module Bosh::Director
   module Addon
     describe Addon do
-      subject(:addon) { Addon.new(addon_name, jobs, properties, includes, excludes) }
+      subject(:addon) { Addon.new(addon_name, jobs, options) }
+      let(:options) do
+        {
+          addon_level_properties: properties,
+          addon_include: include,
+          addon_exclude: exclude,
+          addon_includes: includes,
+          addon_excludes: excludes,
+        }
+      end
+
       let(:addon_name) { 'addon-name' }
       let(:jobs) {
         [
@@ -18,6 +28,8 @@ module Bosh::Director
         ]
       }
       let(:properties) { {'echo_value' => 'addon_prop_value'} }
+      let(:includes) { [] }
+      let(:excludes) { [] }
 
       let(:cloud_configs) { [Models::Config.make(:cloud_with_manifest_v2)] }
 
@@ -47,8 +59,8 @@ module Bosh::Director
         planner
       end
 
-      let(:includes) { Filter.parse(include_spec, :include) }
-      let(:excludes) { Filter.parse(exclude_spec, :exclude) }
+      let(:include) { Filter.parse(include_spec, :include) }
+      let(:exclude) { Filter.parse(exclude_spec, :exclude) }
 
       let(:exclude_spec) { nil }
       let(:include_spec) { nil }
@@ -332,53 +344,253 @@ module Bosh::Director
         end
 
         context 'when name is empty' do
-          let(:addon_hash) { {'jobs' => ['addon-name']} }
+          let(:addon_hash) { { 'jobs' => ['addon-name'] } }
 
           it 'errors' do
             expect { Addon.parse(addon_hash) }.to raise_error ValidationMissingField,
               "Required property 'name' was not specified in object ({\"jobs\"=>[\"addon-name\"]})"
           end
         end
+
+        context 'when includes and include are specified' do
+          let(:addon_hash) do
+            {
+              'name' => 'addon-name',
+              'include' => { 'deployments' => [deployment_name] },
+              'includes' => [
+                { 'deployments' => [deployment_name] },
+                { 'teams' => ['team_1'] },
+              ],
+            }
+          end
+
+          it 'errors' do
+            expect { Addon.parse(addon_hash) }.to raise_error(
+              AddonSingleAndArrayFilter,
+              'Include and includes sections cannot be both specified. Please remove one of them',
+            )
+          end
+        end
+
+        context 'when excludes and exclude are specified' do
+          let(:addon_hash) do
+            {
+              'name' => 'addon-name',
+              'exclude' =>
+                { 'deployments' => [deployment_name] },
+              'excludes' => [
+                { 'deployments' => [deployment_name] },
+                { 'teams' => ['team_1'] },
+              ],
+            }
+          end
+
+          it 'errors' do
+            expect { Addon.parse(addon_hash) }.to raise_error(
+              AddonSingleAndArrayFilter,
+              'Exclude and excludes sections cannot be both specified. Please remove one of them',
+            )
+          end
+        end
+
+        context 'when excludes and include are specified' do
+          let(:addon_hash) do
+            {
+              'name' => 'addon-name',
+              'include' =>
+                { 'deployments' => [deployment_name] },
+              'excludes' => [
+                { 'deployments' => [deployment_name] },
+                { 'teams' => ['team_1'] },
+              ],
+            }
+          end
+
+          it 'returns addon' do
+            addon = Addon.parse(addon_hash)
+            expect(addon.name).to eq('addon-name')
+            expect(addon.jobs.count).to eq(0)
+            expect(addon.properties).to be_nil
+          end
+        end
+
+        context 'when exclude and includes are specified' do
+          let(:addon_hash) do
+            {
+              'name' => 'addon-name',
+              'exclude' => { 'deployments' => [deployment_name] },
+              'includes' => [
+                { 'deployments' => [deployment_name] },
+                { 'teams' => ['team_1'] },
+              ],
+            }
+          end
+
+          it 'returns addon' do
+            addon = Addon.parse(addon_hash)
+            expect(addon.name).to eq('addon-name')
+            expect(addon.jobs.count).to eq(0)
+            expect(addon.properties).to be_nil
+          end
+        end
+
+        context 'when excludes and includes are specified' do
+          let(:addon_hash) do
+            {
+              'name' => 'addon-name',
+              'includes' => [
+                { 'deployments' => [deployment_name] },
+              ],
+              'excludes' => [
+                { 'deployments' => [deployment_name] },
+                { 'teams' => ['team_1'] },
+              ],
+            }
+          end
+
+          it 'returns addon' do
+            addon = Addon.parse(addon_hash)
+            expect(addon.name).to eq('addon-name')
+            expect(addon.jobs.count).to eq(0)
+            expect(addon.properties).to be_nil
+          end
+        end
       end
 
       describe '#applies?' do
-        context 'when the addon is applicable by deployment name' do
+        context 'by deployment name' do
           let(:include_spec) { {'deployments' => [deployment_name]} }
           let(:deployment_instance_group) {
             instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
             instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
           }
 
-          it 'applies' do
-            expect(addon.applies?(deployment_name, [], nil)).to eq(true)
+          context 'when include is specified' do
+            it 'applies' do
+              expect(addon.applies?(deployment_name, [], nil)).to eq(true)
+            end
+
+            it 'does not apply' do
+              expect(addon.applies?('blarg', [], nil)).to eq(false)
+            end
+          end
+
+          context 'when includes is specified' do
+            let(:includes) { [Filter.parse(include_spec, :include)] }
+            let(:include) { Filter.parse({}, :include) }
+
+            it 'applies' do
+              expect(addon.applies?(deployment_name, [], nil)).to eq(true)
+            end
+
+            it 'does not apply' do
+              expect(addon.applies?('blarg', [], nil)).to eq(false)
+            end
+          end
+
+          context 'when includes has several options' do
+            let(:include_spec) { { 'deployments' => [deployment_name] } }
+            let(:include1_spec) { { 'deployments' => ['another_deployment'] } }
+            let(:includes) { [Filter.parse(include_spec, :include), Filter.parse(include1_spec, :include)] }
+            let(:include) { Filter.parse({}, :include) }
+            let(:exclude_spec) { {} }
+
+            it 'applies' do
+              expect(addon.applies?(deployment_name, [], nil)).to eq(true)
+            end
+          end
+
+          context 'when excludes has several options' do
+            let(:exclude_spec) { { 'deployments' => [deployment_name] } }
+            let(:exclude1_spec) { { 'deployments' => ['another_deployment'] } }
+            let(:excludes) { [Filter.parse(exclude_spec, :exclude), Filter.parse(exclude1_spec, :exclude)] }
+            let(:exclude) { Filter.parse({}, :include) }
+            let(:include_spec) { {} }
+
+            it 'does not apply' do
+              expect(addon.applies?(deployment_name, [], nil)).to eq(false)
+            end
           end
         end
 
-        context 'when the addon is not applicable by deployment name' do
-          let(:include_spec) { {'deployments' => [deployment_name]} }
-          let(:deployment_instance_group) {
-            instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
-            instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
-          }
-
-          it 'does not apply' do
-            expect(addon.applies?('blarg', [], nil)).to eq(false)
-          end
-        end
-
-        context 'when the addon is applicable by team' do
+        context 'by team' do
           let(:include_spec) { {'teams' => ['team_1']} }
 
-          it 'applies' do
-            expect(addon.applies?(deployment_name, ['team_1'], nil)).to eq(true)
+          context 'when include is specified' do
+            it 'applies' do
+              expect(addon.applies?(deployment_name, ['team_1'], nil)).to eq(true)
+            end
+
+            it 'does not apply' do
+              expect(addon.applies?(deployment_name, ['team_5'], nil)).to eq(false)
+            end
+          end
+
+          context 'when includes is specified' do
+            let(:includes) { [Filter.parse(include_spec, :include)] }
+            let(:include) { Filter.parse({}, :include) }
+            it 'applies' do
+              expect(addon.applies?(deployment_name, ['team_1'], nil)).to eq(true)
+            end
+
+            it 'does not apply' do
+              expect(addon.applies?(deployment_name, ['team_5'], nil)).to eq(false)
+            end
           end
         end
 
-        context 'when the addon is not applicable by team' do
-          let(:include_spec) { {'teams' => ['team_5']} }
+        context 'by availability zone' do
+          let(:instance_group_parser) { DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger) }
+          let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
+          let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
 
-          it 'does not apply' do
-            expect(addon.applies?(deployment_name, ['team_1'], nil)).to eq(false)
+          before do
+            release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
+
+            release = DeploymentPlan::ReleaseVersion.new(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
+            deployment.add_release(release)
+            stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
+            deployment.add_stemcell(stemcell)
+            deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
+              Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs,
+              DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
+              DeploymentPlan::IpProviderFactory.new(true, logger),
+            )
+            jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
+            instance_group = instance_group_parser.parse(
+              Bosh::Spec::NewDeployments.simple_instance_group(jobs: jobs, azs: ['z1']), {}
+            )
+            deployment.add_instance_group(instance_group)
+          end
+          let(:include_spec) { { 'azs' => ['z1'] } }
+
+          context 'when include is specified' do
+            it 'applies' do
+              expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(true)
+            end
+
+            context 'when another available zone' do
+              let(:include_spec) { { 'azs' => ['z5'] } }
+              it 'does not apply' do
+                expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
+              end
+            end
+          end
+
+          context 'when includes is specified' do
+            let(:includes) { [Filter.parse(include_spec, :include)] }
+            let(:include) { Filter.parse({}, :include) }
+
+            it 'applies' do
+              expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(true)
+            end
+
+            context 'when another available zone' do
+              let(:include_spec) { { 'azs' => ['z5'] } }
+              it 'does not apply' do
+                expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
+              end
+            end
           end
         end
 
@@ -394,7 +606,7 @@ module Bosh::Director
           end
         end
 
-        context 'when the addon has empty include and exclude' do
+        context 'when the addon has empty include, exclude, includes and excludes' do
           let(:include_spec) { {} }
           let(:exclude_spec) { {} }
           let(:deployment_instance_group) {
@@ -409,6 +621,7 @@ module Bosh::Director
 
         context 'when the addon has include and exclude' do
           let(:include_spec) { {'deployments' => [deployment_name]} }
+
           context 'when they are the same' do
             let(:exclude_spec) { {'deployments' => [deployment_name]} }
             let(:deployment_instance_group) {
@@ -450,40 +663,56 @@ module Bosh::Director
               expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar1'))).to eq(true)
             end
           end
+        end
 
-          context 'when the addon has availability zones' do
-            let(:instance_group_parser) {DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)}
-            let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
-            let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
+        context 'when the addon has includes and excludes' do
+          let(:include_spec) { { 'deployments' => [deployment_name] } }
+          let(:includes) { [Filter.parse(include_spec, :include)] }
+          let(:include) { Filter.parse({}, :include) }
 
-            before do
-              release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
-
-              release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
-              deployment.add_release(release)
-              stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
-              deployment.add_stemcell(stemcell)
-              deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger)
-                .parse(Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs,
-                       DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
-                       DeploymentPlan::IpProviderFactory.new(true, logger))
-              jobs = [{'name' => 'dummy', 'release' => 'dummy'}]
-              instance_group = instance_group_parser.parse(Bosh::Spec::NewDeployments.simple_instance_group(jobs: jobs, azs: ['z1']), {})
-              deployment.add_instance_group(instance_group)
+          context 'when they are the same' do
+            let(:exclude_spec) { { 'deployments' => [deployment_name] } }
+            let(:excludes) { [Filter.parse(include_spec, :exclude)] }
+            let(:exclude) { Filter.parse({}, :exclude) }
+            let(:deployment_instance_group) do
+              instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+              instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
             end
 
-            context 'when the addon is applicable by availability zones' do
-              let(:include_spec) { {'azs' => ['z1']} }
-              it 'it applies' do
-                expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(true)
-              end
+            it 'does not apply' do
+              expect(addon.applies?(deployment_name, [], nil)).to eq(false)
+            end
+          end
+        end
+
+        context 'when the addon has include, exclude, includes and excludes' do
+          context 'when exclude and includes are the same' do
+            let(:include_spec) { { 'deployments' => [deployment_name] } }
+            let(:includes) { [Filter.parse(include_spec, :include)] }
+            let(:include) { Filter.parse({}, :include) }
+            let(:exclude_spec) { { 'deployments' => [deployment_name] } }
+            let(:deployment_instance_group) do
+              instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+              instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
             end
 
-            context 'when the addon is not applicable by availability zones' do
-              let(:include_spec) { {'azs' => ['z5']} }
-              it 'does not apply' do
-                expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
-              end
+            it 'does not apply' do
+              expect(addon.applies?(deployment_name, [], nil)).to eq(false)
+            end
+          end
+
+          context 'when include and excludes are the same' do
+            let(:exclude_spec) { { 'deployments' => [deployment_name] } }
+            let(:excludes) { [Filter.parse(include_spec, :include)] }
+            let(:exclude) { Filter.parse({}, :include) }
+            let(:include_spec) { { 'deployments' => [deployment_name] } }
+            let(:deployment_instance_group) do
+              instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+              instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
+            end
+
+            it 'does not apply' do
+              expect(addon.applies?(deployment_name, [], nil)).to eq(false)
             end
           end
         end

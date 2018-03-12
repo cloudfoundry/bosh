@@ -306,6 +306,7 @@ module Bosh::Director
   AddonIncompleteFilterStemcellSection = err(530005)
   AddonDeploymentFilterNotAllowed = err(530006)
   RuntimeConfigParseError = err(530006)
+  AddonSingleAndArrayFilter = err(530007)
 
   # Config server errors
   ConfigServerFetchError = err(540001)
