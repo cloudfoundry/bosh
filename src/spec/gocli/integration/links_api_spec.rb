@@ -647,4 +647,94 @@ describe 'links api', type: :integration do
       end
     end
   end
+
+  context 'when doing POST request to create link' do
+    context 'when correct json provided' do
+      let(:provider_id) {1}
+      let(:payload_json) do
+        {
+          'link_provider_id'=> provider_id,
+          'link_consumer' => {
+            'owner_object_name'=> 'external_consumer_1',
+            'owner_object_type'=> 'external',
+          }
+        }
+      end
+
+      context 'when provider already exists' do
+        let(:jobs) do
+          [
+            {
+              'name' => 'provider',
+              'provides' => {
+                'provider' => {
+                  'as' => 'foo',
+                  'shared' => true
+                }
+              }
+            }
+          ]
+        end
+
+        before do
+          provider_response = get_link_providers
+          provider_id = provider_response.first['id']
+        end
+
+        it 'provide json output' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          link = JSON.parse(response.read_body)
+
+          expect(link["name"]).to eq(payload_json['link_consumer']['owner_object_name'])
+          expect(link["link_provider_id"]).to eq(provider_id)
+        end
+      end
+
+      context 'when link_provider_id do not exists' do
+        let(:provider_id) { 42 }
+
+        it 'returns error' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          error_response = JSON.parse(response.read_body)
+          expect(error_response['description']).to eq("Invalid link_provider_id: #{provider_id}")
+        end
+      end
+
+      context 'when link_provider_id is invalid' do
+        let(:provider_id) { "" }
+        it 'returns error' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          error_response = JSON.parse(response.read_body)
+          expect(error_response['description']).to eq("Invalid json: provide valid `link_provider_id`")
+        end
+      end
+
+      context 'when owner_object_name is invalid' do
+        let(:payload_json) do
+          {
+            'link_provider_id'=> provider_id,
+            'link_consumer' => {
+              'owner_object_name'=> '',
+              'owner_object_type'=> 'external',
+            }
+          }
+        end
+
+        it 'returns error' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          error_response = JSON.parse(response.read_body)
+          expect(error_response['description']).to eq("Invalid json: provide valid `owner_object_name`")
+        end
+      end
+    end
+
+    #TODO Links API
+    context 'when user does not have sufficient permissions' do
+      it 'should raise an error' do
+        response = send_director_post_request("/links", '', JSON.generate({}), {})
+
+        expect(response.read_body).to include("Not authorized: '/links'")
+      end
+    end
+  end
 end

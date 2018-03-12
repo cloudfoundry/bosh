@@ -199,7 +199,7 @@ module Bosh::Director
                   :content => 'some link content',
                   )
               end
-              let(:provider_id) { provider_1.id }
+              let(:provider_id) { provider_1_intent_1.id }
 
               it 'creates a external consumer' do
                 post "/", JSON.generate(payload_json), { 'CONTENT_TYPE' => 'application/json' }

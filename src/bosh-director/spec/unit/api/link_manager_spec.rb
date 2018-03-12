@@ -60,13 +60,13 @@ module Bosh::Director
           }
        }
     end
-    let(:provider_id) {provider_1.id}
+    let(:provider_id) {provider_1_intent_1.id}
 
     describe '#create_link' do
       context 'when link_provider_id is invalid' do
-        let(:provider_id) {2}
+        let(:provider_id) { 42 }
         it 'return error' do
-          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid link_provider_id: 2/)
+          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid link_provider_id: #{provider_id}/)
         end
       end
       context 'when link_provider_id is missing' do
@@ -76,10 +76,10 @@ module Bosh::Director
         end
       end
 
-      context 'when provider is valid' do
-        it '#find_provider and #find_provider_intent' do
-          expect(Bosh::Director::Models::Links::LinkProvider).to receive(:find).and_return([provider_1])
+      context 'when provider_id (provider_intent_id) is valid' do
+        it '#find_provider_intent and #find_provider' do
           expect(Bosh::Director::Models::Links::LinkProviderIntent).to receive(:find).and_return(provider_1_intent_1)
+          expect(Bosh::Director::Models::Links::LinkProvider).to receive(:find).and_return(provider_1)
 
           subject.create_link(username, payload_json)
         end

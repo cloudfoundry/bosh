@@ -12,12 +12,11 @@ module Bosh::Director
       #TODO Links: if we want to track the user initiated the link_create task, what to do with the username
       def create_link(username, json_payload)
         validate_link_payload(json_payload)
-        provider = find_provider_by_id(json_payload["link_provider_id"])
-        if provider.nil?
+        provider_intent = find_provider_intent(json_payload["link_provider_id"])
+        if provider_intent.nil?
           raise "Invalid link_provider_id: #{json_payload["link_provider_id"]}"
         end
-
-        provider_intent = find_provider_intent(provider)
+        provider = find_provider_by_id(provider_intent.link_provider_id)
 
         consumer_data = json_payload["link_consumer"]
         consumer = create_consumer(consumer_data["owner_object_name"], provider)
@@ -42,20 +41,12 @@ module Bosh::Director
         end
       end
 
-      def find_provider_by_id(id)
-        provider = Bosh::Director::Models::Links::LinkProvider.find(id)
-        if provider.size == 0
-          return nil
-        else
-          provider.first
-        end
+      def find_provider_by_id(provider_id)
+        Bosh::Director::Models::Links::LinkProvider.find(id: provider_id)
       end
 
-      def find_provider_intent(provider)
-        Bosh::Director::Models::Links::LinkProviderIntent.find(
-          link_provider: provider,
-          original_name: provider.name
-        )
+      def find_provider_intent(provider_intent_id)
+        Bosh::Director::Models::Links::LinkProviderIntent.find(id: provider_intent_id)
       end
 
       def create_consumer(owner_object_name, provider)

@@ -1,12 +1,11 @@
 module Support
   module ApiHelpers
-    def send_director_post_request(url_path, query, request_body, auth = {username: 'test', password: 'test'})
+    def send_director_post_request(url_path, query, request_body, auth = {username: 'test', password: 'test'}, init_header = {'Content-Type' =>'application/json'})
       director_url = build_director_api_url(url_path, query)
 
-      req = Net::HTTP::Post.new(director_url)
+      req = Net::HTTP::Post.new(director_url, init_header)
       req.body = request_body
       req.basic_auth(auth[:username], auth[:password]) unless auth.empty?
-
       send_director_api_request(director_url, req)
     end
 
