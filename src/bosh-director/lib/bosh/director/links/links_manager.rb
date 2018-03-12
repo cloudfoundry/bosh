@@ -318,41 +318,12 @@ module Bosh::Director::Links
           link_content: link_content
         ) unless dry_run
       else
+        found_provider_intents = provider_intents_for_consumer_intent(consumer_intent, consumer_intent_metadata)
         consumer = consumer_intent.link_consumer
-        found_provider_intents = []
-
         current_deployment_name = consumer.deployment.name
+
         link_network = consumer_intent_metadata['network']
         is_explicit_link = !!consumer_intent_metadata['explicit_link']
-
-        unless consumer_intent.blocked
-          deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
-          is_cross_deployment = (consumer.deployment.name != deployment_name)
-
-          if is_cross_deployment
-            deployment = Bosh::Director::Models::Deployment.find(name: deployment_name)
-            raise Bosh::Director::DeploymentNotFound, "Can't find deployment '#{deployment_name}'" if deployment.nil?
-          else
-            deployment = consumer.deployment
-          end
-
-          providers = deployment.link_providers
-
-          providers.each do |provider|
-            provider.intents.each do |provider_intent|
-              # TODO LINKS Added unit test for the following test.
-              next if provider_intent.type != consumer_intent.type
-
-              if is_explicit_link
-                next if provider_intent.name != consumer_intent.name
-                next if is_cross_deployment && !provider_intent.shared
-              end
-
-              next if provider_intent.serial_id != deployment.links_serial_id
-              found_provider_intents << provider_intent
-            end
-          end
-        end
 
         if found_provider_intents.empty? && consumer_intent.optional
           return unless is_explicit_link && !consumer_intent.blocked
@@ -372,10 +343,7 @@ module Bosh::Director::Links
             end
           end
 
-          link_use_ip_address = consumer_intent_metadata['ip_addresses']
-          provider_content = provider_intent.content || '{}'
-          link_spec = update_addresses(JSON.parse(provider_content), link_network, global_use_dns_entry, link_use_ip_address)
-          link_content = link_spec.to_json
+          link_content = extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
 
           find_or_create_link(
             name: consumer_intent.original_name,
@@ -385,6 +353,50 @@ module Bosh::Director::Links
           )
         end
       end
+    end
+
+    def extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
+      link_use_ip_address = consumer_intent_metadata['ip_addresses']
+      provider_content = provider_intent.content || '{}'
+      # determine what network name / dns entry things to use
+      link_spec = update_addresses(JSON.parse(provider_content), link_network, global_use_dns_entry, link_use_ip_address)
+      link_content = link_spec.to_json
+    end
+
+    def provider_intents_for_consumer_intent(consumer_intent, consumer_intent_metadata)
+      consumer = consumer_intent.link_consumer
+      found_provider_intents = []
+
+      unless consumer_intent.blocked
+        deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
+        is_cross_deployment = (consumer.deployment.name != deployment_name)
+
+        if is_cross_deployment
+          deployment = Bosh::Director::Models::Deployment.find(name: deployment_name)
+          raise Bosh::Director::DeploymentNotFound, "Can't find deployment '#{deployment_name}'" if deployment.nil?
+        else
+          deployment = consumer.deployment
+        end
+
+        providers = deployment.link_providers
+
+        is_explicit_link = !!consumer_intent_metadata['explicit_link']
+
+        providers.each do |provider|
+          provider.intents.each do |provider_intent|
+            next if provider_intent.type != consumer_intent.type
+
+            if is_explicit_link
+              next if provider_intent.name != consumer_intent.name
+              next if is_cross_deployment && !provider_intent.shared
+            end
+
+            next if provider_intent.serial_id != deployment.links_serial_id
+            found_provider_intents << provider_intent
+          end
+        end
+      end
+      found_provider_intents
     end
 
     def get_manual_link_provider_for_consumer(consumer_intent)
