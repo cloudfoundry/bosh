@@ -121,9 +121,7 @@ module Bosh::Director
       instance_groups = []
       deployment_plan.instance_groups.each do |instance_group|
         instance_group.jobs.each do |job|
-          if job.name == errand_name && job.runs_as_errand?
-            instance_groups << instance_group
-          end
+          instance_groups << instance_group if job.name == errand_name
         end
       end
       instance_groups
