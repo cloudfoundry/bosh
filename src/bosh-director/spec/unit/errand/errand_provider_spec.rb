@@ -43,8 +43,10 @@ module Bosh::Director
 
       context 'when running an errand by release job name' do
         let(:job_name) { 'errand-job-name' }
-        let(:job) { instance_double(DeploymentPlan::Job, name: job_name, runs_as_errand?: true) }
-        let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], bind_instances: nil, is_errand?: false) }
+        let(:job) { instance_double(DeploymentPlan::Job, name: job_name) }
+        let(:instance_group) do
+          instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], bind_instances: nil, is_errand?: false)
+        end
         let(:instance_groups) { [instance_group] }
 
         it 'provides an errand that will run on the instance in that group' do
@@ -113,6 +115,52 @@ module Bosh::Director
             allow(package_compile_step).to receive(:perform)
             allow(instance_group2).to receive(:bind_instances)
             allow(Errand::Runner).to receive(:new).and_return(runner)
+          end
+
+          context 'when one instance has a matching non-errand job name' do
+            let(:instance_groups) { [instance_group1, non_errand_ig] }
+            let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'errand-job-name', runs_as_errand?: false) }
+            let(:non_errand_step) { instance_double(Errand::LifecycleServiceStep) }
+            let(:non_errand_instance_model) { Models::Instance.make(deployment: deployment_model, job: errand_group_name) }
+            let(:non_errand_instance) do
+              instance_double(
+                DeploymentPlan::Instance,
+                model: non_errand_instance_model,
+                job_name: non_errand_instance_model.job,
+                uuid: non_errand_instance_model.uuid,
+                index: 2,
+                current_job_state: 'running',
+              )
+            end
+            let(:non_errand_ig) do
+              instance_double(DeploymentPlan::InstanceGroup,
+                              name: 'non_errand_ig',
+                              jobs: [non_errand_job],
+                              instances: [non_errand_instance],
+                              is_errand?: false,
+                              needed_instance_plans: [],
+                              bind_instances: nil)
+            end
+
+            before do
+              allow(deployment_planner).to receive(:instance_group).with(service_group_name).and_return(instance_group1)
+              allow(deployment_planner).to receive(:instance_group).with('non_errand_ig').and_return(non_errand_ig)
+            end
+
+            it 'tries to run all matching jobs even if some are not errands ' do
+              expect(Errand::LifecycleServiceStep).to receive(:new)
+                .with(runner, instance1, logger)
+                .and_return(errand_step1)
+              expect(Errand::LifecycleServiceStep).to receive(:new)
+                .with(runner, instance2, logger)
+                .and_return(errand_step2)
+              expect(Errand::LifecycleServiceStep).to receive(:new)
+                .with(runner, non_errand_instance, logger)
+                .and_return(non_errand_step)
+
+              returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
+              expect(returned_errands.steps).to contain_exactly(errand_step1, errand_step2, non_errand_step)
+            end
           end
 
           context 'when a matching instance group has 0 instances' do
@@ -301,9 +349,9 @@ module Bosh::Director
       context 'when running an errand by instance group name' do
         let(:instance_group_name) { 'instance-group-name' }
         let(:instance_groups) { [instance_group] }
-        let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'non-errand-job', runs_as_errand?: false) }
-        let(:errand_job_name) {'errand-job'}
-        let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name, runs_as_errand?: true) }
+        let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'non-errand-job') }
+        let(:errand_job_name) { 'errand-job' }
+        let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name) }
         let(:needed_instance_plans) { [] }
         let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep) }
 

@@ -1,5 +1,11 @@
 require_relative '../../spec_helper'
 
+def upload_fake_errand_release
+  FileUtils.cp_r(FAKE_ERRAND_RELEASE_TEMPLATE, ClientSandbox.fake_errand_release_dir, preserve: true)
+  bosh_runner.run_in_dir('create-release --force', ClientSandbox.fake_errand_release_dir)
+  bosh_runner.run_in_dir('upload-release', ClientSandbox.fake_errand_release_dir)
+end
+
 describe 'run release job errand', type: :integration, with_tmp_dir: true do
   let(:deployment_name) { manifest_hash['name'] }
 
@@ -105,6 +111,37 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
         expect(output.scan('stdout-from-errand1-package').size).to eq(2)
 
         expect(output).to match(/Succeeded/)
+      end
+
+      context 'when running an errand that conflicts with a non-errand job from a different release' do
+        before do
+          upload_fake_errand_release
+        end
+
+        it 'runs the errand successfully and fails to run the non-errand job' do
+          manifest_hash['instance_groups'][1] = {
+            'instances' => 1,
+            'name' => 'fake-errand-group',
+            'networks' => ['name' => 'a'],
+            'stemcell' => 'default',
+            'vm_type' => 'a',
+            'jobs' => [{
+              'release' => 'fake-errand-release',
+              'name' => 'errand1',
+              'properties' => {},
+            }],
+          }
+          manifest_hash['releases'] << { 'name' => 'fake-errand-release', 'version' => 'latest' }
+
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+          output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name, failure_expected: true)
+
+          expect(output).to match(/Running errand: service_with_errand/)
+          expect(output).to match(/Running errand: fake-errand-group/)
+          expect(output).to match(/Fetching logs for service_with_errand/)
+          expect(output).to match(%r{Error: Action Failed get_task:.*bin\/run: no such file or directory})
+        end
       end
     end
 

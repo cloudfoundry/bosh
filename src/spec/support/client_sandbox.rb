@@ -26,6 +26,10 @@ class ClientSandbox
       File.join(base_dir, 'multidisks_release')
     end
 
+    def fake_errand_release_dir
+      File.join(base_dir, 'fake_errand_release')
+    end
+
     def bosh_work_dir
       File.join(base_dir, 'bosh_work_dir')
     end

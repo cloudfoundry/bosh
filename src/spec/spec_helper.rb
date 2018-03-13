@@ -18,7 +18,8 @@ ASSETS_DIR = File.expand_path('../assets', __FILE__)
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
 LINKS_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'links_releases', 'links_release_template')
 MULTIDISK_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'multidisks_releases', 'multidisks_release_template')
-BOSH_WORK_TEMPLATE    = File.join(ASSETS_DIR, 'bosh_work_dir')
+FAKE_ERRAND_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'fake_errand_release_template')
+BOSH_WORK_TEMPLATE = File.join(ASSETS_DIR, 'bosh_work_dir')
 
 STDOUT.sync = true
 
