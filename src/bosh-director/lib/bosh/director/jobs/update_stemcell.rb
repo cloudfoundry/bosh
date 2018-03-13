@@ -91,8 +91,8 @@ module Bosh::Director
 
           track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
             begin
-              stemcell = @stemcell_manager.find_by_name_and_version_and_cpi @name, @version, cpi
-            rescue StemcellNotFound => e
+              stemcell = @stemcell_manager.find_by_name_and_version_and_cpi(@name, @version, cpi)
+            rescue StemcellNotFound
               stemcell = Models::Stemcell.new
               stemcell.name = @name
               stemcell.operating_system = @operating_system

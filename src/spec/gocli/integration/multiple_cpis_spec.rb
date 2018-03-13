@@ -84,7 +84,7 @@ describe 'Using multiple CPIs', type: :integration do
       before do
         bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
         bosh_runner.run('delete-config --type=cpi --name=default')
-        bosh_runner.run("upload-stemcell #{stemcell_filename}", env: { 'BOSH_LOG_LEVEL' => 'debug' }, lol: 'wut')
+        bosh_runner.run("upload-stemcell #{stemcell_filename}")
       end
 
       it 'can successfully access the stemcell resource' do
@@ -92,9 +92,12 @@ describe 'Using multiple CPIs', type: :integration do
         manifest = yaml_file('deployment_manifest', deployment)
 
         cpi_config['cpis'][0]['migrated_from'] = [{ 'name' => '' }]
+        cpi_config['cpis'].pop
 
         cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
         bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+        output = bosh_runner.run("upload-stemcell #{stemcell_filename}")
+        expect(output).to include("Stemcell 'ubuntu-stemcell/1' already exists")
 
         bosh_runner.run('stemcells', json: true)
         bosh_runner.run("deploy #{manifest.path}", deployment_name: 'simple')
