@@ -119,13 +119,12 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
         end
 
         it 'runs the errand successfully and fails to run the non-errand job' do
-          manifest_hash['instance_groups'][1] = {
+          manifest_hash['jobs'][1] = {
             'instances' => 1,
             'name' => 'fake-errand-group',
             'networks' => ['name' => 'a'],
-            'stemcell' => 'default',
-            'vm_type' => 'a',
-            'jobs' => [{
+            'resource_pool' => 'a',
+            'templates' => [{
               'release' => 'fake-errand-release',
               'name' => 'errand1',
               'properties' => {},
@@ -133,7 +132,7 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
           }
           manifest_hash['releases'] << { 'name' => 'fake-errand-release', 'version' => 'latest' }
 
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
           output = bosh_runner.run('run-errand errand1', deployment_name: deployment_name, failure_expected: true)
 
