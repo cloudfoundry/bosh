@@ -35,8 +35,10 @@ module Bosh::Director
 
       context 'when running an errand by release job name' do
         let(:job_name) { 'errand-job-name' }
-        let(:job) { instance_double(DeploymentPlan::Job, name: job_name, runs_as_errand?: true) }
-        let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], bind_instances: nil, is_errand?: false) }
+        let(:job) { instance_double(DeploymentPlan::Job, name: job_name) }
+        let(:instance_group) do
+          instance_double(DeploymentPlan::InstanceGroup, jobs: [job], instances: [instance], bind_instances: nil, is_errand?: false)
+        end
         let(:instance_groups) { [instance_group] }
 
         it 'provides an errand that will run on the instance in that group' do
@@ -185,9 +187,9 @@ module Bosh::Director
       context 'when running an errand by instance group name' do
         let(:instance_group_name) { 'instance-group-name' }
         let(:instance_groups) { [instance_group] }
-        let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'non-errand-job', runs_as_errand?: false) }
-        let(:errand_job_name) {'errand-job'}
-        let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name, runs_as_errand?: true) }
+        let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'non-errand-job') }
+        let(:errand_job_name) { 'errand-job' }
+        let(:errand_job) { instance_double(DeploymentPlan::Job, name: errand_job_name) }
         let(:needed_instance_plans) { [] }
         let(:instance_model) { Models::Instance.make }
         let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep) }

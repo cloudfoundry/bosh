@@ -1,0 +1,8 @@
+---
+name: errand1
+templates:
+  fake: fake
+
+packages: []
+
+properties: {}
