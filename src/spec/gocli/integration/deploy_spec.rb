@@ -1134,7 +1134,6 @@ Error: Unable to render instance groups for deployment. Errors are:
               bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
             }.to_not raise_exception
             output = bosh_runner.run('inspect-release test_release/1', json: true)
-            puts output.pretty_inspect
             expect(table(output)).to include({
               'package' => 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f',
               'blobstore_id' => /[a-f0-9\-]{36}/,

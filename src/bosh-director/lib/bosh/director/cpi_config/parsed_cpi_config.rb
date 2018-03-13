@@ -8,7 +8,10 @@ module Bosh::Director
       end
 
       def find_cpi_by_name(name)
-        @cpis.find{|cpi|cpi.name == name}
+        @cpis.find do |cpi|
+          cpi.name == name ||
+            cpi.migrated_from_names.include?(name)
+        end
       end
     end
   end

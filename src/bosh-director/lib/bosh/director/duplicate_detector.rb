@@ -1,10 +1,10 @@
 module Bosh::Director
   module DuplicateDetector
-    def detect_duplicates(collection, &iteratee)
+    def detect_duplicates(collection)
       transformed_elements = Set.new
       duplicated_elements = Set.new
       collection.each do |element|
-        transformed = iteratee.call(element)
+        transformed = yield(element)
 
         if transformed_elements.include?(transformed)
           duplicated_elements << element

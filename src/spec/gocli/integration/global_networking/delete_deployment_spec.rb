@@ -86,7 +86,6 @@ describe 'deleting deployment', type: :integration do
     deployment_deletion_output = bosh_runner.run('delete-deployment', deployment_name: 'simple', json: true)
     expect(deployment_deletion_output).to match /Deleting instances: foobar/
     expect(deployment_deletion_output).to include('Succeeded')
-    # puts bosh_runner.run('delete deployment simple', failure_expected: true)
 
     # Stemcells and releases remain after deletion of deployment
     expect(current_sandbox.cpi.all_stemcells.count).to eq 1

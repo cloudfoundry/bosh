@@ -9,9 +9,9 @@ module Bosh::Director
       end
 
       def merge_configs(cpi_configs)
-        result_hash = {'cpis' => []}
+        result_hash = { 'cpis' => [] }
         cpi_configs.each do |cpi_config|
-          result_hash['cpis'] += safe_property(cpi_config, 'cpis', :class => Array)
+          result_hash['cpis'] += safe_property(cpi_config, 'cpis', class: Array)
         end
         result_hash
       end
@@ -19,14 +19,14 @@ module Bosh::Director
       private
 
       def parse_cpis(cpi_manifest)
-        parsed_cpis = safe_property(cpi_manifest, 'cpis', :class => Array).map do |cpi|
+        parsed_cpis = safe_property(cpi_manifest, 'cpis', class: Array).map do |cpi|
           CpiConfig::Cpi.parse(cpi)
         end
 
-        duplicates = detect_duplicates(parsed_cpis) { |cpi| cpi.name }
-        unless duplicates.empty?
-          raise CpiDuplicateName, "Duplicate cpi name '#{duplicates.first.name}'"
-        end
+        all_present_names = parsed_cpis.map { |c| c.migrated_from_names + [c.name] }.flatten
+
+        duplicates = detect_duplicates(all_present_names, &:itself)
+        raise CpiDuplicateName, "Duplicate cpi name '#{duplicates.first}'" unless duplicates.empty?
 
         parsed_cpis
       end

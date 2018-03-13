@@ -117,9 +117,9 @@ module Bosh::Director
 
       let(:cpis) do
         [
-          CpiConfig::Cpi.new('name1', 'type1', nil, { 'prop1' => 'val1' }),
-          CpiConfig::Cpi.new('name2', 'type2', nil, { 'prop2' => 'val2' }),
-          CpiConfig::Cpi.new('name3', 'type3', nil, { 'prop3' => 'val3' }),
+          CpiConfig::Cpi.new('name1', 'type1', nil, { 'prop1' => 'val1' }, {}),
+          CpiConfig::Cpi.new('name2', 'type2', nil, { 'prop2' => 'val2' }, {}),
+          CpiConfig::Cpi.new('name3', 'type3', nil, { 'prop3' => 'val3' }, {}),
         ]
       end
 

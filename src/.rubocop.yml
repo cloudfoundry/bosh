@@ -1,82 +1,54 @@
 AllCops:
-  TargetRubyVersion: 1.9
+  TargetRubyVersion: 2.4
   Include:
   - Rakefile
   Exclude:
-  - bat/**/*
+  - tmp/**/*
 
-# This one we might always want.
-Lint/AmbiguousRegexpLiteral:
+Style/FrozenStringLiteralComment:
   Enabled: false
 
-Lint/UselessAssignment:
+Style/ClassAndModuleChildren:
   Enabled: false
 
-Lint/UnusedBlockArgument:
+Style/Documentation:
   Enabled: false
 
-Lint/ShadowingOuterLocalVariable:
+Metrics/LineLength:
+  Max: 130
+
+Metrics/ModuleLength:
+  Exclude: ['**/*_spec.rb']
+
+Metrics/ModuleLength:
+  Max: 250
+
+Metrics/ClassLength:
+  Max: 200
+
+Metrics/MethodLength:
+  Max: 30
+
+Metrics/BlockLength:
+  Max: 25
+  ExcludedMethods: [describe, context, let, it]
+
+Style/TrailingCommaInLiteral:
+  Enabled: true
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArguments:
+  Enabled: true
+  EnforcedStyleForMultiline: comma
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: aligned
+
+Metrics/AbcSize:
   Enabled: false
 
-Lint/ParenthesesAsGroupedExpression:
-  Enabled: false
+Style/BracesAroundHashParameters:
+  EnforcedStyle: context_dependent
 
-Lint/NestedMethodDefinition:
-  Enabled: false
-
-Lint/BlockAlignment:
-  Enabled: false
-
-Lint/UnusedMethodArgument:
-  Enabled: false
-
-Lint/HandleExceptions:
-  Enabled: false
-
-Lint/RescueException:
-  Enabled: false
-
-Lint/Void:
-  Enabled: false
-
-Lint/DeprecatedClassMethods:
-  Enabled: false
-
-Lint/DuplicatedKey:
-  Enabled: false
-
-Lint/AmbiguousOperator:
-  Enabled: false
-
-Lint/AssignmentInCondition:
-  Enabled: false
-
-Lint/EndAlignment:
-  Enabled: false
-
-Lint/StringConversionInInterpolation:
-  Enabled: false
-
-Lint/IneffectiveAccessModifier:
-  Enabled: false
-
-Lint/UselessAccessModifier:
-  Enabled: false
-
-Lint/NonLocalExitFromIterator:
-  Enabled: false
-
-Lint/UnderscorePrefixedVariableName:
-  Enabled: false
-
-Lint/FormatParameterMismatch:
-  Enabled: false
-
-Lint/ImplicitStringConcatenation:
-  Enabled: false
-
-Lint/LiteralInCondition:
-  Enabled: false
-
-Lint/DefEndAlignment:
-  Enabled: false
+Layout/IndentHash:
+  EnforcedStyle: consistent
