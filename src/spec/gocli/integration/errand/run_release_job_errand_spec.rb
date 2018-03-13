@@ -119,13 +119,13 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
         end
 
         it 'runs the errand successfully and fails to run the non-errand job' do
-          manifest_hash['instance_groups'][1] = {
+          manifest_hash['jobs'][1] = {
             'instances' => 1,
             'name' => 'fake-errand-group',
             'networks' => ['name' => 'a'],
             'stemcell' => 'default',
             'vm_type' => 'a',
-            'jobs' => [{
+            'templates' => [{
               'release' => 'fake-errand-release',
               'name' => 'errand1',
               'properties' => {},
