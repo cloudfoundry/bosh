@@ -15,12 +15,19 @@ module Bosh::Director
         version = stemcell['version']
         raise ValidationMissingField, "Missing 'version' field" if version.nil?
 
-        found_cpis = Bosh::Director::Models::StemcellUpload.where(name: name, version: version).all.map(&:cpi)
-
-        cpi_config_names = CloudFactory.create.all_names
-
-        result = { 'needed' => !(cpi_config_names - found_cpis).empty? }
+        result = { 'needed' => stemcell_not_found?(name, version) }
         json_encode(result)
+      end
+
+      def stemcell_not_found?(name, version)
+        found_cpis = Bosh::Director::Models::StemcellUpload.where(name: name, version: version).all.map(&:cpi)
+        cloud_factory = CloudFactory.create
+        cloud_factory.all_names.each do |cpi_name|
+          matched = found_cpis & cloud_factory.get_cpi_aliases(cpi_name)
+          return true if matched.empty?
+        end
+
+        false
       end
     end
   end

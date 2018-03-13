@@ -11,9 +11,15 @@ module Bosh::Director
       end
 
       def find_by_name_and_version_and_cpi(name, version, cpi)
-        stemcell = Models::Stemcell[:name => name, :version => version, :cpi => cpi]
-        raise StemcellNotFound, "Stemcell '#{name}/#{version}' and cpi #{cpi} doesn't exist" if stemcell.nil?
-        stemcell
+        cloud_factory = Bosh::Director::CloudFactory.create
+
+        found_cpis = Bosh::Director::Models::Stemcell.where(name: name, version: version).all.map(&:cpi)
+        cpi_aliases = cloud_factory.get_cpi_aliases(cpi)
+
+        matched_cpis = found_cpis & cpi_aliases
+        raise StemcellNotFound, "Stemcell '#{name}/#{version}' and cpi #{cpi} doesn't exist" if matched_cpis.empty?
+
+        return Models::Stemcell[:name => name, :version => version, :cpi => matched_cpis[0]]
       end
 
       def find_all_stemcells
