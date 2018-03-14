@@ -152,12 +152,12 @@ describe 'cli runtime config', type: :integration do
     configs = output['Tables'].first['Rows']
 
     expect(configs.count).to eq (1)
-    expect(configs.first).to eq('name' => 'default', 'teams' => '', 'type' => 'runtime')
+    expect(configs.first).to include('name' => 'default', 'team' => '', 'type' => 'runtime')
   end
 
   it 'shows no diff when uploading same unnamed runtime config as with generic config command' do
     runtime_config = yaml_file('runtime_config.yml', un_named_rc)
-    bosh_runner.run("update-config runtime #{runtime_config.path}")
+    bosh_runner.run("update-config --name=default --type=runtime #{runtime_config.path}")
     output = bosh_runner.run("update-runtime-config #{runtime_config.path}")
     expect(output).to match(/Using environment 'https:\/\/.+' as client 'test'\n\nSucceeded/)
   end

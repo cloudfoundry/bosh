@@ -94,8 +94,8 @@ Error: Unable to render instance groups for deployment. Errors are:
     before do
       create_and_upload_test_release
       upload_stemcell
-      bosh_runner.run("update-config --name=first-cloud-config cloud #{first_cloud_config.path}")
-      bosh_runner.run("update-config --name=second-cloud-config cloud #{second_cloud_config.path}")
+      bosh_runner.run("update-config --name=first-cloud-config --type=cloud #{first_cloud_config.path}")
+      bosh_runner.run("update-config --name=second-cloud-config --type=cloud #{second_cloud_config.path}")
     end
 
     it 'can use configuration from all the uploaded configs' do

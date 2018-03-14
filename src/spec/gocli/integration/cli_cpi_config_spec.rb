@@ -28,8 +28,8 @@ describe "cli cpi config", type: :integration do
       cpi1_yaml = yaml_file('cpi1', Bosh::Spec::NewDeployments.single_cpi_config('cpi-name1'))
       cpi2_yaml = yaml_file('cpi2', Bosh::Spec::NewDeployments.single_cpi_config('cpi-name2'))
 
-      upload1_output = bosh_runner.run("update-config --name cpi_config_1 cpi #{cpi1_yaml.path}")
-      upload2_output = bosh_runner.run("update-config --name cpi_config_2 cpi #{cpi2_yaml.path}")
+      upload1_output = bosh_runner.run("update-config --name cpi_config_1 --type cpi #{cpi1_yaml.path}")
+      upload2_output = bosh_runner.run("update-config --name cpi_config_2 --type cpi #{cpi2_yaml.path}")
 
       expect(upload1_output).to include('Succeeded')
       expect(upload2_output).to include('Succeeded')
