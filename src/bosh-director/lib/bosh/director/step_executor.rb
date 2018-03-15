@@ -34,7 +34,10 @@ module Bosh::Director
     def run_agenda(agenda)
       @logger.info(agenda.info)
       agenda.steps.each do |step|
+        start_time = Time.now
+        @logger.debug("Agenda step #{step.class} started at: #{start_time}")
         step.perform(agenda.report)
+        @logger.debug("Agenda step #{step.class} finished after #{Time.now - start_time}s")
       end
     end
   end
