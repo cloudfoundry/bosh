@@ -300,8 +300,6 @@ module Bosh::Director::Links
 
     end
 
-    private
-
     def resolve_consumer_intent(consumer_intent, global_use_dns_entry, dry_run)
       consumer_intent_metadata = {}
       consumer_intent_metadata = JSON.parse(consumer_intent.metadata) unless consumer_intent.metadata.nil?
@@ -334,6 +332,7 @@ module Bosh::Director::Links
         unless dry_run
           provider_intent = found_provider_intents.first
 
+          #TODO Links: discuss about possibility of value of content being empty; will cause nil class error
           if is_explicit_link
             content = provider_intent.content || '{}'
             provider_intent_networks = JSON.parse(content)['networks']
@@ -354,6 +353,8 @@ module Bosh::Director::Links
         end
       end
     end
+
+    private
 
     def extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
       link_use_ip_address = consumer_intent_metadata['ip_addresses']

@@ -649,7 +649,7 @@ describe 'links api', type: :integration do
   end
 
   context 'when doing POST request to create link' do
-    context 'when correct json provided' do
+    context 'when correct json is provided' do
       let(:provider_id) {1}
       let(:payload_json) do
         {
@@ -660,33 +660,39 @@ describe 'links api', type: :integration do
           }
         }
       end
-
-      context 'when provider already exists' do
-        let(:jobs) do
-          [
-            {
-              'name' => 'provider',
-              'provides' => {
-                'provider' => {
-                  'as' => 'foo',
-                  'shared' => true
-                }
+      let(:jobs) do
+        [
+          {
+            'name' => 'provider',
+            'provides' => {
+              'provider' => {
+                'as' => 'foo',
+                'shared' => true
               }
             }
-          ]
-        end
+          }
+        ]
+      end
 
+      context 'when provider already exists' do
         before do
           provider_response = get_link_providers
           provider_id = provider_response.first['id']
         end
 
-        it 'provide json output' do
+        it 'provide link json output' do
           response = send_director_post_request("/links", '', JSON.generate(payload_json))
           link = JSON.parse(response.read_body)
 
-          expect(link["name"]).to eq(payload_json['link_consumer']['owner_object_name'])
+          expect(link["name"]).to eq(jobs[0]['name'])
           expect(link["link_provider_id"]).to eq(provider_id)
+        end
+
+        it 'create consumer_intent' do
+          send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = get_link_consumers
+
+          expect(response.count).to_not eq(0)
         end
       end
 
@@ -724,6 +730,46 @@ describe 'links api', type: :integration do
           response = send_director_post_request("/links", '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
           expect(error_response['description']).to eq("Invalid json: provide valid `owner_object_name`")
+        end
+      end
+
+      context 'when network name is provided' do
+        let(:network_name) { 'a' }
+        let(:payload_json) do
+          {
+            'link_provider_id'=> provider_id,
+            'link_consumer' => {
+              'owner_object_name'=> 'external_consumer_1',
+              'owner_object_type'=> 'external',
+            },
+            'network' => network_name
+          }
+        end
+
+        before do
+          provider_response = get_link_providers
+          provider_id = provider_response.first['id']
+        end
+
+        context 'when network name is valid' do
+          it 'creates links' do
+            response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            link = JSON.parse(response.read_body)
+
+            expect(link).to match(links_response)
+          end
+        end
+
+        context 'when network name is invalid' do
+          let(:network_name) { 'invalid-network-name' }
+
+          it 'return error' do
+            response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            error_response = JSON.parse(response.read_body)
+            error_string = "Can't resolve network: `#{network_name}` in provider id: #{provider_id} for `#{payload_json['link_consumer']['owner_object_name']}`"
+
+            expect(error_response['description']).to eq(error_string)
+          end
         end
       end
     end
