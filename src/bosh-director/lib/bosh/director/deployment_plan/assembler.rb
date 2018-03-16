@@ -71,10 +71,12 @@ module Bosh::Director
 
       bind_templates
       bind_properties if should_bind_properties
+      bind_new_variable_set if should_bind_new_variable_set # should_bind_new is true when doing deploy action
+      bind_instance_networks
+      resolve_network_plans_for_hotswapped_instances(desired_instance_groups)
       bind_instance_networks
       bind_dns
       bind_links if should_bind_links
-      bind_new_variable_set if should_bind_new_variable_set
     end
 
     private
@@ -230,6 +232,27 @@ module Bosh::Director
           existing_instance,
           states_by_existing_instance[existing_instance]
         )
+      end
+    end
+
+    def resolve_network_plans_for_hotswapped_instances(desired_instance_groups)
+      network_planner = DeploymentPlan::NetworkPlanner::Planner.new(@logger)
+
+      desired_instance_groups.each do |desired_instance_group|
+        desired_instance_group.sorted_instance_plans.each do |desired_instance_plan|
+          next unless desired_instance_plan.should_hot_swap? && desired_instance_plan.recreate_for_non_network_reasons?
+          next unless desired_instance_plan.network_plans.select(&:desired?).empty?
+
+          desired_instance_group.networks.each do |network|
+            plan = network_planner.network_plan_with_dynamic_reservation(desired_instance_plan, network)
+            desired_instance_plan.network_plans << plan
+          end
+
+          desired_instance_plan.network_plans.select(&:existing?).each do |network_plan|
+            network_plan.existing = false
+            network_plan.obsolete = true
+          end
+        end
       end
     end
   end
