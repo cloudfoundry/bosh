@@ -11,7 +11,9 @@ describe Bosh::Clouds::ExternalCpi do
 
     before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
 
-    let (:method) {method}
+    #chomp trailing method name '?' for CPI compatibility (see #139530381)
+    let (:method_name) {method}
+    let (:truncated_method_name) {method.to_s.chomp('?')}
     let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
 
     before { stub_const('Bosh::Clouds::Config', config) }
@@ -24,15 +26,37 @@ describe Bosh::Clouds::ExternalCpi do
     before { allow(Random).to receive(:rand).and_return('fake-request-id') }
     let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
-    it 'calls cpi binary with correct arguments' do
-      stub_const('ENV', 'TMPDIR' => '/some/tmp')
+    context 'api version specified' do
 
-      expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
-      expected_cmd = '/path/to/fake-cpi/bin/cpi'
-      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
+      before do
+        subject.request_cpi_api_version = 1
+      end
 
-      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
-      call_cpi_method
+      it 'should call cpi binary with correct arguments' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
+        expected_cmd = '/path/to/fake-cpi/bin/cpi'
+        #chomp trailing method name '?' for CPI compatibility (see #139530381)
+        expected_stdin = %({"method":"#{truncated_method_name}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":1})
+
+        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        call_cpi_method
+      end
+    end
+
+    context 'api version not specified' do
+      it 'should call cpi binary with correct arguments' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
+        expected_cmd = '/path/to/fake-cpi/bin/cpi'
+        #chomp trailing method name '?' for CPI compatibility (see #139530381)
+        expected_stdin = %({"method":"#{truncated_method_name}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
+
+        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        call_cpi_method
+      end
     end
 
     context 'if properties from cpi config are given' do
@@ -58,7 +82,7 @@ describe Bosh::Clouds::ExternalCpi do
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
         context = {'director_uuid' => director_uuid, 'request_id' => request_id}.merge(cpi_config_properties)
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expected_stdin = %({"method":"#{truncated_method_name}","arguments":#{arguments.to_json},"context":#{context.to_json}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -89,7 +113,7 @@ describe Bosh::Clouds::ExternalCpi do
         }
 
         expected_arguments = arguments.clone
-        if method == :create_vm
+        if truncated_method_name == 'create_vm'
           expected_arguments[2] = {'cloud' => '<redacted>'}
           expected_arguments[3] = redacted_network_settings
           expected_arguments[5] = {
@@ -100,12 +124,12 @@ describe Bosh::Clouds::ExternalCpi do
             },
             'other' => '<redacted>'
           }
-        elsif method == :create_disk
+        elsif truncated_method_name == 'create_disk'
           expected_arguments[1] = {'type' => '<redacted>'}
         end
 
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
-        expected_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
+        expected_stdin = %({"method":"#{truncated_method_name}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expected_log = %([external-cpi] [#{request_id}] request: {"method":"#{truncated_method_name}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_log)
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
@@ -113,7 +137,7 @@ describe Bosh::Clouds::ExternalCpi do
       end
     end
 
-    context 'when api_version stemcell is given' do
+    context 'when stemcell api_version is given' do
       let(:director_uuid) {'fake-director-uuid'}
       let(:request_id) {'cpi-fake-request-id'}
       let(:stemcell_api_version) { 5 }
@@ -146,7 +170,7 @@ describe Bosh::Clouds::ExternalCpi do
             }
           }
         }
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expected_stdin = %({"method":"#{truncated_method_name}","arguments":#{arguments.to_json},"context":#{context.to_json}})
         expect(logger).to receive(:debug).with(/api_version/)
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
@@ -182,8 +206,8 @@ describe Bosh::Clouds::ExternalCpi do
       end
 
       it 'adds to existing file if for a given task several cpi requests were made' do
-        external_cpi.public_send(method, *arguments)
-        external_cpi.public_send(method, *arguments)
+        external_cpi.public_send(method_name, *arguments)
+        external_cpi.public_send(method_name, *arguments)
         expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-datafake-logfake-stderr-data')
       end
 
@@ -243,7 +267,7 @@ describe Bosh::Clouds::ExternalCpi do
         end
 
         it 'raises an error constructed from error response' do
-          expect { call_cpi_method }.to raise_error(error_class, /CPI error '#{error_type}' with message '#{message}' in '#{method}' CPI method/)
+          expect { call_cpi_method }.to raise_error(error_class, /CPI error '#{error_type}' with message '#{message}' in '#{truncated_method_name}' CPI method/)
         end
 
         it 'saves log and stderr' do
@@ -275,7 +299,7 @@ describe Bosh::Clouds::ExternalCpi do
             call_cpi_method
           }.to raise_error do |error|
             expect(error.class).to eq(error_class)
-            expect(error.message).to eq("CPI error '#{error_class}' with message 'fake-error-message' in '#{method}' CPI method")
+            expect(error.message).to eq("CPI error '#{error_class}' with message 'fake-error-message' in '#{truncated_method_name}' CPI method")
             expect(error.ok_to_retry).to eq(true)
           end
         end
@@ -531,7 +555,7 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#has_vm' do
-    it_calls_cpi_method(:has_vm, 'fake-vm-cid')
+    it_calls_cpi_method(:has_vm?, 'fake-vm-cid')
   end
 
   describe '#reboot_vm' do
@@ -551,7 +575,7 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#has_disk' do
-    it_calls_cpi_method(:has_disk, 'fake-disk-cid')
+    it_calls_cpi_method(:has_disk?, 'fake-disk-cid')
   end
 
   describe '#delete_disk' do
@@ -567,7 +591,9 @@ describe Bosh::Clouds::ExternalCpi do
   end
 
   describe '#snapshot_disk' do
-    it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
+    #TODO: All director codebase calls pass some metadata hash as param. Test does not.
+    # Is this a testing issue? Or should we discard extending Bosh::Cloud in ExtCPI altogether?
+    it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid', {my_key: 'my_value'})
   end
 
   describe '#delete_snapshot' do

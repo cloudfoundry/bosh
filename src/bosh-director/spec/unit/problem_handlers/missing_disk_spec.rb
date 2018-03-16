@@ -71,7 +71,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
       context 'when vm is present' do
         before do
-          allow(cloud).to receive(:has_vm).and_return(true)
+          allow(cloud).to receive(:has_vm?).and_return(true)
           expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone, 25).and_return(cloud)
         end
 
@@ -180,7 +180,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
       context 'when vm is missing' do
         before do
-          allow(cloud).to receive(:has_vm).and_return(false)
+          allow(cloud).to receive(:has_vm?).and_return(false)
           expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone, 25).and_return(cloud)
         end
 

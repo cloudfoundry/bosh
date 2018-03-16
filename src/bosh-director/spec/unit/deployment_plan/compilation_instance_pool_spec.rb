@@ -105,6 +105,9 @@ module Bosh::Director
     before do
       allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(cloud).to receive(:create_vm)
+      allow(cloud).to receive(:info).and_return({})
+      allow(cloud).to receive(:request_cpi_api_version=).with(1)
+      allow(cloud).to receive(:request_cpi_api_version).and_return(1)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)

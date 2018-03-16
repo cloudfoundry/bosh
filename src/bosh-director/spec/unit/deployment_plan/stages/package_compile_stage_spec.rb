@@ -98,6 +98,9 @@ module Bosh::Director
       allow(Config).to receive(:name).and_return('fake-director-name')
       allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(cloud).to receive(:info)
+      allow(cloud).to receive(:request_cpi_api_version=)
+      allow(cloud).to receive(:request_cpi_api_version)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       @all_packages = []
     end

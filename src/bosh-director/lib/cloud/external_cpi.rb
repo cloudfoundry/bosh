@@ -2,15 +2,18 @@ require 'membrane'
 require 'open3'
 
 module Bosh::Clouds
-  class ExternalCpi
+  class ExternalCpi < Bosh::Cloud
     # Raised when the external CPI executable returns an error unknown to director
-    class UnknownError < StandardError; end
+    class UnknownError < StandardError;
+    end
 
     # Raised when the external CPI executable returns nil or invalid JSON format to director
-    class InvalidResponse < StandardError; end
+    class InvalidResponse < StandardError;
+    end
 
     # Raised when the external CPI bin/cpi is not executable
-    class NonExecutable < StandardError; end
+    class NonExecutable < StandardError;
+    end
 
     KNOWN_RPC_ERRORS = %w(
     Bosh::Clouds::CpiError
@@ -39,6 +42,8 @@ module Bosh::Clouds
       }
     end
 
+    attr_accessor :request_cpi_api_version
+
     def initialize(cpi_path, director_uuid, options = {})
       @cpi_path = cpi_path
       @director_uuid = director_uuid
@@ -47,38 +52,38 @@ module Bosh::Clouds
       @stemcell_api_version = options.fetch(:stemcell_api_version, nil)
     end
 
-    def current_vm_id(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def create_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def delete_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def create_vm(*arguments) invoke_cpi_method(__method__.to_s, *arguments); end
-    def delete_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def has_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def reboot_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def set_vm_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def set_disk_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def create_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def has_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def delete_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def attach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def detach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def snapshot_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def delete_snapshot(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def resize_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def get_disks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def ping(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def calculate_vm_cloud_properties(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def info; invoke_cpi_method(__method__.to_s); end
+    def info; invoke_cpi_method(__method__.to_s, []); end
+    def current_vm_id; invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def create_stemcell(image_path, cloud_properties); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def delete_stemcell(stemcell_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def create_vm(agent_id, stemcell_id, resource_pool, networks, disk_locality, env); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def delete_vm(vm_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def has_vm?(vm_id); invoke_cpi_method(__method__.to_s.chomp('?'), method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def has_disk?(disk_id); invoke_cpi_method(__method__.to_s.chomp('?'), method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def reboot_vm(vm_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def set_vm_metadata(vm, metadata); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def set_disk_metadata(disk_id, metadata); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def create_disk(size, cloud_properties, vm_locality); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def delete_disk(disk_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def attach_disk(vm_id, disk_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def snapshot_disk(disk_id, metadata); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def delete_snapshot(snapshot_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def detach_disk(vm_id, disk_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def get_disks(vm_id); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def resize_disk(disk_id, new_size); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def calculate_vm_cloud_properties(vm_properties); invoke_cpi_method(__method__.to_s, method(__method__).parameters.map {|arg| binding.local_variable_get(arg[1])}); end
+    def ping(*arguments); invoke_cpi_method(__method__.to_s, arguments); end
 
     private
 
-    def invoke_cpi_method(method_name, *arguments)
+    def invoke_cpi_method(method_name, arguments)
       request_id = "cpi-#{Random.rand(100000..999999)}"
       context = {
         'director_uuid' => @director_uuid,
         'request_id' => request_id
       }
 
-      vm_context = {'vm' => {'stemcell' => { 'api_version' => @stemcell_api_version }}}
+      vm_context = {'vm' => {'stemcell' => {'api_version' => @stemcell_api_version}}}
       context.merge!(vm_context) unless @stemcell_api_version.nil?
       context.merge!(@properties_from_cpi_config) unless @properties_from_cpi_config.nil?
 
@@ -116,7 +121,7 @@ module Bosh::Clouds
 
     def redact_context(context)
       return context if @properties_from_cpi_config.nil?
-      Hash[context.map{|k,v|[k,@properties_from_cpi_config.keys.include?(k) ? '<redacted>' : v]}]
+      Hash[context.map {|k, v| [k, @properties_from_cpi_config.keys.include?(k) ? '<redacted>' : v]}]
     end
 
     def redact_arguments(method_name, arguments)
@@ -167,15 +172,18 @@ module Bosh::Clouds
     end
 
     def redactAllBut(keys, hash)
-      Hash[hash.map { |k,v| [k, keys.include?(k) ? v.dup : '<redacted>'] }]
+      Hash[hash.map {|k, v| [k, keys.include?(k) ? v.dup : '<redacted>']}]
     end
 
     def request_json(method_name, arguments, context)
-      JSON.dump({
+      request_hash = {
         'method' => method_name,
         'arguments' => arguments,
-        'context' => context
-      })
+        'context' => context,
+      }
+
+      request_hash['api_version'] = request_cpi_api_version unless request_cpi_api_version.nil?
+      JSON.dump(request_hash)
     end
 
     def handle_error(error_response, method_name)

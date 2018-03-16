@@ -62,6 +62,8 @@ module Bosh::Dev::Sandbox
     attr_reader :nats_url, :nats_user, :nats_password, :nats_allow_legacy_clients
     attr_reader :nats_needs_restart
 
+    attr_reader :dummy_cpi_api_version
+
     attr_accessor :trusted_certs
 
     def self.from_env
@@ -95,6 +97,7 @@ module Bosh::Dev::Sandbox
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
       @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
+      @dummy_cpi_api_version = nil
 
       @nats_user = 'mbus'
       @nats_password = 'password'
@@ -149,7 +152,8 @@ module Bosh::Dev::Sandbox
           'nats' => @nats_url,
           'log_buffer' => @logger,
         },
-        {}
+        {},
+        @dummy_cpi_api_version
       )
 
       reconfigure
@@ -340,6 +344,7 @@ module Bosh::Dev::Sandbox
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
       old_tls_enabled_value = @db_config[:tls_enabled]
       @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS']=='true')
+      @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, nil)
 
       check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
       setup_database(@db_config, old_tls_enabled_value)
@@ -429,7 +434,8 @@ module Bosh::Dev::Sandbox
         config_path: sandbox_path(EXTERNAL_CPI_CONFIG),
         env_path: ENV['PATH'],
         gem_home: ENV['GEM_HOME'],
-        gem_path: ENV['GEM_PATH']
+        gem_path: ENV['GEM_PATH'],
+        dummy_cpi_api_version: @dummy_cpi_api_version,
       }
     end
 

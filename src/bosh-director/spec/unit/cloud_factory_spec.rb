@@ -11,6 +11,8 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid').and_return(default_cloud)
+      allow(default_cloud).to receive(:info)
+      allow(default_cloud).to receive(:request_cpi_api_version=)
     end
 
     describe '.create' do
@@ -112,9 +114,9 @@ module Bosh::Director
 
       let(:clouds) do
         [
-          instance_double(Bosh::Cloud),
-          instance_double(Bosh::Cloud),
-          instance_double(Bosh::Cloud),
+          instance_double(Bosh::Clouds::ExternalCpi),
+          instance_double(Bosh::Clouds::ExternalCpi),
+          instance_double(Bosh::Clouds::ExternalCpi),
         ]
       end
 
@@ -123,6 +125,11 @@ module Bosh::Director
         allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, properties_from_cpi_config: cpis[0].properties, stemcell_api_version: nil).and_return(clouds[0])
         allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, properties_from_cpi_config: cpis[1].properties, stemcell_api_version: nil).and_return(clouds[1])
         allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, properties_from_cpi_config: cpis[2].properties, stemcell_api_version: nil).and_return(clouds[2])
+
+        clouds.each do |cloud|
+          allow(cloud).to receive(:info)
+          allow(cloud).to receive(:request_cpi_api_version=)
+        end
       end
 
       it 'returns the cpi if asking for a given existing cpi' do

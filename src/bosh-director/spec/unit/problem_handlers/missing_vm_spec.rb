@@ -82,12 +82,15 @@ module Bosh::Director
     end
 
     describe 'Resolutions:' do
-      let(:fake_cloud) { instance_double('Bosh::Cloud') }
+      let(:fake_cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
 
       before do
         allow(Config).to receive(:uuid).and_return('woof-uuid')
         allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+        allow(fake_cloud).to receive(:info)
+        allow(fake_cloud).to receive(:request_cpi_api_version=)
+        allow(fake_cloud).to receive(:request_cpi_api_version)
         allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(fake_cloud)
 
         allow(fake_new_agent).to receive(:sync_dns) do |_, _, _, &blk|
