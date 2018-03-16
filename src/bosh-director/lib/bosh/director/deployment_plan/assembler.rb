@@ -146,6 +146,10 @@ module Bosh::Director
       }
 
       @links_manager.resolve_deployment_links(@deployment_plan.model, resolve_link_options)
+      if @deployment_plan.model.has_stale_errand_links
+         @deployment_plan.model.has_stale_errand_links = false
+         @deployment_plan.model.save
+      end
     end
 
     # Binds template models for each release spec in the deployment plan

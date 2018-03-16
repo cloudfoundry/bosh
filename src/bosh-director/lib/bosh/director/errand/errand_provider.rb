@@ -14,6 +14,10 @@ module Bosh::Director
       result = nil
 
       deployment = Models::Deployment.first(name: deployment_name)
+      if deployment.has_stale_errand_links
+        deployment.links_serial_id += 1
+        deployment.save
+      end
       # Models::Instance
       instances_from_db = @instance_manager.find_instances_by_deployment(deployment)
 
@@ -136,8 +140,14 @@ module Bosh::Director
     def get_by_name(deployment_name, instances)
       deployment_model = Api::DeploymentManager.new.find_by_name(deployment_name)
       planner_factory = DeploymentPlan::PlannerFactory.create(@logger)
-      deployment_planner = planner_factory.create_from_model(deployment_model)
-      DeploymentPlan::Assembler.create(deployment_planner).bind_models(instances: instances)
+
+      is_deploy_action = !!deployment_model.has_stale_errand_links
+      options = {
+          'deploy' => is_deploy_action
+      }
+
+      deployment_planner = planner_factory.create_from_model(deployment_model, options)
+      DeploymentPlan::Assembler.create(deployment_planner).bind_models(instances: instances, is_deploy_action: is_deploy_action)
       deployment_planner
     end
   end

@@ -27,6 +27,20 @@ module Bosh::Director
 
         expect(db[:deployments].first[:links_serial_id]).to eq(0)
       end
+
+      it 'adds the has_stale_errand_links column to deployment and migrates it to TRUE' do
+        db[:deployments] << {name: 'fake-deployment', id: 43}
+        DBSpecHelper.migrate(migration_file)
+
+        expect(db[:deployments].first[:has_stale_errand_links]).to be_truthy
+      end
+
+      it 'adds the has_stale_errand_links column to deployment and defaults to FALSE' do
+        DBSpecHelper.migrate(migration_file)
+        db[:deployments] << {name: 'fake-deployment', id: 43}
+
+        expect(db[:deployments].first[:has_stale_errand_links]).to be_falsey
+      end
     end
 
     context 'providers migration' do

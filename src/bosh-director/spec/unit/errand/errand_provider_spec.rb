@@ -426,6 +426,31 @@ module Bosh::Director
               returned_errand = subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
               expect(returned_errand.steps[0]).to eq(errand_step)
             end
+
+            it 'should NOT be a deploy action' do
+              expect(deployment_model.links_serial_id).to eq(0)
+
+              subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
+
+              deployment_model.refresh
+              expect(deployment_model.links_serial_id).to eq(0)
+            end
+          end
+
+          context 'and it has stale errand links' do
+            before do
+              deployment_model.has_stale_errand_links = true
+              deployment_model.save
+            end
+
+            it 'still treats it as a deploy action to resolve links' do
+              expect(deployment_model.links_serial_id).to eq(0)
+
+              subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
+
+              deployment_model.refresh
+              expect(deployment_model.links_serial_id).to eq(1)
+            end
           end
 
           context 'and instances are specified' do

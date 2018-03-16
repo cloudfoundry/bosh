@@ -241,6 +241,18 @@ module Bosh::Director
 
             assembler.bind_models({:should_bind_links => false})
           end
+
+          context 'when the links are stale' do
+            before do
+              deployment_model.has_stale_errand_links = true
+            end
+
+            it 'should clear the errand links stale flag in the end' do
+              assembler.bind_models(is_deploy_action: true)
+
+              expect(deployment_model.has_stale_errand_links).to be_falsey
+            end
+          end
         end
 
         context 'properties binding' do

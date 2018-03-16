@@ -68,10 +68,6 @@ Sequel.migration do
       Time :created_at
     end
 
-    # alter_table(:links) do
-    #   add_index [:link_provider_intent_id, :link_consumer_intent_id], unique: true
-    # end
-
     create_table :instances_links do
       primary_key :id
       foreign_key :link_id, :links, :on_delete => :cascade, :null => false
@@ -84,6 +80,9 @@ Sequel.migration do
       add_index [:link_id, :instance_id], unique: true
     end
 
+    alter_table(:deployments) do
+        add_column :has_stale_errand_links, 'boolean', null: false, default: false
+    end
 
     if [:mysql, :mysql2].include? adapter_scheme
       set_column_type :link_provider_intents, :content, 'longtext'
@@ -121,6 +120,8 @@ Sequel.migration do
         end
       end
     end
+
+    self[:deployments].update(has_stale_errand_links: true)
 
     links_to_migrate = {}
 

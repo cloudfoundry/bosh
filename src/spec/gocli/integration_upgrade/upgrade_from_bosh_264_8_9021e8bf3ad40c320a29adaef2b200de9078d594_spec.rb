@@ -1401,4 +1401,14 @@ describe 'director upgrade after refactoring links into separate database tables
     expect(output).to include('Running errand: errand_ig')
     expect(output).to include('Stdout     normal_bar')
   end
+
+  it 'runs the errand and does not create conflicting providers' do
+    output, exit_code = bosh_runner.run('-d shared_deployment_with_errand run-errand errand_with_links', return_exit_code: true)
+
+    expect(exit_code).to eq(0)
+
+    expect(output).to include('Creating missing vms: errand_consumer_ig')
+    expect(output).to include('Updating instance errand_consumer_ig: errand_consumer_ig')
+    expect(output).to include('Stdout     normal_bar')
+  end
 end
