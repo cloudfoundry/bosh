@@ -93,8 +93,8 @@ describe 'calculated vm properties', type: :integration do
 
       expect(invocations.select {|inv| inv.method_name == 'calculate_vm_cloud_properties'}.count).to eq(1)
 
-      expect(invocations[2].method_name).to eq('calculate_vm_cloud_properties')
-      expect(invocations[2].inputs['vm_resources']).to eq(vm_resources)
+      expect(invocations[4].method_name).to eq('calculate_vm_cloud_properties')
+      expect(invocations[4].inputs['vm_resources']).to eq(vm_resources)
 
       invocations.select {|inv| inv.method_name == 'create_vm'}.each do |inv|
         expect(inv.inputs['cloud_properties']).to eq({"instance_type"=>"dummy", "ephemeral_disk"=>{"size"=>10}})

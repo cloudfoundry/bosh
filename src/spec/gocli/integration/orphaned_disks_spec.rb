@@ -100,7 +100,7 @@ describe 'orphaned disks', type: :integration do
 
     # does not attach disk again, delete_vm
     expect(cpi_invocations.map(&:method_name)).to eq(
-      %w[snapshot_disk detach_disk delete_vm create_vm set_vm_metadata detach_disk],
+      %w[info snapshot_disk info detach_disk info delete_vm info create_vm info set_vm_metadata info detach_disk],
     )
   end
 

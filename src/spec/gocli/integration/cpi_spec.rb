@@ -37,14 +37,14 @@ describe 'CPI calls', type: :integration do
       expect(invocations[0].method_name).to eq('info')
       expect(invocations[0].inputs).to be_nil
 
-      expect(invocations[1].method_name).to eq('create_stemcell')
-      expect(invocations[1].inputs).to match({
+      expect(invocations[2].method_name).to eq('create_stemcell')
+      expect(invocations[2].inputs).to match({
         'image_path' => String,
         'cloud_properties' => {'property1' => 'test', 'property2' => 'test'}
       })
 
-      expect(invocations[2].method_name).to eq('create_vm')
-      expect(invocations[2].inputs).to match({
+      expect(invocations[4].method_name).to eq('create_vm')
+      expect(invocations[4].inputs).to match({
         'agent_id' => String,
         'stemcell_id' => String,
         'cloud_properties' => {},
@@ -70,14 +70,14 @@ describe 'CPI calls', type: :integration do
         }
       })
 
-      agent_id = invocations[2].inputs['agent_id']
-      raw_cert = invocations[2].inputs['env']['bosh']['mbus']['cert']['certificate']
+      agent_id = invocations[4].inputs['agent_id']
+      raw_cert = invocations[4].inputs['env']['bosh']['mbus']['cert']['certificate']
       cert = OpenSSL::X509::Certificate.new raw_cert
       cn = cert.subject.to_a.select { |attr| attr[0] == 'CN' }.first
       expect("#{agent_id}.agent.bosh-internal").to eq(cn[1])
 
-      expect(invocations[3].method_name).to eq('set_vm_metadata')
-      expect(invocations[3].inputs).to match({
+      expect(invocations[6].method_name).to eq('set_vm_metadata')
+      expect(invocations[6].inputs).to match({
         'vm_cid' => String,
         'metadata' => {
           'director' => 'TestDirector',
@@ -90,11 +90,11 @@ describe 'CPI calls', type: :integration do
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
-      expect_name(invocations[3])
-      compilation_vm_id = invocations[3].inputs['vm_cid']
+      expect_name(invocations[6])
+      compilation_vm_id = invocations[6].inputs['vm_cid']
 
-      expect(invocations[4].method_name).to eq('set_vm_metadata')
-      expect(invocations[4].inputs).to match({
+      expect(invocations[8].method_name).to eq('set_vm_metadata')
+      expect(invocations[8].inputs).to match({
         'vm_cid' => compilation_vm_id,
         'metadata' => {
           'compiling' => 'foo',
@@ -108,12 +108,13 @@ describe 'CPI calls', type: :integration do
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
       }
       })
-      expect_name(invocations[4])
-      expect(invocations[5].method_name).to eq('delete_vm')
-      expect(invocations[5].inputs).to match({'vm_cid' => compilation_vm_id})
+      expect_name(invocations[8])
 
-      expect(invocations[6].method_name).to eq('create_vm')
-      expect(invocations[6].inputs).to match({
+      expect(invocations[10].method_name).to eq('delete_vm')
+      expect(invocations[10].inputs).to match({'vm_cid' => compilation_vm_id})
+
+      expect(invocations[12].method_name).to eq('create_vm')
+      expect(invocations[12].inputs).to match({
         'agent_id' => String,
         'stemcell_id' => String,
         'cloud_properties' => {},
@@ -139,8 +140,8 @@ describe 'CPI calls', type: :integration do
         }
       })
 
-      expect(invocations[7].method_name).to eq('set_vm_metadata')
-      expect(invocations[7].inputs).to match({
+      expect(invocations[14].method_name).to eq('set_vm_metadata')
+      expect(invocations[14].inputs).to match({
         'vm_cid' => String,
         'metadata' => {
           'director' => 'TestDirector',
@@ -153,11 +154,11 @@ describe 'CPI calls', type: :integration do
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
-      expect_name(invocations[7])
-      compilation_vm_id = invocations[7].inputs['vm_cid']
+      expect_name(invocations[14])
+      compilation_vm_id = invocations[14].inputs['vm_cid']
 
-      expect(invocations[8].method_name).to eq('set_vm_metadata')
-      expect(invocations[8].inputs).to match({
+      expect(invocations[16].method_name).to eq('set_vm_metadata')
+      expect(invocations[16].inputs).to match({
         'vm_cid' => compilation_vm_id,
         'metadata' => {
           'compiling' => 'bar',
@@ -171,13 +172,13 @@ describe 'CPI calls', type: :integration do
           'name' => /compilation-.*\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
-      expect_name(invocations[8])
+      expect_name(invocations[16])
 
-      expect(invocations[9].method_name).to eq('delete_vm')
-      expect(invocations[9].inputs).to match({'vm_cid' => compilation_vm_id})
+      expect(invocations[18].method_name).to eq('delete_vm')
+      expect(invocations[18].inputs).to match({'vm_cid' => compilation_vm_id})
 
-      expect(invocations[10].method_name).to eq('create_vm')
-      expect(invocations[10].inputs).to match({
+      expect(invocations[20].method_name).to eq('create_vm')
+      expect(invocations[20].inputs).to match({
         'agent_id' => String,
         'stemcell_id' => String,
         'cloud_properties' =>{},
@@ -204,8 +205,8 @@ describe 'CPI calls', type: :integration do
         }
       })
 
-      expect(invocations[11].method_name).to eq('set_vm_metadata')
-      expect(invocations[11].inputs).to match({
+      expect(invocations[22].method_name).to eq('set_vm_metadata')
+      expect(invocations[22].inputs).to match({
         'vm_cid' => String,
         'metadata' => {
           'director' => 'TestDirector',
@@ -218,9 +219,9 @@ describe 'CPI calls', type: :integration do
           'name' => /foobar\/[0-9a-f]{8}-[0-9a-f-]{27}/
         }
       })
-      expect_name(invocations[11])
+      expect_name(invocations[22])
 
-      expect(invocations.size).to eq(12)
+      expect(invocations.size).to eq(24)
     end
 
     context 'when stemcell has api version' do
@@ -263,11 +264,11 @@ describe 'CPI calls', type: :integration do
         expect(first_deploy_invocations[0].inputs).to be_nil
         expect(first_deploy_invocations[0].context).to match(context_without_api_version)
 
-        expect(first_deploy_invocations[1].method_name).to eq('create_stemcell')
-        expect(first_deploy_invocations[1].context).to match(context_without_api_version)
+        expect(first_deploy_invocations[2].method_name).to eq('create_stemcell')
+        expect(first_deploy_invocations[2].context).to match(context_without_api_version)
 
-        expect(first_deploy_invocations[2].method_name).to eq('create_vm')
-        expect(first_deploy_invocations[2].inputs).to match({
+        expect(first_deploy_invocations[4].method_name).to eq('create_vm')
+        expect(first_deploy_invocations[4].inputs).to match({
                                                               'agent_id' => String,
                                                               'stemcell_id' => String,
                                                               'cloud_properties' => {},
@@ -292,26 +293,26 @@ describe 'CPI calls', type: :integration do
                                                                 }
                                                               }
                                                             })
-        expect(first_deploy_invocations[2].context).to match(context_with_api_version)
+        expect(first_deploy_invocations[4].context).to match(context_with_api_version)
 
-        expect(first_deploy_invocations[3].method_name).to eq('set_vm_metadata')
-        expect(first_deploy_invocations[3].context).to match(context_without_api_version)
-        expect_name(first_deploy_invocations[3])
-        vm_cid = first_deploy_invocations[3].inputs['vm_cid']
+        expect(first_deploy_invocations[6].method_name).to eq('set_vm_metadata')
+        expect(first_deploy_invocations[6].context).to match(context_without_api_version)
+        expect_name(first_deploy_invocations[6])
+        vm_cid = first_deploy_invocations[6].inputs['vm_cid']
 
-        expect(first_deploy_invocations[4].method_name).to eq('create_disk')
-        expect(first_deploy_invocations[4].context).to match(context_without_api_version)
+        expect(first_deploy_invocations[9].method_name).to eq('create_disk')
+        expect(first_deploy_invocations[9].context).to match(context_without_api_version)
 
-        expect(first_deploy_invocations[5].method_name).to eq('attach_disk')
-        expect(first_deploy_invocations[5].inputs).to match({
+        expect(first_deploy_invocations[11].method_name).to eq('attach_disk')
+        expect(first_deploy_invocations[11].inputs).to match({
                                                               'vm_cid' => vm_cid,
                                                               'disk_id' => String
                                                             })
-        disk_cid = first_deploy_invocations[5].inputs['disk_id']
-        expect(first_deploy_invocations[5].context).to match(context_with_api_version)
+        disk_cid = first_deploy_invocations[11].inputs['disk_id']
+        expect(first_deploy_invocations[11].context).to match(context_with_api_version)
 
-        expect(first_deploy_invocations[6].method_name).to eq('set_disk_metadata')
-        expect(first_deploy_invocations[6].inputs).to match({
+        expect(first_deploy_invocations[13].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[13].inputs).to match({
                                                               'disk_cid' => disk_cid,
                                                               'metadata' => {
                                                                 'director' => 'TestDirector',
@@ -322,7 +323,7 @@ describe 'CPI calls', type: :integration do
                                                                 'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
                                                               }
                                                             })
-        expect(first_deploy_invocations[6].context).to match(context_without_api_version)
+        expect(first_deploy_invocations[13].context).to match(context_without_api_version)
 
         manifest_hash['instance_groups'] = [
           Bosh::Spec::NewDeployments.simple_instance_group(
@@ -356,8 +357,8 @@ describe 'CPI calls', type: :integration do
 
         second_deploy_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
 
-        expect(second_deploy_invocations[0].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[0].inputs).to match({
+        expect(second_deploy_invocations[1].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[1].inputs).to match({
                                                                'agent_id' => String,
                                                                'stemcell_id' => String,
                                                                'cloud_properties' => {},
@@ -375,64 +376,64 @@ describe 'CPI calls', type: :integration do
                                                                'disk_cids' => [],
                                                                'env' => anything
                                                              })
-        expect(second_deploy_invocations[0].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[1].context).to match(context_with_api_version)
 
-        expect(second_deploy_invocations[1].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[1].context).to match(context_without_api_version)
-
-        expect(second_deploy_invocations[2].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[2].context).to match(context_without_api_version)
-
-        expect(second_deploy_invocations[3].method_name).to eq('delete_vm')
-        expect(second_deploy_invocations[3].context).to match(context_with_api_version)
-
-        expect(second_deploy_invocations[4].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[4].inputs).to match({
-                                                               'agent_id' => String,
-                                                               'stemcell_id' => String,
-                                                               'cloud_properties' => {},
-                                                               'networks' => {
-                                                                 'a' => {
-                                                                   'type' => 'manual',
-                                                                   'ip' => String,
-                                                                   'netmask' => '255.255.255.0',
-                                                                   'cloud_properties' => {},
-                                                                   'default' => ['dns', 'gateway'],
-                                                                   'dns' => ['192.168.1.1', '192.168.1.2'],
-                                                                   'gateway' => '192.168.1.1',
-                                                                 }
-                                                               },
-                                                               'disk_cids' => [],
-                                                               'env' => anything
-                                                             })
-        expect(second_deploy_invocations[4].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[3].context).to match(context_without_api_version)
 
         expect(second_deploy_invocations[5].method_name).to eq('set_vm_metadata')
         expect(second_deploy_invocations[5].context).to match(context_without_api_version)
 
-        expect(second_deploy_invocations[6].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[6].context).to match(context_without_api_version)
-
         expect(second_deploy_invocations[7].method_name).to eq('delete_vm')
         expect(second_deploy_invocations[7].context).to match(context_with_api_version)
 
-        expect(second_deploy_invocations[8].method_name).to eq('snapshot_disk')
-        expect(second_deploy_invocations[8].context).to match(context_without_api_version)
-
-        expect(second_deploy_invocations[9].method_name).to eq('detach_disk')
-        expect(second_deploy_invocations[9].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[9].method_name).to eq('create_vm')
         expect(second_deploy_invocations[9].inputs).to match({
+                                                               'agent_id' => String,
+                                                               'stemcell_id' => String,
+                                                               'cloud_properties' => {},
+                                                               'networks' => {
+                                                                 'a' => {
+                                                                   'type' => 'manual',
+                                                                   'ip' => String,
+                                                                   'netmask' => '255.255.255.0',
+                                                                   'cloud_properties' => {},
+                                                                   'default' => ['dns', 'gateway'],
+                                                                   'dns' => ['192.168.1.1', '192.168.1.2'],
+                                                                   'gateway' => '192.168.1.1',
+                                                                 }
+                                                               },
+                                                               'disk_cids' => [],
+                                                               'env' => anything
+                                                             })
+        expect(second_deploy_invocations[9].context).to match(context_with_api_version)
+
+        expect(second_deploy_invocations[11].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[11].context).to match(context_without_api_version)
+
+        expect(second_deploy_invocations[13].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[13].context).to match(context_without_api_version)
+
+        expect(second_deploy_invocations[15].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[15].context).to match(context_with_api_version)
+
+        expect(second_deploy_invocations[17].method_name).to eq('snapshot_disk')
+        expect(second_deploy_invocations[17].context).to match(context_without_api_version)
+
+        expect(second_deploy_invocations[19].method_name).to eq('detach_disk')
+        expect(second_deploy_invocations[19].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[19].inputs).to match({
                                                                'vm_cid' => vm_cid, 'disk_id' => disk_cid
                                                              })
 
-        expect(second_deploy_invocations[10].method_name).to eq('delete_vm')
-        expect(second_deploy_invocations[10].inputs).to match({
+        expect(second_deploy_invocations[21].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[21].inputs).to match({
                                                                 'vm_cid' => vm_cid
                                                               })
-        expect(second_deploy_invocations[10].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[21].context).to match(context_with_api_version)
 
-        expect(second_deploy_invocations[11].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[11].inputs).to match({
+        expect(second_deploy_invocations[23].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[23].inputs).to match({
                                                                 'agent_id' => String,
                                                                 'stemcell_id' => String,
                                                                 'cloud_properties' => {},
@@ -457,24 +458,24 @@ describe 'CPI calls', type: :integration do
                                                                   }
                                                                 }
                                                               })
-        expect(second_deploy_invocations[11].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[23].context).to match(context_with_api_version)
 
-        expect(second_deploy_invocations[12].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[12].context).to match(context_without_api_version)
+        expect(second_deploy_invocations[25].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[25].context).to match(context_without_api_version)
 
-        expect_name(second_deploy_invocations[12])
+        expect_name(second_deploy_invocations[25])
 
-        new_vm_cid = second_deploy_invocations[12].inputs['vm_cid']
+        new_vm_cid = second_deploy_invocations[25].inputs['vm_cid']
 
-        expect(second_deploy_invocations[13].method_name).to eq('attach_disk')
-        expect(second_deploy_invocations[13].inputs).to match({
+        expect(second_deploy_invocations[27].method_name).to eq('attach_disk')
+        expect(second_deploy_invocations[27].inputs).to match({
                                                                 'vm_cid' => new_vm_cid,
                                                                 'disk_id' => disk_cid
                                                               })
-        expect(second_deploy_invocations[13].context).to match(context_with_api_version)
+        expect(second_deploy_invocations[27].context).to match(context_with_api_version)
 
-        expect(second_deploy_invocations[14].method_name).to eq('set_disk_metadata')
-        expect(second_deploy_invocations[14].context).to match(context_without_api_version)
+        expect(second_deploy_invocations[29].method_name).to eq('set_disk_metadata')
+        expect(second_deploy_invocations[29].context).to match(context_without_api_version)
       end
     end
 
@@ -499,8 +500,8 @@ describe 'CPI calls', type: :integration do
         expect(first_deploy_invocations[0].method_name).to eq('info')
         expect(first_deploy_invocations[0].inputs).to be_nil
 
-        expect(first_deploy_invocations[1].method_name).to eq('create_stemcell')
-        expect(first_deploy_invocations[1].inputs).to match({
+        expect(first_deploy_invocations[2].method_name).to eq('create_stemcell')
+        expect(first_deploy_invocations[2].inputs).to match({
           'image_path' => String,
           'cloud_properties' => {
             'property1' => 'test',
@@ -508,8 +509,8 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(first_deploy_invocations[2].method_name).to eq('create_vm')
-        expect(first_deploy_invocations[2].inputs).to match({
+        expect(first_deploy_invocations[4].method_name).to eq('create_vm')
+        expect(first_deploy_invocations[4].inputs).to match({
           'agent_id' => String,
           'stemcell_id' => String,
           'cloud_properties' => {},
@@ -535,8 +536,8 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(first_deploy_invocations[3].method_name).to eq('set_vm_metadata')
-        expect(first_deploy_invocations[3].inputs).to match({
+        expect(first_deploy_invocations[6].method_name).to eq('set_vm_metadata')
+        expect(first_deploy_invocations[6].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
             'director' => 'TestDirector',
@@ -549,25 +550,25 @@ describe 'CPI calls', type: :integration do
             'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/
           }
         })
-        expect_name(first_deploy_invocations[3])
-        vm_cid = first_deploy_invocations[3].inputs['vm_cid']
+        expect_name(first_deploy_invocations[6])
+        vm_cid = first_deploy_invocations[6].inputs['vm_cid']
 
-        expect(first_deploy_invocations[4].method_name).to eq('create_disk')
-        expect(first_deploy_invocations[4].inputs).to match({
+        expect(first_deploy_invocations[9].method_name).to eq('create_disk')
+        expect(first_deploy_invocations[9].inputs).to match({
           'size' => 123,
           'cloud_properties' => {},
           'vm_locality' => vm_cid
         })
 
-        expect(first_deploy_invocations[5].method_name).to eq('attach_disk')
-        expect(first_deploy_invocations[5].inputs).to match({
+        expect(first_deploy_invocations[11].method_name).to eq('attach_disk')
+        expect(first_deploy_invocations[11].inputs).to match({
           'vm_cid' => vm_cid,
           'disk_id' => String
         })
-        disk_cid = first_deploy_invocations[5].inputs['disk_id']
+        disk_cid = first_deploy_invocations[11].inputs['disk_id']
 
-        expect(first_deploy_invocations[6].method_name).to eq('set_disk_metadata')
-        expect(first_deploy_invocations[6].inputs).to match({
+        expect(first_deploy_invocations[13].method_name).to eq('set_disk_metadata')
+        expect(first_deploy_invocations[13].inputs).to match({
           'disk_cid' => disk_cid,
           'metadata' => {
             'director' => 'TestDirector',
@@ -611,8 +612,8 @@ describe 'CPI calls', type: :integration do
 
         second_deploy_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
 
-        expect(second_deploy_invocations[0].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[0].inputs).to match({
+        expect(second_deploy_invocations[1].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[1].inputs).to match({
           'agent_id' => String,
           'stemcell_id' => String,
           'cloud_properties' => {},
@@ -631,8 +632,8 @@ describe 'CPI calls', type: :integration do
           'env' => anything
         })
 
-        expect(second_deploy_invocations[1].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[1].inputs).to match({
+        expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[3].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
             'director' => 'TestDirector',
@@ -646,44 +647,6 @@ describe 'CPI calls', type: :integration do
             'tag1' => 'value1',
             'tag2' => 'value2'
           }
-        })
-
-        expect(second_deploy_invocations[2].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[2].inputs).to match({
-          'vm_cid' => String,
-          'metadata' => {
-            'director' => 'TestDirector',
-            'created_at' => kind_of(String),
-            'deployment' => 'simple',
-            'job' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'instance_group' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'index' => '0',
-            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'compiling' => 'foo'
-          }
-        })
-
-        expect(second_deploy_invocations[3].method_name).to eq('delete_vm')
-
-        expect(second_deploy_invocations[4].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[4].inputs).to match({
-          'agent_id' => String,
-          'stemcell_id' => String,
-          'cloud_properties' => {},
-          'networks' => {
-            'a' => {
-              'type' => 'manual',
-              'ip' => String,
-              'netmask' => '255.255.255.0',
-              'cloud_properties' => {},
-              'default' => ['dns', 'gateway'],
-              'dns' => ['192.168.1.1', '192.168.1.2'],
-              'gateway' => '192.168.1.1',
-            }
-          },
-          'disk_cids' => [],
-          'env' => anything
         })
 
         expect(second_deploy_invocations[5].method_name).to eq('set_vm_metadata')
@@ -698,13 +661,51 @@ describe 'CPI calls', type: :integration do
             'index' => '0',
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'compiling' => 'foo'
+          }
+        })
+
+        expect(second_deploy_invocations[7].method_name).to eq('delete_vm')
+
+        expect(second_deploy_invocations[9].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[9].inputs).to match({
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'type' => 'manual',
+              'ip' => String,
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            }
+          },
+          'disk_cids' => [],
+          'env' => anything
+        })
+
+        expect(second_deploy_invocations[11].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[11].inputs).to match({
+          'vm_cid' => String,
+          'metadata' => {
+            'director' => 'TestDirector',
+            'created_at' => kind_of(String),
+            'deployment' => 'simple',
+            'job' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'instance_group' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'index' => '0',
+            'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
+            'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
             'tag1' => 'value1',
             'tag2' => 'value2'
           }
         })
 
-        expect(second_deploy_invocations[6].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[6].inputs).to match({
+        expect(second_deploy_invocations[13].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[13].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
             'director' => 'TestDirector',
@@ -719,10 +720,10 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[7].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[15].method_name).to eq('delete_vm')
 
-        expect(second_deploy_invocations[8].method_name).to eq('snapshot_disk')
-        expect(second_deploy_invocations[8].inputs).to match({
+        expect(second_deploy_invocations[17].method_name).to eq('snapshot_disk')
+        expect(second_deploy_invocations[17].inputs).to match({
           'disk_id' => disk_cid,
           'metadata' => {
             'deployment' => 'simple',
@@ -735,18 +736,18 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[9].method_name).to eq('detach_disk')
-        expect(second_deploy_invocations[9].inputs).to match({
+        expect(second_deploy_invocations[19].method_name).to eq('detach_disk')
+        expect(second_deploy_invocations[19].inputs).to match({
           "vm_cid" => vm_cid, "disk_id" => disk_cid
         })
 
-        expect(second_deploy_invocations[10].method_name).to eq('delete_vm')
-        expect(second_deploy_invocations[10].inputs).to match({
+        expect(second_deploy_invocations[21].method_name).to eq('delete_vm')
+        expect(second_deploy_invocations[21].inputs).to match({
           'vm_cid' => vm_cid
         })
 
-        expect(second_deploy_invocations[11].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[11].inputs).to match({
+        expect(second_deploy_invocations[23].method_name).to eq('create_vm')
+        expect(second_deploy_invocations[23].inputs).to match({
           'agent_id' => String,
           'stemcell_id' => String,
           'cloud_properties' => {},
@@ -772,8 +773,8 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect(second_deploy_invocations[12].method_name).to eq('set_vm_metadata')
-        expect(second_deploy_invocations[12].inputs).to match({
+        expect(second_deploy_invocations[25].method_name).to eq('set_vm_metadata')
+        expect(second_deploy_invocations[25].inputs).to match({
           'vm_cid' => String,
           'metadata' => {
             'director' => 'TestDirector',
@@ -789,18 +790,18 @@ describe 'CPI calls', type: :integration do
           }
         })
 
-        expect_name(second_deploy_invocations[12])
+        expect_name(second_deploy_invocations[25])
 
-        new_vm_cid = second_deploy_invocations[12].inputs['vm_cid']
+        new_vm_cid = second_deploy_invocations[25].inputs['vm_cid']
 
-        expect(second_deploy_invocations[13].method_name).to eq('attach_disk')
-        expect(second_deploy_invocations[13].inputs).to match({
+        expect(second_deploy_invocations[27].method_name).to eq('attach_disk')
+        expect(second_deploy_invocations[27].inputs).to match({
           'vm_cid' => new_vm_cid,
           'disk_id' => disk_cid
         })
 
-        expect(second_deploy_invocations[14].method_name).to eq('set_disk_metadata')
-        expect(second_deploy_invocations[14].inputs).to match({
+        expect(second_deploy_invocations[29].method_name).to eq('set_disk_metadata')
+        expect(second_deploy_invocations[29].inputs).to match({
           'disk_cid' => disk_cid,
           'metadata' => {
             'director' => 'TestDirector',
@@ -854,9 +855,9 @@ describe 'CPI calls', type: :integration do
         expect(invocations[0].inputs).to eq(nil)
         expect(invocations[0].context).to include({'somekey' => 'someval'})
 
-        expect(invocations[2].method_name).to eq('info')
-        expect(invocations[2].inputs).to eq(nil)
-        expect(invocations[2].context).to include({'somekey2' => 'someval2'})
+        expect(invocations[3].method_name).to eq('info')
+        expect(invocations[3].inputs).to eq(nil)
+        expect(invocations[3].context).to include({'somekey2' => 'someval2'})
       end
     end
   end

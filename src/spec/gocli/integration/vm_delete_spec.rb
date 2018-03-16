@@ -18,9 +18,9 @@ describe 'vm delete', type: :integration do
   context 'when bosh has deployed the vm' do
     it 'deletes the vm by its vm_cid' do
       instance = director.instances.first
-      expect(current_sandbox.cpi.has_vm?(instance.vm_cid)).to be_truthy
+      expect(current_sandbox.cpi.has_vm(instance.vm_cid)).to be_truthy
       output = bosh_runner.run("delete-vm #{instance.vm_cid}", deployment_name: 'simple')
-      expect(current_sandbox.cpi.has_vm?(instance.vm_cid)).not_to be_truthy
+      expect(current_sandbox.cpi.has_vm(instance.vm_cid)).not_to be_truthy
       expect(director.vms.count).to eq(0)
       expect(output).to match /Delete VM: [0-9]{1,6}/
       expect(output).to match /Delete VM: VM [0-9]{1,6} is successfully deleted/
@@ -33,9 +33,9 @@ describe 'vm delete', type: :integration do
 
       #no reference to instance
       id = resurrected_instance.vm_cid
-      expect(current_sandbox.cpi.has_vm?(id)).to be_truthy
+      expect(current_sandbox.cpi.has_vm(id)).to be_truthy
       output = bosh_runner.run("delete-vm #{id}", deployment_name: 'simple')
-      expect(current_sandbox.cpi.has_vm?(id)).not_to be_truthy
+      expect(current_sandbox.cpi.has_vm(id)).not_to be_truthy
       expect(output).to match /Delete VM: [0-9]{1,6}/
       expect(output).to match /Delete VM: VM [0-9]{1,6} is successfully deleted/
       expect(output).to match /Succeeded/
@@ -50,7 +50,7 @@ describe 'vm delete', type: :integration do
 
       cpi_invocations = current_sandbox.cpi.invocations
 
-      [13, 18].each do |cpi_call_index|
+      [26, 35].each do |cpi_call_index|
         expect(cpi_invocations[cpi_call_index].method_name).to eq('delete_vm')
         expect(cpi_invocations[cpi_call_index].context).to match({
           'director_uuid' => kind_of(String),
@@ -63,8 +63,8 @@ describe 'vm delete', type: :integration do
         })
       end
 
-      expect(cpi_invocations[20].method_name).to eq('delete_vm')
-      expect(cpi_invocations[20].context).to match({
+      expect(cpi_invocations[38].method_name).to eq('delete_vm')
+      expect(cpi_invocations[38].context).to match({
         'director_uuid' => kind_of(String),
         'request_id' => kind_of(String),
         'vm' => {
@@ -107,15 +107,15 @@ describe 'vm delete', type: :integration do
       network ={'a' => {'ip' => '192.168.1.5', 'type' => 'dynamic'}}
       id = current_sandbox.cpi.create_vm(SecureRandom.uuid, current_sandbox.cpi.latest_stemcell['id'], {}, network, [], env)
 
-      expect(current_sandbox.cpi.has_vm?(id)).to be_truthy
+      expect(current_sandbox.cpi.has_vm(id)).to be_truthy
       bosh_runner.run("delete-vm #{id}", deployment_name: 'simple')
-      expect(current_sandbox.cpi.has_vm?(id)).not_to be_truthy
+      expect(current_sandbox.cpi.has_vm(id)).not_to be_truthy
 
       expect { bosh_runner.run("delete-vm #{id}", deployment_name: 'simple') }.not_to raise_error
 
       cpi_invocations = current_sandbox.cpi.invocations
 
-      [14, 16].each do |cpi_call_index|
+      [27, 30].each do |cpi_call_index|
         expect(cpi_invocations[cpi_call_index].method_name).to eq('delete_vm')
         expect(cpi_invocations[cpi_call_index].context).to match({
            'director_uuid' => kind_of(String),

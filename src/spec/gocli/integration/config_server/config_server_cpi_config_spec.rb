@@ -49,9 +49,17 @@ describe 'cpi config', type: :integration do
           expect(invocations[0].inputs).to eq(nil)
           expect(invocations[0].context).to include({'someKeyFoo1' => 'some-foo-val-1',
                                                      'someKeyBar1' => 'some-bar-val-1'})
-          expect(invocations[2].method_name).to eq('info')
-          expect(invocations[2].inputs).to eq(nil)
-          expect(invocations[2].context).to include({'someKeyFoo2' => 'some-foo-val-2',
+          expect(invocations[1].method_name).to eq('info')
+          expect(invocations[1].inputs).to eq(nil)
+          expect(invocations[1].context).to include({'someKeyFoo1' => 'some-foo-val-1',
+                                                     'someKeyBar1' => 'some-bar-val-1'})
+          expect(invocations[3].method_name).to eq('info')
+          expect(invocations[3].inputs).to eq(nil)
+          expect(invocations[3].context).to include({'someKeyFoo2' => 'some-foo-val-2',
+                                                     'someKeyBar2' => 'some-bar-val-2'})
+          expect(invocations[4].method_name).to eq('info')
+          expect(invocations[4].inputs).to eq(nil)
+          expect(invocations[4].context).to include({'someKeyFoo2' => 'some-foo-val-2',
                                                      'someKeyBar2' => 'some-bar-val-2'})
 
         end
