@@ -50,7 +50,8 @@ module Bosh::Director
             disk_cid: 'original-disk-cid',
             instance_id: instance_model.id,
             active: true,
-            size: 50)
+            size: 50,
+            cloud_properties: { "encrypted" => true })
         end
 
         it 'attaches the disk' do
@@ -60,10 +61,11 @@ module Bosh::Director
           expect(active_disks.first.disk_cid).to eq(disk_cid)
         end
 
-        it 'sets the disk size to 1 so it is migrated to the desired size next deploy' do
+        it 'sets the disk size and cloud_properties to that of previous persistent disk' do
           attach_disk_job.perform
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
-          expect(active_disks.first.size).to eq(1)
+          expect(active_disks.first.size).to eq(50)
+          expect(active_disks.first.cloud_properties).to eq({ "encrypted" => true })
         end
 
         it 'marks the pre existing active persistent disk as inactive and orphans it' do
