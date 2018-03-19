@@ -423,6 +423,21 @@ module Bosh::Director
             expect(spec.has_key?('links')).to be_falsey
           end
         end
+
+        context 'when link_consumer is deleted: #cascade relationship' do
+          it 'should delete associated link_consumer_intents and links' do
+            DBSpecHelper.migrate(migration_file)
+
+            link_consumer_1 = db[:link_consumers].where(name: 'http_proxy_with_requires').first
+            link_consumer_intent_1 = db[:link_consumer_intents].where(original_name: 'proxied_http_endpoint').first
+            link_1 = db[:links].where(name: 'proxied_http_endpoint').first
+
+            expect{db[:link_consumers].where(id: link_consumer_1[:id]).delete}.to_not raise_error
+
+            expect(db[:link_consumer_intents].where(id: link_consumer_intent_1[:id]).first).to be_nil
+            expect(db[:links].where(link_consumer_intent_id: link_consumer_intent_1[:id]).count).to eq(0)
+          end
+        end
       end
 
       context 'when multiple instances contain the same link key' do

@@ -61,8 +61,8 @@ Sequel.migration do
 
     create_table :links do
       primary_key :id
-      foreign_key :link_provider_intent_id, :on_delete => :set_null
-      foreign_key :link_consumer_intent_id, :on_delete => :cascade, :null => false
+      foreign_key :link_provider_intent_id, :link_provider_intents, :on_delete => :set_null
+      foreign_key :link_consumer_intent_id, :link_consumer_intents, :on_delete => :cascade, :null => false
       String :name, :null => false
       String :link_content
       Time :created_at
