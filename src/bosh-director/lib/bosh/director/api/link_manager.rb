@@ -38,6 +38,16 @@ module Bosh::Director
         filter_content_and_create_link(consumer_intent)
       end
 
+      def delete_link(usename, link_id)
+        link = find_link(link_id)
+        if link.nil?
+          raise "Invalid link id: #{link_id}"
+        end
+
+        is_link_external(link)
+
+        delete_external_link(link)
+      end
 
       private
 
@@ -54,6 +64,23 @@ module Bosh::Director
         end
       end
 
+      def validate_consumer_network(provider_intent, consumer_network, consumer_name)
+        # TODO Links: discuss about possibility of value of content being empty; will cause nil class error
+        content = provider_intent.content
+        provider_intent_networks = JSON.parse(content)['networks']
+
+        if consumer_network && !provider_intent_networks.include?(consumer_network)
+          raise Bosh::Director::LinkNetworkLookupError, "Can't resolve network: `#{consumer_network}` in provider id: #{provider_intent.id} for `#{consumer_name}`"
+        end
+      end
+
+      def is_link_external(link)
+        consumer = link.link_consumer_intent.link_consumer
+        if consumer.type != @external_type
+          raise "Error deleting link: not a external link"
+        end
+      end
+
       def filter_content_and_create_link(consumer_intent)
         # global_use_dns should be the director default for external link
         global_use_dns = Bosh::Director::Config.local_dns_use_dns_addresses?
@@ -64,14 +91,13 @@ module Bosh::Director
         Bosh::Director::Models::Links::LinkProviderIntent.find(id: provider_intent_id)
       end
 
-      def validate_consumer_network(provider_intent, consumer_network, consumer_name)
-        # TODO Links: discuss about possibility of value of content being empty; will cause nil class error
-        content = provider_intent.content
-        provider_intent_networks = JSON.parse(content)['networks']
+      def find_link(link_id)
+        Bosh::Director::Models::Links::Link.find(id: link_id)
+      end
 
-        if consumer_network && !provider_intent_networks.include?(consumer_network)
-          raise Bosh::Director::LinkNetworkLookupError, "Can't resolve network: `#{consumer_network}` in provider id: #{provider_intent.id} for `#{consumer_name}`"
-        end
+      def delete_external_link(link)
+        consumer = link.link_consumer_intent.link_consumer
+        consumer.destroy
       end
     end
   end

@@ -53,12 +53,42 @@ module Bosh::Director
     let(:provider_id) {provider_1_intent_1.id}
 
     describe '#create_link' do
+      shared_examples 'creates consumer, consumer_intent and link' do
+        it '#filter_content_and_create_link' do
+          subject.create_link(username, payload_json)
+
+          external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
+            deployment: deployment,
+            instance_group: instance_group,
+            name: "external_consumer_1",
+            type: "external"
+          )
+          expect(external_consumer).to_not be_nil
+
+          external_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+            link_consumer: external_consumer,
+            original_name: provider_1.name
+          )
+          expect(external_consumer_intent).to_not be_nil
+          expect(external_consumer_intent.type).to eq(provider_1_intent_1.type)
+
+          external_link = Bosh::Director::Models::Links::Link.find(
+            link_provider_intent_id: provider_1_intent_1.id,
+            link_consumer_intent_id: external_consumer_intent.id,
+            name: provider_1.name
+          )
+          expect(external_link).to_not be_nil
+          expect(JSON.parse(external_link.link_content)).to match({'default_network' => String, 'networks' => ['neta', 'netb'], 'instances' => [{'address' => 'ip2'}]})
+        end
+      end
+
       context 'when link_provider_id is invalid' do
         let(:provider_id) { 42 }
         it 'return error' do
           expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid link_provider_id: #{provider_id}/)
         end
       end
+
       context 'when link_provider_id is missing' do
         let(:provider_id) { "" }
         it 'return error' do
@@ -105,36 +135,6 @@ module Bosh::Director
         let(:consumer_1_intent_1) {}
         let(:link_1) {}
 
-        shared_examples 'creates consumer, consumer_intent and link' do
-          it '#filter_content_and_create_link' do
-            subject.create_link(username, payload_json)
-
-            actual_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
-              deployment: deployment,
-              instance_group: instance_group,
-              name: "external_consumer_1",
-              type: "external"
-            )
-            expect(actual_consumer).to_not be_nil
-
-            actual_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
-              link_consumer: actual_consumer,
-              original_name: provider_1.name
-            )
-            expect(actual_consumer_intent).to_not be_nil
-            expect(actual_consumer_intent.type).to eq(provider_1_intent_1.type)
-
-            actual_link = Bosh::Director::Models::Links::Link.find(
-              link_provider_intent_id: provider_1_intent_1.id,
-              link_consumer_intent_id: actual_consumer_intent.id,
-              name: provider_1.name
-            )
-            expect(actual_link).to_not be_nil
-            expect(JSON.parse(actual_link.link_content)).to match({'default_network' => String, 'networks' => ['neta', 'netb'], 'instances' => [{'address' => 'ip2'}]})
-          end
-
-        end
-
         context '#filter_content_and_create_link' do
           include_examples 'creates consumer, consumer_intent and link'
         end
@@ -178,6 +178,133 @@ module Bosh::Director
 
             it 'return error' do
               expect { subject.create_link(username, payload_json) }.to raise_error(/Can't resolve network: `invalid_network_name` in provider id: 1 for `external_consumer_1`/)
+            end
+          end
+        end
+      end
+    end
+
+    describe '#delete_link' do
+      let!(:not_external_consumer_1) do
+        Models::Links::LinkConsumer.create(
+          deployment: deployment,
+          instance_group: 'instance_group',
+          type: 'job',
+          name: 'job_name_1',
+          serial_id: link_serial_id,
+          )
+      end
+
+      let!(:not_external_consumer_intent_1) do
+        Models::Links::LinkConsumerIntent.create(
+          link_consumer: not_external_consumer_1,
+          original_name: 'link_1',
+          type: 'link_type_1',
+          name: 'link_alias_1',
+          optional: false,
+          blocked: false,
+          serial_id: link_serial_id,
+        )
+      end
+      let!(:not_external_link_1) do
+        Models::Links::Link.create(
+          :name => 'link_1',
+          :link_provider_intent_id => provider_1_intent_1.id,
+          :link_consumer_intent_id => not_external_consumer_intent_1.id,
+          :link_content => "content 1",
+          :created_at => Time.now
+        )
+      end
+      context 'when link_id is invalid' do
+        context 'when link is not external' do
+          let(:link_id) { not_external_link_1.id  }
+          it 'return error' do
+            expect{ subject.delete_link(username, link_id) }.to raise_error(RuntimeError, /Error deleting link: not a external link/)
+          end
+        end
+
+        context 'when link_id is non-existing' do
+          let(:link_id) { 42 + not_external_link_1.id }
+          it 'return error' do
+            expect{ subject.delete_link(username, link_id) }.to raise_error(RuntimeError, "Invalid link id: #{link_id}")
+          end
+        end
+      end
+
+      context 'when link id is valid' do
+        context 'when link is not created by the user' do
+          it 'return access error' do
+            #TODO Links: need to discuss more about the access filter
+          end
+        end
+
+        context 'when link is external' do
+          before do
+            subject.create_link(username, payload_json)
+
+            @external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
+              deployment: deployment,
+              instance_group: instance_group,
+              name: "external_consumer_1",
+              type: "external"
+            )
+            expect(@external_consumer).to_not be_nil
+
+            @external_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+              link_consumer: @external_consumer,
+              original_name: provider_1.name
+            )
+            expect(@external_consumer_intent).to_not be_nil
+
+            @external_link = Bosh::Director::Models::Links::Link.find(
+              link_provider_intent_id: provider_1_intent_1.id,
+              link_consumer_intent_id: @external_consumer_intent.id,
+              name: provider_1.name
+            )
+            expect(@external_link).to_not be_nil
+          end
+          it 'delete link' do
+            expect{ subject.delete_link(username, @external_link.id) }.to_not raise_error
+
+            invalid_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
+              deployment: deployment,
+              instance_group: instance_group,
+              name: "external_consumer_1",
+              type: "external"
+            )
+            expect(invalid_consumer).to be_nil
+
+            invalid_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
+              link_consumer: @external_consumer,
+              original_name: provider_1.name
+            )
+            expect(invalid_consumer_intent).to be_nil
+
+            invalid_link = Bosh::Director::Models::Links::Link.find(
+              link_provider_intent_id: provider_1_intent_1.id,
+              link_consumer_intent_id: @external_consumer_intent.id,
+              name: provider_1.name
+            )
+
+            expect(invalid_link).to eq(nil)
+          end
+
+          #TODO Link: make sure we need it or not
+          context 'when link is not deleted' do
+            before do
+              allow(@external_link).to receive(:destroy).and_return(nil)
+              allow(@external_link).to receive(:delete).and_return(nil)
+            end
+            it 'return error' do
+              # expect{ subject.delete_link(username, @external_link.id) }.to raise_error
+              #
+              # invalid_link = Bosh::Director::Models::Links::Link.find(
+              #   link_provider_intent_id: provider_1_intent_1.id,
+              #   link_consumer_intent_id: @external_consumer_intent.id,
+              #   name: provider_1.name
+              # )
+              #
+              # expect(invalid_link).to_not be_nil
             end
           end
         end
