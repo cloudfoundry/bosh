@@ -66,12 +66,13 @@ module Bosh::Director
 
         stemcells_to_delete = @stemcells_to_delete_picker.pick(stemcells_to_keep)
         stemcell_stage = Config.event_log.begin_stage('Deleting stemcells', stemcells_to_delete.count)
-        ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+        ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
           stemcells_to_delete.each do |stemcell|
             pool.process do
               stemcell_stage.advance_and_track("#{stemcell['name']}/#{stemcell['version']}") do
+                Models::StemcellUpload.where(name: stemcell['name'], version: stemcell['version']).delete
                 stemcells = @stemcell_manager.all_by_name_and_version(stemcell['name'], stemcell['version'])
-                stemcells.each{|stemcell| @stemcell_deleter.delete(stemcell) }
+                stemcells.each { |s| @stemcell_deleter.delete(s) }
               end
             end
           end
