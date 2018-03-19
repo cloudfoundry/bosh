@@ -7,7 +7,7 @@ module Bosh::Director
       include ApiHelper
 
       def all_by_name_and_version(name, version)
-        Models::Stemcell.where(:name => name, :version => version).all
+        Models::Stemcell.where(name: name, version: version).all
       end
 
       def find_by_name_and_version_and_cpi(name, version, cpi)
@@ -92,7 +92,7 @@ module Bosh::Director
         JobQueue.new.enqueue(username, Jobs::UpdateStemcell, 'create stemcell', [stemcell_path, options])
       end
 
-      def delete_stemcell(username, stemcell_name, stemcell_version, options={})
+      def delete_stemcell(username, stemcell_name, stemcell_version, options = {})
         description = "delete stemcell: #{stemcell_name}/#{stemcell_version}"
 
         JobQueue.new.enqueue(username, Jobs::DeleteStemcell, description, [stemcell_name, stemcell_version, options])

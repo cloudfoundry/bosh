@@ -35,25 +35,27 @@ module Bosh::Director
 
       def perform
         if @config['remove_all']
-          releases_to_keep, stemcells_to_keep = 0, 0
-          dns_blob_age, dns_blobs_to_keep = 0, 0
+          releases_to_keep = 0
+          stemcells_to_keep = 0
+          dns_blob_age = 0
+          dns_blobs_to_keep = 0
 
-          if Models::Deployment.count > 0
-            dns_blobs_to_keep = 1
-          end
+          dns_blobs_to_keep = 1 if Models::Deployment.count.positive?
         else
-          releases_to_keep, stemcells_to_keep = 2, 2
-          dns_blob_age, dns_blobs_to_keep = 3600, 10
+          releases_to_keep = 2
+          stemcells_to_keep = 2
+          dns_blob_age = 3600
+          dns_blobs_to_keep = 10
         end
 
         unused_release_name_and_versions = @releases_to_delete_picker.pick(releases_to_keep)
-        release_count = unused_release_name_and_versions.map{|r| r['versions']}.flatten.count
+        release_count = unused_release_name_and_versions.map { |r| r['versions'] }.flatten.count
         release_stage = Config.event_log.begin_stage('Deleting releases', release_count)
-        ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+        ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
           unused_release_name_and_versions.each do |release|
             pool.process do
               name = release['name']
-              with_release_lock(name, :timeout => 10) do
+              with_release_lock(name, timeout: 10) do
                 release['versions'].each do |version|
                   release_stage.advance_and_track("#{name}/#{version}") do
                     @name_version_release_deleter.find_and_delete_release(name, version, false)
