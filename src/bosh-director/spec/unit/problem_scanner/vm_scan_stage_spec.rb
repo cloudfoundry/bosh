@@ -201,7 +201,7 @@ module Bosh::Director
           end
         end
 
-        context 'when cloud implements has_vm?' do
+        context 'when cloud implements has_vm' do
           before do
             allow(cloud).to receive(:has_vm?).and_return(true)
           end
@@ -255,7 +255,7 @@ module Bosh::Director
           end
         end
 
-        context 'when cloud does not implement has_vm?' do
+        context 'when cloud does not implement has_vm' do
           before do
             allow(cloud).to receive(:has_vm?).and_raise(Bosh::Clouds::NotImplemented)
           end
