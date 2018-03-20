@@ -44,7 +44,7 @@ module Bosh::Director
         cloud = factory.get_for_az(@instance.availability_zone, @instance.active_vm&.stemcell_api_version)
 
         # If VM is present we try to unmount and detach disk from VM
-        if @instance.vm_cid && cloud.has_vm?(@instance.vm_cid)
+        if @instance.vm_cid && cloud.has_vm(@instance.vm_cid)
           agent_client = agent_client(@instance.agent_id)
           disk_list = []
 
