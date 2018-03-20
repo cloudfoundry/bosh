@@ -73,7 +73,7 @@ module Bosh::Director
         end
       end
 
-      context 'when cloud does not implement has_disk' do
+      context 'when cloud does not implement has_disk?' do
         before do
           allow(cloud).to receive(:has_disk?).and_raise(Bosh::Clouds::NotImplemented)
         end

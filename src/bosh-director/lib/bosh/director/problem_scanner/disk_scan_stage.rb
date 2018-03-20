@@ -47,7 +47,7 @@ module Bosh::Director::ProblemScanner
           return :missing
         end
       rescue Bosh::Clouds::NotImplemented
-        @logger.info('Ignored check for disk presence, CPI does not implement has_disk method')
+        @logger.info('Ignored check for disk presence, CPI does not implement has_disk? method')
       end
 
       # inactive disks
