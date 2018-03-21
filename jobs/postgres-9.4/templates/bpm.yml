@@ -1,9 +1,21 @@
----
-processes:
-- name: postgres-9.4
-  executable: /var/vcap/jobs/postgres-9.4/bin/postgres
-  persistent_disk: true
-  limits:
-    open_files: 65536
-  hooks:
-    pre_start: /var/vcap/jobs/postgres-9.4/bin/pre-start
+<%=
+
+postgres_config = {
+  "name" => "postgres-9.4",
+  "executable" => "/var/vcap/jobs/postgres-9.4/bin/postgres",
+  "persistent_disk" => true,
+  "limits" => {
+    "open_files" => 65536,
+  },
+  "hooks" => {
+    "pre_start" => "/var/vcap/jobs/postgres-9.4/bin/pre-start",
+  }
+}
+
+config = {
+  "processes" => [postgres_config],
+}
+
+YAML.dump(config)
+
+%>

@@ -1,9 +1,18 @@
----
-processes:
-- name: nats
-  executable: /var/vcap/packages/gonats/bin/gnatsd
-  args:
-  - -c
-  - /var/vcap/jobs/nats/config/nats.cfg
-  limits:
-    open_files: 65536
+<%=
+
+nats_config = {
+  "name" => "nats",
+  "executable" => "/var/vcap/packages/gonats/bin/gnatsd",
+  "args" => ["-c", "/var/vcap/jobs/nats/config/nats.cfg"],
+  "limits" => {
+    "open_files": 65536,
+  },
+}
+
+config = {
+  "processes" => [nats_config],
+}
+
+YAML.dump(config)
+
+%>
