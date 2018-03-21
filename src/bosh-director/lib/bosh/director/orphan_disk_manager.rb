@@ -88,9 +88,6 @@ module Bosh::Director
         deployment_name = orphan_disk.deployment_name
         orphan_disk_cid = orphan_disk.disk_cid
         parent_id = add_event('delete', deployment_name, instance_name, orphan_disk_cid)
-        orphan_disk.orphan_snapshots.each do |orphan_snapshot|
-          delete_orphan_snapshot(orphan_snapshot)
-        end
         @logger.info("Deleting orphan orphan disk: #{orphan_disk.disk_cid}")
         cloud = CloudFactory.create.get(orphan_disk.cpi)
         cloud.delete_disk(orphan_disk.disk_cid)
