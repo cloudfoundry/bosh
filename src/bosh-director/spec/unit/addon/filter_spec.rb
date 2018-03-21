@@ -119,6 +119,24 @@ module Bosh::Director
           end
         end
 
+        describe 'when the filter spec has only a lifecycle section' do
+          let(:filter_hash) { { 'lifecycle' => 'errand' } }
+
+          describe 'when the lifecycle type matches the one from the include spec' do
+            it 'applies' do
+              allow(instance_group).to receive(:lifecycle).and_return('errand')
+              expect(addon_include.applies?('anything', [], instance_group)).to be(true)
+            end
+          end
+
+          describe 'when the lifecycle type does not match the one from the include spec' do
+            it 'does not apply' do
+              allow(instance_group).to receive(:lifecycle).and_return('service')
+              expect(addon_include.applies?('anything', [], instance_group)).to be(false)
+            end
+          end
+        end
+
         describe 'when the filter spec has only a jobs section' do
           let(:filter_hash) { { 'jobs' => [{ 'name' => 'job_name', 'release' => 'release_name' }] } }
 

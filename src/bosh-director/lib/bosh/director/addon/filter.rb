@@ -3,13 +3,14 @@ module Bosh::Director
     class Filter
       extend ValidationHelper
 
-      def initialize(jobs, deployment_names, stemcells, networks, teams, availability_zones, filter_type)
+      def initialize(jobs, deployment_names, stemcells, networks, teams, availability_zones, lifecycle_type, filter_type)
         @applicable_jobs = jobs
         @applicable_deployment_names = deployment_names
         @applicable_stemcells = stemcells
         @applicable_networks = networks
         @applicable_teams = teams
         @applicable_availability_zones = availability_zones
+        @applicable_lifecycle_type = lifecycle_type
         @filter_type = filter_type
       end
 
@@ -24,6 +25,7 @@ module Bosh::Director
         applicable_teams = safe_property(addon_filter_hash, 'teams', class: Array, default: [])
         applicable_teams = [] if addon_level == DEPLOYMENT_LEVEL
         applicable_availability_zones = safe_property(addon_filter_hash, 'azs', class: Array, default: [])
+        applicable_lifecycle_type = safe_property(addon_filter_hash, 'lifecycle', class: String, default: '')
 
         # TODO: throw an exception with all wrong jobs
         verify_jobs_section(applicable_jobs, filter_type, addon_level)
@@ -37,11 +39,13 @@ module Bosh::Director
           applicable_networks,
           applicable_teams,
           applicable_availability_zones,
+          applicable_lifecycle_type,
           filter_type,
         )
       end
 
       def applies?(deployment_name, deployment_teams, deployment_instance_group)
+        return false if has_lifecycle? && !deployment_instance_group.lifecycle.nil? && @applicable_lifecycle_type != deployment_instance_group.lifecycle
         return false if has_availability_zones? && !has_applicable_availability_zones?(deployment_instance_group)
         return false if has_teams? && !has_applicable_team?(deployment_teams)
         return false if has_stemcells? && !has_applicable_stemcell?(deployment_instance_group)
@@ -59,7 +63,7 @@ module Bosh::Director
           # `has_team? && !has_applicable_team?`, has_availability_zones? && !has_applicable_availability_zones?
           # are checked before. all other cases are covered by simple check
           # `has_stemcells? || has_networks? || has_teams?` || has_availability_zones?
-          return @filter_type == :exclude && (has_stemcells? || has_networks? || has_teams? || has_availability_zones?)
+          return @filter_type == :exclude && (has_stemcells? || has_networks? || has_teams? || has_availability_zones? || has_lifecycle?)
         end
       end
 
@@ -136,6 +140,10 @@ module Bosh::Director
         @applicable_availability_zones.any? do |az_name|
           deployment_instance_group.has_availability_zone?(az_name)
         end
+      end
+
+      def has_lifecycle?
+        !@applicable_lifecycle_type.empty? && !@applicable_lifecycle_type.nil?
       end
     end
   end
