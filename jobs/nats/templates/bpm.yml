@@ -7,4 +7,3 @@ processes:
   - /var/vcap/jobs/nats/config/nats.cfg
   limits:
     open_files: 65536
-    memory: 3000M

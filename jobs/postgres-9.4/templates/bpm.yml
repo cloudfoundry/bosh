@@ -5,6 +5,5 @@ processes:
   persistent_disk: true
   limits:
     open_files: 65536
-    memory: 3000M
   hooks:
     pre_start: /var/vcap/jobs/postgres-9.4/bin/pre-start
