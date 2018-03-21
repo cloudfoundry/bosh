@@ -45,25 +45,26 @@ module Bosh::Director
       end
 
       def applies?(deployment_name, deployment_teams, deployment_instance_group)
-        return false if has_lifecycle? && !deployment_instance_group.lifecycle.nil? && @applicable_lifecycle_type != deployment_instance_group.lifecycle
-        return false if has_availability_zones? && !has_applicable_availability_zones?(deployment_instance_group)
-        return false if has_teams? && !has_applicable_team?(deployment_teams)
-        return false if has_stemcells? && !has_applicable_stemcell?(deployment_instance_group)
-        return false if has_networks? && !has_applicable_network?(deployment_instance_group)
-        case { has_deployments: has_deployments?, has_jobs: has_jobs? }
+        return false if lifecycle? && !applicable_lifecycle?(deployment_instance_group)
+        return false if availability_zones? && !applicable_availability_zones?(deployment_instance_group)
+        return false if teams? && !applicable_team?(deployment_teams)
+        return false if stemcells? && !applicable_stemcell?(deployment_instance_group)
+        return false if networks? && !applicable_network?(deployment_instance_group)
+        deployments_and_jobs_present = { has_deployments: deployments?, has_jobs: jobs? }
+        case deployments_and_jobs_present
         when { has_deployments: true, has_jobs: false }
           return @applicable_deployment_names.include?(deployment_name)
         when { has_deployments: false, has_jobs: true }
-          return has_applicable_job?(deployment_instance_group)
+          return applicable_job?(deployment_instance_group)
         when { has_deployments: true, has_jobs: true }
-          return @applicable_deployment_names.include?(deployment_name) && has_applicable_job?(deployment_instance_group)
+          return @applicable_deployment_names.include?(deployment_name) && applicable_job?(deployment_instance_group)
         else
           return true if @filter_type == :include
           # cases with `has_stemcells? && !has_applicable_stemcell?`, `has_networks? && !has_applicable_network?`,
           # `has_team? && !has_applicable_team?`, has_availability_zones? && !has_applicable_availability_zones?
           # are checked before. all other cases are covered by simple check
           # `has_stemcells? || has_networks? || has_teams?` || has_availability_zones?
-          return @filter_type == :exclude && (has_stemcells? || has_networks? || has_teams? || has_availability_zones? || has_lifecycle?)
+          return @filter_type == :exclude && (stemcells? || networks? || teams? || availability_zones? || lifecycle?)
         end
       end
 
@@ -89,61 +90,65 @@ module Bosh::Director
         end
       end
 
-      def has_deployments?
+      def deployments?
         !@applicable_deployment_names.nil? && !@applicable_deployment_names.empty?
       end
 
-      def has_jobs?
+      def jobs?
         !@applicable_jobs.nil? && !@applicable_jobs.empty?
       end
 
-      def has_applicable_job?(deployment_instance_group)
+      def applicable_job?(deployment_instance_group)
         @applicable_jobs.any? do |job|
           deployment_instance_group.has_job?(job['name'], job['release'])
         end
       end
 
-      def has_stemcells?
+      def stemcells?
         !@applicable_stemcells.nil? && !@applicable_stemcells.empty?
       end
 
-      def has_applicable_stemcell?(deployment_instance_group)
+      def applicable_stemcell?(deployment_instance_group)
         @applicable_stemcells.any? do |stemcell|
           deployment_instance_group.has_os?(stemcell['os'])
         end
       end
 
-      def has_networks?
+      def networks?
         !@applicable_networks.nil? && !@applicable_networks.empty?
       end
 
-      def has_applicable_network?(deployment_instance_group)
+      def applicable_network?(deployment_instance_group)
         @applicable_networks.any? do |network_name|
           deployment_instance_group.network_present?(network_name)
         end
       end
 
-      def has_teams?
+      def teams?
         !@applicable_teams.nil? && !@applicable_teams.empty?
       end
 
-      def has_applicable_team?(deployment_teams)
+      def applicable_team?(deployment_teams)
         return false if deployment_teams.nil? || deployment_teams.empty? || @applicable_teams.nil?
         !(@applicable_teams & deployment_teams).empty?
       end
 
-      def has_availability_zones?
+      def availability_zones?
         !@applicable_availability_zones.nil? && !@applicable_availability_zones.empty?
       end
 
-      def has_applicable_availability_zones?(deployment_instance_group)
+      def applicable_availability_zones?(deployment_instance_group)
         @applicable_availability_zones.any? do |az_name|
           deployment_instance_group.has_availability_zone?(az_name)
         end
       end
 
-      def has_lifecycle?
+      def lifecycle?
         !@applicable_lifecycle_type.empty? && !@applicable_lifecycle_type.nil?
+      end
+
+      def applicable_lifecycle?(deployment_instance_group)
+        @applicable_lifecycle_type == deployment_instance_group.lifecycle
       end
     end
   end
