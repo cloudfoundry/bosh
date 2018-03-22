@@ -480,6 +480,15 @@ module Bosh::Director
       Config.configure_db(hash['db'])
     end
 
+    def dns_db
+      dns_db = hash.dig('dns', 'db')
+      Config.configure_db(dns_db) if dns_db
+    end
+
+    def cpi
+      hash.dig('cloud', 'plugin')
+    end
+
     def blobstore_config
       hash.fetch('blobstore')
     end

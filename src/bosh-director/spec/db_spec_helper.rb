@@ -7,6 +7,7 @@ require 'logging'
 require 'securerandom'
 
 require_relative '../../bosh-director/lib/bosh/director/config'
+require_relative '../../bosh-director/lib/db_migrator'
 
 module DBSpecHelper
   class << self
@@ -65,28 +66,18 @@ module DBSpecHelper
 
     def reset_database
       disconnect_database
-
-      FileUtils.rm_rf(@migration_dir) if @migration_dir
-      @migration_dir = Dir.mktmpdir('migration-dir', @temp_dir)
-
       connect_database
     end
 
     def migrate_all_before(migration_file)
       reset_database
-      migration_file_full_path = File.join(@director_migrations_dir, migration_file)
-      files_to_migrate = Dir.glob("#{@director_migrations_dir}/*").sort.select do |filename|
-        filename < migration_file_full_path
-      end
-
-      FileUtils.cp_r(files_to_migrate, @migration_dir)
-      Sequel::TimestampMigrator.new(@db, @migration_dir, {}).run
+      version = migration_file.split('_').first.to_i
+      migrate_to_version(version - 1)
     end
 
     def migrate(migration_file)
-      migration_file_full_path = File.join(@director_migrations_dir, migration_file)
-      FileUtils.cp(migration_file_full_path, @migration_dir)
-      Sequel::TimestampMigrator.new(@db, @migration_dir, {}).run
+      version = migration_file.split('_').first.to_i
+      migrate_to_version(version)
     end
 
     def get_latest_migration_script
@@ -95,6 +86,12 @@ module DBSpecHelper
 
     def get_migrations
       Dir.glob(File.join(@director_migrations_dir, '..', '**', '[0-9]*_*.rb'))
+    end
+
+    private
+
+    def migrate_to_version(version)
+      DBMigrator.new(@db, :director, target: version).migrate
     end
   end
 end
