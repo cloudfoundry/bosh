@@ -134,10 +134,9 @@ describe 'orphaned disks', type: :integration do
     expect(orphaned_output[0]['disk_cid']).to eq(disk_cids.first)
 
     cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
-
     # does not attach disk again, delete_vm
     expect(cpi_invocations.map(&:method_name)).to eq(
-      %w[create_vm set_vm_metadata snapshot_disk detach_disk detach_disk],
+      %w[info create_vm info set_vm_metadata info snapshot_disk info detach_disk info detach_disk],
     )
   end
 
