@@ -4,8 +4,6 @@ module Bosh::Director
   module Api::Controllers
     class ConfigsController < BaseController
       get '/:id', scope: :read do
-        return status(404) unless integer?(params['id'])
-
         config = Bosh::Director::Api::ConfigManager.new.find_by_id(params['id'])
         status(200)
         json_encode(sql_to_hash(config))
@@ -68,8 +66,6 @@ module Bosh::Director
       end
 
       delete '/:id', scope: :update_configs do
-        return status(404) unless integer?(params['id'])
-
         config_manager = Bosh::Director::Api::ConfigManager.new
 
         config = config_manager.find_by_id(params['id'])

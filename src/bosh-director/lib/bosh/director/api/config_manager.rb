@@ -39,7 +39,7 @@ module Bosh
         end
 
         def find_by_id(id)
-          config = Bosh::Director::Models::Config[id]
+          config = integer?(id) ? Bosh::Director::Models::Config[id] : nil
           raise ConfigNotFound, "Config #{id} not found" if config.nil? || config.deleted
           config
         end
@@ -68,6 +68,9 @@ module Bosh
             .all
         end
 
+        def integer?(param)
+          param.to_s == param.to_i.to_s
+        end
       end
     end
   end
