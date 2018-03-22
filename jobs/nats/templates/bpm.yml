@@ -5,7 +5,7 @@ nats_config = {
   "executable" => "/var/vcap/packages/gonats/bin/gnatsd",
   "args" => ["-c", "/var/vcap/jobs/nats/config/nats.cfg"],
   "limits" => {
-    "open_files": 65536,
+    "open_files" => 65536,
   },
 }
 
