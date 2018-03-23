@@ -159,7 +159,7 @@ module Bosh::Director
 
         def add_ip_addresses_to_vm_model(network_settings, vm_model)
           network_settings.each do |network_name, network|
-            next unless network['type'] == 'manual'
+            next if network['type'] == 'dynamic'
 
             addr = NetAddr::CIDR.create(network['ip'].to_s).to_i.to_s
 
