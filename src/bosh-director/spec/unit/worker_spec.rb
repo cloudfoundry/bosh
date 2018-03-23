@@ -1,6 +1,15 @@
 require 'spec_helper'
 require 'db_migrator'
 
+Models = Bosh::Director::Models
+module Kernel
+  alias old_require require
+  def require(path)
+    Bosh::Director.const_set(:Models, Models) if path == 'bosh/director' && !defined?(Bosh::Director::Models)
+    old_require(path)
+  end
+end
+
 module Bosh::Director
   describe 'worker' do
     subject(:worker) { Worker.new(config, 0, 0.01) }
@@ -9,6 +18,14 @@ module Bosh::Director
     end
 
     let(:config) { Config.load_hash(config_hash) }
+
+    before do
+      Bosh::Director.send(:remove_const, :Models)
+    end
+
+    after do
+      require 'bosh/director'
+    end
 
     describe 'when workers is sent USR1' do
       let(:queues) { worker.queues }
@@ -50,8 +67,8 @@ module Bosh::Director
 
       it 'starts up immediately if migrations are current' do
         allow(migrator).to receive(:current?).once.and_return(true)
-        worker.prep
         allow(djworker).to receive(:start)
+        worker.prep
         worker.start
         expect(djworker).to have_received(:start)
       end
@@ -59,8 +76,8 @@ module Bosh::Director
       it 'waits until migrations are current to start' do
         allow(migrator).to receive(:current?).twice.and_return(false, true)
 
-        worker.prep
         allow(djworker).to receive(:start)
+        worker.prep
         worker.start
 
         expect(djworker).to have_received(:start)
@@ -69,9 +86,8 @@ module Bosh::Director
       it 'raises error if migrations are never current' do
         allow(migrator).to receive(:current?).exactly(Worker::MAX_MIGRATION_ATTEMPTS).times.and_return(false)
 
-        worker.prep
         allow(djworker).to receive(:start)
-        expect { worker.start }.to raise_error(/Migrations not current after #{Worker::MAX_MIGRATION_ATTEMPTS} retries/)
+        expect { worker.prep }.to raise_error(/Migrations not current after #{Worker::MAX_MIGRATION_ATTEMPTS} retries/)
         expect(djworker).not_to have_received(:start)
       end
     end

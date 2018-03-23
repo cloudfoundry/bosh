@@ -4,6 +4,8 @@ require 'socket'
 require 'uri'
 require 'common/logging/filters'
 require 'tmpdir'
+require 'common/common'
+require 'common/thread_formatter'
 
 module Bosh::Director
 
