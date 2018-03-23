@@ -18,12 +18,10 @@ module Bosh::Director
           )
 
           @vm.ip_addresses_dataset.all.each do |ip_address|
-            ip_address.instance = nil
-            ip_address.orphaned_vm = orphaned_vm
-            ip_address.save
+            orphaned_vm.add_ip_address(ip_address)
           end
-
-          @vm.destroy
+          @vm.remove_all_ip_addresses
+          @vm.delete
         end
       end
     end

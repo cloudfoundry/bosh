@@ -38,7 +38,7 @@ describe 'vip networks', type: :integration do
     manifest_hash
   end
 
-  it 'reuses instance vip network IP on subsequent deploy', no_hotswap: true do
+  it 'reuses instance vip network IP on subsequent deploy' do
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
     deploy_simple_manifest(manifest_hash: simple_manifest)
     original_instances = director.instances

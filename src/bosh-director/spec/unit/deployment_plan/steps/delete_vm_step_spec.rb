@@ -98,26 +98,6 @@ module Bosh
               expect { subject.perform(report) }.to(change { Models::Event.count }.from(0).to(2))
             end
 
-            context 'when the vm has manual network IPs' do
-            let!(:ip_address_model) do
-              ip = Models::IpAddress.make
-              ip.vm = vm_model
-              ip.instance = instance_model
-              ip.save
-              ip
-            end
-
-              it 'disassociates the ip from the vm' do
-                expect(vm_model.ip_addresses).to include(ip_address_model)
-                expect(cloud).to receive(:delete_vm).with('vm-cid')
-
-                subject.perform(report)
-
-                expect(ip_address_model.reload.vm).to be_nil
-
-              end
-            end
-
             context 'when store_event is false' do
               let(:store_event) { false }
               it 'deletes the instance and does not store an event' do

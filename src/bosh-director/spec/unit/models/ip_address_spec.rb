@@ -8,12 +8,10 @@ module Bosh::Director::Models
         instance: instance,
         network_name: 'foonetwork',
         address_str: NetAddr::CIDR.create('10.10.0.1').to_i.to_s,
-        static: true,
-        vm: vm
+        static: true
       )
     end
     let(:instance) {Instance.make(job: 'foojob', index: 1, deployment: deployment)}
-    let(:vm) { Vm.make(instance: instance) }
     let(:deployment) {Deployment.make(name: 'foodeployment')}
 
     context '#info' do
@@ -25,44 +23,18 @@ module Bosh::Director::Models
     end
 
     context 'validations' do
-      let(:ip) {IpAddress.make}
-
-      it 'be valid with just an orphaned_vm_id' do
-        ip.instance_id = nil
-        ip.vm_id = nil
-        ip.orphaned_vm_id = 111
-
-        expect { ip.save }.not_to raise_error
-      end
-
-      it 'be valid with just an instance_id' do
-        ip.vm_id = nil
-
-        expect { ip.save }.not_to raise_error
-      end
-
       it 'should require ip address' do
-        ip.address_str = ""
-        expect { ip.save }.to raise_error /address_str presence/
+        invalid_ip = IpAddress.make
 
-        ip.address_str = NetAddr::CIDR.create('10.10.0.1').to_i.to_s
-        expect { ip.save }.not_to raise_error
-      end
+        invalid_ip.address_str = ""
+        expect {
+          invalid_ip.save
+        }.to raise_error /address_str presence/
 
-      it 'must have either an instance_id ord orphaned_vm_id' do
-        ip.instance_id = nil
-        ip.vm_id = nil
-        ip.orphaned_vm_id = nil
-
-        expect { ip.save }.to raise_error('No instance or orphaned VM associated with IP')
-      end
-
-      it 'cannot have both instance_id and orphaned_vm_id' do
-        ip.instance_id = instance.id
-        ip.vm_id = nil
-        ip.orphaned_vm_id = 111
-
-        expect { ip.save }.to raise_error('IP address cannot have both instance id and orphaned VM id')
+        invalid_ip.address_str = NetAddr::CIDR.create('10.10.0.1').to_i.to_s
+        expect {
+          invalid_ip.save
+        }.not_to raise_error
       end
     end
 

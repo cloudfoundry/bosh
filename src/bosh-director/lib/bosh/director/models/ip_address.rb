@@ -5,10 +5,7 @@ module Bosh::Director::Models
     many_to_one :orphaned_vm
 
     def validate
-      raise 'No instance or orphaned VM associated with IP' if instance_id.nil? && orphaned_vm_id.nil?
-      raise 'IP address cannot have both instance id and orphaned VM id' if !instance_id.nil? && !orphaned_vm_id.nil?
-      validates_presence :instance_id, allow_nil: true
-      validates_presence :orphaned_vm_id, allow_nil: true
+      validates_presence :instance_id
       validates_presence :task_id
       validates_presence :address_str
       validates_unique :address_str

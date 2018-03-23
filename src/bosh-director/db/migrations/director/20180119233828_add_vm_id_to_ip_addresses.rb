@@ -1,7 +1,7 @@
 Sequel.migration do
   up do
     alter_table(:ip_addresses) do
-      add_foreign_key :vm_id, :vms, null: true
+      add_column :vm_id, Integer
     end
 
     self[:vms].all do |vm|
