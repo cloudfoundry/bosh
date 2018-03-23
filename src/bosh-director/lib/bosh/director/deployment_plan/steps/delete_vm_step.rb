@@ -30,7 +30,7 @@ module Bosh::Director
               end
             end
 
-            vm.delete
+            vm.destroy
           rescue Exception => e
             raise e
           ensure
