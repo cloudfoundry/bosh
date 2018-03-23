@@ -94,7 +94,7 @@ describe 'attach disk', type: :integration do
     end
   end
 
-  context 'deployment has disk that exists in an orphaned list not attached to an instance' do
+  context 'when deployment has an orphaned disk that was previously attached to an instance' do
     before do
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
 
