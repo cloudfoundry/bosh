@@ -1,0 +1,57 @@
+require 'digest/sha1'
+require 'fileutils'
+require 'securerandom'
+require 'membrane'
+require 'netaddr'
+require_relative '../cloud/errors'
+require 'cloud_v2'
+
+module Bosh
+  module Clouds
+    class DummyV2 < Bosh::Clouds::Dummy
+      include Bosh::CloudV2
+
+      def initialize(options, context)
+        super(options, context, 2)
+      end
+
+      # rubocop:disable ParameterLists
+      def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
+        vm_cid = Dummy.instance_method(:create_vm).bind(self).call(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
+
+        {
+          'vm_cid' => vm_cid,
+          'networks' => [],
+          'disk_hints' => {
+            'persistent' => {},
+          },
+        }
+      end
+
+      ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { { vm_cid: String, disk_id: String, disk_hints: Hash } }
+      def attach_disk(vm_cid, disk_id, disk_hints)
+        validate_and_record_inputs(ATTACH_DISK_SCHEMA, __method__, vm_cid, disk_id, disk_hints)
+        raise "#{disk_id} is already attached to an instance" if disk_attached?(disk_id)
+        file = attachment_file(vm_cid, disk_id)
+        FileUtils.mkdir_p(File.dirname(file))
+        FileUtils.touch(file)
+
+        @logger.debug("Attached disk: '#{disk_id}' to vm: '#{vm_cid}' at attachment file: #{file}")
+
+        agent_id = agent_id_for_vm_id(vm_cid)
+        settings = read_agent_settings(agent_id)
+        settings['disks']['persistent'][disk_id] = 'attached'
+        write_agent_settings(agent_id, settings)
+        file
+      end
+
+      def info
+        record_inputs(__method__, nil)
+        {
+          api_version: 2,
+          stemcell_formats: @supported_formats,
+        }
+      end
+    end
+  end
+end

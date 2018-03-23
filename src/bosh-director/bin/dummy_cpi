@@ -3,14 +3,15 @@
 require 'json'
 require 'yaml'
 require_relative '../lib/cloud/dummy'
+require_relative '../lib/cloud/dummy_v2'
 
 module Logging
-  def self.appenders;
-    self;
+  def self.appenders
+    self
   end
 
   def self.io(_, io)
-    Logger.new(io);
+    Logger.new(io)
   end
 
   class Logger
@@ -22,23 +23,23 @@ module Logging
     end
 
     def add_appenders(logger)
-      @io = logger.io;
+      @io = logger.io
     end
 
     def debug(message)
-      io << "DEBUG - #{message}\n";
+      io << "DEBUG - #{message}\n"
     end
 
     def info(message)
-      io << "INFO - #{message}\n";
+      io << "INFO - #{message}\n"
     end
 
     def warn(message)
-      io << "WARN - #{message}\n";
+      io << "WARN - #{message}\n"
     end
 
     def error(message)
-      io << "ERROR - #{message}\n";
+      io << "ERROR - #{message}\n"
     end
   end
 end
@@ -58,14 +59,19 @@ begin
   context = request['context']
   requested_api_version = request['api_version']
 
-  dummy = Bosh::Clouds::Dummy.new(cpi_config, context, requested_api_version)
+  dummy = case requested_api_version
+          when 2
+            Bosh::Clouds::DummyV2.new(cpi_config, context)
+          else
+            Bosh::Clouds::Dummy.new(cpi_config, context, cpi_config['api_version'])
+          end
 
   result = dummy.send(command, *arguments)
-rescue => e
+rescue StandardError => e
   error = {
     'type' => e.message,
     'message' => "#{e.message}\n#{e.backtrace.join("\n")}",
-    'ok_to_retry' => false
+    'ok_to_retry' => false,
   }
 end
 

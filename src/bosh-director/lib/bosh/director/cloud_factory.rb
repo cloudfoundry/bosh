@@ -58,12 +58,11 @@ module Bosh::Director
       begin
         info_response = cloud.info || {}
         cpi_api_version = info_response.fetch('api_version', 1)
-        #TODO: request_cpi_api_version should be minimum of director's and cpi's highest supported api_version
-        cloud.request_cpi_api_version = cpi_api_version
       rescue
         # ignored
       end
-      cloud
+      #TODO: request_cpi_api_version should be minimum of director's and cpi's highest supported api_version
+      Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version)
     end
 
     private

@@ -6,6 +6,7 @@ module Bosh::Director
 
     let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+    let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, 1) }
 
     let(:instance_provider) { DeploymentPlan::InstanceProvider.new(deployment_plan, vm_creator, logger) }
     let(:stemcell) do
@@ -105,10 +106,13 @@ module Bosh::Director
     before do
       allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(cloud).to receive(:create_vm)
+      #TODO Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper
+      allow(cloud).to receive(:set_vm_metadata)
       allow(cloud).to receive(:info).and_return({})
       allow(cloud).to receive(:request_cpi_api_version=).with(1)
       allow(cloud).to receive(:request_cpi_api_version).and_return(1)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
+      allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(cloud, anything).and_return(cloud_wrapper)
       allow(network).to receive(:network_settings).with(instance_of(DesiredNetworkReservation), ['dns', 'gateway'], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(Config).to receive(:name).and_return('fake-director-name')

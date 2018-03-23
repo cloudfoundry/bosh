@@ -44,7 +44,7 @@ module Bosh::Clouds
     def initialize(cpi_path, director_uuid, options = {})
       @cpi_path = cpi_path
       @director_uuid = director_uuid
-      @logger = ::Bosh::Director::TaggedLogger.new(Config.logger, "external-cpi")
+      @logger = Bosh::Director::TaggedLogger.new(Config.logger, "external-cpi")
       @properties_from_cpi_config = options.fetch(:properties_from_cpi_config, nil)
       @stemcell_api_version = options.fetch(:stemcell_api_version, nil)
     end

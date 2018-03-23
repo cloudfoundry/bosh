@@ -1,32 +1,34 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
 
-describe Bosh::Clouds::ExternalCpi do
+describe Bosh::Clouds::ExternalCpiResponseWrapper do
   include FakeFS::SpecHelpers
 
-  subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
+  let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
+  let(:cpi_api_version) { 1 }
 
-  def self.it_calls_cpi_method(method, *arguments, api_version: 1)
-    define_method(:call_cpi_method) { external_cpi.public_send(method, *arguments) }
+  subject { described_class.new(cloud, cpi_api_version) }
 
-    before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
+  def self.it_calls_cpi_method(method, *arguments)
+    define_method(:call_cpi_method) { subject.public_send(method, *arguments) }
 
     let(:method) { method }
     let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
-
-    before { stub_const('Bosh::Clouds::Config', config) }
     let(:config) { double('Bosh::Clouds::Config', logger: double(:logger, debug: nil), cpi_task_log: cpi_log_path) }
     let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
-
-    before { FileUtils.mkdir_p('/var/vcap/task/5') }
-
-    before { allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status]) }
-    before { allow(Random).to receive(:rand).and_return('fake-request-id') }
     let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
+
+    before do
+      allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
+      stub_const('Bosh::Clouds::Config', config)
+      FileUtils.mkdir_p('/var/vcap/task/5')
+      allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status])
+      allow(Random).to receive(:rand).and_return('fake-request-id')
+    end
 
     context 'api version specified' do
       before do
-        subject.request_cpi_api_version = api_version
+        #subject.request_cpi_api_version = cpi_api_version
       end
 
       it 'should call cpi binary with correct arguments' do
@@ -34,7 +36,7 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{api_version}})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{cpi_api_version}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -47,7 +49,7 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{cpi_api_version}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -63,7 +65,7 @@ describe Bosh::Clouds::ExternalCpi do
           properties_from_cpi_config: cpi_config_properties
         }
       end
-      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
+      let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
       let(:logger) { double }
       before do
         allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
@@ -77,7 +79,7 @@ describe Bosh::Clouds::ExternalCpi do
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
         context = {'director_uuid' => director_uuid, 'request_id' => request_id}.merge(cpi_config_properties)
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json},"api_version":#{cpi_api_version}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -123,9 +125,10 @@ describe Bosh::Clouds::ExternalCpi do
           expected_arguments[1] = {'type' => '<redacted>'}
         end
 
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
-        expected_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
-        expect(logger).to receive(:debug).with(expected_log)
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json},"api_version":#{cpi_api_version}})
+        expected_request_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json},"api_version":#{cpi_api_version}} with command: #{expected_cmd})
+        expect(logger).to receive(:debug).with(expected_request_log)
+        # expect(logger).to receive(:debug).with
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -142,7 +145,7 @@ describe Bosh::Clouds::ExternalCpi do
         }
       end
 
-      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
+      let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
       let(:logger) { double }
 
       before do
@@ -165,7 +168,7 @@ describe Bosh::Clouds::ExternalCpi do
             }
           }
         }
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json},"api_version":#{cpi_api_version}})
         expect(logger).to receive(:debug).with(/api_version/)
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
@@ -188,7 +191,7 @@ describe Bosh::Clouds::ExternalCpi do
       let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
 
       it 'returns result' do
-        expect(call_cpi_method).to eq('fake-result')
+        expect(call_cpi_method).to eq(expected_response)
       end
     end
 
@@ -201,8 +204,8 @@ describe Bosh::Clouds::ExternalCpi do
       end
 
       it 'adds to existing file if for a given task several cpi requests were made' do
-        external_cpi.public_send(method, *arguments)
-        external_cpi.public_send(method, *arguments)
+        subject.public_send(method, *arguments)
+        subject.public_send(method, *arguments)
         expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-datafake-logfake-stderr-data')
       end
 
@@ -358,254 +361,149 @@ describe Bosh::Clouds::ExternalCpi do
     end
   end
 
-  describe '#current_vm_id' do
-    it_calls_cpi_method(:current_vm_id)
-  end
-
-  describe '#create_stemcell' do
-    it_calls_cpi_method(:create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
-  end
-
-  describe '#delete_stemcell' do
-    it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
-  end
-
   describe '#create_vm' do
-    context 'when cloud_properties in network settings is valid and defined' do
-      let(:redacted_network_settings) do
-        {
-          'net' => {
-            'type' => 'manual',
-            'ip' => '10.10.0.2',
-            'netmask' => '255.255.255.0',
-            'cloud_properties' => {
-              'smurf_1' => '<redacted>'
-            },
-            'default' => ['dns', 'gateway'],
-            'dns' => ['10.10.0.2'],
-            'gateway' => '10.10.0.1'
-          }
-        }
-      end
+    let(:redacted_network_settings) { nil }
+    let(:expected_response) { {"vm_cid"=>"fake-result"} }
 
-      it_calls_cpi_method(
-        :create_vm,
-        'fake-agent-id',
-        'fake-stemcell-cid',
-        {'cloud' => 'props'},
-        {
-          'net' => {
-            'type' => 'manual',
-            'ip' => '10.10.0.2',
-            'netmask' => '255.255.255.0',
-            'cloud_properties' => {
-              'smurf_1' => 'cat_1_manual_network'
-            },
-            'default' => ['dns', 'gateway'],
-            'dns' => ['10.10.0.2'],
-            'gateway' => '10.10.0.1'
-          }
+    it_calls_cpi_method(
+      :create_vm,
+      'fake-agent-id',
+      'fake-stemcell-cid',
+      {'cloud' => 'props'},
+      nil,
+      ['fake-disk-cid'],
+      {
+        'bosh' => {
+          'group' => 'my-group',
+          'groups' => ['my-first-group'],
+          'password' => 'my-secret-password'
         },
-        ['fake-disk-cid'],
-        {
-          'bosh' => {
-            'group' => 'my-group',
-            'groups' => ['my-first-group'],
-            'password' => 'my-secret-password'
-          },
-          'other' => 'value'
+        'other' => 'value'
+      }
+    )
+  end
+
+  context 'when network settings hash cloud properties is absent' do
+    let(:expected_response) { {"vm_cid"=>"fake-result"} }
+    let(:redacted_network_settings) do
+      {
+        'net' => {
+          'type' => 'manual',
+          'ip' => '10.10.0.2',
+          'netmask' => '255.255.255.0',
+          'default' => ['dns', 'gateway'],
+          'dns' => ['10.10.0.2'],
+          'gateway' => '10.10.0.1'
         }
-      )
+      }
     end
 
-    context 'when network settings hash is nil' do
-      let(:redacted_network_settings) { nil }
-
-      it_calls_cpi_method(
-        :create_vm,
-        'fake-agent-id',
-        'fake-stemcell-cid',
-        {'cloud' => 'props'},
-        nil,
-        ['fake-disk-cid'],
-        {
-          'bosh' => {
-            'group' => 'my-group',
-            'groups' => ['my-first-group'],
-            'password' => 'my-secret-password'
-          },
-          'other' => 'value'
+    it_calls_cpi_method(
+      :create_vm,
+      'fake-agent-id',
+      'fake-stemcell-cid',
+      {'cloud' => 'props'},
+      {
+        'net' => {
+          'type' => 'manual',
+          'ip' => '10.10.0.2',
+          'netmask' => '255.255.255.0',
+          'default' => ['dns', 'gateway'],
+          'dns' => ['10.10.0.2'],
+          'gateway' => '10.10.0.1'
         }
-      )
-    end
-
-    context 'when network settings is not a hash' do
-      let(:redacted_network_settings) { 'I am not a hash' }
-
-      it_calls_cpi_method(
-        :create_vm,
-        'fake-agent-id',
-        'fake-stemcell-cid',
-        {'cloud' => 'props'},
-        'I am not a hash',
-        ['fake-disk-cid'],
-        {
-          'bosh' => {
-            'group' => 'my-group',
-            'groups' => ['my-first-group'],
-            'password' => 'my-secret-password'
-          },
-          'other' => 'value'
-        }
-      )
-    end
-
-    context 'when network settings hash cloud properties is absent' do
-      let(:redacted_network_settings) do
-        {
-          'net' => {
-            'type' => 'manual',
-            'ip' => '10.10.0.2',
-            'netmask' => '255.255.255.0',
-            'default' => ['dns', 'gateway'],
-            'dns' => ['10.10.0.2'],
-            'gateway' => '10.10.0.1'
-          }
-        }
-      end
-
-      it_calls_cpi_method(
-        :create_vm,
-        'fake-agent-id',
-        'fake-stemcell-cid',
-        {'cloud' => 'props'},
-        {
-          'net' => {
-            'type' => 'manual',
-            'ip' => '10.10.0.2',
-            'netmask' => '255.255.255.0',
-            'default' => ['dns', 'gateway'],
-            'dns' => ['10.10.0.2'],
-            'gateway' => '10.10.0.1'
-          }
+      },
+      ['fake-disk-cid'],
+      {
+        'bosh' => {
+          'group' => 'my-group',
+          'groups' => ['my-first-group'],
+          'password' => 'my-secret-password'
         },
-        ['fake-disk-cid'],
-        {
-          'bosh' => {
-            'group' => 'my-group',
-            'groups' => ['my-first-group'],
-            'password' => 'my-secret-password'
-          },
-          'other' => 'value'
-        }
-      )
-    end
-
-    context 'when network settings hash cloud properties is not a hash' do
-      let(:redacted_network_settings) do
-        {
-          'net' => {
-            'type' => 'manual',
-            'ip' => '10.10.0.2',
-            'netmask' => '255.255.255.0',
-            'default' => ['dns', 'gateway'],
-            'dns' => ['10.10.0.2'],
-            'gateway' => '10.10.0.1',
-            'cloud_properties' => 'i am not a hash'
-          }
-        }
-      end
-
-      it_calls_cpi_method(
-        :create_vm,
-        'fake-agent-id',
-        'fake-stemcell-cid',
-        {'cloud' => 'props'},
-        {
-          'net' => {
-            'type' => 'manual',
-            'ip' => '10.10.0.2',
-            'netmask' => '255.255.255.0',
-            'default' => ['dns', 'gateway'],
-            'dns' => ['10.10.0.2'],
-            'gateway' => '10.10.0.1',
-            'cloud_properties' => 'i am not a hash'
-          }
-        },
-        ['fake-disk-cid'],
-        {
-          'bosh' => {
-            'group' => 'my-group',
-            'groups' => ['my-first-group'],
-            'password' => 'my-secret-password'
-          },
-          'other' => 'value'
-        }
-      )
-    end
+        'other' => 'value'
+      }
+    )
   end
 
-  describe '#delete_vm' do
-    it_calls_cpi_method(:delete_vm, 'fake-vm-cid')
-  end
-
-  describe '#has_vm' do
-    it_calls_cpi_method(:has_vm, 'fake-vm-cid')
-  end
-
-  describe '#reboot_vm' do
-    it_calls_cpi_method(:reboot_vm, 'fake-vm-cid')
-  end
-
-  describe '#set_vm_metadata' do
-    it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
-  end
-
-  describe '#set_disk_metadata' do
-    it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
-  end
-
-  describe '#create_disk' do
-    it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
-  end
-
-  describe '#has_disk' do
-    it_calls_cpi_method(:has_disk, 'fake-disk-cid')
-  end
-
-  describe '#delete_disk' do
-    it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
-  end
 
   describe '#attach_disk' do
+    let(:expected_response) { {"device_name"=>"fake-result"} }
     it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
   end
 
-  describe '#detach_disk' do
-    it_calls_cpi_method(:detach_disk, 'fake-vm-cid', 'fake-disk-cid')
-  end
+  describe 'forwards all other methods without change' do
+    let(:expected_response) { "fake-result" }
 
-  describe '#snapshot_disk' do
-    it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
-  end
+    context("#current_vm_id") do
+      it_calls_cpi_method(:current_vm_id)
+    end
 
-  describe '#delete_snapshot' do
-    it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
-  end
+    context("#create_stemcell") do
+      it_calls_cpi_method(:create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
+    end
 
-  describe '#resize_disk' do
-    it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
-  end
+    context("#delete_stemcell") do
+      it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
+    end
 
-  describe '#get_disks' do
-    it_calls_cpi_method(:get_disks, 'fake-vm-cid')
-  end
+    context("#delete_vm") do
+      it_calls_cpi_method(:delete_vm, 'fake-vm-cid')
+    end
 
-  describe '#ping' do
-    it_calls_cpi_method(:ping)
-  end
+    context("#has_vm") do
+      it_calls_cpi_method(:has_vm, 'fake-vm-cid')
+    end
 
-  describe '#info' do
-    it_calls_cpi_method(:info)
+    context("#reboot_vm") do
+      it_calls_cpi_method(:reboot_vm, 'fake-vm-cid')
+    end
+
+    context("#set_vm_metadata") do
+      it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
+    end
+
+    context("#set_disk_metadata") do
+      it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
+    end
+
+    context("#create_disk") do
+      it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
+    end
+
+    context("#has_disk") do
+      it_calls_cpi_method(:has_disk, 'fake-disk-cid')
+    end
+
+    context("#delete_disk") do
+      it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
+    end
+
+    context("#detach_disk") do
+      it_calls_cpi_method(:detach_disk, 'fake-vm-cid', 'fake-disk-cid')
+    end
+
+    context("#snapshot_disk") do
+      it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
+    end
+
+    context("#delete_snapshot") do
+      it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
+    end
+
+    context("#resize_disk") do
+      it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
+    end
+
+    context("#get_disks") do
+      it_calls_cpi_method(:get_disks, 'fake-vm-cid')
+    end
+
+    context("#ping") do
+      it_calls_cpi_method(:ping)
+    end
+
+    context("#info") do
+      it_calls_cpi_method(:info)
+    end
   end
 end

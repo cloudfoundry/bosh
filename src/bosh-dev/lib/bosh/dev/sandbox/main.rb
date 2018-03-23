@@ -153,7 +153,7 @@ module Bosh::Dev::Sandbox
           'log_buffer' => @logger,
         },
         {},
-        @dummy_cpi_api_version
+        1
       )
 
       reconfigure

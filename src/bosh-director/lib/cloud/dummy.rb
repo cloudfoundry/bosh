@@ -4,20 +4,21 @@ require 'securerandom'
 require 'membrane'
 require 'netaddr'
 require_relative '../cloud/errors'
+require 'cloud'
 
 module Bosh
   module Clouds
-    class Dummy
+    class Dummy < Bosh::Cloud
       class NotImplemented < StandardError; end
 
       attr_reader :commands
       attr_accessor :options
 
-      def initialize(options, context, request_api_version)
+      def initialize(options, context, api_version)
         @options = options
         @context = context
-        @api_version = options.fetch('api_version', nil)
-        @request_api_version = request_api_version
+        @api_version = api_version
+        @stemcell_api_version = options.fetch('api_version', nil)
 
         @supported_formats = context['formats'] || ['dummy']
         @base_dir = options['dir']
@@ -159,7 +160,11 @@ module Bosh
 
       def info
         record_inputs(__method__, nil)
-        {stemcell_formats: @supported_formats}
+        {
+          stemcell_formats: @supported_formats,
+        }.tap do |response|
+          response['api_version'] = @api_version unless @api_version.nil?
+        end
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
