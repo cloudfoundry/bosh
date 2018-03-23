@@ -72,6 +72,13 @@ describe 'orphaned disks', type: :integration do
 
     result = bosh_runner.run('disks --orphaned')
     expect(result).not_to include orphaned_disk_cid
+    output = bosh_runner.run('events', deployment_name: 'simple', json: true)
+
+    events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
+    expect(events).to include(
+      {'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'delete', 'object_type' => 'disk', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'delete', 'object_type' => 'disk', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+    )
   end
 
   it 'does not detach and reattach disks unnecessarily', no_hotswap: true do
@@ -127,10 +134,9 @@ describe 'orphaned disks', type: :integration do
     expect(orphaned_output[0]['disk_cid']).to eq(disk_cids.first)
 
     cpi_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
-
     # does not attach disk again, delete_vm
     expect(cpi_invocations.map(&:method_name)).to eq(
-      %w[create_vm set_vm_metadata snapshot_disk detach_disk detach_disk],
+      %w[info create_vm info set_vm_metadata info snapshot_disk info detach_disk info detach_disk],
     )
   end
 

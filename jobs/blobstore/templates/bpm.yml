@@ -1,9 +1,17 @@
----
-processes:
-- name: blobstore
-  executable: /var/vcap/packages/nginx/sbin/nginx
-  persistent_disk: true
-  ephemeral_disk: true
-  args:
-  - -c
-  - /var/vcap/jobs/blobstore/config/nginx.conf
+<%=
+
+blobstore_config = {
+  "name" => "blobstore",
+  "executable" => "/var/vcap/packages/nginx/sbin/nginx",
+  "args" => ["-c", "/var/vcap/jobs/blobstore/config/nginx.conf"],
+  "persistent_disk" => true,
+  "ephemeral_disk" => true,
+}
+
+config = {
+  "processes" => [blobstore_config],
+}
+
+YAML.dump(config)
+
+%>

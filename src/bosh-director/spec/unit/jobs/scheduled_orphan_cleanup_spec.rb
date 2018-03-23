@@ -20,11 +20,14 @@ module Bosh::Director
     let(:task) { Models::Task.make(id: 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:scheduled_orphan_cleanup_job) {instance_double(Bosh::Director::Jobs::ScheduledOrphanCleanup, username: 'user', task_id: task.id, event_manager: event_manager)}
 
     before do
-      allow(Config).to receive(:event_log).and_return(event_log)
       allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+      allow(Config).to receive(:current_job).and_return(scheduled_orphan_cleanup_job)
     end
 
     describe '#has_work' do
