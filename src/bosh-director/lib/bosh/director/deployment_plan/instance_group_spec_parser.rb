@@ -136,6 +136,8 @@ module Bosh::Director
         legacy_jobs = safe_property(@instance_group_spec, 'templates', class: Array, optional: true)
         jobs = safe_property(@instance_group_spec, 'jobs', class: Array, optional: true)
 
+        migrated_from = safe_property(@instance_group_spec, 'migrated_from', class: Array, optional: true, :default => [])
+
         if jobs.nil?
           jobs = legacy_jobs
         end
@@ -191,9 +193,16 @@ module Bosh::Director
               @instance_group.name
             )
 
+            # migrated_from true? or false?
+            # get migrated_from_name = migarted_name : @instance_group.name
             if is_deploy_action
-              @links_parser.parse_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name)
-              @links_parser.parse_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name)
+              unless migrated_from.to_a.empty?
+                @links_parser.parse_migrated_from_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name, migrated_from)
+                @links_parser.parse_migrated_from_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name, migrated_from)
+              else
+                @links_parser.parse_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name)
+                @links_parser.parse_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name)
+              end
             end
             @instance_group.jobs << job
           end

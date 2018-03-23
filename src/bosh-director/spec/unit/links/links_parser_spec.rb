@@ -53,6 +53,298 @@ describe Bosh::Director::Links::LinksParser do
   let(:release_consumers) {nil}
   let(:release_properties) {nil}
 
+  describe '#parse_migrated_from_providers_from_job' do
+    let(:provider) {instance_double(Bosh::Director::Models::Links::LinkProvider)}
+    let(:provider_intent) {instance_double(Bosh::Director::Models::Links::LinkProviderIntent)}
+
+    let(:job_properties) {{}}
+
+    let(:release_providers) do
+      [{name: 'link_1_name', type: 'link_1_type'}]
+    end
+
+    let(:job_spec) do
+      {
+        'name' => 'jobby1',
+        'release' => 'release1',
+        'provides' => {
+          'link_1_name' => {
+            'as' => 'link_1_name_alias',
+            'shared' => true,
+            'properties' => {},
+          }
+        }
+      }
+    end
+
+    context 'when the job belongs to an instance group that is being migrated' do
+      let(:release_providers) do
+        [
+          {
+            name: 'chocolate',
+            type: 'flavour'
+          }
+        ]
+      end
+
+      let(:deployment_model) {BD::Models::Deployment.make(links_serial_id: serial_id)}
+      let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
+      let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
+      let(:serial_id) { 1 }
+      let!(:provider_1) do
+        Bosh::Director::Models::Links::LinkProvider.make(
+          deployment: deployment_model,
+          instance_group: 'old-ig1',
+          name: 'foobar',
+          type: 'job',
+          serial_id: serial_id
+        )
+      end
+
+      let!(:provider_1_intent) do
+        Bosh::Director::Models::Links::LinkProviderIntent.make(
+          :link_provider => provider_1,
+          :original_name => 'chocolate',
+          :name => 'chocolate',
+          :type => 'flavour',
+          :shared => true,
+          :consumable => true,
+          :content => '{}',
+          :serial_id => serial_id
+        )
+      end
+
+      let(:link_providers) do
+        [provider_1]
+      end
+
+      let(:job_spec) do
+        {
+          'name' => 'foobar',
+          'release' => 'release1',
+          'properties' => job_properties,
+          'provides' => {
+            'chocolate' => {
+              'as' => 'chocolate'
+            }
+          }
+        }
+      end
+
+      let(:job_properties) do
+        {
+          'street' => 'Any Street',
+        }
+      end
+
+      let(:migrated_from) do
+        [
+          {'name' => 'old_ig1', 'az' => 'az1'},
+          {'name' => 'old_ig2', 'az' => 'az2'}
+        ]
+      end
+
+      before do
+        allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+      end
+
+      it 'should update the instance_group name to match the existing provider' do
+        expect(Bosh::Director::Models::Links::LinkProvider).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig1',
+          name: 'foobar',
+          type: 'job'
+        ).and_return(provider_1)
+        expect(Bosh::Director::Models::Links::LinkProvider).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig2',
+          name: 'foobar',
+          type: 'job'
+        ).and_return(nil)
+        expect(links_manager).to receive(:find_or_create_provider).with(deployment_model: deployment_model, instance_group_name: "old_ig1",name: "foobar",type: "job").and_return(provider_1)
+        expect(links_manager).to receive(:find_or_create_provider_intent).with(link_provider: provider_1, link_original_name: 'chocolate', link_type: 'flavour').and_return(provider_1_intent)
+        subject.parse_migrated_from_providers_from_job(job_spec, deployment_model, template, job_properties, "new-ig", migrated_from)
+      end
+    end
+
+    context 'when there is a new job during a migrated_from deploy' do
+      let(:migrated_from) do
+        [
+          {'name' => 'old_ig1', 'az' => 'az1'},
+          {'name' => 'old_ig2', 'az' => 'az2'}
+        ]
+      end
+
+      before do
+        allow(provider_intent).to receive(:name=)
+        allow(provider_intent).to receive(:metadata=)
+        allow(provider_intent).to receive(:consumable=)
+        allow(provider_intent).to receive(:shared=)
+        allow(provider_intent).to receive(:save)
+      end
+
+      it 'chooses the new instance group name if there is no match' do
+        expect(Bosh::Director::Models::Links::LinkProvider).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig1',
+          name: 'jobby1',
+          type: 'job'
+        ).and_return(nil)
+        expect(Bosh::Director::Models::Links::LinkProvider).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig2',
+          name: 'jobby1',
+          type: 'job'
+        ).and_return(nil)
+        expect(links_manager).to receive(:find_or_create_provider).with(deployment_model: deployment_model, instance_group_name: "instance-group-name",name: "jobby1",type: "job").and_return(provider)
+        expect(links_manager).to receive(:find_or_create_provider_intent).with(link_provider: provider, link_original_name: 'link_1_name', link_type: 'link_1_type').and_return(provider_intent)
+
+        subject.parse_migrated_from_providers_from_job(job_spec, deployment_plan.model, template, job_properties, "instance-group-name", migrated_from)
+      end
+    end
+  end
+
+  describe '#parse_migrated_from_consumers_from_job' do
+    let(:consumer) {instance_double(Bosh::Director::Models::Links::LinkConsumer)}
+    let(:consumer_intent) {instance_double(Bosh::Director::Models::Links::LinkConsumerIntent)}
+
+    let(:job_properties) {{}}
+
+    let(:release_consumers) do
+      [{name: 'link_1_name', type: 'link_1_type'}]
+    end
+
+    let(:job_spec) do
+      {
+        'name' => 'jobby1',
+        'release' => 'release1',
+        'consumes' => {
+          'link_1_name' => {
+            'from' => 'link_1_name_alias',
+          }
+        }
+      }
+    end
+
+    context 'when the job belongs to an instance group that is being migrated' do
+      let(:release_consumers) do
+        [
+          {
+            name: 'chocolate',
+            type: 'flavour'
+          }
+        ]
+      end
+
+      let(:deployment_model) {BD::Models::Deployment.make(links_serial_id: serial_id)}
+      let(:deployment_plan) {instance_double(Bosh::Director::DeploymentPlan::Planner)}
+      let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
+      let(:serial_id) { 1 }
+      let!(:consumer) do
+        Bosh::Director::Models::Links::LinkConsumer.make(
+          deployment: deployment_model,
+          instance_group: 'old-ig1',
+          name: 'foobar',
+          type: 'job',
+          serial_id: serial_id
+        )
+      end
+
+      let!(:consumer_intent) do
+        Bosh::Director::Models::Links::LinkConsumerIntent.make(
+          :link_consumer => consumer,
+          :original_name => 'chocolate',
+          :name => 'chocolate',
+          :type => 'flavour',
+          :blocked => false,
+          :serial_id => serial_id
+        )
+      end
+
+      let(:link_consumers) do
+        [consumer]
+      end
+
+      let(:job_spec) do
+        {
+          'name' => 'foobar',
+          'release' => 'release1',
+          'properties' => {},
+          'consumes' => {
+            'chocolate' => {
+              'from' => 'chocolate'
+            }
+          }
+        }
+      end
+
+      let(:migrated_from) do
+        [
+          {'name' => 'old_ig1', 'az' => 'az1'},
+          {'name' => 'old_ig2', 'az' => 'az2'}
+        ]
+      end
+
+      before do
+        allow(deployment_model).to receive(:link_consumers).and_return(link_consumers)
+      end
+
+      it 'should update the instance_group name to match the existing provider' do
+        expect(Bosh::Director::Models::Links::LinkConsumer).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig1',
+          name: 'foobar',
+          type: 'job'
+        ).and_return(consumer)
+        expect(Bosh::Director::Models::Links::LinkConsumer).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig2',
+          name: 'foobar',
+          type: 'job'
+        ).and_return(nil)
+        expect(links_manager).to receive(:find_or_create_consumer).with(deployment_model: deployment_model, instance_group_name: "old_ig1",name: "foobar",type: "job").and_return(consumer)
+        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'chocolate', link_type: 'flavour').and_return(consumer_intent)
+        subject.parse_migrated_from_consumers_from_job(job_spec, deployment_model, template, "new-ig", migrated_from)
+      end
+    end
+
+    context 'when there is a new job during a migrated_from deploy' do
+      let(:migrated_from) do
+        [
+          {'name' => 'old_ig1', 'az' => 'az1'},
+          {'name' => 'old_ig2', 'az' => 'az2'}
+        ]
+      end
+
+      before do
+        allow(consumer_intent).to receive(:name=)
+        allow(consumer_intent).to receive(:metadata=)
+        allow(consumer_intent).to receive(:blocked=)
+        allow(consumer_intent).to receive(:optional=)
+        allow(consumer_intent).to receive(:save)
+      end
+
+      it 'chooses the new instance group name if there is no match' do
+        expect(Bosh::Director::Models::Links::LinkConsumer).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig1',
+          name: 'jobby1',
+          type: 'job'
+        ).and_return(nil)
+        expect(Bosh::Director::Models::Links::LinkConsumer).to receive(:find).with(
+          deployment: deployment_model,
+          instance_group: 'old_ig2',
+          name: 'jobby1',
+          type: 'job'
+        ).and_return(nil)
+        expect(links_manager).to receive(:find_or_create_consumer).with(deployment_model: deployment_model, instance_group_name: "instance-group-name",name: "jobby1",type: "job").and_return(consumer)
+        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'link_1_name', link_type: 'link_1_type').and_return(consumer_intent)
+
+        subject.parse_migrated_from_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name", migrated_from)
+      end
+    end
+  end
+
   describe '#parse_providers_from_job' do
     let(:provider) {instance_double(Bosh::Director::Models::Links::LinkProvider)}
     let(:provider_intent) {instance_double(Bosh::Director::Models::Links::LinkProviderIntent)}

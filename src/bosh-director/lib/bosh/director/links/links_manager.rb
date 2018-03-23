@@ -354,6 +354,34 @@ module Bosh::Director::Links
       end
     end
 
+    def migrate_links_provider_instance_group(deployment_model, instance_group_model)
+      instance_group_list = instance_group_model.migrated_from.map{|h| h['name']}
+
+      instance_group_list.each do |instance_group_name|
+        deployment_model.link_providers.each do |link_provider|
+          next if link_provider.instance_group != instance_group_name
+          if link_provider.serial_id == deployment_model.links_serial_id
+            link_provider.instance_group = instance_group_model.name
+            link_provider.save
+          end
+        end
+      end
+    end
+
+    def migrate_links_consumer_instance_group(deployment_model, instance_group_model)
+      instance_group_list = instance_group_model.migrated_from.map{|h| h['name']}
+
+      instance_group_list.each do |instance_group_name|
+        deployment_model.link_consumers.each do |link_consumer|
+          next if link_consumer.instance_group != instance_group_name
+          if link_consumer.serial_id == deployment_model.links_serial_id
+            link_consumer.instance_group = instance_group_model.name
+            link_consumer.save
+          end
+        end
+      end
+    end
+
     private
 
     def extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
@@ -361,7 +389,7 @@ module Bosh::Director::Links
       provider_content = provider_intent.content || '{}'
       # determine what network name / dns entry things to use
       link_spec = update_addresses(JSON.parse(provider_content), link_network, global_use_dns_entry, link_use_ip_address)
-      link_content = link_spec.to_json
+      link_spec.to_json
     end
 
     def provider_intents_for_consumer_intent(consumer_intent, consumer_intent_metadata)

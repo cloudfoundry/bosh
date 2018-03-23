@@ -60,6 +60,11 @@ module Bosh::Director
       job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
       desired_instance_groups.each do |desired_instance_group|
+        unless desired_instance_group.migrated_from.to_a.empty?
+          @links_manager.migrate_links_provider_instance_group(@deployment_plan.model, desired_instance_group)
+          @links_manager.migrate_links_consumer_instance_group(@deployment_plan.model, desired_instance_group)
+        end
+
         desired_instances = desired_instance_group.desired_instances
         existing_instances = job_migrator.find_existing_instances(desired_instance_group)
         instance_plans = instance_planner.plan_instance_group_instances(desired_instance_group, desired_instances, existing_instances, @deployment_plan.vm_resources_cache)

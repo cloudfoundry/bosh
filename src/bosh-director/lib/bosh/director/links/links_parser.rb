@@ -4,19 +4,60 @@ module Bosh::Director::Links
 
     MANUAL_LINK_KEYS = ['instances', 'properties', 'address']
 
-    def parse_providers_from_job(job_spec, deployment_model, current_template_model, job_properties, instance_group_name)
+    def parse_migrated_from_providers_from_job(manifest_job_spec, deployment_model, current_template_model, job_properties, instance_group_name, migrated_from)
+      migrated_from.each do |migration_block|
+        old_instance_group_name = migration_block['name']
+        job_name = safe_property(manifest_job_spec, 'name', class: String)
+
+        providers = Bosh::Director::Models::Links::LinkProvider.find(
+          deployment: deployment_model,
+          instance_group: old_instance_group_name,
+          name: job_name,
+          type: 'job'
+        )
+
+        unless providers.nil?
+          instance_group_name = migration_block['name']
+        end
+      end
+
+      parse_providers_from_job(manifest_job_spec, deployment_model, current_template_model, job_properties, instance_group_name)
+    end
+
+    def parse_migrated_from_consumers_from_job(manifest_job_spec, deployment_model, current_release_template_model, instance_group_name, migrated_from)
+      migrated_from.each do |migration_block|
+        old_instance_group_name = migration_block['name']
+        job_name = safe_property(manifest_job_spec, 'name', class: String)
+
+        consumers = Bosh::Director::Models::Links::LinkConsumer.find(
+          deployment: deployment_model,
+          instance_group: old_instance_group_name,
+          name: job_name,
+          type: 'job'
+        )
+
+        unless consumers.nil?
+          instance_group_name = migration_block['name']
+        end
+      end
+
+      parse_consumers_from_job(manifest_job_spec, deployment_model, current_release_template_model, instance_group_name)
+    end
+
+    def parse_providers_from_job(manifest_job_spec, deployment_model, current_release_template_model, job_properties, instance_group_name)
       @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
 
-      provides_links = Bosh::Common::DeepCopy.copy(safe_property(job_spec, 'provides', class: Hash, optional: true, default: {}))
-      job_name = safe_property(job_spec, 'name', class: String)
+      manifest_provides_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'provides', class: Hash, optional: true, default: {}))
+      job_name = safe_property(manifest_job_spec, 'name', class: String)
 
       # TODO links: add integration test to test for it, maybe not
-      if current_template_model.provides.empty? && !provides_links.empty?
+      if current_release_template_model.provides.empty? && !manifest_provides_links.empty?
         raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies providers in the manifest but the job does not define any providers in the release spec"
       end
 
-      return if current_template_model.provides.empty?
+      return if current_release_template_model.provides.empty?
 
+      # potential TODO links: check if migrated_from and do not create new provider if migration occurring
       provider = @links_manager.find_or_create_provider(
         deployment_model: deployment_model,
         instance_group_name: instance_group_name,
@@ -26,7 +67,7 @@ module Bosh::Director::Links
 
       errors = []
 
-      current_template_model.provides.each do |provides|
+      current_release_template_model.provides.each do |provides|
         provider_original_name = provides['name']
 
         provider_intent_params = {
@@ -37,8 +78,8 @@ module Bosh::Director::Links
           consumable: true
         }
 
-        if provides_links.has_key?(provider_original_name)
-          manifest_source = provides_links.delete(provider_original_name)
+        if manifest_provides_links.has_key?(provider_original_name)
+          manifest_source = manifest_provides_links.delete(provider_original_name)
 
           validation_errors = validate_provide_link(manifest_source, provider_original_name, job_name, instance_group_name)
           errors.concat(validation_errors)
@@ -54,8 +95,8 @@ module Bosh::Director::Links
 
         exported_properties = provides['properties'] || []
         default_job_properties = {
-          'properties' => current_template_model.properties,
-          'template_name' => current_template_model.name
+          'properties' => current_release_template_model.properties,
+          'template_name' => current_release_template_model.name
         }
 
         mapped_properties, properties_errors = process_link_properties(job_properties, default_job_properties, exported_properties)
@@ -76,9 +117,9 @@ module Bosh::Director::Links
         provider_intent.save
       end
 
-      unless provides_links.empty?
+      unless manifest_provides_links.empty?
         errors.push("Manifest defines unknown providers:")
-        provides_links.each do |link_name, _|
+        manifest_provides_links.each do |link_name, _|
           errors.push("  - Job '#{job_name}' does not provide link '#{link_name}' in the release spec")
         end
       end
@@ -88,17 +129,17 @@ module Bosh::Director::Links
       end
     end
 
-    def parse_consumers_from_job(job_spec, deployment_model, current_template_model, instance_group_name)
+    def parse_consumers_from_job(manifest_job_spec, deployment_model, current_release_template_model, instance_group_name)
       @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
 
-      consumes_links = Bosh::Common::DeepCopy.copy(safe_property(job_spec, 'consumes', class: Hash, optional: true, default: {}))
-      job_name = safe_property(job_spec, 'name', class: String)
+      consumes_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'consumes', class: Hash, optional: true, default: {}))
+      job_name = safe_property(manifest_job_spec, 'name', class: String)
 
-      if current_template_model.consumes.empty? && !consumes_links.empty?
+      if current_release_template_model.consumes.empty? && !consumes_links.empty?
         raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies consumers in the manifest but the job does not define any consumers in the release spec"
       end
 
-      return if current_template_model.consumes.empty?
+      return if current_release_template_model.consumes.empty?
 
       consumer = @links_manager.find_or_create_consumer(
         deployment_model: deployment_model,
@@ -109,7 +150,7 @@ module Bosh::Director::Links
 
       errors = []
 
-      current_template_model.consumes.each do |consumes|
+      current_release_template_model.consumes.each do |consumes|
         consumed_link_original_name = consumes["name"]
 
         consumer_intent_params = {
@@ -270,7 +311,6 @@ module Bosh::Director::Links
       end
       mapped_properties
     end
-
 
     def validate_consume_link(source, link_name, job_name, instance_group_name)
       if source.eql? 'nil'

@@ -74,7 +74,7 @@ namespace :fly do
   def execute(task, command_options = nil, additional_env = {})
     env = prepare_env(additional_env)
     sh("#{env} fly #{concourse_target} sync")
-    sh("#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -x -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../")
+    sh("#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../")
   end
 end
 
