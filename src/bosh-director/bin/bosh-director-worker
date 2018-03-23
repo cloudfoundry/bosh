@@ -2,8 +2,8 @@
 
 require 'erb'
 require 'optparse'
-require 'bosh/director/config'
 require 'bosh/director/worker'
+require 'bosh/director/config'
 
 config_file = nil
 index = nil
