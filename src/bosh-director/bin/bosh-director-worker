@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 
 require 'erb'
-require 'bosh/director'
+require 'optparse'
+require 'bosh/director/worker'
+require 'bosh/director/config'
 
 config_file = nil
 index = nil
