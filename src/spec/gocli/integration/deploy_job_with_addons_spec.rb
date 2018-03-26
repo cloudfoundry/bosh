@@ -121,6 +121,30 @@ describe 'deploy job with addons', type: :integration do
       expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
     end
 
+    it 'allows addons to be excluded for specific lifecycle type' do
+      runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon_excludes_lifecycle)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'][1] = Bosh::Spec::NewDeployments.simple_errand_instance_group.merge({
+        'name' => 'errand',
+      })
+
+      prepare_for_deploy
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      bosh_runner.run('run-errand -d simple  errand --keep-alive')
+      instances = director.instances
+
+      no_addon_instance = instances.detect { |instance| instance.job_name == 'errand' }
+      expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
+
+      addon_instance = instances.detect { |instance| instance.job_name == 'foobar' }
+      expect(File.exist?(addon_instance.job_path('dummy'))).to eq(true)
+    end
+
     context 'when a team is specified' do
       with_reset_sandbox_before_each(user_authentication: 'uaa')
 

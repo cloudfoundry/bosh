@@ -13,9 +13,11 @@ module Bosh
       attr_reader :commands
       attr_accessor :options
 
-      def initialize(options, context)
+      def initialize(options, context, request_api_version)
         @options = options
         @context = context
+        @api_version = options.fetch('api_version', nil)
+        @request_api_version = request_api_version
 
         @supported_formats = context['formats'] || ['dummy']
         @base_dir = options['dir']

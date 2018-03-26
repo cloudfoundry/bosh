@@ -84,7 +84,7 @@ describe 'Using multiple CPIs', type: :integration do
       before do
         bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
         bosh_runner.run('delete-config --type=cpi --name=default')
-        bosh_runner.run("upload-stemcell #{stemcell_filename}", env: { 'BOSH_LOG_LEVEL' => 'debug' }, lol: 'wut')
+        bosh_runner.run("upload-stemcell #{stemcell_filename}")
       end
 
       it 'can successfully access the stemcell resource' do
@@ -92,9 +92,12 @@ describe 'Using multiple CPIs', type: :integration do
         manifest = yaml_file('deployment_manifest', deployment)
 
         cpi_config['cpis'][0]['migrated_from'] = [{ 'name' => '' }]
+        cpi_config['cpis'].pop
 
         cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
         bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+        output = bosh_runner.run("upload-stemcell #{stemcell_filename}")
+        expect(output).to include("Stemcell 'ubuntu-stemcell/1' already exists")
 
         bosh_runner.run('stemcells', json: true)
         bosh_runner.run("deploy #{manifest.path}", deployment_name: 'simple')
@@ -191,7 +194,7 @@ describe 'Using multiple CPIs', type: :integration do
   end
 
   context 'when an az references a CPI that was deleted' do
-    it 'fails to redeploy and orphans the VM associated with the deleted CPI' do
+    it 'fails to redeploy and orphans the VM associated with the deleted CPI', no_hotswap: true do
       # deploy with initial cpi config, and 2 azs
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
       expect(output).to include("Using deployment 'simple'")
@@ -223,7 +226,7 @@ describe 'Using multiple CPIs', type: :integration do
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
 
       output = bosh_runner.run("deploy --recreate #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
-      error_message = "Failed to load CPI for AZ 'z2': CPI 'cpi-name2' not found in cpi-config"
+      error_message = "CPI 'cpi-name2' not found in cpi-config"
       expect(output).to match /#{error_message}/
 
       # Bosh can't delete VM since its CPI no longer exists
@@ -250,6 +253,90 @@ describe 'Using multiple CPIs', type: :integration do
         { 'active' => 'true',
           'instance' => %r{foobar/.*},
           'process_state' => 'stopped',
+          'az' => 'z2',
+          'ips' => /.*/,
+          'vm_cid' => /\d+/,
+          'vm_type' => 'a' },
+      )
+    end
+
+    it 'fails to redeploy and orphans the VM associated with the deleted CPI', hotswap: true do
+      # deploy with initial cpi config, and 2 azs
+      output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+      expect(output).to include("Using deployment 'simple'")
+      expect(output).to include('Succeeded')
+
+      output = table(bosh_runner.run('instances', deployment_name: 'simple', json: true))
+      expect(output).to contain_exactly(
+        {
+          'instance' => %r{foobar/.*},
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/,
+        },
+        {
+          'instance' => %r{foobar/.*},
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/,
+        },
+        { 'instance' => %r{foobar/.*},
+          'process_state' => 'running',
+          'az' => 'z2',
+          'ips' => /.*/ },
+      )
+
+      # Remove z2 CPI
+      cpi_config['cpis'] = [cpi_config['cpis'][0]]
+      cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
+      bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
+
+      output = bosh_runner.run("deploy --recreate #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
+      error_message = "CPI 'cpi-name2' not found in cpi-config"
+      expect(output).to match /#{error_message}/
+
+      # Bosh can't delete VM since its CPI no longer exists
+      output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
+      expect(output).to contain_exactly(
+        {
+          'active' => 'true',
+          'instance' => %r{foobar/.*},
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/,
+          'vm_cid' => /\d+/,
+          'vm_type' => 'a',
+        },
+        {
+          'active' => 'true',
+          'instance' => %r{foobar/.*},
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/,
+          'vm_cid' => /\d+/,
+          'vm_type' => 'a',
+        },
+        {
+          'active' => 'false',
+          'instance' => %r{foobar/.*},
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/,
+          'vm_cid' => /\d+/,
+          'vm_type' => 'a',
+        },
+        {
+          'active' => 'false',
+          'instance' => %r{foobar/.*},
+          'process_state' => 'running',
+          'az' => 'z1',
+          'ips' => /.*/,
+          'vm_cid' => /\d+/,
+          'vm_type' => 'a',
+        },
+        { 'active' => 'true',
+          'instance' => %r{foobar/.*},
+          'process_state' => 'running',
           'az' => 'z2',
           'ips' => /.*/,
           'vm_cid' => /\d+/,

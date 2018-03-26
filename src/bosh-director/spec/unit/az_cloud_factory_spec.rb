@@ -13,6 +13,8 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: nil).and_return(default_cloud)
+      allow(default_cloud).to receive(:info)
+      allow(default_cloud).to receive(:request_cpi_api_version=)
     end
 
     context 'factory methods' do
@@ -111,6 +113,14 @@ module Bosh::Director
         end
       end
 
+      context 'when requesting a cloud instance associated with a specific stemcell api version' do
+        it 'requests the correct one' do
+          expect(az_cloud_factory).to receive(:get).with(anything, 432)
+
+          az_cloud_factory.get_for_az('some-az', 432)
+        end
+      end
+
       it 'returns the default cloud from director config when asking for the cloud of a nil AZ' do
         cloud = az_cloud_factory.get_for_az(nil)
         expect(cloud).to eq(default_cloud)
@@ -131,14 +141,18 @@ module Bosh::Director
 
       let(:clouds) do
         [
-          instance_double(Bosh::Cloud),
-          instance_double(Bosh::Cloud),
-          instance_double(Bosh::Cloud),
+          instance_double(Bosh::Clouds::ExternalCpi),
+          instance_double(Bosh::Clouds::ExternalCpi),
+          instance_double(Bosh::Clouds::ExternalCpi),
         ]
       end
 
       before do
         expect(az_cloud_factory.uses_cpi_config?).to be_truthy
+        clouds.each do |cloud|
+          allow(cloud).to receive(:info)
+          allow(cloud).to receive(:request_cpi_api_version=)
+        end
       end
 
       it 'returns the cloud from cpi config when asking for a AZ with this cpi' do

@@ -1,23 +1,41 @@
----
-processes:
-- name: director
-  executable: /var/vcap/jobs/director/bin/director
-  ephemeral_disk: true
-  persistent_disk: true
-  hooks:
-    pre_start: /var/vcap/jobs/director/bin/bpm-pre-start
+<%=
 
-- name: nginx
-  executable:  /var/vcap/packages/nginx/sbin/nginx
-  ephemeral_disk: true
-  args:
-  - -c
-  - /var/vcap/jobs/director/config/nginx.conf
+director_config = {
+  "name" => "director",
+  "executable" => "/var/vcap/jobs/director/bin/director",
+  "ephemeral_disk" => true,
+  "persistent_disk" => true,
+  "hooks" => {
+    "pre_start" => "/var/vcap/jobs/director/bin/bpm-pre-start",
+  },
+}
 
-- name: scheduler
-  executable: /var/vcap/jobs/director/bin/scheduler
-  ephemeral_disk: true
+nginx_config = {
+  "name" => "nginx",
+  "executable" => "/var/vcap/packages/nginx/sbin/nginx",
+  "args" => ["-c", "/var/vcap/jobs/director/config/nginx.conf"],
+  "ephemeral_disk" => true,
+  "hooks" => {
+    "pre_start" => "/var/vcap/jobs/director/bin/bpm-pre-start",
+  },
+}
 
-- name: sync_dns
-  executable: /var/vcap/jobs/director/bin/sync-dns
-  ephemeral_disk: true
+scheduler_config = {
+  "name" => "scheduler",
+  "executable" => "/var/vcap/jobs/director/bin/scheduler",
+  "ephemeral_disk" => true,
+}
+
+sync_dns_config = {
+  "name" => "sync_dns",
+  "executable" => "/var/vcap/jobs/director/bin/sync-dns",
+  "ephemeral_disk" => true,
+}
+
+config = {
+  "processes" => [director_config, nginx_config, scheduler_config, sync_dns_config],
+}
+
+YAML.dump(config)
+
+%>

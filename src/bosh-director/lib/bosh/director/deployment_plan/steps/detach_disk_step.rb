@@ -10,8 +10,11 @@ module Bosh::Director
         def perform(_report)
           return if @disk.nil?
 
+          instance_active_vm = @disk.instance.active_vm
+          return if instance_active_vm.nil?
+
           cloud_factory = CloudFactory.create
-          cloud = cloud_factory.get(@disk.cpi)
+          cloud = cloud_factory.get(@disk.cpi, instance_active_vm.stemcell_api_version)
           @logger.info("Detaching disk #{@disk.disk_cid}")
           cloud.detach_disk(@disk.instance.vm_cid, @disk.disk_cid)
         rescue Bosh::Clouds::DiskNotAttached

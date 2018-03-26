@@ -7,8 +7,8 @@ module Bosh::Director::Jobs
 
       def pick(stemcells_to_keep)
         unused_stemcell_names_and_versions = @stemcell_manager
-                                               .find_all_stemcells
-                                               .select { |stemcell| stemcell['deployments'].empty? }
+                                             .find_all_stemcells
+                                             .select { |stemcell| stemcell['deployments'].empty? }
 
         unused_stemcells_grouped_by_name = unused_stemcell_names_and_versions.inject({}) do |h, stemcell|
           h[stemcell['name']] ||= []

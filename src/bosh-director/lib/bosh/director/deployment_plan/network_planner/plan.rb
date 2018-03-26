@@ -9,6 +9,8 @@ module Bosh::Director::DeploymentPlan
 
       attr_reader :reservation
       attr_accessor :existing
+      attr_accessor :obsolete
+
 
       def obsolete?
         !!@obsolete

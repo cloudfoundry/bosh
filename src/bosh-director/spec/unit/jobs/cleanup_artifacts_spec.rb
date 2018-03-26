@@ -3,9 +3,15 @@ require 'timecop'
 
 module Bosh::Director
   describe Jobs::CleanupArtifacts do
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
+
+    before { allow(Config).to receive(:current_job).and_return(update_job) }
+
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
-      let(:config) { {'remove_all' => remove_all} }
+      let(:config) { { 'remove_all' => remove_all } }
 
       describe 'when user specifies --all at the command line' do
         let(:remove_all) { true }
@@ -28,26 +34,35 @@ module Bosh::Director
       let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
       let(:event_log) { EventLog::Log.new }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
-      let(:release_1) { Models::Release.make(name: 'release-1') }
-      let(:release_2) { Models::Release.make(name: 'release-2') }
+      let(:release1) { Models::Release.make(name: 'release-1') }
+      let(:release2) { Models::Release.make(name: 'release-2') }
       let(:thread_pool) { ThreadPool.new }
       let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       subject(:cleanup_artifacts) { Jobs::CleanupArtifacts.new(config) }
 
+      def make_stemcell(name:, version:, operating_system: '')
+        Models::StemcellUpload.make(name: name, version: version)
+        Models::Stemcell.make(name: name, version: version, operating_system: operating_system)
+      end
+
       before do
         fake_locks
 
-        stemcell_1 = Models::Stemcell.make(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1')
-        Models::Stemcell.make(name: 'stemcell-b', version: '2')
+        stemcell1 = make_stemcell(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1')
+        make_stemcell(name: 'stemcell-b', version: '2')
 
-        release_version_1 = Models::ReleaseVersion.make(version: 1, release: release_1)
-        Models::ReleaseVersion.make(version: 2, release: release_2)
+        release_version1 = Models::ReleaseVersion.make(version: 1, release: release1)
+        Models::ReleaseVersion.make(version: 2, release: release2)
 
-        package = Models::Package.make(release: release_1, blobstore_id: 'package_blob_id_1')
-        package.add_release_version(release_version_1)
-        Models::CompiledPackage.make(package: package, stemcell_os: stemcell_1.operating_system,
-          stemcell_version: stemcell_1.version, blobstore_id: 'compiled-package-1')
+        package = Models::Package.make(release: release1, blobstore_id: 'package_blob_id_1')
+        package.add_release_version(release_version1)
+        Models::CompiledPackage.make(
+          package: package,
+          stemcell_os: stemcell1.operating_system,
+          stemcell_version: stemcell1.version,
+          blobstore_id: 'compiled-package-1',
+        )
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(stage)
@@ -67,7 +82,7 @@ module Bosh::Director
       end
 
       context 'when cleaning up ALL artifacts (stemcells, releases AND orphaned disks)' do
-        let(:config) { {'remove_all' => true} }
+        let(:config) { { 'remove_all' => true } }
         before do
           expect(blobstore).to receive(:delete).with('compiled-package-1')
         end
@@ -118,11 +133,11 @@ module Bosh::Director
         context 'when there are more than 2 stemcells and/or releases' do
           context 'and there are no orphaned disks' do
             it 'removes all stemcells and releases' do
-              Models::Stemcell.make(name: 'stemcell-a', version: '10')
-              Models::Stemcell.make(name: 'stemcell-b', version: '10')
+              make_stemcell(name: 'stemcell-a', version: '10')
+              make_stemcell(name: 'stemcell-b', version: '10')
 
-              Models::ReleaseVersion.make(version: 10, release: release_1)
-              Models::ReleaseVersion.make(version: 10, release: release_2)
+              Models::ReleaseVersion.make(version: 10, release: release1)
+              Models::ReleaseVersion.make(version: 10, release: release2)
 
               expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 4)
               expect(event_log).to receive(:begin_stage).with('Deleting releases', 4)
@@ -130,10 +145,13 @@ module Bosh::Director
               allow(blobstore).to receive(:delete).with('package_blob_id_1')
               result = subject.perform
 
-              expected_result = "Deleted 4 release(s), 4 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}"
+              expected_result = "Deleted 4 release(s), 4 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+                                "Deleted 0 dns blob(s) created before #{Time.now}"
+
               expect(result).to eq(expected_result)
 
               expect(Models::Stemcell.all).to be_empty
+              expect(Models::StemcellUpload.all).to be_empty
               expect(Models::Release.all).to be_empty
             end
           end
@@ -141,8 +159,8 @@ module Bosh::Director
 
         context 'when deleting multiple versions of the same release' do
           it 'removes them in sequence' do
-            Models::ReleaseVersion.make(version: 10, release: release_1)
-            Models::ReleaseVersion.make(version: 9, release: release_1)
+            Models::ReleaseVersion.make(version: 10, release: release1)
+            Models::ReleaseVersion.make(version: 9, release: release1)
 
             locks_acquired = []
             allow(Bosh::Director::Lock).to receive(:new) do |name, *args|
@@ -206,7 +224,8 @@ module Bosh::Director
           expect(thread_pool).not_to receive(:process)
           result = subject.perform
 
-          expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}")
+          expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+                               "Deleted 0 dns blob(s) created before #{Time.now - 3600}")
 
           expect(Models::Release.all.count).to eq(2)
           expect(Models::Stemcell.all.count).to eq(2)
@@ -216,10 +235,10 @@ module Bosh::Director
           it 'keeps the 2 latest versions of each stemcell' do
             expect(blobstore).not_to receive(:delete).with('compiled-package-1')
 
-            Models::Stemcell.make(name: 'stemcell-a', version: '10')
-            Models::Stemcell.make(name: 'stemcell-a', version: '9')
-            Models::Stemcell.make(name: 'stemcell-b', version: '10')
-            Models::Stemcell.make(name: 'stemcell-b', version: '9')
+            make_stemcell(name: 'stemcell-a', version: '10')
+            make_stemcell(name: 'stemcell-a', version: '9')
+            make_stemcell(name: 'stemcell-b', version: '10')
+            make_stemcell(name: 'stemcell-b', version: '9')
 
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 2)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)
@@ -227,9 +246,11 @@ module Bosh::Director
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = subject.perform
 
-            expected_result = "Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}"
+            expected_result = "Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+              "Deleted 0 dns blob(s) created before #{Time.now - 3600}"
             expect(result).to eq(expected_result)
 
+            expect(Models::StemcellUpload.all.count).to eq(4)
             expect(Models::Stemcell.all.count).to eq(4)
             expect(Models::Release.all.count).to eq(2)
           end
@@ -237,10 +258,10 @@ module Bosh::Director
           it 'keeps the last 2 most recently used releases' do
             expect(blobstore).to receive(:delete).with('compiled-package-1')
 
-            Models::ReleaseVersion.make(version: 10, release: release_1)
-            Models::ReleaseVersion.make(version: 10, release: release_2)
-            Models::ReleaseVersion.make(version: 9, release: release_1)
-            Models::ReleaseVersion.make(version: 9, release: release_2)
+            Models::ReleaseVersion.make(version: 10, release: release1)
+            Models::ReleaseVersion.make(version: 10, release: release2)
+            Models::ReleaseVersion.make(version: 9, release: release1)
+            Models::ReleaseVersion.make(version: 9, release: release2)
 
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 2)
@@ -248,7 +269,8 @@ module Bosh::Director
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = subject.perform
 
-            expected_result = "Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}"
+            expected_result = "Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+              "Deleted 0 dns blob(s) created before #{Time.now - 3600}"
             expect(result).to eq(expected_result)
 
             expect(Models::Release.all.count).to eq(2)
@@ -258,22 +280,22 @@ module Bosh::Director
 
         context 'when there are stemcells and releases in use' do
           before do
-            deployment_1 = Models::Deployment.make(name: 'first')
-            deployment_2 = Models::Deployment.make(name: 'second')
+            deployment1 = Models::Deployment.make(name: 'first')
+            deployment2 = Models::Deployment.make(name: 'second')
 
-            stemcell_with_deployment_1 = Models::Stemcell.make(name: 'stemcell-c')
-            stemcell_with_deployment_1.add_deployment(deployment_1)
+            stemcell_with_deployment1 = Models::Stemcell.make(name: 'stemcell-c')
+            stemcell_with_deployment1.add_deployment(deployment1)
 
-            stemcell_with_deployment_2 = Models::Stemcell.make(name: 'stemcell-d')
-            stemcell_with_deployment_2.add_deployment(deployment_2)
+            stemcell_with_deployment2 = Models::Stemcell.make(name: 'stemcell-d')
+            stemcell_with_deployment2.add_deployment(deployment2)
 
-            release_1 = Models::Release.make(name: 'release-c')
-            release_2 = Models::Release.make(name: 'release-d')
-            version_1 = Models::ReleaseVersion.make(version: 1, release: release_1)
-            version_2 = Models::ReleaseVersion.make(version: 2, release: release_2)
+            release1 = Models::Release.make(name: 'release-c')
+            release2 = Models::Release.make(name: 'release-d')
+            version1 = Models::ReleaseVersion.make(version: 1, release: release1)
+            version2 = Models::ReleaseVersion.make(version: 2, release: release2)
 
-            version_1.add_deployment(deployment_1)
-            version_2.add_deployment(deployment_2)
+            version1.add_deployment(deployment1)
+            version2.add_deployment(deployment2)
           end
 
           it 'does not delete any stemcells and releases currently in use' do
@@ -335,7 +357,7 @@ module Bosh::Director
       end
 
       context 'when director was unable to delete a disk' do
-        let(:config) { {'remove_all' => true} }
+        let(:config) { { 'remove_all' => true } }
 
         before do
           Models::OrphanDisk.make(disk_cid: 'fake-cid-1')

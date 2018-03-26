@@ -1,11 +1,9 @@
 module Bosh::Director
   class DnsEncoder
-    def initialize(service_groups={}, az_hash={}, network_name_hash={}, instance_uuid_num_hash={}, short_dns_enabled=false)
+    def initialize(service_groups={}, az_hash={}, short_dns_enabled=false)
       @az_hash = az_hash
       @service_groups = service_groups
       @short_dns_enabled = short_dns_enabled
-      @network_name_hash = network_name_hash
-      @instance_uuid_num_hash = instance_uuid_num_hash
     end
 
     def encode_query(criteria)
@@ -42,7 +40,7 @@ module Bosh::Director
         return nil
       end
 
-      index = @instance_uuid_num_hash[uuid]
+      index = Models::Instance.where(uuid: uuid).get(:id)
       raise RuntimeError.new("Unknown instance UUID: '#{uuid}'") if index.nil?
       "#{index}"
     end
@@ -51,7 +49,7 @@ module Bosh::Director
       if network_name.nil?
         return nil
       end
-      index = @network_name_hash[network_name]
+      index = Models::LocalDnsEncodedNetwork.where(name: network_name).get(:id)
       raise RuntimeError.new("Unknown Network: '#{network_name}'") if index.nil?
       "#{index}"
     end

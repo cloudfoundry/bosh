@@ -7,13 +7,19 @@ module Bosh::Director
       include ApiHelper
 
       def all_by_name_and_version(name, version)
-        Models::Stemcell.where(:name => name, :version => version).all
+        Models::Stemcell.where(name: name, version: version).all
       end
 
       def find_by_name_and_version_and_cpi(name, version, cpi)
-        stemcell = Models::Stemcell[:name => name, :version => version, :cpi => cpi]
-        raise StemcellNotFound, "Stemcell '#{name}/#{version}' and cpi #{cpi} doesn't exist" if stemcell.nil?
-        stemcell
+        cloud_factory = Bosh::Director::CloudFactory.create
+
+        found_cpis = Bosh::Director::Models::Stemcell.where(name: name, version: version).all.map(&:cpi)
+        cpi_aliases = cloud_factory.get_cpi_aliases(cpi)
+
+        matched_cpis = found_cpis & cpi_aliases
+        raise StemcellNotFound, "Stemcell '#{name}/#{version}' and cpi #{cpi} doesn't exist" if matched_cpis.empty?
+
+        return Models::Stemcell[:name => name, :version => version, :cpi => matched_cpis[0]]
       end
 
       def find_all_stemcells
@@ -86,7 +92,7 @@ module Bosh::Director
         JobQueue.new.enqueue(username, Jobs::UpdateStemcell, 'create stemcell', [stemcell_path, options])
       end
 
-      def delete_stemcell(username, stemcell_name, stemcell_version, options={})
+      def delete_stemcell(username, stemcell_name, stemcell_version, options = {})
         description = "delete stemcell: #{stemcell_name}/#{stemcell_version}"
 
         JobQueue.new.enqueue(username, Jobs::DeleteStemcell, description, [stemcell_name, stemcell_version, options])

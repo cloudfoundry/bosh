@@ -33,11 +33,11 @@ module Bosh::Director
       @azs = azs
     end
 
-    def get_for_az(az_name)
+    def get_for_az(az_name, stemcell_api_version = nil)
       cpi_name = get_name_for_az(az_name)
 
       begin
-        get(cpi_name)
+        get(cpi_name, stemcell_api_version)
       rescue RuntimeError => e
         raise "Failed to load CPI for AZ '#{az_name}': #{e.message}"
       end

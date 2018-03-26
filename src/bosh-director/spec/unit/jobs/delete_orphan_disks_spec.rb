@@ -2,6 +2,11 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DeleteOrphanDisks do
+    let(:event_manager) {Api::EventManager.new(true)}
+    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:delete_orphan_disks_job) {instance_double(Bosh::Director::Jobs::DeleteOrphanDisks, username: 'user', task_id: task.id, event_manager: event_manager)}
+
+    before { allow(Config).to receive(:current_job).and_return(delete_orphan_disks_job) }
 
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }

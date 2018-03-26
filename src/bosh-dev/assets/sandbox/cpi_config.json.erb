@@ -8,5 +8,7 @@
          "blobstore_path": "<%= blobstore_storage_dir %>"
       }
     }
-  }
+  }<% unless dummy_cpi_api_version.nil? %>,
+  "api_version": <%= dummy_cpi_api_version %>
+  <% end %>
 }

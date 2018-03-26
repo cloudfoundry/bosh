@@ -39,6 +39,8 @@ module Bosh::Clouds
       }
     end
 
+    attr_accessor :request_cpi_api_version
+
     def initialize(cpi_path, director_uuid, options = {})
       @cpi_path = cpi_path
       @director_uuid = director_uuid
@@ -171,11 +173,14 @@ module Bosh::Clouds
     end
 
     def request_json(method_name, arguments, context)
-      JSON.dump({
+      request_hash = {
         'method' => method_name,
         'arguments' => arguments,
-        'context' => context
-      })
+        'context' => context,
+      }
+
+      request_hash['api_version'] = request_cpi_api_version unless request_cpi_api_version.nil?
+      JSON.dump(request_hash)
     end
 
     def handle_error(error_response, method_name)

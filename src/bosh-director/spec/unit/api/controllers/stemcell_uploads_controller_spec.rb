@@ -15,24 +15,7 @@ module Bosh::Director
         basic_authorize 'admin', 'admin'
       end
 
-      context 'when a compatible cpi is missing the stemcell' do
-        before do
-          BD::Models::Stemcell.make(
-            cpi: cpi_config['cpis'][0]['name'],
-            name: 'bosh-stemcell',
-            version: '1234',
-          )
-        end
-
-        it 'returns that stemcell is needed' do
-          post '/', JSON.generate(stemcell: { name: 'bosh-stemcell', version: '1234' }), 'CONTENT_TYPE' => 'application/json'
-          expect(last_response.status).to eq(200)
-          body = JSON.parse(last_response.body)
-          expect(body).to eq('needed' => true)
-        end
-      end
-
-      context 'when a noncompatible cpi is missing the stemcell' do
+      context 'when a cpi is missing the stemcell' do
         before do
           BD::Models::StemcellUpload.make(
             cpi: cpi_config['cpis'][0]['name'],
@@ -49,25 +32,85 @@ module Bosh::Director
         end
       end
 
-      context 'when the stemcell does not need to be uploaded to any cpis' do
-        before do
-          BD::Models::StemcellUpload.make(
-            cpi: cpi_config['cpis'][0]['name'],
-            name: 'bosh-stemcell',
-            version: '1234',
-          )
-          BD::Models::StemcellUpload.make(
-            cpi: cpi_config['cpis'][1]['name'],
-            name: 'bosh-stemcell',
-            version: '1234',
-          )
+      context 'when a cpi already references an existing stemcell' do
+        context 'multiple cpis' do
+          before do
+            BD::Models::StemcellUpload.make(
+              cpi: cpi_config['cpis'][0]['name'],
+              name: 'bosh-stemcell',
+              version: '1234',
+            )
+            BD::Models::StemcellUpload.make(
+              cpi: cpi_config['cpis'][1]['name'],
+              name: 'bosh-stemcell',
+              version: '1234',
+            )
+          end
+
+          it 'returns that stemcell is not needed' do
+            post '/', JSON.generate(stemcell: { name: 'bosh-stemcell', version: '1234' }), 'CONTENT_TYPE' => 'application/json'
+            expect(last_response.status).to eq(200)
+            body = JSON.parse(last_response.body)
+            expect(body).to eq('needed' => false)
+          end
         end
 
-        it 'returns that stemcell is not needed' do
-          post '/', JSON.generate(stemcell: { name: 'bosh-stemcell', version: '1234' }), 'CONTENT_TYPE' => 'application/json'
-          expect(last_response.status).to eq(200)
-          body = JSON.parse(last_response.body)
-          expect(body).to eq('needed' => false)
+        context 'a new cpi is migrated from an existing cpi with a stemcell' do
+          let(:migrated_from_cpi) do
+            {
+              'cpis' => [{
+                'migrated_from' => ['name' => cpi_config['cpis'][0]['name']],
+                'name' => 'new-cpi',
+                'type' => 'cpi',
+              }],
+            }
+          end
+
+          before do
+            BD::Models::StemcellUpload.make(
+              cpi: cpi_config['cpis'][0]['name'],
+              name: 'bosh-stemcell',
+              version: '1234',
+            )
+            Models::Config.make(:cpi, content: migrated_from_cpi.to_yaml)
+          end
+
+          it 'returns that stemcell is not needed' do
+            post '/', JSON.generate(stemcell: { name: 'bosh-stemcell', version: '1234' }), 'CONTENT_TYPE' => 'application/json'
+            expect(last_response.status).to eq(200)
+
+            body = JSON.parse(last_response.body)
+            expect(body).to eq('needed' => false)
+          end
+        end
+
+        context 'a new cpi is migrated from a blank cpi' do
+          let(:migrated_from_cpi) do
+            {
+              'cpis' => [{
+                'migrated_from' => ['name' => ''],
+                'name' => 'new-cpi',
+                'type' => 'cpi',
+              }],
+            }
+          end
+
+          before do
+            BD::Models::StemcellUpload.make(
+              cpi: '',
+              name: 'bosh-stemcell',
+              version: '1234',
+            )
+            Models::Config.make(:cpi, content: migrated_from_cpi.to_yaml)
+          end
+
+          it 'returns that stemcell is not needed' do
+            post '/', JSON.generate(stemcell: { name: 'bosh-stemcell', version: '1234' }), 'CONTENT_TYPE' => 'application/json'
+            expect(last_response.status).to eq(200)
+
+            body = JSON.parse(last_response.body)
+            expect(body).to eq('needed' => false)
+          end
         end
       end
 

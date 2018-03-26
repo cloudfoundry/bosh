@@ -43,14 +43,27 @@ module Bosh::Director
     end
 
     def get(cpi_name, stemcell_api_version = nil)
-      return get_default_cloud(stemcell_api_version) if cpi_name.nil? || cpi_name == ''
-      cpi_config = get_cpi_config(cpi_name)
-      Bosh::Clouds::ExternalCpi.new(
-        cpi_config.exec_path,
-        @director_uuid,
-        properties_from_cpi_config: cpi_config.properties,
-        stemcell_api_version: stemcell_api_version
-      )
+      if cpi_name.nil? || cpi_name == ''
+        cloud = get_default_cloud(stemcell_api_version)
+      else
+        cpi_config = get_cpi_config(cpi_name)
+        cloud = Bosh::Clouds::ExternalCpi.new(
+          cpi_config.exec_path,
+          @director_uuid,
+          properties_from_cpi_config: cpi_config.properties,
+          stemcell_api_version: stemcell_api_version
+        )
+      end
+
+      begin
+        info_response = cloud.info || {}
+        cpi_api_version = info_response.fetch('api_version', 1)
+        #TODO: request_cpi_api_version should be minimum of director's and cpi's highest supported api_version
+        cloud.request_cpi_api_version = cpi_api_version
+      rescue
+        # ignored
+      end
+      cloud
     end
 
     private

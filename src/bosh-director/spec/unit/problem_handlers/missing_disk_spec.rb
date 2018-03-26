@@ -16,7 +16,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:instance) do
     instance = Bosh::Director::Models::Instance.
       make(job: 'mysql_node', index: 3, uuid: "uuid-42", availability_zone: 'az1')
-    vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid', instance_id: instance.id)
+    vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid', instance_id: instance.id, stemcell_api_version: 25)
     instance.active_vm = vm
     instance.save
   end
@@ -37,10 +37,6 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   end
 
   describe 'resolutions' do
-    before do
-      expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone).and_return(cloud)
-    end
-
     describe 'delete_disk_reference' do
       let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
       let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
@@ -76,6 +72,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
       context 'when vm is present' do
         before do
           allow(cloud).to receive(:has_vm).and_return(true)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone, 25).and_return(cloud)
         end
 
         context 'when agent responds to list_disk' do
@@ -184,6 +181,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
       context 'when vm is missing' do
         before do
           allow(cloud).to receive(:has_vm).and_return(false)
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone, 25).and_return(cloud)
         end
 
         it_ignores_cloud_disk_errors
@@ -205,6 +203,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
         end
 
         it 'deletes disk related info from database directly' do
+          expect(cloud_factory).to receive(:get_for_az).with(instance.availability_zone, nil).and_return(cloud)
           handler = described_class.new(disk.id, {})
           allow(handler).to receive(:cloud).and_return(cloud)
 

@@ -1050,9 +1050,9 @@ module Bosh::Director
           end
         end
 
-        context 'when `id` is not a string containing an integer' do
+        context 'when `id` is not a valid database primary key type' do
           it 'returns a 404' do
-            get('/invalid-id')
+            get('/invalidType!$_0')
 
             expect(last_response.status).to eq(404)
           end

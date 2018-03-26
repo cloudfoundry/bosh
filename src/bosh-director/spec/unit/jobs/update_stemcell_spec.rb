@@ -21,6 +21,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid', stemcell_api_version: nil).and_return(cloud)
+      allow(cloud).to receive(:request_cpi_api_version=)
+      allow(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
 
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
@@ -265,6 +267,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         before do
           allow(BD::CloudFactory).to receive(:create).and_return(cloud_factory)
+          allow(cloud_factory).to receive(:get_cpi_aliases).with('cloud1').and_return(['cloud1'])
+          allow(cloud_factory).to receive(:get_cpi_aliases).with('cloud2').and_return(['cloud2'])
+          allow(cloud_factory).to receive(:get_cpi_aliases).with('cloud3').and_return(['cloud3'])
         end
 
         it 'creates multiple stemcell records with different cpi attributes' do
@@ -379,6 +384,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_return('stemcell-cid')
 
+          expect(cloud_factory).to receive(:get_cpi_aliases).with('').and_return([''])
           expect(cloud_factory).to receive(:all_names).twice.and_return([''])
           expect(cloud_factory).to receive(:get).with('').and_return(cloud)
 

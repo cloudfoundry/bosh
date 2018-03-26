@@ -256,6 +256,7 @@ module Bosh::Director
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
           allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+          allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
           allow(cloud).to receive(:attach_disk)
           allow(cloud).to receive(:set_disk_metadata)
         end
@@ -291,18 +292,20 @@ module Bosh::Director
 
         let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+        let(:cloud_for_set_disk_metadata) { instance_double(Bosh::Clouds::ExternalCpi) }
 
         before do
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
           allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
-          allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+          allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
+          allow(cloud_factory).to receive(:get).with('').and_return(cloud_for_set_disk_metadata)
           allow(cloud).to receive(:attach_disk)
-          allow(cloud).to receive(:set_disk_metadata)
+          allow(cloud_for_set_disk_metadata).to receive(:set_disk_metadata)
         end
 
         it 'attaches the new disk' do
           expect(cloud).to receive(:attach_disk)
-          expect(cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
+          expect(cloud_for_set_disk_metadata).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }

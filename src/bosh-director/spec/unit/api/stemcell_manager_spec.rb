@@ -129,7 +129,9 @@ module Bosh::Director
     end
 
     describe '#find_by_name_and_version_and_cpi' do
+      let(:cpi_config) { { 'cpis' => [{ 'name' => 'cpi1', 'type' => 'cpi' }] } }
       before do
+        Models::Config.make(:cpi, content: cpi_config.to_yaml)
         Bosh::Director::Models::Stemcell.create(
             name: 'my-stemcell-with-a-name',
             version: 'stemcell_version',
@@ -142,12 +144,25 @@ module Bosh::Director
       it 'raises an error when the requested stemcell is not found' do
         expect {
           subject.find_by_name_and_version_and_cpi('my-stemcell-with-a-name', 'stemcell_version', 'cpi-notexisting')
-        }.to raise_error(Bosh::Director::StemcellNotFound)
+        }.to raise_error(RuntimeError, "CPI 'cpi-notexisting' not found in cpi-config")
       end
 
       it 'returns the uniquely matching stemcell' do
         stemcell = subject.find_by_name_and_version_and_cpi('my-stemcell-with-a-name', 'stemcell_version', 'cpi1')
         expect(stemcell.name).to eq('my-stemcell-with-a-name')
+      end
+
+      context 'when a cpi has another alias with the stemcell' do
+        let(:migrated_from) { { 'cpis' => [{ 'name' => 'cpi2', 'type' => 'cpi', 'migrated_from' => ['name' => 'cpi1'] }] } }
+
+        before do
+          Models::Config.make(:cpi, content: migrated_from.to_yaml)
+        end
+
+        it 'returns the existing stemcell' do
+          stemcell = subject.find_by_name_and_version_and_cpi('my-stemcell-with-a-name', 'stemcell_version', 'cpi2')
+          expect(stemcell.name).to eq('my-stemcell-with-a-name')
+        end
       end
     end
 

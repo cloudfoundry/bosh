@@ -25,7 +25,7 @@ module Bosh
           end
           let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
           let(:cloud_factory) { instance_double(AZCloudFactory) }
-          let(:cloud) { instance_double('Bosh::Cloud') }
+          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
           let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
           let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
           let(:deployment_plan) do
@@ -141,6 +141,8 @@ module Bosh
             allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
             allow(Models::Vm).to receive(:create).and_return(vm_model)
             allow(cloud).to receive(:create_vm)
+            allow(cloud).to receive(:info)
+            allow(cloud).to receive(:request_cpi_api_version).and_return(1)
             allow(DeleteVmStep).to receive(:new).and_return(delete_vm_step)
           end
 

@@ -11,7 +11,7 @@ describe Bosh::Clouds::ExternalCpi do
 
     before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
 
-    let (:method) {method}
+    let(:method) { method }
     let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
 
     before { stub_const('Bosh::Clouds::Config', config) }
@@ -24,15 +24,35 @@ describe Bosh::Clouds::ExternalCpi do
     before { allow(Random).to receive(:rand).and_return('fake-request-id') }
     let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
-    it 'calls cpi binary with correct arguments' do
-      stub_const('ENV', 'TMPDIR' => '/some/tmp')
+    context 'api version specified' do
 
-      expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
-      expected_cmd = '/path/to/fake-cpi/bin/cpi'
-      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
+      before do
+        subject.request_cpi_api_version = 1
+      end
 
-      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
-      call_cpi_method
+      it 'should call cpi binary with correct arguments' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
+        expected_cmd = '/path/to/fake-cpi/bin/cpi'
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":1})
+
+        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        call_cpi_method
+      end
+    end
+
+    context 'api version not specified' do
+      it 'should call cpi binary with correct arguments' do
+        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
+        expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
+        expected_cmd = '/path/to/fake-cpi/bin/cpi'
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
+
+        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        call_cpi_method
+      end
     end
 
     context 'if properties from cpi config are given' do
@@ -113,7 +133,7 @@ describe Bosh::Clouds::ExternalCpi do
       end
     end
 
-    context 'when api_version stemcell is given' do
+    context 'when stemcell api_version is given' do
       let(:director_uuid) {'fake-director-uuid'}
       let(:request_id) {'cpi-fake-request-id'}
       let(:stemcell_api_version) { 5 }

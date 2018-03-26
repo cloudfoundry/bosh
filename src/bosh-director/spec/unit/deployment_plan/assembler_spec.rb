@@ -322,6 +322,82 @@ module Bosh::Director
             expect { assembler.bind_models }.to raise_error('Unable to deploy manifest')
           end
         end
+
+        context 'when there is an instance to hotswap' do
+          let(:instance_planner) { double(DeploymentPlan::InstancePlanner) }
+          let(:existing_network_plan1) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: anything, existing: true) }
+          let(:existing_network_plan2) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: anything, existing: true) }
+          let(:instance) { instance_double(DeploymentPlan::Instance, model: anything) }
+          let(:network) { instance_double(DeploymentPlan::Network, name: 'network') }
+          let(:hot_swap_instance_plan) do
+            DeploymentPlan::InstancePlan.new(existing_instance: anything, desired_instance: anything, instance: instance)
+          end
+          let(:not_hot_swap_instance_plan) do
+            DeploymentPlan::InstancePlan.new(existing_instance: anything, desired_instance: anything, instance: instance)
+          end
+
+          before do
+            hot_swap_instance_plan.network_plans << existing_network_plan1
+            not_hot_swap_instance_plan.network_plans << existing_network_plan2
+
+            allow(DeploymentPlan::InstancePlanner).to receive(:new).and_return(instance_planner)
+            allow(instance_planner).to receive(:plan_instance_group_instances).and_return(hot_swap_instance_plan)
+            allow(instance_planner).to receive(:plan_obsolete_instance_groups)
+            allow(hot_swap_instance_plan).to receive(:should_hot_swap?).and_return(true)
+            allow(not_hot_swap_instance_plan).to receive(:should_hot_swap?).and_return(false)
+            allow(instance_group_network).to receive(:deployment_network).and_return(network)
+            allow(instance_group_1).to receive(:sorted_instance_plans).and_return([hot_swap_instance_plan])
+            allow(instance_group_2).to receive(:sorted_instance_plans).and_return([not_hot_swap_instance_plan])
+          end
+
+          context 'and it should be recreated for a non network reason' do
+            before do
+              allow(hot_swap_instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(true)
+            end
+
+            it 'creates a desired network reservation for each existing reservation' do
+              assembler.bind_models
+
+              expect(hot_swap_instance_plan.network_plans.size).to eq(2)
+              expect(existing_network_plan1.obsolete?).to eq(true)
+              expect(existing_network_plan1.existing?).to eq(false)
+              expect(
+                hot_swap_instance_plan.network_plans.map(&:reservation),
+              ).to include(a_kind_of(DesiredNetworkReservation))
+
+              expect(not_hot_swap_instance_plan.network_plans.size).to eq(1)
+              expect(existing_network_plan2.obsolete?).to eq(false)
+              expect(existing_network_plan2.existing?).to eq(true)
+              expect(
+                not_hot_swap_instance_plan.network_plans.map(&:reservation),
+              ).to_not include(a_kind_of(DesiredNetworkReservation))
+            end
+          end
+
+          context 'and it should not be recreated' do
+            before do
+              allow(hot_swap_instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
+            end
+
+            it 'it does not change the network plan' do
+              assembler.bind_models
+
+              expect(hot_swap_instance_plan.network_plans.size).to eq(1)
+              expect(existing_network_plan1.obsolete?).to eq(false)
+              expect(existing_network_plan1.existing?).to eq(true)
+              expect(
+                hot_swap_instance_plan.network_plans.map(&:reservation),
+              ).to_not include(a_kind_of(DesiredNetworkReservation))
+
+              expect(not_hot_swap_instance_plan.network_plans.size).to eq(1)
+              expect(existing_network_plan2.obsolete?).to eq(false)
+              expect(existing_network_plan2.existing?).to eq(true)
+              expect(
+                not_hot_swap_instance_plan.network_plans.map(&:reservation),
+              ).to_not include(a_kind_of(DesiredNetworkReservation))
+            end
+          end
+        end
       end
 
       it 'configures dns' do

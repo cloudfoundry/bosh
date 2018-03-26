@@ -102,7 +102,7 @@ module Bosh::Director
     describe '#detach_disk' do
       context 'managed disks' do
         it 'unmounts + detaches disk' do
-          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).once.and_return(cloud)
+          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).once.and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
           expect(agent_client).to receive(:unmount_disk).with('disk123')
           disk_manager.detach_disk(persistent_disk)
@@ -112,7 +112,7 @@ module Bosh::Director
       context 'unmanaged disks' do
         it 'detaches the disk without unmounting' do
           persistent_disk.update(name: 'chewbacca')
-          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).at_least(:once).and_return(cloud)
+          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).at_least(:once).and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
           expect(agent_client).to_not receive(:unmount_disk)
           disk_manager.detach_disk(persistent_disk)
@@ -122,6 +122,7 @@ module Bosh::Director
 
     describe '#update_persistent_disk' do
       before do
+        allow(cloud_factory).to receive(:get).with('my-cpi', nil).and_return(cloud)
         allow(cloud_factory).to receive(:get).with('my-cpi').and_return(cloud)
       end
 
@@ -616,13 +617,16 @@ module Bosh::Director
     end
 
     describe '#attach_disks_if_needed' do
+      let(:cloud_for_set_disk_metadata) { instance_double(Bosh::Clouds::ExternalCpi) }
+
       context 'when instance desired job has disk' do
         let(:job_persistent_disk_size) { 100 }
 
         it 'attaches current instance disk' do
           expect(cloud).to receive(:attach_disk).with('vm234', 'disk123')
-          expect(cloud).to receive(:set_disk_metadata).with('disk123', hash_including(tags))
-          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).at_least(:once).and_return(cloud)
+          expect(cloud_for_set_disk_metadata).to receive(:set_disk_metadata).with('disk123', hash_including(tags))
+          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).at_least(:once).and_return(cloud)
+          expect(cloud_factory).to receive(:get).with(persistent_disk.cpi).at_least(:once).and_return(cloud_for_set_disk_metadata)
           disk_manager.attach_disks_if_needed(instance_plan)
         end
       end

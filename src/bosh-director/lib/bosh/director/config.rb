@@ -4,6 +4,8 @@ require 'socket'
 require 'uri'
 require 'common/logging/filters'
 require 'tmpdir'
+require 'common/common'
+require 'common/thread_formatter'
 
 module Bosh::Director
 
@@ -478,6 +480,15 @@ module Bosh::Director
 
     def db
       Config.configure_db(hash['db'])
+    end
+
+    def dns_db
+      dns_db = hash.dig('dns', 'db')
+      Config.configure_db(dns_db) if dns_db
+    end
+
+    def cpi
+      hash.dig('cloud', 'plugin')
     end
 
     def blobstore_config

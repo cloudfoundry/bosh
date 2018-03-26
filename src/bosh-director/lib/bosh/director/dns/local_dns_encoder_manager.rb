@@ -13,16 +13,7 @@ module Bosh::Director
     end
 
     def self.create_dns_encoder(use_short_dns_names)
-      az_hash = {}
-      network_name_hash = {}
-
-      Models::LocalDnsEncodedAz.all.each do |item|
-        az_hash[item.name] = item.id.to_s
-      end
-
-      Models::LocalDnsEncodedNetwork.all.each do |item|
-        network_name_hash[item.name] = item.id.to_s
-      end
+      az_hash = Models::LocalDnsEncodedAz.as_hash(:name, :id)
 
       service_groups = {}
       Bosh::Director::Models::LocalDnsEncodedInstanceGroup.
@@ -38,12 +29,7 @@ module Bosh::Director
         }] = join_row[:id].to_s
       end
 
-      instance_uuids = {}
-      Bosh::Director::Models::Instance.each do |i|
-        instance_uuids[i.uuid] = i.id
-      end
-
-      Bosh::Director::DnsEncoder.new(service_groups, az_hash, network_name_hash, instance_uuids, use_short_dns_names)
+      Bosh::Director::DnsEncoder.new(service_groups, az_hash, use_short_dns_names)
     end
 
     def self.new_encoder_with_updated_index(plan)

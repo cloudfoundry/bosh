@@ -50,7 +50,7 @@ describe 'vm delete', type: :integration do
 
       cpi_invocations = current_sandbox.cpi.invocations
 
-      [13, 18].each do |cpi_call_index|
+      [26, 35].each do |cpi_call_index|
         expect(cpi_invocations[cpi_call_index].method_name).to eq('delete_vm')
         expect(cpi_invocations[cpi_call_index].context).to match({
           'director_uuid' => kind_of(String),
@@ -63,8 +63,8 @@ describe 'vm delete', type: :integration do
         })
       end
 
-      expect(cpi_invocations[20].method_name).to eq('delete_vm')
-      expect(cpi_invocations[20].context).to match({
+      expect(cpi_invocations[38].method_name).to eq('delete_vm')
+      expect(cpi_invocations[38].context).to match({
         'director_uuid' => kind_of(String),
         'request_id' => kind_of(String),
         'vm' => {
@@ -115,7 +115,7 @@ describe 'vm delete', type: :integration do
 
       cpi_invocations = current_sandbox.cpi.invocations
 
-      [14, 16].each do |cpi_call_index|
+      [27, 30].each do |cpi_call_index|
         expect(cpi_invocations[cpi_call_index].method_name).to eq('delete_vm')
         expect(cpi_invocations[cpi_call_index].context).to match({
            'director_uuid' => kind_of(String),

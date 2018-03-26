@@ -26,6 +26,7 @@ module Bosh::Director
         expect(Models::LocalDnsEncodedAz.all[1].id).to eq 2
       end
     end
+
     describe '.persist_network_names' do
       it 'saves new Networks' do
         subject.persist_network_names(['nw1', 'nw2'])
@@ -50,8 +51,11 @@ module Bosh::Director
     end
 
     describe '.create_dns_encoder' do
+      let(:deployment) { Models::Deployment.make(name: 'a-deployment') }
+      let(:encoder) { subject.create_dns_encoder(false) }
+      let(:short_dns_encoder) { subject.create_dns_encoder(true) }
+
       before do
-        deployment = Models::Deployment.make(name: 'a-deployment')
         Models::LocalDnsEncodedAz.create(name: 'az1')
         Models::LocalDnsEncodedInstanceGroup.create(name: 'some-ig', deployment_id: deployment.id)
         Models::LocalDnsEncodedNetwork.create(name: 'my-network')
@@ -63,7 +67,6 @@ module Bosh::Director
       end
 
       it 'should create a dns encoder that uses the current index' do
-        encoder = subject.create_dns_encoder(false)
         expect(encoder.id_for_az('az1')).to eq('1')
         expect(encoder.id_for_group_tuple(
           'some-ig',
@@ -73,15 +76,13 @@ module Bosh::Director
       end
 
       it 'respects the option for short names as default' do
-        encoder = subject.create_dns_encoder(false)
         expect(encoder.encode_query(
           instance_group: 'some-ig',
           default_network: 'my-network',
           deployment_name: 'a-deployment',
           root_domain: 'super-bosh'
         )).to eq 'q-s0.some-ig.my-network.a-deployment.super-bosh'
-        encoder = subject.create_dns_encoder(true)
-        expect(encoder.encode_query(
+        expect(short_dns_encoder.encode_query(
           instance_group: 'some-ig',
           default_network: 'my-network',
           deployment_name: 'a-deployment',

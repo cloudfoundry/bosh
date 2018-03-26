@@ -277,9 +277,7 @@ module Bosh
         end
 
         def needs_shutting_down?
-          return true if obsolete?
-
-          recreate_for_non_network_reasons? || networks_changed?
+          obsolete? || recreate_for_non_network_reasons? || networks_changed?
         end
 
         def recreate_for_non_network_reasons?

@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe VmResourcesCache do
     subject {VmResourcesCache.new(cloud_factory, logger)}
 
-    let(:cloud_factory) { Bosh::Director::CloudFactory.create }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:fake_cpi1) {instance_double(Bosh::Clouds::ExternalCpi)}
     let(:fake_cpi2) {instance_double(Bosh::Clouds::ExternalCpi)}
 
@@ -29,19 +29,8 @@ module Bosh::Director::DeploymentPlan
     before do
       Bosh::Director::Models::Config.make(type: 'cloud', name: 'default', content: YAML.dump(cloud_config))
 
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(
-        '/var/vcap/jobs/cpi-type_cpi/bin/cpi',
-        Bosh::Director::Config.uuid,
-        properties_from_cpi_config: cpi_config.raw_manifest['cpis'][0]['properties'],
-        stemcell_api_version: nil
-      ).and_return(fake_cpi1)
-
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(
-        '/var/vcap/jobs/cpi-type2_cpi/bin/cpi',
-        Bosh::Director::Config.uuid,
-        properties_from_cpi_config: cpi_config.raw_manifest['cpis'][1]['properties'],
-        stemcell_api_version: nil
-      ).and_return(fake_cpi2)
+      allow(cloud_factory).to receive(:get).with('cpi-name1').and_return(fake_cpi1)
+      allow(cloud_factory).to receive(:get).with('cpi-name2').and_return(fake_cpi2)
 
       allow(fake_cpi1).to receive(:calculate_vm_cloud_properties).with(vm_resources).and_return(vm_cloud_properties1)
       allow(fake_cpi2).to receive(:calculate_vm_cloud_properties).with(vm_resources).and_return(vm_cloud_properties2)

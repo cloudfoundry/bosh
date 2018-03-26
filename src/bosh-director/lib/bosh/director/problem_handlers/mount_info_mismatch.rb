@@ -14,7 +14,13 @@ module Bosh::Director
         end
 
         @disk_cid = @disk.disk_cid
-        @vm_cid = @disk.instance.vm_cid if @disk.instance
+
+        active_vm = @disk.instance&.active_vm
+        unless active_vm.nil?
+          @vm_cid = active_vm.cid
+          @vm_stemcell_api_version = active_vm.stemcell_api_version
+        end
+
         handler_error("Can't find corresponding vm-cid for disk '#{@disk_cid}'") if @vm_cid.nil?
 
         @instance = @disk.instance
@@ -51,9 +57,12 @@ module Bosh::Director
       end
 
       def reattach_disk(reboot = false)
-        cloud = AZCloudFactory.create_with_latest_configs(@instance.deployment).get_for_az(@instance.availability_zone)
-        cloud.attach_disk(@vm_cid, @disk_cid)
-        MetadataUpdater.build.update_disk_metadata(cloud, @disk, @disk.instance.deployment.tags)
+        az_cloud_factory = AZCloudFactory.create_with_latest_configs(@instance.deployment)
+        cloud_for_attach_disk = az_cloud_factory.get_for_az(@instance.availability_zone, @vm_stemcell_api_version)
+        cloud_for_attach_disk.attach_disk(@vm_cid, @disk_cid)
+
+        cloud_for_update_metadata = az_cloud_factory.get_for_az(@instance.availability_zone)
+        MetadataUpdater.build.update_disk_metadata(cloud_for_update_metadata, @disk, @disk.instance.deployment.tags)
         if reboot
           reboot_vm(@instance)
         else
