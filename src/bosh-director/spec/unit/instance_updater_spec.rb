@@ -125,7 +125,7 @@ module Bosh::Director
       end
 
       it 'updates the variable_set_id on the instance' do
-        allow(links_manager).to receive(:bind_links_to_instance)
+        expect(links_manager).to receive(:bind_links_to_instance)
 
         expect(instance).to receive(:update_variable_set)
         updater.update(instance_plan)
@@ -136,6 +136,7 @@ module Bosh::Director
       before do
         allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
+        allow(links_manager).to receive(:bind_links_to_instance).with(instance)
       end
 
       context 'when instance is currently started' do
@@ -178,6 +179,7 @@ module Bosh::Director
 
         it 'persists rendered templates to the blobstore' do
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan)
+          expect(links_manager).to receive(:bind_links_to_instance).with(instance)
 
           updater.update(instance_plan)
         end
@@ -279,7 +281,7 @@ module Bosh::Director
 
           expect(state_applier).to receive(:apply)
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
-          expect(links_manager).to receive(:bind_links_to_instance).with(instance)
+          expect(links_manager).to receive(:bind_links_to_instance).with(instance).twice
 
           subnet_spec = {
             'range' => '10.10.10.0/24',
@@ -333,21 +335,11 @@ module Bosh::Director
 
             expect(state_applier).to receive(:apply)
             expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+            expect(links_manager).to receive(:bind_links_to_instance).with(instance)
 
             updater.update(instance_plan)
           end
-
-          it 'does not try to bind links to instance' do
-            allow(delete_step).to receive(:perform)
-            allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).and_return delete_step
-            allow(state_applier).to receive(:apply)
-            allow(vm_creator).to receive(:create_for_instance_plan)
-
-            expect(links_manager).to_not receive(:bind_links_to_instance)
-
-            updater.update(instance_plan)
-          end
-
+          
           context 'when the instance uses duplicate-and-replace-vm strategy' do
             let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
             let!(:inactive_vm_model) { Models::Vm.make(instance_id: instance_model.id) }
@@ -368,6 +360,7 @@ module Bosh::Director
                 .with(instance_plan).and_return(apply_spec_step)
               allow(DeploymentPlan::Steps::OrphanVmStep).to receive(:new)
                 .with(instance_model.active_vm).and_return(orphan_vm_step)
+              allow(links_manager).to receive(:bind_links_to_instance).with(instance)
 
               allow(state_applier).to receive(:apply)
             end
@@ -402,6 +395,7 @@ module Bosh::Director
                 expect(attach_step).to receive(:perform)
                 expect(mount_step).to receive(:perform)
                 expect(state_applier).to receive(:apply)
+                expect(links_manager).to receive(:bind_links_to_instance).with(instance)
 
                 updater.update(instance_plan)
               end
@@ -482,6 +476,7 @@ module Bosh::Director
         allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(rendered_templates_persistor).to receive(:persist)
+        allow(links_manager).to receive(:bind_links_to_instance).with(instance)
       end
 
       it 'should always add an event recording the error' do

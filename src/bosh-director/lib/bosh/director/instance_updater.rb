@@ -65,6 +65,7 @@ module Bosh::Director
           # It will update the rendered templates on the VM
           unless Config.enable_nats_delivered_templates && needs_recreate?(instance_plan)
             @rendered_templates_persistor.persist(instance_plan)
+            @links_manager.bind_links_to_instance(instance)
             instance.update_variable_set
           end
 
