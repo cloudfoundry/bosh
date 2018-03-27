@@ -3,34 +3,47 @@ require_relative '../../spec_helper'
 describe 'director behaviour with CPI v2', type: :integration do
   with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
 
-  context 'create_vm' do
-    it 'includes api_version 2 in request' do
+  let(:cpi_version) { 2 }
+  let(:cpi_version_string) { "\"api_version\":#{cpi_version}" }
+  let(:response_string) { nil }
+  let(:search_filter_string) { nil }
+
+
+  shared_examples_for 'using CPI v2' do
+
+    before do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      manifest_hash['instance_groups'][0]['persistent_disk'] = 1000
       output = deploy_from_scratch(manifest_hash: manifest_hash)
       task_id = Bosh::Spec::OutputParser.new(output).task_id
-
-      task_output = bosh_runner.run("task #{task_id} --debug")
-      results = task_output.split(/\n+/).select { |i| i[/\[external-cpi\] \[cpi-\d{6}\].*"method":"create_vm"/] }
-      expect(results).to_not be_empty
-      results.each do |result|
-        expect(result).to include('"api_version":2')
-      end
+      @task_output = bosh_runner.run("task #{task_id} --debug")
     end
 
     it 'responds with v2 result' do
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-      output = deploy_from_scratch(manifest_hash: manifest_hash)
-      task_id = Bosh::Spec::OutputParser.new(output).task_id
+      api_version_filter = @task_output.split(/\n+/).select { |i| i[/\[external-cpi\] \[cpi-\d{6}\].*"method":"create_vm"/] }
+      expect(api_version_filter).to_not be_empty
+      api_version_filter.each do |result|
+        expect(result).to include(cpi_version_string)
+      end
 
-      task_output = bosh_runner.run("task #{task_id} --debug")
-      results = task_output.split(/\n+/).select { |i| i[/\[external-cpi\] \[cpi-\d{6}\]/] }
-
-      results.each_with_index do |result, index|
-        result2 = results.fetch(index + 1)
-        puts "r1 #{result}"
-        #puts "r2 #{result2}"
-        #expect(result2).to match(/"result":{"vm_cid":"\d+","networks":\[.*\],"disk_hints":{.*}}/) if result.include?('"method":"create_vm"')
+      cpi_method_call_filter = @task_output.split(/\n+/).select { |i| i[/\[external-cpi\] \[cpi-\d{6}\]/] }
+      expect(cpi_method_call_filter).to_not be_empty
+      cpi_method_call_filter.each_with_index do |result, index|
+        expect(result).to match(response_string) if result.include?(search_filter_string)
       end
     end
+  end
+
+  context 'create_vm' do
+    let(:response_string) { /"result":{"vm_cid":"\d+","networks":\[.*\],"disk_hints":{.*}}/ }
+    let(:search_filter_string) { 'DEBUG - Dummy: create_vm' }
+    it_behaves_like 'using CPI v2'
+  end
+
+  context 'attach_disk' do
+    # response is expected to be filepath (from dummy_v2:attach_disk)
+    let(:response_string) { /"result":"(\/.*\/)\d+"/ }
+    let(:search_filter_string) { 'DEBUG - Saving input for attach_disk' }
+    it_behaves_like 'using CPI v2'
   end
 end

@@ -5,7 +5,9 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   include FakeFS::SpecHelpers
 
   let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
-  let(:cpi_api_version) { 1 }
+  let(:cpi_api_version) { 2 }
+  let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
+  let(:additional_expected_args) { nil }
 
   subject { described_class.new(cloud, cpi_api_version) }
 
@@ -13,7 +15,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     define_method(:call_cpi_method) { subject.public_send(method, *arguments) }
 
     let(:method) { method }
-    let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
     let(:config) { double('Bosh::Clouds::Config', logger: double(:logger, debug: nil), cpi_task_log: cpi_log_path) }
     let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
     let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
@@ -36,6 +37,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
+        arguments << additional_expected_args unless additional_expected_args.nil?
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{cpi_api_version}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
@@ -188,7 +190,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     end
 
     describe 'result' do
-      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+      #let(:cpi_response) { JSON.dump(result: {'vm_cid':'fake-result'}, error: nil, log: 'fake-log') }
 
       it 'returns result' do
         expect(call_cpi_method).to eq(expected_response)
@@ -361,149 +363,307 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     end
   end
 
-  describe '#create_vm' do
-    let(:redacted_network_settings) { nil }
-    let(:expected_response) { {"vm_cid"=>"fake-result"} }
+  describe 'when cpi_version is 2' do
+    describe '#create_vm' do
+      let(:redacted_network_settings) { nil }
+      let(:cpi_response) { JSON.dump(result: {'vm_cid':'fake-result'}, error: nil, log: 'fake-log') }
+      let(:expected_response) { {"vm_cid"=>"fake-result"} }
 
-    it_calls_cpi_method(
-      :create_vm,
-      'fake-agent-id',
-      'fake-stemcell-cid',
-      {'cloud' => 'props'},
-      nil,
-      ['fake-disk-cid'],
-      {
-        'bosh' => {
-          'group' => 'my-group',
-          'groups' => ['my-first-group'],
-          'password' => 'my-secret-password'
-        },
-        'other' => 'value'
-      }
-    )
-  end
-
-  context 'when network settings hash cloud properties is absent' do
-    let(:expected_response) { {"vm_cid"=>"fake-result"} }
-    let(:redacted_network_settings) do
-      {
-        'net' => {
-          'type' => 'manual',
-          'ip' => '10.10.0.2',
-          'netmask' => '255.255.255.0',
-          'default' => ['dns', 'gateway'],
-          'dns' => ['10.10.0.2'],
-          'gateway' => '10.10.0.1'
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        nil,
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
         }
-      }
+      )
+
+      context 'when network settings hash cloud properties is absent' do
+        let(:expected_response) { {"vm_cid"=>"fake-result"} }
+        let(:cpi_response) { JSON.dump(result: {'vm_cid':'fake-result'}, error: nil, log: 'fake-log') }
+        let(:redacted_network_settings) do
+          {
+            'net' => {
+              'type' => 'manual',
+              'ip' => '10.10.0.2',
+              'netmask' => '255.255.255.0',
+              'default' => ['dns', 'gateway'],
+              'dns' => ['10.10.0.2'],
+              'gateway' => '10.10.0.1'
+            }
+          }
+        end
+
+        it_calls_cpi_method(
+          :create_vm,
+          'fake-agent-id',
+          'fake-stemcell-cid',
+          {'cloud' => 'props'},
+          {
+            'net' => {
+              'type' => 'manual',
+              'ip' => '10.10.0.2',
+              'netmask' => '255.255.255.0',
+              'default' => ['dns', 'gateway'],
+              'dns' => ['10.10.0.2'],
+              'gateway' => '10.10.0.1'
+            }
+          },
+          ['fake-disk-cid'],
+          {
+            'bosh' => {
+              'group' => 'my-group',
+              'groups' => ['my-first-group'],
+              'password' => 'my-secret-password'
+            },
+            'other' => 'value'
+          }
+        )
+      end
     end
 
-    it_calls_cpi_method(
-      :create_vm,
-      'fake-agent-id',
-      'fake-stemcell-cid',
-      {'cloud' => 'props'},
-      {
-        'net' => {
-          'type' => 'manual',
-          'ip' => '10.10.0.2',
-          'netmask' => '255.255.255.0',
-          'default' => ['dns', 'gateway'],
-          'dns' => ['10.10.0.2'],
-          'gateway' => '10.10.0.1'
+    describe '#attach_disk' do
+      let(:expected_response) { {'device_name'=>'fake-result'} }
+      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+      let(:additional_expected_args) {{'disk_hint' => {}}}
+      it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
+    end
+
+    describe 'forwards all other methods without change' do
+      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+      let(:expected_response) { 'fake-result' }
+
+      context("#current_vm_id") do
+        it_calls_cpi_method(:current_vm_id)
+      end
+
+      context("#create_stemcell") do
+        it_calls_cpi_method(:create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
+      end
+
+      context("#delete_stemcell") do
+        it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
+      end
+
+      context("#delete_vm") do
+        it_calls_cpi_method(:delete_vm, 'fake-vm-cid')
+      end
+
+      context("#has_vm") do
+        it_calls_cpi_method(:has_vm, 'fake-vm-cid')
+      end
+
+      context("#reboot_vm") do
+        it_calls_cpi_method(:reboot_vm, 'fake-vm-cid')
+      end
+
+      context("#set_vm_metadata") do
+        it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
+      end
+
+      context("#set_disk_metadata") do
+        it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
+      end
+
+      context("#create_disk") do
+        it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
+      end
+
+      context("#has_disk") do
+        it_calls_cpi_method(:has_disk, 'fake-disk-cid')
+      end
+
+      context("#delete_disk") do
+        it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
+      end
+
+      context("#detach_disk") do
+        it_calls_cpi_method(:detach_disk, 'fake-vm-cid', 'fake-disk-cid')
+      end
+
+      context("#snapshot_disk") do
+        it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
+      end
+
+      context("#delete_snapshot") do
+        it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
+      end
+
+      context("#resize_disk") do
+        it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
+      end
+
+      context("#get_disks") do
+        it_calls_cpi_method(:get_disks, 'fake-vm-cid')
+      end
+
+      context("#ping") do
+        it_calls_cpi_method(:ping)
+      end
+
+      context("#info") do
+        it_calls_cpi_method(:info)
+      end
+    end
+  end
+
+  describe 'when cpi_version is 1' do
+    let(:cpi_api_version) { 1 }
+    let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+    describe '#create_vm' do
+      let(:redacted_network_settings) { nil }
+      let(:expected_response) { {"vm_cid"=>"fake-result"} }
+
+      it_calls_cpi_method(
+        :create_vm,
+        'fake-agent-id',
+        'fake-stemcell-cid',
+        {'cloud' => 'props'},
+        nil,
+        ['fake-disk-cid'],
+        {
+          'bosh' => {
+            'group' => 'my-group',
+            'groups' => ['my-first-group'],
+            'password' => 'my-secret-password'
+          },
+          'other' => 'value'
         }
-      },
-      ['fake-disk-cid'],
-      {
-        'bosh' => {
-          'group' => 'my-group',
-          'groups' => ['my-first-group'],
-          'password' => 'my-secret-password'
-        },
-        'other' => 'value'
-      }
-    )
+      )
+
+      context 'when network settings hash cloud properties is absent' do
+        let(:expected_response) { {"vm_cid"=>"fake-result"} }
+        let(:redacted_network_settings) do
+          {
+            'net' => {
+              'type' => 'manual',
+              'ip' => '10.10.0.2',
+              'netmask' => '255.255.255.0',
+              'default' => ['dns', 'gateway'],
+              'dns' => ['10.10.0.2'],
+              'gateway' => '10.10.0.1'
+            }
+          }
+        end
+
+        it_calls_cpi_method(
+          :create_vm,
+          'fake-agent-id',
+          'fake-stemcell-cid',
+          {'cloud' => 'props'},
+          {
+            'net' => {
+              'type' => 'manual',
+              'ip' => '10.10.0.2',
+              'netmask' => '255.255.255.0',
+              'default' => ['dns', 'gateway'],
+              'dns' => ['10.10.0.2'],
+              'gateway' => '10.10.0.1'
+            }
+          },
+          ['fake-disk-cid'],
+          {
+            'bosh' => {
+              'group' => 'my-group',
+              'groups' => ['my-first-group'],
+              'password' => 'my-secret-password'
+            },
+            'other' => 'value'
+          }
+        )
+      end
+    end
+
+    describe '#attach_disk' do
+      let(:expected_response) { {'device_name'=>'fake-result'} }
+      it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
+    end
+
+    describe 'forwards all other methods without change' do
+      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+      let(:expected_response) { 'fake-result' }
+
+      context("#current_vm_id") do
+        it_calls_cpi_method(:current_vm_id)
+      end
+
+      context("#create_stemcell") do
+        it_calls_cpi_method(:create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
+      end
+
+      context("#delete_stemcell") do
+        it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
+      end
+
+      context("#delete_vm") do
+        it_calls_cpi_method(:delete_vm, 'fake-vm-cid')
+      end
+
+      context("#has_vm") do
+        it_calls_cpi_method(:has_vm, 'fake-vm-cid')
+      end
+
+      context("#reboot_vm") do
+        it_calls_cpi_method(:reboot_vm, 'fake-vm-cid')
+      end
+
+      context("#set_vm_metadata") do
+        it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
+      end
+
+      context("#set_disk_metadata") do
+        it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
+      end
+
+      context("#create_disk") do
+        it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
+      end
+
+      context("#has_disk") do
+        it_calls_cpi_method(:has_disk, 'fake-disk-cid')
+      end
+
+      context("#delete_disk") do
+        it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
+      end
+
+      context("#detach_disk") do
+        it_calls_cpi_method(:detach_disk, 'fake-vm-cid', 'fake-disk-cid')
+      end
+
+      context("#snapshot_disk") do
+        it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
+      end
+
+      context("#delete_snapshot") do
+        it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
+      end
+
+      context("#resize_disk") do
+        it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
+      end
+
+      context("#get_disks") do
+        it_calls_cpi_method(:get_disks, 'fake-vm-cid')
+      end
+
+      context("#ping") do
+        it_calls_cpi_method(:ping)
+      end
+
+      context("#info") do
+        it_calls_cpi_method(:info)
+      end
+    end
   end
 
 
-  describe '#attach_disk' do
-    let(:expected_response) { {"device_name"=>"fake-result"} }
-    it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
-  end
-
-  describe 'forwards all other methods without change' do
-    let(:expected_response) { "fake-result" }
-
-    context("#current_vm_id") do
-      it_calls_cpi_method(:current_vm_id)
-    end
-
-    context("#create_stemcell") do
-      it_calls_cpi_method(:create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
-    end
-
-    context("#delete_stemcell") do
-      it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
-    end
-
-    context("#delete_vm") do
-      it_calls_cpi_method(:delete_vm, 'fake-vm-cid')
-    end
-
-    context("#has_vm") do
-      it_calls_cpi_method(:has_vm, 'fake-vm-cid')
-    end
-
-    context("#reboot_vm") do
-      it_calls_cpi_method(:reboot_vm, 'fake-vm-cid')
-    end
-
-    context("#set_vm_metadata") do
-      it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
-    end
-
-    context("#set_disk_metadata") do
-      it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
-    end
-
-    context("#create_disk") do
-      it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
-    end
-
-    context("#has_disk") do
-      it_calls_cpi_method(:has_disk, 'fake-disk-cid')
-    end
-
-    context("#delete_disk") do
-      it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
-    end
-
-    context("#detach_disk") do
-      it_calls_cpi_method(:detach_disk, 'fake-vm-cid', 'fake-disk-cid')
-    end
-
-    context("#snapshot_disk") do
-      it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
-    end
-
-    context("#delete_snapshot") do
-      it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
-    end
-
-    context("#resize_disk") do
-      it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
-    end
-
-    context("#get_disks") do
-      it_calls_cpi_method(:get_disks, 'fake-vm-cid')
-    end
-
-    context("#ping") do
-      it_calls_cpi_method(:ping)
-    end
-
-    context("#info") do
-      it_calls_cpi_method(:info)
-    end
-  end
 end
