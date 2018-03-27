@@ -11,8 +11,8 @@ module Bosh::Director
 
           next if ip.nil?
 
-          Models::IpAddress.where(address_str: IpUtil::CIDRIP.new(network_plan.reservation.ip).to_s)
-                           .update(vm_id: report.vm.id)
+          ip_model = Models::IpAddress.find(address_str: ip.to_s)
+          ip_model&.update(vm: report.vm)
         end
       end
     end

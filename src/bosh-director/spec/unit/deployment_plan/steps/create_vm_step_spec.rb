@@ -726,42 +726,6 @@ module Bosh
               }.to raise_error ('Bad DB. Bad.')
             end
           end
-
-          context 'when using manual networks' do
-            let(:manual_network_properties) {
-              {
-                'range' => '192.168.0.0/0',
-                'gateway' => '192.168.0.254',
-                'cloud_properties' => {'foo' => 'bar'}
-              }
-            }
-            let(:reservation) do
-              subnet = BD::DeploymentPlan::ManualNetworkSubnet.parse('dns', manual_network_properties, ['az-1'], {})
-              network = BD::DeploymentPlan::ManualNetwork.new('name', [subnet], logger)
-              reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
-              reservation
-            end
-            let(:ip_address_model) { Models::IpAddress.make }
-            let(:ip_address) { NetAddr::CIDR.create(ip_address_model.address_str.to_i).ip.to_s}
-
-            before do
-              reservation.resolve_ip(ip_address)
-            end
-
-            it 'associates an ip with the vm after creating the vm' do
-              expect(cloud).to receive(:create_vm).with(
-                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
-                                                                                                       'groups' => expected_groups
-              }}
-              ).and_return('new-vm-cid')
-
-              expect(agent_client).to receive(:wait_until_ready)
-              expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: nil))
-
-              subject.perform(report)
-              expect(ip_address_model.reload.vm).to eq(Models::Vm.all.last)
-            end
-          end
         end
       end
     end

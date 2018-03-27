@@ -143,7 +143,6 @@ module Bosh::Director
           vm_options[:created_at] = Time.now
           vm_options[:stemcell_api_version] = stemcell_api_version
           vm_model = Models::Vm.create(vm_options)
-          add_ip_addresses_to_vm_model(network_settings, vm_model)
           vm_model
         rescue => e
           @logger.error("error creating vm: #{e.message}")
@@ -155,17 +154,6 @@ module Bosh::Director
           raise e
         ensure
           add_event(deployment_name, instance_model.name, 'create', vm_cid, parent_id, e)
-        end
-
-        def add_ip_addresses_to_vm_model(network_settings, vm_model)
-          network_settings.each do |network_name, network|
-            next if network[network_name]['type'] == 'dynamic'
-
-            addr = NetAddr::CIDR.create(network['ip'].to_s).to_i.to_s
-
-            ip_model = Models::IpAddress.find(address_str: addr)
-            ip_model&.update(vm: vm_model)
-          end
         end
 
         def add_event(deployment_name, instance_name, action, object_name = nil, parent_id = nil, error = nil)
