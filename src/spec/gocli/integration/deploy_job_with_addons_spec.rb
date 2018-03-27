@@ -138,10 +138,10 @@ describe 'deploy job with addons', type: :integration do
       bosh_runner.run('run-errand -d simple  errand --keep-alive')
       instances = director.instances
 
-      no_addon_instance = instances.detect { |instance| instance.job_name == 'errand' }
+      no_addon_instance = instances.detect { |instance| instance.instance_group_name == 'errand' }
       expect(File.exist?(no_addon_instance.job_path('dummy'))).to eq(false)
 
-      addon_instance = instances.detect { |instance| instance.job_name == 'foobar' }
+      addon_instance = instances.detect { |instance| instance.instance_group_name == 'foobar' }
       expect(File.exist?(addon_instance.job_path('dummy'))).to eq(true)
     end
 
