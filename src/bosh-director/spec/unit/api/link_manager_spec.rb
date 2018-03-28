@@ -2,23 +2,22 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::LinkManager do
-
     let(:username) { 'LINK_CREATOR' }
     let(:link_serial_id) { 42 }
-    let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'}), :links_serial_id => link_serial_id) }
-    let(:instance_group) {'instance_group'}
-    let(:networks) { ['neta', 'netb'] }
+    let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id) }
+    let(:instance_group) { 'instance_group' }
+    let(:networks) { %w[neta netb] }
     let(:provider_json_content) do
-       {
-          default_network: 'netb',
-          networks: networks,
-          instances: [
-            {
-              dns_addresses: {neta: 'dns1', netb: 'dns2'},
-              addresses: {neta: 'ip1', netb: 'ip2'}
-            }
-          ]
-       }
+      {
+        default_network: 'netb',
+        networks: networks,
+        instances: [
+          {
+            dns_addresses: { neta: 'dns1', netb: 'dns2' },
+            addresses: { neta: 'ip1', netb: 'ip2' },
+          },
+        ],
+      }
     end
     let(:provider_1) do
       Bosh::Director::Models::Links::LinkProvider.create(
@@ -31,26 +30,26 @@ module Bosh::Director
     end
     let(:provider_1_intent_1) do
       Models::Links::LinkProviderIntent.create(
-        :name => 'link_name_1',
-        :link_provider => provider_1,
-        :shared => true,
-        :consumable => true,
-        :type => 'job',
-        :original_name => 'provider_name_1',
-        :content => provider_json_content.to_json,
-        :serial_id => link_serial_id,
-        )
+        name: 'link_name_1',
+        link_provider: provider_1,
+        shared: true,
+        consumable: true,
+        type: 'job',
+        original_name: 'provider_name_1',
+        content: provider_json_content.to_json,
+        serial_id: link_serial_id,
+      )
     end
     let(:payload_json) do
-       {
-          'link_provider_id'=> provider_id,
-          'link_consumer' => {
-            'owner_object_name'=> 'external_consumer_1',
-            'owner_object_type'=> 'external',
-          }
-       }
+      {
+        'link_provider_id' => provider_id,
+        'link_consumer' => {
+          'owner_object_name' => 'external_consumer_1',
+          'owner_object_type' => 'external',
+        },
+      }
     end
-    let(:provider_id) {provider_1_intent_1.id}
+    let(:provider_id) { provider_1_intent_1.id }
 
     describe '#create_link' do
       shared_examples 'creates consumer, consumer_intent and link' do
@@ -60,14 +59,14 @@ module Bosh::Director
           external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
             deployment: deployment,
             instance_group: instance_group,
-            name: "external_consumer_1",
-            type: "external"
+            name: 'external_consumer_1',
+            type: 'external',
           )
           expect(external_consumer).to_not be_nil
 
           external_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
             link_consumer: external_consumer,
-            original_name: provider_1.name
+            original_name: provider_1.name,
           )
           expect(external_consumer_intent).to_not be_nil
           expect(external_consumer_intent.type).to eq(provider_1_intent_1.type)
@@ -75,10 +74,10 @@ module Bosh::Director
           external_link = Bosh::Director::Models::Links::Link.find(
             link_provider_intent_id: provider_1_intent_1.id,
             link_consumer_intent_id: external_consumer_intent.id,
-            name: provider_1.name
+            name: provider_1.name,
           )
           expect(external_link).to_not be_nil
-          expect(JSON.parse(external_link.link_content)).to match({'default_network' => String, 'networks' => ['neta', 'netb'], 'instances' => [{'address' => 'ip2'}]})
+          expect(JSON.parse(external_link.link_content)).to match('default_network' => String, 'networks' => %w[neta netb], 'instances' => [{ 'address' => 'ip2' }])
         end
       end
 
@@ -90,7 +89,7 @@ module Bosh::Director
       end
 
       context 'when link_provider_id is missing' do
-        let(:provider_id) { "" }
+        let(:provider_id) { '' }
         it 'return error' do
           expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid request: `link_provider_id` must be an Integer/)
         end
@@ -108,9 +107,10 @@ module Bosh::Director
         context 'when link_consumer is missing from inputs' do
           let(:payload_json) do
             {
-              'link_provider_id'=> provider_id,
+              'link_provider_id' => provider_id,
             }
           end
+
           it 'return error' do
             expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer` section must be defined/)
           end
@@ -124,9 +124,10 @@ module Bosh::Director
                 'link_consumer' => {
                   'owner_object_name' => '',
                   'owner_object_type' => 'external',
-                }
+                },
               }
             end
+
             it 'return error' do
               expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object_name` must not be empty/)
             end
@@ -139,9 +140,10 @@ module Bosh::Director
                 'link_consumer' => {
                   'owner_object_name' => 'test_owner_name',
                   'owner_object_type' => 'test_owner_type',
-                }
+                },
               }
             end
+
             it 'return error' do
               expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object_type` should be 'external'/)
             end
@@ -161,28 +163,28 @@ module Bosh::Director
         context 'when provider type and provider_intent types are different' do
           let(:provider_1_intent_1) do
             Models::Links::LinkProviderIntent.create(
-              :name => 'link_name_1',
-              :link_provider => provider_1,
-              :shared => true,
-              :consumable => true,
-              :type => 'different-job-type',
-              :original_name => 'provider_name_1',
-              :content => provider_json_content.to_json,
-              :serial_id => link_serial_id,
-              )
+              name: 'link_name_1',
+              link_provider: provider_1,
+              shared: true,
+              consumable: true,
+              type: 'different-job-type',
+              original_name: 'provider_name_1',
+              content: provider_json_content.to_json,
+              serial_id: link_serial_id,
+            )
           end
 
           include_examples 'creates consumer, consumer_intent and link'
         end
 
         context 'when network is provided' do
-          let(:network_name) { networks[0]}
+          let(:network_name) { networks[0] }
           let(:payload_json) do
             {
-              'link_provider_id'=> provider_id,
+              'link_provider_id' => provider_id,
               'link_consumer' => {
-                'owner_object_name'=> 'external_consumer_1',
-                'owner_object_type'=> 'external',
+                'owner_object_name' => 'external_consumer_1',
+                'owner_object_type' => 'external',
               },
               'network' => network_name,
             }
@@ -193,7 +195,7 @@ module Bosh::Director
           end
 
           context 'when network in invalid' do
-            let(:network_name) { "invalid_network_name"}
+            let(:network_name) { 'invalid_network_name' }
 
             it 'return error' do
               expect { subject.create_link(username, payload_json) }.to raise_error(/Can't resolve network: `invalid_network_name` in provider id: 1 for `external_consumer_1`/)

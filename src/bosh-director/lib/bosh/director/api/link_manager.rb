@@ -4,21 +4,21 @@ module Bosh::Director
       include ApiHelper
 
       def initialize
-        @external_type = "external"
+        @external_type = 'external'
         @links_manager = nil
       end
 
       #TODO Links: if we want to track the user link_create task, what to do with the username
       def create_link(username, json_payload)
         validate_link_payload(json_payload)
-        consumer_data = json_payload["link_consumer"]
+        consumer_data = json_payload['link_consumer']
 
-        provider_intent = find_provider_intent(json_payload["link_provider_id"])
+        provider_intent = find_provider_intent(json_payload['link_provider_id'])
         if provider_intent.nil?
           raise "Invalid link_provider_id: #{json_payload["link_provider_id"]}"
         end
 
-        validate_consumer_network(provider_intent, json_payload["network"], consumer_data["owner_object_name"]) unless json_payload["network"].nil?
+        validate_consumer_network(provider_intent, json_payload['network'], consumer_data['owner_object_name']) unless json_payload['network'].nil?
 
         @links_manager = Bosh::Director::Links::LinksManager.new(Bosh::Director::Config.logger, Bosh::Director::Config.event_log, provider_intent.serial_id)
         provider = provider_intent.link_provider #find_provider_by_id(provider_intent.link_provider_id)
@@ -26,7 +26,7 @@ module Bosh::Director
         consumer = @links_manager.find_or_create_consumer(
           deployment_model: provider.deployment,
           instance_group_name: provider.instance_group,
-          name: consumer_data["owner_object_name"],
+          name: consumer_data['owner_object_name'],
           type:@external_type
         )
         consumer_intent = @links_manager.find_or_create_consumer_intent(
@@ -79,7 +79,7 @@ module Bosh::Director
       def is_link_external(link)
         consumer = link.link_consumer_intent.link_consumer
         if consumer.type != @external_type
-          raise "Error deleting link: not a external link"
+          raise 'Error deleting link: not a external link'
         end
       end
 
