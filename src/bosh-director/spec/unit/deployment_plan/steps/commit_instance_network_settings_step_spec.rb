@@ -14,9 +14,9 @@ module Bosh::Director
           ]
         end
 
-        let(:existing_ip_address_string) { '1.2.3.4' }
-        let(:obsolete_ip_address_string) { '1.2.3.5' }
-        let(:desired_ip_address_string) { '1.2.3.6' }
+        let(:existing_ip_address_string) { 'existing_ip_address_string' }
+        let(:obsolete_ip_address_string) { 'obsolete_ip_address_string' }
+        let(:desired_ip_address_string) { 'desired_ip_address_string' }
 
         let(:existing_reservation) { instance_double(NetworkReservation, ip: existing_ip_address_string) }
         let(:obsolete_reservation) { instance_double(NetworkReservation, ip: obsolete_ip_address_string) }

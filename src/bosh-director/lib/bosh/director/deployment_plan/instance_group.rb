@@ -134,10 +134,11 @@ module Bosh::Director
                                                      .sort(@instance_plans.reject(&:obsolete?))
       end
 
-      def instance_plans_needing_shutdown
+      def unignored_instance_plans_needing_shutdown
         @shutdown_instances ||= sorted_instance_plans.select { |plan| plan.instance&.vm_created? }
                                                      .select(&:needs_shutting_down?)
                                                      .reject(&:new?)
+                                                     .reject(&:should_be_ignored?)
                                                      .reject { |plan| plan.instance.state == 'detached' }
       end
 

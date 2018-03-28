@@ -151,7 +151,7 @@ module Bosh::Director
               service?: true,
               errand?: false,
               should_hot_swap?: should_hot_swap?,
-              instance_plans_needing_shutdown: [instance_plan],
+              unignored_instance_plans_needing_shutdown: [instance_plan],
             )
           end
 
@@ -182,7 +182,7 @@ module Bosh::Director
               errand?: false,
               should_hot_swap?: should_hot_swap?,
               hot_swap?: hot_swap?,
-              instance_plans_needing_shutdown: [instance_plan],
+              unignored_instance_plans_needing_shutdown: [instance_plan],
             )
           end
 
