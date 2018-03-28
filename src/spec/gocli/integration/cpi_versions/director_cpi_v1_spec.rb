@@ -15,7 +15,6 @@ describe 'director behaviour', type: :integration do
       output = deploy_from_scratch(manifest_hash: manifest_hash)
       task_id = Bosh::Spec::OutputParser.new(output).task_id
       @task_output = bosh_runner.run("task #{task_id} --debug")
-
     end
 
     it 'responds with specific cpi_api_version results' do
