@@ -220,7 +220,7 @@ module Bosh::Director
       def instance_plans_with_hot_swap_and_needs_shutdown
         instance_groups_starting_on_deploy.collect_concat do |instance_group|
           return [] unless instance_group.should_hot_swap?
-          instance_group.instance_plans_needing_shutdown
+          instance_group.unignored_instance_plans_needing_shutdown
         end
       end
 
@@ -228,7 +228,7 @@ module Bosh::Director
         instance_groups_starting_on_deploy.collect_concat do |instance_group|
           return [] if instance_group.hot_swap? == instance_group.should_hot_swap?
 
-          instance_group.instance_plans_needing_shutdown
+          instance_group.unignored_instance_plans_needing_shutdown
         end
       end
 
