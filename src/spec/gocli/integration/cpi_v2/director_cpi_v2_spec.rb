@@ -1,7 +1,6 @@
 require_relative '../../spec_helper'
 
 describe 'director behaviour with CPI v2', type: :integration do
-  with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
 
   let(:cpi_version) { 2 }
   let(:cpi_version_string) { "\"api_version\":#{cpi_version}" }
@@ -34,16 +33,37 @@ describe 'director behaviour with CPI v2', type: :integration do
     end
   end
 
-  context 'create_vm' do
-    let(:response_string) { /"result":{"vm_cid":"\d+","networks":\[.*\],"disk_hints":{.*}}/ }
-    let(:search_filter_string) { 'DEBUG - Dummy: create_vm' }
-    it_behaves_like 'using CPI v2'
+  context 'when cpi_version is 2' do
+    with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
+    let(:cpi_version) { 2 }
+    context 'create_vm' do
+      let(:response_string) { /"result":{"vm_cid":"\d+","networks":\[.*\],"disk_hints":{.*}}/ }
+      let(:search_filter_string) { 'DEBUG - Dummy: create_vm' }
+      it_behaves_like 'using CPI v2'
+    end
+
+    context 'attach_disk' do
+      # response is expected to be filepath (from dummy_v2:attach_disk)
+      let(:response_string) { /"result":"(\/.*\/)\d+"/ }
+      let(:search_filter_string) { 'DEBUG - Saving input for attach_disk' }
+      it_behaves_like 'using CPI v2'
+    end
   end
 
-  context 'attach_disk' do
-    # response is expected to be filepath (from dummy_v2:attach_disk)
-    let(:response_string) { /"result":"(\/.*\/)\d+"/ }
-    let(:search_filter_string) { 'DEBUG - Saving input for attach_disk' }
-    it_behaves_like 'using CPI v2'
+  context 'when cpi_version < 2' do
+    with_reset_sandbox_before_each(dummy_cpi_api_version: nil)
+    let(:cpi_version) { 1 }
+    context 'create_vm' do
+      let(:response_string) { /"result":"\d"/ }
+      let(:search_filter_string) { 'DEBUG - Dummy: create_vm' }
+      it_behaves_like 'using CPI v2'
+    end
+
+    context 'attach_disk' do
+      # response is expected to be filepath (from dummy_v2:attach_disk)
+      let(:response_string) { /"result":\d/ }
+      let(:search_filter_string) { 'DEBUG - Saving input for attach_disk' }
+      it_behaves_like 'using CPI v2'
+    end
   end
 end
