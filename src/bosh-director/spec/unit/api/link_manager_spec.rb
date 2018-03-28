@@ -92,7 +92,7 @@ module Bosh::Director
       context 'when link_provider_id is missing' do
         let(:provider_id) { "" }
         it 'return error' do
-          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid json: provide valid `link_provider_id`/)
+          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid request: `link_provider_id` must be an Integer/)
         end
       end
 
@@ -112,25 +112,44 @@ module Bosh::Director
             }
           end
           it 'return error' do
-            expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid json: missing `link_consumer`/)
+            expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer` section must be defined/)
           end
         end
 
         context 'when link_consumer contents are invalid' do
-          #TODO Links: make sure the empty string get removed from the json object Ex: {"owner_object_name"=>""}
-          let(:payload_json) do
-            {
-              'link_provider_id'=> provider_id,
-              'link_consumer' => {"owner_object_name"=>""}
-            }
+          context 'invalid owner_object_name' do
+            let(:payload_json) do
+              {
+                'link_provider_id' => provider_id,
+                'link_consumer' => {
+                  'owner_object_name' => '',
+                  'owner_object_type' => 'external',
+                }
+              }
+            end
+            it 'return error' do
+              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object_name` must not be empty/)
+            end
           end
-          it 'return error' do
-            expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid json: provide valid `owner_object_name`/)
+
+          context 'invalid owner_object_type' do
+            let(:payload_json) do
+              {
+                'link_provider_id' => provider_id,
+                'link_consumer' => {
+                  'owner_object_name' => 'test_owner_name',
+                  'owner_object_type' => 'test_owner_type',
+                }
+              }
+            end
+            it 'return error' do
+              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object_type` should be 'external'/)
+            end
           end
         end
       end
 
-      context 'when link_conumer data in valid' do
+      context 'when link_consumer data is valid' do
         let(:consumer_1) {}
         let(:consumer_1_intent_1) {}
         let(:link_1) {}

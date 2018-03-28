@@ -55,12 +55,14 @@ module Bosh::Director
 
       def validate_link_payload(json_payload)
         # TODO Links: check if Integer validation is required or not?
-        if  json_payload["link_provider_id"].nil? || !(json_payload["link_provider_id"].is_a?(Integer))
-          raise "Invalid json: provide valid `link_provider_id`"
-        elsif json_payload["link_consumer"].nil?
-          raise "Invalid json: missing `link_consumer`"
-        elsif json_payload["link_consumer"]["owner_object_name"].nil? || json_payload["link_consumer"]["owner_object_name"] == ""
-          raise "Invalid json: provide valid `owner_object_name`"
+        if  json_payload['link_provider_id'].nil? || !(json_payload['link_provider_id'].is_a?(Integer))
+          raise 'Invalid request: `link_provider_id` must be an Integer'
+        elsif json_payload['link_consumer'].nil?
+          raise 'Invalid request: `link_consumer` section must be defined'
+        elsif json_payload['link_consumer']['owner_object_type'].nil? || json_payload['link_consumer']['owner_object_type'] != 'external'
+          raise "Invalid request: `link_consumer.owner_object_type` should be 'external'"
+        elsif json_payload['link_consumer']['owner_object_name'].nil? || json_payload['link_consumer']['owner_object_name'] == ''
+          raise 'Invalid request: `link_consumer.owner_object_name` must not be empty'
         end
       end
 
