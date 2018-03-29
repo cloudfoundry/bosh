@@ -69,9 +69,12 @@ module Bosh::Director
 
       agenda.steps << DeploymentPlan::Steps::ReleaseObsoleteNetworksStep.new(ip_provider) unless instance_plan.should_hot_swap?
 
-      if instance_plan.needs_disk? && !instance_plan.should_hot_swap?
-        agenda.steps << DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags)
-        agenda.steps << DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model)
+      # TODO(mxu, cdutra): find cleaner way to express when you need to Attach and Mount the disk
+      if instance_plan.needs_disk?
+        if !instance_plan.should_hot_swap? || creating_first_hot_swap_vm?(instance_plan, already_had_active_vm)
+          agenda.steps << DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags)
+          agenda.steps << DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model)
+        end
       end
 
       agenda.steps << DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance)
@@ -83,6 +86,10 @@ module Bosh::Director
       )
 
       agenda
+    end
+
+    def creating_first_hot_swap_vm?(instance_plan, already_had_active_vm)
+      instance_plan.should_hot_swap? && !already_had_active_vm
     end
   end
 end

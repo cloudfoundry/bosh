@@ -167,6 +167,50 @@ module Bosh
             vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
           end
         end
+
+        context 'when the instance plan needs a persistent disk' do
+          before do
+            allow(instance_plan).to receive(:needs_disk?).and_return(true)
+          end
+
+          context 'when the instance uses legacy updating instance strategy' do
+            it 'adds attach and mount disk steps' do
+              expect(create_vm_step).to receive(:perform).with(report)
+              expect(attach_instance_disks_step).to receive(:perform)
+              expect(mount_instance_disks_step).to receive(:perform)
+
+              vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
+            end
+          end
+
+          context 'when the instance uses duplicate-and-replace-vm strategy' do
+            before do
+              allow(instance_plan).to receive(:should_hot_swap?).and_return(true)
+            end
+
+            context 'when there is already an active vm' do
+              before { allow(instance).to receive(:vm_created?).and_return(true) }
+
+              it 'does NOT add attach and mount disk steps' do
+                expect(create_vm_step).to receive(:perform).with(report)
+                expect(attach_instance_disks_step).not_to receive(:perform)
+                expect(mount_instance_disks_step).not_to receive(:perform)
+
+                vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
+              end
+            end
+
+            context 'when there is no active vm' do
+              it 'adds attach and mount disk steps' do
+                expect(create_vm_step).to receive(:perform).with(report)
+                expect(attach_instance_disks_step).to receive(:perform)
+                expect(mount_instance_disks_step).to receive(:perform)
+
+                vm_creator.create_for_instance_plan(instance_plan, ip_provider, ['fake-disk-cid'], tags)
+              end
+            end
+          end
+        end
       end
 
       describe '#create_for_instance_plans' do

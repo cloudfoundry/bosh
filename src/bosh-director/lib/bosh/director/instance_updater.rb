@@ -124,6 +124,12 @@ module Bosh::Director
             instance_report.vm = new_vm
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
             DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report)
+
+            instance_report.vm = instance_model.active_vm
+            if instance_plan.needs_disk?
+              DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
+              DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
+            end
           else
             DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms)
                                                .perform(instance_report)
@@ -135,12 +141,7 @@ module Bosh::Director
 
         instance_report.vm = instance_model.active_vm
 
-        if instance_plan.should_hot_swap?
-          if instance_plan.needs_disk?
-            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
-            DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
-          end
-        else
+        unless instance_plan.should_hot_swap?
           instance_plan.release_obsolete_network_plans(@ip_provider)
         end
 
