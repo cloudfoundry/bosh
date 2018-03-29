@@ -711,7 +711,7 @@ describe 'links api', type: :integration do
         it 'returns error' do
           response = send_director_post_request("/links", '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
-          expect(error_response['description']).to eq("Invalid json: provide valid `link_provider_id`")
+          expect(error_response['description']).to eq('Invalid request: `link_provider_id` must be an Integer')
         end
       end
 
@@ -729,7 +729,7 @@ describe 'links api', type: :integration do
         it 'returns error' do
           response = send_director_post_request("/links", '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
-          expect(error_response['description']).to eq("Invalid json: provide valid `owner_object_name`")
+          expect(error_response['description']).to eq('Invalid request: `link_consumer.owner_object_name` must not be empty')
         end
       end
 
