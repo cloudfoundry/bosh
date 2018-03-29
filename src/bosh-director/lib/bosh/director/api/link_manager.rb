@@ -27,12 +27,12 @@ module Bosh::Director
           deployment_model: provider.deployment,
           instance_group_name: provider.instance_group,
           name: consumer_data['owner_object_name'],
-          type:@external_type
+          type: @external_type,
         )
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,
           link_original_name: provider.name,
-          link_type: provider_intent.type
+          link_type: provider_intent.type,
         )
 
         filter_content_and_create_link(consumer_intent)
