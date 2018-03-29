@@ -2,6 +2,40 @@ require_relative '../spec_helper'
 
 describe 'upgraded director after introducing the enforcement of IP addresses', type: :upgrade do
 
+  let(:provider_manifest_hash) do
+    {
+      'name' => 'simple',
+      'releases' => [{'name' => 'bosh-release', 'version' => 'latest'}],
+      'update' => {
+        'canaries' => 2,
+        'canary_watch_time' => 4000,
+        'max_in_flight' => 1,
+        'update_watch_time' => 20
+      },
+      'instance_groups' => [{
+                              'name' => 'ig_provider',
+                              'jobs' => [{
+                                           'name' => 'provider',
+                                           'provides' => {
+                                             'provider' => { 'as' => 'provider_link', 'shared' => true}
+                                           },
+                                           'properties' => {
+                                             'a' => '1',
+                                             'b' => '2',
+                                             'c' => '3',
+                                           }
+                                         }],
+                              'instances' => 1,
+                              'networks' => [{'name' => 'private'}],
+                              'vm_type' => 'small',
+                              'persistent_disk_type' => 'small',
+                              'azs' => ['z1'],
+                              'stemcell' => 'default'
+                            }],
+      'stemcells' => [{'alias' => 'default', 'os' => 'toronto-os', 'version' => '1'}]
+    }
+  end
+
   let(:manifest_hash) do
     {
       'name' => 'simple_consumer',
@@ -87,7 +121,7 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       end
     end
 
-    context 'when a provider deployment deployed by old director is started by new director (causing provider deployment link spec to be updated)' do
+    context 'when a provider deployment deployed by old director is started by new director' do
       before do
         output = scrub_random_ids(parse_blocks(bosh_runner.run('-d simple start', json: true)))
         expect(output).to include('Creating missing vms: ig_provider/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)')
@@ -95,10 +129,6 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       end
 
       context 'when there is a consumer deployment deployed by the new director which uses links from the provider deployment' do
-        before do
-          deploy_simple_manifest(manifest_hash: manifest_hash)
-        end
-
         context 'when ip_address flag is not set by consumer link' do
           let (:consumes) {{
             'provider' => {
@@ -108,41 +138,49 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
           }}
 
           it 'gives a dns address for the link address' do
+            deploy_simple_manifest(manifest_hash: manifest_hash)
             instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
             hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
             expect(hash['provider_link_0_address']).to match /.ig-provider.private.simple.bosh/
           end
         end
 
-        context 'when ip_address flag is set to false for consumer link' do
-          let (:consumes) {{
-            'provider' => {
-              'from' => 'provider_link',
-              'deployment' => 'simple',
-              'ip_addresses' => false
-            }
-          }}
-
-          it 'gives a dns address for the link address' do
-            instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
-            hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
-            expect(hash['provider_link_0_address']).to match /.ig-provider.private.simple.bosh/
+        context 'with a required redeploy of the provider' do
+          before do
+            deploy_simple_manifest(manifest_hash: provider_manifest_hash)
+            deploy_simple_manifest(manifest_hash: manifest_hash)
           end
-        end
 
-        context 'when ip_address flag is set to true for consumer link' do
-          let (:consumes) {{
-            'provider' => {
-              'from' => 'provider_link',
-              'deployment' => 'simple',
-              'ip_addresses' => true
-            }
-          }}
+          context 'when ip_address flag is set to false for consumer link' do
+            let (:consumes) {{
+              'provider' => {
+                'from' => 'provider_link',
+                'deployment' => 'simple',
+                'ip_addresses' => false
+              }
+            }}
 
-          it 'gives an ip address for the link address' do
-            instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
-            hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
-            expect(hash['provider_link_0_address']).to match /10.10.0.2/
+            it 'gives a dns address for the link address' do
+              instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
+              hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
+              expect(hash['provider_link_0_address']).to match /.ig-provider.private.simple.bosh/
+            end
+          end
+
+          context 'when ip_address flag is set to true for consumer link' do
+            let (:consumes) {{
+              'provider' => {
+                'from' => 'provider_link',
+                'deployment' => 'simple',
+                'ip_addresses' => true
+              }
+            }}
+
+            it 'gives an ip address for the link address' do
+              instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
+              hash = YAML.load(instance.read_job_template('consumer', 'config.yml'))
+              expect(hash['provider_link_0_address']).to match /10.10.0.2/
+            end
           end
         end
       end
@@ -206,7 +244,7 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       end
     end
 
-    context 'when a provider deployment deployed by old director is started by new director (causing provider deployment link spec to be updated)' do
+    context 'when a provider deployment deployed by old director is started by new director' do
 
       before do
         output = scrub_random_ids(parse_blocks(bosh_runner.run('-d simple start', json: true)))
@@ -217,6 +255,7 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       context 'when there is a consumer deployment deployed by the new director which uses links from the provider deployment' do
 
         before do
+          deploy_simple_manifest(manifest_hash: provider_manifest_hash)
           deploy_simple_manifest(manifest_hash: manifest_hash)
         end
 
