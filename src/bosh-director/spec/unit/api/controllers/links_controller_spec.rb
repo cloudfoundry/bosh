@@ -282,6 +282,32 @@ module Bosh::Director
               end
             end
           end
+
+          context 'when user is not authenticated' do
+            before do
+              basic_authorize 'invalid', 'invalid'
+            end
+
+            it 'should raise an error' do
+              post '/', '{}', 'CONTENT_TYPE' => 'application/json'
+              expect(last_response.status).to eq(401)
+              expect(last_response.body).to start_with('Not authorized:')
+            end
+          end
+        end
+      end
+
+      context 'when deleting links' do
+        context 'when the user is not authenticated' do
+          before do
+            basic_authorize 'invalid', 'invalid'
+          end
+
+          it 'should raise an error' do
+            delete '/3'
+            expect(last_response.status).to eq(401)
+            expect(last_response.body).to start_with('Not authorized:')
+          end
         end
       end
 

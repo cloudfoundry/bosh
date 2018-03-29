@@ -44,6 +44,9 @@ module Bosh::Director
         end
       end
 
+      delete '/:linkid', authorization: :delete_link do
+      end
+
       private
 
       def generate_link_hash(model)
