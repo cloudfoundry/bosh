@@ -58,7 +58,7 @@ module Bosh::Director
 
           external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
             deployment: deployment,
-            instance_group: instance_group,
+            instance_group: '',
             name: 'external_consumer_1',
             type: 'external',
           )
@@ -267,9 +267,9 @@ module Bosh::Director
           let(:external_consumer) do
             Bosh::Director::Models::Links::LinkConsumer.create(
               deployment: deployment,
-              instance_group: 'provider_ig_name',
-              name: 'provider_job_name',
-              type: 'external',
+              instance_group: '',
+              name: "external_consumer_1",
+              type: "external"
             )
           end
 
@@ -293,7 +293,7 @@ module Bosh::Director
             before do
               control_consumer = Bosh::Director::Models::Links::LinkConsumer.create(
                 deployment: deployment,
-                instance_group: 'control_ig_name',
+                instance_group: '',
                 name: 'control_job_name',
                 type: 'external',
               )

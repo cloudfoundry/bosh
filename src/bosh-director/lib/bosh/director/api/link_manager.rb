@@ -25,7 +25,7 @@ module Bosh::Director
 
         consumer = @links_manager.find_or_create_consumer(
           deployment_model: provider.deployment,
-          instance_group_name: provider.instance_group,
+          instance_group_name: '',
           name: consumer_data['owner_object_name'],
           type: @external_type,
         )

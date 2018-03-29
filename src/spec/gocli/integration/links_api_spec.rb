@@ -693,6 +693,9 @@ describe 'links api', type: :integration do
           response = get_link_consumers
 
           expect(response.count).to_not eq(0)
+          consumer = response[0]
+          expect(consumer['deployment']).to eq('simple')
+          expect(consumer['owner_object']['type']).to eq('external')
         end
       end
 

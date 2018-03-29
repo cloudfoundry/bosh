@@ -16,16 +16,6 @@ module Bosh::Director::Models::Links
         }.to raise_error(Sequel::ValidationFailed, 'deployment_id presence')
       end
 
-      it 'validates presence of instance_group' do
-        expect {
-          Bosh::Director::Models::Links::LinkConsumer.create(
-            deployment: deployment,
-            name: 'name',
-            type: 'type'
-          )
-        }.to raise_error(Sequel::ValidationFailed, 'instance_group presence')
-      end
-
       it 'validates presence of name' do
         expect {
           LinkConsumer.create(

@@ -214,7 +214,7 @@ module Bosh::Director
 
                   new_external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
                     deployment: deployment,
-                    instance_group: 'instance_group',
+                    instance_group: '',
                     name: 'external_consumer_1',
                     type: 'external',
                     )
