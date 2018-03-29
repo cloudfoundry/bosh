@@ -155,7 +155,7 @@ module Bosh::Director
               instance_double(
                 DeploymentPlan::Instance,
                 model: non_errand_instance_model,
-                job_name: non_errand_instance_model.job,
+                instance_group_name: non_errand_instance_model.job,
                 uuid: non_errand_instance_model.uuid,
                 index: 2,
                 current_job_state: 'running',
