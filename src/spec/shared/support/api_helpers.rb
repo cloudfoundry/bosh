@@ -18,6 +18,15 @@ module Support
       send_director_api_request(director_url, req)
     end
 
+    def send_director_delete_request(url_path, query, auth = {username: 'test', password: 'test'})
+      director_url = build_director_api_url(url_path, query)
+
+      req = Net::HTTP::Delete.new(director_url)
+      req.basic_auth(auth[:username], auth[:password]) unless auth.empty?
+
+      send_director_api_request(director_url, req)
+    end
+
     def send_director_api_request(director_url, request)
       Net::HTTP.start(
         director_url.hostname,

@@ -45,6 +45,13 @@ module Bosh::Director
       end
 
       delete '/:linkid', authorization: :delete_link do
+        begin
+          @link_manager.delete_link(current_user, params[:linkid])
+        rescue RuntimeError => e
+          raise LinkDeleteError, e
+        end
+        status(204)
+        body(nil)
       end
 
       private

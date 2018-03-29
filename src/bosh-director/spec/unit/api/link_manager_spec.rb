@@ -206,48 +206,48 @@ module Bosh::Director
     end
 
     describe '#delete_link' do
-      let!(:not_external_consumer_1) do
-        Models::Links::LinkConsumer.create(
-          deployment: deployment,
-          instance_group: 'instance_group',
-          type: 'job',
-          name: 'job_name_1',
-          serial_id: link_serial_id,
-          )
-      end
-
-      let!(:not_external_consumer_intent_1) do
-        Models::Links::LinkConsumerIntent.create(
-          link_consumer: not_external_consumer_1,
-          original_name: 'link_1',
-          type: 'link_type_1',
-          name: 'link_alias_1',
-          optional: false,
-          blocked: false,
-          serial_id: link_serial_id,
-        )
-      end
-      let!(:not_external_link_1) do
-        Models::Links::Link.create(
-          :name => 'link_1',
-          :link_provider_intent_id => provider_1_intent_1.id,
-          :link_consumer_intent_id => not_external_consumer_intent_1.id,
-          :link_content => "content 1",
-          :created_at => Time.now
-        )
-      end
       context 'when link_id is invalid' do
+        let!(:not_external_consumer_1) do
+          Models::Links::LinkConsumer.create(
+            deployment: deployment,
+            instance_group: 'instance_group',
+            type: 'job',
+            name: 'job_name_1',
+            serial_id: link_serial_id,
+          )
+        end
+
+        let!(:not_external_consumer_intent_1) do
+          Models::Links::LinkConsumerIntent.create(
+            link_consumer: not_external_consumer_1,
+            original_name: 'link_1',
+            type: 'link_type_1',
+            name: 'link_alias_1',
+            optional: false,
+            blocked: false,
+            serial_id: link_serial_id,
+          )
+        end
+        let!(:not_external_link_1) do
+          Models::Links::Link.create(
+            name: 'link_1',
+            link_provider_intent_id: provider_1_intent_1.id,
+            link_consumer_intent_id: not_external_consumer_intent_1.id,
+            link_content: 'content 1',
+            created_at: Time.now,
+          )
+        end
         context 'when link is not external' do
-          let(:link_id) { not_external_link_1.id  }
+          let(:link_id) { not_external_link_1.id }
           it 'return error' do
-            expect{ subject.delete_link(username, link_id) }.to raise_error(RuntimeError, /Error deleting link: not a external link/)
+            expect { subject.delete_link(username, link_id) }.to raise_error(LinkNotExternalError, /Error deleting link: not a external link/)
           end
         end
 
         context 'when link_id is non-existing' do
           let(:link_id) { 42 + not_external_link_1.id }
           it 'return error' do
-            expect{ subject.delete_link(username, link_id) }.to raise_error(RuntimeError, "Invalid link id: #{link_id}")
+            expect { subject.delete_link(username, link_id) }.to raise_error(LinkLookupError, "Invalid link id: #{link_id}")
           end
         end
       end
@@ -255,77 +255,133 @@ module Bosh::Director
       context 'when link id is valid' do
         context 'when link is not created by the user' do
           it 'return access error' do
-            #TODO Links: need to discuss more about the access filter
+            # TODO: Links: need to discuss more about the access filter
           end
         end
 
         context 'when link is external' do
-          before do
-            subject.create_link(username, payload_json)
-
-            @external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
-              deployment: deployment,
-              instance_group: instance_group,
-              name: "external_consumer_1",
-              type: "external"
-            )
-            expect(@external_consumer).to_not be_nil
-
-            @external_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
-              link_consumer: @external_consumer,
-              original_name: provider_1.name
-            )
-            expect(@external_consumer_intent).to_not be_nil
-
-            @external_link = Bosh::Director::Models::Links::Link.find(
-              link_provider_intent_id: provider_1_intent_1.id,
-              link_consumer_intent_id: @external_consumer_intent.id,
-              name: provider_1.name
-            )
-            expect(@external_link).to_not be_nil
-          end
-          it 'delete link' do
-            expect{ subject.delete_link(username, @external_link.id) }.to_not raise_error
-
-            invalid_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
-              deployment: deployment,
-              instance_group: instance_group,
-              name: "external_consumer_1",
-              type: "external"
-            )
-            expect(invalid_consumer).to be_nil
-
-            invalid_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
-              link_consumer: @external_consumer,
-              original_name: provider_1.name
-            )
-            expect(invalid_consumer_intent).to be_nil
-
-            invalid_link = Bosh::Director::Models::Links::Link.find(
-              link_provider_intent_id: provider_1_intent_1.id,
-              link_consumer_intent_id: @external_consumer_intent.id,
-              name: provider_1.name
-            )
-
-            expect(invalid_link).to eq(nil)
+          let(:deployment) do
+            Bosh::Director::Models::Deployment.make
           end
 
-          #TODO Link: make sure we need it or not
-          context 'when link is not deleted' do
+          let(:external_consumer) do
+            Bosh::Director::Models::Links::LinkConsumer.create(
+              deployment: deployment,
+              instance_group: 'provider_ig_name',
+              name: 'provider_job_name',
+              type: 'external',
+            )
+          end
+
+          let(:external_consumer_intent) do
+            Bosh::Director::Models::Links::LinkConsumerIntent.create(
+              link_consumer: external_consumer,
+              original_name: 'link_name',
+              type: 'link_type',
+            )
+          end
+
+          let!(:external_link) do
+            Bosh::Director::Models::Links::Link.create(
+              link_consumer_intent: external_consumer_intent,
+              link_content: '{}',
+              name: 'link_name',
+            )
+          end
+
+          context 'when there are multiple external consumers' do
             before do
-              allow(@external_link).to receive(:destroy).and_return(nil)
-              allow(@external_link).to receive(:delete).and_return(nil)
+              control_consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+                deployment: deployment,
+                instance_group: 'control_ig_name',
+                name: 'control_job_name',
+                type: 'external',
+              )
+
+              control_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+                link_consumer: control_consumer,
+                original_name: 'control_consumer_intent',
+                type: 'control_type',
+              )
+
+              Bosh::Director::Models::Links::Link.create(
+                link_consumer_intent: control_consumer_intent,
+                link_content: '{}',
+                name: 'control_consumer_link',
+              )
             end
-            it 'return error' do
-              # expect{ subject.delete_link(username, @external_link.id) }.to raise_error
-              #
-              # invalid_link = Bosh::Director::Models::Links::Link.find(
-              #   link_provider_intent_id: provider_1_intent_1.id,
-              #   link_consumer_intent_id: @external_consumer_intent.id,
-              #   name: provider_1.name
-              # )
-              #
-              # expect(invalid_link).to_not be_nil
+
+            it 'only deletes the link with specific id' do
+              expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(2)
+              expect(Bosh::Director::Models::Links::LinkConsumerIntent.count).to eq(2)
+              expect(Bosh::Director::Models::Links::Link.count).to eq(2)
+
+              expect do
+                subject.delete_link(username, external_link[:id])
+              end.to_not raise_error
+
+              expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)
+              expect(Bosh::Director::Models::Links::LinkConsumerIntent.count).to eq(1)
+              expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+              expect(Bosh::Director::Models::Links::Link.find(name: 'control_consumer_link')).to_not(be_nil)
+            end
+          end
+
+          context 'when there is a single external consumer' do
+            context 'when there are multiple intents for the consumer' do
+              before do
+                control_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+                  link_consumer: external_consumer,
+                  original_name: 'control_consumer_intent',
+                  type: 'control_type',
+                )
+
+                Bosh::Director::Models::Links::Link.create(
+                  link_consumer_intent: control_consumer_intent,
+                  link_content: '{}',
+                  name: 'control_consumer_link',
+                )
+              end
+
+              it 'only deletes the link with specific id' do
+                expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)
+                expect(Bosh::Director::Models::Links::LinkConsumerIntent.count).to eq(2)
+                expect(Bosh::Director::Models::Links::Link.count).to eq(2)
+
+                expect do
+                  subject.delete_link(username, external_link[:id])
+                end.to_not raise_error
+
+                expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)
+                expect(Bosh::Director::Models::Links::LinkConsumerIntent.count).to eq(1)
+                expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+                expect(Bosh::Director::Models::Links::Link.find(name: 'control_consumer_link')).to_not(be_nil)
+              end
+            end
+
+            context 'when there is a single intent for the consumer' do
+              before do
+                Bosh::Director::Models::Links::Link.create(
+                  link_consumer_intent: external_consumer_intent,
+                  link_content: '{}',
+                  name: 'control_consumer_link',
+                )
+              end
+
+              it 'only deletes the link with specific id' do
+                expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)
+                expect(Bosh::Director::Models::Links::LinkConsumerIntent.count).to eq(1)
+                expect(Bosh::Director::Models::Links::Link.count).to eq(2)
+
+                expect do
+                  subject.delete_link(username, external_link[:id])
+                end.to_not raise_error
+
+                expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)
+                expect(Bosh::Director::Models::Links::LinkConsumerIntent.count).to eq(1)
+                expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+                expect(Bosh::Director::Models::Links::Link.find(name: 'control_consumer_link')).to_not(be_nil)
+              end
             end
           end
         end

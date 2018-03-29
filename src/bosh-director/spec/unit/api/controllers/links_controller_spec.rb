@@ -309,6 +309,67 @@ module Bosh::Director
             expect(last_response.body).to start_with('Not authorized:')
           end
         end
+
+        context 'when the user is authenticated' do
+          let(:link_manager) do
+            instance_double(Bosh::Director::Api::LinkManager)
+          end
+
+          before do
+            expect(Api::LinkManager).to receive(:new).and_return(link_manager)
+            basic_authorize 'admin', 'admin'
+          end
+
+          context 'and link_manager successfully deletes a link' do
+            before do
+              allow(link_manager).to receive(:delete_link)
+            end
+
+            it 'returns completes successfully' do
+              delete '/1'
+              expect(last_response.status).to eq(204)
+              expect(last_response.body).to be_empty
+            end
+          end
+
+          context 'and link_manager raised a error' do
+            before do
+              allow(link_manager).to receive(:delete_link).and_raise(error)
+            end
+
+            context 'and the error is a runtime error' do
+              let(:error) do
+                RuntimeError.new
+              end
+
+              it 'should return the appropriate error status code' do
+                delete '/1'
+                expect(last_response.status).to eq(500)
+              end
+            end
+
+            context 'and the error is a LinkLookupError' do
+              let(:error) do
+                LinkLookupError.new
+              end
+
+              it 'should raise the appropriate error status code' do
+                delete '/1'
+                expect(last_response.status).to eq(404)
+              end
+            end
+
+            context 'and the error is a LinkNotExternalError' do
+              let(:error) do
+                LinkNotExternalError.new
+              end
+              it 'returns completes successfully' do
+                delete '/1'
+                expect(last_response.status).to eq(400)
+              end
+            end
+          end
+        end
       end
 
       def generate_link_hash(model)

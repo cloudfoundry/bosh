@@ -38,18 +38,31 @@ module Bosh::Director
         filter_content_and_create_link(consumer_intent)
       end
 
-      def delete_link(usename, link_id)
+      def delete_link(username, link_id)
         link = find_link(link_id)
         if link.nil?
-          raise "Invalid link id: #{link_id}"
+          raise Bosh::Director::LinkLookupError, "Invalid link id: #{link_id}"
         end
 
-        is_link_external(link)
+        validate_link_external_type(link)
 
-        delete_external_link(link)
+        delete_link_and_cleanup(link)
       end
 
       private
+
+      def delete_link_and_cleanup(link)
+        consumer_intent = link.link_consumer_intent
+        link.destroy
+        if consumer_intent.links.nil? || consumer_intent.links.empty?
+          consumer = consumer_intent.link_consumer
+          consumer_intent.destroy
+
+          if consumer.intents.nil? || consumer.intents.empty?
+            consumer.destroy
+          end
+        end
+      end
 
       # TODO Links: all provider and consumer related functions should be moved to respective managers/controller?
 
@@ -76,10 +89,10 @@ module Bosh::Director
         end
       end
 
-      def is_link_external(link)
+      def validate_link_external_type(link)
         consumer = link.link_consumer_intent.link_consumer
         if consumer.type != @external_type
-          raise 'Error deleting link: not a external link'
+          raise Bosh::Director::LinkNotExternalError, 'Error deleting link: not a external link'
         end
       end
 
@@ -95,11 +108,6 @@ module Bosh::Director
 
       def find_link(link_id)
         Bosh::Director::Models::Links::Link.find(id: link_id)
-      end
-
-      def delete_external_link(link)
-        consumer = link.link_consumer_intent.link_consumer
-        consumer.destroy
       end
     end
   end

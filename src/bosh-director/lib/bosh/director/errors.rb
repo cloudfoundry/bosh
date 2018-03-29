@@ -339,8 +339,10 @@ module Bosh::Director
   InvalidJsonError = err(710001)
 
   # Resolving Links
-  LinkLookupError = err(810000)
+  LinkLookupError = err(810000, NOT_FOUND)
   LinkCreateError = err(810001)
   LinkProviderLookupError = err(810002)
   LinkNetworkLookupError = err(810003)
+  LinkDeleteError = err(810004, INTERNAL_SERVER_ERROR)
+  LinkNotExternalError = err(810005, BAD_REQUEST)
 end
