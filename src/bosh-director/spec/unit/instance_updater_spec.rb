@@ -323,6 +323,32 @@ module Bosh::Director
             updater.update(instance_plan)
           end
 
+          context 'and has unresponsive agent' do
+            before do
+              allow(instance_plan).to receive(:unresponsive_agent?).and_return(true)
+            end
+
+            it 'does not unmount and detach disk, then recreates correctly and persists rendered templates to blobstore' do
+              expect(unmount_step).not_to receive(:perform)
+              expect(detach_step).not_to receive(:perform)
+              expect(delete_step).to receive(:perform) do |report|
+                expect(report.vm).to eql(instance_model.active_vm)
+              end
+              expect(vm_creator).to receive(:create_for_instance_plan) do |i, ipp, disks, tags, use_existing|
+                expect(instance_plan).to eq(i)
+                expect(ipp).to eq(ip_provider)
+                expect(disks).to eq([persistent_disk_model.disk_cid])
+                expect(tags).to eq(tags)
+                expect(use_existing).to eq(nil)
+              end
+
+              expect(state_applier).to receive(:apply)
+              expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+
+              updater.update(instance_plan)
+            end
+          end
+
           context 'when the instance uses duplicate-and-replace-vm strategy' do
             let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
             let!(:inactive_vm_model) { Models::Vm.make(instance_id: instance_model.id) }
@@ -366,6 +392,29 @@ module Bosh::Director
               expect(orphan_vm_step).to receive(:perform)
 
               updater.update(instance_plan)
+            end
+
+            context 'and has unresponsive agent' do
+              before do
+                allow(instance_plan).to receive(:unresponsive_agent?).and_return(true)
+              end
+
+              it 'deletes the old vm and does NOT try to orphan it' do
+                expect(unmount_step).not_to receive(:perform)
+                expect(detach_step).not_to receive(:perform)
+                expect(delete_step).to receive(:perform) do |report|
+                  expect(report.vm).to eql(instance_model.active_vm)
+                end
+                expect(vm_creator).not_to receive(:create_for_instance_plan)
+
+                expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)
+                expect(elect_active_vm_step).to receive(:perform)
+                expect(orphan_vm_step).not_to receive(:perform)
+                expect(state_applier).to receive(:apply)
+                expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+
+                updater.update(instance_plan)
+              end
             end
 
             context 'when instance has persistent disks' do

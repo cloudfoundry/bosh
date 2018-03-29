@@ -108,11 +108,17 @@ module Bosh::Director
         if needs_recreate?(instance_plan) || (instance_plan.should_hot_swap? && instance_model.vms.count > 1)
           new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
 
+          deleted_unresponsive_vm = false
           @logger.debug('Failed to update in place. Recreating VM')
-          unless instance_plan.unresponsive_agent?
+          if instance_plan.unresponsive_agent?
+            DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms)
+              .perform(instance_report)
+            deleted_unresponsive_vm = true
+          else
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
             DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
           end
+
           tags = instance_plan.tags
 
           disks = instance_model.active_persistent_disks.collection
@@ -123,7 +129,7 @@ module Bosh::Director
             old_vm = instance_report.vm
             instance_report.vm = new_vm
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
-            DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report)
+            DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report) unless deleted_unresponsive_vm
 
             instance_report.vm = instance_model.active_vm
             if instance_plan.needs_disk?
@@ -132,7 +138,7 @@ module Bosh::Director
             end
           else
             DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms)
-                                               .perform(instance_report)
+              .perform(instance_report) unless deleted_unresponsive_vm
             @vm_creator.create_for_instance_plan(instance_plan, @ip_provider, disks, tags)
           end
 
