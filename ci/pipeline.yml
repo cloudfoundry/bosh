@@ -24,6 +24,7 @@ groups:
       - brats-ubuntu
       - upgrade-tests
       - blobstore-performance
+      - delivery
 
   - name: mysql
     jobs:
@@ -953,6 +954,19 @@ jobs:
           params: *brats-dbs-params
           attempts: 3
 
+  - name: delivery
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+          passed:
+          - bats-ubuntu
+          - bats-centos
+          - brats-ubuntu
+      - put: tracker-output
+        params:
+          repos:
+          - bosh-src
 
   # - name: finalize-bosh-release
   #   serial: true
@@ -1121,6 +1135,13 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
+
+  - name: tracker-output
+    type: tracker
+    source:
+      token: ((tracker_api_token))
+      project_id: ((tracker_project_id))
+      tracker_url: https://www.pivotaltracker.com
 
 resource_types:
 - name: slack-notification
