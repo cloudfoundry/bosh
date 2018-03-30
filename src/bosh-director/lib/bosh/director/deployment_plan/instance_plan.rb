@@ -375,12 +375,14 @@ module Bosh
         end
 
         def stemcell_changed?
-          if @existing_instance && @instance.stemcell.name != @existing_instance.spec_p('stemcell.name')
+          if @existing_instance&.spec_p('stemcell.name') &&
+             @instance.stemcell.name != @existing_instance.spec_p('stemcell.name')
             log_changes(__method__, @existing_instance.spec_p('stemcell.name'), @instance.stemcell.name, @existing_instance)
             return true
           end
 
-          if @existing_instance && @instance.stemcell.version != @existing_instance.spec_p('stemcell.version')
+          if @existing_instance&.spec_p('stemcell.version') &&
+             @instance.stemcell.version != @existing_instance.spec_p('stemcell.version')
             log_changes(
               __method__,
               "version: #{@existing_instance.spec_p('stemcell.version')}",

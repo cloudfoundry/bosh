@@ -634,6 +634,19 @@ module Bosh::Director::DeploymentPlan
           expect(instance_plan.recreate_for_non_network_reasons?).to be_truthy
         end
       end
+
+      context 'when the existing instance does not have a stemcell' do
+        before do
+          instance_plan.existing_instance.update(spec: spec.merge(
+            'vm_type' => { 'name' => 'old', 'cloud_properties' => { 'a' => 'b' } },
+            'stemcell' => nil,
+          ))
+        end
+
+        it 'returns false for stemcell changed' do
+          expect(instance_plan.recreate_for_non_network_reasons?).to be_falsey
+        end
+      end
     end
 
     describe '#persist_current_spec' do
