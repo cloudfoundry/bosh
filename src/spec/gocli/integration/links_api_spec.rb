@@ -697,6 +697,20 @@ describe 'links api', type: :integration do
           expect(consumer['deployment']).to eq('simple')
           expect(consumer['owner_object']['type']).to eq('external')
         end
+
+        it 'keeps the consumer and link after redeploy' do
+          send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = get_link_consumers
+
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+          response2 = get_link_consumers
+
+          expect(response.count).to eq(response2.count)
+          consumer = response2[0]
+          expect(consumer['deployment']).to eq('simple')
+          expect(consumer['owner_object']['type']).to eq('external')
+        end
+
       end
 
       context 'when link_provider_id do not exists' do

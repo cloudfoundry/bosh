@@ -281,7 +281,8 @@ module Bosh::Director::Links
 
       end
 
-      Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment_model).each do |consumer|
+      deployment_model.link_consumers.each do |consumer|
+        next if consumer.type == "external"
         consumer.intents.each do |consumer_intent|
           if consumer_intent.serial_id == serial_id
             Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).each do |link|
