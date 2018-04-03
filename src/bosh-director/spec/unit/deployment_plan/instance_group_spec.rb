@@ -978,10 +978,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#unignored_instance_plans_needing_shutdown' do
+  describe '#unignored_instance_plans_needing_duplicate_vm' do
     let(:instance_plan_instance) { instance_double(BD::DeploymentPlan::Instance, vm_created?: true, state: 'started') }
     let(:instance_plan) do
-      instance_double(BD::DeploymentPlan::InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true, should_be_ignored?: false)
+      instance_double(BD::DeploymentPlan::InstancePlan, instance: instance_plan_instance, new?: false, needs_duplicate_vm?: true, should_be_ignored?: false)
     end
     let(:instance_plan_sorter) { instance_double(BD::DeploymentPlan::InstancePlanSorter, sort: [instance_plan]) }
 
@@ -991,7 +991,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when the plan has a created instance and needs shutting down' do
       it 'selects the instance plan' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to eq([instance_plan])
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to eq([instance_plan])
       end
     end
 
@@ -1001,7 +1001,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should filter detached instance plans' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
@@ -1011,7 +1011,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
@@ -1021,17 +1021,17 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
     context 'when the instance does not need shutting down' do
       before do
-        allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
+        allow(instance_plan).to receive(:needs_duplicate_vm?).and_return(false)
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
   end

@@ -528,7 +528,7 @@ jobs:
         - task: test-group-1
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
+          tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
             DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
@@ -540,7 +540,7 @@ jobs:
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
+          tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
             DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
@@ -552,7 +552,7 @@ jobs:
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
+          tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
             DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm

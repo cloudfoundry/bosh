@@ -12,7 +12,7 @@ module Bosh::Director
 
         let(:instance_model_hot_swap) { instance_double(Models::Instance) }
         let(:deployment_plan_instance_hot_swap) { instance_double(DeploymentPlan::Instance, model: instance_model_hot_swap) }
-        let(:instance_plans_with_hot_swap_and_needs_shutdown) do
+        let(:instance_plans_with_hot_swap_and_needs_duplicate_vm) do
           [instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_hot_swap)]
         end
 
@@ -34,9 +34,9 @@ module Bosh::Director
 
         let(:deployment_plan) do
           instance_double(DeploymentPlan::Planner,
-                          instance_plans_with_hot_swap_and_needs_shutdown: instance_plans_with_hot_swap_and_needs_shutdown,
+                          instance_plans_with_hot_swap_and_needs_duplicate_vm: instance_plans_with_hot_swap_and_needs_duplicate_vm,
                           instance_plans_with_missing_vms: instance_plans_with_missing_vms,
-                          skipped_instance_plans_with_hot_swap_and_needs_shutdown: [],
+                          skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm: [],
                           ip_provider: ip_provider,
                           availability_zones: [
                             instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),
@@ -62,7 +62,7 @@ module Bosh::Director
         context 'when the director database contains no instances' do
           it 'creates vms for instance groups missing vms and checkpoints task' do
             expect(vm_creator).to receive(:create_for_instance_plans).with(
-              instance_plans_with_missing_vms + instance_plans_with_hot_swap_and_needs_shutdown,
+              instance_plans_with_missing_vms + instance_plans_with_hot_swap_and_needs_duplicate_vm,
               ip_provider,
               tags,
             )
