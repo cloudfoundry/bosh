@@ -361,6 +361,7 @@ module Bosh::Director
 
               expect(state_applier).to receive(:apply)
               expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
+              expect(links_manager).to receive(:bind_links_to_instance).with(instance)
 
               updater.update(instance_plan)
             end
