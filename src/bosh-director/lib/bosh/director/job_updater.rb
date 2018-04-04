@@ -29,7 +29,10 @@ module Bosh::Director
           # instance updater will not do so
           instance_plan.persist_current_spec
           instance_plan.instance.update_variable_set
-          # linksmanager.bind_links_to_instance(instance_plan.instance)
+          if @links_manager.nil?
+            @links_manager = Bosh::Director::Links::LinksManagerFactory.create(instance_plan.instance.deployment_model.links_serial_id).create_manager
+          end
+          @links_manager.bind_links_to_instance(instance_plan.instance)
           false
         end
       end

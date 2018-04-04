@@ -2588,19 +2588,15 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         instance_model.add_link(link_2)
+        instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_2.id).first
+        instance_link.serial_id = serial_id
+        instance_link.save
       end
 
       it 'removes links with instances_link with old serial_ids' do
         subject.remove_unused_links(deployment_model)
         links = Bosh::Director::Models::Links::Link.all
         expect(links.first.link_content).to eq('{"foo": "bar"}')
-      end
-    end
-
-    context 'keeps all active links related objects' do
-      it 'leaves providers, provider_intents, consumers, consumer_intents, links with instances_link with current serial_ids' do
-        subject.remove_unused_links(deployment_model)
-
       end
     end
   end

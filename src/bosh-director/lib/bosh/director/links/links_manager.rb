@@ -124,9 +124,7 @@ module Bosh::Director::Links
         intent.type = link_type
       end
 
-      if intent.serial_id != @serial_id
-        intent.serial_id = @serial_id
-      end
+      intent.serial_id = @serial_id
       intent.save
     end
 
@@ -233,18 +231,20 @@ module Bosh::Director::Links
 
       instance_model = instance.model
       consumers.each do |consumer|
+        next if consumer.serial_id != instance.deployment_model.links_serial_id
         consumer.intents.each do |consumer_intent|
           next if consumer_intent.serial_id != instance.deployment_model.links_serial_id
-          consumer_intent.links.each do |link|
-            instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: link.id).first
-            if instance_link.nil?
-              instance_model.add_link(link)
-            end
-            instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: link.id).first
-            if instance_link.serial_id != @serial_id
-              instance_link.serial_id = @serial_id
-              instance_link.save
-            end
+          next if consumer_intent.links.empty?
+
+          newest_link = Bosh::Director::Models::Links::Link.where(link_consumer_intent_id: consumer_intent.id).order(Sequel.desc(:id)).first
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: newest_link.id).first
+          if instance_link.nil?
+            instance_model.add_link(newest_link)
+            instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: newest_link.id).first
+          end
+          if instance_link.serial_id != @serial_id
+            instance_link.serial_id = @serial_id
+            instance_link.save
           end
         end
       end
@@ -271,14 +271,13 @@ module Bosh::Director::Links
       serial_id = deployment_model.links_serial_id
 
       #TODO LINKS: we are not filtering out disks, currently deleting all providers which are not associated with current serial_id
-      Bosh::Director::Models::Links::LinkProvider.where(deployment: deployment_model).each do |provider|
+      deployment_model.link_providers.each do |provider|
         provider.intents.each do |provider_intent|
           provider_intent.delete unless provider_intent.serial_id == serial_id
         end
         unless provider.serial_id == serial_id
           provider.delete
         end
-
       end
 
       deployment_model.link_consumers.each do |consumer|
@@ -286,16 +285,16 @@ module Bosh::Director::Links
         consumer.intents.each do |consumer_intent|
           if consumer_intent.serial_id == serial_id
             Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).each do |link|
-              instances_links = Bosh::Director::Models::Links::InstancesLink.where(link_id: link.id)
+              instances_links = Bosh::Director::Models::Links::InstancesLink.where(link_id: link.id, serial_id: consumer_intent.serial_id)
               if instances_links.count == 0
                 link.delete
               end
             end
           else
-            consumer_intent.delete
+            consumer_intent.destroy
           end
         end
-        consumer.delete unless consumer.serial_id == serial_id
+        consumer.destroy unless consumer.serial_id == serial_id
       end
       #TODO LINKS: make sure there are no expired links left around, by examining the instances_link table
 

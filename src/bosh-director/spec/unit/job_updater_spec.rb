@@ -49,6 +49,8 @@ module Bosh::Director
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       context 'when job is up to date' do
+        let(:serial_id) { 64 }
+        let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
         let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
@@ -61,8 +63,27 @@ module Bosh::Director
           allow(instance_plan).to receive(:changes) { [] }
           allow(instance_plan).to receive(:persist_current_spec)
           allow(instance_plan).to receive(:instance).and_return(needed_instance)
-          allow(needed_instance).to receive(:update_variable_set)
           [instance_plan]
+        end
+        let(:links_manager_factory) do
+          instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
+            expect(double).to receive(:create_manager).and_return(links_manager)
+          end
+        end
+
+        let(:links_manager) do
+          instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+            allow(double).to receive(:resolve_deployment_links)
+          end
+        end
+
+        let(:instance_model) { Bosh::Director::Models::Instance.make() }
+
+        before do
+          allow(needed_instance).to receive(:instance_group_name).and_return('instance-group-name')
+          allow(needed_instance).to receive(:model).and_return(instance_model)
+          allow(needed_instance).to receive(:update_variable_set)
+          allow(needed_instance).to receive(:deployment_model).and_return(deployment_model)
         end
 
         it 'should not begin the updating job event stage' do
@@ -163,9 +184,24 @@ module Bosh::Director
       end
 
       context 'when job needs to be updated' do
+        let(:serial_id) { 64 }
+        let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
         let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
         let(:changed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (2)") }
         let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: nil, index: 1, model: canary_model) }
+
+        let(:links_manager_factory) do
+          instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
+            expect(double).to receive(:create_manager).and_return(links_manager)
+          end
+        end
+
+        let(:links_manager) do
+          instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+            allow(double).to receive(:bind_links_to_instance)
+          end
+        end
+
         let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: nil, index: 2, model: changed_instance_model) }
         let(:unchanged_instance) do
           instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: nil, index: 3)
@@ -203,11 +239,19 @@ module Bosh::Director
           allow(plan).to receive(:changes) { [] }
           allow(plan).to receive(:persist_current_spec)
           allow(plan).to receive(:instance).and_return(unchanged_instance)
-          allow(unchanged_instance).to receive(:update_variable_set)
           plan
         end
 
+        let(:instance_model) { Bosh::Director::Models::Instance.make() }
+
         let(:needed_instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
+
+        before do
+          allow(unchanged_instance).to receive(:update_variable_set)
+          allow(unchanged_instance).to receive(:instance_group_name).and_return('instance-group-name')
+          allow(unchanged_instance).to receive(:model).and_return(instance_model)
+          allow(unchanged_instance).to receive(:deployment_model).and_return(deployment_model)
+        end
 
         it 'should update changed job instances with canaries' do
           expect(canary_updater).to receive(:update).with(canary_plan, canary: true)

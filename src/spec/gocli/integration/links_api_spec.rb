@@ -646,6 +646,18 @@ describe 'links api', type: :integration do
         expect(get_links).to match_array(expected_response)
       end
     end
+
+    context 'when redeploying with change to provider instances' do
+      it 'should remove the old link and make a new one' do
+        manifest_hash['instance_groups'][0]['instances'] = 2
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        links = get_links
+        expect(links.count).to eq(1)
+        expect(links.first['id']).to eq(2)
+      end
+    end
   end
 
   context 'when doing POST request to create link' do
