@@ -215,7 +215,7 @@ module Bosh::Director
             end
           end
 
-          packages = Models::Package.where(fingerprint: package_meta['fingerprint']).all
+          packages = Models::Package.where(fingerprint: package_meta['fingerprint']).order(:sha1).all
 
           if packages.empty?
             new_packages << package_meta
