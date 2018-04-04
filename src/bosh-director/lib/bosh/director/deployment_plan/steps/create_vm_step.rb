@@ -142,7 +142,8 @@ module Bosh::Director
           vm_options[:cid] = vm_cid
           vm_options[:created_at] = Time.now
           vm_options[:stemcell_api_version] = stemcell_api_version
-          Models::Vm.create(vm_options)
+          vm_model = Models::Vm.create(vm_options)
+          vm_model
         rescue => e
           @logger.error("error creating vm: #{e.message}")
           if vm_cid

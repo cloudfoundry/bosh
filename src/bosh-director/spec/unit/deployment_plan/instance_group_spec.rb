@@ -898,33 +898,60 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#instance_plans_needing_shutdown' do
-    let(:instance_plan_instance) { instance_double(Instance, state: 'started') }
+  describe '#unignored_instance_plans_needing_duplicate_vm' do
+    let(:instance_plan_instance) { instance_double(BD::DeploymentPlan::Instance, vm_created?: true, state: 'started') }
     let(:instance_plan) do
-      instance_double(InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true)
+      instance_double(BD::DeploymentPlan::InstancePlan, instance: instance_plan_instance, new?: false, needs_duplicate_vm?: true, should_be_ignored?: false)
+    end
+    let(:instance_plan_sorter) { instance_double(BD::DeploymentPlan::InstancePlanSorter, sort: [instance_plan]) }
+
+    before do
+      allow(BD::DeploymentPlan::InstancePlanSorter).to receive(:new).and_return(instance_plan_sorter)
+    end
+
+    context 'when the plan has a created instance and needs shutting down' do
+      it 'selects the instance plan' do
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to eq([instance_plan])
+      end
     end
 
     context 'when instance group contains detached instance plan' do
-      let(:instance_plan_instance) { instance_double(Instance, state: 'detached') }
+      before do
+        allow(instance_plan_instance).to receive(:state).and_return('detached')
+      end
 
       it 'should filter detached instance plans' do
-        expect(subject.instance_plans_needing_shutdown).to eq([])
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
+      end
+    end
+
+    context 'when the instance plan should be ignored' do
+      before do
+        allow(instance_plan).to receive(:should_be_ignored?).and_return(true)
+      end
+
+      it 'should not be considered for hot swap' do
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
     context 'when a new instance is added to a deployment' do
-      let(:instance_plan) { instance_double(InstancePlan, new?: true, needs_shutting_down?: true) }
+      before do
+        allow(instance_plan).to receive(:new?).and_return(true)
+      end
 
       it 'should not be considered for hot swap' do
-        expect(subject.instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
     context 'when the instance does not need shutting down' do
-      let(:instance_plan) { instance_double(InstancePlan, new?: false, needs_shutting_down?: false) }
+      before do
+        allow(instance_plan).to receive(:needs_duplicate_vm?).and_return(false)
+      end
 
       it 'should not be considered for hot swap' do
-        expect(subject.instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
   end

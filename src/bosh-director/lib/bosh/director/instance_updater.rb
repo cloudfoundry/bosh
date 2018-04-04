@@ -105,6 +105,7 @@ module Bosh::Director
         end
 
         recreated = false
+        deleted_vm = false
 
         instance_model = instance_plan.instance.model
 
@@ -112,40 +113,49 @@ module Bosh::Director
           new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
 
           @logger.debug('Failed to update in place. Recreating VM')
-          unless instance_plan.unresponsive_agent?
+          if instance_plan.unresponsive_agent?
+            DeploymentPlan::Steps::DeleteVmStep
+              .new(true, false, Config.enable_virtual_delete_vms)
+              .perform(instance_report)
+            deleted_vm = true
+          else
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
             DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
           end
+
           tags = instance_plan.tags
 
           disks = instance_model.active_persistent_disks.collection
                                 .map(&:model)
                                 .map(&:disk_cid).compact
 
-          if instance_plan.should_hot_swap?
+          if instance_plan.should_hot_swap? && instance_model.vms.count > 1
             old_vm = instance_report.vm
             instance_report.vm = new_vm
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
-            DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report)
+            DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report) unless deleted_vm
+
+            instance_report.vm = instance_model.active_vm
+            if instance_plan.needs_disk?
+              DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
+              DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
+            end
           else
-            DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms)
-                                               .perform(instance_report)
+            unless deleted_vm
+              DeploymentPlan::Steps::DeleteVmStep
+                .new(true, false, Config.enable_virtual_delete_vms)
+                .perform(instance_report)
+              deleted_vm = true
+            end
             @vm_creator.create_for_instance_plan(instance_plan, @ip_provider, disks, tags)
           end
 
           recreated = true
         end
 
-        instance_report.vm = instance_model.active_vm
+        instance_plan.release_obsolete_network_plans(@ip_provider) if deleted_vm
 
-        if instance_plan.should_hot_swap?
-          if instance_plan.needs_disk?
-            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
-            DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
-          end
-        else
-          instance_plan.release_obsolete_network_plans(@ip_provider)
-        end
+        instance_report.vm = instance_model.active_vm
 
         update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)

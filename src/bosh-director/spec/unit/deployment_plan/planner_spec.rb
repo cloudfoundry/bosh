@@ -154,7 +154,7 @@ module Bosh::Director
           expect(planner.vm_resources_cache).to be_instance_of(VmResourcesCache)
         end
 
-        describe '#instance_plans_with_hot_swap_and_needs_shutdown' do
+        describe '#instance_plans_with_hot_swap_and_needs_duplicate_vm' do
           before { subject.add_instance_group(instance_group) }
           let(:instance_plan) { instance_double(InstancePlan) }
           let(:should_hot_swap?) { true }
@@ -166,24 +166,24 @@ module Bosh::Director
               service?: true,
               errand?: false,
               should_hot_swap?: should_hot_swap?,
-              instance_plans_needing_shutdown: [instance_plan],
+              unignored_instance_plans_needing_duplicate_vm: [instance_plan],
             )
           end
 
           it 'should return instance groups that are duplicate-and-replace-vm enabled' do
-            expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+            expect(subject.instance_plans_with_hot_swap_and_needs_duplicate_vm).to eq([instance_plan])
           end
 
           context 'when no instance groups have duplicate-and-replace-vm enabled' do
             let(:should_hot_swap?) { false }
 
             it 'should return empty array' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+              expect(subject.instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
             end
           end
         end
 
-        describe '#skipped_instance_plans_with_hot_swap_and_needs_shutdown' do
+        describe '#skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm' do
           before { subject.add_instance_group(instance_group) }
           let(:instance_plan) { instance_double(InstancePlan) }
           let(:should_hot_swap?) { false }
@@ -197,12 +197,12 @@ module Bosh::Director
               errand?: false,
               should_hot_swap?: should_hot_swap?,
               hot_swap?: hot_swap?,
-              instance_plans_needing_shutdown: [instance_plan],
+              unignored_instance_plans_needing_duplicate_vm: [instance_plan],
             )
           end
 
           it 'returns instances that want duplicate-and-replace-vm but cannot be' do
-            expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+            expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to eq([instance_plan])
           end
 
           context 'when instance_group does not want duplicate-and-replace-vm' do
@@ -210,7 +210,7 @@ module Bosh::Director
             let(:hot_swap?) { false }
 
             it 'should return empty array' do
-              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
             end
           end
 
@@ -219,7 +219,7 @@ module Bosh::Director
             let(:hot_swap?) { true }
 
             it 'should return empty array' do
-              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
             end
           end
         end

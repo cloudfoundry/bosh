@@ -66,7 +66,7 @@ module Bosh
           @changes << :cloud_properties if instance.cloud_properties_changed?
           @changes << :stemcell if stemcell_changed?
           @changes << :env if env_changed?
-          @changes << :network if networks_changed?
+          @changes << :network if networks_changed? || network_settings_changed?
           @changes << :packages if packages_changed?
           @changes << :persistent_disk if persistent_disk_changed?
           @changes << :configuration if configuration_changed?
@@ -139,6 +139,11 @@ module Bosh
             changed = true
           end
 
+          changed
+        end
+
+        def network_settings_changed?
+          changed = false
           old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
           new_network_settings = network_settings_hash
 
@@ -151,7 +156,8 @@ module Bosh
             @instance.desired_variable_set,
           )
 
-          if network_settings_changed?(interpolated_old_network_settings, interpolated_new_network_settings)
+          if interpolated_old_network_settings != {} &&
+             remove_dns_record_name_from_network_settings(interpolated_old_network_settings) != interpolated_new_network_settings
             @logger.debug(
               "#{__method__} network settings changed FROM: #{old_network_settings} " \
               "TO: #{new_network_settings} on instance #{@existing_instance}",
@@ -277,6 +283,10 @@ module Bosh
         end
 
         def needs_shutting_down?
+          obsolete? || recreate_for_non_network_reasons? || networks_changed? || network_settings_changed?
+        end
+
+        def needs_duplicate_vm?
           obsolete? || recreate_for_non_network_reasons? || networks_changed?
         end
 
@@ -348,11 +358,6 @@ module Bosh
 
         private
 
-        def network_settings_changed?(old_network_settings, new_network_settings)
-          return false if old_network_settings == {}
-          remove_dns_record_name_from_network_settings(old_network_settings) != new_network_settings
-        end
-
         def remove_dns_record_name_from_network_settings(network_settings)
           return network_settings if network_settings.nil?
 
@@ -375,12 +380,14 @@ module Bosh
         end
 
         def stemcell_changed?
-          if @existing_instance && @instance.stemcell.name != @existing_instance.spec_p('stemcell.name')
+          if @existing_instance&.spec_p('stemcell.name') &&
+             @instance.stemcell.name != @existing_instance.spec_p('stemcell.name')
             log_changes(__method__, @existing_instance.spec_p('stemcell.name'), @instance.stemcell.name, @existing_instance)
             return true
           end
 
-          if @existing_instance && @instance.stemcell.version != @existing_instance.spec_p('stemcell.version')
+          if @existing_instance&.spec_p('stemcell.version') &&
+             @instance.stemcell.version != @existing_instance.spec_p('stemcell.version')
             log_changes(
               __method__,
               "version: #{@existing_instance.spec_p('stemcell.version')}",

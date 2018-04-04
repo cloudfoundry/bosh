@@ -10,7 +10,7 @@ module Bosh::Director
         let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
 
         let(:swap_instance_plan) { instance_double(DeploymentPlan::InstancePlan) }
-        let(:instance_plans_with_hot_swap_and_needs_shutdown) { [swap_instance_plan] }
+        let(:instance_plans_with_hot_swap_and_needs_duplicate_vm) { [swap_instance_plan] }
 
         let(:instance0_plan) { instance_double(DeploymentPlan::InstancePlan) }
         let(:instance1_plan) { instance_double(DeploymentPlan::InstancePlan) }
@@ -26,7 +26,7 @@ module Bosh::Director
 
         let(:deployment_plan) do
           instance_double(DeploymentPlan::Planner,
-            instance_plans_with_hot_swap_and_needs_shutdown: instance_plans_with_hot_swap_and_needs_shutdown,
+            instance_plans_with_hot_swap_and_needs_duplicate_vm: instance_plans_with_hot_swap_and_needs_duplicate_vm,
             instance_plans_with_missing_vms: instance_plans_with_missing_vms,
             ip_provider: ip_provider,
             availability_zones: [

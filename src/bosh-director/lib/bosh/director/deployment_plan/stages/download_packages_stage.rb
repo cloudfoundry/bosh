@@ -10,7 +10,7 @@ module Bosh::Director
         end
 
         def perform
-          hotswap_instance_plans = @deployment_plan.instance_plans_with_hot_swap_and_needs_shutdown
+          hotswap_instance_plans = @deployment_plan.instance_plans_with_hot_swap_and_needs_duplicate_vm
           instance_plans_missing_vms = @deployment_plan.instance_plans_with_missing_vms
           instance_plans_needing_packages = hotswap_instance_plans + instance_plans_missing_vms
 
