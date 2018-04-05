@@ -106,7 +106,6 @@ module Bosh::Director
             ])
             allow(deployment_planner).to receive(:cloud_configs).and_return([cloud_config])
             allow(deployment_planner).to receive(:runtime_configs).and_return(runtime_configs)
-            allow(deployment_planner).to receive(:link_spec).and_return(link_spec)
           end
 
           it 'updates the release version on the deployment to be the ones from the provided manifest', ENV do
