@@ -714,8 +714,8 @@ jobs:
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
-          tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
-          annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
+          tag: bosh-src-with-bumped-version-tag/tag-name
+          annotate: bosh-src-with-bumped-version-tag/annotate-msg
 
 resources:
   - name: bosh-src
