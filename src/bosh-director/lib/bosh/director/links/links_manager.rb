@@ -270,7 +270,6 @@ module Bosh::Director::Links
     def remove_unused_links(deployment_model)
       serial_id = deployment_model.links_serial_id
 
-      #TODO LINKS: we are not filtering out disks, currently deleting all providers which are not associated with current serial_id
       deployment_model.link_providers.each do |provider|
         provider.intents.each do |provider_intent|
           provider_intent.delete unless provider_intent.serial_id == serial_id
@@ -296,8 +295,6 @@ module Bosh::Director::Links
         end
         consumer.destroy unless consumer.serial_id == serial_id
       end
-      #TODO LINKS: make sure there are no expired links left around, by examining the instances_link table
-
     end
 
     def resolve_consumer_intent(consumer_intent, global_use_dns_entry, dry_run)

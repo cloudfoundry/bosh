@@ -2562,6 +2562,11 @@ describe Bosh::Director::Links::LinksManager do
           link_content: '{}'
         )
 
+        instance_model.add_link(link_1)
+        instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_1.id).first
+        instance_link.serial_id = serial_id - 1
+        instance_link.save
+
         provider_2 = Bosh::Director::Models::Links::LinkProvider.find_or_create(
           deployment: deployment_model,
           instance_group: 'ig1',
@@ -2598,6 +2603,12 @@ describe Bosh::Director::Links::LinksManager do
         links = Bosh::Director::Models::Links::Link.all
         expect(links.first.link_content).to eq('{"foo": "bar"}')
       end
+
+      it 'removes instances_links with old serial_ids' do
+        subject.remove_unused_links(deployment_model)
+        expect(Bosh::Director::Models::Links::InstancesLink.count).to eq(1)
+      end
+
     end
   end
 end
