@@ -13,6 +13,7 @@ RUN \
     sudo \
     uidmap \
     ulogd \
+    xfsprogs \
     zip \
   && \
   apt-get clean
