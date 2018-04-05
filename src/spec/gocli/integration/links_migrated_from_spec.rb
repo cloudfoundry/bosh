@@ -192,7 +192,9 @@ describe 'Links', type: :integration do
         response = get_link_providers
         expect(response).to eq(provided_link_migrated_response)
         consumer_response = get_link_consumers
-        expect(consumer_response).to eq(consumed_link_migrated_response)
+        expect(consumer_response.count).to eq(2)
+        expect(consumer_response).to include(consumed_link_migrated_response[0])
+        expect(consumer_response).to include(consumed_link_migrated_response[1])
       end
     end
 
