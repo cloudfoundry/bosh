@@ -2,9 +2,6 @@
 
 set -xe
 
-source /etc/profile.d/chruby.sh
-chruby 2.3.1
-
 mkdir -p /opt/garden/bin
 cd /opt/garden
 

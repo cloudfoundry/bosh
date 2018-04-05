@@ -3,15 +3,18 @@
 set -e
 
 permit_device_control() {
-  local devices_mount_info=$(cat /proc/self/cgroup | grep devices)
+  local devices_mount_info
+  devices_mount_info=$(grep devices /proc/self/cgroup)
 
   if [ -z "$devices_mount_info" ]; then
     # cgroups not set up; must not be in a container
     return
   fi
 
-  local devices_subsytems=$(echo $devices_mount_info | cut -d: -f2)
-  local devices_subdir=$(echo $devices_mount_info | cut -d: -f3)
+  local devices_subsytems
+  local devices_subdir
+  devices_subsytems="$(echo "$devices_mount_info" | cut -d: -f2)"
+  devices_subdir="$(echo "$devices_mount_info" | cut -d: -f3)"
 
   if [ "$devices_subdir" = "/" ]; then
     # we're in the root devices cgroup; must not be in a container
@@ -21,26 +24,26 @@ permit_device_control() {
   RUN_DIR=$(mktemp -d)
   cgroup_dir=${RUN_DIR}/devices-cgroup
 
-  if [ ! -e ${cgroup_dir} ]; then
+  if [ ! -e "${cgroup_dir}" ]; then
     # mount our container's devices subsystem somewhere
-    mkdir ${cgroup_dir}
+    mkdir "${cgroup_dir}"
   fi
 
-  if ! mountpoint -q ${cgroup_dir}; then
-    mount -t cgroup -o $devices_subsytems none ${cgroup_dir}
+  if ! mountpoint -q "${cgroup_dir}"; then
+    mount -t cgroup -o "$devices_subsytems" none "${cgroup_dir}"
   fi
 
   # permit our cgroup to do everything with all devices
-  echo a > ${cgroup_dir}${devices_subdir}/devices.allow
+  echo a > "${cgroup_dir}${devices_subdir}/devices.allow"
 
-  umount ${cgroup_dir}
+  umount "${cgroup_dir}"
 }
 
 create_loop_devices() {
   set +e
   amt=${1:-256}
-  for i in $(seq 0 $amt); do
-    if ! mknod -m 0660 /dev/loop$i b 7 $i; then
+  for i in $(seq 0 "$amt"); do
+    if ! mknod -m 0660 "/dev/loop$i" b 7 "$i"; then
       break
     fi
   done
@@ -59,12 +62,14 @@ main() {
   permit_device_control
   create_loop_devices 256
 
-  local mtu=$(cat /sys/class/net/$(ip route get 8.8.8.8|awk '{ print $5 }')/mtu)
-  local tmpdir=$(mktemp -d)
+  local mtu
+  local tmpdir
+  mtu=$(cat "/sys/class/net/$(ip route get 8.8.8.8 | awk '{ print $5 }')"/mtu)
+  tmpdir=$(mktemp -d)
 
   local depot_path=$tmpdir/depot
 
-  mkdir -p $depot_path
+  mkdir -p "$depot_path"
 
   export TMPDIR=$tmpdir
   export TEMP=$tmpdir
@@ -85,12 +90,12 @@ main() {
 
   /opt/garden/bin/gdn server \
     --allow-host-access \
-    --depot $depot_path \
+    --depot "$depot_path" \
     --bind-ip 0.0.0.0 --bind-port 7777 \
-    --mtu $mtu \
+    --mtu "$mtu" \
     --graph=$GARDEN_GRAPH_PATH \
     --graph-cleanup-threshold-in-megabytes=1024 \
     &
 }
 
-main $@
+main "$@"
