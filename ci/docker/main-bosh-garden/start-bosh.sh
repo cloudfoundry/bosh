@@ -26,6 +26,7 @@ main() {
 		-o bosh-lite.yml \
 		-o bosh-lite-runc.yml \
 		-o warden/cpi.yml \
+		-o warden/cpi-grootfs.yml \
 		-v director_name=warden \
 		-v internal_cidr=10.245.0.0/16 \
 		-v internal_gw=10.245.0.1 \
