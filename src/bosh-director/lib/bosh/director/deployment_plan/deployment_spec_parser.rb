@@ -15,7 +15,10 @@ module Bosh::Director
         @deployment_manifest = deployment_interpolated_manifest
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
-        parse_options = {}
+        parse_options = {
+          'is_deploy_action' => !!options['is_deploy_action']
+        }
+
         if options['canaries']
           parse_options['canaries'] = options['canaries']
           @logger.debug("Using canaries value #{options['canaries']} given in a command line.")

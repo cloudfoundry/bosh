@@ -21,7 +21,7 @@ module Bosh::Director
         vm_deleter,
         vm_creator,
         disk_manager,
-        rendered_templates_persistor,
+        rendered_templates_persistor
       )
     end
 
@@ -46,6 +46,7 @@ module Bosh::Director
 
     def update(instance_plan, options = {})
       instance = instance_plan.instance
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(instance.deployment_model.links_serial_id).create_manager
       instance_report = DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance.model.active_vm }
       action, context = get_action_and_context(instance_plan)
       parent_id = add_event(instance.deployment_model.name, action, instance.model.name, context) if instance_plan.changed?
@@ -64,6 +65,7 @@ module Bosh::Director
           # It will update the rendered templates on the VM
           unless Config.enable_nats_delivered_templates && needs_recreate?(instance_plan)
             @rendered_templates_persistor.persist(instance_plan)
+            @links_manager.bind_links_to_instance(instance)
             instance.update_variable_set
           end
 
@@ -95,6 +97,7 @@ module Bosh::Director
                                                .perform(instance_report)
           end
           instance_plan.release_obsolete_network_plans(@ip_provider)
+          @links_manager.bind_links_to_instance(instance)
           instance.update_state
           instance.update_variable_set
           update_dns(instance_plan)
@@ -163,6 +166,7 @@ module Bosh::Director
 
         @rendered_templates_persistor.persist(instance_plan)
         instance.update_variable_set
+        @links_manager.bind_links_to_instance(instance) unless recreated
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,

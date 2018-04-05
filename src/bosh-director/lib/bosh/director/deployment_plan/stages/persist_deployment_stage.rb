@@ -22,7 +22,6 @@ module Bosh::Director
           @deployment_plan.model.manifest_text = @deployment_plan.raw_manifest_text
           @deployment_plan.model.cloud_configs = @deployment_plan.cloud_configs
           @deployment_plan.model.runtime_configs = @deployment_plan.runtime_configs
-          @deployment_plan.model.link_spec = @deployment_plan.link_spec
           @deployment_plan.model.save
         end
       end

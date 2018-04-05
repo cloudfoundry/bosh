@@ -83,7 +83,7 @@ module Bosh::Director
 
       context 'when getting the templates spec of an instance plan errors' do
         before do
-          allow(instance).to receive(:job_name).and_return('my_instance_group')
+          allow(instance).to receive(:instance_group_name).and_return('my_instance_group')
           allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_raise Exception, <<-EOF
 - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
 - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'

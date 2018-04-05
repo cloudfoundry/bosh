@@ -15,12 +15,13 @@ module Bosh::Director
       @logger = Config.logger
       @stemcell_manager = stemcell_manager
       @powerdns_manager = powerdns_manager
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_plan.model.links_serial_id).create_manager
     end
 
     def bind_models(options = {})
       @logger.info('Binding models')
 
-      should_bind_links = options.fetch(:should_bind_links, true)
+      should_bind_links = options.fetch(:is_deploy_action, false) && options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
       should_bind_new_variable_set = options.fetch(:should_bind_new_variable_set, false)
       deployment_options = @deployment_plan.deployment_wide_options
@@ -44,7 +45,7 @@ module Bosh::Director
         instance_repo,
         states_by_existing_instance,
         @deployment_plan.skip_drain,
-         index_assigner,
+        index_assigner,
         network_reservation_repository,
         {
           'recreate' => @deployment_plan.recreate,
@@ -60,6 +61,11 @@ module Bosh::Director
       job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
       desired_instance_groups.each do |desired_instance_group|
+        unless desired_instance_group.migrated_from.to_a.empty?
+          @links_manager.migrate_links_provider_instance_group(@deployment_plan.model, desired_instance_group)
+          @links_manager.migrate_links_consumer_instance_group(@deployment_plan.model, desired_instance_group)
+        end
+
         desired_instances = desired_instance_group.desired_instances
         existing_instances = job_migrator.find_existing_instances(desired_instance_group)
         instance_plans = instance_planner.plan_instance_group_instances(desired_instance_group, desired_instances, existing_instances, @deployment_plan.vm_resources_cache)
@@ -139,33 +145,17 @@ module Bosh::Director
     end
 
     def bind_links
-      links_resolver = DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
+      @links_manager.update_provider_intents_contents(@deployment_plan.model.link_providers, @deployment_plan)
 
-      @deployment_plan.instance_groups.each do |instance_group|
-        links_resolver.add_providers(instance_group)
-      end
+      resolve_link_options = {
+        dry_run: false,
+        global_use_dns_entry: @deployment_plan.use_dns_addresses?
+      }
 
-      @deployment_plan.instance_groups.each do |instance_group|
-        links_resolver.resolve(instance_group)
-      end
-
-      # Find any LinkProvider entries that reference this deployment but are no longer needed, and delete them
-      link_providers = Bosh::Director::Models::LinkProvider.where(deployment: @deployment_plan.model)
-      link_providers.each do |link_provider|
-        result = @deployment_plan.link_providers.select{ |lp| lp.id == link_provider.id }
-        if result.empty?
-          link_provider.destroy
-          # TODO: orphaning any links referring to them.
-        end
-      end
-
-      link_consumers = Bosh::Director::Models::LinkConsumer.where(deployment: @deployment_plan.model)
-      link_consumers.each do |link_consumer|
-        result = @deployment_plan.link_consumers.select{ |lp| lp.id == link_consumer.id }
-        if result.empty?
-          link_consumer.destroy
-          # TODO: deleting any links referring to them.
-        end
+      @links_manager.resolve_deployment_links(@deployment_plan.model, resolve_link_options)
+      if @deployment_plan.model.has_stale_errand_links
+         @deployment_plan.model.has_stale_errand_links = false
+         @deployment_plan.model.save
       end
     end
 

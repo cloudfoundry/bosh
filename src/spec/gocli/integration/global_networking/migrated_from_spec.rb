@@ -162,7 +162,7 @@ describe 'migrated from', type: :integration do
       deploy_from_scratch(legacy: true, manifest_hash: legacy_manifest)
       original_instances = director.instances
       original_disks = current_sandbox.cpi.disk_cids
-      expect(original_instances.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z2'])
+      expect(original_instances.map(&:instance_group_name)).to match_array(['etcd_z1', 'etcd_z2'])
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
       deploy_simple_manifest(manifest_hash: manifest_with_azs)
@@ -185,7 +185,7 @@ describe 'migrated from', type: :integration do
         original_instances, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_instances = director.instances
-        expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd'])
 
         expect(new_instances.map(&:ips).flatten).to match_array(['192.168.1.10', '192.168.2.10'])
         expect(new_instances.map(&:vm_cid)).to match_array(original_instances.map(&:vm_cid))
@@ -214,7 +214,7 @@ describe 'migrated from', type: :integration do
         original_instances, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_instances = director.instances
-        expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd'])
 
         expect(new_instances.map(&:ips)).to match_array(original_instances.map(&:ips))
         expect(new_instances.map(&:vm_cid)).to match_array(original_instances.map(&:vm_cid))
@@ -234,7 +234,7 @@ describe 'migrated from', type: :integration do
         _, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_instances = director.instances
-        expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd'])
 
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to match_array(original_disks)
@@ -256,7 +256,7 @@ describe 'migrated from', type: :integration do
         original_instances, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_instances = director.instances
-        expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd'])
 
         expect(new_instances.map(&:ips).flatten).to match_array(['192.168.1.10', '192.168.2.10'])
         expect(new_instances.map(&:vm_cid)).not_to match_array(original_instances.map(&:vm_cid))
@@ -277,7 +277,7 @@ describe 'migrated from', type: :integration do
         original_instances, original_disks = migrate_legacy_etcd_z1_and_z2
 
         new_instances = director.instances
-        expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd'])
 
         expect(new_instances.map(&:vm_cid)).not_to match_array(original_instances.map(&:vm_cid))
 
@@ -305,14 +305,14 @@ describe 'migrated from', type: :integration do
         original_disks = current_sandbox.cpi.disk_cids
         expect(original_instances.size).to eq(3)
         expect(original_disks.size).to eq(3)
-        expect(original_instances.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z1', 'etcd_z2'])
+        expect(original_instances.map(&:instance_group_name)).to match_array(['etcd_z1', 'etcd_z1', 'etcd_z2'])
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash_with_azs)
         deploy_simple_manifest(manifest_hash: manifest_with_azs)
 
         new_instances = director.instances
         expect(new_instances.size).to eq(2)
-        expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd'])
 
         expect(original_instances.map(&:vm_cid)).to include(*new_instances.map(&:vm_cid))
 
@@ -338,7 +338,7 @@ describe 'migrated from', type: :integration do
 
         new_instances = director.instances
         expect(new_instances.size).to eq(3)
-        expect(new_instances.map(&:job_name)).to eq(['etcd', 'etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd', 'etcd'])
         expect((new_instances.map(&:vm_cid) & original_instances.map(&:vm_cid)).size).to eq 1
 
         new_disks = current_sandbox.cpi.disk_cids
@@ -362,7 +362,7 @@ describe 'migrated from', type: :integration do
 
         original_instances = director.instances
         expect(original_instances.size).to eq(2)
-        expect(original_instances.map(&:job_name)).to match_array(['etcd_z1', 'etcd_z1'])
+        expect(original_instances.map(&:instance_group_name)).to match_array(['etcd_z1', 'etcd_z1'])
         expect(original_instances.map(&:availability_zone)).to match_array(['my-az-1', 'my-az-1'])
 
         new_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
@@ -375,7 +375,7 @@ describe 'migrated from', type: :integration do
         deploy_simple_manifest(manifest_hash: new_manifest_hash)
         new_instances = director.instances
         expect(new_instances.size).to eq(2)
-        expect(new_instances.map(&:job_name)).to match_array(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to match_array(['etcd', 'etcd'])
         expect(new_instances.map(&:availability_zone)).to match_array(['my-az-1', 'my-az-2'])
         instance_in_z1 = original_instances.find { |instance| instance.availability_zone == 'my-az-1' }
         expect(original_instances.map(&:vm_cid)).to include(instance_in_z1.vm_cid)
@@ -399,12 +399,12 @@ describe 'migrated from', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
 
         new_instances = director.instances
-        etcd_instance_1 = new_instances.find { |vm| vm.job_name == 'etcd' && vm.index == '0' }
+        etcd_instance_1 = new_instances.find { |vm| vm.instance_group_name == 'etcd' && vm.index == '0' }
         expect(etcd_instance_1).to_not be_nil
         expect(etcd_instance_1.bootstrap).to be_truthy
         expect(etcd_instance_1.availability_zone).to eq('my-az-1')
 
-        etcd_instance_2 = new_instances.find { |vm| vm.job_name == 'etcd' && vm.index == '1' }
+        etcd_instance_2 = new_instances.find { |vm| vm.instance_group_name == 'etcd' && vm.index == '1' }
         expect(etcd_instance_2).to_not be_nil
         expect(etcd_instance_2.bootstrap).to be_falsey
         expect(etcd_instance_2.availability_zone).to eq('my-az-2')
@@ -446,14 +446,14 @@ describe 'migrated from', type: :integration do
         deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1, cloud_config_hash: cloud_config_hash_with_azs)
         original_instances = director.instances
         expect(original_instances.size).to eq(1)
-        expect(original_instances.map(&:job_name)).to match_array(['etcd_z1'])
+        expect(original_instances.map(&:instance_group_name)).to match_array(['etcd_z1'])
         expect(original_instances.map(&:availability_zone)).to match_array(['my-az-1'])
         original_disks = current_sandbox.cpi.disk_cids
 
         deploy_simple_manifest(manifest_hash: manifest_with_etcd_z2_in_az2_migrated_from_etcd_z1)
         new_instances = director.instances
         expect(new_instances.size).to eq(1)
-        expect(new_instances.map(&:job_name)).to match_array(['etcd_z2'])
+        expect(new_instances.map(&:instance_group_name)).to match_array(['etcd_z2'])
         expect(new_instances.map(&:availability_zone)).to match_array(['my-az-2'])
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to_not match_array(original_disks)
@@ -476,7 +476,7 @@ describe 'migrated from', type: :integration do
         deploy_from_scratch(manifest_hash: manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
         original_instances = director.instances
         expect(original_instances.size).to eq(2)
-        expect(original_instances.map(&:job_name)).to match_array(['etcd_z1', 'etcd'])
+        expect(original_instances.map(&:instance_group_name)).to match_array(['etcd_z1', 'etcd'])
         original_disks = current_sandbox.cpi.disk_cids
 
         instance_group_spec_1['azs'] = ['my-az-1', 'my-az-2']
@@ -488,7 +488,7 @@ describe 'migrated from', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_with_azs)
         new_instances = director.instances
         expect(new_instances.size).to eq(2)
-        expect(new_instances.map(&:job_name)).to match_array(['etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to match_array(['etcd', 'etcd'])
         new_disks = current_sandbox.cpi.disk_cids
         expect(new_disks).to match_array(original_disks)
       end
@@ -529,7 +529,7 @@ describe 'migrated from', type: :integration do
 
         deploy_simple_manifest(manifest_hash: new_manifest_hash)
 
-        db_instances = director.instances.select { |i| i.job_name =='db' }
+        db_instances = director.instances.select { |i| i.instance_group_name =='db' }
         expect(db_instances.map(&:index)).to match_array(['0', '1', '2', '3'])
       end
     end
@@ -581,12 +581,12 @@ describe 'migrated from', type: :integration do
       deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1, cloud_config_hash: cloud_config_hash_with_azs)
       original_instances = director.instances
       expect(original_instances.size).to eq(1)
-      expect(original_instances.map(&:job_name)).to match_array(['etcd_z1'])
+      expect(original_instances.map(&:instance_group_name)).to match_array(['etcd_z1'])
 
       deploy_simple_manifest(manifest_hash: manifest_with_unknown_migrated_from_job)
       new_instances = director.instances
       expect(new_instances.size).to eq(1)
-      expect(new_instances.map(&:job_name)).to match_array(['etcd'])
+      expect(new_instances.map(&:instance_group_name)).to match_array(['etcd'])
       expect(new_instances.map(&:vm_cid)).to_not match_array(original_instances.map(&:vm_cid))
     end
   end
@@ -627,14 +627,14 @@ describe 'migrated from', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_with_azs)
 
       new_instance = director.instances
-      etcd_instance_1 = new_instance.find { |instance| instance.job_name == 'etcd' && instance.index == '0' }
+      etcd_instance_1 = new_instance.find { |instance| instance.instance_group_name == 'etcd' && instance.index == '0' }
       template = etcd_instance_1.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('az=my-az-1')
       expect(template).to include('job_name=etcd')
       expect(template).to include('index=0')
       expect(template).to include('bootstrap=true')
 
-      etcd_instance_2 = new_instance.find { |instance| instance.job_name == 'etcd' && instance.index == '1' }
+      etcd_instance_2 = new_instance.find { |instance| instance.instance_group_name == 'etcd' && instance.index == '1' }
       template = etcd_instance_2.read_job_template('foobar', 'bin/foobar_ctl')
       expect(template).to include('az=my-az-2')
       expect(template).to include('job_name=etcd')

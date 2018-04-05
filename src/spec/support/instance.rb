@@ -1,6 +1,6 @@
 module Bosh::Spec
   class Instance
-    attr_reader :last_known_state, :vm_cid, :agent_id, :resurrection, :ips, :availability_zone, :id, :job_name, :index, :ignore, :bootstrap, :disk_cids
+    attr_reader :last_known_state, :vm_cid, :agent_id, :resurrection, :ips, :availability_zone, :id, :instance_group_name, :index, :ignore, :bootstrap, :disk_cids
 
     def initialize(
       waiter,
@@ -11,7 +11,7 @@ module Bosh::Spec
       ips,
       availability_zone,
       instance_uuid,
-      job_name,
+      instance_group_name,
       index,
       ignore,
       bootstrap,
@@ -28,7 +28,7 @@ module Bosh::Spec
       @ips = ips
       @availability_zone = availability_zone
       @id = instance_uuid
-      @job_name = job_name
+      @instance_group_name = instance_group_name
       @index = index
       @ignore = ignore
       @bootstrap = bootstrap

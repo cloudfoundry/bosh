@@ -135,6 +135,21 @@ module Bosh::Director
           expect(plan.recreate).to be_truthy
         end
 
+        it 'should parse deploy' do
+          expect(planner.is_deploy?).to be_falsey
+
+          plan = described_class.new(
+            planner_attributes,
+            manifest_text,
+            YAML.dump(manifest_text),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            'is_deploy_action' => true,
+            )
+          expect(plan.is_deploy?).to be_truthy
+        end
+
         it 'creates a vm requirements cache' do
           expect(planner.vm_resources_cache).to be_instance_of(VmResourcesCache)
         end
@@ -508,30 +523,6 @@ module Bosh::Director
 
           it 'returns team names from the deployment' do
             expect(subject.team_names).to match_array(%w[team_1 team_3])
-          end
-        end
-
-        context 'links' do
-          describe '#add_link_providers' do
-            let(:link_provider) { instance_double(Models::LinkProvider) }
-            before do
-              subject.add_link_provider link_provider
-            end
-            it 'adds link provider to list of providers' do
-              expect(subject.link_providers.count).to eq(1)
-              expect(subject.link_providers[0]).to eq(link_provider)
-            end
-          end
-
-          describe '#add_link_consumers' do
-            let(:link_consumer) { instance_double(Models::LinkConsumer) }
-            before do
-              subject.add_link_consumer link_consumer
-            end
-            it 'adds link consumer to list of consumers' do
-              expect(subject.link_consumers.count).to eq(1)
-              expect(subject.link_consumers[0]).to eq(link_consumer)
-            end
           end
         end
       end

@@ -9,6 +9,7 @@ module Bosh::Director::Models
     one_to_many :vms
     many_to_many :templates
     many_to_one :variable_set, class: 'Bosh::Director::Models::VariableSet'
+    many_to_many :links, :class => 'Bosh::Director::Models::Links::Link', :join_table => :instances_links
 
     def validate
       validates_presence [:deployment_id, :job, :index, :state]

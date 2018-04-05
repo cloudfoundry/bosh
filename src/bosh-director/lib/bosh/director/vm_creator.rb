@@ -77,6 +77,12 @@ module Bosh::Director
         end
       end
 
+      # first time to update the instance spec json
+      # don't care about the links, since they are not being used yet
+      # add_state_to_model is the only place it is being called here
+      # TODO LINKS
+      # save the association between links and the instance
+
       agenda.steps << DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance)
       agenda.steps << DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan)
       agenda.steps << DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(

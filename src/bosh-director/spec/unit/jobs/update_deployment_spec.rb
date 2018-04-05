@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs
     describe UpdateDeployment do
-      subject(:job) { UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options) }
+      subject(:job) {UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options)}
 
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
@@ -23,9 +23,17 @@ module Bosh::Director
       let(:zone_2) { DeploymentPlan::AvailabilityZone.new('zone_2', {}) }
       let(:logger) { instance_double(Logging::Logger) }
       let(:dns_encoder) { instance_double(DnsEncoder) }
+      let(:resolved_links) { [] }
+      let(:links_manager) do
+        instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+          allow(double).to receive(:get_links_for_instance_group).and_return(resolved_links)
+        end
+      end
+      let(:deployment_name) { 'deployment-name'}
 
       before do
         App.new(config)
+        allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
         allow(job).to receive(:task_id).and_return(task.id)
         allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
       end
@@ -42,7 +50,7 @@ module Bosh::Director
             create_from_manifest: planner,
           )
         end
-        let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: 'dep', manifest: '{}') }
+        let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: deployment_name, manifest: '{}') }
         let(:planner) do
           instance_double(
             DeploymentPlan::Planner,
@@ -118,6 +126,7 @@ module Bosh::Director
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
+              allow(links_manager).to receive(:remove_unused_links)
 
               allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
 
@@ -145,12 +154,25 @@ module Bosh::Director
               job.perform
             end
 
+            it "should perform links cleanup" do
+              expect(links_manager).to receive(:remove_unused_links).with(deployment_model)
+              job.perform
+            end
+
             it 'cleans up old VariableSets' do
               another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
 
               expect(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set])
               job.perform
+            end
+
+            it 'increments links_serial_id in deployment' do
+              old_links_serial_id = deployment_model.links_serial_id
+              job.perform
+              new_links_serial_id = deployment_model.links_serial_id
+
+              expect(new_links_serial_id).to eq(old_links_serial_id + 1)
             end
 
             it 'does not fail if cleaning up old VariableSets raises an error' do
@@ -164,7 +186,7 @@ module Bosh::Director
             end
 
             it 'should bind the models with correct options in the assembler' do
-              expect(assembler).to receive(:bind_models).with({:should_bind_new_variable_set => true})
+              expect(assembler).to receive(:bind_models).with({:is_deploy_action => true, :should_bind_new_variable_set => true})
 
               job.perform
             end
@@ -180,7 +202,7 @@ module Bosh::Director
             end
 
             it 'should bind the models with correct options in the assembler' do
-              expect(assembler).to receive(:bind_models).with({:should_bind_new_variable_set => false})
+              expect(assembler).to receive(:bind_models).with({:is_deploy_action => false, :should_bind_new_variable_set => false})
 
               job.perform
             end
@@ -269,13 +291,27 @@ module Bosh::Director
 
             before do
               allow(errand_instance_group).to receive(:properties).and_return(errand_properties)
-              allow(errand_instance_group).to receive(:resolved_links).and_return(resolved_links)
+              allow(links_manager).to receive(:get_links_for_instance_group).and_return(resolved_links)
             end
 
             it 'versions the variables in errands' do
-              expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, 'deployment-name', variable_set_1)
+              expect(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, deployment_name, variable_set_1)
               expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_1_links, variable_set_1)
               expect(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_2_links, variable_set_1)
+
+              job.perform
+            end
+
+            it 'versions the links in errands' do
+              allow(variables_interpolator).to receive(:interpolate_template_spec_properties).with(errand_properties, deployment_name, variable_set_1)
+              allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_1_links, variable_set_1)
+              allow(variables_interpolator).to receive(:interpolate_link_spec_properties).with(job_2_links, variable_set_1)
+
+              instance_1 = instance_double(Bosh::Director::DeploymentPlan::Instance)
+              instance_2 = instance_double(Bosh::Director::DeploymentPlan::Instance)
+              allow(errand_instance_group).to receive(:instances).and_return([instance_1, instance_2])
+              expect(links_manager).to receive(:bind_links_to_instance).with(instance_1)
+              expect(links_manager).to receive(:bind_links_to_instance).with(instance_2)
 
               job.perform
             end
@@ -302,6 +338,7 @@ module Bosh::Director
                 allow(variable_set_1).to receive(:update)
                 allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
                 allow(variable_set).to receive(:update).with(:deployed_successfully => true)
+                allow(links_manager).to receive(:remove_unused_links)
                 allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
               end
 
@@ -448,6 +485,7 @@ module Bosh::Director
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(variable_set_1).to receive(:update).with(:deployed_successfully => true)
+              allow(links_manager).to receive(:remove_unused_links)
             end
             it 'should mark variable_set.writable to false' do
               expect(variable_set_1).to receive(:update).with({:writable => false})
@@ -563,7 +601,7 @@ Unable to render instance groups for deployment. Errors are:
 
             before do
               allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variable_interpolator)
-              allow(errand_instance_group).to receive(:resolved_links).and_return( {'job_1' => {'link_1' =>{}}} )
+              allow(links_manager).to receive(:get_links_for_instance_group).and_return({'job_1' => {'link_1' =>{}}})
               allow(variable_interpolator).to receive(:interpolate_template_spec_properties).and_raise(errand_properties_error)
               allow(variable_interpolator).to receive(:interpolate_link_spec_properties).and_raise(errand_link_error)
             end

@@ -34,7 +34,7 @@ module Bosh::Director
     def to_hash
       {
         'instance' => {
-          'group' => @instance.job_name,
+          'group' => @instance.instance_group_name,
           'id' => @instance.uuid,
         },
         'errand_name' => @errand_name,

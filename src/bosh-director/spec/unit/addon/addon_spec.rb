@@ -51,6 +51,7 @@ module Bosh::Director
       let(:excludes) { Filter.parse(exclude_spec, :exclude) }
 
       let(:exclude_spec) { nil }
+      let(:include_spec) { nil }
 
       describe '#add_to_deployment' do
         let(:include_spec) { {'deployments' => [deployment_name]} }
@@ -104,12 +105,20 @@ module Bosh::Director
           }
         end
 
+        let(:dummy_with_properties_template) do
+          Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model, spec_json: dummy_with_properties_template_spec.to_json)
+        end
+
+        let(:dummy_with_packages_template) do
+          Bosh::Director::Models::Template.make(name: 'dummy_with_package', release: release_model)
+        end
+
         before do
           release_version_model.add_template(
             Bosh::Director::Models::Template.make(name: 'dummy', release: release_model, spec_json: dummy_template_spec.to_json)
           )
-          release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model, spec_json: dummy_with_properties_template_spec.to_json))
-          release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_package', release: release_model))
+          release_version_model.add_template(dummy_with_properties_template)
+          release_version_model.add_template(dummy_with_packages_template)
 
           release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'dummy', 'version' => '0.2-dev'})
           deployment.add_release(release)
@@ -128,6 +137,7 @@ module Bosh::Director
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
 
@@ -137,27 +147,70 @@ module Bosh::Director
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
 
         context 'when addon applies to instance group' do
+          let(:links_parser) do
+            instance_double(Bosh::Director::Links::LinksParser)
+          end
+
           it 'adds addon to instance group' do
             addon.add_to_deployment(deployment)
             deployment_instance_group = deployment.instance_group(instance_group.name)
             expect(deployment_instance_group.jobs.map(&:name)).to eq(['dummy', 'dummy_with_properties', 'dummy_with_package'])
           end
 
+          it 'parses links using LinksParser' do
+            allow(Bosh::Director::Links::LinksParser).to receive(:new).and_return(links_parser)
+
+            expect(links_parser).to receive(:parse_providers_from_job).with(jobs[0], deployment_model, dummy_with_properties_template, properties, 'foobar')
+            expect(links_parser).to receive(:parse_consumers_from_job).with(jobs[0], deployment_model, dummy_with_properties_template, 'foobar')
+
+            expect(links_parser).to receive(:parse_providers_from_job).with(jobs[1], deployment_model, dummy_with_packages_template, properties, 'foobar')
+            expect(links_parser).to receive(:parse_consumers_from_job).with(jobs[1], deployment_model, dummy_with_packages_template, 'foobar')
+
+            addon.add_to_deployment(deployment)
+          end
+
+          context 'when there is another instance group which is excluded' do
+            let(:exclude_spec) do
+              {'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy'}]}
+            end
+
+            before do
+              instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+              jobs = [{'name' => 'dummy_with_properties', 'release' => 'dummy'}]
+              instance_group = instance_group_parser.parse(Bosh::Spec::Deployments.simple_job(name: 'excluded_ig', jobs: jobs, azs: ['z1']), {})
+              deployment.add_instance_group(instance_group)
+            end
+
+            it 'should not parse providers and consumers for excluded instance group' do
+              links_parser = instance_double(Bosh::Director::Links::LinksParser)
+
+              allow(Bosh::Director::Links::LinksParser).to receive(:new).and_return(links_parser)
+              allow(links_parser).to receive(:parse_providers_from_job)
+              allow(links_parser).to receive(:parse_consumers_from_job)
+
+              expect(links_parser).to_not receive(:parse_providers_from_job).with(anything, anything, anything, anything, 'excluded_ig')
+              expect(links_parser).to_not receive(:parse_consumers_from_job).with(anything, anything, anything, 'excluded_ig')
+
+              addon.add_to_deployment(deployment)
+            end
+          end
+
           context 'when addon job specified does not exist in release' do
             let(:jobs) {
               [
-                  {'name' => 'non-existing-job',
-                   'release' => 'dummy',
-                   'provides_links' => [],
-                   'consumes_links' => []},
-                  {'name' => 'dummy_with_package',
-                   'release' => 'dummy',
-                   'provides_links' => [],
-                   'consumes_links' => []}
+                {'name' => 'non-existing-job',
+                 'release' => 'dummy',
+                 'provides_links' => [],
+                 'consumes_links' => []},
+                {'name' => 'dummy_with_package',
+                 'release' => 'dummy',
+                 'provides_links' => [],
+                 'consumes_links' => []}
               ]
             }
 
@@ -211,81 +264,6 @@ module Bosh::Director
               addon.add_to_deployment(deployment)
             end
           end
-
-          context 'when the addon job has links' do
-            let(:consumed_links_from_manifest) {
-              {
-                'consumed_links_4' => {'from' => 'whatever_link_1'},
-              }
-            }
-
-            let(:provided_links_from_manifest) {
-              {
-                'provided_links_2' => {'as' => 'whatever_link_2', 'shared' => true},
-              }
-            }
-
-            let(:jobs) {
-              [
-                {'name' => 'dummy_with_properties',
-                 'release' => 'dummy',
-                 'provides_links' => provided_links_from_manifest.to_a,
-                 'consumes_links' => consumed_links_from_manifest.to_a,
-                 'properties' => {'job' => 'properties'}
-                }
-              ]
-            }
-
-            it 'adds correct provides/consumes links info from the release and the manifest to the job' do
-              expect(instance_group).to(receive(:add_job)) do |added_job|
-                expect(added_job.provides_link_info(instance_group.name, 'provided_links_1')).to eq({'name' => 'provided_links_1', 'type' => 'type_1'})
-                expect(added_job.provides_link_info(instance_group.name, 'provided_links_2')).to eq({'name' => 'provided_links_2', 'type'=>'type_2', 'as' => 'whatever_link_2', 'shared' =>true})
-                expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_3')).to eq({'name'=>'consumed_links_3', 'type'=>'type_3'})
-                expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_4')).to eq({'name'=>'consumed_links_4', 'type'=>'type_4', 'from' => 'whatever_link_1'})
-              end
-
-              addon.add_to_deployment(deployment)
-            end
-
-            context 'when there are multiple versions of the same release' do
-              let(:release_version_model_3) { Bosh::Director::Models::ReleaseVersion.make(version: '0.3-dev', release: release_model) }
-
-              let(:dummy_with_properties_template_spec_version_3) do
-                {
-                  'provides' => [
-                    {
-                      'name' => 'provided_links_v3_1',
-                      'type' => 'type_v3_1'
-                    }
-                  ],
-                  'consumes' => [
-                    {
-                      'name' => 'consumed_links_v3_3',
-                      'type' => 'type_v3_3'
-                    }
-                  ]
-                }
-              end
-
-              before do
-                release_version_model_3.add_template(Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model, spec_json: dummy_with_properties_template_spec_version_3.to_json))
-              end
-
-              it 'should ONLY add templates from the specified release version' do
-                expect(instance_group).to(receive(:add_job)) do |added_job|
-                  expect(added_job.provides_link_info(instance_group.name, 'provided_links_1')).to eq({'name' => 'provided_links_1', 'type' => 'type_1'})
-                  expect(added_job.provides_link_info(instance_group.name, 'provided_links_2')).to eq({'name' => 'provided_links_2', 'type'=>'type_2', 'as' => 'whatever_link_2', 'shared' =>true})
-                  expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_3')).to eq({'name'=>'consumed_links_3', 'type'=>'type_3'})
-                  expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_4')).to eq({'name'=>'consumed_links_4', 'type'=>'type_4', 'from' => 'whatever_link_1'})
-
-                  expect(added_job.provides_link_info(instance_group.name, 'provided_links_v3_1')).to eq({})
-                  expect(added_job.consumes_link_info(instance_group.name, 'consumed_links_v3_3')).to eq({})
-                end
-
-                addon.add_to_deployment(deployment)
-              end
-            end
-          end
         end
 
         context 'when the addon has deployments in include and jobs in exclude' do
@@ -295,6 +273,7 @@ module Bosh::Director
           it 'adds filtered jobs only' do
             expect(instance_group).not_to receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
 
@@ -304,6 +283,7 @@ module Bosh::Director
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
             addon.add_to_deployment(deployment)
+            expect(deployment_model.release_versions).to be_empty
           end
         end
       end
@@ -505,6 +485,22 @@ module Bosh::Director
                 expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
               end
             end
+          end
+        end
+      end
+
+      describe '#releases' do
+        it 'should only return unique releases' do
+          expect(addon.releases).to match_array(['dummy'])
+        end
+
+        context 'there are no jobs' do
+          let(:jobs) do
+            []
+          end
+
+          it 'should return an empty array of releases' do
+            expect(addon.releases).to be_empty
           end
         end
       end

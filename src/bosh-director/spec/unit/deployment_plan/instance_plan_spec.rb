@@ -50,7 +50,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment_plan, availability_zone) }
     let(:current_state) { {'current' => 'state', 'job' => instance_group_spec, 'job_state' => job_state} }
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
-    let(:instance) { Instance.create_from_instance_group(instance_group, 1, instance_state, deployment_plan, current_state, availability_zone, logger) }
+    let(:instance) { Instance.create_from_instance_group(instance_group, 1, instance_state, deployment_plan.model, current_state, availability_zone, logger) }
     let(:instance_state) { 'started' }
     let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan, [], logger) }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
@@ -343,7 +343,7 @@ module Bosh::Director::DeploymentPlan
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
 
               allow(mock_instance).to receive_message_chain(:model, :deployment, :name)
-              allow(mock_instance).to receive(:job_name)
+              allow(mock_instance).to receive(:instance_group_name)
               allow(mock_instance).to receive(:current_networks)
               allow(mock_instance).to receive(:availability_zone)
               allow(mock_instance).to receive(:index)

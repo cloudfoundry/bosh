@@ -8,12 +8,30 @@ module Bosh::Director
       using_global_networking?: false,
       skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
       recreate: false,
-      model: BD::Models::Deployment.make,
+      model: deployment_model,
 
     ) }
-    let(:stemcell_manager) { nil }
-    let(:powerdns_manager) { PowerDnsManagerProvider.create }
-    let(:event_log) { Config.event_log }
+
+    let(:deployment_model) {BD::Models::Deployment.make}
+    let(:stemcell_manager) {nil}
+    let(:powerdns_manager) {PowerDnsManagerProvider.create}
+    let(:event_log) {Config.event_log}
+    let(:links_manager_factory) do
+      instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
+        expect(double).to receive(:create_manager).and_return(links_manager)
+      end
+    end
+
+    let(:links_manager) do
+      instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+        allow(double).to receive(:resolve_deployment_links)
+      end
+    end
+
+    before do
+      allow(Bosh::Director::Links::LinksManagerFactory).to receive(:create).and_return(links_manager_factory)
+      allow(links_manager).to receive(:update_provider_intents_contents)
+    end
 
     describe '#bind_models' do
       let(:instance_model) { Models::Instance.make(job: 'old-name') }
@@ -178,109 +196,62 @@ module Bosh::Director
         end
 
         context 'links binding' do
-          let(:links_resolver) { double(DeploymentPlan::LinksResolver) }
+          let(:resolver_options) {{dry_run: false, global_use_dns_entry: boolean}}
+
+          let(:provider) do
+            Models::Links::LinkProvider.make(
+              deployment: deployment_model,
+              instance_group: 'foo-ig',
+              name: 'foo-provider',
+              type: 'job'
+            )
+          end
+
+          let(:provider_intent) do
+            Models::Links::LinkProviderIntent.make(
+              :link_provider => provider,
+              :original_name => 'link_original_name_1',
+              :name => 'link_name_1',
+              :type => 'link_type_1',
+              :shared => true,
+              :consumable => true,
+              :content => '{}',
+              :metadata => {'mapped_properties' => {'a' => 'foo'}}.to_json
+            )
+          end
+
+          let(:link_providers) do
+            [provider]
+          end
 
           before do
-            allow(DeploymentPlan::LinksResolver).to receive(:new).with(deployment_plan, logger).and_return(links_resolver)
-            allow(links_resolver).to receive(:add_providers)
+            allow(deployment_model).to receive(:link_providers).and_return(link_providers)
           end
 
           it 'should bind links by default' do
-            expect(links_resolver).to receive(:resolve).with(instance_group_1)
-            expect(links_resolver).to receive(:resolve).with(instance_group_2)
+            expect(links_manager).to receive(:update_provider_intents_contents).with(link_providers, deployment_plan).ordered
+            expect(links_manager).to receive(:resolve_deployment_links).with(deployment_plan.model, resolver_options).ordered
 
-            assembler.bind_models
+            assembler.bind_models(is_deploy_action: true)
           end
 
           it 'should skip links binding when should_bind_links flag is passed as false' do
-            expect(links_resolver).to_not receive(:resolve)
+            expect(links_manager).to_not receive(:update_provider_intents_contents)
+            expect(links_manager).to_not receive(:resolve_deployment_links)
 
             assembler.bind_models({:should_bind_links => false})
           end
 
-          it 'should clean up unreferenced link_providers after binding' do
-            Models::LinkProvider.create(
-              name: 'old',
-              deployment: deployment_plan.model,
-              instance_group: 'ig-1',
-              link_provider_definition_type: 'creds',
-              link_provider_definition_name: 'login',
-              consumable: true,
-              shared: false,
-              content: '{"user":"bob","password":"jim"}',
-              owner_object_type: 'Job',
-              owner_object_name: 'oldjob'
-            )
+          context 'when the links are stale' do
+            before do
+              deployment_model.has_stale_errand_links = true
+            end
 
-            expect(links_resolver).to receive(:resolve).with(instance_group_1)
-            expect(links_resolver).to receive(:resolve).with(instance_group_2)
-            allow(deployment_plan).to receive(:link_providers).and_return([])
+            it 'should clear the errand links stale flag in the end' do
+              assembler.bind_models(is_deploy_action: true)
 
-            expect(Models::LinkProvider.count).to eq(1)
-            assembler.bind_models
-            expect(Models::LinkProvider.all).to be_empty
-          end
-
-          it 'should clean up unreferenced link_consumers after binding' do
-            Models::LinkConsumer.create(
-              deployment: deployment_plan.model,
-              instance_group: 'ig-1',
-              owner_object_type: 'Job',
-              owner_object_name: 'oldjob'
-            )
-
-            new_consumer = Models::LinkConsumer.create(
-              deployment: deployment_plan.model,
-              instance_group: 'ig-1',
-              owner_object_type: 'Job',
-              owner_object_name: 'newjob'
-            )
-
-            expect(links_resolver).to receive(:resolve).with(instance_group_1)
-            expect(links_resolver).to receive(:resolve).with(instance_group_2)
-            allow(deployment_plan).to receive(:link_consumers).and_return([new_consumer])
-
-            expect(Models::LinkConsumer.count).to eq(2)
-            assembler.bind_models
-            expect(Models::LinkConsumer.count).to eq(1)
-            expect(Models::LinkConsumer.first[:id]).to eq(new_consumer[:id])
-          end
-
-          it 'should only preserve link_providers referenced after binding' do
-            Models::LinkProvider.create(
-              name: 'old',
-              deployment: deployment_plan.model,
-              instance_group: 'ig-1',
-              link_provider_definition_type: 'creds',
-              link_provider_definition_name: 'login',
-              consumable: true,
-              shared: false,
-              content: '{"user":"bob","password":"jim"}',
-              owner_object_type: 'Job',
-              owner_object_name: 'oldjob'
-            )
-
-            new_provider = Models::LinkProvider.create(
-              name: 'new',
-              deployment: deployment_plan.model,
-              instance_group: 'ig-1',
-              link_provider_definition_type: 'creds',
-              link_provider_definition_name: 'login',
-              consumable: true,
-              shared: false,
-              content: '{"user":"jim","password":"bob"}',
-              owner_object_type: 'Job',
-              owner_object_name: 'newjob'
-            )
-
-            expect(links_resolver).to receive(:resolve).with(instance_group_1)
-            expect(links_resolver).to receive(:resolve).with(instance_group_2)
-            allow(deployment_plan).to receive(:link_providers).and_return([new_provider])
-
-            expect(Models::LinkProvider.count).to eq(2)
-            assembler.bind_models
-            expect(Models::LinkProvider.count).to eq(1)
-            expect(Models::LinkProvider.first[:id]).to eq(new_provider[:id])
+              expect(deployment_model.has_stale_errand_links).to be_falsey
+            end
           end
         end
 

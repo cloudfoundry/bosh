@@ -78,8 +78,8 @@ describe 'cli: cloudcheck', type: :integration do
 
       context 'when there is an ignored vm' do
         before do
-          instance_to_ignore =director.instances.select{|instance| instance.job_name == 'foobar' && instance.index == '1'}.first
-          bosh_runner.run("ignore #{instance_to_ignore.job_name}/#{instance_to_ignore.id}", deployment_name: 'simple')
+          instance_to_ignore =director.instances.select{|instance| instance.instance_group_name == 'foobar' && instance.index == '1'}.first
+          bosh_runner.run("ignore #{instance_to_ignore.instance_group_name}/#{instance_to_ignore.id}", deployment_name: 'simple')
         end
 
         it 'does not scan ignored vms and their disks' do

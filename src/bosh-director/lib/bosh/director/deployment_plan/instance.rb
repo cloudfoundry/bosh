@@ -32,6 +32,12 @@ module Bosh::Director
 
       attr_reader :existing_network_reservations
 
+      attr_reader :instance_group_name
+
+      attr_reader :stemcell
+
+      attr_reader :deployment_model
+
       def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, az, logger)
         new(
           instance_group.name,
@@ -48,7 +54,7 @@ module Bosh::Director
         )
       end
 
-      def initialize(job_name,
+      def initialize(instance_group_name,
                      index,
                      virtual_state,
                      merged_cloud_properties,
@@ -63,7 +69,7 @@ module Bosh::Director
         @availability_zone = availability_zone
         @logger = logger
         @deployment_model = deployment_model
-        @job_name = job_name
+        @instance_group_name = instance_group_name
         @stemcell = stemcell
         @env = env
         @compilation = compilation
@@ -93,13 +99,11 @@ module Bosh::Director
         @compilation
       end
 
-      attr_reader :job_name
-
       def to_s
         if @uuid.nil?
-          "#{@job_name}/#{@index}"
+          "#{@instance_group_name}/#{@index}"
         else
-          "#{@job_name}/#{@uuid} (#{@index})"
+          "#{@instance_group_name}/#{@uuid} (#{@index})"
         end
       end
 
@@ -110,21 +114,20 @@ module Bosh::Director
       def bind_new_instance_model
         @model = Models::Instance.create(
           deployment_id: @deployment_model.id,
-          job: @job_name,
+          job: @instance_group_name,
           index: index,
           state: state,
           compilation: @compilation,
           uuid: SecureRandom.uuid,
           availability_zone: availability_zone_name,
           bootstrap: false,
-          variable_set_id: @deployment_model.current_variable_set.id,
+          variable_set_id: @deployment_model.current_variable_set.id
         )
         @uuid = @model.uuid
         @desired_variable_set = @model.variable_set
         @previous_variable_set = @model.variable_set
       end
 
-      attr_reader :stemcell
 
       def stemcell_model
         @stemcell.model_for_az(availability_zone_name)
@@ -133,8 +136,6 @@ module Bosh::Director
       def env
         @env.spec
       end
-
-      attr_reader :deployment_model
 
       # Updates this domain object to reflect an existing instance running on an existing vm
       def bind_existing_instance_model(existing_instance_model)
@@ -221,7 +222,7 @@ module Bosh::Director
       end
 
       def update_description
-        @model.update(job: job_name, index: index)
+        @model.update(job: instance_group_name, index: index)
       end
 
       def mark_as_bootstrap
@@ -304,7 +305,7 @@ module Bosh::Director
 
         conditions = {
           deployment_id: @deployment_model.id,
-          job: @job_name,
+          job: @instance_group_name,
           index: @index,
         }
 

@@ -81,7 +81,7 @@ module Bosh::Director
             instance_double(
               DeploymentPlan::Instance,
               model: instance1_model,
-              job_name: instance1_model.job,
+              instance_group_name: instance1_model.job,
               uuid: instance1_model.uuid,
               index: 1,
               current_job_state: job_state1,
@@ -93,7 +93,7 @@ module Bosh::Director
             instance_double(
               DeploymentPlan::Instance,
               model: instance2_model,
-              job_name: instance2_model.job,
+              instance_group_name: instance2_model.job,
               uuid: instance2_model.uuid,
               index: 2,
               current_job_state: job_state2,
@@ -105,7 +105,7 @@ module Bosh::Director
             instance_double(
               DeploymentPlan::Instance,
               model: instance3_model,
-              job_name: instance3_model.job,
+              instance_group_name: instance3_model.job,
               uuid: instance3_model.uuid,
               index: 3,
               current_job_state: job_state3,
@@ -155,7 +155,7 @@ module Bosh::Director
               instance_double(
                 DeploymentPlan::Instance,
                 model: non_errand_instance_model,
-                job_name: non_errand_instance_model.job,
+                instance_group_name: non_errand_instance_model.job,
                 uuid: non_errand_instance_model.uuid,
                 index: 2,
                 current_job_state: 'running',
@@ -471,6 +471,31 @@ module Bosh::Director
                 .and_return(errand_step)
               returned_errand = subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
               expect(returned_errand.steps[0]).to eq(errand_step)
+            end
+
+            it 'should NOT be a deploy action' do
+              expect(deployment_model.links_serial_id).to eq(0)
+
+              subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
+
+              deployment_model.refresh
+              expect(deployment_model.links_serial_id).to eq(0)
+            end
+          end
+
+          context 'and it has stale errand links' do
+            before do
+              deployment_model.has_stale_errand_links = true
+              deployment_model.save
+            end
+
+            it 'still treats it as a deploy action to resolve links' do
+              expect(deployment_model.links_serial_id).to eq(0)
+
+              subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
+
+              deployment_model.refresh
+              expect(deployment_model.links_serial_id).to eq(1)
             end
           end
 

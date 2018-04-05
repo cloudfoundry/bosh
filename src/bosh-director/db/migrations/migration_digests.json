@@ -131,7 +131,7 @@
   "20171018102040_remove_compilation_local_dns_records": "5bb71074f5dfab23c1caef1a9fb1779190cb76d3",
   "20171030224934_convert_nil_configs_to_empty": "38992699f41df50e7b4b869a9e89a2fd2d8770f2",
   "20171104185823_add_manifest_text_to_deployments": "fbb7a4d05c9e12ad6d1fdf3ec04fc5dccf09cad1",
-  "20171113000000_add_links_api": "f54258df34eae567eb5b4363eb65311aedab4f20",
+  "20171113000000_add_links_api": "ca114291b3d5a7260ffda44b8fbbe8e38229fbf8",
   "20171117230219_add_network_spec_to_vms": "86943d47455e06382190cef6ee6faea71dd1151f",
   "20171201153629_remove_unused_template_columns": "a1853f2f9c44a82717dba7809ae5149789b95d01",
   "20180119183014_add_stemcell_matches": "c01cc3aefbfd865086c839ca794f1235f16932a0",

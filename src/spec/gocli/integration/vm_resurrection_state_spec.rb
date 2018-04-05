@@ -11,8 +11,8 @@ describe 'vm resurrection', type: :integration do
     instance_before_with_index_0 = instances_before_state_switch.find{ |instance| instance.index == '0'}
     instance_before_with_index_1 = instances_before_state_switch.find{ |instance| instance.index == '1'}
 
-    bosh_runner.run("vm resurrection #{instance_before_with_index_0.job_name} #{instance_before_with_index_0.index} disable")
-    bosh_runner.run("vm resurrection #{instance_before_with_index_1.job_name} #{instance_before_with_index_1.id} disable")
+    bosh_runner.run("vm resurrection #{instance_before_with_index_0.instance_group_name} #{instance_before_with_index_0.index} disable")
+    bosh_runner.run("vm resurrection #{instance_before_with_index_1.instance_group_name} #{instance_before_with_index_1.id} disable")
 
     instances_after_state_switch = director.instances
     instance_after_with_index_0 = instances_after_state_switch.find{ |instance| instance.index == '0'}

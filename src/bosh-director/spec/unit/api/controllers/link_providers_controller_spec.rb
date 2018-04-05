@@ -72,57 +72,80 @@ module Bosh::Director
 
         context 'and there are providers in the database' do
           let!(:provider_1) do
-            Models::LinkProvider.create(
-              :name => 'link_name_1',
+            Models::Links::LinkProvider.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
+              :type => 'job',
+              :name => 'job_name_1',
+            )
+            end
+          let!(:provider_intent_1a) do
+            Models::Links::LinkProviderIntent.create(
+              :name => 'link_name_1a',
+              :link_provider => provider_1,
               :shared => true,
               :consumable => true,
-              :link_provider_definition_type => 'link_type_1',
-              :link_provider_definition_name => 'link_original_name_1',
-              :owner_object_type => 'job',
+              :type => 'link_type_1a',
+              :original_name => 'link_original_name_1a',
               :content => 'some link content',
-              :owner_object_name => 'job_name_1',
+            )
+            end
+          let!(:provider_intent_1b) do
+            Models::Links::LinkProviderIntent.create(
+              :name => 'link_name_1b',
+              :link_provider => provider_1,
+              :shared => true,
+              :consumable => true,
+              :type => 'link_type_1b',
+              :original_name => 'link_original_name_1b',
+              :content => 'some link content',
             )
           end
           let!(:provider_2) do
-            Models::LinkProvider.create(
-              :name => 'link_name_2',
+            Models::Links::LinkProvider.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
+              :type => 'job',
+              :name => 'job_name_2',
+            )
+            end
+          let!(:provider_intent_2) do
+            Models::Links::LinkProviderIntent.create(
+              :name => 'link_name_2',
+              :link_provider => provider_2,
               :shared => false,
               :consumable => true,
-              :link_provider_definition_type => 'link_type_2',
-              :link_provider_definition_name => 'link_original_name_2',
-              :owner_object_type => 'job',
+              :type => 'link_type_2',
+              :original_name => 'link_original_name_2',
               :content => 'I have content',
-              :owner_object_name => 'job_name_2',
             )
           end
 
           it 'should return a list of providers for specified deployment' do
             get "/?deployment=#{provider_1.deployment.name}"
             expect(last_response.status).to eq(200)
-            expect(JSON.parse(last_response.body)).to eq([generate_provider_hash(provider_1),generate_provider_hash(provider_2)])
+            expect(JSON.parse(last_response.body)).to eq([generate_provider_hash(provider_intent_1a),generate_provider_hash(provider_intent_1b),generate_provider_hash(provider_intent_2)])
           end
         end
       end
 
       def generate_provider_hash(model)
+        provider = model.link_provider
         {
           'id' => model.id,
           'name' => model.name,
           'shared' => model.shared,
-          'deployment' => model.deployment.name,
-          'link_provider_definition' => {
-            'type' => model.link_provider_definition_type,
-            'name' => model.link_provider_definition_name
-          },
+          'deployment' => provider.deployment.name,
+          'link_provider_definition' =>
+            {
+              'type' => model.type,
+              'name' => model.original_name,
+            },
           'owner_object' => {
-            'type' => model.owner_object_type,
-            'name' => model.owner_object_name,
+            'type' => provider.type,
+            'name' => provider.name,
             'info' => {
-              'instance_group' => model.instance_group,
+              'instance_group' => provider.instance_group,
             }
           }
         }

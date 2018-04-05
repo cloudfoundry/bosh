@@ -85,10 +85,6 @@ module Bosh::Director
 
       attr_accessor :did_change
 
-      attr_reader :link_paths
-
-      attr_reader :resolved_links
-
       def self.parse(plan, instance_group_spec, event_log, logger, parse_options = {})
         parser = InstanceGroupSpecParser.new(plan, event_log, logger)
         parser.parse(instance_group_spec, parse_options)
@@ -108,8 +104,6 @@ module Bosh::Director
         @default_network = {}
 
         @packages = {}
-        @link_paths = {}
-        @resolved_links = {}
         @migrated_from = []
         @availability_zones = []
 
@@ -372,20 +366,6 @@ module Bosh::Director
         needed_instance_plans.reject do |instance_plan|
           instance_plan.instance.vm_created? || instance_plan.instance.state == 'detached'
         end
-      end
-
-      def add_resolved_link(job_name, link_name, link_spec)
-        @resolved_links[job_name] ||= {}
-        @resolved_links[job_name][link_name] = sort_property(link_spec)
-      end
-
-      def link_path(job_name, link_name)
-        @link_paths.fetch(job_name, {})[link_name]
-      end
-
-      def add_link_path(job_name, link_name, link_path)
-        @link_paths[job_name] ||= {}
-        @link_paths[job_name][link_name] = link_path
       end
 
       def compilation?

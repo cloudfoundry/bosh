@@ -16,7 +16,7 @@ module Bosh::Director
       default_network: {}
     ) }
     let(:instance) { instance_double(DeploymentPlan::Instance,
-      job_name: job.name,
+      instance_group_name: job.name,
       model: instance_model,
       availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
       index: 0,

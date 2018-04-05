@@ -267,13 +267,19 @@ module Bosh::Director::Models
 
   Variable.blueprint {}
 
-  LinkProvider.blueprint {}
-
   Vm.blueprint do
     instance { Instance.make }
     cid      { Sham.vm_cid }
     agent_id { Sham.agent_id }
     created_at { Time.now }
+  end
+
+  module Links
+    LinkProvider.blueprint {}
+    LinkProviderIntent.blueprint {}
+    LinkConsumer.blueprint {}
+    LinkConsumerIntent.blueprint {}
+    Link.blueprint {}
   end
 
   module Dns
