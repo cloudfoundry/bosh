@@ -49,6 +49,23 @@ module Bosh::Director
         delete_link_and_cleanup(link)
       end
 
+      def link_address(link_id,azs)
+        link = find_link(link_id)
+        raise Bosh::Director::LinkLookupError, "Could not find the link id #{link_id}" if link.nil?
+
+        result = []
+
+        content = JSON.parse(link.link_content)
+
+        content['instances'].each do |instance|
+          if azs.nil? || azs.include?(instance['az'])
+            result << {'az' => instance['az'], 'address' => instance['address']}
+          end
+        end
+
+        result
+      end
+
       private
 
       def delete_link_and_cleanup(link)

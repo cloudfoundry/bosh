@@ -907,4 +907,13 @@ describe 'links api', type: :integration do
       expect(parsed_body_hash['description']).to eq('Invalid link id: 2')
     end
   end
+
+  context 'when doing GET for link_address' do
+    let(:jobs) { explicit_provider_and_consumer }
+
+    it 'returns link address' do
+      response = get_json('/link_address', 'link_id=1')
+      expect(response['address']).to eq('192.168.1.2')
+    end
+  end
 end
