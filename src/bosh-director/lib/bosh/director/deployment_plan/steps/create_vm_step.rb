@@ -132,7 +132,7 @@ module Bosh::Director
           begin
             cloud = cloud_factory.get(vm_options[:cpi], stemcell_api_version)
             create_vm_obj = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
-            vm_cid = create_vm_obj['vm_cid']
+            vm_cid = create_vm_obj[0]
           rescue Bosh::Clouds::VMCreationFailed => e
             count += 1
             @logger.error("failed to create VM, retrying (#{count})")

@@ -33,24 +33,22 @@ module Bosh::Clouds
     def create_vm(*args)
       cpi_response = @cpi.create_vm(*args)
 
-      response = {}
-      if @cpi_api_version == 2
+      response = []
+      if @cpi_api_version >= 2
         response = cpi_response
       else
-        response['vm_cid'] = cpi_response
+        response << cpi_response
       end
 
       response
     end
 
     def attach_disk(*args)
-      response = {}
       if @cpi_api_version == 2 && args.count == 2
-        args << {'disk_hint' => {}}
+        args << {'disk_hints' => {}}
       end
-      response['device_name'] = @cpi.attach_disk(*args)
 
-      response
+      @cpi.attach_disk(*args)
     end
   end
 end

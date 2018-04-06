@@ -366,8 +366,34 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   describe 'when cpi_version is 2' do
     describe '#create_vm' do
       let(:redacted_network_settings) { nil }
-      let(:cpi_response) { JSON.dump(result: {'vm_cid':'fake-result'}, error: nil, log: 'fake-log') }
-      let(:expected_response) { {"vm_cid"=>"fake-result"} }
+      let(:instance_cid) { 'i-0478554' }
+      let(:networks) {
+        {
+          'private' => {
+            'type' => 'manual',
+            'netmask' => '255.255.255.0',
+            'gateway' => '10.230.13.1',
+            'ip' => '10.230.13.6',
+            'default' => [ 'dns', 'gateway' ],
+            'cloud_properties' => { 'net_id' => 'd29fdb0d-44d8-4e04-818d-5b03888f8eaa' }
+          },
+          'public' => {
+            'type' => 'vip',
+            'ip' => '173.101.112.104',
+            'cloud_properties' => {}
+          }
+        }
+      }
+      let(:disk_hints) {
+        {
+          'system' => '/dev/sda',
+          'ephemeral' => '/dev/sdb',
+          'persistent' => {}
+        }
+      }
+
+      let(:cpi_response) { JSON.dump(result: [instance_cid, networks, disk_hints], error: nil, log: 'fake-log') }
+      let(:expected_response) { [instance_cid, networks, disk_hints] }
 
       it_calls_cpi_method(
         :create_vm,
@@ -387,8 +413,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       )
 
       context 'when network settings hash cloud properties is absent' do
-        let(:expected_response) { {"vm_cid"=>"fake-result"} }
-        let(:cpi_response) { JSON.dump(result: {'vm_cid':'fake-result'}, error: nil, log: 'fake-log') }
         let(:redacted_network_settings) do
           {
             'net' => {
@@ -431,9 +455,28 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     end
 
     describe '#attach_disk' do
-      let(:expected_response) { {'device_name'=>'fake-result'} }
-      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
-      let(:additional_expected_args) {{'disk_hint' => {}}}
+      let(:disk_hints) {
+        {
+          'system' => '/dev/sda',
+          'ephemeral' => '/dev/sdb',
+          'persistent' => {}
+        }
+      }
+      let(:expected_response) {
+        {
+          'system' => '/dev/sda',
+          'ephemeral' => '/dev/sdb',
+          'persistent' => {
+            'vol-3475945' => { 'volume_id' => '3' },
+            'vol-7447851' => { 'path' => '/dev/sdd' },
+          }
+        }
+      }
+      let(:json_object) {
+        expected_response
+      }
+      let(:cpi_response) { JSON.dump(result: json_object, error: nil, log: 'fake-log') }
+      let(:additional_expected_args) { disk_hints }
       it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
     end
 
@@ -441,15 +484,15 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
       let(:expected_response) { 'fake-result' }
 
-      context("#current_vm_id") do
+      context('#current_vm_id') do
         it_calls_cpi_method(:current_vm_id)
       end
 
-      context("#create_stemcell") do
+      context('#create_stemcell') do
         it_calls_cpi_method(:create_stemcell, 'fake-stemcell-image-path', {'cloud' => 'props'})
       end
 
-      context("#delete_stemcell") do
+      context('#delete_stemcell') do
         it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
       end
 
@@ -517,10 +560,11 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
   describe 'when cpi_version is 1' do
     let(:cpi_api_version) { 1 }
-    let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+
     describe '#create_vm' do
+      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
       let(:redacted_network_settings) { nil }
-      let(:expected_response) { {"vm_cid"=>"fake-result"} }
+      let(:expected_response) { ["fake-result"] }
 
       it_calls_cpi_method(
         :create_vm,
@@ -540,7 +584,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       )
 
       context 'when network settings hash cloud properties is absent' do
-        let(:expected_response) { {"vm_cid"=>"fake-result"} }
+        let(:expected_response) { ["fake-result"] }
         let(:redacted_network_settings) do
           {
             'net' => {
@@ -583,7 +627,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     end
 
     describe '#attach_disk' do
-      let(:expected_response) { {'device_name'=>'fake-result'} }
+      let(:expected_response) { nil }
+      let(:cpi_response) { JSON.dump(result: nil, error: nil, log: 'fake-log') }
       it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
     end
 

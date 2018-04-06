@@ -19,13 +19,11 @@ module Bosh
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
         vm_cid = Dummy.instance_method(:create_vm).bind(self).call(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
-        {
-          'vm_cid' => vm_cid,
-          'networks' => [],
-          'disk_hints' => {
-            'persistent' => {},
-          },
-        }
+        [
+          vm_cid,
+          {},
+          {},
+        ]
       end
 
       ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { { vm_cid: String, disk_id: String, disk_hints: Hash } }
@@ -42,7 +40,7 @@ module Bosh
         settings = read_agent_settings(agent_id)
         settings['disks']['persistent'][disk_id] = 'attached'
         write_agent_settings(agent_id, settings)
-        file
+        {persistent: {"#{disk_id}": {path: "#{file}"}}}
       end
 
       def info
