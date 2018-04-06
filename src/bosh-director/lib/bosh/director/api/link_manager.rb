@@ -67,9 +67,10 @@ module Bosh::Director
       # TODO Links: all provider and consumer related functions should be moved to respective managers/controller?
 
       def validate_link_payload(json_payload)
-        # TODO Links: check if Integer validation is required or not?
-        if  json_payload['link_provider_id'].nil? || !(json_payload['link_provider_id'].is_a?(Integer))
-          raise 'Invalid request: `link_provider_id` must be an Integer'
+        if  json_payload['link_provider_id'].nil? || json_payload['link_provider_id'] == ''
+          raise 'Invalid request: `link_provider_id` must be provided'
+        elsif !(json_payload['link_provider_id'].is_a?(String))
+          raise 'Invalid request: `link_provider_id` must be a String'
         elsif json_payload['link_consumer'].nil?
           raise 'Invalid request: `link_consumer` section must be defined'
         elsif json_payload['link_consumer']['owner_object_type'].nil? || json_payload['link_consumer']['owner_object_type'] != 'external'

@@ -34,7 +34,7 @@ module Bosh::Director
       def generate_consumer_hash(model)
         consumer = model.link_consumer
         {
-          :id => model.id,
+          :id => model.id.to_s,
           :name => model.name,
           :optional => model.optional,
           :deployment => consumer.deployment.name,

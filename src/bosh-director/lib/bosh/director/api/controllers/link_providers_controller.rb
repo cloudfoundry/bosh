@@ -34,7 +34,7 @@ module Bosh::Director
       def generate_provider_hash(model)
         provider = model.link_provider
         {
-          :id => model.id,
+          :id => model.id.to_s,
           :name => model.name,
           :shared => model.shared,
           :deployment => provider.deployment.name,

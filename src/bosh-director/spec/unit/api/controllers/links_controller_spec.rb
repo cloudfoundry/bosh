@@ -141,30 +141,29 @@ module Bosh::Director
             it 'raise error for missing link_provider_id' do
               post '/', JSON.generate('{}'), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be an Integer"}')
+              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be provided"}')
             end
             it 'raise error for invalid link_provider_id' do
-              # TODO: Links: check if Integer validation is required or not?
-              post '/', JSON.generate('link_provider_id' => '3'), 'CONTENT_TYPE' => 'application/json'
+              post '/', JSON.generate('link_provider_id' => 3), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be an Integer"}')
+              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be a String"}')
             end
           end
           context 'when link_consumer is invalid' do
             it 'raise error for missing link_consumer' do
-              post '/', JSON.generate('link_provider_id' => 3), 'CONTENT_TYPE' => 'application/json'
+              post '/', JSON.generate('link_provider_id' => '3'), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
               expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer` section must be defined"}')
             end
             it 'raise error for invalid owner_object_name' do
-              post '/', JSON.generate('link_provider_id' => 3, 'link_consumer' => {'owner_object_name' => ''}), 'CONTENT_TYPE' => 'application/json'
+              post '/', JSON.generate('link_provider_id' => '3', 'link_consumer' => {'owner_object_name' => ''}), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
               expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer.owner_object_type` should be \'external\'"}')
             end
           end
 
           context 'when link_provider_id and link_consumer are provided' do
-            let(:provider_id) {42}
+            let(:provider_id) {'42'}
             let!(:payload_json) do
               {
                 'link_provider_id' => provider_id,
@@ -205,7 +204,7 @@ module Bosh::Director
                   serial_id: link_serial_id,
                   )
               end
-              let(:provider_id) {provider_1_intent_1.id}
+              let(:provider_id) {provider_1_intent_1.id.to_s}
 
               shared_examples 'creates consumer and link' do
                 it 'returns links' do
@@ -377,10 +376,10 @@ module Bosh::Director
 
       def generate_link_hash(model)
         {
-          'id' => model.id,
+          'id' => model.id.to_s,
           'name' => model.name,
-          'link_consumer_id' => model[:link_consumer_intent_id],
-          'link_provider_id' => model[:link_provider_intent_id],
+          'link_consumer_id' => model[:link_consumer_intent_id].to_s,
+          'link_provider_id' => model[:link_provider_intent_id].to_s,
           'created_at' => model.created_at.to_s,
         }
       end

@@ -74,7 +74,7 @@ describe 'links api', type: :integration do
 
   let(:provider_response) do
     {
-      'id' => Integer,
+      'id' => String,
       'name' => 'provider',
       'shared' => false,
       'deployment' => 'simple',
@@ -111,7 +111,7 @@ describe 'links api', type: :integration do
 
   def consumer_response(job_name = 'consumer', link_name = 'provider')
     {
-      'id' => Integer,
+      'id' => String,
       'name' => link_name,
       'optional' => false,
       'deployment' => 'simple',
@@ -131,10 +131,10 @@ describe 'links api', type: :integration do
 
   let(:links_response) do
     {
-      'id' => 1,
+      'id' => '1',
       'name' => 'provider',
-      'link_consumer_id' => 1,
-      'link_provider_id' => 1,
+      'link_consumer_id' => '1',
+      'link_provider_id' => '1',
       'created_at' => String
     }
   end
@@ -221,7 +221,7 @@ describe 'links api', type: :integration do
         end
 
         it 'should return the original provider with updated information' do
-          expected_response = [provider_response.merge('id' => 1, 'name' => 'bar')]
+          expected_response = [provider_response.merge('id' => '1', 'name' => 'bar')]
 
           expect(get_link_providers).to match_array(expected_response)
         end
@@ -486,7 +486,7 @@ describe 'links api', type: :integration do
       end
 
       it 'should return a single orphaned link' do
-        expected_response = [ links_response.merge('link_provider_id' => Integer) ]
+        expected_response = [ links_response.merge('link_provider_id' => String) ]
         expect(get_links).to match_array(expected_response)
       end
     end
@@ -526,17 +526,17 @@ describe 'links api', type: :integration do
         expected_response = [
           links_response.merge(
             {
-              'id' => Integer,
+              'id' => String,
               'name' => 'disk_provider',
-              'link_provider_id' => 1,
+              'link_provider_id' => '1',
             }
           ),
           links_response.merge(
             {
-              'id' => Integer,
+              'id' => String,
               'name' => 'backup_disk_provider',
-              'link_consumer_id' => 2,
-              'link_provider_id' => 2,
+              'link_consumer_id' => '2',
+              'link_provider_id' => '2',
             }
           )
         ]
@@ -655,14 +655,14 @@ describe 'links api', type: :integration do
 
         links = get_links
         expect(links.count).to eq(1)
-        expect(links.first['id']).to eq(2)
+        expect(links.first['id']).to eq('2')
       end
     end
   end
 
   context 'when doing POST request to create link' do
     context 'when correct json is provided' do
-      let(:provider_id) {1}
+      let(:provider_id) {'1'}
       let(:payload_json) do
         {
           'link_provider_id'=> provider_id,
@@ -726,7 +726,7 @@ describe 'links api', type: :integration do
       end
 
       context 'when link_provider_id do not exists' do
-        let(:provider_id) { 42 }
+        let(:provider_id) { '42' }
 
         it 'returns error' do
           response = send_director_post_request("/links", '', JSON.generate(payload_json))
@@ -740,7 +740,7 @@ describe 'links api', type: :integration do
         it 'returns error' do
           response = send_director_post_request("/links", '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
-          expect(error_response['description']).to eq('Invalid request: `link_provider_id` must be an Integer')
+          expect(error_response['description']).to eq('Invalid request: `link_provider_id` must be provided')
         end
       end
 
@@ -814,7 +814,7 @@ describe 'links api', type: :integration do
   end
 
   context 'when doing DELETE request to delete link' do
-    let(:provider_id) {1}
+    let(:provider_id) {'1'}
     let(:payload_json) do
       {
         'link_provider_id'=> provider_id,

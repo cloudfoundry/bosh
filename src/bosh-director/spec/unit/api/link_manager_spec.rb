@@ -49,7 +49,7 @@ module Bosh::Director
         },
       }
     end
-    let(:provider_id) { provider_1_intent_1.id }
+    let(:provider_id) { provider_1_intent_1.id.to_s }
 
     describe '#create_link' do
       shared_examples 'creates consumer, consumer_intent and link' do
@@ -82,7 +82,7 @@ module Bosh::Director
       end
 
       context 'when link_provider_id is invalid' do
-        let(:provider_id) { 42 }
+        let(:provider_id) { '42' }
         it 'return error' do
           expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid link_provider_id: #{provider_id}/)
         end
@@ -91,7 +91,7 @@ module Bosh::Director
       context 'when link_provider_id is missing' do
         let(:provider_id) { '' }
         it 'return error' do
-          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid request: `link_provider_id` must be an Integer/)
+          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid request: `link_provider_id` must be provided/)
         end
       end
 
