@@ -45,7 +45,6 @@ module Bosh::Director
           expect(orphaned_vm.cid).to eq vm.cid
           expect(orphaned_vm.cloud_properties).to eq instance.cloud_properties
           expect(orphaned_vm.cpi).to eq vm.cpi
-          expect(orphaned_vm.instance_id).to eq instance.id
           expect(orphaned_vm.stemcell_api_version).to eq(9876)
           expect(orphaned_vm.orphaned_at).to be_a Time
         end

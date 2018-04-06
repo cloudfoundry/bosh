@@ -12,7 +12,6 @@ module Bosh::Director
             cid: @vm.cid,
             cloud_properties: @vm.instance.cloud_properties,
             cpi: @vm.cpi,
-            instance_id: @vm.instance_id,
             stemcell_api_version: @vm.stemcell_api_version,
             orphaned_at: Time.now,
           )
