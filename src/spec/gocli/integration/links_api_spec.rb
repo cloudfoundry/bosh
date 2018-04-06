@@ -467,6 +467,54 @@ describe 'links api', type: :integration do
 
           expect(actual_response).to match_array(expected_response)
         end
+
+        context 'when the shared provider is removed' do
+          before do
+            deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
+
+            manifest_hash['instance_groups'][0]['jobs']=[]
+            deploy_simple_manifest(manifest_hash: manifest_hash)
+          end
+
+          it 'should become an orphaned link (with no provider)' do
+            actual_response = get_json('/links', 'deployment=consumer-simple')
+            expected_response = [ links_response ]
+            expected_response[0]['link_provider_id'] = ''
+
+            expect(actual_response).to match_array(expected_response)
+          end
+        end
+
+        context 'when the shared provider deployment is removed' do
+          before do
+            deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
+
+            bosh_runner.run('delete-deployment', deployment_name: 'simple')
+          end
+
+          it 'should become an orphaned link (with no provider)' do
+            actual_response = get_json('/links', 'deployment=consumer-simple')
+            expected_response = [ links_response ]
+            expected_response[0]['link_provider_id'] = ''
+
+            expect(actual_response).to match_array(expected_response)
+          end
+        end
+
+        context 'when the consumer is removed' do
+          before do
+            deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
+
+            consumer_manifest_hash['instance_groups'][0]['jobs']=[]
+            deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
+          end
+
+          it 'should remove the link' do
+            actual_response = get_json('/links', 'deployment=consumer-simple')
+            expected_response = [ ]
+            expect(actual_response).to match_array(expected_response)
+          end
+        end
       end
     end
 

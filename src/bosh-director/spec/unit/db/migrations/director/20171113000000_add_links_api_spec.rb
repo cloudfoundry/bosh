@@ -452,6 +452,23 @@ module Bosh::Director
             expect(db[:links].where(link_consumer_intent_id: link_consumer_intent_1[:id]).count).to eq(0)
           end
         end
+
+        context 'when deployment is deleted' do
+          before do
+            DBSpecHelper.migrate(migration_file)
+            db[:instances].delete
+          end
+
+          it 'should delete all links, providers, consumers' do
+            expect{db[:deployments].where(id: 42).delete}.to_not raise_error
+            expect(db[:links].count).to eq(0)
+            expect(db[:link_consumers].count).to eq(0)
+            expect(db[:link_providers].count).to eq(0)
+            expect(db[:link_provider_intents].count).to eq(0)
+            expect(db[:link_consumer_intents].count).to eq(0)
+            expect(db[:instances_links].count).to eq(0)
+          end
+        end
       end
 
       context 'when multiple instances contain the same link key' do
