@@ -135,11 +135,26 @@ module Bosh::Director
           expect(plan.recreate).to be_truthy
         end
 
+        it 'should parse deploy' do
+          expect(planner.is_deploy?).to be_falsey
+
+          plan = described_class.new(
+            planner_attributes,
+            manifest_text,
+            YAML.dump(manifest_text),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            'is_deploy_action' => true,
+            )
+          expect(plan.is_deploy?).to be_truthy
+        end
+
         it 'creates a vm requirements cache' do
           expect(planner.vm_resources_cache).to be_instance_of(VmResourcesCache)
         end
 
-        describe '#instance_plans_with_hot_swap_and_needs_shutdown' do
+        describe '#instance_plans_with_hot_swap_and_needs_duplicate_vm' do
           before { subject.add_instance_group(instance_group) }
           let(:instance_plan) { instance_double(InstancePlan) }
           let(:should_hot_swap?) { true }
@@ -151,24 +166,24 @@ module Bosh::Director
               service?: true,
               errand?: false,
               should_hot_swap?: should_hot_swap?,
-              unignored_instance_plans_needing_shutdown: [instance_plan],
+              unignored_instance_plans_needing_duplicate_vm: [instance_plan],
             )
           end
 
           it 'should return instance groups that are duplicate-and-replace-vm enabled' do
-            expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+            expect(subject.instance_plans_with_hot_swap_and_needs_duplicate_vm).to eq([instance_plan])
           end
 
           context 'when no instance groups have duplicate-and-replace-vm enabled' do
             let(:should_hot_swap?) { false }
 
             it 'should return empty array' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+              expect(subject.instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
             end
           end
         end
 
-        describe '#skipped_instance_plans_with_hot_swap_and_needs_shutdown' do
+        describe '#skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm' do
           before { subject.add_instance_group(instance_group) }
           let(:instance_plan) { instance_double(InstancePlan) }
           let(:should_hot_swap?) { false }
@@ -182,12 +197,12 @@ module Bosh::Director
               errand?: false,
               should_hot_swap?: should_hot_swap?,
               hot_swap?: hot_swap?,
-              unignored_instance_plans_needing_shutdown: [instance_plan],
+              unignored_instance_plans_needing_duplicate_vm: [instance_plan],
             )
           end
 
           it 'returns instances that want duplicate-and-replace-vm but cannot be' do
-            expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to eq([instance_plan])
+            expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to eq([instance_plan])
           end
 
           context 'when instance_group does not want duplicate-and-replace-vm' do
@@ -195,7 +210,7 @@ module Bosh::Director
             let(:hot_swap?) { false }
 
             it 'should return empty array' do
-              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
             end
           end
 
@@ -204,7 +219,7 @@ module Bosh::Director
             let(:hot_swap?) { true }
 
             it 'should return empty array' do
-              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_shutdown).to be_empty
+              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
             end
           end
         end
@@ -508,30 +523,6 @@ module Bosh::Director
 
           it 'returns team names from the deployment' do
             expect(subject.team_names).to match_array(%w[team_1 team_3])
-          end
-        end
-
-        context 'links' do
-          describe '#add_link_providers' do
-            let(:link_provider) { instance_double(Models::LinkProvider) }
-            before do
-              subject.add_link_provider link_provider
-            end
-            it 'adds link provider to list of providers' do
-              expect(subject.link_providers.count).to eq(1)
-              expect(subject.link_providers[0]).to eq(link_provider)
-            end
-          end
-
-          describe '#add_link_consumers' do
-            let(:link_consumer) { instance_double(Models::LinkConsumer) }
-            before do
-              subject.add_link_consumer link_consumer
-            end
-            it 'adds link consumer to list of consumers' do
-              expect(subject.link_consumers.count).to eq(1)
-              expect(subject.link_consumers[0]).to eq(link_consumer)
-            end
           end
         end
       end

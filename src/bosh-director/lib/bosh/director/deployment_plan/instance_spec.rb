@@ -21,7 +21,7 @@ module Bosh::Director
           'index' => instance.index,
           'bootstrap' => instance.bootstrap?,
           'lifecycle' => instance_group.lifecycle,
-          'name' => instance.job_name,
+          'name' => instance.instance_group_name,
           'id' => instance.uuid,
           'az' => instance.availability_zone_name,
           'networks' => instance_plan.network_settings_hash,
@@ -33,7 +33,6 @@ module Bosh::Director
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,
           'dns_domain_name' => powerdns_manager.root_domain,
-          'links' => instance_group.resolved_links,
           'address' => instance_plan.network_address,
           'update' => instance_group.update_spec
         }
@@ -52,7 +51,7 @@ module Bosh::Director
       end
 
       def as_template_spec
-        TemplateSpec.new(full_spec, @variables_interpolator, @instance.desired_variable_set).spec
+        TemplateSpec.new(full_spec, @variables_interpolator, @instance.desired_variable_set, @instance).spec
       end
 
       def as_apply_spec
@@ -99,10 +98,13 @@ module Bosh::Director
     end
 
     class TemplateSpec
-      def initialize(full_spec, variables_interpolator, variable_set)
+      def initialize(full_spec, variables_interpolator, variable_set, instance)
         @full_spec = full_spec
         @variables_interpolator = variables_interpolator
         @variable_set = variable_set
+        @instance = instance
+        links_serial_id = instance.deployment_model.links_serial_id
+        @links_manager = Bosh::Director::Links::LinksManagerFactory.create(links_serial_id).create_manager
       end
 
       def spec
@@ -137,7 +139,8 @@ module Bosh::Director
         template_hash['properties'] =  @variables_interpolator.interpolate_template_spec_properties(@full_spec['properties'], @full_spec['deployment'], @variable_set)
 
         template_hash['links'] = {}
-        links_hash = @full_spec.fetch('links', {})
+
+        links_hash = @links_manager.get_links_for_instance_group(@instance.deployment_model, @instance.instance_group_name)
         links_hash.each do |job_name, links|
           template_hash['links'][job_name] ||= {}
           interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(links, @variable_set)

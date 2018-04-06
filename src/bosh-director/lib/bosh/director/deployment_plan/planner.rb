@@ -64,14 +64,10 @@ module Bosh::Director
 
       attr_accessor :addons
 
-      # @return [Hash] Returns the shared links
-      attr_reader :link_spec
-
       attr_reader :cloud_configs
       attr_reader :runtime_configs
 
-      attr_reader :link_providers
-      attr_reader :link_consumers
+      attr_reader :links_manager
 
       def initialize(attrs,
                      uninterpolated_manifest_hash,
@@ -99,21 +95,20 @@ module Bosh::Director
         @unneeded_vms = []
         @instance_plans_for_obsolete_instance_groups = []
 
+        @is_deploy_action = !!options['is_deploy_action']
         @recreate = !!options['recreate']
         @fix = !!options['fix']
 
-        @link_spec = {}
         @skip_drain = SkipDrain.new(options['skip_drain'])
 
         @variables = Variables.new([])
         @features = DeploymentFeatures.new
 
         @addons = []
-
-        @link_providers = []
-        @link_consumers = []
-
         @logger = Config.logger
+
+        @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
+
         @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
         @vm_resources_cache = VmResourcesCache.new(AZCloudFactory.create_with_latest_configs(@model), @logger)
       end
@@ -217,18 +212,18 @@ module Bosh::Director
         instance_groups_starting_on_deploy.collect_concat(&:instance_plans_with_missing_vms)
       end
 
-      def instance_plans_with_hot_swap_and_needs_shutdown
+      def instance_plans_with_hot_swap_and_needs_duplicate_vm
         instance_groups_starting_on_deploy.collect_concat do |instance_group|
           return [] unless instance_group.should_hot_swap?
-          instance_group.unignored_instance_plans_needing_shutdown
+          instance_group.unignored_instance_plans_needing_duplicate_vm
         end
       end
 
-      def skipped_instance_plans_with_hot_swap_and_needs_shutdown
+      def skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm
         instance_groups_starting_on_deploy.collect_concat do |instance_group|
           return [] if instance_group.hot_swap? == instance_group.should_hot_swap?
 
-          instance_group.unignored_instance_plans_needing_shutdown
+          instance_group.unignored_instance_plans_needing_duplicate_vm
         end
       end
 
@@ -279,22 +274,6 @@ module Bosh::Director
         CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(@cloud_configs)
       end
 
-      def add_link_provider(link_provider)
-        @link_providers << link_provider unless @link_providers.include?(link_provider)
-      end
-
-      def add_link_consumer(link_consumer)
-        @link_consumers << link_consumer unless @link_consumers.include?(link_consumer)
-      end
-
-      # If we don't want to do what we are doing in this method, then link_spec should be an object
-      def add_deployment_link_spec(instance_group_name, job_name, provided_link_name, provided_link_type, link_spec)
-        @link_spec[instance_group_name] ||= {}
-        @link_spec[instance_group_name][job_name] ||= {}
-        @link_spec[instance_group_name][job_name][provided_link_name] ||= {}
-        @link_spec[instance_group_name][job_name][provided_link_name][provided_link_type] = link_spec
-      end
-
       def set_variables(variables_obj)
         @variables = variables_obj
       end
@@ -321,6 +300,10 @@ module Bosh::Director
 
       def team_names
         @model.teams.map(&:name)
+      end
+
+      def is_deploy?
+        @is_deploy_action
       end
     end
   end

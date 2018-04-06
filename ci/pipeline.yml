@@ -24,6 +24,7 @@ groups:
       - brats-ubuntu
       - upgrade-tests
       - blobstore-performance
+      - delivery
 
   - name: mysql
     jobs:
@@ -527,7 +528,7 @@ jobs:
         - task: test-group-1
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
+          tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
             DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
@@ -539,7 +540,7 @@ jobs:
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
+          tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
             DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
@@ -551,7 +552,7 @@ jobs:
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
+          tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
             DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
@@ -811,12 +812,16 @@ jobs:
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
+      - unit-2.4-db-migrations-rds
       - integration-mysql-gocli-sha1
       - integration-postgres-gocli-sha2
       - blobstore-client-integration
       - fuzz-tests
       - upgrade-tests
       - blobstore-performance
+      - integration-db-tls-mysql
+      - integration-db-tls-postgres
+      - integration-db-tls-postgres-hotswap
     - get: bosh-cli
     - get: candidate-version
       params:
@@ -953,6 +958,19 @@ jobs:
           params: *brats-dbs-params
           attempts: 3
 
+  - name: delivery
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+          passed:
+          - bats-ubuntu
+          - bats-centos
+          - brats-ubuntu
+      - put: tracker-output
+        params:
+          repos:
+          - bosh-src
 
   # - name: finalize-bosh-release
   #   serial: true
@@ -1121,6 +1139,13 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
+
+  - name: tracker-output
+    type: tracker
+    source:
+      token: ((tracker_api_token))
+      project_id: ((tracker_project_id))
+      tracker_url: https://www.pivotaltracker.com
 
 resource_types:
 - name: slack-notification

@@ -47,7 +47,7 @@ describe 'deliver rendered templates through nats', type: :integration do
   it 'does NOT store rendered templates in the blobstore' do
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-    running_instance = director.instances.select{ |instance| instance.job_name == 'our_instance_group'}.first
+    running_instance = director.instances.select{ |instance| instance.instance_group_name == 'our_instance_group'}.first
     template_hash = YAML.load(running_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
     expect(template_hash['properties_list']['gargamel_color']).to eq('GARGAMEL_COLOR_IS_NOT_BLUE')
 
@@ -73,7 +73,7 @@ describe 'deliver rendered templates through nats', type: :integration do
       expect(upload_blob_request['arguments'][0]['payload']).to eq('<redacted>')
     end
 
-    running_instance = director.instances.select{ |instance| instance.job_name == 'our_instance_group'}.first
+    running_instance = director.instances.select{ |instance| instance.instance_group_name == 'our_instance_group'}.first
     template_hash = YAML.load(running_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
     expect(template_hash['properties_list']['gargamel_color']).to eq('GARGAMEL_COLOR_IS_NOT_BLUE')
   end
@@ -139,7 +139,7 @@ describe 'deliver rendered templates through nats', type: :integration do
 
       # =========================================
       # Instance Group 1
-      instance_group_1_vm = running_instances.select{ |instance| instance.job_name == 'instance_group_1'}.first
+      instance_group_1_vm = running_instances.select{ |instance| instance.instance_group_name == 'instance_group_1'}.first
 
       template_1_hash_1 = YAML.load(instance_group_1_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
       expect(template_1_hash_1['properties_list']['gargamel_color']).to eq('GARGAMEL_COLOR_IS_NOT_BLUE')
@@ -152,7 +152,7 @@ describe 'deliver rendered templates through nats', type: :integration do
 
       # =========================================
       # Instance Group 2
-      instance_group_2_vm = running_instances.select{ |instance| instance.job_name == 'instance_group_2'}.first
+      instance_group_2_vm = running_instances.select{ |instance| instance.instance_group_name == 'instance_group_2'}.first
 
       template_2_hash_1 = YAML.load(instance_group_2_vm.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
       expect(template_2_hash_1['properties_list']['gargamel_color']).to eq('RED_IS_AZRIEL')
@@ -182,7 +182,7 @@ describe 'deliver rendered templates through nats', type: :integration do
     it 'should fallback to storing in the default blobstore' do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-      running_instance = director.instances.select{ |instance| instance.job_name == 'our_instance_group'}.first
+      running_instance = director.instances.select{ |instance| instance.instance_group_name == 'our_instance_group'}.first
       template_hash = YAML.load(running_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
       expect(template_hash['properties_list']['gargamel_color']).to eq('GARGAMEL_COLOR_IS_NOT_BLUE')
 
@@ -204,7 +204,7 @@ describe 'deliver rendered templates through nats', type: :integration do
     it 'should fallback to storing in the default blobstore' do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
-      running_instance = director.instances.select{ |instance| instance.job_name == 'our_instance_group'}.first
+      running_instance = director.instances.select{ |instance| instance.instance_group_name == 'our_instance_group'}.first
       template_hash = YAML.load(running_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
       expect(template_hash['properties_list']['gargamel_color']).to eq('GARGAMEL_COLOR_IS_NOT_BLUE')
 

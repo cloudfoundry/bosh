@@ -37,7 +37,6 @@ module Bosh::Director
         package_spec: {},
         persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(logger),
         errand?: false,
-        resolved_links: {},
         compilation?: false,
         jobs: [],
         update_spec: update_config.to_hash,
@@ -73,8 +72,21 @@ module Bosh::Director
     let(:instance_model_state) { 'stopped' }
     let(:job_state) { 'running' }
     let(:update_watch_time) { '1000-2000' }
+    let(:links_manager_factory) do
+      instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
+        allow(double).to receive(:create_manager).and_return(links_manager)
+      end
+    end
+
+    let(:links_manager) do
+      instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+        allow(double).to receive(:get_links_from_deployment).and_return([])
+      end
+    end
 
     before do
+      allow(Bosh::Director::Links::LinksManagerFactory).to receive(:create).and_return(links_manager_factory)
+
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
       reservation.resolve_ip('192.168.0.10')
 

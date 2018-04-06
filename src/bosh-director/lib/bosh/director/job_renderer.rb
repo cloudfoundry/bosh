@@ -41,7 +41,7 @@ module Bosh::Director
       begin
        instance_plan.spec.as_template_spec
       rescue Exception => e
-        header = "- Unable to render jobs for instance group '#{instance_plan.instance.job_name}'. Errors are:"
+        header = "- Unable to render jobs for instance group '#{instance_plan.instance.instance_group_name}'. Errors are:"
         message = FormatterHelper.new.prepend_header_and_indent_body(header, e.message.strip, {:indent_by => 2})
         raise message
       end

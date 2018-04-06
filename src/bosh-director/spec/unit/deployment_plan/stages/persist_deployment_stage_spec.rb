@@ -106,7 +106,6 @@ module Bosh::Director
             ])
             allow(deployment_planner).to receive(:cloud_configs).and_return([cloud_config])
             allow(deployment_planner).to receive(:runtime_configs).and_return(runtime_configs)
-            allow(deployment_planner).to receive(:link_spec).and_return(link_spec)
           end
 
           it 'updates the release version on the deployment to be the ones from the provided manifest', ENV do
@@ -139,12 +138,6 @@ module Bosh::Director
             subject.perform
             reloaded_model = deployment_model.reload
             expect(reloaded_model.runtime_configs).to eq(runtime_configs)
-          end
-
-          it 'saves link_spec' do
-            subject.perform
-            reloaded_model = deployment_model.reload
-            expect(reloaded_model.link_spec).to eq(link_spec)
           end
         end
       end

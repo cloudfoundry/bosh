@@ -101,7 +101,7 @@ describe 'links api', type: :integration do
       },
       'owner_object' => {
         'name' => 'foobar',
-        'type' => 'instance_group',
+        'type' => 'disk',
         'info' => {
           'instance_group' => 'foobar',
         }
@@ -109,16 +109,22 @@ describe 'links api', type: :integration do
     )
   end
 
-  def consumer_response(name='consumer')
+  def consumer_response(job_name = 'consumer', link_name = 'provider')
     {
       'id' => Integer,
+      'name' => link_name,
+      'optional' => false,
       'deployment' => 'simple',
       'owner_object' => {
-        'name' => name,
+        'name' => job_name,
         'type' => 'job',
         'info' => {
           'instance_group' => 'foobar'
-        }
+        },
+      },
+      'link_consumer_definition' => {
+        'name' => link_name,
+        'type' => link_name
       }
     }
   end
@@ -334,7 +340,7 @@ describe 'links api', type: :integration do
         let(:jobs) { [{ 'name' => 'api_server_with_optional_db_link' }] }
 
         it 'should still create a consumer' do
-          expected_response = [ consumer_response('api_server_with_optional_db_link') ]
+          expected_response = [ consumer_response('api_server_with_optional_db_link', 'db').merge('optional' => true) ]
 
           expect(get_link_consumers).to match_array(expected_response)
         end
@@ -392,6 +398,8 @@ describe 'links api', type: :integration do
       let(:jobs) { implicit_provider_and_consumer }
 
       it 'should return the correct number of links' do
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
         expected_response = [ links_response ]
 
         expect(get_links).to match_array(expected_response)
@@ -478,7 +486,7 @@ describe 'links api', type: :integration do
       end
 
       it 'should return a single orphaned link' do
-        expected_response = [ links_response.merge('link_provider_id' => nil) ]
+        expected_response = [ links_response.merge('link_provider_id' => Integer) ]
         expect(get_links).to match_array(expected_response)
       end
     end
@@ -518,14 +526,16 @@ describe 'links api', type: :integration do
         expected_response = [
           links_response.merge(
             {
-              'id' => 1,
+              'id' => Integer,
               'name' => 'disk_provider',
+              'link_provider_id' => 1,
             }
           ),
           links_response.merge(
             {
-              'id' => 2,
+              'id' => Integer,
               'name' => 'backup_disk_provider',
+              'link_consumer_id' => 2,
               'link_provider_id' => 2,
             }
           )
@@ -591,7 +601,6 @@ describe 'links api', type: :integration do
       end
 
       it 'should not create a new link' do
-        pending('To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]')
         expect(get_links).to match_array(@expected_links)
       end
     end
@@ -610,9 +619,244 @@ describe 'links api', type: :integration do
       end
 
       it 'should not create a new link' do
-        pending('To be done in a future story (#152942059)[https://www.pivotaltracker.com/story/show/152942059]')
         expect(get_links).to match_array(@expected_links)
       end
+    end
+
+    context 'when redeploying with change to provider' do
+      let(:new_jobs) do
+        [
+          {
+            'name' => 'provider',
+            'provides' => { 'provider' => { 'as' => 'bar' } }
+          },
+          {
+            'name' => 'consumer',
+            'consumes' => { 'provider' => { 'from' => 'bar' } }
+          }
+        ]
+      end
+
+      it 'should reuse the old links' do
+        manifest_hash['instance_groups'][0]['jobs'] = new_jobs
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        expected_response = [ links_response ]
+        expect(get_links).to match_array(expected_response)
+      end
+    end
+
+    context 'when redeploying with change to provider instances' do
+      it 'should remove the old link and make a new one' do
+        manifest_hash['instance_groups'][0]['instances'] = 2
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        links = get_links
+        expect(links.count).to eq(1)
+        expect(links.first['id']).to eq(2)
+      end
+    end
+  end
+
+  context 'when doing POST request to create link' do
+    context 'when correct json is provided' do
+      let(:provider_id) {1}
+      let(:payload_json) do
+        {
+          'link_provider_id'=> provider_id,
+          'link_consumer' => {
+            'owner_object_name'=> 'external_consumer_1',
+            'owner_object_type'=> 'external',
+          }
+        }
+      end
+      let(:jobs) do
+        [
+          {
+            'name' => 'provider',
+            'provides' => {
+              'provider' => {
+                'as' => 'foo',
+                'shared' => true
+              }
+            }
+          }
+        ]
+      end
+
+      context 'when provider already exists' do
+        before do
+          provider_response = get_link_providers
+          provider_id = provider_response.first['id']
+        end
+
+        it 'provide link json output' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          link = JSON.parse(response.read_body)
+
+          expect(link["name"]).to eq(jobs[0]['name'])
+          expect(link["link_provider_id"]).to eq(provider_id)
+        end
+
+        it 'create consumer_intent' do
+          send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = get_link_consumers
+
+          expect(response.count).to_not eq(0)
+          consumer = response[0]
+          expect(consumer['deployment']).to eq('simple')
+          expect(consumer['owner_object']['type']).to eq('external')
+        end
+
+        it 'keeps the consumer and link after redeploy' do
+          send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = get_link_consumers
+
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+          response2 = get_link_consumers
+
+          expect(response.count).to eq(response2.count)
+          consumer = response2[0]
+          expect(consumer['deployment']).to eq('simple')
+          expect(consumer['owner_object']['type']).to eq('external')
+        end
+
+      end
+
+      context 'when link_provider_id do not exists' do
+        let(:provider_id) { 42 }
+
+        it 'returns error' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          error_response = JSON.parse(response.read_body)
+          expect(error_response['description']).to eq("Invalid link_provider_id: #{provider_id}")
+        end
+      end
+
+      context 'when link_provider_id is invalid' do
+        let(:provider_id) { "" }
+        it 'returns error' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          error_response = JSON.parse(response.read_body)
+          expect(error_response['description']).to eq('Invalid request: `link_provider_id` must be an Integer')
+        end
+      end
+
+      context 'when owner_object_name is invalid' do
+        let(:payload_json) do
+          {
+            'link_provider_id'=> provider_id,
+            'link_consumer' => {
+              'owner_object_name'=> '',
+              'owner_object_type'=> 'external',
+            }
+          }
+        end
+
+        it 'returns error' do
+          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          error_response = JSON.parse(response.read_body)
+          expect(error_response['description']).to eq('Invalid request: `link_consumer.owner_object_name` must not be empty')
+        end
+      end
+
+      context 'when network name is provided' do
+        let(:network_name) { 'a' }
+        let(:payload_json) do
+          {
+            'link_provider_id'=> provider_id,
+            'link_consumer' => {
+              'owner_object_name'=> 'external_consumer_1',
+              'owner_object_type'=> 'external',
+            },
+            'network' => network_name
+          }
+        end
+
+        before do
+          provider_response = get_link_providers
+          provider_id = provider_response.first['id']
+        end
+
+        context 'when network name is valid' do
+          it 'creates links' do
+            response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            link = JSON.parse(response.read_body)
+
+            expect(link).to match(links_response)
+          end
+        end
+
+        context 'when network name is invalid' do
+          let(:network_name) { 'invalid-network-name' }
+
+          it 'return error' do
+            response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            error_response = JSON.parse(response.read_body)
+            error_string = "Can't resolve network: `#{network_name}` in provider id: #{provider_id} for `#{payload_json['link_consumer']['owner_object_name']}`"
+
+            expect(error_response['description']).to eq(error_string)
+          end
+        end
+      end
+    end
+
+    #TODO Links API
+    context 'when user does not have sufficient permissions' do
+      it 'should raise an error' do
+        response = send_director_post_request("/links", '', JSON.generate({}), {})
+
+        expect(response.read_body).to include("Not authorized: '/links'")
+      end
+    end
+  end
+
+  context 'when doing DELETE request to delete link' do
+    let(:provider_id) {1}
+    let(:payload_json) do
+      {
+        'link_provider_id'=> provider_id,
+        'link_consumer' => {
+          'owner_object_name'=> 'external_consumer_1',
+          'owner_object_type'=> 'external',
+        },
+        'network' => 'a'
+      }
+    end
+    let(:jobs) do
+      [
+        {
+          'name' => 'provider',
+          'provides' => {
+            'provider' => {
+              'as' => 'foo',
+              'shared' => true
+            }
+          }
+        }
+      ]
+    end
+
+    before do
+      provider_response = get_link_providers
+      provider_id = provider_response.first['id']
+      send_director_post_request("/links", '', JSON.generate(payload_json))
+    end
+
+    it 'performs a successful delete when link exists' do
+      response = send_director_delete_request("/links/1", '')
+      expect(response.body).to be_nil
+      expect(response).to be_an_instance_of(Net::HTTPNoContent)
+    end
+
+    it 'raises error if link does not exist' do
+      response = send_director_delete_request("/links/2", '')
+      expect(response).to be_an_instance_of(Net::HTTPNotFound)
+      parsed_body_hash = JSON.parse(response.body)
+      expect(parsed_body_hash['code']).to eq(Bosh::Director::LinkLookupError.new.error_code)
+      expect(parsed_body_hash['description']).to eq('Invalid link id: 2')
     end
   end
 end

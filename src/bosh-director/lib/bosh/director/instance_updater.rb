@@ -21,7 +21,7 @@ module Bosh::Director
         vm_deleter,
         vm_creator,
         disk_manager,
-        rendered_templates_persistor,
+        rendered_templates_persistor
       )
     end
 
@@ -46,6 +46,7 @@ module Bosh::Director
 
     def update(instance_plan, options = {})
       instance = instance_plan.instance
+      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(instance.deployment_model.links_serial_id).create_manager
       instance_report = DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance.model.active_vm }
       action, context = get_action_and_context(instance_plan)
       parent_id = add_event(instance.deployment_model.name, action, instance.model.name, context) if instance_plan.changed?
@@ -64,6 +65,7 @@ module Bosh::Director
           # It will update the rendered templates on the VM
           unless Config.enable_nats_delivered_templates && needs_recreate?(instance_plan)
             @rendered_templates_persistor.persist(instance_plan)
+            @links_manager.bind_links_to_instance(instance)
             instance.update_variable_set
           end
 
@@ -95,6 +97,7 @@ module Bosh::Director
                                                .perform(instance_report)
           end
           instance_plan.release_obsolete_network_plans(@ip_provider)
+          @links_manager.bind_links_to_instance(instance)
           instance.update_state
           instance.update_variable_set
           update_dns(instance_plan)
@@ -102,6 +105,7 @@ module Bosh::Director
         end
 
         recreated = false
+        deleted_vm = false
 
         instance_model = instance_plan.instance.model
 
@@ -109,40 +113,49 @@ module Bosh::Director
           new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
 
           @logger.debug('Failed to update in place. Recreating VM')
-          unless instance_plan.unresponsive_agent?
+          if instance_plan.unresponsive_agent?
+            DeploymentPlan::Steps::DeleteVmStep
+              .new(true, false, Config.enable_virtual_delete_vms)
+              .perform(instance_report)
+            deleted_vm = true
+          else
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
             DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
           end
+
           tags = instance_plan.tags
 
           disks = instance_model.active_persistent_disks.collection
                                 .map(&:model)
                                 .map(&:disk_cid).compact
 
-          if instance_plan.should_hot_swap?
+          if instance_plan.should_hot_swap? && instance_model.vms.count > 1
             old_vm = instance_report.vm
             instance_report.vm = new_vm
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
-            DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report)
+            DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report) unless deleted_vm
+
+            instance_report.vm = instance_model.active_vm
+            if instance_plan.needs_disk?
+              DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
+              DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
+            end
           else
-            DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms)
-                                               .perform(instance_report)
+            unless deleted_vm
+              DeploymentPlan::Steps::DeleteVmStep
+                .new(true, false, Config.enable_virtual_delete_vms)
+                .perform(instance_report)
+              deleted_vm = true
+            end
             @vm_creator.create_for_instance_plan(instance_plan, @ip_provider, disks, tags)
           end
 
           recreated = true
         end
 
-        instance_report.vm = instance_model.active_vm
+        instance_plan.release_obsolete_network_plans(@ip_provider) if deleted_vm
 
-        if instance_plan.should_hot_swap?
-          if instance_plan.needs_disk?
-            DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance_model, instance_plan.tags).perform(instance_report)
-            DeploymentPlan::Steps::MountInstanceDisksStep.new(instance_model).perform(instance_report)
-          end
-        else
-          instance_plan.release_obsolete_network_plans(@ip_provider)
-        end
+        instance_report.vm = instance_model.active_vm
 
         update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
@@ -153,6 +166,7 @@ module Bosh::Director
 
         @rendered_templates_persistor.persist(instance_plan)
         instance.update_variable_set
+        @links_manager.bind_links_to_instance(instance) unless recreated
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,

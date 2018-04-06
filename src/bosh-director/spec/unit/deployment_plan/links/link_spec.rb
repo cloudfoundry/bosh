@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Link do
-      subject { described_class.new(deployment_name, link_name, source_instance_group, job) }
+      subject { described_class.new(deployment_name, source_instance_group, mapped_properties) }
 
       let(:deployment_name) { 'smurf_deployment' }
       let(:link_name) { 'smurf_link' }
@@ -14,7 +14,6 @@ module Bosh::Director
         )
       end
       let(:network_name) { 'smurf_network' }
-      let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job)  }
       let(:use_short_dns_addresses) { true }
       let(:instance_group_private_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
       let(:instance_group_public_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
@@ -32,6 +31,12 @@ module Bosh::Director
         }
       end
 
+      let(:mapped_properties) do
+        {
+          'a' => 'b'
+        }
+      end
+
       let(:needed_instance_plan) { instance_double(Bosh::Director::DeploymentPlan::InstancePlan) }
       let(:needed_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
 
@@ -41,7 +46,6 @@ module Bosh::Director
 
         allow(source_instance_group).to receive(:name).and_return(source_instance_group_name)
         allow(source_instance_group).to receive(:networks).and_return([instance_group_private_network, instance_group_public_network])
-        expect(job).to receive(:provides_link_info).with(source_instance_group_name, link_name).and_return(smurf_link_info)
       end
 
       context '#spec' do

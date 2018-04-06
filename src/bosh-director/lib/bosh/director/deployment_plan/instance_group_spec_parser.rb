@@ -7,11 +7,14 @@ module Bosh::Director
       include Bosh::Template::PropertyHelper
       include IpUtil
 
+      MANUAL_LINK_KEYS = ['instances', 'properties', 'address']
+
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
       def initialize(deployment, event_log, logger)
         @deployment = deployment
         @event_log = event_log
         @logger = logger
+        @links_parser = Bosh::Director::Links::LinksParser.new
       end
 
       # @param [Hash] instance_group_spec Raw instance_group spec from the deployment manifest
@@ -26,11 +29,10 @@ module Bosh::Director
         parse_release
         validate_jobs
 
-
         merged_global_and_instance_group_properties = extract_global_and_instance_group_properties
 
         parse_legacy_template(merged_global_and_instance_group_properties)
-        parse_jobs(merged_global_and_instance_group_properties)
+        parse_jobs(merged_global_and_instance_group_properties, options['is_deploy_action'])
 
         check_job_uniqueness
         parse_disks
@@ -130,9 +132,11 @@ module Bosh::Director
         end
       end
 
-      def parse_jobs(merged_global_and_instance_group_properties)
+      def parse_jobs(merged_global_and_instance_group_properties, is_deploy_action)
         legacy_jobs = safe_property(@instance_group_spec, 'templates', class: Array, optional: true)
         jobs = safe_property(@instance_group_spec, 'jobs', class: Array, optional: true)
+
+        migrated_from = safe_property(@instance_group_spec, 'migrated_from', class: Array, optional: true, :default => [])
 
         if jobs.nil?
           jobs = legacy_jobs
@@ -146,19 +150,19 @@ module Bosh::Director
           release_versions_templates_models_hash = {}
 
           jobs.each do |job_spec|
-            template_name = safe_property(job_spec, 'name', class: String)
+            job_name = safe_property(job_spec, 'name', class: String)
             release_name = safe_property(job_spec, 'release', class: String, optional: true)
 
             if release_name
               release = @deployment.release(release_name)
               unless release
                 raise InstanceGroupUnknownRelease,
-                      "Job '#{template_name}' (instance group '#{@instance_group.name}') references an unknown release '#{release_name}'"
+                      "Job '#{job_name}' (instance group '#{@instance_group.name}') references an unknown release '#{release_name}'"
               end
             else
               release = @instance_group.release
               unless release
-                raise InstanceGroupMissingRelease, "Cannot tell what release template '#{template_name}' (instance group '#{@instance_group.name}') is supposed to use, please explicitly specify one"
+                raise InstanceGroupMissingRelease, "Cannot tell what release template '#{job_name}' (instance group '#{@instance_group.name}') is supposed to use, please explicitly specify one"
               end
               release_name = release.name
             end
@@ -170,33 +174,12 @@ module Bosh::Director
             end
 
             templates_models_list = release_versions_templates_models_hash[release_name]
-            current_template_model = templates_models_list.find {|target| target.name == template_name }
+            current_template_model = templates_models_list.find {|target| target.name == job_name }
 
-            job = release.get_or_create_template(template_name)
+            job = release.get_or_create_template(job_name)
 
             if current_template_model == nil
-              raise "Job '#{template_name}' not found in Template table"
-            end
-
-            if current_template_model.consumes != nil
-              current_template_model.consumes.each do |consumes|
-                job.add_link_from_release(@instance_group.name,'consumes', consumes["name"], consumes)
-              end
-            end
-            if current_template_model.provides != nil
-              current_template_model.provides.each do |provides|
-                job.add_link_from_release(@instance_group.name, 'provides', provides["name"], provides)
-              end
-            end
-
-            provides_links = safe_property(job_spec, 'provides', class: Hash, optional: true)
-            provides_links.to_a.each do |link_name, source|
-              job.add_link_from_manifest(@instance_group.name, "provides", link_name, source)
-            end
-
-            consumes_links = safe_property(job_spec, 'consumes', class: Hash, optional: true)
-            consumes_links.to_a.each do |link_name, source|
-              job.add_link_from_manifest(@instance_group.name, 'consumes', link_name, source)
+              raise "Job '#{job_name}' not found in Template table"
             end
 
             if job_spec.has_key?('properties')
@@ -204,11 +187,23 @@ module Bosh::Director
             else
               job_properties = merged_global_and_instance_group_properties
             end
+
             job.add_properties(
               job_properties,
               @instance_group.name
             )
 
+            # migrated_from true? or false?
+            # get migrated_from_name = migarted_name : @instance_group.name
+            if is_deploy_action
+              unless migrated_from.to_a.empty?
+                @links_parser.parse_migrated_from_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name, migrated_from)
+                @links_parser.parse_migrated_from_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name, migrated_from)
+              else
+                @links_parser.parse_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name)
+                @links_parser.parse_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name)
+              end
+            end
             @instance_group.jobs << job
           end
         end
@@ -287,6 +282,8 @@ module Bosh::Director
             end
 
             persistent_disk_collection.add_by_disk_name_and_type(persistent_disk_name, disk_type)
+
+            @links_parser.parse_provider_from_disk(persistent_disk, @deployment.model, @instance_group.name)
           end
         end
 

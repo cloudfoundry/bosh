@@ -74,7 +74,7 @@ module Bosh::Director::Core::Templates
         if modified_spec['links'][@template_name]
           links_spec = modified_spec['links'][@template_name]
           modified_spec['links'] = links_spec
-        elsif
+        else
           modified_spec['links'] = {}
         end
       end

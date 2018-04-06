@@ -1,3 +1,27 @@
+groups:
+- name: bosh:docker-images
+  jobs:
+  - build-bosh-agent
+  - build-bosh-utils
+  - build-bosh-blobstore-client
+  - build-main-bats-aws
+  - build-main-ruby-go
+  - build-main-ubuntu-chroot
+  - build-bosh-load-tests-garden
+  - build-bosh-load-tests
+  - build-bosh-garden
+  - build-bosh-docker
+  - build-main-base
+  - build-main
+  - build-main-mysql-5.7
+  - build-main-mysql-5.6
+  - build-main-mysql-5.5
+  - build-main-postgres-9.6
+  - build-main-postgres-9.5
+  - build-main-postgres-9.4
+  - build-main-postgres-9.3
+  - build-compiled-release
+
 jobs:
   - name: build-compiled-release
     public: true
@@ -179,8 +203,6 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
-          passed:
-            - "build-main-ruby-go"
         - get: bosh-cli
           trigger: true
         - get: bosh-deployment

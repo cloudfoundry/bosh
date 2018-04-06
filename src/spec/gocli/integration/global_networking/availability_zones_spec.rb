@@ -526,7 +526,7 @@ describe 'availability zones', type: :integration do
         expect(original_instances.map(&:availability_zone)).to contain_exactly('my-az', 'my-az')
       end
 
-      it 'updates instances when az cloud properties change and deployment is re-deployed' do
+      it 'updates instances when az cloud properties change and deployment is re-deployed', no_hotswap: true do
         cloud_hash = cloud_config_hash
         cloud_hash['azs'] = [
           {
@@ -585,6 +585,68 @@ describe 'availability zones', type: :integration do
         })
 
         expect(current_sandbox.cpi.invocations_for_method('delete_vm').count).to eq(1)
+        expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(2)
+      end
+
+      it 'updates instances when az cloud properties change and deployment is re-deployed', hotswap: true do
+        cloud_hash = cloud_config_hash
+        cloud_hash['azs'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az',
+              'a' => 'should_be_overwritten_from_vm_type_cloud_properties',
+              'b' => 'cp_value_for_b'
+            }
+          }
+        ]
+
+        cloud_hash['networks'].first['subnets'] = [
+          {
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+            'az' => 'my-az'
+          }
+        ]
+        upload_cloud_config(cloud_config_hash: cloud_hash)
+
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
+        manifest['instance_groups'].first['azs'] = ['my-az']
+
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        expect(current_sandbox.cpi.read_cloud_properties(director.instances[0].vm_cid)).to eq({
+              'availability_zone' => 'my-az',
+              'b' => 'cp_value_for_b',
+              'a' => 'vm_value_for_a',
+              'e' => 'vm_value_for_e'
+            })
+
+        cloud_hash['azs'] = [
+          {
+            'name' => 'my-az',
+            'cloud_properties' => {
+              'availability_zone' => 'my-az',
+              'foo' => 'bar'
+            }
+          }
+        ]
+
+        upload_cloud_config(cloud_config_hash: cloud_hash)
+
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        expect(current_sandbox.cpi.read_cloud_properties(director.instances[0].vm_cid)).to eq({
+          'availability_zone' => 'my-az',
+          'a' => 'vm_value_for_a',
+          'e' => 'vm_value_for_e',
+          'foo' => 'bar'
+        })
+
+        expect(current_sandbox.cpi.invocations_for_method('delete_vm').count).to eq(0)
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(2)
       end
     end

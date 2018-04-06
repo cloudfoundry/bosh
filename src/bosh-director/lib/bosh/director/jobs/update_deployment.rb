@@ -54,14 +54,19 @@ module Bosh::Director
         previous_releases, previous_stemcells = get_stemcells_and_releases
         context = {}
         parent_id = add_event
-        is_deploy_action = @options['deploy']
 
         with_deployment_lock(@deployment_name) do
+          is_deploy_action = @options['deploy']
           deployment_plan = nil
           dns_encoder = nil
 
           if is_deploy_action
-            Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
+            deployment_model = Bosh::Director::Models::Deployment.find(name: @deployment_name)
+
+            deployment_model.add_variable_set(:created_at => Time.now, :writable => true)
+
+            deployment_model.links_serial_id += 1
+            deployment_model.save
           end
 
           manifest_text = @options.fetch('manifest_text', @manifest_text)
@@ -73,11 +78,17 @@ module Bosh::Director
           event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
           event_log_stage.advance_and_track('Preparing deployment') do
             planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+
+            # that's where the link path is created
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
+            @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_plan.model.links_serial_id).create_manager
+
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
-            deployment_assembler.bind_models({:should_bind_new_variable_set => is_deploy_action})
+
+            # that's where the links resolver is created
+            deployment_assembler.bind_models({is_deploy_action: is_deploy_action, should_bind_new_variable_set: is_deploy_action})
           end
 
           if deployment_plan.instance_models.any?(&:ignore)
@@ -105,6 +116,7 @@ module Bosh::Director
 
               # only in the case of a deploy should you be cleaning up
               if is_deploy_action
+                @links_manager.remove_unused_links(deployment_plan.model)
                 current_variable_set.update(deployed_successfully: true)
                 remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
               end
@@ -242,7 +254,8 @@ module Bosh::Director
             instance_group_errors.push e
           end
 
-          instance_group_links = instance_group.resolved_links || {}
+          deployment = Bosh::Director::Models::Deployment.where(name: @deployment_name).first
+          instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
             begin
               variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
@@ -256,6 +269,12 @@ module Bosh::Director
             header = "- Unable to render jobs for instance group '#{instance_group.name}'. Errors are:"
             e = Exception.new(Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2}))
             errors << e
+          end
+
+          if errors.empty?
+            instance_group.instances.each do |instance|
+              @links_manager.bind_links_to_instance(instance)
+            end
           end
         end
         errors

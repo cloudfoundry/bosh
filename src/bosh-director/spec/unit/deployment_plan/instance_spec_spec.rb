@@ -4,30 +4,41 @@ module Bosh::Director::DeploymentPlan
   describe InstanceSpec do
     include Support::StemcellHelpers
     subject(:instance_spec) { described_class.create_from_instance_plan(instance_plan) }
+    let(:links_manager) do
+      instance_double(Bosh::Director::Links::LinksManager).tap do |double|
+        allow(double).to receive(:get_links_from_deployment).and_return([])
+      end
+    end
     let(:job_spec) { { 'name' => 'smurf-job', 'release' => 'release', 'templates' => [] } }
     let(:packages) { { 'pkg' => { 'name' => 'package', 'version' => '1.0' } } }
     let(:properties) { { 'key' => 'value' } }
     let(:links) do
-      { 'smurf-job' =>
-        { 'link_name' =>
-          { 'deployment_name' => 'dep1',
-            'some_key' => 'some_value',
+      {
+        'smurf-job' => {
+          'link_name' => {
+            'deployment_name' => 'dep1',
             'networks' => ['default'],
             'properties' => {
               'listen_port' => 'Kittens',
             },
             'address' => 'some.address.com',
-            'instances' => [{
-              'name' => 'provider',
-              'index' => 0,
-              'bootstrap' => true,
-              'id' => '3d46803d-1527-4209-8e1f-822105fece7c',
-              'az' => 'z1',
-              'address' => '10.244.0.4',
-            }],
+            'instances' => [
+              {
+                'name' => 'provider',
+                'index' => 0,
+                'bootstrap' => true,
+                'id' => '3d46803d-1527-4209-8e1f-822105fece7c',
+                'az' => 'z1',
+                'address' => '10.244.0.4',
+              }
+            ],
             'instance_group' => 'smurf-ig',
             'default_network' => 'smurf-net',
-            'domain' => 'smurf.bosh' } } }
+            'domain' => 'smurf.bosh',
+            'non-whitelisted-key' => 'some_value'
+          }
+        }
+      }
     end
     let(:smurf_job_links) { links['smurf-job'] }
 
@@ -51,7 +62,6 @@ module Bosh::Director::DeploymentPlan
         package_spec: packages,
         persistent_disk_collection: persistent_disk_collection,
         errand?: false,
-        resolved_links: links,
         compilation?: false,
         update_spec: {},
         properties: properties,
@@ -68,7 +78,7 @@ module Bosh::Director::DeploymentPlan
         instance_group,
         index,
         'started',
-        plan,
+        deployment,
         instance_state,
         availability_zone,
         logger,
@@ -80,11 +90,6 @@ module Bosh::Director::DeploymentPlan
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
     let(:stemcell) { make_stemcell(name: 'fake-stemcell-name', version: '1.0') }
     let(:env) { Env.new('key' => 'value') }
-    let(:plan) do
-      instance_double('Bosh::Director::DeploymentPlan::Planner',
-                      name: 'fake-deployment',
-                      model: deployment)
-    end
     let(:deployment_name) { 'fake-deployment' }
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
@@ -94,6 +99,8 @@ module Bosh::Director::DeploymentPlan
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
     before do
+      allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
+
       persistent_disk_collection.add_by_disk_size(0)
 
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance.model, network)
@@ -216,6 +223,8 @@ module Bosh::Director::DeploymentPlan
         allow(variables_interpolator).to receive(:interpolate_link_spec_properties)
           .with(smurf_job_links, instance.desired_variable_set)
           .and_return(smurf_job_links)
+
+        expect(links_manager).to receive(:get_links_for_instance_group).and_return(links)
       end
 
       context 'links specs whitelisting' do
@@ -425,9 +434,60 @@ module Bosh::Director::DeploymentPlan
 
     describe '#full_spec' do
       it 'return correct json format' do
-        full_spec = instance_spec.full_spec
-
-        expect(full_spec['links']).to eq(links)
+        expected_spec = {
+          "deployment" => "fake-deployment",
+          "job" => {
+            "name" => "smurf-job",
+            "release" => "release",
+            "templates" => []
+          },
+          "index" => 0,
+          "bootstrap" => true,
+          "lifecycle" => "service",
+          "name" => "fake-job",
+          "id" => "uuid-1",
+          "az" => "foo-az",
+          "networks" => {
+            "default" => {
+              "type" => "dynamic",
+              "cloud_properties" => {"foo" => "bar"},
+              "default" => ["gateway"]
+            }
+          },
+          "vm_type" => {
+            "name" => "fake-vm-type",
+            "cloud_properties" => {}
+          },
+          "vm_resources" => nil,
+          "stemcell" => {
+            "name" => "fake-stemcell-name",
+            "version" => "1.0"
+          },
+          "env" => {"key" => "value"},
+          "packages" => {
+            "pkg" => {
+              "name" => "package",
+              "version" => "1.0"
+            }
+          },
+          "properties" => {"key" => "value"},
+          "properties_need_filtering" => true,
+          "dns_domain_name" => "bosh",
+          "address" => "uuid-1.fake-job.default.fake-deployment.bosh",
+          "update" => {},
+          "persistent_disk" => 0,
+          "persistent_disk_pool" => {
+            "name" => String,
+            "disk_size" => 0,
+            "cloud_properties" => {}
+          },
+          "persistent_disk_type" => {
+            "name" => String,
+            "disk_size" => 0,
+            "cloud_properties" => {}
+          }
+        }
+        expect(instance_spec.full_spec).to match(expected_spec)
       end
 
       context 'when CompilationJobs' do

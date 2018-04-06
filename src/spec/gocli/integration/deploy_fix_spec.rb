@@ -1,15 +1,15 @@
 require_relative '../spec_helper'
 
-describe 'deploy_fix', type: :integration do
+describe 'deploy --fix', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'fix unresponsive vms' do
+  it 'fixes unresponsive vms' do
     doTest
   end
 
   context 'when sending templates over nats' do
     with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
-    it 'fix unresponsive vms' do
+    it 'fixes unresponsive vms' do
       doTest
     end
   end

@@ -1,0 +1,362 @@
+require_relative '../spec_helper'
+
+describe 'Links', type: :integration do
+  with_reset_sandbox_before_each
+
+  def send_director_get_request(url_path, query, auth = {username: 'test', password: 'test'})
+    director_url = build_director_api_url(url_path, query)
+
+    req = Net::HTTP::Get.new(director_url)
+    req.basic_auth(auth[:username], auth[:password]) unless auth.empty?
+
+    send_director_api_request(director_url, req)
+  end
+
+  def get(path, params)
+    send_director_get_request(path, params)
+  end
+
+  def get_json(*args)
+    JSON.parse get(*args).read_body
+  end
+
+  def get_link_providers
+    get_json('/link_providers', 'deployment=simple')
+  end
+
+  def get_link_consumers
+    get_json('/link_consumers', 'deployment=simple')
+  end
+
+  def upload_links_release
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, :preserve => true)
+    bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
+    bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
+  end
+
+  def should_contain_network_for_job(job, template, pattern)
+    my_api_instance = director.instance(job, '0', deployment_name: 'simple')
+    template = YAML.load(my_api_instance.read_job_template(template, 'config.yml'))
+
+    template['databases'].select {|key| key == 'main' || key == 'backup_db'}.each do |_, database|
+      database.each do |instance|
+        expect(instance['address']).to match(pattern)
+      end
+    end
+  end
+
+  let(:cloud_config) do
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash['azs'] = [{'name' => 'z1'}]
+    cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
+    cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
+    cloud_config_hash['compilation']['az'] = 'z1'
+    cloud_config_hash['networks'] << {
+      'name' => 'dynamic-network',
+      'type' => 'dynamic',
+      'subnets' => [{'az' => 'z1'}]
+    }
+
+    cloud_config_hash
+  end
+
+  before do
+    upload_links_release
+    upload_stemcell
+
+    upload_cloud_config(cloud_config_hash: cloud_config)
+  end
+
+  context 'when job requires link' do
+    let(:links) do
+      {
+        'db' => {'from' => 'link_alias'},
+        'backup_db' => {'from' => 'link_alias'},
+      }
+    end
+
+    let(:api_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_api',
+        jobs: [{'name' => 'api_server', 'consumes' => links}],
+        instances: 1
+      )
+      spec['azs'] = ['z1']
+      spec
+    end
+
+    let(:aliased_instance_group_spec) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'aliased_postgres',
+        jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+        instances: 1,
+        )
+      spec['azs'] = ['z1']
+      spec
+    end
+
+    context 'when deployment includes a migrated job which also provides or consumes links' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [api_instance_group_spec, aliased_instance_group_spec]
+        manifest
+      end
+
+      let(:new_api_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'new_api_job',
+          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          instances: 1,
+          )
+        spec['migrated_from'] = ['name' => 'my_api']
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:new_aliased_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'new_aliased_job',
+          jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+          instances: 1
+        )
+        spec['migrated_from'] = [{'name' => 'aliased_postgres'}]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:provided_link_migrated_response) do
+        [{'id' => 1,
+          'name' => 'link_alias',
+          'shared' => false,
+          'deployment' => 'simple',
+          'link_provider_definition' => {'type' => 'db', 'name' => 'backup_db'},
+          'owner_object' => {'type' => 'job',
+                             'name' => 'backup_database',
+                             'info' => {'instance_group' => 'new_aliased_job'}}
+         }]
+      end
+
+      let(:consumed_link_migrated_response) do
+        [{"id" => 1,
+          "name" => "link_alias",
+          "optional" => false,
+          "deployment" => "simple",
+          "owner_object" =>
+            {"type" => "job", "name" => "api_server", "info" => {"instance_group" => "new_api_job"}},
+          "link_consumer_definition" => {"name" => "db", "type" => "db"}},
+         {"id" => 2,
+          "name" => "link_alias",
+          "optional" => false,
+          "deployment" => "simple",
+          "owner_object" =>
+            {"type" => "job", "name" => "api_server", "info" => {"instance_group" => "new_api_job"}},
+          "link_consumer_definition" => {"name" => "backup_db", "type" => "db"}}]
+      end
+
+      it 'deploys migrated_from jobs' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.load(link_instance.read_job_template('api_server', 'config.yml'))
+
+        aliased_job_instance = director.instance('aliased_postgres', '0')
+
+        expect(template['databases']['main'].size).to eq(1)
+        expect(template['databases']['main']).to contain_exactly(
+                                                   {
+                                                     'id' => "#{aliased_job_instance.id}",
+                                                     'name' => 'aliased_postgres',
+                                                     'index' => 0,
+                                                     'address' => '192.168.1.3'
+                                                   }
+                                                 )
+
+        manifest['instance_groups'] = [new_api_instance_group_spec, new_aliased_instance_group_spec]
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('new_api_job', '0')
+        template = YAML.load(link_instance.read_job_template('api_server', 'config.yml'))
+
+        new_aliased_job_instance = director.instance('new_aliased_job', '0')
+
+        expect(template['databases']['main'].size).to eq(1)
+        expect(template['databases']['main']).to contain_exactly(
+                                                   {
+                                                     'id' => "#{new_aliased_job_instance.id}",
+                                                     'name' => 'new_aliased_job',
+                                                     'index' => 0,
+                                                     'address' => '192.168.1.3'
+                                                   }
+                                                 )
+
+        response = get_link_providers
+        expect(response).to eq(provided_link_migrated_response)
+        consumer_response = get_link_consumers
+        expect(consumer_response.count).to eq(2)
+        expect(consumer_response).to include(consumed_link_migrated_response[0])
+        expect(consumer_response).to include(consumed_link_migrated_response[1])
+      end
+    end
+
+    context 'when deployment includes multiple migrated jobs with the same name and who both provide links' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [aliased_instance_group_spec, secondary_deployment_instance_group_spec,
+                                       secondary_deployment_consumer_instance_group_spec, api_instance_group_spec]
+        manifest
+      end
+
+      let(:secondary_deployment_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'test_another_group',
+          jobs: [
+            {'name' => 'backup_database',
+             'provides' => {
+               'backup_db' => {'as' => 'link_alias2'}
+             }
+            }
+          ],
+          instances: 1
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:secondary_deployment_consumer_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'test_another_consumer_group',
+          jobs: [
+            {
+              'name' => 'api_server',
+              'consumes' => {
+                'db' => {'from' => 'link_alias2'},
+                'backup_db' => {'from' => 'link_alias2'}
+              }
+            }
+          ],
+          instances: 1
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:new_aliased_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'new_aliased_job',
+          jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+          instances: 1
+        )
+        spec['migrated_from'] = [{'name' => 'aliased_postgres'}, {'name' => 'test_another_group'}]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:new_api_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'new_api_job',
+          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          instances: 1,
+          )
+        spec['migrated_from'] = [{'name' => 'my_api'}, {'name' => 'test_another_consumer_group'}]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'is still able to deploy and chooses the appropriate link property' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        manifest['instance_groups'] = [new_api_instance_group_spec, new_aliased_instance_group_spec]
+        expect { deploy_simple_manifest(manifest_hash: manifest) }.to_not raise_error
+      end
+
+      it 'is still able to deploy and chooses the appropriate link property in either order' do
+        manifest['instance_groups'] = [secondary_deployment_instance_group_spec, aliased_instance_group_spec, api_instance_group_spec]
+        deploy_simple_manifest(manifest_hash: manifest)
+        manifest['instance_groups'] = [new_api_instance_group_spec, new_aliased_instance_group_spec]
+        expect { deploy_simple_manifest(manifest_hash: manifest) }.to_not raise_error
+      end
+    end
+
+    context 'when migrated from two jobs with the same name who use manual links' do
+      let(:links) do
+        {
+          'db' => {
+            'instances' => [
+              { 'address' => 'something.aws.amazon.com' }
+            ],
+            'properties' => {'foo' => 'haha'}
+          },
+          'backup_db' => {
+            'instances' => [
+              { 'address' => 'something.aws.amazon.com' }
+            ],
+            'properties' => {'foo' => 'hehe'}
+          }
+        }
+      end
+
+      let(:second_api_instance_group_spec) do
+        spec = Bosh::Common::DeepCopy.copy(api_instance_group_spec)
+        spec['name'] = 'secondary_instance_group'
+        spec
+      end
+
+      let(:merged_instance_group_spec) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'merged_instance_group',
+          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          instances: 1,
+          )
+        spec['migrated_from'] = [{'name' => api_instance_group_spec['name']},
+                                 {'name' => second_api_instance_group_spec['name']}]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [api_instance_group_spec, second_api_instance_group_spec]
+        manifest
+      end
+
+      it 'should choose the first job' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        manifest['instance_groups'] = [merged_instance_group_spec]
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+    end
+
+    context 'when migrated_from but there is a new job with links added' do
+      let(:secondary_aliased_instance_group_spec) do
+        spec = Bosh::Common::DeepCopy.copy(aliased_instance_group_spec)
+        spec['name'] = 'secondary_instance_group'
+        spec
+      end
+
+      let(:merged_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'merged_group',
+          jobs: [
+            {'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}},
+            {'name' => 'database', 'provides' => {'db' => {'as' => 'db2'}}},
+          ],
+          instances: 1,
+          )
+        spec['migrated_from'] = [{'name' => aliased_instance_group_spec['name']}, {'name' => secondary_aliased_instance_group_spec['name']}]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [aliased_instance_group_spec, secondary_aliased_instance_group_spec]
+        manifest
+      end
+
+      it 'still deploys successfully' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        manifest['instance_groups'] = [merged_instance_group]
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+    end
+  end
+end

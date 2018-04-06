@@ -117,13 +117,16 @@ LOGMESSAGE
             let(:deployment_model) { Models::Deployment.make(name: 'simple') }
             let(:expected_attrs) { { name: 'simple', properties: {} } }
             let(:expected_plan_options) do
-              { 'recreate' => false,
+              {
+                'is_deploy_action' => false,
+                'recreate' => false,
                 'fix' => false,
                 'skip_drain' => nil,
                 'job_states' => {},
                 'max_in_flight' => nil,
                 'canaries' => nil,
-                'tags' => {} }
+                'tags' => {},
+              }
             end
 
             before do
@@ -203,14 +206,40 @@ LOGMESSAGE
                 allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with('simple').and_return(runtime_config_hash)
               end
 
-              it 'has the releases from the deployment manifest and the addon' do
-                expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
-                  [
-                    ['bosh-release', '1'],
-                    ['bar-release', '2'],
-                    %w[test_release_2 2]
-                  ]
-                )
+              context 'and the runtime config does not have any applicable jobs' do
+                it 'has the releases from the deployment manifest' do
+                  expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
+                    [
+                      ['bosh-release', '1'],
+                      ['bar-release', '2'],
+                    ],
+                  )
+                end
+              end
+
+              context 'and the runtime config does has applicable jobs' do
+                let(:runtime_config_hash) do
+                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                    'addons' => [
+                      {
+                        'name' => 'first_addon',
+                        'jobs' => [
+                          { 'name' => 'my_template', 'release' => 'test_release_2' },
+                        ],
+                      },
+                    ],
+                  )
+                end
+
+                it 'has the releases from the deployment manifest and relevant addon releases' do
+                  expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
+                    [
+                      %w[bosh-release 1],
+                      %w[bar-release 2],
+                      %w[test_release_2 2],
+                    ],
+                  )
+                end
               end
 
               context 'with runtime variables' do
@@ -321,122 +350,6 @@ LOGMESSAGE
             end
           end
 
-          describe 'links' do
-            context 'when a job consumes a link' do
-              before do
-                manifest_hash.merge!(
-                  'jobs' => [
-                    { 'name' => 'job1-name',
-                      'templates' => [{
-                        'name' => 'provides_template',
-                        'consumes' => {
-                          'link_name' => { 'from' => 'link_name' }
-                        }
-                      }] }
-                  ]
-                )
-              end
-
-              let(:deployment_name) { 'deployment_name' }
-
-              let(:job1) do
-                job = Bosh::Director::DeploymentPlan::Job.new(release, 'provides_job', deployment_name)
-                job.add_link_from_release('job1-name', 'consumes', 'link_name', 'name' => 'link_name', 'type' => 'link_type')
-                job.add_link_from_release('job1-name', 'provides', 'link_name_2', 'properties' => ['a'])
-                job
-              end
-
-              let(:instance_group1) do
-                instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-                                name: 'job1-name',
-                                canonical_name: 'job1-canonical-name',
-                                jobs: [job1])
-              end
-
-              let(:link_path) do
-                instance_double(
-                  'Bosh::Director::DeploymentPlan::LinkPath',
-                  deployment: 'deployment_name',
-                  instance_group: 'ig_name',
-                  job: 'provides_job',
-                  name: 'link_name',
-                  path: 'deployment_name.ig_name.provides_job.link_name',
-                  skip: false
-                )
-              end
-
-              let(:skipped_link_path) do
-                instance_double(
-                  'Bosh::Director::DeploymentPlan::LinkPath',
-                  deployment: 'deployment_name',
-                  instance_group: 'ig_name',
-                  job: 'provides_job',
-                  name: 'link_name',
-                  path: 'deployment_name.ig_name.provides_job.link_name',
-                  skip: true
-                )
-              end
-
-              let(:release) do
-                instance_double(
-                  'Bosh::Director::DeploymentPlan::ReleaseVersion',
-                  name: 'bosh-release'
-                )
-              end
-
-              it 'should have a link_path' do
-                allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                expect(DeploymentPlan::LinkPath).to receive(:new).and_return(link_path)
-                expect(link_path).to receive(:parse)
-                expect(instance_group1).to receive(:add_link_path).with('provides_job', 'link_name', link_path)
-
-                planner
-              end
-
-              it 'should not add a link path if no links found for optional ones, and it should not fail' do
-                allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                allow(job1).to receive(:release).and_return(release)
-                allow(job1).to receive(:properties).and_return({})
-                expect(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
-                expect(skipped_link_path).to receive(:parse)
-                expect(instance_group1).to_not receive(:add_link_path)
-                planner
-              end
-
-              context 'when job properties_json has the value "null"' do
-                it 'should not throw an error' do
-                  allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                  allow(job1).to receive(:release).and_return(release)
-                  allow(job1).to receive(:properties).and_return({})
-                  allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
-                  allow(skipped_link_path).to receive(:parse)
-
-                  templateModel = Models::Template.where(name: 'provides_job').first
-                  templateModel.save
-
-                  expect(subject).to_not receive(:process_link_properties).with({}, { 'properties' => nil, 'template_name' => 'provides_job' }, ['a'], [])
-                  planner
-                end
-              end
-
-              context 'when link property has no default value and no value is set in the deployment manifest' do
-                it 'should not throw an error' do
-                  allow(DeploymentPlan::InstanceGroup).to receive(:parse).and_return(instance_group1)
-                  allow(job1).to receive(:release).and_return(release)
-                  allow(job1).to receive(:properties).and_return({})
-                  allow(DeploymentPlan::LinkPath).to receive(:new).and_return(skipped_link_path)
-                  allow(skipped_link_path).to receive(:parse)
-
-                  template_model = Models::Template.where(name: 'provides_job').first
-                  template_model.spec = template_model.spec.merge(properties: { 'a' => {} })
-                  template_model.save
-
-                  planner
-                end
-              end
-            end
-          end
-
           context 'runtime config' do
             before do
               allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(true)
@@ -485,7 +398,9 @@ LOGMESSAGE
 
           runtime_config_hash['releases'].each do |release_entry|
             release = Models::Release.make(name: release_entry['name'])
-            Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            template = Models::Template.make(name: 'my_template', release: release)
+            release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            release_version.add_template(template)
           end
         end
 

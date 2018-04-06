@@ -194,7 +194,7 @@ module Bosh::Director
 
           expect { release_job.update }.to raise_error(
             JobDuplicateLinkName,
-            "Job 'foo' 'provides' specifies links with duplicate name 'db'"
+            "Job 'foo' specifies duplicate provides link with name 'db'"
           )
         end
 
@@ -240,7 +240,7 @@ module Bosh::Director
 
           expect { release_job.update }.to raise_error(
               JobDuplicateLinkName,
-              "Job 'foo' 'consumes' specifies links with duplicate name 'db'"
+              "Job 'foo' specifies duplicate consumes link with name 'db'"
             )
         end
 

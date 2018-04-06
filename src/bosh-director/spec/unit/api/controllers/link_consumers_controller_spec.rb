@@ -72,41 +72,71 @@ module Bosh::Director
 
         context 'and there are consumers in the database' do
           let!(:consumer_1) do
-            Models::LinkConsumer.create(
+            Models::Links::LinkConsumer.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
-              :owner_object_type => 'job',
-              :owner_object_name => 'job_name_1',
+              :type => 'job',
+              :name => 'job_name_1',
             )
           end
+
+          let!(:consumer_intent_1) do
+            Models::Links::LinkConsumerIntent.create(
+              :link_consumer => consumer_1,
+              :original_name => 'link_1',
+              :type => 'link_type_1',
+              :name => 'link_alias_1',
+              :optional => false,
+              :blocked => false
+              )
+          end
+
           let!(:consumer_2) do
-            Models::LinkConsumer.create(
+            Models::Links::LinkConsumer.create(
               :deployment => deployment,
               :instance_group => 'instance_group',
-              :owner_object_type => 'job',
-              :owner_object_name => 'job_name_2',
+              :type => 'job',
+              :name => 'job_name_2',
+            )
+          end
+
+          let!(:consumer_intent_2) do
+            Models::Links::LinkConsumerIntent.create(
+              :link_consumer => consumer_1,
+              :original_name => 'link_2',
+              :type => 'link_type_2',
+              :name => 'link_alias_2',
+              :optional => false,
+              :blocked => false
             )
           end
 
           it 'should return a list of consumers for specified deployment' do
             get "/?deployment=#{consumer_1.deployment.name}"
             expect(last_response.status).to eq(200)
-            expect(JSON.parse(last_response.body)).to eq([generate_consumer_hash(consumer_1), generate_consumer_hash(consumer_2)])
+            expect(JSON.parse(last_response.body)).to eq([generate_consumer_hash(consumer_intent_1), generate_consumer_hash(consumer_intent_2)])
           end
         end
       end
 
       def generate_consumer_hash(model)
+        consumer = model.link_consumer
         {
           'id' => model.id,
-          'deployment' => model.deployment.name,
+          'name' => model.name,
+          'optional' => model.optional,
+          'deployment' => consumer.deployment.name,
           'owner_object' => {
-            'type' => model.owner_object_type,
-            'name' => model.owner_object_name,
+            'type' => consumer.type,
+            'name' => consumer.name,
             'info' => {
-              'instance_group' => model.instance_group,
+              'instance_group' => consumer.instance_group,
             },
-          }
+          },
+          'link_consumer_definition' => {
+              'type' => model.type,
+              'name' => model.original_name,
+          },
         }
       end
     end

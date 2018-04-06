@@ -144,10 +144,10 @@ describe 'using director with config server', type: :integration do
           it 'should use old variable value during hard stop, start' do
             instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
 
-            bosh_runner.run("stop --hard #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            bosh_runner.run("stop --hard #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
             pre_start_invocations_size = current_sandbox.cpi.invocations.size
 
-            bosh_runner.run("start #{instance.job_name}/#{instance.id}", deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            bosh_runner.run("start #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
             invocations = current_sandbox.cpi.invocations.drop(pre_start_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last

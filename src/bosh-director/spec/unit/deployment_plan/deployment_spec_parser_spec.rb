@@ -10,7 +10,7 @@ module Bosh::Director
     let(:runtime_configs) { [Models::Config.make(:runtime)] }
 
     describe '#parse' do
-      let(:options) { {} }
+      let(:options) { {'is_deploy_action' => true} }
       let(:parsed_deployment) { subject.parse(manifest_hash, options) }
       let(:deployment_model) { Models::Deployment.make }
       let(:manifest_hash) do
@@ -274,26 +274,26 @@ module Bosh::Director
             update = instance_double('Bosh::Director::DeploymentPlan::UpdateConfig')
 
             expect(DeploymentPlan::UpdateConfig).to receive(:new).
-              with('foo' => 'bar').
+              with('foo' => 'bar', 'is_deploy_action' => true).
               and_return(update)
 
             expect(parsed_deployment.update).to eq(update)
           end
 
           context 'when canaries value is present in options' do
-              let(:options) { { 'canaries'=> '42' } }
+              let(:options) { { 'is_deploy_action' => true, 'canaries'=> '42' } }
               it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::UpdateConfig).to receive(:new)
-                  .with( {'foo'=> 'bar', 'canaries' => '42'} )
+                  .with( {'foo'=> 'bar', 'is_deploy_action' => true, 'canaries' => '42'} )
                   .and_return(update_config)
                 parsed_deployment.update
               end
           end
           context 'when max_in_flight value is present in options' do
-            let(:options) { { 'max_in_flight'=> '42' } }
+            let(:options) { { 'is_deploy_action' => true, 'max_in_flight'=> '42' } }
             it "replaces max_in_flight value from job's update section with option's value" do
               expect(DeploymentPlan::UpdateConfig).to receive(:new)
-                .with( {'foo'=> 'bar', 'max_in_flight' => '42'} )
+                .with( {'foo'=> 'bar', 'is_deploy_action' => true, 'max_in_flight' => '42'} )
                 .and_return(update_config)
               parsed_deployment.update
             end
@@ -346,18 +346,18 @@ module Bosh::Director
 
             it 'delegates to Job to parse job specs' do
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {'is_deploy_action' => true}).
                 and_return(instance_group_1)
 
               expect(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {'is_deploy_action' => true}).
                 and_return(instance_group_2)
 
               expect(parsed_deployment.instance_groups).to eq([instance_group_1, instance_group_2])
             end
 
             context 'when canaries value is present in options' do
-              let(:options) { { 'canaries'=> '42' } }
+              let(:options) { { 'is_deploy_action' => true, 'canaries'=> '42' } }
               it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
                   .with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, options)
@@ -372,7 +372,7 @@ module Bosh::Director
             end
 
             context 'when max_in_flight value is present in options' do
-              let(:options) { { 'max_in_flight'=> '42' } }
+              let(:options) { { 'is_deploy_action' => true, 'max_in_flight'=> '42' } }
               it "replaces max_in_flight value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
                    .with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, options)
@@ -388,11 +388,11 @@ module Bosh::Director
 
             it 'allows to look up job by name' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {'is_deploy_action' => true}).
                 and_return(instance_group_1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {'is_deploy_action' => true}).
                 and_return(instance_group_2)
 
 
@@ -427,11 +427,11 @@ module Bosh::Director
 
             it 'raises an error' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, {'is_deploy_action' => true}).
                 and_return(instance_group_1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse).
-                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {}).
+                with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-2-name'}, event_log, logger, {'is_deploy_action' => true}).
                 and_return(instance_group_2)
 
               expect {
@@ -562,8 +562,8 @@ module Bosh::Director
 
             expect(result_obj.count).to eq(1)
             expect(result_obj.first.name).to eq('addon1')
-            expect(result_obj.first.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil},
-              {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides_links' => [], 'consumes_links' => [], 'properties' => nil}])
+            expect(result_obj.first.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil},
+              {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil}])
             expect(result_obj.first.properties).to eq({'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
           end
 

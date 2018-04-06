@@ -68,7 +68,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:release1_model) { Bosh::Director::Models::Release.make(name: 'release1') }
   let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
   let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
+  let(:links_serial_id) { 7 }
   subject { described_class.new(logger) }
+
+  let(:links_manager) { Bosh::Director::Links::LinksManager.new(logger, event_log, links_serial_id) }
 
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new).and_return update_config
@@ -77,6 +80,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     allow(plan).to receive(:vm_type).with('dea').and_return vm_type
     allow(plan).to receive(:stemcell).with('dea').and_return stemcell
     allow(plan).to receive(:update)
+    allow(plan).to receive(:links_manager).and_return(links_manager)
 
     allow(release1).to receive(:get_or_create_template).with('foo').and_return(release1_foo_job)
     allow(release1).to receive(:get_or_create_template).with('bar').and_return(release1_bar_job)
@@ -331,6 +335,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       context 'when templates do not depend on packages with the same name' do
+        before do
+          link_provider = instance_double(Bosh::Director::Models::Links::LinkProvider)
+          allow(links_manager).to receive(:find_or_create_provider).and_return(link_provider)
+        end
+
         it 'does not raise an exception' do
           expect { instance_group.validate_package_names_do_not_collide! }.to_not raise_error
         end
@@ -776,95 +785,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#add_resolved_link' do
-    let(:link_spec_1) do
-      {
-        'deployment_name' => 'my_dep_name_1',
-        'networks' => ['default_1'],
-        'properties' => {
-          'listen_port' => 'Kittens',
-          'disorder_property' => 'foo',
-        },
-        'instances' => [{
-          'name' => 'provider_1',
-          'index' => 0,
-          'bootstrap' => true,
-          'id' => 'vroom',
-          'az' => 'z1',
-          'address' => '10.244.0.4',
-        }],
-      }
-    end
-
-    let(:link_spec_2) do
-      {
-        'deployment_name' => 'my_dep_name_2',
-        'networks' => ['default_2'],
-        'properties' => {
-          'listen_port' => 'Dogs',
-          'disorder_property' => 'foo',
-        },
-        'instances' => [{
-          'name' => 'provider_2',
-          'index' => 0,
-          'bootstrap' => false,
-          'id' => 'hello',
-          'az' => 'z2',
-          'address' => '10.244.0.5',
-        }],
-      }
-    end
-
-    let(:expected_resolved_links) do
-      {
-        'some-job-1' => {
-          'my_link_name_1' => {
-            'deployment_name' => 'my_dep_name_1',
-            'instances' => [{
-              'name' => 'provider_1',
-              'index' => 0,
-              'bootstrap' => true,
-              'id' => 'vroom',
-              'az' => 'z1',
-              'address' => '10.244.0.4',
-            }],
-            'networks' => ['default_1'],
-            'properties' => {
-              'disorder_property' => 'foo',
-              'listen_port' => 'Kittens',
-            },
-
-          },
-        },
-        'some-job-2' => {
-          'my_link_name_2' => {
-            'deployment_name' => 'my_dep_name_2',
-            'instances' => [{
-              'name' => 'provider_2',
-              'index' => 0,
-              'bootstrap' => false,
-              'id' => 'hello',
-              'az' => 'z2',
-              'address' => '10.244.0.5',
-            }],
-            'networks' => ['default_2'],
-            'properties' => {
-              'disorder_property' => 'foo',
-              'listen_port' => 'Dogs',
-            },
-          },
-        },
-      }
-    end
-
-    it 'stores resolved links correctly' do
-      subject.add_resolved_link('some-job-1', 'my_link_name_1', link_spec_1)
-      subject.add_resolved_link('some-job-2', 'my_link_name_2', link_spec_2)
-
-      expect(subject.resolved_links.to_json).to eq(expected_resolved_links.to_json)
-    end
-  end
-
   describe '#referenced_variable_sets' do
     let(:spec) do
       {
@@ -978,10 +898,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#unignored_instance_plans_needing_shutdown' do
+  describe '#unignored_instance_plans_needing_duplicate_vm' do
     let(:instance_plan_instance) { instance_double(BD::DeploymentPlan::Instance, vm_created?: true, state: 'started') }
     let(:instance_plan) do
-      instance_double(BD::DeploymentPlan::InstancePlan, instance: instance_plan_instance, new?: false, needs_shutting_down?: true, should_be_ignored?: false)
+      instance_double(BD::DeploymentPlan::InstancePlan, instance: instance_plan_instance, new?: false, needs_duplicate_vm?: true, should_be_ignored?: false)
     end
     let(:instance_plan_sorter) { instance_double(BD::DeploymentPlan::InstancePlanSorter, sort: [instance_plan]) }
 
@@ -991,7 +911,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when the plan has a created instance and needs shutting down' do
       it 'selects the instance plan' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to eq([instance_plan])
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to eq([instance_plan])
       end
     end
 
@@ -1001,7 +921,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should filter detached instance plans' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
@@ -1011,7 +931,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
@@ -1021,17 +941,17 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
     context 'when the instance does not need shutting down' do
       before do
-        allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
+        allow(instance_plan).to receive(:needs_duplicate_vm?).and_return(false)
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_shutdown).to be_empty
+        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
   end

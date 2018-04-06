@@ -296,10 +296,6 @@ module Bosh::Director
         {}
       end
 
-      def resolved_links
-        {}
-      end
-
       def update_spec
         nil
       end

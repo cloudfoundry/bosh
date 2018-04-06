@@ -8,7 +8,7 @@ module Bosh::Director
       let(:deployment_plan) do
         instance_double(
           Planner,
-          model: Models::Deployment.make,
+          model: deployment_model,
           properties: {},
           update: UpdateConfig.new(
             'canaries' => 2,
@@ -22,12 +22,25 @@ module Bosh::Director
           releases: {},
         )
       end
+      let(:deployment_model) { Models::Deployment.make }
       let(:network) { ManualNetwork.new('fake-network-name', [], logger) }
       let(:task) { Models::Task.make(id: 42) }
       let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
       let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
       let(:disk_collection) { PersistentDiskCollection.new(logger) }
+
+      let(:links_parser) do
+        instance_double(Bosh::Director::Links::LinksParser).tap do |mock|
+          allow(mock).to receive(:parse_consumers_from_job)
+          allow(mock).to receive(:parse_providers_from_job)
+          allow(mock).to receive(:parse_provider_from_disk)
+        end
+      end
+
+      before do
+        allow(Bosh::Director::Links::LinksParser).to receive(:new).and_return(links_parser)
+      end
 
       describe '#parse' do
         before do
@@ -44,7 +57,7 @@ module Bosh::Director
           allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
           allow(PersistentDiskCollection).to receive(:new).and_return(disk_collection)
         end
-        let(:parse_options) { {} }
+        let(:parse_options) { {'is_deploy_action' => true} }
         let(:parsed_instance_group) { parser.parse(instance_group_spec, parse_options) }
         let(:resource_pool_env) { { 'key' => 'value' } }
         let(:uninterpolated_resource_pool_env) { { 'key' => '((value_placeholder))' } }
@@ -312,6 +325,7 @@ module Bosh::Director
         shared_examples_for 'templates/jobs key' do
           before { instance_group_spec.delete('jobs') }
 
+          # TODO LINKS: Add tests to ensure links_manager's methods get invoked.
           context 'when value is an array of hashes' do
             context 'when one of the hashes specifies a release' do
               before do
@@ -326,21 +340,23 @@ module Bosh::Director
 
                 release_model_2 = Models::Release.make(name: 'fake-release-2')
                 fake_release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model_2)
-                fake_release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model_2))
+                fake_release_version_model.add_template(Models::Template.make(
+                  name: 'job-name',
+                  release: release_model_2,
+                  spec: {consumes: [{'name' => "a", 'type' => "db"}]}
+                ))
 
-                deployment_model = Models::Deployment.make(name: 'deployment', link_spec_json: '{"job_name":{"template_name":{"link_name":{"name":"link_name","type":"link_type"}}}}')
+                deployment_model = Models::Deployment.make(name: 'deployment')
                 version.add_deployment(deployment_model)
               end
 
               let(:rel_ver) { instance_double(ReleaseVersion, name: 'fake-release-2', version: '1') }
 
               context 'when job specifies a release' do
-                before do
-                  instance_group_spec['release'] = 'fake-release'
-                end
                 let(:job) { make_job('job-name', rel_ver) }
 
                 before do
+                  instance_group_spec['release'] = 'fake-release'
                   allow(deployment_plan).to receive(:release)
                     .with('fake-release')
                     .and_return(rel_ver)
@@ -348,7 +364,6 @@ module Bosh::Director
                   allow(rel_ver).to receive(:get_or_create_template)
                     .with('job-name')
                     .and_return(job)
-                  allow(job).to receive(:add_link_from_manifest)
                   allow(job).to receive(:add_properties)
                 end
 
@@ -359,29 +374,25 @@ module Bosh::Director
               end
 
               context 'when job does not specify a release' do
-                before { instance_group_spec.delete('release') }
-
-                before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver]) }
                 let(:deployment_rel_ver) { instance_double(ReleaseVersion, name: '') }
                 let(:job) { make_job('job-name', nil) }
 
-                let(:provides_link) { instance_double(Link, name: 'zz') }
                 let(:provides_job) { instance_double(Job, name: 'z') }
                 let(:provides_instance_group) { instance_double(InstanceGroup, name: 'y') }
 
                 before do
+                  instance_group_spec.delete('release')
+                  allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
                   allow(deployment_plan).to receive(:release)
                     .with('fake-release')
                     .and_return(rel_ver)
 
-                  allow(provides_job).to receive(:provided_links).and_return([provides_link])
                   allow(provides_instance_group).to receive(:jobs).and_return([provides_job])
                   allow(deployment_plan).to receive(:instance_groups).and_return([provides_instance_group])
 
                   allow(rel_ver).to receive(:get_or_create_template)
                     .with('job-name')
                     .and_return(job)
-                  allow(job).to receive(:add_link_from_manifest)
                   allow(job).to receive(:add_properties)
                 end
 
@@ -627,14 +638,16 @@ module Bosh::Director
 
               before do
                 instance_group_spec['templates'] = [
-                  { 'name' => 'job-name',
+                  {
+                    'name' => 'job-name',
                     'links' => { 'db' => 'a.b.c' },
                     'properties' => {
                       'property_1' => 'property_1_value',
                       'property_2' => {
                         'life' => 'life_value',
                       },
-                    } },
+                    },
+                  },
                 ]
                 instance_group_spec['release'] = 'fake-release'
 
@@ -680,8 +693,10 @@ module Bosh::Director
 
               before do
                 instance_group_spec['templates'] = [
-                  { 'name' => 'job-name',
-                    'links' => { 'db' => 'a.b.c' } },
+                  {
+                    'name' => 'job-name',
+                    'links' => { 'db' => 'a.b.c' }
+                  },
                 ]
 
                 instance_group_spec['properties'] = props
@@ -774,14 +789,16 @@ module Bosh::Director
 
               before do
                 instance_group_spec['templates'] = [
-                  { 'name' => 'job-name',
+                  {
+                    'name' => 'job-name',
                     'links' => { 'db' => 'a.b.c' },
                     'properties' => {
                       'property_1' => 'property_1_value',
                       'property_2' => {
                         'life' => 'life_value',
                       },
-                    } },
+                    },
+                  },
                 ]
                 instance_group_spec['release'] = 'fake-job-release'
 
@@ -803,6 +820,70 @@ module Bosh::Director
                   .with({ 'property_1' => 'property_1_value', 'property_2' => { 'life' => 'life_value' } }, 'instance-group-name')
 
                 parsed_instance_group
+              end
+            end
+
+            context 'when the manifest specifies a job' do
+              it 'will parse the links using links parser' do
+                # TODO LINKS
+              end
+            end
+
+            context 'link parsing' do
+              let(:rel_ver) { instance_double(ReleaseVersion, name: 'fake-release', version: '1') }
+              let(:job) { make_job('job-name', nil) }
+
+              before do
+                instance_group_spec[keyword] = [
+                  {
+                    'name' => 'job-name',
+                    'release' => 'fake-release',
+                  },
+                ]
+                release_model = Models::Release.make(name: 'fake-release')
+                version = Models::ReleaseVersion.make(version: '1', release: release_model)
+                version.add_template(Models::Template.make(
+                  name: 'job-name',
+                  release: release_model,
+                  spec: {}
+                ))
+                release_model.add_version(version)
+
+                deployment_model = Models::Deployment.make(name: 'deployment')
+                version.add_deployment(deployment_model)
+
+                allow(deployment_plan).to receive(:release)
+                  .with('fake-release')
+                  .and_return(rel_ver)
+
+                allow(rel_ver).to receive(:get_or_create_template)
+                  .with('job-name')
+                  .and_return(job)
+                allow(job).to receive(:add_properties)
+              end
+
+              it 'should parse providers with LinksParser' do
+                expect(links_parser).to receive(:parse_providers_from_job)
+                parsed_instance_group
+              end
+
+              it 'should parse consumers with LinksParser' do
+                expect(links_parser).to receive(:parse_consumers_from_job)
+                parsed_instance_group
+              end
+
+              context 'when it is not a deploy action' do
+                let(:parse_options) { {'is_deploy_action' => false} }
+
+                it 'should skip parsing providers with LinksParser' do
+                  expect(links_parser).to_not receive(:parse_providers_from_job)
+                  parsed_instance_group
+                end
+
+                it 'should skip parsing consumers with LinksParser' do
+                  expect(links_parser).to_not receive(:parse_consumers_from_job)
+                  parsed_instance_group
+                end
               end
             end
           end
@@ -970,55 +1051,66 @@ module Bosh::Director
           let(:disk_type_large) { instance_double(DiskType) }
           let(:disk_collection) { instance_double(PersistentDiskCollection) }
 
-          it 'parses' do
-            instance_group_spec['persistent_disks'] = [{ 'name' => 'my-disk', 'type' => 'disk-type-small' },
-                                                       { 'name' => 'my-favourite-disk', 'type' => 'disk-type-large' }]
-            expect(deployment_plan).to receive(:disk_type)
-              .with('disk-type-small')
-              .and_return(disk_type_small)
-            expect(deployment_plan).to receive(:disk_type)
-              .with('disk-type-large')
-              .and_return(disk_type_large)
-            expect(disk_collection).to receive(:add_by_disk_name_and_type)
-              .with('my-favourite-disk', disk_type_large)
-            expect(disk_collection).to receive(:add_by_disk_name_and_type)
-              .with('my-disk', disk_type_small)
+          context 'when persistent disks are well formatted' do
+            before do
+              instance_group_spec['persistent_disks'] = [
+                { 'name' => 'my-disk', 'type' => 'disk-type-small' },
+                { 'name' => 'my-favourite-disk', 'type' => 'disk-type-large' },
+              ]
+              expect(deployment_plan).to receive(:disk_type)
+                .with('disk-type-small')
+                .and_return(disk_type_small)
+              expect(deployment_plan).to receive(:disk_type)
+                .with('disk-type-large')
+                .and_return(disk_type_large)
+              expect(disk_collection).to receive(:add_by_disk_name_and_type)
+                .with('my-favourite-disk', disk_type_large)
+              expect(disk_collection).to receive(:add_by_disk_name_and_type)
+                .with('my-disk', disk_type_small)
+            end
 
-            parsed_instance_group
+            it 'should call LinksParser to create disk providers for each specified disk' do
+              expect(links_parser).to receive(:parse_provider_from_disk).twice
+              parsed_instance_group
+            end
           end
 
-          it 'complains about empty names' do
-            instance_group_spec['persistent_disks'] = [{ 'name' => '', 'type' => 'disk-type-small' }]
-            expect do
-              parsed_instance_group
-            end.to raise_error InstanceGroupInvalidPersistentDisk,
-                               "Instance group 'instance-group-name' persistent_disks's section contains a disk with no name"
-          end
+          context 'when persistent disks are NOT well formatted' do
+            it 'complains about empty names' do
+              instance_group_spec['persistent_disks'] = [{ 'name' => '', 'type' => 'disk-type-small' }]
+              expect do
+                parsed_instance_group
+              end.to raise_error InstanceGroupInvalidPersistentDisk,
+                                 "Instance group 'instance-group-name' persistent_disks's section contains a disk with no name"
+            end
 
-          it 'complains about two disks with the same name' do
-            instance_group_spec['persistent_disks'] = [
-              { 'name' => 'same', 'type' => 'disk-type-small' },
-              { 'name' => 'same', 'type' => 'disk-type-small' },
-            ]
+            it 'complains about two disks with the same name' do
+              instance_group_spec['persistent_disks'] = [
+                { 'name' => 'same', 'type' => 'disk-type-small' },
+                { 'name' => 'same', 'type' => 'disk-type-small' },
+              ]
 
-            expect do
-              parsed_instance_group
-            end.to raise_error InstanceGroupInvalidPersistentDisk,
-                               "Instance group 'instance-group-name' persistent_disks's section contains duplicate names"
-          end
+              expect do
+                parsed_instance_group
+              end.to raise_error InstanceGroupInvalidPersistentDisk,
+                "Instance group 'instance-group-name' persistent_disks's section contains duplicate names"
+            end
 
-          it 'complains about unknown disk type' do
-            instance_group_spec['persistent_disks'] = [{ 'name' => 'disk-name-0', 'type' => 'disk-type-small' }]
-            expect(deployment_plan).to receive(:disk_type)
-              .with('disk-type-small')
-              .and_return(nil)
+            it 'complains about unknown disk type' do
+              instance_group_spec['persistent_disks'] = [
+                { 'name' => 'disk-name-0', 'type' => 'disk-type-small' },
+              ]
+              expect(deployment_plan).to receive(:disk_type)
+                .with('disk-type-small')
+                .and_return(nil)
 
-            expect do
-              parsed_instance_group
-            end.to raise_error(
-              InstanceGroupUnknownDiskType,
-              "Instance group 'instance-group-name' persistent_disks's section references an unknown disk type 'disk-type-small'",
-            )
+              expect do
+                parsed_instance_group
+              end.to raise_error(
+                InstanceGroupUnknownDiskType,
+                "Instance group 'instance-group-name' persistent_disks's section references an unknown disk type 'disk-type-small'",
+              )
+            end
           end
         end
 
@@ -1394,9 +1486,10 @@ module Bosh::Director
           it 'parses out desired instances' do
             instance_group = parsed_instance_group
 
-            expect(instance_group.desired_instances).to eq([
-                                                             DesiredInstance.new(instance_group, deployment_plan),
-                                                           ])
+            expected_instances = [
+              DesiredInstance.new(instance_group, deployment_plan),
+            ]
+            expect(instance_group.desired_instances).to eq(expected_instances)
           end
         end
 
