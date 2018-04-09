@@ -27,12 +27,22 @@ module Bosh::Dev::Sandbox
 
       @connector = HTTPEndpointConnector.new('director', 'localhost', options[:director_port], '/info', "\"uuid\"", log_location, @logger)
 
-      @worker_processes = 3.times.map do |index|
-        Service.new(
-          %W[bosh-director-worker -c #{@director_config} -i #{index}],
-          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal,urgent'}},
-          @logger,
-        )
+      if ENV['TMUX_DEBUG']
+        @worker_processes = 2.times.map do |index|
+          Service.new(
+            %W[tmux new-window -n bosh-director-worker-#{index} -d bundle exec bosh-director-worker -c #{@director_config} -i #{index}],
+            {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal,urgent'}},
+            @logger,
+          )
+        end
+      else
+        @worker_processes = 3.times.map do |index|
+          Service.new(
+            %W[bosh-director-worker -c #{@director_config} -i #{index}],
+            {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal,urgent'}},
+            @logger,
+          )
+        end
       end
 
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, @director_config, @logger)
@@ -137,6 +147,10 @@ module Bosh::Dev::Sandbox
     end
 
     def delayed_job_ready?
+      if ENV['TMUX_DEBUG']
+        sleep 20
+        return true
+      end
       started = true
       @worker_processes.each do |worker|
         started = started && worker.stdout_contents.include?('Starting job worker')
@@ -161,10 +175,20 @@ module Bosh::Dev::Sandbox
         sleep delay
       end
 
+      if ENV['TMUX_DEBUG']
+        return
+      end
+
       start_monitor_workers
     end
 
     def stop_workers
+      if ENV['TMUX_DEBUG']
+        @worker_processes.length.times.map do |index|
+          system("tmux kill-window -t :bosh-director-worker-#{index}")
+        end
+        return
+      end
       # wait for workers in parallel for fastness
       stop_monitor_workers
       @worker_processes.map { |worker_process| Thread.new {
