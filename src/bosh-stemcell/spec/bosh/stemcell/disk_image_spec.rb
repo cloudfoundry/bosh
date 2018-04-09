@@ -95,7 +95,7 @@ module Bosh::Stemcell
           allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
           if Bosh::Stemcell::Arch.ppc64le?
             allow(shell).to receive(:run).
-                               with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
+                               with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"", 
                                output_command: false).and_return(kpartx_map_output)
           else
             allow(shell).to receive(:run).
@@ -172,6 +172,54 @@ module Bosh::Stemcell
         expect(shell).to receive(:run).with('sudo losetup -dv /dev/loop0', output_command: false).ordered
 
         expect { disk_image.unmount }.to raise_error
+      end
+    end
+
+    describe '#while_mounted' do
+      it 'mounts the disk, calls the provided block, and unmounts' do
+        fake_thing = double('FakeThing')
+        losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+        allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+        if Bosh::Stemcell::Arch.ppc64le?
+          allow(shell).to receive(:run).
+                               with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
+                               output_command: false).and_return(kpartx_map_output)
+          expect(shell).to receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p2 /fake/mnt', output_command: false)
+        else
+          allow(shell).to receive(:run).
+                             with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
+          expect(shell).to receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false)
+        end
+        allow(fake_thing).to receive(:fake_call).with(disk_image).ordered
+        expect(shell).to receive(:run).with('sudo umount /fake/mnt', output_command: false).ordered
+        expect(shell).to receive(:run).with('sudo kpartx -dv /dev/loop0', output_command: false).ordered
+        expect(shell).to receive(:run).with('sudo losetup -dv /dev/loop0', output_command: false).ordered
+
+        disk_image.while_mounted do |image|
+          fake_thing.fake_call(image)
+        end
+      end
+
+      context 'when the block raises and error' do
+        it 'mounts the disk, calls the provided block, and unmounts' do
+          losetup_commad = 'sudo losetup --show --find /path/to/FAKE_IMAGE'
+          allow(shell).to receive(:run).with(losetup_commad, output_command: false).and_return('/dev/loop0')
+          if Bosh::Stemcell::Arch.ppc64le?
+            allow(shell).to receive(:run).
+                                 with("sudo kpartx -av /dev/loop0 | grep \"^add\" | grep \"p2 \"",
+                                 output_command: false).and_return(kpartx_map_output)
+            expect(shell).to receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p2 /fake/mnt', output_command: false)
+          else
+            allow(shell).to receive(:run).
+                               with('sudo kpartx -av /dev/loop0', output_command: false).and_return(kpartx_map_output)
+            expect(shell).to receive(:run).with('sudo mount /dev/mapper/FAKE_LOOP1p1 /fake/mnt', output_command: false)
+          end
+          expect(shell).to receive(:run).with('sudo umount /fake/mnt', output_command: false).ordered
+          expect(shell).to receive(:run).with('sudo kpartx -dv /dev/loop0', output_command: false).ordered
+          expect(shell).to receive(:run).with('sudo losetup -dv /dev/loop0', output_command: false).ordered
+
+          expect { disk_image.while_mounted { |_| raise } }.to raise_error
+        end
       end
     end
   end
