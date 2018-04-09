@@ -913,7 +913,7 @@ describe 'links api', type: :integration do
 
     it 'returns link address' do
       response = get_json('/link_address', 'link_id=1')
-      expect(response['address']).to eq('192.168.1.2')
+      expect(response[0]['address']).to eq("192.168.1.2")
     end
   end
 end
