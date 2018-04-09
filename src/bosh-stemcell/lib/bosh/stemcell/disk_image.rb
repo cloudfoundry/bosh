@@ -31,13 +31,6 @@ module Bosh::Stemcell
       unmap_image
     end
 
-    def while_mounted
-      mount
-      yield self
-    ensure
-      unmount
-    end
-
     private
 
     attr_reader :image_file_path, :verbose, :shell, :device
