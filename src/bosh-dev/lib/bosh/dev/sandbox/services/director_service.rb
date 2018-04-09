@@ -148,7 +148,7 @@ module Bosh::Dev::Sandbox
 
     def delayed_job_ready?
       if ENV['TMUX']
-        sleep 10
+        sleep 20
         return true
       end
       started = true
