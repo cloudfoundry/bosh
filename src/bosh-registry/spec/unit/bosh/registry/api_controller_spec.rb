@@ -1,11 +1,9 @@
 require "spec_helper"
 
 describe Bosh::Registry::ApiController do
-
+  let(:auth) { [{'user' => 'admin', 'password' => 'admin'}] }
   before(:each) do
-    Bosh::Registry.http_user = "admin"
-    Bosh::Registry.http_password = "admin"
-
+    Bosh::Registry.auth = auth
     @instance_manager = double("instance manager")
     Bosh::Registry.instance_manager = @instance_manager
 
@@ -79,6 +77,21 @@ describe Bosh::Registry::ApiController do
 
       expect_json_response(@session.last_response, 200,
                            { "status" => "ok" })
+    end
+  end
+
+  context "When there is a second authorized user" do
+    let(:auth) { [{'user' => 'admin', 'password' => 'admin'},{'user' => 'admin1', 'password' => 'admin1'}] }
+
+    it "returns settings (authorized user, no IP check)" do
+      expect(@instance_manager).to receive(:read_settings).
+          with("foo", nil).and_return("bar")
+
+      @session.basic_authorize("admin1", "admin1")
+      @session.get("/instances/foo/settings")
+
+      expect_json_response(@session.last_response, 200,
+                           { "status" => "ok", "settings" => "bar" })
     end
   end
 

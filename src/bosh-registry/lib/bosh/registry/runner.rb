@@ -7,8 +7,7 @@ module Bosh::Registry
 
       @logger = Bosh::Registry.logger
       @http_port = Bosh::Registry.http_port
-      @http_user = Bosh::Registry.http_user
-      @http_password = Bosh::Registry.http_password
+      @auth = Bosh::Registry.auth
     end
 
     def run

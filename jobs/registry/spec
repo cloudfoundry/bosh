@@ -22,7 +22,12 @@ properties:
     description: Username clients must use to access Registry via HTTP Basic Auth
   registry.password:
     description: Password clients must use to access Registry via HTTP Basic Auth
-
+  registry.additional_users:
+    description: |
+      An array of objects with keys 'username' and 'password'
+      clients must use to access Registry via HTTP Basic Auth
+      These users are in addition to the user defined by 'registry.username'/'registry.password'
+      This is to enable registry credential rotation
   env.http_proxy:
     description: HTTP proxy that the registry should use
   env.https_proxy:

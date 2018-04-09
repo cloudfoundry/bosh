@@ -4,10 +4,9 @@ module Bosh::Registry
 
     attr_accessor :logger
     attr_accessor :http_port
-    attr_accessor :http_user
-    attr_accessor :http_password
     attr_accessor :db
     attr_accessor :instance_manager
+    attr_accessor :auth
 
     def configure(config)
       validate_config(config)
@@ -18,8 +17,18 @@ module Bosh::Registry
       end
 
       @http_port = config["http"]["port"]
-      @http_user = config["http"]["user"]
-      @http_password = config["http"]["password"]
+
+      @auth = []
+      @auth << {
+          'user' => config['http']['user'],
+          'password' => config['http']['password']
+      }
+
+      if config['http']['additional_users']
+        @auth = @auth + config['http']['additional_users'].map do |user|
+          {"user" => user['username'], "password" => user['password']}
+        end
+      end
 
       @db = connect_db(config["db"])
 
