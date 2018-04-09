@@ -28,11 +28,13 @@ module Bosh::Dev::Sandbox
       @connector = HTTPEndpointConnector.new('director', 'localhost', options[:director_port], '/info', "\"uuid\"", log_location, @logger)
 
       if ENV['TMUX']
-        Service.new(
-          %W[tmux new-window -n bosh-director-worker bosh-director-worker -c #{@director_config} -i #{index}],
-          {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal,urgent'}},
-          @logger,
-        )
+        @worker_processes = [
+          Service.new(
+            %W[tmux new-window -n bosh-director-worker -d bundle exec bosh-director-worker -c #{@director_config} -i 0],
+            {output: "#{@base_log_path}.worker_0.out", env: {'QUEUE' => 'normal,urgent'}},
+            @logger,
+          )
+        ]
       else
         @worker_processes = 3.times.map do |index|
           Service.new(
@@ -146,6 +148,7 @@ module Bosh::Dev::Sandbox
 
     def delayed_job_ready?
       if ENV['TMUX']
+        sleep 10
         return true
       end
       started = true
@@ -172,12 +175,17 @@ module Bosh::Dev::Sandbox
         sleep delay
       end
 
+      if ENV['TMUX']
+        return
+      end
+
       start_monitor_workers
     end
 
     def stop_workers
       if ENV['TMUX']
         system("tmux kill-window -t :bosh-director-worker")
+        return
       end
       # wait for workers in parallel for fastness
       stop_monitor_workers
