@@ -215,7 +215,7 @@ module Bosh::Director
             end
           end
 
-          packages = Models::Package.where(fingerprint: package_meta['fingerprint']).order(:sha1).all
+          packages = Models::Package.where(fingerprint: package_meta['fingerprint']).order_by(:id).all
 
           if packages.empty?
             new_packages << package_meta
@@ -410,7 +410,7 @@ module Bosh::Director
       def compiled_packages_matching(package, stemcell)
         other_compiled_packages = []
         dependency_key = dependency_key(package)
-        packages = Models::Package.where(fingerprint: package.fingerprint).all
+        packages = Models::Package.where(fingerprint: package.fingerprint).order_by(:id).all
         packages.each do |pkg|
           other_compiled_packages.concat(find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all)
         end
