@@ -73,6 +73,7 @@ module Bosh::Spec
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{ 'name' => 'a' }],
+        'env' => {},
       }
     end
 
@@ -186,7 +187,11 @@ module Bosh::Spec
     def self.manifest_errand_with_placeholders
       manifest = manifest_with_errand
       manifest['instance_groups'][1]['jobs'].first['properties']['errand1']['stdout'] = '((placeholder))'
-      manifest
+      manifest.merge('env' => {
+        'bosh' => {
+          'password' => '((errand_password))',
+        },
+      })
     end
 
     def self.test_release_instance_group

@@ -244,12 +244,16 @@ module Bosh::Director
       def snapshot_errands_variables_versions(errands_instance_groups, current_variable_set)
         errors = []
         variables_interpolator = ConfigServer::VariablesInterpolator.new
+        config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
 
         errands_instance_groups.each do |instance_group|
           instance_group_errors = []
 
           begin
             variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
+            unless instance_group&.env&.spec.nil?
+              config_server_client.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
+            end
           rescue Exception => e
             instance_group_errors.push e
           end
