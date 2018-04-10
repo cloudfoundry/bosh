@@ -504,19 +504,48 @@ describe Bosh::Director::Links::LinksManager do
     end
 
 
-    it 'creates a new link' do
-      expected_link = subject.find_or_create_link(
-        name: "test_link_name",
-        provider_intent: provider_intent,
-        consumer_intent: consumer_intent,
-        link_content: "{}"
-      )
+    context 'when link do not exist' do
+      it 'creates a new link' do
+        expected_link = subject.find_or_create_link(
+          name: "test_link_name",
+          provider_intent: provider_intent,
+          consumer_intent: consumer_intent,
+          link_content: "{}"
+        )
 
-      actual_link = Bosh::Director::Models::Links::Link.find(
-        name: "test_link_name"
-      )
+        actual_link = Bosh::Director::Models::Links::Link.find(
+          name: "test_link_name"
+        )
 
-      expect(actual_link).to eq(expected_link)
+        expect(actual_link).to eq(expected_link)
+      end
+    end
+
+    context 'when link already exists' do
+      before do
+        @expected_link_1 = subject.find_or_create_link(
+          name: "test_link_name",
+          provider_intent: provider_intent,
+          consumer_intent: consumer_intent,
+          link_content: "{}"
+        )
+
+        actual_link = Bosh::Director::Models::Links::Link.find(
+          name: "test_link_name"
+        )
+        expect(actual_link).to_not be_nil
+      end
+
+      it 'should return existing link' do
+        expected_link_2 = subject.find_or_create_link(
+          name: "test_link_name",
+          provider_intent: provider_intent,
+          consumer_intent: consumer_intent,
+          link_content: "{}"
+        )
+
+        expect(expected_link_2).to eq(@expected_link_1)
+      end
     end
   end
 

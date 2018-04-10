@@ -141,13 +141,15 @@ module Bosh::Director::Links
       )
 
       unless found_link
-        Bosh::Director::Models::Links::Link.create(
+        return Bosh::Director::Models::Links::Link.create(
           name: name,
           link_provider_intent_id: provider_intent && provider_intent[:id],
           link_consumer_intent_id: consumer_intent && consumer_intent[:id],
           link_content: link_content
         )
       end
+
+      found_link
     end
 
     def find_link(

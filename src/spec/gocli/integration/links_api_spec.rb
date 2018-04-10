@@ -771,6 +771,21 @@ describe 'links api', type: :integration do
           expect(consumer['owner_object']['type']).to eq('external')
         end
 
+        context 'when multiple request have same owner_object and provider_id' do
+          before do
+            first_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            @link_1 = JSON.parse(first_response.read_body)
+          end
+
+          it 'should NOT create new links' do
+            second_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            link_2 = JSON.parse(second_response.read_body)
+
+            expect(link_2).to eq(@link_1)
+
+          end
+        end
+
       end
 
       context 'when link_provider_id do not exists' do
