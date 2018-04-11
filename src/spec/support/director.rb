@@ -161,6 +161,7 @@ module Bosh::Spec
 
       wait_for_resurrection_to_finish
 
+      resurrected_vm.reload
       if vm.vm_cid == resurrected_vm.vm_cid
         raise "expected vm to be recreated by cids match. original: #{vm.inspect}, new: #{resurrected_vm.inspect}"
       end
