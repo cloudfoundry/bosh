@@ -11,7 +11,7 @@ describe 'links api', type: :integration do
 
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.manifest_with_release.merge(
-      'instance_groups' => [instance_group]
+      'instance_groups' => [instance_group],
     )
   end
 
@@ -24,7 +24,7 @@ describe 'links api', type: :integration do
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
       'properties' => {},
-      'persistent_disks' => persistent_disks
+      'persistent_disks' => persistent_disks,
     }
   end
 
@@ -38,14 +38,14 @@ describe 'links api', type: :integration do
         {
           'name' => 'low-performance-disk-type',
           'disk_size' => 1024,
-          'cloud_properties' => { 'type' => 'gp2' }
+          'cloud_properties' => { 'type' => 'gp2' },
         },
         {
           'name' => 'high-performance-disk-type',
           'disk_size' => 4076,
-          'cloud_properties' => { 'type' => 'io1' }
-        }
-      ]
+          'cloud_properties' => { 'type' => 'io1' },
+        },
+      ],
     )
   end
 
@@ -54,21 +54,21 @@ describe 'links api', type: :integration do
   let(:explicit_provider) do
     {
       'name' => 'provider',
-      'provides' => { 'provider' => { 'as' => 'foo' } }
+      'provides' => { 'provider' => { 'as' => 'foo' } },
     }
   end
 
   let(:explicit_consumer) do
     {
       'name' => 'consumer',
-      'consumes' => { 'provider' => { 'from' => 'foo' } }
+      'consumes' => { 'provider' => { 'from' => 'foo' } },
     }
   end
 
   let(:implicit_provider_and_consumer) do
     [
       { 'name' => 'provider' },
-      { 'name' => 'consumer' }
+      { 'name' => 'consumer' },
     ]
   end
 
@@ -80,15 +80,15 @@ describe 'links api', type: :integration do
       'deployment' => 'simple',
       'link_provider_definition' => {
         'name' => 'provider',
-        'type' => 'provider'
+        'type' => 'provider',
       },
       'owner_object' => {
         'name' => 'provider',
         'type' => 'job',
         'info' => {
           'instance_group' => 'foobar',
-        }
-      }
+        },
+      },
     }
   end
 
@@ -97,15 +97,15 @@ describe 'links api', type: :integration do
       'name' => name,
       'link_provider_definition' => {
         'name' => name,
-        'type' => 'disk'
+        'type' => 'disk',
       },
       'owner_object' => {
         'name' => 'foobar',
         'type' => 'disk',
         'info' => {
           'instance_group' => 'foobar',
-        }
-      }
+        },
+      },
     )
   end
 
@@ -119,13 +119,13 @@ describe 'links api', type: :integration do
         'name' => job_name,
         'type' => 'job',
         'info' => {
-          'instance_group' => 'foobar'
+          'instance_group' => 'foobar',
         },
       },
       'link_consumer_definition' => {
         'name' => link_name,
-        'type' => link_name
-      }
+        'type' => link_name,
+      },
     }
   end
 
@@ -135,7 +135,7 @@ describe 'links api', type: :integration do
       'name' => 'provider',
       'link_consumer_id' => '1',
       'link_provider_id' => '1',
-      'created_at' => String
+      'created_at' => String,
     }
   end
 
@@ -195,10 +195,10 @@ describe 'links api', type: :integration do
               'provides' => {
                 'provider' => {
                   'as' => 'foo',
-                  'shared' => true
-                }
-              }
-            }
+                  'shared' => true,
+                },
+              },
+            },
           ]
         end
 
@@ -236,21 +236,21 @@ describe 'links api', type: :integration do
       let(:low_iops_persistent_disk) do
         {
           'type' => 'low-performance-disk-type',
-          'name' => 'low-iops-persistent-disk-name'
+          'name' => 'low-iops-persistent-disk-name',
         }
       end
 
       let(:high_iops_persistent_disk) do
         {
           'type' => 'high-performance-disk-type',
-          'name' => 'high-iops-persistent-disk-name'
+          'name' => 'high-iops-persistent-disk-name',
         }
       end
 
       it 'should return the disk providers' do
         expected_response = [
           disk_provider_response('low-iops-persistent-disk-name'),
-          disk_provider_response('high-iops-persistent-disk-name')
+          disk_provider_response('high-iops-persistent-disk-name'),
         ]
 
         expect(get_link_providers).to match_array(expected_response)
@@ -262,8 +262,8 @@ describe 'links api', type: :integration do
         [
           {
             'type' => 'low-performance-disk-type',
-            'name' => 'provider'
-          }
+            'name' => 'provider',
+          },
         ]
       end
 
@@ -272,8 +272,8 @@ describe 'links api', type: :integration do
           { 'name' => 'provider' },
           {
             'name' => 'alternate_provider',
-            'provides' => { 'provider' => { 'as' => 'provider' } }
-          }
+            'provides' => { 'provider' => { 'as' => 'provider' } },
+          },
         ]
       end
 
@@ -284,11 +284,11 @@ describe 'links api', type: :integration do
             'owner_object' => {
               'name' => 'alternate_provider',
               'info' => {
-                'instance_group' => 'foobar'
-              }
-            }
+                'instance_group' => 'foobar',
+              },
+            },
           ),
-          disk_provider_response('provider')
+          disk_provider_response('provider'),
         ]
 
         expect(get_link_providers).to match_array(expected_response)
@@ -310,7 +310,7 @@ describe 'links api', type: :integration do
         expected_error = Bosh::Director::DeploymentRequired.new('Deployment name is required')
         expected_response = {
           'code' => expected_error.error_code,
-          'description' => expected_error.message
+          'description' => expected_error.message,
         }
 
         expect(actual_response).to match(expected_response)
@@ -331,7 +331,7 @@ describe 'links api', type: :integration do
       let(:jobs) { implicit_provider_and_consumer }
 
       it 'should return the correct number of consumers' do
-        expected_response = [ consumer_response ]
+        expected_response = [consumer_response]
 
         expect(get_link_consumers).to match_array(expected_response)
       end
@@ -340,7 +340,7 @@ describe 'links api', type: :integration do
         let(:jobs) { [{ 'name' => 'api_server_with_optional_db_link' }] }
 
         it 'should still create a consumer' do
-          expected_response = [ consumer_response('api_server_with_optional_db_link', 'db').merge('optional' => true) ]
+          expected_response = [consumer_response('api_server_with_optional_db_link', 'db').merge('optional' => true)]
 
           expect(get_link_consumers).to match_array(expected_response)
         end
@@ -377,7 +377,7 @@ describe 'links api', type: :integration do
         expected_error = Bosh::Director::DeploymentRequired.new('Deployment name is required')
         expected_response = {
           'code' => expected_error.error_code,
-          'description' => expected_error.message
+          'description' => expected_error.message,
         }
 
         expect(actual_response).to match(expected_response)
@@ -400,7 +400,7 @@ describe 'links api', type: :integration do
       it 'should return the correct number of links' do
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
-        expected_response = [ links_response ]
+        expected_response = [links_response]
 
         expect(get_links).to match_array(expected_response)
       end
@@ -410,7 +410,7 @@ describe 'links api', type: :integration do
       let(:jobs) { explicit_provider_and_consumer }
 
       it 'should return the correct number of links' do
-        expected_response = [ links_response ]
+        expected_response = [links_response]
 
         expect(get_links).to match_array(expected_response)
       end
@@ -423,17 +423,17 @@ describe 'links api', type: :integration do
               'provides' => {
                 'provider' => {
                   'as' => 'foo',
-                  'shared' => true
-                }
-              }
-            }
+                  'shared' => true,
+                },
+              },
+            },
           ]
         end
 
         let(:consumer_manifest_hash) do
           Bosh::Spec::NewDeployments.manifest_with_release.merge(
             'name' => 'consumer-simple',
-            'instance_groups' => [consumer_instance_group]
+            'instance_groups' => [consumer_instance_group],
           )
         end
 
@@ -446,16 +446,16 @@ describe 'links api', type: :integration do
                 'consumes' => {
                   'provider' => {
                     'from' => 'foo',
-                    'deployment' => 'simple'
-                  }
-                }
-              }
+                    'deployment' => 'simple',
+                  },
+                },
+              },
             ],
             'vm_type' => 'a',
             'stemcell' => 'default',
             'instances' => 1,
             'networks' => [{ 'name' => 'a' }],
-            'properties' => {}
+            'properties' => {},
           }
         end
 
@@ -463,7 +463,7 @@ describe 'links api', type: :integration do
           deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
 
           actual_response = get_json('/links', 'deployment=consumer-simple')
-          expected_response = [ links_response ]
+          expected_response = [links_response]
 
           expect(actual_response).to match_array(expected_response)
         end
@@ -472,13 +472,13 @@ describe 'links api', type: :integration do
           before do
             deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
 
-            manifest_hash['instance_groups'][0]['jobs']=[]
+            manifest_hash['instance_groups'][0]['jobs'] = []
             deploy_simple_manifest(manifest_hash: manifest_hash)
           end
 
           it 'should become an orphaned link (with no provider)' do
             actual_response = get_json('/links', 'deployment=consumer-simple')
-            expected_response = [ links_response ]
+            expected_response = [links_response]
             expected_response[0]['link_provider_id'] = ''
 
             expect(actual_response).to match_array(expected_response)
@@ -494,7 +494,7 @@ describe 'links api', type: :integration do
 
           it 'should become an orphaned link (with no provider)' do
             actual_response = get_json('/links', 'deployment=consumer-simple')
-            expected_response = [ links_response ]
+            expected_response = [links_response]
             expected_response[0]['link_provider_id'] = ''
 
             expect(actual_response).to match_array(expected_response)
@@ -505,13 +505,13 @@ describe 'links api', type: :integration do
           before do
             deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
 
-            consumer_manifest_hash['instance_groups'][0]['jobs']=[]
+            consumer_manifest_hash['instance_groups'][0]['jobs'] = []
             deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
           end
 
           it 'should remove the link' do
             actual_response = get_json('/links', 'deployment=consumer-simple')
-            expected_response = [ ]
+            expected_response = []
             expect(actual_response).to match_array(expected_response)
           end
         end
@@ -526,15 +526,15 @@ describe 'links api', type: :integration do
             'consumes' => {
               'provider' => {
                 'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
-                'properties' => { 'a' => 'bar', 'c' => 'bazz' }
-              }
-            }
-          }
+                'properties' => { 'a' => 'bar', 'c' => 'bazz' },
+              },
+            },
+          },
         ]
       end
 
       it 'should return a single orphaned link' do
-        expected_response = [ links_response.merge('link_provider_id' => String) ]
+        expected_response = [links_response.merge('link_provider_id' => String)]
         expect(get_links).to match_array(expected_response)
       end
     end
@@ -547,14 +547,14 @@ describe 'links api', type: :integration do
       let(:low_iops_persistent_disk) do
         {
           'type' => 'low-performance-disk-type',
-          'name' => 'low-iops-persistent-disk-name'
+          'name' => 'low-iops-persistent-disk-name',
         }
       end
 
       let(:high_iops_persistent_disk) do
         {
           'type' => 'high-performance-disk-type',
-          'name' => 'high-iops-persistent-disk-name'
+          'name' => 'high-iops-persistent-disk-name',
         }
       end
 
@@ -563,30 +563,26 @@ describe 'links api', type: :integration do
           {
             'name' => 'disk_consumer',
             'consumes' => {
-              'disk_provider' => {'from' => 'low-iops-persistent-disk-name'},
-              'backup_disk_provider' => {'from' => 'high-iops-persistent-disk-name'},
-            }
-          }
+              'disk_provider' => { 'from' => 'low-iops-persistent-disk-name' },
+              'backup_disk_provider' => { 'from' => 'high-iops-persistent-disk-name' },
+            },
+          },
         ]
       end
 
       it 'should have one link for each disk being consumed' do
         expected_response = [
           links_response.merge(
-            {
-              'id' => String,
-              'name' => 'disk_provider',
-              'link_provider_id' => '1',
-            }
+            'id' => String,
+            'name' => 'disk_provider',
+            'link_provider_id' => '1',
           ),
           links_response.merge(
-            {
-              'id' => String,
-              'name' => 'backup_disk_provider',
-              'link_consumer_id' => '2',
-              'link_provider_id' => '2',
-            }
-          )
+            'id' => String,
+            'name' => 'backup_disk_provider',
+            'link_consumer_id' => '2',
+            'link_provider_id' => '2',
+          ),
         ]
         expect(get_links).to match_array(expected_response)
       end
@@ -599,7 +595,7 @@ describe 'links api', type: :integration do
         expected_error = Bosh::Director::DeploymentRequired.new('Deployment name is required')
         expected_response = {
           'code' => expected_error.error_code,
-          'description' => expected_error.message
+          'description' => expected_error.message,
         }
 
         expect(actual_response).to match(expected_response)
@@ -676,12 +672,12 @@ describe 'links api', type: :integration do
         [
           {
             'name' => 'provider',
-            'provides' => { 'provider' => { 'as' => 'bar' } }
+            'provides' => { 'provider' => { 'as' => 'bar' } },
           },
           {
             'name' => 'consumer',
-            'consumes' => { 'provider' => { 'from' => 'bar' } }
-          }
+            'consumes' => { 'provider' => { 'from' => 'bar' } },
+          },
         ]
       end
 
@@ -690,7 +686,7 @@ describe 'links api', type: :integration do
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
-        expected_response = [ links_response ]
+        expected_response = [links_response]
         expect(get_links).to match_array(expected_response)
       end
     end
@@ -710,14 +706,14 @@ describe 'links api', type: :integration do
 
   context 'when doing POST request to create link' do
     context 'when correct json is provided' do
-      let(:provider_id) {'1'}
+      let(:provider_id) { '1' }
       let(:payload_json) do
         {
-          'link_provider_id'=> provider_id,
+          'link_provider_id' => provider_id,
           'link_consumer' => {
-            'owner_object_name'=> 'external_consumer_1',
-            'owner_object_type'=> 'external',
-          }
+            'owner_object_name' => 'external_consumer_1',
+            'owner_object_type' => 'external',
+          },
         }
       end
       let(:jobs) do
@@ -727,10 +723,10 @@ describe 'links api', type: :integration do
             'provides' => {
               'provider' => {
                 'as' => 'foo',
-                'shared' => true
-              }
-            }
-          }
+                'shared' => true,
+              },
+            },
+          },
         ]
       end
 
@@ -741,15 +737,15 @@ describe 'links api', type: :integration do
         end
 
         it 'provide link json output' do
-          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = send_director_post_request('/links', '', JSON.generate(payload_json))
           link = JSON.parse(response.read_body)
 
-          expect(link["name"]).to eq(jobs[0]['name'])
-          expect(link["link_provider_id"]).to eq(provider_id)
+          expect(link['name']).to eq(jobs[0]['name'])
+          expect(link['link_provider_id']).to eq(provider_id)
         end
 
         it 'create consumer_intent' do
-          send_director_post_request("/links", '', JSON.generate(payload_json))
+          send_director_post_request('/links', '', JSON.generate(payload_json))
           response = get_link_consumers
 
           expect(response.count).to_not eq(0)
@@ -759,7 +755,7 @@ describe 'links api', type: :integration do
         end
 
         it 'keeps the consumer and link after redeploy' do
-          send_director_post_request("/links", '', JSON.generate(payload_json))
+          send_director_post_request('/links', '', JSON.generate(payload_json))
           response = get_link_consumers
 
           deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -773,34 +769,33 @@ describe 'links api', type: :integration do
 
         context 'when multiple request have same owner_object and provider_id' do
           before do
-            first_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            first_response = send_director_post_request('/links', '', JSON.generate(payload_json))
             @link_1 = JSON.parse(first_response.read_body)
           end
 
           it 'should NOT create new links' do
-            second_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            second_response = send_director_post_request('/links', '', JSON.generate(payload_json))
             link_2 = JSON.parse(second_response.read_body)
 
             expect(link_2).to eq(@link_1)
           end
         end
-
       end
 
       context 'when link_provider_id do not exists' do
         let(:provider_id) { '42' }
 
         it 'returns error' do
-          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = send_director_post_request('/links', '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
           expect(error_response['description']).to eq("Invalid link_provider_id: #{provider_id}")
         end
       end
 
       context 'when link_provider_id is invalid' do
-        let(:provider_id) { "" }
+        let(:provider_id) { '' }
         it 'returns error' do
-          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = send_director_post_request('/links', '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
           expect(error_response['description']).to eq('Invalid request: `link_provider_id` must be provided')
         end
@@ -809,16 +804,16 @@ describe 'links api', type: :integration do
       context 'when owner_object_name is invalid' do
         let(:payload_json) do
           {
-            'link_provider_id'=> provider_id,
+            'link_provider_id' => provider_id,
             'link_consumer' => {
-              'owner_object_name'=> '',
-              'owner_object_type'=> 'external',
-            }
+              'owner_object_name' => '',
+              'owner_object_type' => 'external',
+            },
           }
         end
 
         it 'returns error' do
-          response = send_director_post_request("/links", '', JSON.generate(payload_json))
+          response = send_director_post_request('/links', '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
           expect(error_response['description']).to eq('Invalid request: `link_consumer.owner_object_name` must not be empty')
         end
@@ -828,12 +823,12 @@ describe 'links api', type: :integration do
         let(:network_name) { 'a' }
         let(:payload_json) do
           {
-            'link_provider_id'=> provider_id,
+            'link_provider_id' => provider_id,
             'link_consumer' => {
-              'owner_object_name'=> 'external_consumer_1',
-              'owner_object_type'=> 'external',
+              'owner_object_name' => 'external_consumer_1',
+              'owner_object_type' => 'external',
             },
-            'network' => network_name
+            'network' => network_name,
           }
         end
 
@@ -844,7 +839,7 @@ describe 'links api', type: :integration do
 
         context 'when network name is valid' do
           it 'creates links' do
-            response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            response = send_director_post_request('/links', '', JSON.generate(payload_json))
             link = JSON.parse(response.read_body)
 
             expect(link).to match(links_response)
@@ -855,7 +850,7 @@ describe 'links api', type: :integration do
           let(:network_name) { 'invalid-network-name' }
 
           it 'return error' do
-            response = send_director_post_request("/links", '', JSON.generate(payload_json))
+            response = send_director_post_request('/links', '', JSON.generate(payload_json))
             error_response = JSON.parse(response.read_body)
             error_string = "Can't resolve network: `#{network_name}` in provider id: #{provider_id} for `#{payload_json['link_consumer']['owner_object_name']}`"
 
@@ -865,10 +860,10 @@ describe 'links api', type: :integration do
       end
     end
 
-    #TODO Links API
+    # TODO: Links API
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
-        response = send_director_post_request("/links", '', JSON.generate({}), {})
+        response = send_director_post_request('/links', '', JSON.generate({}), {})
 
         expect(response.read_body).to include("Not authorized: '/links'")
       end
@@ -876,15 +871,15 @@ describe 'links api', type: :integration do
   end
 
   context 'when doing DELETE request to delete link' do
-    let(:provider_id) {'1'}
+    let(:provider_id) { '1' }
     let(:payload_json) do
       {
-        'link_provider_id'=> provider_id,
+        'link_provider_id' => provider_id,
         'link_consumer' => {
-          'owner_object_name'=> 'external_consumer_1',
-          'owner_object_type'=> 'external',
+          'owner_object_name' => 'external_consumer_1',
+          'owner_object_type' => 'external',
         },
-        'network' => 'a'
+        'network' => 'a',
       }
     end
     let(:jobs) do
@@ -894,27 +889,27 @@ describe 'links api', type: :integration do
           'provides' => {
             'provider' => {
               'as' => 'foo',
-              'shared' => true
-            }
-          }
-        }
+              'shared' => true,
+            },
+          },
+        },
       ]
     end
 
     before do
       provider_response = get_link_providers
       provider_id = provider_response.first['id']
-      send_director_post_request("/links", '', JSON.generate(payload_json))
+      send_director_post_request('/links', '', JSON.generate(payload_json))
     end
 
     it 'performs a successful delete when link exists' do
-      response = send_director_delete_request("/links/1", '')
+      response = send_director_delete_request('/links/1', '')
       expect(response.body).to be_nil
       expect(response).to be_an_instance_of(Net::HTTPNoContent)
     end
 
     it 'raises error if link does not exist' do
-      response = send_director_delete_request("/links/2", '')
+      response = send_director_delete_request('/links/2', '')
       expect(response).to be_an_instance_of(Net::HTTPNotFound)
       parsed_body_hash = JSON.parse(response.body)
       expect(parsed_body_hash['code']).to eq(Bosh::Director::LinkLookupError.new.error_code)
@@ -930,20 +925,20 @@ describe 'links api', type: :integration do
           'provides' => {
             'provider' => {
               'as' => 'foo',
-              'shared' => true
-            }
-          }
+              'shared' => true,
+            },
+          },
         },
-        explicit_consumer
+        explicit_consumer,
       ]
     end
 
     let(:payload_json) do
       {
         'link_consumer' => {
-          'owner_object_name'=> 'external_consumer_1',
-          'owner_object_type'=> 'external',
-        }
+          'owner_object_name' => 'external_consumer_1',
+          'owner_object_type' => 'external',
+        },
       }
     end
 
@@ -954,22 +949,22 @@ describe 'links api', type: :integration do
     end
 
     it 'returns link address' do
-      external_link_response = JSON.parse(send_director_post_request("/links", '', JSON.generate(payload_json)).read_body)
+      external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
       response = get_json('/link_address', "link_id=#{external_link_response['id']}")
-      expect(response).to eq({"address"=>"q-s0.foobar.a.simple.bosh"})
+      expect(response).to eq('address' => 'q-s0.foobar.a.simple.bosh')
     end
 
     context 'when requesting for unknown link id' do
       it 'should raise an error' do
-        response = send_director_get_request('/link_address', "link_id=9999")
+        response = send_director_get_request('/link_address', 'link_id=9999')
         expect(response).to be_an_instance_of(Net::HTTPNotFound)
       end
     end
 
     context 'when requesting for an internal link' do
       it 'should raise an error' do
-        response = send_director_get_request('/link_address', "link_id=1")
-        expect(response).to be_an_instance_of(Net::HTTPBadRequest) #TODO: Perhaps we should be doing 403 instead
+        response = send_director_get_request('/link_address', 'link_id=1')
+        expect(response).to be_an_instance_of(Net::HTTPBadRequest) # TODO: Perhaps we should be doing 403 instead
       end
     end
   end
