@@ -279,7 +279,8 @@ describe Bosh::Director::Links::LinksManager do
         actual_link_consumer_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
           link_original_name: 'test_original_link_name',
-          link_type: 'test_link_type'
+          link_type: 'test_link_type',
+          new_intent_metadata: nil,
         )
 
         expect(actual_link_consumer_intent).to eq(expected_link_consumer_intent)
@@ -299,7 +300,8 @@ describe Bosh::Director::Links::LinksManager do
         actual_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
           link_original_name: 'test_original_link_name',
-          link_type: 'my_new_link_type'
+          link_type: 'my_new_link_type',
+          new_intent_metadata: nil,
         )
 
         expect(actual_intent.id).to eq(expected_intent.id)
@@ -312,7 +314,8 @@ describe Bosh::Director::Links::LinksManager do
         expected_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
           link_original_name: 'test_original_link_name',
-          link_type: 'test_link_type'
+          link_type: 'test_link_type',
+          new_intent_metadata: {'abc':'def'}
         )
 
         actual_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
@@ -325,6 +328,7 @@ describe Bosh::Director::Links::LinksManager do
 
         expect(actual_intent).to eq(expected_intent)
         expect(actual_intent.serial_id).to eq(serial_id)
+        expect(actual_intent.metadata).to eq({'abc' => 'def'}.to_json)
       end
     end
   end

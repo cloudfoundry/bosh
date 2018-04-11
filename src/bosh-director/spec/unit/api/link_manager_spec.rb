@@ -77,7 +77,11 @@ module Bosh::Director
             name: provider_1.name,
           )
           expect(external_link).to_not be_nil
-          expect(JSON.parse(external_link.link_content)).to match('default_network' => String, 'networks' => %w[neta netb], 'instances' => [{ 'address' => 'ip2' }])
+
+          desired_address_from_payload = payload_json['network']
+          default_instance_ip = provider_json_content[:instances][0][:addresses][provider_json_content[:default_network]&.to_sym]
+          expected_instance_ip = provider_json_content[:instances][0][:addresses][desired_address_from_payload&.to_sym] || default_instance_ip
+          expect(JSON.parse(external_link.link_content)).to match('default_network' => String, 'networks' => %w[neta netb], 'instances' => [{ 'address' => expected_instance_ip }])
         end
       end
 
@@ -194,7 +198,7 @@ module Bosh::Director
             include_examples 'creates consumer, consumer_intent and link'
           end
 
-          context 'when network in invalid' do
+          context 'when network is invalid' do
             let(:network_name) { 'invalid_network_name' }
 
             it 'return error' do

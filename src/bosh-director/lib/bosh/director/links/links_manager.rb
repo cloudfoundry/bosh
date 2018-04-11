@@ -107,7 +107,8 @@ module Bosh::Director::Links
     def find_or_create_consumer_intent(
       link_consumer:,
       link_original_name:,
-      link_type:
+      link_type:,
+      new_intent_metadata:
     )
       intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
         link_consumer: link_consumer,
@@ -119,8 +120,13 @@ module Bosh::Director::Links
           link_consumer: link_consumer,
           original_name: link_original_name,
           type: link_type,
+          metadata: new_intent_metadata.to_json,
         )
       else
+        if !new_intent_metadata.nil? && new_intent_metadata.keys.length > 0
+          existing_metadata = JSON.parse(intent.metadata) || {}
+          intent.metadata = existing_metadata.merge(new_intent_metadata).to_json
+        end
         intent.type = link_type
       end
 

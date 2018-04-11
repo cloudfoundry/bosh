@@ -10,6 +10,7 @@ module Bosh::Director
 
       # TODO: Links: if we want to track the user link_create task, what to do with the username
       def create_link(username, json_payload)
+        network_metadata = {}
         validate_link_payload(json_payload)
         consumer_data = json_payload['link_consumer']
 
@@ -27,10 +28,13 @@ module Bosh::Director
           name: consumer_data['owner_object_name'],
           type: @external_type,
         )
+
+        network_metadata['network'] = json_payload['network'] if json_payload.has_key?('network')
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,
           link_original_name: provider.name,
           link_type: provider_intent.type,
+          new_intent_metadata: network_metadata,
         )
 
         filter_content_and_create_link(consumer_intent)
