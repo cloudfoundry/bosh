@@ -782,7 +782,6 @@ describe 'links api', type: :integration do
             link_2 = JSON.parse(second_response.read_body)
 
             expect(link_2).to eq(@link_1)
-
           end
         end
 
@@ -924,11 +923,54 @@ describe 'links api', type: :integration do
   end
 
   context 'when doing GET for link_address' do
-    let(:jobs) { explicit_provider_and_consumer }
+    let(:jobs) do
+      [
+        {
+          'name' => 'provider',
+          'provides' => {
+            'provider' => {
+              'as' => 'foo',
+              'shared' => true
+            }
+          }
+        },
+        explicit_consumer
+      ]
+    end
+
+    let(:payload_json) do
+      {
+        'link_consumer' => {
+          'owner_object_name'=> 'external_consumer_1',
+          'owner_object_type'=> 'external',
+        }
+      }
+    end
+
+    before do
+      provider_response = get_link_providers
+      provider_id = provider_response.first['id']
+      payload_json['link_provider_id'] = provider_id
+    end
 
     it 'returns link address' do
-      response = get_json('/link_address', 'link_id=1')
-      expect(response[0]['address']).to eq("192.168.1.2")
+      external_link_response = JSON.parse(send_director_post_request("/links", '', JSON.generate(payload_json)).read_body)
+      response = get_json('/link_address', "link_id=#{external_link_response['id']}")
+      expect(response).to eq({"address"=>"q-s0.foobar.a.simple.bosh"})
+    end
+
+    context 'when requesting for unknown link id' do
+      it 'should raise an error' do
+        response = send_director_get_request('/link_address', "link_id=9999")
+        expect(response).to be_an_instance_of(Net::HTTPNotFound)
+      end
+    end
+
+    context 'when requesting for an internal link' do
+      it 'should raise an error' do
+        response = send_director_get_request('/link_address', "link_id=1")
+        expect(response).to be_an_instance_of(Net::HTTPBadRequest) #TODO: Perhaps we should be doing 403 instead
+      end
     end
   end
 end

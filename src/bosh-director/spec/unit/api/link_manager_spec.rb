@@ -268,8 +268,8 @@ module Bosh::Director
             Bosh::Director::Models::Links::LinkConsumer.create(
               deployment: deployment,
               instance_group: '',
-              name: "external_consumer_1",
-              type: "external"
+              name: 'external_consumer_1',
+              type: 'external',
             )
           end
 
@@ -383,6 +383,83 @@ module Bosh::Director
                 expect(Bosh::Director::Models::Links::Link.find(name: 'control_consumer_link')).to_not(be_nil)
               end
             end
+          end
+        end
+      end
+    end
+
+    describe '#link_address' do
+      context 'when the link does not exist' do
+        it 'raises an error' do
+          expect do
+            subject.link_address('1')
+          end.to raise_error(LinkLookupError, 'Could not find a link with id 1')
+        end
+      end
+
+      context 'when the link exists' do
+        context 'and the link is from an external consumer' do
+          let(:consumer) do
+            Bosh::Director::Models::Links::LinkConsumer.create(
+              deployment: deployment,
+              instance_group: '',
+              name: 'consumer_1',
+              type: 'job',
+            )
+          end
+
+          let(:consumer_intent) do
+            Bosh::Director::Models::Links::LinkConsumerIntent.create(
+              link_consumer: consumer,
+              original_name: 'link_name',
+              type: 'link_type',
+            )
+          end
+
+          let!(:link) do
+            Bosh::Director::Models::Links::Link.create(
+              link_consumer_intent: consumer_intent,
+              link_content: '{}',
+              name: 'control_consumer_link',
+            )
+          end
+
+          it 'should raise an error' do
+            expect do
+              subject.link_address(link.id)
+            end.to raise_error(LinkNotExternalError, 'Link is must be external to retrieve address')
+          end
+        end
+
+        context 'and the link is from an external consumer' do
+          let(:external_consumer) do
+            Bosh::Director::Models::Links::LinkConsumer.create(
+              deployment: deployment,
+              instance_group: '',
+              name: 'external_consumer_1',
+              type: 'external',
+            )
+          end
+
+          let(:external_consumer_intent) do
+            Bosh::Director::Models::Links::LinkConsumerIntent.create(
+              link_consumer: external_consumer,
+              original_name: 'link_name',
+              type: 'link_type',
+            )
+          end
+
+          let!(:link) do
+            Bosh::Director::Models::Links::Link.create(
+              link_consumer_intent: external_consumer_intent,
+              link_content: '{"deployment_name": "dep_foo", "instance_group": "ig_bar", "default_network": "baz", "domain": "bosh"}',
+              name: 'external_consumer_link',
+            )
+          end
+
+          it 'should return the address of the link' do
+            link_address = subject.link_address(link.id)
+            expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
           end
         end
       end
