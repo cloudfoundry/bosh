@@ -45,11 +45,11 @@ module Bosh::Director::DeploymentPlan
       let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
       let(:static_network_reservation) { BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2') }
 
-      let(:should_hot_swap?) { false }
+      let(:should_create_swap_delete?) { false }
 
       before do
         existing_reservations.each(&:mark_reserved)
-        allow(instance_plan).to receive(:should_hot_swap?).and_return(should_hot_swap?)
+        allow(instance_plan).to receive(:should_create_swap_delete?).and_return(should_create_swap_delete?)
       end
 
       context 'when the instance group is on a dynamic network' do
@@ -71,8 +71,8 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when the instance is a hotswap instance' do
-        let(:should_hot_swap?) { true }
+      context 'when the instance is a create-swap-delete instance' do
+        let(:should_create_swap_delete?) { true }
         let(:desired_reservations) do
           [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)]
         end

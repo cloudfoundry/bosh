@@ -23,4 +23,4 @@ params:
   SPEC_PATH:               ~
   SHA2_MODE:               ~
   DB_TLS:                  false
-  DEFAULT_UPDATE_STRATEGY: "in-place-replace-vm"
+  DEFAULT_UPDATE_STRATEGY: "delete-create"

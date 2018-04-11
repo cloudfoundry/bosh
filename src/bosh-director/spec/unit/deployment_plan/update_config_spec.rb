@@ -234,14 +234,14 @@ module Bosh::Director
       context 'strategy' do
         it 'should return the strategy configuration from the spec' do
           config = DeploymentPlan::UpdateConfig.new(
-            'strategy' => 'duplicate-and-replace-vm',
+            'strategy' => 'create-swap-delete',
             'canaries' => 2,
             'max_in_flight' => 4,
             'canary_watch_time' => 60_000,
             'update_watch_time' => 30_000,
           )
 
-          expect(config.strategy).to eq('duplicate-and-replace-vm')
+          expect(config.strategy).to eq('create-swap-delete')
         end
 
         context 'when strategy has a wrong format' do
@@ -254,7 +254,7 @@ module Bosh::Director
                 'canary_watch_time' => 60_000,
                 'update_watch_time' => 30_000,
               )
-            end.to raise_error(Bosh::Director::ValidationInvalidValue, /Invalid strategy 'incorrect-strategy-value', valid strategies are: duplicate-and-replace-vm, in-place-replace-vm/)
+            end.to raise_error(Bosh::Director::ValidationInvalidValue, /Invalid strategy 'incorrect-strategy-value', valid strategies are: create-swap-delete, delete-create/)
           end
         end
 
@@ -276,7 +276,7 @@ module Bosh::Director
         context 'when default update_config is provided and strategy is not provided' do
           let(:default_config) do
             DeploymentPlan::UpdateConfig.new(
-              'strategy' => 'duplicate-and-replace-vm',
+              'strategy' => 'create-swap-delete',
               'canaries' => 2,
               'max_in_flight' => 4,
               'canary_watch_time' => 60_000,
@@ -287,7 +287,7 @@ module Bosh::Director
           it 'should use strategy value from default_update_config' do
             config = DeploymentPlan::UpdateConfig.new({}, default_config)
 
-            expect(config.strategy).to eq('duplicate-and-replace-vm')
+            expect(config.strategy).to eq('create-swap-delete')
           end
 
           context 'when strategy has a wrong format' do
@@ -302,7 +302,7 @@ module Bosh::Director
                     'update_watch_time' => 30_000,
                   }, default_config
                 )
-              end.to raise_error(Bosh::Director::ValidationInvalidValue, /Invalid strategy '', valid strategies are: duplicate-and-replace-vm, in-place-replace-vm/)
+              end.to raise_error(Bosh::Director::ValidationInvalidValue, /Invalid strategy '', valid strategies are: create-swap-delete, delete-create/)
             end
           end
         end
@@ -338,7 +338,7 @@ module Bosh::Director
     describe '#to_hash' do
       it 'should create a valid hash' do
         config = DeploymentPlan::UpdateConfig.new(
-          'strategy' => 'duplicate-and-replace-vm',
+          'strategy' => 'create-swap-delete',
           'canaries' => 2,
           'max_in_flight' => 4,
           'canary_watch_time' => 60_000,
@@ -347,7 +347,7 @@ module Bosh::Director
 
         config_hash = config.to_hash
         expect(config_hash).to eq(
-          'strategy' => 'duplicate-and-replace-vm',
+          'strategy' => 'create-swap-delete',
           'canaries' => '2',
           'max_in_flight' => '4',
           'canary_watch_time' => '60000-60000',
@@ -357,7 +357,7 @@ module Bosh::Director
       end
 
       context 'when strategy is nil' do
-        it 'should set strategy to in-place-replace-vm strategy' do
+        it 'should set strategy to delete-create strategy' do
           config = DeploymentPlan::UpdateConfig.new(
             'canaries' => 2,
             'max_in_flight' => 4,
@@ -367,7 +367,7 @@ module Bosh::Director
 
           config_hash = config.to_hash
           expect(config_hash).to eq(
-            'strategy' => 'in-place-replace-vm',
+            'strategy' => 'delete-create',
             'canaries' => '2',
             'max_in_flight' => '4',
             'canary_watch_time' => '60000-60000',

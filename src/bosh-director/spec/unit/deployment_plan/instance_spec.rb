@@ -31,7 +31,7 @@ module Bosh::Director::DeploymentPlan
         persistent_disk_collection: PersistentDiskCollection.new(logger),
         compilation?: false,
         errand?: false,
-        strategy: UpdateConfig::STRATEGY_HOT_SWAP,
+        strategy: UpdateConfig::STRATEGY_CREATE_SWAP_DELETE,
         vm_extensions: vm_extensions,
       )
     end

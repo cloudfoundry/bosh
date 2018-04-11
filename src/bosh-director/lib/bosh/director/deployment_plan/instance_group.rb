@@ -185,12 +185,12 @@ module Bosh::Director
         update&.strategy
       end
 
-      def hot_swap?
-        strategy == UpdateConfig::STRATEGY_HOT_SWAP
+      def create_swap_delete?
+        strategy == UpdateConfig::STRATEGY_CREATE_SWAP_DELETE
       end
 
-      def should_hot_swap?
-        Array(networks).none?(&:static?) && hot_swap?
+      def should_create_swap_delete?
+        Array(networks).none?(&:static?) && create_swap_delete?
       end
 
       def needed_instance_plans

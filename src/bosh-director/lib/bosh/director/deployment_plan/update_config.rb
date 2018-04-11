@@ -1,9 +1,9 @@
 module Bosh::Director
   module DeploymentPlan
     class UpdateConfig
-      STRATEGY_HOT_SWAP = 'duplicate-and-replace-vm'.freeze
-      STRATEGY_LEGACY = 'in-place-replace-vm'.freeze
-      ALLOWED_STRATEGY = [STRATEGY_HOT_SWAP, STRATEGY_LEGACY].freeze
+      STRATEGY_CREATE_SWAP_DELETE = 'create-swap-delete'.freeze
+      STRATEGY_DELETE_CREATE = 'delete-create'.freeze
+      ALLOWED_STRATEGY = [STRATEGY_CREATE_SWAP_DELETE, STRATEGY_DELETE_CREATE].freeze
 
       include ValidationHelper
 
@@ -86,7 +86,7 @@ module Bosh::Director
           'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
           'serial' => serial?,
-          'strategy' => @strategy.nil? ? STRATEGY_LEGACY : @strategy,
+          'strategy' => @strategy.nil? ? STRATEGY_DELETE_CREATE : @strategy,
         }
       end
 

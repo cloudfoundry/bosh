@@ -27,14 +27,14 @@ module Bosh::Director
           @logger.info('Creating missing VMs')
 
           missing_plans = @deployment_plan.instance_plans_with_missing_vms
-          hotswap_plans = @deployment_plan.instance_plans_with_hot_swap_and_needs_duplicate_vm
+          create_swap_delete_plans = @deployment_plan.instance_plans_with_create_swap_delete_and_needs_duplicate_vm
 
-          @deployment_plan.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm.each do |instance_plan|
-            @logger.info("Skipping hotswap for static ip enabled instance #{instance_plan.instance_model}")
+          @deployment_plan.skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm.each do |instance_plan|
+            @logger.info("Skipping create-swap-delete for static ip enabled instance #{instance_plan.instance_model}")
           end
 
           @vm_creator.create_for_instance_plans(
-            missing_plans + hotswap_plans,
+            missing_plans + create_swap_delete_plans,
             @deployment_plan.ip_provider,
             @deployment_plan.tags,
           )

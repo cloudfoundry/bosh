@@ -434,7 +434,7 @@ describe 'global networking', type: :integration do
       expect(new_ips).to eq(original_ips)
     end
 
-    it 'gives VMs the same IP on `deploy --recreate`', no_hotswap: true do
+    it 'gives VMs the same IP on `deploy --recreate`', no_create_swap_delete: true do
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 5)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
 
@@ -451,7 +451,7 @@ describe 'global networking', type: :integration do
       expect(new_ips).to match_array(original_ips)
     end
 
-    it 'gives VMs different IPs on `deploy --recreate`', hotswap: true do
+    it 'gives VMs different IPs on `deploy --recreate`', create_swap_delete: true do
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 5)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
 
@@ -563,8 +563,8 @@ describe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: first_manifest_hash)
     end
 
-    # Skipping in hotswap mode: we are currently not deleting orphaned VMs
-    it 'releases IP when subnet range is changed to no longer include it', no_hotswap: true do
+    # Skipping in create-swap-delete mode: we are currently not deleting orphaned VMs
+    it 'releases IP when subnet range is changed to no longer include it', no_create_swap_delete: true do
       deploy_with_range('my-deploy', '192.168.1.0/24')
       expect(director.instances(deployment_name: 'my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
 
@@ -599,7 +599,7 @@ describe 'global networking', type: :integration do
           instance_group_spec
         end
 
-        it 'redeploys VM updating IP that does not belong to range and keeping another IP', no_hotswap: true do
+        it 'redeploys VM updating IP that does not belong to range and keeping another IP', no_create_swap_delete: true do
           first_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 2, range: '192.168.1.0/24') # 1 for compilation
           second_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 1, range: '10.10.0.0/24')
 
@@ -661,7 +661,7 @@ describe 'global networking', type: :integration do
         expect(new_ips).to eq(original_ips)
       end
 
-      it 'gives VMs the same IP on `deploy --recreate`', no_hotswap: true do
+      it 'gives VMs the same IP on `deploy --recreate`', no_create_swap_delete: true do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 5)
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -678,7 +678,7 @@ describe 'global networking', type: :integration do
         expect(new_ips).to match_array(original_ips)
       end
 
-      it 'gives VMs new IPs on `deploy --recreate`', hotswap: true do
+      it 'gives VMs new IPs on `deploy --recreate`', create_swap_delete: true do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
           name: 'my-deploy',
           instances: 2,

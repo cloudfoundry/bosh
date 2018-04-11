@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 require 'fileutils'
 
-RSpec::Matchers.define :be_a_hotswapped do |old_vm|
+RSpec::Matchers.define :be_create_swap_deleted do |old_vm|
   match do |new_vm|
     new_vm['active'] == 'true' &&
       new_vm['az'] == old_vm['az'] &&
@@ -13,11 +13,11 @@ RSpec::Matchers.define :be_a_hotswapped do |old_vm|
   end
 end
 
-describe 'deploy with hotswap', type: :integration do
+describe 'deploy with create-swap-delete', type: :integration do
   with_reset_sandbox_before_each
   let(:manifest) do
     manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
-    manifest['update'] = manifest['update'].merge('strategy' => 'duplicate-and-replace-vm')
+    manifest['update'] = manifest['update'].merge('strategy' => 'create-swap-delete')
     manifest
   end
   let(:cloud_config) do
@@ -64,7 +64,7 @@ describe 'deploy with hotswap', type: :integration do
 
       expect(new_vm).to match(vm_pattern)
 
-      expect(new_vm).to be_a_hotswapped(old_vm)
+      expect(new_vm).to be_create_swap_deleted(old_vm)
     end
 
     it 'should show the new vm only in bosh instances command' do
@@ -108,7 +108,7 @@ describe 'deploy with hotswap', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest)
       end
 
-      it 'should attach disks to new hotswap vms' do
+      it 'should attach disks to new create-swap-deleted vms' do
         instance = director.instances.first
         disk_cid = instance.disk_cids[0]
         expect(disk_cid).not_to be_empty
@@ -128,7 +128,7 @@ describe 'deploy with hotswap', type: :integration do
     context 'when adding an additional network to VM' do
       let(:network_type) { 'manual' }
 
-      it 'hotswaps vms' do
+      it 'create-swap-deleted vms' do
         old_vm = table(bosh_runner.run('vms', json: true))[0]
 
         cloud_config['networks'] << {
@@ -170,14 +170,14 @@ describe 'deploy with hotswap', type: :integration do
 
         expect(new_vm).to match(vm_pattern)
 
-        expect(new_vm).to be_a_hotswapped(old_vm)
+        expect(new_vm).to be_create_swap_deleted(old_vm)
       end
     end
 
     context 'when changing network settings' do
       let(:network_type) { 'manual' }
 
-      it 'hotswaps vms' do
+      it 'be_create_swap_deleted vms' do
         old_vm = table(bosh_runner.run('vms', json: true))[0]
 
         cloud_config['networks'][0]['subnets'][0]['reserved'] << old_vm['ips']
@@ -204,7 +204,7 @@ describe 'deploy with hotswap', type: :integration do
 
         expect(new_vm).to match(vm_pattern)
 
-        expect(new_vm).to be_a_hotswapped(old_vm)
+        expect(new_vm).to be_create_swap_deleted(old_vm)
       end
     end
 
@@ -233,7 +233,7 @@ describe 'deploy with hotswap', type: :integration do
 
         expect(new_vm).to match(vm_pattern)
 
-        expect(new_vm).to be_a_hotswapped(old_vm)
+        expect(new_vm).to be_create_swap_deleted(old_vm)
       end
 
       context 'when doing a no-op deploy' do
@@ -269,7 +269,7 @@ describe 'deploy with hotswap', type: :integration do
           deploy_simple_manifest(manifest_hash: manifest)
         end
 
-        it 'should not hotswap vms' do
+        it 'should not create-swap-deleted vms' do
           task_id = nil
           expect do
             deploy_simple_manifest(manifest_hash: manifest, recreate: true)
@@ -277,7 +277,7 @@ describe 'deploy with hotswap', type: :integration do
           end.not_to(change { director.instances.first.ips })
 
           task_log = bosh_runner.run("task #{task_id} --debug")
-          expect(task_log).to match(/Skipping hotswap for static ip enabled instance #{instance_slug_regex}/)
+          expect(task_log).to match(/Skipping create-swap-deleted for static ip enabled instance #{instance_slug_regex}/)
         end
       end
     end

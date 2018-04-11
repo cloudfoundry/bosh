@@ -7,7 +7,6 @@ module Bosh::Director
     it 'should match the digest in the digests file' do
       digests = JSON.parse(File.read(File.join(DBSpecHelper.director_migrations_dir, '..', 'migration_digests.json')))
       DBSpecHelper.get_migrations.each do | migration |
-
         expected_digest = digests.fetch(File.basename(migration, ".rb"))
 
         actual_digest = ::Digest::SHA1.hexdigest(File.read(migration))

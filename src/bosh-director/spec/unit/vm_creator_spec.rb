@@ -183,9 +183,9 @@ module Bosh
             end
           end
 
-          context 'when the instance uses duplicate-and-replace-vm strategy' do
+          context 'when the instance uses create-swap-delete strategy' do
             before do
-              allow(instance_plan).to receive(:should_hot_swap?).and_return(true)
+              allow(instance_plan).to receive(:should_create_swap_delete?).and_return(true)
             end
 
             context 'when there is already an active vm' do
