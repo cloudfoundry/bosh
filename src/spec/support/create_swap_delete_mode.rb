@@ -1,7 +1,7 @@
 RSpec.configure do |config|
   require 'rspec/core/formatters/console_codes'
 
-  if ENV['DEFAULT_UPDATE_STRATEGY'] == 'create-swap-delete'
+  if ENV['DEFAULT_UPDATE_VM_STRATEGY'] == 'create-swap-delete'
     warning = 'Skipping non-create-swap-delete tests'
     puts RSpec::Core::Formatters::ConsoleCodes.wrap(warning, :yellow)
     config.filter_run_excluding no_create_swap_delete: true

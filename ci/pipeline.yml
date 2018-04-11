@@ -531,7 +531,7 @@ jobs:
           tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
-            DEFAULT_UPDATE_STRATEGY: create-swap-delete
+            DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
             RUBY_VERSION: 2.4.2
             NUM_GROUPS:   24
             GROUP:        1,4,7,10,13,16,19,22
@@ -543,7 +543,7 @@ jobs:
           tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
-            DEFAULT_UPDATE_STRATEGY: create-swap-delete
+            DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
             RUBY_VERSION: 2.4.2
             NUM_GROUPS:   24
             GROUP:        2,5,8,11,14,17,20,23
@@ -555,7 +555,7 @@ jobs:
           tags: ["bosh-integration-db-tls-hotswap"]
           params:
             DB:           postgresql
-            DEFAULT_UPDATE_STRATEGY: create-swap-delete
+            DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
             RUBY_VERSION: 2.4.2
             NUM_GROUPS:   24
             GROUP:        3,6,9,12,15,18,21,24

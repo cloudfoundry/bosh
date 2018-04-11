@@ -111,7 +111,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'properties' => props,
         'template' => %w[foo bar],
         'update' => update,
-        'strategy' => 'create-swap-delete',
       }
     end
 
@@ -578,17 +577,17 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#create_swap_delete?' do
-    context 'when strategy is create-swap-delete' do
+    context 'when vm_strategy is create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'create-swap-delete'
+        allow(update_config).to receive(:vm_strategy).and_return 'create-swap-delete'
       end
 
       it { should be_create_swap_delete }
     end
 
-    context 'when strategy is not create-swap-delete' do
+    context 'when vm_strategy is not create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'something-else'
+        allow(update_config).to receive(:vm_strategy).and_return 'something-else'
       end
 
       it { should_not be_create_swap_delete }
@@ -596,9 +595,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#should_create_swap_delete?' do
-    context 'when strategy is create-swap-delete' do
+    context 'when vm_strategy is create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'create-swap-delete'
+        allow(update_config).to receive(:vm_strategy).and_return 'create-swap-delete'
         subject.networks = [job_network]
       end
 
@@ -615,9 +614,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
     end
 
-    context 'when strategy is not create-swap-delete' do
+    context 'when vm_strategy is not create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'something-else'
+        allow(update_config).to receive(:vm_strategy).and_return 'something-else'
       end
 
       it { should_not be_should_create_swap_delete }

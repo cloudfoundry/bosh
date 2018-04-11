@@ -15,16 +15,19 @@ end
 
 describe 'deploy with create-swap-delete', type: :integration do
   with_reset_sandbox_before_each
+
   let(:manifest) do
     manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
-    manifest['update'] = manifest['update'].merge('strategy' => 'create-swap-delete')
+    manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
     manifest
   end
+
   let(:cloud_config) do
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config['networks'][0]['type'] = network_type
     cloud_config
   end
+
   let(:network_type) { 'dynamic' }
 
   context 'a very simple deploy' do

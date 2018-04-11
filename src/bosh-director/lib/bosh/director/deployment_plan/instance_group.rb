@@ -181,12 +181,12 @@ module Bosh::Director
         needed_instance_plans.reject(&:should_be_ignored?)
       end
 
-      def strategy
-        update&.strategy
+      def vm_strategy
+        update&.vm_strategy
       end
 
       def create_swap_delete?
-        strategy == UpdateConfig::STRATEGY_CREATE_SWAP_DELETE
+        vm_strategy == UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE
       end
 
       def should_create_swap_delete?

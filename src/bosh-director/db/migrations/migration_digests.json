@@ -141,5 +141,6 @@
   "20180215152554_add_api_version_to_stemcells": "94400dcd0ec9f2eb3607e7f7483b207d4da7ce5a",
   "20180301204622_add_stemcell_api_version_to_vms": "d51e2a411900f20847ff439225c27da6b9e60f8f",
   "20180405233153_remove_instance_from_orphaned_vms": "e06508c28f2619548f6dcfe5e5c46787d17c18b6",
-  "20180410180821_migrate_legacy_update_strategy": "9f224e6079b779638a3a52e01dc9fefbc3a2bfd8"
+  "20180410180821_migrate_legacy_update_strategy": "9f224e6079b779638a3a52e01dc9fefbc3a2bfd8",
+  "20180411165035_migrate_update_strategy_to_vm_strategy": "116a03febc41f331316bb0d14385093ed941bc68"
 }
