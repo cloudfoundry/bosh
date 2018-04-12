@@ -280,7 +280,7 @@ describe 'deploy with create-swap-delete', type: :integration do
           end.not_to(change { director.instances.first.ips })
 
           task_log = bosh_runner.run("task #{task_id} --debug")
-          expect(task_log).to match(/Skipping create-swap-deleted for static ip enabled instance #{instance_slug_regex}/)
+          expect(task_log).to match(/Skipping create-swap-delete for static ip enabled instance #{instance_slug_regex}/)
         end
       end
     end

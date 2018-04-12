@@ -287,7 +287,7 @@ describe 'local DNS', type: :integration do
           expect(template).to include('spec.address=192.168.1.2')
         end
 
-        it 'renders a different value', no_create_swap_delete: true do
+        it 'renders a different value', create_swap_delete: true do
           instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
           template = instance.read_job_template('foobar', 'bin/foobar_ctl')
           expect(template).to include('spec.address=192.168.1.3')
@@ -318,22 +318,21 @@ describe 'local DNS', type: :integration do
   def initial_manifest(number_of_instances, max_in_flight)
     manifest_deployment = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell
     manifest_deployment.merge!(
-      {
-        'update' => {
-          'canaries' => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight' => max_in_flight,
-          'update_watch_time' => 20
-        },
+      'update' => {
+        'canaries' => 2,
+        'canary_watch_time' => 4000,
+        'max_in_flight' => max_in_flight,
+        'update_watch_time' => 20
+      },
 
-        'instance_groups' => [
-          Bosh::Spec::NewDeployments.simple_instance_group(
-            name: instance_group_name,
-            instances: number_of_instances,
-            azs: ['z1', 'z2']
-          )
-        ]
-      })
+      'instance_groups' => [
+        Bosh::Spec::NewDeployments.simple_instance_group(
+          name: instance_group_name,
+          instances: number_of_instances,
+          azs: ['z1', 'z2']
+        )
+      ]
+    )
     manifest_deployment['name'] = deployment_name
     manifest_deployment['instance_groups'][0]['networks'][0]['name'] = network_name
     manifest_deployment
