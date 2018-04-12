@@ -84,6 +84,34 @@ module Bosh::Director
             response = JSON.parse(last_response.body)
             expect(response).to eq('address' => 'q-s0.ig-bar.baz.dep-foo.bosh')
           end
+
+          context 'when an az is specified' do
+            before do
+              Models::LocalDnsEncodedAz.create(name: 'z1')
+              Models::LocalDnsEncodedAz.create(name: 'z2')
+            end
+
+            it 'should return the address with the az information' do
+              get "/?link_id=#{link.id}&az=z1"
+              expect(last_response.status).to eq(200)
+              response = JSON.parse(last_response.body)
+              expect(response).to eq('address' => 'q-a1s0.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'when multiple azs are specified' do
+            before do
+              Models::LocalDnsEncodedAz.create(name: 'z1')
+              Models::LocalDnsEncodedAz.create(name: 'z2')
+            end
+
+            it 'should return the address with the az information' do
+              get "/?link_id=#{link.id}&az[]=z1&az[]=z2"
+              expect(last_response.status).to eq(200)
+              response = JSON.parse(last_response.body)
+              expect(response).to eq('address' => 'q-a1a2s0.ig-bar.baz.dep-foo.bosh')
+            end
+          end
         end
       end
 

@@ -16,7 +16,13 @@ module Bosh::Director
           raise LinkIdRequiredError, 'Link id is required'
         end
 
-        result = {address: @link_manager.link_address(params['link_id'])}
+        query = {
+          azs: [(params['az'] || [])].flatten
+        }
+
+        result = {
+          address: @link_manager.link_address(params['link_id'], query)
+        }
 
         body(json_encode(result))
       end

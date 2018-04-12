@@ -402,7 +402,7 @@ module Bosh::Director
       end
 
       context 'when the link exists' do
-        context 'and the link is from an external consumer' do
+        context 'and the link is from an internal consumer' do
           let(:consumer) do
             Bosh::Director::Models::Links::LinkConsumer.create(
               deployment: deployment,
@@ -464,6 +464,18 @@ module Bosh::Director
           it 'should return the address of the link' do
             link_address = subject.link_address(link.id)
             expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
+          end
+
+          context 'and an az parameter is specified' do
+            before do
+              Models::LocalDnsEncodedAz.create(name: 'z1')
+              Models::LocalDnsEncodedAz.create(name: 'z2')
+            end
+
+            it 'should return the address of the link' do
+              link_address = subject.link_address(link.id, {azs: ['z1']})
+              expect(link_address).to eq('q-a1s0.ig-bar.baz.dep-foo.bosh')
+            end
           end
         end
       end
