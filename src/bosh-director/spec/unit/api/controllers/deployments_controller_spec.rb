@@ -119,21 +119,33 @@ module Bosh::Director
             context 'when provided cloud configs and runtime configs context to work within' do
               it 'should use the provided context instead of using the latest runtime and cloud config' do
                 cloud_config = Models::Config.make(:cloud_with_manifest)
-                runtime_config_1 = Models::Config.make(type: 'runtime')
-                runtime_config_2 = Models::Config.make(type: 'runtime')
+                runtime_config1 = Models::Config.make(type: 'runtime')
+                runtime_config2 = Models::Config.make(type: 'runtime')
 
                 Models::Config.make(:cloud_with_manifest)
                 Models::Config.make(type: 'runtime')
 
-                deployment_context = [['context', JSON.dump({'cloud_config_ids' => [cloud_config.id], 'runtime_config_ids' => [runtime_config_1.id, runtime_config_2.id]})]]
+                deployment_context = [[
+                  'context',
+                  JSON.dump(
+                    'cloud_config_ids' => [cloud_config.id],
+                    'runtime_config_ids' => [runtime_config1.id, runtime_config2.id],
+                  ),
+                ]]
 
                 expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                  .with(anything, anything, [cloud_config], [runtime_config_1, runtime_config_2], anything, anything, anything)
-                  .and_return(Models::Task.make)
+                  .with(
+                    anything,
+                    anything,
+                    [cloud_config],
+                    a_collection_containing_exactly(runtime_config1, runtime_config2),
+                    anything,
+                    anything,
+                    anything,
+                  ).and_return(Models::Task.make)
 
-                post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
-
+                post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
                 expect_redirect_to_queued_task(last_response)
               end
 
