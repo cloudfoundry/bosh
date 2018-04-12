@@ -158,9 +158,11 @@ module Bosh::Spec
     def kill_vm_and_wait_for_resurrection(vm, options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
       vm.kill_agent
 
-      resurrected_vm = wait_for_vm(vm.instance_group_name, vm.index, 300, options)
+      wait_for_vm(vm.instance_group_name, vm.index, 300, options)
 
       wait_for_resurrection_to_finish
+
+      resurrected_vm = wait_for_vm(vm.instance_group_name, vm.index, 300, options)
 
       if vm.vm_cid == resurrected_vm.vm_cid
         raise "expected vm to be recreated by cids match. original: #{vm.inspect}, new: #{resurrected_vm.inspect}"
