@@ -28,7 +28,7 @@ module Bosh::Director::DeploymentPlan::Stages
 
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
-    let(:update_step) { UpdateStage.new(base_job, deployment_plan, multi_job_updater, dns_encoder) }
+    let(:update_step) { UpdateStage.new(base_job, deployment_plan, multi_instance_group_updater, dns_encoder) }
 
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
     let(:assembler) { Assembler.new(deployment_plan, nil, nil) }
@@ -147,7 +147,7 @@ module Bosh::Director::DeploymentPlan::Stages
 
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
+          let(:multi_instance_group_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater', run: nil) }
           before do
             deployment.add_job_instance(instance_model)
           end
@@ -171,9 +171,9 @@ module Bosh::Director::DeploymentPlan::Stages
     end
 
     context 'when the director database contains no instances' do
-      let(:multi_job_updater) do
-        Bosh::Director::DeploymentPlan::SerialMultiJobUpdater.new(
-          Bosh::Director::JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder)
+      let(:multi_instance_group_updater) do
+        Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater.new(
+          Bosh::Director::InstanceGroupUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder)
         )
       end
 

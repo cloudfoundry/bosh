@@ -1,23 +1,23 @@
 module Bosh::Director
   module DeploymentPlan
     module Stages
-      class UpdateJobsStage
-        def initialize(base_job, deployment_plan, multi_job_updater)
+      class UpdateInstanceGroupsStage
+        def initialize(base_job, deployment_plan, multi_instance_group_updater)
           @base_job = base_job
           @logger = base_job.logger
           @deployment_plan = deployment_plan
-          @multi_job_updater = multi_job_updater
+          @multi_instance_group_updater = multi_instance_group_updater
         end
 
         def perform
-          update_jobs
+          update_instance_groups
         end
 
         private
 
-        def update_jobs
+        def update_instance_groups
           @logger.info('Updating instances')
-          @multi_job_updater.run(
+          @multi_instance_group_updater.run(
             @base_job,
             @deployment_plan.ip_provider,
             @deployment_plan.instance_groups,

@@ -200,16 +200,16 @@ module Bosh::Director
         DeploymentPlan::Stages::UpdateStage.new(
           self,
           deployment_plan,
-          multi_job_updater(deployment_plan, dns_encoder),
+          multi_instance_group_updater(deployment_plan, dns_encoder),
           dns_encoder
         )
       end
 
       # Job dependencies
 
-      def multi_job_updater(deployment_plan, dns_encoder)
-        @multi_job_updater ||= begin
-          DeploymentPlan::BatchMultiJobUpdater.new(JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder))
+      def multi_instance_group_updater(deployment_plan, dns_encoder)
+        @multi_instance_group_updater ||= begin
+          DeploymentPlan::BatchMultiInstanceGroupUpdater.new(InstanceGroupUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder))
         end
       end
 

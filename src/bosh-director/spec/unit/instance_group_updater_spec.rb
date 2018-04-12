@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe JobUpdater do
-    subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
+  describe InstanceGroupUpdater do
+    subject(:instance_group_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
 
@@ -87,7 +87,7 @@ module Bosh::Director
         end
 
         it 'should not begin the updating job event stage' do
-          job_updater.update
+          instance_group_updater.update
 
           check_event_log(task.id) do |events|
             expect(events).to be_empty
@@ -96,12 +96,12 @@ module Bosh::Director
 
         it 'persists the full spec to the database in case something that is not sent to the vm changes' do
           expect(needed_instance_plans.first).to receive(:persist_current_spec)
-          job_updater.update
+          instance_group_updater.update
         end
       end
 
       context 'when instance plans are errands' do
-        subject(:job_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
+        subject(:instance_group_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
         let(:job) do
           instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
             name: 'job_name',
@@ -137,7 +137,7 @@ module Bosh::Director
           it 'applies' do
             expect(canary_updater).to receive(:update)
 
-            job_updater.update
+            instance_group_updater.update
 
             check_event_log(task.id) do |events|
               [
@@ -151,7 +151,7 @@ module Bosh::Director
 	end
 
         it 'should not apply' do
-          job_updater.update
+          instance_group_updater.update
 
           check_event_log(task.id) do |events|
             expect(events).to be_empty
@@ -175,7 +175,7 @@ module Bosh::Director
         end
 
         it 'should apply the instance plan' do
-          job_updater.update
+          instance_group_updater.update
 
           check_event_log(task.id) do |events|
             expect(events).to be_empty
@@ -258,7 +258,7 @@ module Bosh::Director
           expect(changed_updater).to receive(:update).with(changed_instance_plan)
           expect(unchanged_updater).to_not receive(:update)
 
-          job_updater.update
+          instance_group_updater.update
 
           check_event_log(task.id) do |events|
             [
@@ -277,7 +277,7 @@ module Bosh::Director
           expect(changed_updater).to_not receive(:update)
           expect(unchanged_updater).to_not receive(:update)
 
-          expect { job_updater.update }.to raise_error(update_error)
+          expect { instance_group_updater.update }.to raise_error(update_error)
 
           check_event_log(task.id) do |events|
             [
@@ -294,7 +294,7 @@ module Bosh::Director
           expect(changed_updater).to receive(:update).with(changed_instance_plan).and_raise(update_error)
           expect(unchanged_updater).to_not receive(:update)
 
-          expect { job_updater.update }.to raise_error(update_error)
+          expect { instance_group_updater.update }.to raise_error(update_error)
 
           check_event_log(task.id) do |events|
             [
@@ -322,7 +322,7 @@ module Bosh::Director
           expect(instance_deleter).to receive(:delete_instance_plans).
             with([instance_plan], instance_of(Bosh::Director::EventLog::Stage), {max_threads: 1})
 
-          job_updater.update
+          instance_group_updater.update
         end
       end
 
@@ -404,7 +404,7 @@ module Bosh::Director
           expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
           expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
 
-          job_updater.update
+          instance_group_updater.update
 
           check_event_log(task.id) do |events|
             [
@@ -440,7 +440,7 @@ module Bosh::Director
             expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
             expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
 
-            job_updater.update
+            instance_group_updater.update
 
             check_event_log(task.id) do |events|
               [

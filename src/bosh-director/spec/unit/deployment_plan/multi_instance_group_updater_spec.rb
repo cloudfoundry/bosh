@@ -1,10 +1,10 @@
 require 'spec_helper'
-require 'bosh/director/deployment_plan/multi_job_updater'
-require 'bosh/director/job_updater'
+require 'bosh/director/deployment_plan/multi_instance_group_updater'
+require 'bosh/director/instance_group_updater'
 
-describe Bosh::Director::DeploymentPlan::SerialMultiJobUpdater do
-  subject { described_class.new(job_updater_factory) }
-  let(:job_updater_factory) { instance_double('Bosh::Director::JobUpdaterFactory') }
+describe Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater do
+  subject { described_class.new(instance_group_updater_factory) }
+  let(:instance_group_updater_factory) { instance_double('Bosh::Director::InstanceGroupUpdaterFactory') }
   let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider) }
 
   describe '#run' do
@@ -14,13 +14,13 @@ describe Bosh::Director::DeploymentPlan::SerialMultiJobUpdater do
 
     context 'with 1+ jobs' do
       it 'updates each job serially' do
-        job_updater1 = instance_double('Bosh::Director::JobUpdater')
-        expect(job_updater_factory).to receive(:new_job_updater).with(ip_provider, job1).and_return(job_updater1)
-        expect(job_updater1).to receive(:update).with(no_args).ordered
+        instance_group_updater1 = instance_double('Bosh::Director::InstanceGroupUpdater')
+        expect(instance_group_updater_factory).to receive(:new_instance_group_updater).with(ip_provider, job1).and_return(instance_group_updater1)
+        expect(instance_group_updater1).to receive(:update).with(no_args).ordered
 
-        job_updater2 = instance_double('Bosh::Director::JobUpdater')
-        expect(job_updater_factory).to receive(:new_job_updater).with(ip_provider, job2).and_return(job_updater2)
-        expect(job_updater2).to receive(:update).with(no_args).ordered
+        instance_group_updater2 = instance_double('Bosh::Director::InstanceGroupUpdater')
+        expect(instance_group_updater_factory).to receive(:new_instance_group_updater).with(ip_provider, job2).and_return(instance_group_updater2)
+        expect(instance_group_updater2).to receive(:update).with(no_args).ordered
 
         subject.run(base_job, ip_provider, [job1, job2])
       end
@@ -28,15 +28,15 @@ describe Bosh::Director::DeploymentPlan::SerialMultiJobUpdater do
       it 'task checkpoints before updating each job' do
         expect(base_job).to receive(:task_checkpoint).ordered
 
-        job_updater1 = instance_double('Bosh::Director::JobUpdater')
-        expect(job_updater_factory).to receive(:new_job_updater).with(ip_provider, job1).and_return(job_updater1)
-        expect(job_updater1).to receive(:update).with(no_args).ordered
+        instance_group_updater1 = instance_double('Bosh::Director::InstanceGroupUpdater')
+        expect(instance_group_updater_factory).to receive(:new_instance_group_updater).with(ip_provider, job1).and_return(instance_group_updater1)
+        expect(instance_group_updater1).to receive(:update).with(no_args).ordered
 
         expect(base_job).to receive(:task_checkpoint).ordered
 
-        job_updater2 = instance_double('Bosh::Director::JobUpdater')
-        expect(job_updater_factory).to receive(:new_job_updater).with(ip_provider, job2).and_return(job_updater2)
-        expect(job_updater2).to receive(:update).with(no_args).ordered
+        instance_group_updater2 = instance_double('Bosh::Director::InstanceGroupUpdater')
+        expect(instance_group_updater_factory).to receive(:new_instance_group_updater).with(ip_provider, job2).and_return(instance_group_updater2)
+        expect(instance_group_updater2).to receive(:update).with(no_args).ordered
 
         subject.run(base_job, ip_provider, [job1, job2])
       end
@@ -50,10 +50,10 @@ describe Bosh::Director::DeploymentPlan::SerialMultiJobUpdater do
   end
 end
 
-describe Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater do
-  subject { described_class.new(job_updater_factory) }
+describe Bosh::Director::DeploymentPlan::ParallelMultiInstanceGroupUpdater do
+  subject { described_class.new(instance_group_updater_factory) }
   let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider) }
-  let(:job_updater_factory) { instance_double('Bosh::Director::JobUpdaterFactory') }
+  let(:instance_group_updater_factory) { instance_double('Bosh::Director::InstanceGroupUpdaterFactory') }
 
   describe '#run' do
     let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
@@ -77,7 +77,7 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater do
         expect(thread_pool).to receive(:wrap).and_yield(thread_pool)
 
         # make sure that job updates did not happen outside of the thread pool #process
-        expect(job_updater_factory).to_not receive(:new_job_updater)
+        expect(instance_group_updater_factory).to_not receive(:new_instance_group_updater)
 
         subject.run(base_job, ip_provider, [job1, job2])
       end
@@ -95,16 +95,16 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater do
         subject.run(base_job, ip_provider, [job1, job2])
 
         # first job was enqueued
-        job_updater1 = instance_double('Bosh::Director::JobUpdater', update: nil)
-        expect(job_updater_factory).to receive(:new_job_updater).with(ip_provider, job1).and_return(job_updater1)
+        instance_group_updater1 = instance_double('Bosh::Director::InstanceGroupUpdater', update: nil)
+        expect(instance_group_updater_factory).to receive(:new_instance_group_updater).with(ip_provider, job1).and_return(instance_group_updater1)
         enqueued.first.call
-        expect(job_updater1).to have_received(:update).with(no_args)
+        expect(instance_group_updater1).to have_received(:update).with(no_args)
 
         # second job was enqueued
-        job_updater2 = instance_double('Bosh::Director::JobUpdater', update: nil)
-        expect(job_updater_factory).to receive(:new_job_updater).with(ip_provider, job2).and_return(job_updater2)
+        instance_group_updater2 = instance_double('Bosh::Director::InstanceGroupUpdater', update: nil)
+        expect(instance_group_updater_factory).to receive(:new_instance_group_updater).with(ip_provider, job2).and_return(instance_group_updater2)
         enqueued.last.call
-        expect(job_updater2).to have_received(:update).with(no_args)
+        expect(instance_group_updater2).to have_received(:update).with(no_args)
       end
     end
 
@@ -117,31 +117,31 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater do
   end
 end
 
-describe Bosh::Director::DeploymentPlan::BatchMultiJobUpdater do
-  subject { described_class.new(job_updater_factory) }
+describe Bosh::Director::DeploymentPlan::BatchMultiInstanceGroupUpdater do
+  subject { described_class.new(instance_group_updater_factory) }
   let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider) }
-  let(:job_updater_factory) { instance_double('Bosh::Director::JobUpdaterFactory') }
+  let(:instance_group_updater_factory) { instance_double('Bosh::Director::InstanceGroupUpdaterFactory') }
 
   describe '#run' do
     let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
 
     before do
-      allow(Bosh::Director::DeploymentPlan::SerialMultiJobUpdater).to receive(:new).
-        with(job_updater_factory).
+      allow(Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater).to receive(:new).
+        with(instance_group_updater_factory).
         and_return(serial_updater)
     end
-    let(:serial_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
+    let(:serial_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater') }
 
     let(:serial_job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-serial-job1-name', update: serial_update_config) }
     let(:serial_job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-serial-job2-name', update: serial_update_config) }
     let(:serial_update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', serial?: true) }
 
     before do
-      allow(Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater).to receive(:new).
-        with(job_updater_factory).
+      allow(Bosh::Director::DeploymentPlan::ParallelMultiInstanceGroupUpdater).to receive(:new).
+        with(instance_group_updater_factory).
         and_return(parallel_updater)
     end
-    let(:parallel_updater) { instance_double('Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater') }
+    let(:parallel_updater) { instance_double('Bosh::Director::DeploymentPlan::ParallelMultiInstanceGroupUpdater') }
 
     let(:parallel_job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-parallel-job1-name', update: parallel_update_config) }
     let(:parallel_job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-parallel-job2-name', update: parallel_update_config) }

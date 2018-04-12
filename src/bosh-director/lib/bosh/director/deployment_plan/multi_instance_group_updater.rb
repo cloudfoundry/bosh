@@ -1,8 +1,8 @@
 module Bosh::Director
   module DeploymentPlan
-    class SerialMultiJobUpdater
-      def initialize(job_updater_factory)
-        @job_updater_factory = job_updater_factory
+    class SerialMultiInstanceGroupUpdater
+      def initialize(instance_group_updater_factory)
+        @instance_group_updater_factory = instance_group_updater_factory
       end
 
       def run(base_job, ip_provider, jobs)
@@ -11,15 +11,15 @@ module Bosh::Director
         jobs.each do |j|
           base_job.task_checkpoint
           base_job.logger.info("Updating instance: #{j.name}")
-          job_updater = @job_updater_factory.new_job_updater(ip_provider, j)
-          job_updater.update
+          instance_group_updater = @instance_group_updater_factory.new_instance_group_updater(ip_provider, j)
+          instance_group_updater.update
         end
       end
     end
 
-    class ParallelMultiJobUpdater
-      def initialize(job_updater_factory)
-        @job_updater_factory = job_updater_factory
+    class ParallelMultiInstanceGroupUpdater
+      def initialize(instance_group_updater_factory)
+        @instance_group_updater_factory = instance_group_updater_factory
       end
 
       def run(base_job, ip_provider, jobs)
@@ -30,22 +30,22 @@ module Bosh::Director
           jobs.each do |j|
             pool.process do
               base_job.logger.info("Updating instance: #{j.name}")
-              job_updater = @job_updater_factory.new_job_updater(ip_provider, j)
-              job_updater.update
+              instance_group_updater = @instance_group_updater_factory.new_instance_group_updater(ip_provider, j)
+              instance_group_updater.update
             end
           end
         end
       end
     end
 
-    class BatchMultiJobUpdater
-      def initialize(job_updater_factory)
-        @job_updater_factory = job_updater_factory
+    class BatchMultiInstanceGroupUpdater
+      def initialize(instance_group_updater_factory)
+        @instance_group_updater_factory = instance_group_updater_factory
       end
 
       def run(base_job, ip_provider, jobs)
-        serial_updater = SerialMultiJobUpdater.new(@job_updater_factory)
-        parallel_updater = ParallelMultiJobUpdater.new(@job_updater_factory)
+        serial_updater = SerialMultiInstanceGroupUpdater.new(@instance_group_updater_factory)
+        parallel_updater = ParallelMultiInstanceGroupUpdater.new(@instance_group_updater_factory)
 
         partition_jobs_by_serial(jobs).each do |jp|
           updater = jp.first.update.serial? ? serial_updater : parallel_updater

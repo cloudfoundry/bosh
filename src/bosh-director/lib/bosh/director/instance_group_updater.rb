@@ -1,5 +1,5 @@
 module Bosh::Director
-  class JobUpdater
+  class InstanceGroupUpdater
     def initialize(ip_provider, instance_group, disk_manager, template_blob_cache, dns_encoder)
       @ip_provider = ip_provider
       @instance_group = instance_group
@@ -18,8 +18,8 @@ module Bosh::Director
       instance_plans = @instance_group.needed_instance_plans.select do | instance_plan |
         if instance_plan.should_be_ignored?
           false
-	      elsif @instance_group.lifecycle == 'errand'
-	        @instance_group.instances.any? { |i| i.vm_created? }
+        elsif @instance_group.lifecycle == 'errand'
+          @instance_group.instances.any?(&:vm_created?)
         elsif instance_plan.changed?
           true
         else
