@@ -49,7 +49,7 @@ module Bosh::Director
         delete_link_and_cleanup(link)
       end
 
-      def link_address(link_id, query = {})
+      def link_address(link_id, query_options = {})
         link = find_link(link_id)
 
         raise Bosh::Director::LinkLookupError, "Could not find a link with id #{link_id}" if link.nil?
@@ -62,7 +62,8 @@ module Bosh::Director
           instance_group: link_content['instance_group'],
           default_network: link_content['default_network'],
           root_domain: link_content['domain'],
-          azs: query[:azs],
+          azs: query_options[:azs],
+          status: query_options[:status],
         }
         dns_encoder.encode_query(query_criteria)
       end

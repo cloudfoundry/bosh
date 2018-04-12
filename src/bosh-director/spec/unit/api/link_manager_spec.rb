@@ -477,6 +477,43 @@ module Bosh::Director
               expect(link_address).to eq('q-a1s0.ig-bar.baz.dep-foo.bosh')
             end
           end
+
+          context 'and the status parameter is specified' do
+            context 'and the status is "healthy"' do
+              it 'should return the address of the link' do
+                link_address = subject.link_address(link.id, {status: 'healthy'})
+                expect(link_address).to eq('q-s3.ig-bar.baz.dep-foo.bosh')
+              end
+            end
+
+            context 'and the status is "unhealthy"' do
+              it 'should return the address of the link' do
+                link_address = subject.link_address(link.id, {status: 'unhealthy'})
+                expect(link_address).to eq('q-s1.ig-bar.baz.dep-foo.bosh')
+              end
+            end
+
+            context 'and the status is "all"' do
+              it 'should return the address of the link' do
+                link_address = subject.link_address(link.id, {status: 'all'})
+                expect(link_address).to eq('q-s4.ig-bar.baz.dep-foo.bosh')
+              end
+            end
+
+            context 'and the status is "default"' do
+              it 'should return the address of the link' do
+                link_address = subject.link_address(link.id, {status: 'default'})
+                expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
+              end
+            end
+
+            context 'and the status is invalid' do
+              it 'should return the address of the link' do
+                link_address = subject.link_address(link.id, {status: 'foobar'})
+                expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
+              end
+            end
+          end
         end
       end
     end

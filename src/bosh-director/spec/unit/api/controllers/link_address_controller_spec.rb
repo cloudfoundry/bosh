@@ -112,6 +112,60 @@ module Bosh::Director
               expect(response).to eq('address' => 'q-a1a2s0.ig-bar.baz.dep-foo.bosh')
             end
           end
+
+          context 'when "healthy" status is specified' do
+            it 'should return the query address with the status information' do
+              get "/?link_id=#{link.id}&status=healthy"
+              expect(last_response.status).to eq(200)
+              response = JSON.parse(last_response.body)
+              expect(response).to eq('address' => 'q-s3.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'when "unhealthy" status is specified' do
+            it 'should return the query address with the status information' do
+              get "/?link_id=#{link.id}&status=unhealthy"
+              expect(last_response.status).to eq(200)
+              response = JSON.parse(last_response.body)
+              expect(response).to eq('address' => 'q-s1.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'when "all" status is specified' do
+            it 'should return the query address with the status information' do
+              get "/?link_id=#{link.id}&status=all"
+              expect(last_response.status).to eq(200)
+              response = JSON.parse(last_response.body)
+              expect(response).to eq('address' => 'q-s4.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'when "default" status is specified' do
+            it 'should return the query address with the status information' do
+              get "/?link_id=#{link.id}&status=default"
+              expect(last_response.status).to eq(200)
+              response = JSON.parse(last_response.body)
+              expect(response).to eq('address' => 'q-s0.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'when an invalid status is specified' do
+            it 'should return a 400 bad request' do
+              get "/?link_id=#{link.id}&status=foobar"
+              expect(last_response.status).to eq(400)
+              response = JSON.parse(last_response.body)
+              expect(response["description"]).to eq('status must be a one of: ["healthy", "unhealthy", "all", "default"]')
+            end
+          end
+
+          context 'when an invalid status is specified (array)' do
+            it 'should return a 400 bad request' do
+              get "/?link_id=#{link.id}&status[]=healthy"
+              expect(last_response.status).to eq(400)
+              response = JSON.parse(last_response.body)
+              expect(response["description"]).to eq('status must be a one of: ["healthy", "unhealthy", "all", "default"]')
+            end
+          end
         end
       end
 
