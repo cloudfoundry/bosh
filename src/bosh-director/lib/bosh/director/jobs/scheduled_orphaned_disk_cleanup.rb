@@ -4,7 +4,7 @@ module Bosh::Director
       @queue = :normal
 
       def self.job_type
-        :scheduled_orphan_cleanup
+        :scheduled_orphaned_disk_cleanup
       end
 
       def self.has_work(params)

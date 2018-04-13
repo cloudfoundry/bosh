@@ -5,7 +5,7 @@ module Bosh::Director
     subject { described_class.new(*params) } # Resque splats the params Array before giving it to the ctor
     let(:params) do
       [{
-        'max_orphaned_age_in_days' => max_orphaned_age_in_days
+        'max_orphaned_age_in_days' => max_orphaned_age_in_days,
       }]
     end
     let(:max_orphaned_age_in_days) { 1 }
@@ -18,16 +18,24 @@ module Bosh::Director
     let!(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: one_day_one_second_ago) }
     let!(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: less_than_one_day_ago) }
     let(:task) { Models::Task.make(id: 42) }
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
-    let(:event_manager) {Api::EventManager.new(true)}
-    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
-    let(:scheduled_orphan_cleanup_job) {instance_double(Bosh::Director::Jobs::ScheduledOrphanedDiskCleanup, username: 'user', task_id: task.id, event_manager: event_manager)}
+    let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+    let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
+    let(:event_manager) { Api::EventManager.new(true) }
+    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+
+    let(:scheduled_orphaned_disk_cleanup_job) do
+      instance_double(
+        Bosh::Director::Jobs::ScheduledOrphanedDiskCleanup,
+        username: 'user',
+        task_id: task.id,
+        event_manager: event_manager,
+      )
+    end
 
     before do
       allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud_factory).to receive(:get).with('').and_return(cloud)
-      allow(Config).to receive(:current_job).and_return(scheduled_orphan_cleanup_job)
+      allow(Config).to receive(:current_job).and_return(scheduled_orphaned_disk_cleanup_job)
     end
 
     describe '#has_work' do
@@ -57,7 +65,8 @@ module Bosh::Director
       end
 
       it 'should show the count deleted' do
-        expect(subject.perform).to eq("Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 0 disk(s).")
+        expect(subject.perform)
+          .to eq("Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 0 disk(s).")
       end
 
       context 'when CPI is unable to delete a disk' do
@@ -71,12 +80,18 @@ module Bosh::Director
           let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: one_day_one_second_ago) }
 
           it 'cleans all disks and raises the error thrown by the CPI' do
-            allow(orphan_disk_manager).to receive(:delete_orphan_disk).with(orphan_disk_1).and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!')).ordered
-            allow(orphan_disk_manager).to receive(:delete_orphan_disk).with(orphan_disk_2).ordered
+            allow(orphan_disk_manager)
+              .to receive(:delete_orphan_disk)
+              .with(orphan_disk_1)
+              .and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!')).ordered
 
-            expect{
-              subject.perform
-            }.to raise_error(Bosh::Clouds::CloudError, "Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s).")
+            allow(orphan_disk_manager)
+              .to receive(:delete_orphan_disk).with(orphan_disk_2).ordered
+
+            expect { subject.perform }.to raise_error(
+              Bosh::Clouds::CloudError,
+              "Deleted 1 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s).",
+            )
 
             expect(orphan_disk_manager).to have_received(:delete_orphan_disk).with(orphan_disk_1)
             expect(orphan_disk_manager).to have_received(:delete_orphan_disk).with(orphan_disk_2)
@@ -85,24 +100,31 @@ module Bosh::Director
 
         it 'logs the failer and raises the error thrown by the CPI' do
           logger = double('logger', warn: nil, info: nil)
-          allow(orphan_disk_manager).to receive(:delete_orphan_disk).and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!'))
+          allow(orphan_disk_manager)
+            .to receive(:delete_orphan_disk).and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!'))
           allow(subject).to receive(:logger).and_return(logger)
 
-          expect{
-            subject.perform
-          }.to raise_error(Bosh::Clouds::CloudError, "Deleted 0 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s).")
+          expect { subject.perform }
+            .to raise_error(
+              Bosh::Clouds::CloudError,
+              "Deleted 0 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s).",
+            )
 
           expect(logger).to have_received(:warn)
-          expect(logger).to have_received(:info).with("Failed to delete orphan disk with cid #{orphan_disk_1.disk_cid}. Failed with Bad stuff happened!")
+          expect(logger).to have_received(:info)
+            .with("Failed to delete orphan disk with cid #{orphan_disk_1.disk_cid}. Failed with Bad stuff happened!")
         end
 
         context 'when a different exception than CloudError is thrown' do
           it 'catches it and raises CloudError' do
-            allow(orphan_disk_manager).to receive(:delete_orphan_disk).and_raise(Bosh::Clouds::ExternalCpi::UnknownError.new('Bad stuff happened!'))
+            allow(orphan_disk_manager).to receive(:delete_orphan_disk)
+              .and_raise(Bosh::Clouds::ExternalCpi::UnknownError.new('Bad stuff happened!'))
 
-            expect {
-              subject.perform
-            }.to raise_error Bosh::Clouds::CloudError, "Deleted 0 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s)."
+            expect { subject.perform }
+              .to raise_error(
+                Bosh::Clouds::CloudError,
+                "Deleted 0 orphaned disk(s) older than #{time - one_day_seconds}. Failed to delete 1 disk(s).",
+              )
           end
         end
       end
