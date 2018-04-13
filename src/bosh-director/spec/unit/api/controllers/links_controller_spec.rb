@@ -379,7 +379,7 @@ module Bosh::Director
           'id' => model.id.to_s,
           'name' => model.name,
           'link_consumer_id' => model[:link_consumer_intent_id].to_s,
-          'link_provider_id' => model[:link_provider_intent_id].to_s,
+          'link_provider_id' => (model[:link_provider_intent_id].nil? ? nil : model[:link_provider_intent_id].to_s),
           'created_at' => model.created_at.to_s,
         }
       end

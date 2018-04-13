@@ -474,12 +474,12 @@ describe 'links api', type: :integration do
 
             manifest_hash['instance_groups'][0]['jobs'] = []
             deploy_simple_manifest(manifest_hash: manifest_hash)
+            links_response['link_provider_id'] = nil
           end
 
           it 'should become an orphaned link (with no provider)' do
             actual_response = get_json('/links', 'deployment=consumer-simple')
             expected_response = [links_response]
-            expected_response[0]['link_provider_id'] = ''
 
             expect(actual_response).to match_array(expected_response)
           end
@@ -490,12 +490,12 @@ describe 'links api', type: :integration do
             deploy_simple_manifest(manifest_hash: consumer_manifest_hash)
 
             bosh_runner.run('delete-deployment', deployment_name: 'simple')
+            links_response['link_provider_id'] = nil
           end
 
           it 'should become an orphaned link (with no provider)' do
             actual_response = get_json('/links', 'deployment=consumer-simple')
             expected_response = [links_response]
-            expected_response[0]['link_provider_id'] = ''
 
             expect(actual_response).to match_array(expected_response)
           end
