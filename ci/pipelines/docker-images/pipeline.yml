@@ -21,6 +21,7 @@ groups:
   - build-main-postgres-9.4
   - build-main-postgres-9.3
   - build-compiled-release
+  - build-go-dep-bumper
 
 jobs:
   - name: build-compiled-release
@@ -310,6 +311,18 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: build-go-dep-bumper
+    public: true
+    serial: true
+    plan:
+      - get: bosh-utils-src
+        trigger: true
+      - put: go-dep-bumper
+        params:
+          build: "bosh-utils-src/ci/docker/go-dep-bumper"
+        get_params:
+          skip_download: true
+
   - name: build-bosh-agent
     public: true
     serial: true
@@ -509,6 +522,14 @@ resources:
     type: docker-image
     source:
       repository: bosh/utils
+      email: ((dockerhub_email))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: go-dep-bumper
+    type: docker-image
+    source:
+      repository: bosh/go-dep-bumper
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
