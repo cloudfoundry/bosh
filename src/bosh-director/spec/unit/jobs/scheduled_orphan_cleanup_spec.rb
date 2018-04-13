@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::ScheduledOrphanCleanup do
+  describe Jobs::ScheduledOrphanedDiskCleanup do
     subject { described_class.new(*params) } # Resque splats the params Array before giving it to the ctor
     let(:params) do
       [{
@@ -22,7 +22,7 @@ module Bosh::Director
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:event_manager) {Api::EventManager.new(true)}
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
-    let(:scheduled_orphan_cleanup_job) {instance_double(Bosh::Director::Jobs::ScheduledOrphanCleanup, username: 'user', task_id: task.id, event_manager: event_manager)}
+    let(:scheduled_orphan_cleanup_job) {instance_double(Bosh::Director::Jobs::ScheduledOrphanedDiskCleanup, username: 'user', task_id: task.id, event_manager: event_manager)}
 
     before do
       allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)

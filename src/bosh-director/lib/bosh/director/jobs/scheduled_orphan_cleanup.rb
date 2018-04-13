@@ -1,6 +1,6 @@
 module Bosh::Director
   module Jobs
-    class ScheduledOrphanCleanup < BaseJob
+    class ScheduledOrphanedDiskCleanup < BaseJob
       @queue = :normal
 
       def self.job_type
@@ -21,7 +21,7 @@ module Bosh::Director
       end
 
       def initialize(params = {})
-        logger.debug("ScheduledOrphanCleanup initialized with params: #{params.inspect}")
+        logger.debug("ScheduledOrphanedDiskCleanup initialized with params: #{params.inspect}")
         @max_orphaned_age_in_days = params['max_orphaned_age_in_days']
         @orphan_disk_manager = OrphanDiskManager.new(logger)
       end
