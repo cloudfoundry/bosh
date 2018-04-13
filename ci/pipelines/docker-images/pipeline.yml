@@ -2,7 +2,6 @@ groups:
 - name: bosh:docker-images
   jobs:
   - build-bosh-agent
-  - build-bosh-utils
   - build-bosh-blobstore-client
   - build-main-bats-aws
   - build-main-ruby-go
@@ -21,7 +20,6 @@ groups:
   - build-main-postgres-9.4
   - build-main-postgres-9.3
   - build-compiled-release
-  - build-go-dep-bumper
 
 jobs:
   - name: build-compiled-release
@@ -299,30 +297,6 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-bosh-utils
-    public: true
-    serial: true
-    plan:
-      - get: bosh-utils-src
-        trigger: true
-      - put: bosh-utils
-        params:
-          build: "bosh-utils-src/ci/docker/bosh-utils"
-        get_params:
-          skip_download: true
-
-  - name: build-go-dep-bumper
-    public: true
-    serial: true
-    plan:
-      - get: bosh-utils-src
-        trigger: true
-      - put: go-dep-bumper
-        params:
-          build: "bosh-utils-src/ci/docker/go-dep-bumper"
-        get_params:
-          skip_download: true
-
   - name: build-bosh-agent
     public: true
     serial: true
@@ -344,14 +318,6 @@ resources:
       paths:
         - "ci/docker"
         - "ci/pipelines/docker-images/tasks"
-
-  - name: bosh-utils-src
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh-utils
-      branch: develop
-      paths:
-        - "ci/docker"
 
   - name: bosh-agent-src
     type: git
@@ -514,22 +480,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/blobstore_client
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: bosh-utils
-    type: docker-image
-    source:
-      repository: bosh/utils
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: go-dep-bumper
-    type: docker-image
-    source:
-      repository: bosh/go-dep-bumper
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
