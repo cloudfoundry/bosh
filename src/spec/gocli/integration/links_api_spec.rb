@@ -166,7 +166,6 @@ describe 'links api', type: :integration do
     upload_links_release
     upload_stemcell
 
-    add_extra_networks_and_mark_default(cloud_config_hash, manifest_hash)
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash)
   end
@@ -727,6 +726,12 @@ describe 'links api', type: :integration do
   end
 
   context 'when doing POST request to create link' do
+    before do
+      add_extra_networks_and_mark_default(cloud_config_hash, manifest_hash)
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
     context 'when correct json is provided' do
       let(:provider_id) { '1' }
       let(:payload_json) do
