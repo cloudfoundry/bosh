@@ -74,6 +74,7 @@ module Bosh::Director
               'networks' => ['private_network_name', 'smurf_network'],
               'instance_group' => 'my_source_instance_group_name',
               'properties' => { 'a' => 'b' },
+              'use_short_dns_addresses' => false,
               'instances' => [
                 {
                   'name' => 'my_source_instance_group_name',
@@ -105,6 +106,7 @@ module Bosh::Director
               'networks' => ['private_network_name', 'smurf_network'],
               'instance_group' => 'my_source_instance_group_name',
               'properties' => { 'a' => 'b' },
+              'use_short_dns_addresses' => false,
               'instances' => []
             })
           end
