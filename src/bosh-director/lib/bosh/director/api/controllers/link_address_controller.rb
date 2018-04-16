@@ -1,5 +1,4 @@
 require 'bosh/director/api/controllers/base_controller'
-require 'sinatra/param'
 
 module Bosh::Director
   module Api::Controllers
