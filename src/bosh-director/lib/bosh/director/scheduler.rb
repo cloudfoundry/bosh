@@ -2,14 +2,12 @@ require 'rufus/scheduler'
 
 module Bosh::Director
   class Scheduler
-    def initialize(scheduled_jobs=[], options={})
-      if scheduled_jobs.nil? || scheduled_jobs.is_a?(Array)
-        @scheduled_jobs = scheduled_jobs
-        @scheduler = options.fetch(:scheduler) { Rufus::Scheduler::PlainScheduler.new }
-        @queue = options.fetch(:queue) { JobQueue.new }
-      else
-        raise 'scheduled_jobs must be an array'
-      end
+    def initialize(scheduled_jobs = [], options = {})
+      raise 'scheduled_jobs must be an array' if !scheduled_jobs.nil? && !scheduled_jobs.is_a?(Array)
+
+      @scheduled_jobs = scheduled_jobs
+      @scheduler = options.fetch(:scheduler) { Rufus::Scheduler::PlainScheduler.new }
+      @queue = options.fetch(:queue) { JobQueue.new }
     end
 
     def start!
@@ -42,8 +40,8 @@ module Bosh::Director
         end
 
         @scheduler.cron(scheduled_job['schedule']) do |_|
-
           should_enqueue = true
+
           if director_job_class.respond_to?(:has_work)
             logger.debug("Scheduler cron - checking /
 #{director_job_class}.has_work:#{director_job_class.has_work(scheduled_job['params'])} /
@@ -56,14 +54,14 @@ with params #{scheduled_job['params']}")
             logger.info("enqueueing '#{scheduled_job['command']}'")
 
             schedule_message = "scheduled #{scheduled_job['command']}"
-            if director_job_class.respond_to?(:schedule_message)
-              schedule_message = director_job_class.schedule_message
-            end
+            schedule_message = director_job_class.schedule_message if director_job_class.respond_to?(:schedule_message)
 
-            @queue.enqueue('scheduler',
+            @queue.enqueue(
+              'scheduler',
               director_job_class,
               schedule_message,
-              scheduled_job['params'])
+              scheduled_job['params'],
+            )
           end
         end
 

@@ -1,7 +1,8 @@
 module Bosh::Director
   module Jobs
     class DeleteVm < BaseJob
-      UNREFERENCED_VM_STEMCELL_API_VERSION = 2.freeze
+      UNREFERENCED_VM_STEMCELL_API_VERSION = 2
+
       private_constant :UNREFERENCED_VM_STEMCELL_API_VERSION
 
       @queue = :normal
@@ -19,7 +20,7 @@ module Bosh::Director
 
       def perform
         logger.info("deleting vm: #{@vm_cid}")
-        event_log_stage = Config.event_log.begin_stage("Delete VM", 1)
+        event_log_stage = Config.event_log.begin_stage('Delete VM', 1)
         event_log_stage.advance_and_track(@vm_cid) do
           begin
             begin
@@ -47,6 +48,7 @@ module Bosh::Director
       end
 
       private
+
       def add_event(parent_id = nil, error = nil)
         event = Config.current_job.event_manager.create_event(
             {

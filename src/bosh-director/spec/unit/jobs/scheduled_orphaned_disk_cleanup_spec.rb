@@ -47,6 +47,7 @@ module Bosh::Director
 
       describe 'when there is no work to do' do
         let(:max_orphaned_age_in_days) { 2 }
+
         it 'should return false' do
           expect(described_class.has_work(params)).to eq(false)
         end
