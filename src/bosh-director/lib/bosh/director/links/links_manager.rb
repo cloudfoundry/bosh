@@ -268,7 +268,7 @@ module Bosh::Director::Links
 
           properties = metadata['mapped_properties']
 
-          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties).spec.to_json
+          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_short_dns_addresses?).spec.to_json
           provider_intent.content = content
           provider_intent.save
         end

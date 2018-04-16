@@ -2216,25 +2216,51 @@ describe Bosh::Director::Links::LinksManager do
         instance_double(Bosh::Director::DeploymentPlan::Link)
       end
 
-      before do
-        allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
-        allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2])
-        allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+      let(:use_short_dns_addresses) { false }
 
-        allow(link_1).to receive_message_chain(:spec, :to_json).and_return("{'foo_1':'bar_1'}")
-        allow(link_2).to receive_message_chain(:spec, :to_json).and_return("{'foo_2':'bar_2'}")
-        allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
-        allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
-        allow(link_5).to receive_message_chain(:spec, :to_json).and_return("{'foo_5':'bar_5'}")
-        allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
-        allow(deployment_plan).to receive(:model).and_return(deployment_model)
+      before do
+         allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
+         allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2])
+         allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+
+         allow(link_1).to receive_message_chain(:spec, :to_json).and_return("{'foo_1':'bar_1'}")
+         allow(link_2).to receive_message_chain(:spec, :to_json).and_return("{'foo_2':'bar_2'}")
+         allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
+         allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
+         allow(link_5).to receive_message_chain(:spec, :to_json).and_return("{'foo_5':'bar_5'}")
+         allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
+         allow(deployment_plan).to receive(:model).and_return(deployment_model)
+         allow(deployment_plan).to receive(:use_short_dns_addresses?).and_return(use_short_dns_addresses)
        end
 
+      context 'and use_short_dns_addresses is enabled' do
+        let(:use_short_dns_addresses) { true }
+
+        it 'updates the contents field of the provider intents' do
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, true).and_return(link_1)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, true).and_return(link_2)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, true).and_return(link_3)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, true).and_return(link_4)
+
+          expect(provider_1_intent_1).to receive(:save)
+          expect(provider_1_intent_2).to receive(:save)
+          expect(provider_2_intent_1).to receive(:save)
+          expect(provider_2_intent_2).to receive(:save)
+
+          subject.update_provider_intents_contents(link_providers, deployment_plan)
+
+          expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
+          expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
+          expect(provider_2_intent_1.content).to eq("{'foo_3':'bar_3'}")
+          expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+        end
+      end
+
       it 'updates the contents field of the provider intents' do
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'a' => '1'}).and_return(link_1)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'b' => '2'}).and_return(link_2)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'c' => '1'}).and_return(link_3)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'d' => '2'}).and_return(link_4)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, false).and_return(link_1)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, false).and_return(link_2)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false).and_return(link_3)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, false).and_return(link_4)
 
         expect(provider_1_intent_1).to receive(:save)
         expect(provider_1_intent_2).to receive(:save)
@@ -2250,11 +2276,11 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       it 'should only update contents of provider_intents with matching provider serial_id' do
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'a' => '1'}).and_return(link_1)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'b' => '2'}).and_return(link_2)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'c' => '1'}).and_return(link_3)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'d' => '2'}).and_return(link_4)
-        expect(Bosh::Director::DeploymentPlan::Link).to_not receive(:new).with(deployment_model.name, instance_group, {'e' => '5'})
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, false).and_return(link_1)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, false).and_return(link_2)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false).and_return(link_3)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, false).and_return(link_4)
+        expect(Bosh::Director::DeploymentPlan::Link).to_not receive(:new).with(deployment_model.name, instance_group, { 'e' => '5' }, false)
 
         expect(provider_2_intent_3).to_not receive(:save)
         allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2, provider_2_intent_3])

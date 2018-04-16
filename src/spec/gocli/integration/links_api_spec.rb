@@ -12,8 +12,11 @@ describe 'links api', type: :integration do
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.manifest_with_release.merge(
       'instance_groups' => [instance_group],
+      'features' => features
     )
   end
+
+  let(:features) {{}}
 
   let(:instance_group) do
     {
@@ -1041,6 +1044,18 @@ describe 'links api', type: :integration do
       it 'should raise an error' do
         response = send_director_get_request('/link_address', 'link_id=1')
         expect(response).to be_an_instance_of(Net::HTTPBadRequest) # TODO: Perhaps we should be doing 403 instead
+      end
+    end
+
+    context 'and the provider deployment has use_short_dns_addresses enabled' do
+      let(:features) do
+        { 'use_short_dns_addresses' => true }
+      end
+
+      it 'returns the address as a short dns entry' do
+        external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
+        response = get_json('/link_address', "link_id=#{external_link_response['id']}")
+        expect(response).to eq('address' => 'q-n1s0.q-g1.bosh')
       end
     end
   end

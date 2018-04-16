@@ -55,8 +55,9 @@ module Bosh::Director
         raise Bosh::Director::LinkLookupError, "Could not find a link with id #{link_id}" if link.nil?
         raise Bosh::Director::LinkNotExternalError, 'Link is must be external to retrieve address' if link.link_consumer_intent.link_consumer.type != 'external'
 
-        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(false)
         link_content = JSON.parse(link.link_content)
+        use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)
+        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
         query_criteria = {
           deployment_name: link_content['deployment_name'],
           instance_group: link_content['instance_group'],

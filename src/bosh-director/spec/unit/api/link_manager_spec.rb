@@ -402,6 +402,10 @@ module Bosh::Director
       end
 
       context 'when the link exists' do
+        let(:link_content) { {} }
+
+        let(:link_name) { 'link_name' }
+
         context 'and the link is from an internal consumer' do
           let(:consumer) do
             Bosh::Director::Models::Links::LinkConsumer.create(
@@ -423,10 +427,12 @@ module Bosh::Director
           let!(:link) do
             Bosh::Director::Models::Links::Link.create(
               link_consumer_intent: consumer_intent,
-              link_content: '{}',
-              name: 'control_consumer_link',
-            )
+              link_content: link_content.to_json,
+              name: link_name,
+              )
           end
+
+          let(:link_name) { 'control_consumer_link' }
 
           it 'should raise an error' do
             expect do
@@ -453,13 +459,25 @@ module Bosh::Director
             )
           end
 
+          let(:link_content) do
+            {
+              "deployment_name" => "dep_foo",
+              "instance_group" => "ig_bar",
+              "default_network" => "baz",
+              "domain" => "bosh",
+              "use_short_dns_addresses" => false
+            }
+          end
+
           let!(:link) do
             Bosh::Director::Models::Links::Link.create(
               link_consumer_intent: external_consumer_intent,
-              link_content: '{"deployment_name": "dep_foo", "instance_group": "ig_bar", "default_network": "baz", "domain": "bosh"}',
-              name: 'external_consumer_link',
-            )
+              link_content: link_content.to_json,
+              name: link_name,
+              )
           end
+
+          let(:link_name) { 'external_consumer_link' }
 
           it 'should return the address of the link' do
             link_address = subject.link_address(link.id)
@@ -512,6 +530,37 @@ module Bosh::Director
                 link_address = subject.link_address(link.id, {status: 'foobar'})
                 expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
               end
+            end
+          end
+
+          context 'and the provider deployment is using short DNS' do
+            before do
+              Models::LocalDnsEncodedNetwork.create(name: 'bar')
+              Models::LocalDnsEncodedNetwork.create(name: 'baz')
+            end
+            let!(:link) do
+              Bosh::Director::Models::Links::Link.create(
+                link_consumer_intent: external_consumer_intent,
+                link_content: link_content.to_json,
+                name: link_name,
+                )
+            end
+
+            let(:link_content) do
+              {
+                "deployment_name" => "test_deployment",
+                "instance_group" => "ig_bar",
+                "default_network" => "baz",
+                "domain" => "bosh",
+                "use_short_dns_addresses" => true
+              }
+            end
+
+            it 'should return the short DNS address of the link' do
+              Bosh::Director::Models::LocalDnsEncodedInstanceGroup.create(name: 'ig_bar', deployment_id: 1)
+
+              link_address = subject.link_address(link.id)
+              expect(link_address).to eq('q-n2s0.q-g1.bosh')
             end
           end
         end
