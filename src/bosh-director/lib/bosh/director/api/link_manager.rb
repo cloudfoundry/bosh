@@ -53,7 +53,6 @@ module Bosh::Director
         link = find_link(link_id)
 
         raise Bosh::Director::LinkLookupError, "Could not find a link with id #{link_id}" if link.nil?
-        raise Bosh::Director::LinkNotExternalError, 'Link is must be external to retrieve address' if link.link_consumer_intent.link_consumer.type != 'external'
 
         link_content = JSON.parse(link.link_content)
         use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)

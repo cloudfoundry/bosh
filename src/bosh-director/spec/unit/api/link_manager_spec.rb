@@ -402,28 +402,102 @@ module Bosh::Director
       end
 
       context 'when the link exists' do
-        let(:link_content) { {} }
+        let(:link_name) { 'control_consumer_link' }
 
-        let(:link_name) { 'link_name' }
+        let(:link_content) do
+          {
+            "deployment_name" => "dep_foo",
+            "instance_group" => "ig_bar",
+            "default_network" => "baz",
+            "domain" => "bosh",
+            "use_short_dns_addresses" => false
+          }
+        end
 
-        context 'and the link is from an internal consumer' do
-          let(:consumer) do
-            Bosh::Director::Models::Links::LinkConsumer.create(
-              deployment: deployment,
-              instance_group: '',
-              name: 'consumer_1',
-              type: 'job',
+        let(:consumer) do
+          Bosh::Director::Models::Links::LinkConsumer.create(
+            deployment: deployment,
+            instance_group: '',
+            name: 'consumer_1',
+            type: 'job',
+          )
+        end
+
+        let(:consumer_intent) do
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'link_name',
+            type: 'link_type',
+          )
+        end
+
+        let!(:link) do
+          Bosh::Director::Models::Links::Link.create(
+            link_consumer_intent: consumer_intent,
+            link_content: link_content.to_json,
+            name: link_name,
             )
+        end
+
+        it 'should return the address of the link' do
+          link_address = subject.link_address(link.id)
+          expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
+        end
+
+        context 'and an az parameter is specified' do
+          before do
+            Models::LocalDnsEncodedAz.create(name: 'z1')
+            Models::LocalDnsEncodedAz.create(name: 'z2')
           end
 
-          let(:consumer_intent) do
-            Bosh::Director::Models::Links::LinkConsumerIntent.create(
-              link_consumer: consumer,
-              original_name: 'link_name',
-              type: 'link_type',
-            )
+          it 'should return the address of the link' do
+            link_address = subject.link_address(link.id, {azs: ['z1']})
+            expect(link_address).to eq('q-a1s0.ig-bar.baz.dep-foo.bosh')
+          end
+        end
+
+        context 'and the status parameter is specified' do
+          context 'and the status is "healthy"' do
+            it 'should return the address of the link' do
+              link_address = subject.link_address(link.id, {status: 'healthy'})
+              expect(link_address).to eq('q-s3.ig-bar.baz.dep-foo.bosh')
+            end
           end
 
+          context 'and the status is "unhealthy"' do
+            it 'should return the address of the link' do
+              link_address = subject.link_address(link.id, {status: 'unhealthy'})
+              expect(link_address).to eq('q-s1.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'and the status is "all"' do
+            it 'should return the address of the link' do
+              link_address = subject.link_address(link.id, {status: 'all'})
+              expect(link_address).to eq('q-s4.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'and the status is "default"' do
+            it 'should return the address of the link' do
+              link_address = subject.link_address(link.id, {status: 'default'})
+              expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+
+          context 'and the status is invalid' do
+            it 'should return the address of the link' do
+              link_address = subject.link_address(link.id, {status: 'foobar'})
+              expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
+            end
+          end
+        end
+
+        context 'and the provider deployment is using short DNS' do
+          before do
+            Models::LocalDnsEncodedNetwork.create(name: 'bar')
+            Models::LocalDnsEncodedNetwork.create(name: 'baz')
+          end
           let!(:link) do
             Bosh::Director::Models::Links::Link.create(
               link_consumer_intent: consumer_intent,
@@ -432,136 +506,21 @@ module Bosh::Director
               )
           end
 
-          let(:link_name) { 'control_consumer_link' }
-
-          it 'should raise an error' do
-            expect do
-              subject.link_address(link.id)
-            end.to raise_error(LinkNotExternalError, 'Link is must be external to retrieve address')
-          end
-        end
-
-        context 'and the link is from an external consumer' do
-          let(:external_consumer) do
-            Bosh::Director::Models::Links::LinkConsumer.create(
-              deployment: deployment,
-              instance_group: '',
-              name: 'external_consumer_1',
-              type: 'external',
-            )
-          end
-
-          let(:external_consumer_intent) do
-            Bosh::Director::Models::Links::LinkConsumerIntent.create(
-              link_consumer: external_consumer,
-              original_name: 'link_name',
-              type: 'link_type',
-            )
-          end
-
           let(:link_content) do
             {
-              "deployment_name" => "dep_foo",
+              "deployment_name" => "test_deployment",
               "instance_group" => "ig_bar",
               "default_network" => "baz",
               "domain" => "bosh",
-              "use_short_dns_addresses" => false
+              "use_short_dns_addresses" => true
             }
           end
 
-          let!(:link) do
-            Bosh::Director::Models::Links::Link.create(
-              link_consumer_intent: external_consumer_intent,
-              link_content: link_content.to_json,
-              name: link_name,
-              )
-          end
+          it 'should return the short DNS address of the link' do
+            Bosh::Director::Models::LocalDnsEncodedInstanceGroup.create(name: 'ig_bar', deployment_id: 1)
 
-          let(:link_name) { 'external_consumer_link' }
-
-          it 'should return the address of the link' do
             link_address = subject.link_address(link.id)
-            expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
-          end
-
-          context 'and an az parameter is specified' do
-            before do
-              Models::LocalDnsEncodedAz.create(name: 'z1')
-              Models::LocalDnsEncodedAz.create(name: 'z2')
-            end
-
-            it 'should return the address of the link' do
-              link_address = subject.link_address(link.id, {azs: ['z1']})
-              expect(link_address).to eq('q-a1s0.ig-bar.baz.dep-foo.bosh')
-            end
-          end
-
-          context 'and the status parameter is specified' do
-            context 'and the status is "healthy"' do
-              it 'should return the address of the link' do
-                link_address = subject.link_address(link.id, {status: 'healthy'})
-                expect(link_address).to eq('q-s3.ig-bar.baz.dep-foo.bosh')
-              end
-            end
-
-            context 'and the status is "unhealthy"' do
-              it 'should return the address of the link' do
-                link_address = subject.link_address(link.id, {status: 'unhealthy'})
-                expect(link_address).to eq('q-s1.ig-bar.baz.dep-foo.bosh')
-              end
-            end
-
-            context 'and the status is "all"' do
-              it 'should return the address of the link' do
-                link_address = subject.link_address(link.id, {status: 'all'})
-                expect(link_address).to eq('q-s4.ig-bar.baz.dep-foo.bosh')
-              end
-            end
-
-            context 'and the status is "default"' do
-              it 'should return the address of the link' do
-                link_address = subject.link_address(link.id, {status: 'default'})
-                expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
-              end
-            end
-
-            context 'and the status is invalid' do
-              it 'should return the address of the link' do
-                link_address = subject.link_address(link.id, {status: 'foobar'})
-                expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
-              end
-            end
-          end
-
-          context 'and the provider deployment is using short DNS' do
-            before do
-              Models::LocalDnsEncodedNetwork.create(name: 'bar')
-              Models::LocalDnsEncodedNetwork.create(name: 'baz')
-            end
-            let!(:link) do
-              Bosh::Director::Models::Links::Link.create(
-                link_consumer_intent: external_consumer_intent,
-                link_content: link_content.to_json,
-                name: link_name,
-                )
-            end
-
-            let(:link_content) do
-              {
-                "deployment_name" => "test_deployment",
-                "instance_group" => "ig_bar",
-                "default_network" => "baz",
-                "domain" => "bosh",
-                "use_short_dns_addresses" => true
-              }
-            end
-
-            it 'should return the short DNS address of the link' do
-              Bosh::Director::Models::LocalDnsEncodedInstanceGroup.create(name: 'ig_bar', deployment_id: 1)
-
-              link_address = subject.link_address(link.id)
-              expect(link_address).to eq('q-n2s0.q-g1.bosh')
-            end
+            expect(link_address).to eq('q-n2s0.q-g1.bosh')
           end
         end
       end

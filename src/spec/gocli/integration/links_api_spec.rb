@@ -1041,9 +1041,9 @@ describe 'links api', type: :integration do
     end
 
     context 'when requesting for an internal link' do
-      it 'should raise an error' do
-        response = send_director_get_request('/link_address', 'link_id=1')
-        expect(response).to be_an_instance_of(Net::HTTPBadRequest) # TODO: Perhaps we should be doing 403 instead
+      it 'should return ' do
+        response = get_json('/link_address', 'link_id=1')
+        expect(response).to eq('address' => 'q-s0.foobar.a.simple.bosh')
       end
     end
 
