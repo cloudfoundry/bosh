@@ -166,8 +166,27 @@ describe 'links api', type: :integration do
     upload_links_release
     upload_stemcell
 
+    add_extra_networks_and_mark_default(cloud_config_hash, manifest_hash)
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
     deploy_simple_manifest(manifest_hash: manifest_hash)
+  end
+
+  def add_extra_networks_and_mark_default(cloud_config_hash, manifest_hash)
+    new_network_b = {
+      'name' => 'b',
+      'subnets' => [{
+                      'range' => '10.0.0.0/24',
+                      'gateway' => '10.0.0.1',
+                      'dns' => ['10.0.0.1', '10.0.0.2'],
+                      'static' => ['10.0.0.10'],
+                      'reserved' => [],
+                      'cloud_properties' => {},
+                    }]
+    }
+    cloud_config_hash['networks'].push(new_network_b)
+
+    manifest_hash['instance_groups'][0]['networks'][0]['default'] = ['dns','gateway']
+    manifest_hash['instance_groups'][0]['networks'].push({'name' => new_network_b['name']})
   end
 
   context 'when requesting for a list of providers via link_providers endpoint' do
@@ -770,17 +789,184 @@ describe 'links api', type: :integration do
           expect(consumer['owner_object']['type']).to eq('external')
         end
 
-        context 'when multiple request have same owner_object and provider_id' do
-          before do
-            first_response = send_director_post_request('/links', '', JSON.generate(payload_json))
-            @link_1 = JSON.parse(first_response.read_body)
+        context 'when provider does not change during re-deploy' do
+          context 'when multiple requests have same owner_object and provider_id' do
+            before do
+              first_response = send_director_post_request('/links', '', JSON.generate(payload_json))
+              @link_1 = JSON.parse(first_response.read_body)
+            end
+
+            context 'when requesting link with same request parameters again' do
+              it 'should NOT create new link' do
+                second_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+                link_2 = JSON.parse(second_response.read_body)
+
+                expect(link_2).to eq(@link_1)
+              end
+            end
+
+            context 'when requesting link with different request parameters' do
+              before do
+                payload_json['network'] = 'b'
+              end
+
+              it 'should create new link' do
+                second_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+                link_2 = JSON.parse(second_response.read_body)
+
+                expect(link_2['id']).to_not eq(@link_1['id'])
+              end
+            end
           end
+        end
 
-          it 'should NOT create new links' do
-            second_response = send_director_post_request('/links', '', JSON.generate(payload_json))
-            link_2 = JSON.parse(second_response.read_body)
+        context 'when provider content changes during re-deploy' do
+          context 'when multiple request have same owner_object and provider_id before and after re-deploy' do
+            before do
+              first_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+              @link_1 = JSON.parse(first_response.read_body)
+            end
 
-            expect(link_2).to eq(@link_1)
+            context 'when provider number of instances changes' do
+              before do
+                # re-deploy with provider content changes
+                manifest_hash['instance_groups'][0]['instances'] = manifest_hash['instance_groups'][0]['instances'] + 1
+                deploy_simple_manifest(manifest_hash: manifest_hash)
+              end
+
+              it 'should create new link' do
+                second_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+                link_2 = JSON.parse(second_response.read_body)
+
+                expect(link_2['id']).to_not eq(@link_1['id'])
+              end
+            end
+
+            context 'when provider properties change' do
+              before do
+                updated_properties = {
+                  'nested' => {
+                    'one' => 'updated-nested-property',
+                    'two' => 'another-updated-nested-property',
+                  },
+                }
+                manifest_hash['instance_groups'][0]['properties'] = updated_properties
+                # re-deploy with provider content changes
+                deploy_simple_manifest(manifest_hash: manifest_hash)
+              end
+
+              it 'should create new link' do
+                second_response = send_director_post_request("/links", '', JSON.generate(payload_json))
+                link_2 = JSON.parse(second_response.read_body)
+
+                expect(link_2['id']).to_not eq(@link_1['id'])
+              end
+            end
+
+            context 'when provider networks change' do
+              before do
+                provider_response = get_link_providers
+                provider_id = provider_response.first['id']
+
+                response = send_director_post_request("/links", '', JSON.generate(payload_json))
+                @before_deploy_link = JSON.parse(response.read_body)
+              end
+
+              context 'default network stays the same' do
+                context 'new network added to cloud config and deployment' do
+                  before do
+                    new_network_c = {
+                      'name' => 'c',
+                      'subnets' => [{
+                                      'range' => '10.1.0.0/24',
+                                      'gateway' => '10.1.0.1',
+                                      'dns' => ['10.1.0.1', '10.1.0.2'],
+                                      'static' => ['10.1.0.10'],
+                                      'reserved' => [],
+                                      'cloud_properties' => {},
+                                    }]
+                    }
+                    cloud_config_hash['networks'].push(new_network_c)
+                    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+                    manifest_hash['instance_groups'][0]['networks'].push({'name' => new_network_c['name']})
+                    # re-deploy with provider content changes
+                    deploy_simple_manifest(manifest_hash: manifest_hash)
+                  end
+
+                  it 'creates new link using existing consumer for external link request for new network' do
+                    payload_json['network'] = 'c'
+                    response = send_director_post_request("/links", '', JSON.generate(payload_json))
+
+                    expect(response.code).to eq('200')
+
+                    after_deploy_link = JSON.parse(response.read_body)
+                    expect(after_deploy_link['id']).to_not eq(@before_deploy_link['id'])
+                    expect(after_deploy_link['link_consumer_id']).to eq(@before_deploy_link['link_consumer_id'])
+                  end
+
+                  it 'creates new link using existing consumer for external link request for existing network' do
+                    payload_json['network'] = 'a'
+                    response = send_director_post_request("/links", '', JSON.generate(payload_json))
+
+                    expect(response.code).to eq('200')
+
+                    after_deploy_link = JSON.parse(response.read_body)
+                    expect(after_deploy_link['id']).to_not eq(@before_deploy_link['id'])
+                    expect(after_deploy_link['link_consumer_id']).to eq(@before_deploy_link['link_consumer_id'])
+                  end
+                end
+              end
+
+              context 'default network changes' do
+                before do
+                  manifest_hash['instance_groups'][0]['networks'][0] = {'name' => 'a'}
+                  manifest_hash['instance_groups'][0]['networks'][1] = {'name' => 'b', 'default' => ['dns','gateway']}
+                  deploy_simple_manifest(manifest_hash: manifest_hash)
+                end
+
+                context 'requesting external link for new network' do
+                  it 'creates new link and uses same consumer record' do
+                    payload_json['network'] = 'b'
+                    response = send_director_post_request("/links", '', JSON.generate(payload_json))
+
+                    expect(response.code).to eq('200')
+
+                    after_deploy_link = JSON.parse(response.read_body)
+                    expect(after_deploy_link['id']).to_not eq(@before_deploy_link['id'])
+                    expect(after_deploy_link['link_consumer_id']).to eq(@before_deploy_link['link_consumer_id'])
+                  end
+                end
+
+                context 'requesting external link for old network' do
+                  before do
+                    # requesting for same network 'a', which id default network
+                    payload_json['network']='a'
+                    response = send_director_post_request("/links", '', JSON.generate(payload_json))
+
+                    @old_network_link = JSON.parse(response.read_body)
+                  end
+
+                  it 'should not create new link with existing consumer' do
+                    expect(@old_network_link['id']).to eq(@before_deploy_link['id'])
+                    expect(@old_network_link['link_consumer_id']).to eq(@before_deploy_link['link_consumer_id'])
+                  end
+
+                  context 'requesting external link for old network again' do
+                    it 'returns previously created link' do
+                      payload_json['network']='a'
+                      response = send_director_post_request("/links", '', JSON.generate(payload_json))
+
+                      expect(response.code).to eq('200')
+
+                      after_deploy_link = JSON.parse(response.read_body)
+                      expect(after_deploy_link['id']).to eq(@old_network_link['id'])
+                      expect(after_deploy_link['link_consumer_id']).to eq(@old_network_link['link_consumer_id'])
+                    end
+                  end
+                end
+              end
+            end
           end
         end
       end

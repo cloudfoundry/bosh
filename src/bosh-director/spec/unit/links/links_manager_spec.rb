@@ -526,12 +526,42 @@ describe Bosh::Director::Links::LinksManager do
     end
 
     context 'when link already exists' do
+      let(:link_content_1) do
+        {
+          'deployment_name'=>'simple',
+          'domain'=>'bosh',
+          'default_network'=>'a',
+          'networks'=> ['b', 'a'],
+          'instance_group'=>'foobar',
+          'properties'=>{
+            'a'=>'default_a',
+            'b'=>nil,
+            'c'=>'default_c',
+            'nested'=> {
+              'one'=>'default_nested.one',
+              'two'=>'default_nested.two',
+              'three'=>nil,
+            },
+          },
+          'instances'=>[
+            {
+              'name'=>'foobar',
+              'id'=>'e836f635-cece-4531-a519-0bc857b190e8',
+              'index'=>0,
+              'bootstrap'=>true,
+              'az'=>nil,
+              'address'=>'192.168.1.2',
+            }
+          ]
+        }
+      end
+
       before do
         @expected_link_1 = subject.find_or_create_link(
           name: "test_link_name",
           provider_intent: provider_intent,
           consumer_intent: consumer_intent,
-          link_content: "{}"
+          link_content: link_content_1.to_json
         )
 
         actual_link = Bosh::Director::Models::Links::Link.find(
@@ -540,15 +570,152 @@ describe Bosh::Director::Links::LinksManager do
         expect(actual_link).to_not be_nil
       end
 
-      it 'should return existing link' do
-        expected_link_2 = subject.find_or_create_link(
-          name: "test_link_name",
-          provider_intent: provider_intent,
-          consumer_intent: consumer_intent,
-          link_content: "{}"
-        )
+      context 'when content matches' do
+        context 'when single link for provider anc consumer exists' do
+          it 'should return existing link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+            )
 
-        expect(expected_link_2).to eq(@expected_link_1)
+            expect(expected_link_2).to eq(@expected_link_1)
+          end
+        end
+
+        context 'when multiple links for provider and consumer exist' do
+          before do
+            @expected_link_with_different_content = Bosh::Director::Models::Links::Link.create(
+              name: "test_link_name_1",
+              link_provider_intent_id: provider_intent[:id],
+              link_consumer_intent_id: consumer_intent[:id],
+              link_content: "{\"d\":\"e\", \"f\":\"g\"}",
+            )
+
+            actual_links = Bosh::Director::Models::Links::Link.where(
+              link_provider_intent_id: provider_intent[:id],
+              link_consumer_intent_id: consumer_intent[:id],
+              )
+            expect(actual_links).to_not be_nil
+            expect(actual_links.count).to eq(2)
+          end
+
+          it 'should return correct link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name_1",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: "{\"d\":\"e\", \"f\":\"g\"}"
+            )
+
+            expect(expected_link_2).to eq(@expected_link_with_different_content)
+            expect(expected_link_2[:link_content]).to eq(@expected_link_with_different_content[:link_content])
+            expect(Bosh::Director::Models::Links::Link.all.count).to eq(2)
+          end
+        end
+      end
+
+      context 'when content hash elements are in different order' do
+        context 'when properties are in different order' do
+          before do
+            link_content_1['properties']['nested'] = {
+              'two'=>'default_nested.two',
+              'one'=>'default_nested.one',
+              'three'=>nil,
+            }
+          end
+
+          it 'should return existing link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+              )
+
+            expect(expected_link_2[:id]).to eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(JSON.parse(@expected_link_1[:link_content]).sort)
+          end
+        end
+
+        context 'when networks are in different order' do
+          before do
+            link_content_1['networks'] = ['a', 'b']
+          end
+
+          it 'should return existing link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+            )
+
+            expect(expected_link_2[:id]).to eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(JSON.parse(@expected_link_1[:link_content]).sort)
+          end
+        end
+      end
+
+      context 'when content does not match' do
+        context 'when new network is added' do
+          before do
+            link_content_1['networks'] = ['a', 'b', 'c']
+          end
+
+          it 'should return new link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+            )
+
+            expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+          end
+        end
+
+        context 'when there is new default network' do
+          before do
+            link_content_1['default_network'] = 'b'
+          end
+
+          it 'should return new link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+             )
+
+            expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+          end
+        end
+
+        context 'when properties change' do
+          before do
+            link_content_1['properties']['nested'] = {
+              'two'=>'default_nested.two.changed',
+              'one'=>'default_nested.one.changed',
+              'three'=>'new.default_nested.three',
+            }
+          end
+
+          it 'should return new link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json
+            )
+
+            expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+          end
+        end
       end
     end
   end

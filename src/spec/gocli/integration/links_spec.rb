@@ -184,7 +184,7 @@ describe 'Links', type: :integration do
               'name' => 'http_proxy_with_requires',
               'properties' => {'http_proxy_with_requires.listen_port' => 21},
               'consumes' => {
-                'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true}, # TODO LINKS: Why are you sharing? Sharing is not caring.
+                'proxied_http_endpoint' => {'from' => 'http_endpoint2', 'shared' => true},
                 'logs_http_endpoint' => 'nil'
               }
             },
