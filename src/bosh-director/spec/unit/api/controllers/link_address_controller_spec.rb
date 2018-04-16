@@ -85,17 +85,26 @@ module Bosh::Director
             expect(response).to eq('address' => 'q-s0.ig-bar.baz.dep-foo.bosh')
           end
 
-          context 'when an az is specified' do
+          context 'when a single az is specified' do
             before do
               Models::LocalDnsEncodedAz.create(name: 'z1')
               Models::LocalDnsEncodedAz.create(name: 'z2')
             end
 
             it 'should return the address with the az information' do
-              get "/?link_id=#{link.id}&az=z1"
+              get "/?link_id=#{link.id}&azs[]=z1"
               expect(last_response.status).to eq(200)
               response = JSON.parse(last_response.body)
               expect(response).to eq('address' => 'q-a1s0.ig-bar.baz.dep-foo.bosh')
+            end
+
+            context 'when the az is specified as not an array' do
+              it 'should raise an error' do
+                get "/?link_id=#{link.id}&azs=z1"
+                expect(last_response.status).to eq(400)
+                response = JSON.parse(last_response.body)
+                expect(response["description"]).to eq('`azs` param must be array type: `azs[]=`')
+              end
             end
           end
 
@@ -106,7 +115,7 @@ module Bosh::Director
             end
 
             it 'should return the address with the az information' do
-              get "/?link_id=#{link.id}&az[]=z1&az[]=z2"
+              get "/?link_id=#{link.id}&azs[]=z1&azs[]=z2"
               expect(last_response.status).to eq(200)
               response = JSON.parse(last_response.body)
               expect(response).to eq('address' => 'q-a1a2s0.ig-bar.baz.dep-foo.bosh')

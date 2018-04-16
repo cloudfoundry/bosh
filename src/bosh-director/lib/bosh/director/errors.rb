@@ -347,5 +347,5 @@ module Bosh::Director
   LinkNotExternalError = err(810005, BAD_REQUEST)
   LinkIdRequiredError = err(810006, BAD_REQUEST)
   LinkInvalidStatusError = err(810007, BAD_REQUEST)
-  LinkInvalidAzError = err(810008, BAD_REQUEST)
+  LinkInvalidAzsError = err(810008, BAD_REQUEST)
 end

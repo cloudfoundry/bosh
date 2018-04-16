@@ -1,4 +1,5 @@
 require 'bosh/director/api/controllers/base_controller'
+require 'sinatra/param'
 
 module Bosh::Director
   module Api::Controllers
@@ -12,16 +13,13 @@ module Bosh::Director
       end
 
       get '/', authorization: :read do
-        if params['link_id'].nil?
-          raise LinkIdRequiredError, 'Link id is required'
-        end
+        validate_query_params(params)
 
         query_options = {
-          azs: [(params['az'] || [])].flatten,
+          azs: params['azs'],
           status: params['status']
         }
 
-        validate_query_options(query_options)
 
         result = {
           address: @link_manager.link_address(params['link_id'], query_options)
@@ -32,15 +30,18 @@ module Bosh::Director
 
       private
 
-      def validate_query_options(query_options)
-        validate_azs(query_options[:azs])
-        validate_status(query_options[:status])
+      def validate_query_params(params)
+        raise(LinkIdRequiredError, 'Link id is required') unless params.has_key?('link_id')
+        validate_azs(params[:azs])
+        validate_status(params[:status])
       end
 
-      def validate_azs(az_names)
+      def validate_azs(azs)
+        return if azs.nil?
+        raise LinkInvalidAzsError, '`azs` param must be array type: `azs[]=`' unless azs.is_a?(Array)
         az_manager = Api::AvailabilityZoneManager.new
-        az_names.each do |az_name|
-          raise(LinkInvalidAzError, "az #{az_name} is not valid") unless az_manager.is_az_valid?(az_name)
+        azs.each do |az_name|
+          raise(LinkInvalidAzsError, "az #{az_name} is not valid") unless az_manager.is_az_valid?(az_name)
         end
       end
 

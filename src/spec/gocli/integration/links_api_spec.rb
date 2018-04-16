@@ -965,11 +965,11 @@ describe 'links api', type: :integration do
       expect(response).to eq('address' => 'q-s0.foobar.a.simple.bosh')
     end
 
-    context 'az' do
+    context 'azs' do
       context 'when querying for a specific az' do
         it 'returns the link address' do
           external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
-          response = get_json('/link_address', "link_id=#{external_link_response['id']}&az=z1")
+          response = get_json('/link_address', "link_id=#{external_link_response['id']}&azs[]=z1")
           expect(response).to eq('address' => 'q-a1s0.foobar.a.simple.bosh')
         end
       end
@@ -977,7 +977,7 @@ describe 'links api', type: :integration do
       context 'when querying for multiple azs' do
         it 'returns the link address' do
           external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
-          response = get_json('/link_address', "link_id=#{external_link_response['id']}&az[]=z2&az[]=z1")
+          response = get_json('/link_address', "link_id=#{external_link_response['id']}&azs[]=z2&azs[]=z1")
           expect(response).to eq('address' => 'q-a1a2s0.foobar.a.simple.bosh')
         end
       end
