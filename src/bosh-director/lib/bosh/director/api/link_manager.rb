@@ -51,10 +51,14 @@ module Bosh::Director
 
       def link_address(link_id, query_options = {})
         link = find_link(link_id)
-
         raise Bosh::Director::LinkLookupError, "Could not find a link with id #{link_id}" if link.nil?
 
         link_content = JSON.parse(link.link_content)
+
+        if link.link_provider_intent&.link_provider.type == 'manual'
+          return link_content['address']
+        end
+
         use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)
         dns_encoder = LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
         query_criteria = {

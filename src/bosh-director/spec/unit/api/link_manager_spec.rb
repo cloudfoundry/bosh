@@ -523,6 +523,63 @@ module Bosh::Director
             expect(link_address).to eq('q-n2s0.q-g1.bosh')
           end
         end
+
+        context 'and the link is manual' do
+          let(:provider) do
+            Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment,
+              instance_group: instance_group,
+              name: 'manual_provider_name',
+              type: 'manual',
+              serial_id: link_serial_id,
+              )
+          end
+
+          let(:provider_intent) do
+            Models::Links::LinkProviderIntent.create(
+              name: 'manual_link_name',
+              link_provider: provider,
+              shared: true,
+              consumable: true,
+              type: 'spaghetti',
+              original_name: 'napolean',
+              content: provider_json_content.to_json,
+              serial_id: link_serial_id,
+              )
+          end
+
+          let!(:link) do
+            Bosh::Director::Models::Links::Link.create(
+              link_provider_intent: provider_intent,
+              link_consumer_intent: consumer_intent,
+              link_content: link_content.to_json,
+              name: link_name,
+              )
+          end
+
+          let(:link_content) do
+            {
+              'address' => '192.168.1.254'
+            }
+          end
+
+          it 'returns the address of the link' do
+            link_address = subject.link_address(link.id)
+            expect(link_address).to eq('192.168.1.254')
+          end
+
+          context 'when the address is not in the link content' do
+            let(:link_content) do
+              {
+                'address' => nil
+              }
+            end
+            it 'should return a null address' do
+              link_address = subject.link_address(link.id)
+              expect(link_address).to be_nil
+            end
+          end
+        end
       end
     end
   end

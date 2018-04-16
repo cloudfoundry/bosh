@@ -1249,5 +1249,25 @@ describe 'links api', type: :integration do
         expect(response).to eq('address' => 'q-n1s0.q-g1.bosh')
       end
     end
+
+    context 'and the link is manual' do
+      let(:explicit_consumer) do
+        {
+          'name' => 'consumer',
+          'consumes' => {
+            'provider' => {
+              'address' => '192.168.1.254',
+              'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
+              'properties' => { 'a' => 'bar', 'c' => 'bazz' },
+            },
+          },
+        }
+      end
+
+      it 'provides the address of the manual link' do
+        response = get_json('/link_address', "link_id=1")
+        expect(response).to eq('address' => '192.168.1.254')
+      end
+    end
   end
 end

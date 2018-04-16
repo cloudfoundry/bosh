@@ -175,6 +175,51 @@ module Bosh::Director
               expect(response["description"]).to eq('status must be a one of: ["healthy", "unhealthy", "all", "default"]')
             end
           end
+
+          context 'and the link is manual' do
+            let(:provider) do
+              Bosh::Director::Models::Links::LinkProvider.create(
+                deployment: deployment,
+                instance_group: 'instance_group',
+                name: 'manual_provider_name',
+                type: 'manual',
+                )
+            end
+
+            let(:provider_intent) do
+              Models::Links::LinkProviderIntent.create(
+                name: 'manual_link_name',
+                link_provider: provider,
+                shared: true,
+                consumable: true,
+                type: 'spaghetti',
+                original_name: 'napolean',
+                content: {}.to_json,
+                )
+            end
+
+            let!(:link) do
+              Bosh::Director::Models::Links::Link.create(
+                link_provider_intent: provider_intent,
+                link_consumer_intent: external_consumer_intent,
+                link_content: link_content.to_json,
+                name: 'napolean',
+                )
+            end
+
+            let(:link_content) do
+              {
+                'address' => '192.168.1.254'
+              }
+            end
+
+            it 'returns the manual link address content' do
+              get "/?link_id=#{link.id}"
+              expect(last_response.status).to eq(200)
+              response = JSON.parse(last_response.body)
+              expect(response).to eq('address' => '192.168.1.254')
+            end
+          end
         end
       end
 
