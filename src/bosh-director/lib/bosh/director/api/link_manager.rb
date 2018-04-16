@@ -55,7 +55,7 @@ module Bosh::Director
 
         link_content = JSON.parse(link.link_content)
 
-        if link.link_provider_intent&.link_provider.type == 'manual'
+        if link.link_provider_intent&.link_provider&.type == 'manual'
           return link_content['address']
         end
 
