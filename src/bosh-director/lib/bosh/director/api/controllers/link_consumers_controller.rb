@@ -33,7 +33,8 @@ module Bosh::Director
 
       def generate_consumer_hash(model)
         consumer = model.link_consumer
-        {
+
+        result = {
           :id => model.id.to_s,
           :name => model.name,
           :optional => model.optional,
@@ -41,15 +42,19 @@ module Bosh::Director
           :owner_object => {
             :type => consumer.type,
             :name => consumer.name,
-            :info => {
-              :instance_group => consumer.instance_group,
-            },
           },
           :link_consumer_definition => {
             :name => model.original_name,
             :type => model.type,
           }
         }
+
+        info = {}
+        info[:instance_group] = consumer.instance_group unless consumer.instance_group == ''
+
+        result[:owner_object][:info] = info unless info.empty?
+
+        result
       end
     end
   end

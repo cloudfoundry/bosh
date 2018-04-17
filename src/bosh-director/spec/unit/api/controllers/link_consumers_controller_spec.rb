@@ -117,11 +117,40 @@ module Bosh::Director
             expect(JSON.parse(last_response.body)).to eq([generate_consumer_hash(consumer_intent_1), generate_consumer_hash(consumer_intent_2)])
           end
         end
+
+        context 'and there are external consumers in the database' do
+          let!(:consumer_1) do
+            Models::Links::LinkConsumer.create(
+              :deployment => deployment,
+              :instance_group => '',
+              :type => 'external',
+              :name => 'job_name_1',
+              )
+          end
+
+          let!(:consumer_intent_1) do
+            Models::Links::LinkConsumerIntent.create(
+              :link_consumer => consumer_1,
+              :original_name => 'link_1',
+              :type => 'link_type_1',
+              :name => 'link_alias_1',
+              :optional => false,
+              :blocked => false
+            )
+          end
+
+          it 'should return a list of consumers for specified deployment' do
+            get "/?deployment=#{consumer_1.deployment.name}"
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body)).to eq([generate_consumer_hash(consumer_intent_1)])
+          end
+        end
+
       end
 
       def generate_consumer_hash(model)
         consumer = model.link_consumer
-        {
+        result = {
           'id' => model.id.to_s,
           'name' => model.name,
           'optional' => model.optional,
@@ -138,6 +167,8 @@ module Bosh::Director
               'name' => model.original_name,
           },
         }
+        result['owner_object'].delete('info') if consumer.instance_group == ''
+        result
       end
     end
   end

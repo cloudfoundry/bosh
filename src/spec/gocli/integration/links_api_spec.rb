@@ -779,6 +779,7 @@ describe 'links api', type: :integration do
           consumer = response[0]
           expect(consumer['deployment']).to eq('simple')
           expect(consumer['owner_object']['type']).to eq('external')
+          expect(consumer['owner_object']['info']).to be_nil
         end
 
         it 'keeps the consumer and link after redeploy' do
