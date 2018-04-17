@@ -162,6 +162,7 @@ module Bosh
           link_spec['deployment_name'],
           link_spec['domain'],
           encoder_to_inject,
+          link_spec.fetch('use_short_dns_addresses', false)
         )
       end
 

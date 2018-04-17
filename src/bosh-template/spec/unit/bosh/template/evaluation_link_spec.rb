@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'bosh/template/evaluation_link'
 require 'bosh/director/dns/dns_encoder'
+require 'bosh/director/models/local_dns_encoded_network'
 require 'bosh/director/dns/canonicalizer'
 
 module Bosh
@@ -16,6 +17,7 @@ module Bosh
             deployment,
             root_domain,
             dns_encoder,
+            use_short_dns,
           )
         end
         let(:instances) { [] }
@@ -24,6 +26,7 @@ module Bosh
         let(:default_network) { 'potato_net' }
         let(:deployment) { 'fake_deployment' }
         let(:root_domain) { 'sub.bosh' }
+        let(:use_short_dns) { false }
         let(:dns_encoder) { Bosh::Director::DnsEncoder.new({},{'zone1' => '0'}) }
 
         it 'resolves the link characteristics and query params using the dns resolver' do
@@ -34,6 +37,13 @@ module Bosh
           allow(dns_encoder).to receive(:encode_query).and_call_original
           expect(subject.address(status: 'default')).to eq('q-s0.potato-group.potato-net.fake-deployment.sub.bosh')
           expect(dns_encoder).to have_received(:encode_query).with(hash_including(status: 'default'))
+        end
+
+        context 'when use short dns is enabled' do
+          let(:use_short_dns) { true }
+          it 'resolves the address to a short dns name' do
+            expect(subject.address(azs: ['zone1'])).to eq('q-a0s0.q-g1.sub.bosh')
+          end
         end
 
         context 'when there is no dns resolver' do
