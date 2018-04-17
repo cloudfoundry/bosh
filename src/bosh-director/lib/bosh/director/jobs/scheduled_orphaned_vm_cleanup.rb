@@ -25,14 +25,11 @@ module Bosh::Director
               begin
                 Lock.new("lock:orphan_vm_cleanup:#{vm.cid}", timeout: lock_timeout).lock do
                   @vm_deleter.delete_vm_by_cid(vm.cid, vm.stemcell_api_version, vm.cpi)
-                  vm.ip_addresses.each do |ip_addr|
-                    @db_ip_repo.delete(ip_addr.address, nil)
-                  end
-                  vm.destroy
+                  destroy_vm(vm)
                 end
               rescue Bosh::Clouds::VMNotFound => e
                 logger.debug('VM already gone; deleting orphaned references')
-                vm.destroy
+                destroy_vm(vm)
               rescue Timeout => e
                 logger.debug("Timed out acquiring lock to delete #{vm.cid}")
               rescue StandardError => e
@@ -46,6 +43,13 @@ module Bosh::Director
       end
 
       private
+
+      def destroy_vm(vm)
+        vm.ip_addresses.each do |ip_addr|
+          @db_ip_repo.delete(ip_addr.address, nil)
+        end
+        vm.destroy
+      end
 
       def add_event(object_name = nil, error = nil)
         Config.current_job.event_manager.create_event(

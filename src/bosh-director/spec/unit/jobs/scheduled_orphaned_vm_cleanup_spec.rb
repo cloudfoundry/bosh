@@ -159,6 +159,8 @@ module Bosh::Director
           it 'deletes the model from the database' do
             job.perform
             expect(Models::OrphanedVm.all.find { |vm| vm.cid == 'cid1' }).to be_nil
+            expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::CIDR.create('127.0.0.1').to_i.to_s)).to be_nil
+            expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::CIDR.create('127.0.0.2').to_i.to_s)).to be_nil
           end
         end
 
