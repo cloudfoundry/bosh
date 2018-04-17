@@ -1,7 +1,6 @@
 require 'spec_helper'
 require 'bosh/template/evaluation_link'
 require 'bosh/director/dns/dns_encoder'
-require 'bosh/director/models/local_dns_encoded_network'
 require 'bosh/director/dns/canonicalizer'
 
 module Bosh
@@ -36,13 +35,19 @@ module Bosh
         it 'allows you to specify healthiness in your query' do
           allow(dns_encoder).to receive(:encode_query).and_call_original
           expect(subject.address(status: 'default')).to eq('q-s0.potato-group.potato-net.fake-deployment.sub.bosh')
-          expect(dns_encoder).to have_received(:encode_query).with(hash_including(status: 'default'))
+          expect(dns_encoder).to have_received(:encode_query).with(hash_including(status: 'default'), false)
         end
 
         context 'when use short dns is enabled' do
           let(:use_short_dns) { true }
+
+          let(:dns_encoder) do
+            instance_double(Bosh::Director::DnsEncoder)
+          end
+
           it 'resolves the address to a short dns name' do
-            expect(subject.address(azs: ['zone1'])).to eq('q-a0s0.q-g1.sub.bosh')
+            expect(dns_encoder).to receive(:encode_query).with(hash_including(azs:['zone1']), true)
+            subject.address(azs: ['zone1'])
           end
         end
 
