@@ -738,8 +738,10 @@ describe 'links api', type: :integration do
         {
           'link_provider_id' => provider_id,
           'link_consumer' => {
-            'owner_object_name' => 'external_consumer_1',
-            'owner_object_type' => 'external',
+            'owner_object' => {
+              'name' => 'external_consumer_1',
+              'type' => 'external',
+            },
           },
         }
       end
@@ -996,13 +998,15 @@ describe 'links api', type: :integration do
         end
       end
 
-      context 'when owner_object_name is invalid' do
+      context 'when owner_object.name is invalid' do
         let(:payload_json) do
           {
             'link_provider_id' => provider_id,
             'link_consumer' => {
-              'owner_object_name' => '',
-              'owner_object_type' => 'external',
+              'owner_object' => {
+                'name' => '',
+                'type' => 'external',
+              },
             },
           }
         end
@@ -1010,7 +1014,7 @@ describe 'links api', type: :integration do
         it 'returns error' do
           response = send_director_post_request('/links', '', JSON.generate(payload_json))
           error_response = JSON.parse(response.read_body)
-          expect(error_response['description']).to eq('Invalid request: `link_consumer.owner_object_name` must not be empty')
+          expect(error_response['description']).to eq('Invalid request: `link_consumer.owner_object.name` must not be empty')
         end
       end
 
@@ -1020,8 +1024,10 @@ describe 'links api', type: :integration do
           {
             'link_provider_id' => provider_id,
             'link_consumer' => {
-              'owner_object_name' => 'external_consumer_1',
-              'owner_object_type' => 'external',
+              'owner_object' => {
+                'name' => 'external_consumer_1',
+                'type' => 'external',
+              },
             },
             'network' => network_name,
           }
@@ -1047,7 +1053,7 @@ describe 'links api', type: :integration do
           it 'return error' do
             response = send_director_post_request('/links', '', JSON.generate(payload_json))
             error_response = JSON.parse(response.read_body)
-            error_string = "Can't resolve network: `#{network_name}` in provider id: #{provider_id} for `#{payload_json['link_consumer']['owner_object_name']}`"
+            error_string = "Can't resolve network: `#{network_name}` in provider id: #{provider_id} for `#{payload_json['link_consumer']['owner_object']['name']}`"
 
             expect(error_response['description']).to eq(error_string)
           end
@@ -1071,8 +1077,10 @@ describe 'links api', type: :integration do
       {
         'link_provider_id' => provider_id,
         'link_consumer' => {
-          'owner_object_name' => 'external_consumer_1',
-          'owner_object_type' => 'external',
+          'owner_object' => {
+            'name' => 'external_consumer_1',
+            'type' => 'external',
+          },
         },
         'network' => 'a',
       }
@@ -1139,8 +1147,10 @@ describe 'links api', type: :integration do
     let(:payload_json) do
       {
         'link_consumer' => {
-          'owner_object_name' => 'external_consumer_1',
-          'owner_object_type' => 'external',
+          'owner_object' => {
+            'name' => 'external_consumer_1',
+            'type' => 'external',
+          },
         },
       }
     end

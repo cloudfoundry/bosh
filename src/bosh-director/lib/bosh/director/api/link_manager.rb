@@ -17,7 +17,7 @@ module Bosh::Director
         provider_intent = find_provider_intent(json_payload['link_provider_id'])
         raise "Invalid link_provider_id: #{json_payload['link_provider_id']}" if provider_intent.nil?
 
-        validate_consumer_network(provider_intent, json_payload['network'], consumer_data['owner_object_name']) unless json_payload['network'].nil?
+        validate_consumer_network(provider_intent, json_payload['network'], consumer_data['owner_object']['name']) unless json_payload['network'].nil?
 
         @links_manager = Bosh::Director::Links::LinksManager.new(Bosh::Director::Config.logger, Bosh::Director::Config.event_log, provider_intent.serial_id)
         provider = provider_intent.link_provider # find_provider_by_id(provider_intent.link_provider_id)
@@ -25,7 +25,7 @@ module Bosh::Director
         consumer = @links_manager.find_or_create_consumer(
           deployment_model: provider.deployment,
           instance_group_name: '',
-          name: consumer_data['owner_object_name'],
+          name: consumer_data['owner_object']['name'],
           type: @external_type,
         )
 
@@ -94,10 +94,12 @@ module Bosh::Director
           raise 'Invalid request: `link_provider_id` must be a String'
         elsif json_payload['link_consumer'].nil?
           raise 'Invalid request: `link_consumer` section must be defined'
-        elsif json_payload['link_consumer']['owner_object_type'].nil? || json_payload['link_consumer']['owner_object_type'] != 'external'
-          raise "Invalid request: `link_consumer.owner_object_type` should be 'external'"
-        elsif json_payload['link_consumer']['owner_object_name'].nil? || json_payload['link_consumer']['owner_object_name'] == ''
-          raise 'Invalid request: `link_consumer.owner_object_name` must not be empty'
+        elsif json_payload['link_consumer']['owner_object'].nil?
+          raise 'Invalid request: `link_consumer.owner_object` section must be defined'
+        elsif json_payload['link_consumer']['owner_object']['type'].nil? || json_payload['link_consumer']['owner_object']['type'] != @external_type
+          raise "Invalid request: `link_consumer.owner_object.type` should be 'external'"
+        elsif json_payload['link_consumer']['owner_object']['name'].nil? || json_payload['link_consumer']['owner_object']['name'] == ''
+          raise 'Invalid request: `link_consumer.owner_object.name` must not be empty'
         end
       end
 

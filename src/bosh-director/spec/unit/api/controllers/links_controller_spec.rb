@@ -155,10 +155,10 @@ module Bosh::Director
               expect(last_response.status).to eq(400)
               expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer` section must be defined"}')
             end
-            it 'raise error for invalid owner_object_name' do
-              post '/', JSON.generate('link_provider_id' => '3', 'link_consumer' => {'owner_object_name' => ''}), 'CONTENT_TYPE' => 'application/json'
+            it 'raise error for invalid owner_object.name' do
+              post '/', JSON.generate('link_provider_id' => '3', 'link_consumer' => {'owner_object' => {'name' => ''}}), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer.owner_object_type` should be \'external\'"}')
+              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer.owner_object.type` should be \'external\'"}')
             end
           end
 
@@ -168,8 +168,10 @@ module Bosh::Director
               {
                 'link_provider_id' => provider_id,
                 'link_consumer' => {
-                  'owner_object_name' => 'external_consumer_1',
-                  'owner_object_type' => 'external',
+                  'owner_object' => {
+                    'name' => 'external_consumer_1',
+                    'type' => 'external',
+                  },
                 },
               }
             end
@@ -218,7 +220,7 @@ module Bosh::Director
                     type: 'external',
                     )
                   expect(new_external_consumer).to_not be_nil
-                  expect(new_external_consumer.name).to eq(payload_json['link_consumer']['owner_object_name'])
+                  expect(new_external_consumer.name).to eq(payload_json['link_consumer']['owner_object']['name'])
 
                   new_external_link = Bosh::Director::Models::Links::Link.find(
                     link_provider_intent_id: provider_1_intent_1 && provider_1_intent_1[:id],
@@ -252,8 +254,10 @@ module Bosh::Director
                     {
                       'link_provider_id' => provider_id,
                       'link_consumer' => {
-                        'owner_object_name' => 'external_consumer_1',
-                        'owner_object_type' => 'external',
+                        'owner_object' => {
+                          'name' => 'external_consumer_1',
+                          'type' => 'external',
+                        },
                       },
                       'network' => networks[0],
                     }
@@ -266,8 +270,10 @@ module Bosh::Director
                     {
                       'link_provider_id' => provider_id,
                       'link_consumer' => {
-                        'owner_object_name' => 'external_consumer_1',
-                        'owner_object_type' => 'external',
+                        'owner_object' => {
+                          'name' => 'external_consumer_1',
+                          'type' => 'external',
+                        },
                       },
                       'network' => 'invalid-network-name',
                     }

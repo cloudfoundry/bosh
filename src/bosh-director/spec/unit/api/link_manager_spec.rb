@@ -44,8 +44,10 @@ module Bosh::Director
       {
         'link_provider_id' => provider_id,
         'link_consumer' => {
-          'owner_object_name' => 'external_consumer_1',
-          'owner_object_type' => 'external',
+          'owner_object' => {
+            'name' => 'external_consumer_1',
+            'type' => 'external',
+          },
         },
       }
     end
@@ -121,7 +123,7 @@ module Bosh::Director
         end
 
         context 'when link_consumer contents are invalid' do
-          context 'invalid owner_object_name' do
+          context 'invalid owner_object structure' do
             let(:payload_json) do
               {
                 'link_provider_id' => provider_id,
@@ -133,23 +135,43 @@ module Bosh::Director
             end
 
             it 'return error' do
-              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object_name` must not be empty/)
+              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object` section must be defined/)
             end
           end
 
-          context 'invalid owner_object_type' do
+          context 'invalid owner_object.name' do
             let(:payload_json) do
               {
                 'link_provider_id' => provider_id,
                 'link_consumer' => {
-                  'owner_object_name' => 'test_owner_name',
-                  'owner_object_type' => 'test_owner_type',
+                  'owner_object' => {
+                    'name' => '',
+                    'type' => 'external'
+                  },
                 },
               }
             end
 
             it 'return error' do
-              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object_type` should be 'external'/)
+              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object.name` must not be empty/)
+            end
+          end
+
+          context 'invalid owner_object.type' do
+            let(:payload_json) do
+              {
+                'link_provider_id' => provider_id,
+                'link_consumer' => {
+                  'owner_object' => {
+                    'name' => 'test_owner_name',
+                    'type' => 'test_owner_type'
+                  },
+                },
+              }
+            end
+
+            it 'return error' do
+              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object.type` should be 'external'/)
             end
           end
         end
@@ -187,8 +209,10 @@ module Bosh::Director
             {
               'link_provider_id' => provider_id,
               'link_consumer' => {
-                'owner_object_name' => 'external_consumer_1',
-                'owner_object_type' => 'external',
+                'owner_object' => {
+                  'name' => 'external_consumer_1',
+                  'type' => 'external',
+                },
               },
               'network' => network_name,
             }

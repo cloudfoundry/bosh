@@ -79,9 +79,9 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
-          type: "control_owner_object_type"
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type'
         )
 
         expect(actual_provider).to eq(expected_provider)
@@ -93,9 +93,9 @@ describe Bosh::Director::Links::LinksManager do
       it 'does not return a provider' do
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
-          type: "control_owner_object_type"
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type'
         )
         expect(actual_provider).to be_nil
       end
@@ -105,7 +105,7 @@ describe Bosh::Director::Links::LinksManager do
       let(:serial_id) { 55 }
 
       it 'returns nothing' do
-        expected_provider = Bosh::Director::Models::Links::LinkProvider.create(
+        Bosh::Director::Models::Links::LinkProvider.create(
           deployment: deployment_model,
           instance_group: 'control_instance_group',
           name: 'control_owner_object_name',
@@ -115,9 +115,9 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
-          type: "control_owner_object_type"
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type'
         )
 
         expect(actual_provider).to be_nil
@@ -346,8 +346,8 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
           type: 'control_owner_object_type'
         )
         expect(actual_consumer).to eq(expected_consumer)
@@ -359,8 +359,8 @@ describe Bosh::Director::Links::LinksManager do
       it 'does not return a consumer' do
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
           type: 'job'
         )
         expect(actual_consumer).to be_nil
@@ -380,8 +380,8 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
           type: 'control_owner_object_type'
         )
         expect(actual_consumer).to be_nil
@@ -511,14 +511,14 @@ describe Bosh::Director::Links::LinksManager do
     context 'when link do not exist' do
       it 'creates a new link' do
         expected_link = subject.find_or_create_link(
-          name: "test_link_name",
+          name: 'test_link_name',
           provider_intent: provider_intent,
           consumer_intent: consumer_intent,
-          link_content: "{}"
+          link_content: '{}'
         )
 
         actual_link = Bosh::Director::Models::Links::Link.find(
-          name: "test_link_name"
+          name: 'test_link_name'
         )
 
         expect(actual_link).to eq(expected_link)
@@ -558,14 +558,14 @@ describe Bosh::Director::Links::LinksManager do
 
       before do
         @expected_link_1 = subject.find_or_create_link(
-          name: "test_link_name",
+          name: 'test_link_name',
           provider_intent: provider_intent,
           consumer_intent: consumer_intent,
           link_content: link_content_1.to_json
         )
 
         actual_link = Bosh::Director::Models::Links::Link.find(
-          name: "test_link_name"
+          name: 'test_link_name'
         )
         expect(actual_link).to_not be_nil
       end
@@ -574,7 +574,7 @@ describe Bosh::Director::Links::LinksManager do
         context 'when single link for provider anc consumer exists' do
           it 'should return existing link' do
             expected_link_2 = subject.find_or_create_link(
-              name: "test_link_name",
+              name: 'test_link_name',
               provider_intent: provider_intent,
               consumer_intent: consumer_intent,
               link_content: link_content_1.to_json,
@@ -628,7 +628,7 @@ describe Bosh::Director::Links::LinksManager do
 
           it 'should return existing link' do
             expected_link_2 = subject.find_or_create_link(
-              name: "test_link_name",
+              name: 'test_link_name',
               provider_intent: provider_intent,
               consumer_intent: consumer_intent,
               link_content: link_content_1.to_json,
@@ -646,7 +646,7 @@ describe Bosh::Director::Links::LinksManager do
 
           it 'should return existing link' do
             expected_link_2 = subject.find_or_create_link(
-              name: "test_link_name",
+              name: 'test_link_name',
               provider_intent: provider_intent,
               consumer_intent: consumer_intent,
               link_content: link_content_1.to_json,
@@ -666,7 +666,7 @@ describe Bosh::Director::Links::LinksManager do
 
           it 'should return new link' do
             expected_link_2 = subject.find_or_create_link(
-              name: "test_link_name",
+              name: 'test_link_name',
               provider_intent: provider_intent,
               consumer_intent: consumer_intent,
               link_content: link_content_1.to_json,
@@ -684,7 +684,7 @@ describe Bosh::Director::Links::LinksManager do
 
           it 'should return new link' do
             expected_link_2 = subject.find_or_create_link(
-              name: "test_link_name",
+              name: 'test_link_name',
               provider_intent: provider_intent,
               consumer_intent: consumer_intent,
               link_content: link_content_1.to_json,
@@ -706,7 +706,7 @@ describe Bosh::Director::Links::LinksManager do
 
           it 'should return new link' do
             expected_link_2 = subject.find_or_create_link(
-              name: "test_link_name",
+              name: 'test_link_name',
               provider_intent: provider_intent,
               consumer_intent: consumer_intent,
               link_content: link_content_1.to_json
