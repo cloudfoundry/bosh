@@ -12,7 +12,6 @@ require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
 require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
-require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/gnatsd_manager'
@@ -45,8 +44,6 @@ module Bosh::Dev::Sandbox
 
     attr_reader :director_service
     attr_reader :port_provider
-
-    attr_reader :database_proxy
 
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
@@ -175,8 +172,6 @@ module Bosh::Dev::Sandbox
       FileUtils.rm_rf(logs_path)
       FileUtils.mkdir_p(logs_path)
 
-      @database_proxy && @database_proxy.start
-
       @nginx_service.start
 
       @nats_process.start
@@ -271,7 +266,6 @@ module Bosh::Dev::Sandbox
       @config_server_service.stop
 
       @database.drop_db
-      @database_proxy&.stop
 
       @sandbox_log_file.close
 
@@ -515,13 +509,9 @@ module Bosh::Dev::Sandbox
         if db_config[:type] == 'mysql'
           @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
         else
-          proxy_port = @port_provider.get_port(:postgres)
           postgres_options = db_config.dup
-          postgres_options[:port] = proxy_port
 
           @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, postgres_options)
-          # all postgres connections go through this proxy (for testing automatic reconnect)
-          @database_proxy = ConnectionProxyService.new(sandbox_root, '127.0.0.1', 5432, proxy_port, base_log_path, @logger)
         end
       end
     end

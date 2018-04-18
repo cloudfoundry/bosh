@@ -3,7 +3,6 @@ require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/sandbox/nginx'
-require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
 require 'bosh/dev/sandbox/services/uaa_service'
@@ -40,11 +39,6 @@ namespace :spec do
           unless ENV['SKIP_NGINX'] == 'true'
             nginx = Bosh::Dev::Sandbox::Nginx.new(Bosh::Core::Shell.new(compilation_log))
             install_with_retries(nginx)
-          end
-
-          unless ENV['SKIP_TCP_PROXY_NGINX'] == 'true'
-            tcp_proxy_nginx = Bosh::Dev::Sandbox::TCPProxyNginx.new(Bosh::Core::Shell.new(compilation_log))
-            install_with_retries(tcp_proxy_nginx)
           end
 
           unless ENV['SKIP_UAA'] == 'true'

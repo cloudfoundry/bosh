@@ -13,8 +13,8 @@ module Bosh::Dev::Sandbox
 
       @username = options.fetch(:username, 'root')
       @password = options.fetch(:password, 'password')
-      @port = options.fetch(:port, 3306)
-      @host = options.fetch(:host, '127.0.0.1')
+      @port = 3306
+      @host = '127.0.0.1'
       @ca_path = options.fetch(:ca_path, nil)
       @tls_enabled = options.fetch(:tls_enabled, false)
     end
