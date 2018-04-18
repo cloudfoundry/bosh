@@ -24,6 +24,7 @@ scheduler_config = {
   "name" => "scheduler",
   "executable" => "/var/vcap/jobs/director/bin/scheduler",
   "ephemeral_disk" => true,
+  "persistent_disk" => true,
 }
 
 sync_dns_config = {
