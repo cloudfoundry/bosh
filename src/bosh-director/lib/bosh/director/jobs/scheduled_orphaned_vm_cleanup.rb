@@ -11,8 +11,8 @@ module Bosh::Director
         Models::OrphanedVm.any?
       end
 
-      def initialize(params)
-        logger.debug("ScheduledOrphanedVMCleanup initialized with params: #{params.inspect}")
+      def initialize
+        logger.debug('ScheduledOrphanedVMCleanup initialized')
         @vm_deleter = VmDeleter.new(logger)
         @db_ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
       end

@@ -62,7 +62,7 @@ module Bosh::Director
         end
 
         let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter, delete_vm_by_cid: true) }
-        let(:job) { ScheduledOrphanedVMCleanup.new({}) }
+        let(:job) { ScheduledOrphanedVMCleanup.new }
         let(:db_ip_repo) { Bosh::Director::DeploymentPlan::DatabaseIpRepo.new(fake_logger) }
         let(:fake_logger) { instance_double(Logger, debug: true) }
         let(:task) { Models::Task.make(id: 42, username: 'foo') }
