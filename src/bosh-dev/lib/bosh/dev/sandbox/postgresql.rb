@@ -13,8 +13,8 @@ module Bosh::Dev::Sandbox
 
       @username = options.fetch(:username, 'postgres')
       @password = options.fetch(:password, '')
-      @port = 5432
-      @host = 'localhost'
+      @port = options.fetch(:port, 5432)
+      @host = options.fetch(:host, 'localhost')
       @ca_path = options.fetch(:ca_path, nil)
       @tls_enabled = options.fetch(:tls_enabled, false)
     end
