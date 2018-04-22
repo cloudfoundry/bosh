@@ -115,7 +115,7 @@ module Bhm
           end
         end
 
-        context 'when the resurrection config is not applicable by deployment name' do
+        context 'when the deployment is neither included nor excluded' do
           let(:include_spec) { {'deployments' => ['no_findy']} }
 
           it 'sends to resurrection' do
@@ -131,7 +131,7 @@ module Bhm
           end
         end
 
-        context 'when the resurrection config is not applicable by instance group' do
+        context 'when the instance group is neither included nor excluded' do
           let(:include_spec) { {'instance_groups' => ['no_findy']} }
 
           it 'sends to resurrection' do
@@ -169,7 +169,7 @@ module Bhm
           end
         end
 
-        context 'when the resurrection config is not applicable by deployment name' do
+        context 'when the deployment is neither included nor excluded' do
           let(:include_spec) { {'deployments' => ['no_findy']} }
 
           it 'sends to resurrection' do
@@ -185,7 +185,7 @@ module Bhm
           end
         end
 
-        context 'when the resurrection config is not applicable by instance group' do
+        context 'when the instance group is neither included nor excluded' do
           let(:include_spec) { {'instance_groups' => ['no_findy']} }
 
           it 'sends to resurrection' do

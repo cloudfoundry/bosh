@@ -17,25 +17,25 @@ module Bosh::Monitor
 
     def update_rules(resurrection_configs)
       new_parsed_rules = []
-      if !resurrection_configs.nil? && !resurrection_configs.empty?
-        ids = resurrection_configs.map{ |resurrection_config| resurrection_config['id'] }
-        if @active_ids.to_set != ids.to_set
-          @logger.info("Resurrection config update starting...")
+      return if resurrection_configs.nil? || resurrection_configs.empty?
 
-          resurrection_rule_hashes = resurrection_configs.map{ |resurrection_config| YAML.load(resurrection_config['content'])['rules'] }.flatten || []
-          resurrection_rule_hashes.each do |resurrection_rule_hash|
-            begin
-              new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)
-            rescue Exception => e
-              @logger.error("Failed to parse resurrection config rule #{resurrection_rule_hash.inspect}: #{e.inspect}")
-            end
+      ids = resurrection_configs.map {|resurrection_config| resurrection_config['id']}
+      if @active_ids.to_set != ids.to_set
+        @logger.info("Resurrection config update starting...")
+
+        resurrection_rule_hashes = resurrection_configs.map {|resurrection_config| YAML.load(resurrection_config['content'])['rules']}.flatten || []
+        resurrection_rule_hashes.each do |resurrection_rule_hash|
+          begin
+            new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)
+          rescue Exception => e
+            @logger.error("Failed to parse resurrection config rule #{resurrection_rule_hash.inspect}: #{e.inspect}")
           end
-          @parsed_rules = new_parsed_rules
-          @active_ids = ids
-          @logger.info("Resurrection config update finished")
-        else
-          @logger.info("Resurrection config remains the same")
         end
+        @parsed_rules = new_parsed_rules
+        @active_ids = ids
+        @logger.info("Resurrection config update finished")
+      else
+        @logger.info("Resurrection config remains the same")
       end
     end
 
