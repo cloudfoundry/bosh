@@ -3,7 +3,7 @@ name: registry
 dependencies:
 - libpq
 - mysql
-- ruby-2.4-r3
+- ruby-2.4-r4
 
 files:
 - bosh_common/**/*
