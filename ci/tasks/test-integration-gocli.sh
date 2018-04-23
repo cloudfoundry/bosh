@@ -4,6 +4,10 @@ set -e
 
 source bosh-src/ci/tasks/utils.sh
 
+if [ -d integration-tests-parallel-runtime ]; then
+  cp integration-tests-parallel-runtime/parallel_runtime_rspec.log bosh-src/src/parallel_runtime_rspec.log
+fi
+
 check_param RUBY_VERSION
 check_param DB
 
@@ -15,6 +19,9 @@ case "$DB" in
     mkdir /var/lib/mysql
     mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
     mv /var/lib/mysql-src/* /var/lib/mysql/
+    echo '
+[mysqld]
+max_connections = 1024' >> /etc/mysql/my.cnf
 
     if [ "$DB_TLS" = true ]; then
       echo "....... DB TLS enabled ......."
@@ -23,7 +30,6 @@ case "$DB" in
       cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $MYSQLDIR/server-key.pem
       cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $MYSQLDIR/server-cert.pem
       echo '
-[mysqld]
 ssl-cert=server-cert.pem
 ssl-key=server-key.pem
 require_secure_transport=ON

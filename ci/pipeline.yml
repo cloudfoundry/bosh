@@ -305,42 +305,24 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-7"]
-          params:
-            DB:           postgresql
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-8"]
-          params:
-            DB:           postgresql
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-9"]
-          params:
-            DB:           postgresql
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-1"]
+        params:
+          DB:           postgresql
+          SHA2_MODE:    true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: bosh-src/src/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: integration-mysql-gocli-sha1
     public: true
@@ -354,39 +336,24 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-4"]
-          params:
-            DB:           mysql
-            NUM_GROUPS: 24
-            GROUP:      1,4,7,10,13,16,19,22
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-5"]
-          params:
-            DB:           mysql
-            NUM_GROUPS: 24
-            GROUP:      2,5,8,11,14,17,20,23
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-6"]
-          params:
-            DB:           mysql
-            NUM_GROUPS: 24
-            GROUP:      3,6,9,12,15,18,21,24
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-2"]
+        params:
+          DB:           mysql
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: bosh-src/src/parallel_runtime_rspec.log
+          acl: public-read
+
 
   - name: integration-db-tls-postgres
     public: true
@@ -400,43 +367,25 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
-          params:
-            DB:           postgresql
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
-          params:
-            DB:           postgresql
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
-          params:
-            DB:           postgresql
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-            DB_TLS:       true
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-3"]
+        params:
+          DB:           postgresql
+          SHA2_MODE:    true
+          DB_TLS:       true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: bosh-src/src/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: integration-db-tls-postgres-hotswap
     public: true
@@ -450,46 +399,26 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-hotswap"]
-          params:
-            DB:           postgresql
-            DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-hotswap"]
-          params:
-            DB:           postgresql
-            DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-hotswap"]
-          params:
-            DB:           postgresql
-            DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-            DB_TLS:       true
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-4"]
+        params:
+          DB:           postgresql
+          DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
+          SHA2_MODE:    true
+          DB_TLS:       true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: bosh-src/src/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: integration-db-tls-mysql
     public: true
@@ -504,45 +433,25 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: bosh-main-mysql-5.7
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          tags: ["bosh-integration-db-tls-mysql"]
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          image: bosh-main-mysql-5.7
-          params:
-            DB:           mysql
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-2
-          privileged: true
-          tags: ["bosh-integration-db-tls-mysql"]
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          image: bosh-main-mysql-5.7
-          params:
-            DB:           mysql
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-3
-          privileged: true
-          tags: ["bosh-integration-db-tls-mysql"]
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          image: bosh-main-mysql-5.7
-          params:
-            DB:           mysql
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-            DB_TLS:       true
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-5"]
+        params:
+          DB:           mysql
+          SHA2_MODE:    true
+          DB_TLS:       true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: bosh-src/src/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: upgrade-tests
     public: true
@@ -921,6 +830,14 @@ resources:
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
       versioned_file: "bosh-dev-release.tgz"
+
+  - name: integration-tests-parallel-runtime
+    type: s3
+    source:
+      bucket: ((integration_runtime_bucket))
+      access_key_id: ((integration_runtime_access_key_id))
+      secret_access_key: ((integration_runtime_secret_access_key))
+      versioned_file: "parallel_runtime_rspec.log"
 
   - name: davcli
     type: s3

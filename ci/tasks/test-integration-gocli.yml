@@ -18,8 +18,6 @@ params:
   RUBY_VERSION:            2.4.4
   DB:                      replace-me
   LOG_LEVEL:               ERROR
-  NUM_GROUPS:              8
-  GROUP:                   1,2,3,4,5,6,7,8
   SPEC_PATH:               ~
   SHA2_MODE:               ~
   DB_TLS:                  false
