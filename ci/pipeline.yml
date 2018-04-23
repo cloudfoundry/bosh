@@ -58,7 +58,7 @@ shared:
       outputs:
       - name: bosh-src
       params:
-        RUBY_VERSION: 2.4.2
+        RUBY_VERSION: 2.4.4
       run:
         path: /bin/bash
         args:
@@ -146,56 +146,34 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-main-mysql-5.5
+        - get: bosh-main-mysql-5.6
+        - get: bosh-main-mysql-5.7
       - aggregate:
         - task: test-mysql-5.5
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.5
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              DB: mysql
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-mysql-5.5
+          params:
+            DB: mysql
         - task: test-mysql-5.6
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.6
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              DB: mysql
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-mysql-5.6
+          params:
+            DB: mysql
         - task: test-mysql-5.7
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              DB: mysql
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-mysql-5.7
+          params:
+            DB: mysql
         on_failure:
           <<: *slack-alert
 
@@ -204,76 +182,46 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-main-postgres-9.3
+        - get: bosh-main-postgres-9.4
+        - get: bosh-main-postgres-9.5
+        - get: bosh-main-postgres-9.6
       - aggregate:
         - task: test-postgres-9.3
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.3
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              DB: postgresql
-              DB_VERSION: 9.3
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.3
+          params:
+            DB: postgresql
+            DB_VERSION: 9.3
         - task: test-postgres-9.4
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.4
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              DB: postgresql
-              DB_VERSION: 9.4
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.4
+          params:
+            DB: postgresql
+            DB_VERSION: 9.4
         - task: test-postgres-9.5
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.5
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              DB: postgresql
-              DB_VERSION: 9.5
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.5
+          params:
+            DB: postgresql
+            DB_VERSION: 9.5
         - task: test-postgres-9.6
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.6
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              DB: postgresql
-              DB_VERSION: 9.6
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.6
+          params:
+            DB: postgresql
+            DB_VERSION: 9.6
         on_failure:
           <<: *slack-alert
 
@@ -555,6 +503,7 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: bosh-main-mysql-5.7
 
       - <<: *install-dependencies
 
@@ -562,67 +511,36 @@ jobs:
         - task: test-group-1
           privileged: true
           tags: ["bosh-integration-db-tls-mysql"]
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-            - name: bosh-src
-            - name: bosh-cli
-            - name: bosh-agent
-            run:
-              path: bosh-src/ci/tasks/test-integration-gocli.sh
-            params:
-              DB:           mysql
-              NUM_GROUPS:   24
-              GROUP:        1,4,7,10,13,16,19,22
-              SHA2_MODE:    true
-              DB_TLS:       true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-mysql-5.7
+          params:
+            DB:           mysql
+            NUM_GROUPS:   24
+            GROUP:        1,4,7,10,13,16,19,22
+            SHA2_MODE:    true
+            DB_TLS:       true
         - task: test-group-2
           privileged: true
           tags: ["bosh-integration-db-tls-mysql"]
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-            - name: bosh-src
-            - name: bosh-cli
-            - name: bosh-agent
-            run:
-              path: bosh-src/ci/tasks/test-integration-gocli.sh
-            params:
-              DB:           mysql
-              NUM_GROUPS:   24
-              GROUP:        2,5,8,11,14,17,20,23
-              SHA2_MODE:    true
-              DB_TLS:       true
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-mysql-5.7
+          params:
+            DB:           mysql
+            NUM_GROUPS:   24
+            GROUP:        2,5,8,11,14,17,20,23
+            SHA2_MODE:    true
+            DB_TLS:       true
         - task: test-group-3
           privileged: true
           tags: ["bosh-integration-db-tls-mysql"]
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-            - name: bosh-src
-            - name: bosh-cli
-            - name: bosh-agent
-            run:
-              path: bosh-src/ci/tasks/test-integration-gocli.sh
-            params:
-              DB:           mysql
-              NUM_GROUPS:   24
-              GROUP:        3,6,9,12,15,18,21,24
-              SHA2_MODE:    true
-              DB_TLS:       true
-
+          file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-mysql-5.7
+          params:
+            DB:           mysql
+            NUM_GROUPS:   24
+            GROUP:        3,6,9,12,15,18,21,24
+            SHA2_MODE:    true
+            DB_TLS:       true
         on_failure:
           <<: *slack-alert
 
@@ -773,6 +691,7 @@ jobs:
       tags: ["bosh-integration"]
       params:
         BOSH_SRC_PATH: bosh-src/src
+        RUBY_VERSION: 2.4.4
       on_failure:
         <<: *slack-alert
 
@@ -1118,6 +1037,41 @@ resources:
       token: ((tracker_api_token))
       project_id: ((tracker_project_id))
       tracker_url: https://www.pivotaltracker.com
+
+  - name: bosh-main-mysql-5.5
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.5
+
+  - name: bosh-main-mysql-5.6
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.6
+
+  - name: bosh-main-mysql-5.7
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.7
+
+  - name: bosh-main-postgres-9.3
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.3
+
+  - name: bosh-main-postgres-9.4
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.4
+
+  - name: bosh-main-postgres-9.5
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.5
+
+  - name: bosh-main-postgres-9.6
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.6
 
 resource_types:
 - name: slack-notification
