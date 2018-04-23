@@ -16,9 +16,9 @@ dir: <%= sandbox_root %>/boshdir
 
 scheduled_jobs:
   - command: SnapshotDeployments
-    schedule: '*/2 * * * * *'
+    schedule: '*/10 * * * * *'
   - command: ScheduledBackup
-    schedule: '*/1 * * * * *'
+    schedule: '*/10 * * * * *'
   - command: ScheduledOrphanedVMCleanup
     schedule: '*/10 * * * * *'
 

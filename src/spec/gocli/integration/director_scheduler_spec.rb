@@ -28,7 +28,7 @@ describe 'director_scheduler', type: :integration do
     after { current_sandbox.scheduler_process.stop }
 
     it 'snapshots a disk' do
-      waiter.wait(600) { expect(snapshots).to_not be_empty }
+      waiter.wait(300) { expect(snapshots).to_not be_empty }
 
       keys = %w[deployment job index director_name director_uuid agent_id instance_id]
       snapshots.each do |snapshot|
@@ -47,7 +47,7 @@ describe 'director_scheduler', type: :integration do
     after { current_sandbox.scheduler_process.stop }
 
     it 'backs up BOSH artifacts' do
-      waiter.wait(600) { expect(backups).to_not be_empty }
+      waiter.wait(300) { expect(backups).to_not be_empty }
     end
 
     def backups
