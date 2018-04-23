@@ -3,7 +3,7 @@ require 'yaml'
 module Bosh::Dev
   class RubyVersion
     class << self
-      @@versions = ['2.4.2']
+      @@versions = ['2.4.4']
 
       def supported?(version)
         @@versions.include?(version)
