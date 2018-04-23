@@ -19,6 +19,8 @@ scheduled_jobs:
     schedule: '*/2 * * * * *'
   - command: ScheduledBackup
     schedule: '*/1 * * * * *'
+  - command: ScheduledOrphanedVMCleanup
+    schedule: '*/10 * * * * *'
 
 db: &bosh_db
   adapter: <%= database.adapter %>
