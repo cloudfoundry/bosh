@@ -32,6 +32,17 @@ module Bosh::Director
             name: config_hash['name'],
             limit: 1,
           ).first
+          expected_latest_id = config_hash['expected_latest_id']&.to_s
+          config_id = config&.id&.to_s
+
+          if !expected_latest_id.nil? && config_id != expected_latest_id
+            status(412)
+            return json_encode(
+              'latest_id' => config_id,
+              'expected_latest_id' => expected_latest_id,
+              'description' => "Latest Id: '#{config_id}' does not match expected latest id",
+            )
+          end
 
           @permission_authorizer.granted_or_raise(config, :admin, token_scopes) unless config.nil?
 
@@ -54,13 +65,15 @@ module Bosh::Director
         schema_name = validate_diff_request(config_request)
 
         begin
-          old_config_hash, new_config_hash = load_diff_request(config_request, schema_name)
-          json_encode(generate_diff(new_config_hash, old_config_hash))
+          old_config_hash, new_config_hash, from_id = load_diff_request(config_request, schema_name)
+          # require "pry"
+          # binding.pry
+          json_encode(generate_diff(new_config_hash, old_config_hash).merge('from' => { 'id' => from_id&.to_s }))
         rescue BadConfig => error
           status(400)
           json_encode(
             'diff' => [],
-            'error' => "Unable to diff config content: #{error.inspect}\n#{error.backtrace.join("\n")}",
+            'error' => "Unable to diff config content: #{error.inspect}",
           )
         end
       end
@@ -190,7 +203,7 @@ module Bosh::Director
 
         @permission_authorizer.granted_or_raise(old_config, :admin, token_scopes) unless old_config.nil?
 
-        [old_config_hash, new_config_hash]
+        [old_config_hash, new_config_hash, old_config&.id]
       end
 
       def validate_diff_request(config_request)
@@ -241,14 +254,14 @@ module Bosh::Director
                             validate_config_content(config_request['to']['content'])
                           end
 
-        [old_config_hash, new_config_hash]
+        [old_config_hash, new_config_hash, config_request['from']['id']]
       end
 
       def generate_diff(new_config_hash, old_config_hash)
         diff = Changeset.new(old_config_hash, new_config_hash).diff(true).order
         { 'diff' => diff.map { |l| [l.to_s, l.status] } }
       rescue StandardError => error
-        raise BadConfig, "Unable to diff config content: #{error.inspect}\n#{error.backtrace.join("\n")}"
+        raise BadConfig, "Unable to diff config content: #{error.inspect}"
       end
 
       def create_config(config_hash)
