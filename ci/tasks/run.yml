@@ -13,5 +13,5 @@ run:
   path: bosh-src/ci/tasks/run.sh
 
 params:
-  RUBY_VERSION: replace-me
+  RUBY_VERSION: 2.4.4
   COMMAND: "echo command"
