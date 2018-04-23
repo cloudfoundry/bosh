@@ -173,6 +173,11 @@ properties:
     description: RufusScheduler cron formatted schedule for cleanup of orphaned disks and orphaned snapshots
     default: '0 0,30 * * * * UTC' #every 30min
 
+  #Orphaned VMs automated cleanup
+  director.vms.cleanup_schedule:
+    description: RufusScheduler cron formatted schedule for cleanup of orphaned vms
+    default: '*/5 * * * * UTC' #every 5min
+
   # Config Server
   director.config_server.enabled:
     description: 'When true, replace substitution values in manifest with values from Config Server'
