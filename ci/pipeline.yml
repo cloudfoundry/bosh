@@ -312,7 +312,7 @@ jobs:
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
-        tags: ["bosh-integration-1"]
+        tags: ["bosh-integration"]
         params:
           DB:           postgresql
           SHA2_MODE:    true
@@ -343,7 +343,7 @@ jobs:
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
-        tags: ["bosh-integration-2"]
+        tags: ["bosh-integration"]
         params:
           DB:           mysql
         on_failure:
@@ -374,7 +374,7 @@ jobs:
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
-        tags: ["bosh-integration-3"]
+        tags: ["bosh-integration"]
         params:
           DB:           postgresql
           SHA2_MODE:    true
@@ -406,7 +406,7 @@ jobs:
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
-        tags: ["bosh-integration-4"]
+        tags: ["bosh-integration"]
         params:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
@@ -440,7 +440,7 @@ jobs:
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
-        tags: ["bosh-integration-5"]
+        tags: ["bosh-integration"]
         params:
           DB:           mysql
           SHA2_MODE:    true
