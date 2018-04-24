@@ -37,7 +37,7 @@ groups:
 shared:
   - &deploy-director
     task: deploy-director
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/deploy-director.yml
     params:
       BAT_INFRASTRUCTURE: vsphere
@@ -54,20 +54,23 @@ shared:
       BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
       BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
       BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+      BOSH_VSPHERE_VCENTER_RP:              {{vcenter-rp}}
+      DEPLOY_ARGS: |
+        -o bosh-deployment/vsphere/resource-pool.yml \
 
   - &prepare-bats-config
     task: prepare-bats
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
 
   - &run-bats
     task: run-bats
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bats/ci/tasks/run-bats.yml
 
   - &teardown
     task: teardown
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/destroy-director.yml
 
   - &slack-alert
