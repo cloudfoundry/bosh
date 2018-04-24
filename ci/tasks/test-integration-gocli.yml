@@ -11,6 +11,9 @@ inputs:
 - name: bosh-cli
 - name: bosh-agent
 
+inputs:
+- name: bosh-src
+
 run:
   path: bosh-src/ci/tasks/test-integration-gocli.sh
 
