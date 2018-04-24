@@ -1,0 +1,4 @@
+---
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/vms?/cleanup_schedule
+  value: '*/5 * * * * *'
