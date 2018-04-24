@@ -439,12 +439,26 @@ jobs:
 
       - task: tests
         privileged: true
-        file: bosh-src/ci/tasks/test-integration-gocli.yml
         tags: ["bosh-integration"]
-        params:
-          DB:           mysql
-          SHA2_MODE:    true
-          DB_TLS:       true
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: bosh/main-mysql-5.7
+          inputs:
+          - name: bosh-src
+          - name: bosh-cli
+          - name: bosh-agent
+          outputs:
+          - name: parallel-runtime-log
+          run:
+            path: bosh-src/ci/tasks/test-integration-gocli.sh
+          params:
+            RUBY_VERSION: 2.4.4
+            DB:           mysql
+            SHA2_MODE:    true
+            DB_TLS:       true
         on_failure:
           <<: *slack-alert
 

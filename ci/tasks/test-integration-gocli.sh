@@ -94,20 +94,20 @@ agent_path=bosh-src/src/go/src/github.com/cloudfoundry/
 mkdir -p $agent_path
 cp -r bosh-agent $agent_path
 
-cd bosh-src/src
+pushd bosh-src/src
+  print_git_state
 
-print_git_state
+  bundle install --local
 
-bundle install --local
+  set +e
+  bundle exec rake --trace spec:integration_gocli
 
-set +e
-bundle exec rake --trace spec:integration_gocli
+  bundle_exit_code=$?
 
-bundle_exit_code=$?
-
-if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
-  sudo service mysql stop
-fi
+  if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
+    sudo service mysql stop
+  fi
+popd
 
 mkdir -p parallel-runtime-log
 cp bosh-src/src/parallel_runtime_rspec.log parallel-runtime-log/parallel_runtime_rspec.log
