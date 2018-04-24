@@ -109,4 +109,7 @@ if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
   sudo service mysql stop
 fi
 
+mkdir -p parallel-runtime-log
+cp bosh-src/src/parallel_runtime_rspec.log parallel-runtime-log/parallel_runtime_rspec.log
+
 exit $bundle_exit_code

@@ -12,7 +12,7 @@ inputs:
 - name: bosh-agent
 
 outputs:
-- name: bosh-src
+- name: parallel-runtime-log
 
 run:
   path: bosh-src/ci/tasks/test-integration-gocli.sh

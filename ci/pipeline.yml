@@ -321,7 +321,7 @@ jobs:
 
       - put: integration-tests-parallel-runtime
         params:
-          file: bosh-src/src/parallel_runtime_rspec.log
+          file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
 
   - name: integration-mysql-gocli-sha1
@@ -351,7 +351,7 @@ jobs:
 
       - put: integration-tests-parallel-runtime
         params:
-          file: bosh-src/src/parallel_runtime_rspec.log
+          file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
 
 
@@ -384,7 +384,7 @@ jobs:
 
       - put: integration-tests-parallel-runtime
         params:
-          file: bosh-src/src/parallel_runtime_rspec.log
+          file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
 
   - name: integration-db-tls-postgres-hotswap
@@ -417,7 +417,7 @@ jobs:
 
       - put: integration-tests-parallel-runtime
         params:
-          file: bosh-src/src/parallel_runtime_rspec.log
+          file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
 
   - name: integration-db-tls-mysql
@@ -450,7 +450,7 @@ jobs:
 
       - put: integration-tests-parallel-runtime
         params:
-          file: bosh-src/src/parallel_runtime_rspec.log
+          file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
 
   - name: upgrade-tests
