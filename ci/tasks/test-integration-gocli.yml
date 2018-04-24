@@ -11,7 +11,7 @@ inputs:
 - name: bosh-cli
 - name: bosh-agent
 
-inputs:
+outputs:
 - name: bosh-src
 
 run:
