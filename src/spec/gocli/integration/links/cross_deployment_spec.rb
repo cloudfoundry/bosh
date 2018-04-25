@@ -31,6 +31,35 @@ describe 'cross deployment links', type: :integration do
     output
   end
 
+  def add_extra_networks_with_single_ip(cloud_config_hash)
+    new_network_b = {
+      'name' => 'b',
+      'subnets' => [{
+                      'range' => '10.0.1.0/24',
+                      'gateway' => '10.0.1.1',
+                      'dns' => ['10.0.1.1'],
+                      'static' => ['10.0.1.2'],
+                      'reserved' => [],
+                      'cloud_properties' => {},
+                      'az' => 'z1',
+                    }]
+    }
+    new_network_c = {
+      'name' => 'c',
+      'subnets' => [{
+                      'range' => '10.0.2.0/24',
+                      'gateway' => '10.0.2.1',
+                      'dns' => ['10.0.2.1'],
+                      'static' => ['10.0.2.2'],
+                      'reserved' => [],
+                      'cloud_properties' => {},
+                      'az' => 'z1',
+                    }]
+    }
+    cloud_config['networks'].push(new_network_b)
+    cloud_config['networks'].push(new_network_c)
+  end
+
   let(:first_manifest) do
     manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
     manifest['name'] = 'first'
@@ -167,6 +196,55 @@ describe 'cross deployment links', type: :integration do
           expect do
             deploy_simple_manifest(manifest_hash: second_manifest)
           end.to raise_error(RuntimeError, /Can't resolve link 'node1' for job 'node' in instance group 'second_deployment_node' in deployment 'second'/)
+        end
+      end
+    end
+
+    context 'when network changes to non-static in consumer and provider' do
+      before do
+        first_manifest['instance_groups'][0]['networks'][0].delete('static_ips')
+        second_manifest['instance_groups'][0]['networks'][0].delete('static_ips')
+        deploy_simple_manifest(manifest_hash: first_manifest)
+        deploy_simple_manifest(manifest_hash: second_manifest)
+        add_extra_networks_with_single_ip(cloud_config)
+        upload_cloud_config(cloud_config_hash: cloud_config)
+      end
+
+      context 'when deployments change to a different network' do
+        it 'should create a new links which use new network addresses' do
+          initial_links_response = send_director_get_request('/links', 'deployment=second')
+          initial_links = JSON.parse(initial_links_response.read_body)
+          initial_link_addresses = {}
+
+          initial_links.each do |initial_link|
+            initial_links_address_response = send_director_get_request('/link_address', "link_id=#{initial_link['id']}&az=z1")
+            initial_links_address = JSON.parse(initial_links_address_response.read_body)
+            initial_link_addresses[initial_link['name']] = initial_links_address
+          end
+
+          first_manifest['instance_groups'][0]['networks'][0]['name'] = 'b'
+          deploy_simple_manifest(manifest_hash: first_manifest)
+
+          second_manifest['instance_groups'][0]['networks'][0]['name'] = 'c'
+          deploy_simple_manifest(manifest_hash: second_manifest)
+
+          final_links_response = send_director_get_request('/links', 'deployment=second')
+          final_links = JSON.parse(final_links_response.read_body)
+          final_link_addresses = {}
+
+          final_links.each do |final_link|
+            final_links_address_response = send_director_get_request('/link_address', "link_id=#{final_link['id']}&az=z1")
+            final_links_address = JSON.parse(final_links_address_response.read_body)
+            final_link_addresses[final_link['name']] = final_links_address
+          end
+
+          initial_links.each do |initial_link|
+            final_link = final_links.select {|final_link| final_link['name'] == initial_link['name']}.first
+            expect(final_link).to_not be_nil
+            expect(final_link['id']).to_not eq(initial_link['id'])
+
+            expect(initial_link_addresses[initial_link['name']]['address']).to_not eq(final_link_addresses[final_link['name']]['address'])
+          end
         end
       end
     end
