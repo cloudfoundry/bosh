@@ -100,7 +100,12 @@ namespace :spec do
         if spec_path != ''
           "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
         else
-          "#{tag} https_proxy= http_proxy= bundle exec parallel_test -m 0.5 '#{test_path}'#{count} --type rspec"
+          <<-BASH
+          #{tag} https_proxy= http_proxy= bundle exec parallel_test \
+            --runtime-log parallel_runtime_rspec.log \
+            -m 0.5 \
+            '#{test_path}'#{count} --type rspec
+          BASH
         end
       end
       puts command
