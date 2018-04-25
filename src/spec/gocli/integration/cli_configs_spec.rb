@@ -185,13 +185,25 @@ describe 'cli configs', type: :integration do
   context 'can diff configs' do
     let(:other_config) { yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
 
-    it 'diffs two configs' do
+    it 'diffs two saved configs' do
       bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
       bosh_runner.run("update-config --type=other-type --name=other-name #{other_config.path}")
 
       output = bosh_runner.run('configs --recent=99 --json')
       from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
-      expect(bosh_runner.run("diff-config #{from} #{to}")).to include('- vm_types:', '+ releases:', 'Succeeded')
+      expect(bosh_runner.run("diff-config --from-id #{from} --to-id #{to}")).to include('- vm_types:', '+ releases:', 'Succeeded')
+    end
+
+    it 'diffs one saved and one local config' do
+      bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
+
+      output = bosh_runner.run('configs --recent=99 --json')
+      from = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }.first
+      expect(bosh_runner.run("diff-config --from-id #{from} --to-content #{other_config.path}")).to include('- vm_types:', '+ releases:', 'Succeeded')
+    end
+
+    it 'diffs two local configs' do
+      expect(bosh_runner.run("diff-config --from-content #{config.path} --to-content #{other_config.path}")).to include('- vm_types:', '+ releases:', 'Succeeded')
     end
   end
 
