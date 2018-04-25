@@ -35,7 +35,7 @@ groups:
 shared:
   - &prepare-director
     task: prepare-director
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: pipelines/vsphere/tasks/prepare-director.yml
     params: &prepare-director-params
       BOSH_CLIENT:                          {{stemcell-test-director-username}}
@@ -51,16 +51,17 @@ shared:
       BOSH_VSPHERE_VCENTER_VM_FOLDER:       {{vcenter-vm-folder}}
       BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: {{vcenter-template-folder}}
       BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
+      BOSH_VSPHERE_VCENTER_RP:              {{vcenter-rp}}
       SSLIP_IO_KEY:                         {{sslip_io_key}}
 
   - &deploy-director
     task: deploy-director
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: pipelines/shared/tasks/deploy-director.yml
 
   - &prepare-bats
     task: prepare-bats
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: pipelines/vsphere/tasks/prepare-bats.yml
     params: &prepare-bats-params
       BAT_VCAP_PASSWORD:      {{bat-vcap-password}}
@@ -69,12 +70,12 @@ shared:
 
   - &run-bats
     task: run-bats
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: pipelines/shared/tasks/run-bats.yml
 
   - &teardown
     task: teardown
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: pipelines/shared/tasks/teardown.yml
     params:
       DEPLOYMENT_NAME: certification
@@ -625,13 +626,13 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-cpi-certification
-      branch: master
+      branch: stemcell-3363.x # legacy way of running bats
 
   - name: bats
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
-      branch: master
+      branch: stemcell-3363.x # legacy way of running bats
 
   - name: environment
     type: pool
