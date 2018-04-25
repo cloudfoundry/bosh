@@ -33,6 +33,21 @@ describe 'cli: cloudcheck', type: :integration do
         current_sandbox.cpi.delete_vm(current_sandbox.cpi.vm_cids.first)
       end
 
+      it 'automatically recreates missing VMs when cck --auto is used' do
+        cloudcheck_response = bosh_runner.run('cloud-check --auto', deployment_name: 'simple')
+        expect(cloudcheck_response).to match(regexp('missing.'))
+        expect(cloudcheck_response).to match(regexp('Applying problem resolutions'))
+        expect(cloudcheck_response).to match(regexp('Succeeded'))
+        expect(cloudcheck_response).to_not match(regexp('0 problems'))
+        expect(cloudcheck_response).to_not match(regexp('1: Skip for now
+                                                        2: Reboot VM
+                                                        3: Recreate VM using last known apply spec
+                                                        4: Delete VM
+                                                        5: Delete VM reference (DANGEROUS!)'))
+
+                                                        expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
+      end
+
       it 'provides resolution options' do
         cloudcheck_response = scrub_text_random_ids(bosh_run_cck_with_resolution(1))
         expect(cloudcheck_response).to_not match(regexp('0 problems'))
