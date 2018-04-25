@@ -59,6 +59,9 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
       initdb -U postgres -D $PGDATA --pwfile /tmp/bosh-postgres.password
     '
 
+    echo "max_connections = 1024" >> $PGDATA/postgresql.conf
+    echo "shared_buffers = 240MB" >> $PGDATA/postgresql.conf
+
     if [ "$DB_TLS" = true ]; then
       echo "....... DB TLS enabled ......."
       su postgres -c '
