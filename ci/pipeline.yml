@@ -813,7 +813,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
-      branch: gocli-bats
+      branch: master
 
   - name: bosh-deployment
     type: git
