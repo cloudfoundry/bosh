@@ -25,4 +25,5 @@ params:
   SPEC_PATH:               ~
   SHA2_MODE:               ~
   DB_TLS:                  false
+  SAMPLE:                  ~
   DEFAULT_UPDATE_VM_STRATEGY: "delete-create"
