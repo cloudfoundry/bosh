@@ -796,7 +796,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]],"from":{"id":null}}')
+              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
             end
           end
 
@@ -853,7 +853,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq(%'{"diff":[["a: 5","removed"],["",null],["b: 5","added"]],"from":{"id":"#{dev_team_config.id}"}}')
+              expect(last_response.body).to eq(%'{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
             end
           end
 
@@ -865,7 +865,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]],"from":{"id":null}}')
+              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
             end
           end
 
@@ -877,7 +877,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]],"from":{"id":null}}')
+              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
             end
           end
 
@@ -889,7 +889,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq(%'{"diff":[["a: 5","removed"],["",null],["b: 5","added"]],"from":{"id":"#{dev_team_config.id}"}}')
+              expect(last_response.body).to eq(%'{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
             end
 
             context 'where the `content` is an empty config' do

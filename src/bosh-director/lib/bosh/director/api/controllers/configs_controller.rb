@@ -66,9 +66,9 @@ module Bosh::Director
 
         begin
           old_config_hash, new_config_hash, from_id = load_diff_request(config_request, schema_name)
-          # require "pry"
-          # binding.pry
-          json_encode(generate_diff(new_config_hash, old_config_hash).merge('from' => { 'id' => from_id&.to_s }))
+          diff = generate_diff(new_config_hash, old_config_hash)
+          diff['from'] = { 'id' => from_id.to_s } if from_id
+          json_encode(diff)
         rescue BadConfig => error
           status(400)
           json_encode(
@@ -254,7 +254,7 @@ module Bosh::Director
                             validate_config_content(config_request['to']['content'])
                           end
 
-        [old_config_hash, new_config_hash, config_request['from']['id']]
+        [old_config_hash, new_config_hash]
       end
 
       def generate_diff(new_config_hash, old_config_hash)
