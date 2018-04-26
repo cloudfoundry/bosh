@@ -189,6 +189,9 @@ module Bosh
       DETACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
       def detach_disk(vm_cid, disk_id)
         validate_and_record_inputs(DETACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
+
+        raise Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotImplemented' if commands.raise_detach_disk_not_implemented
+
         unless disk_attached_to_vm?(vm_cid, disk_id)
           raise Bosh::Clouds::DiskNotAttached, "#{disk_id} is not attached to instance #{vm_cid}"
         end
@@ -626,15 +629,31 @@ module Bosh
           File.exists?(raise_vmnotfound_path)
         end
 
+        def allow_detach_disk_to_succeed
+          @logger.debug('Allowing detach_disk method to succeed (removing any mandatory failures)')
+          FileUtils.rm(raise_detach_disk_not_implemented_path)
+        end
+
+        def make_detach_disk_to_raise_not_implemented
+          @logger.info('Making detach_disk method to raise NotImplemented exception')
+          FileUtils.mkdir_p(File.dirname(raise_detach_disk_not_implemented_path))
+          FileUtils.touch(raise_detach_disk_not_implemented_path)
+        end
+
         def make_resize_disk_to_raise_not_implemented
           @logger.info('Making resize_disk method to raise NotImplemented exception')
           FileUtils.mkdir_p(File.dirname(raise_resize_disk_not_implemented_path))
           FileUtils.touch(raise_resize_disk_not_implemented_path)
         end
 
+        def raise_detach_disk_not_implemented
+          @logger.info('Reading detach_disk_not_implemented')
+          File.exist?(raise_detach_disk_not_implemented_path)
+        end
+
         def raise_resize_disk_not_implemented
           @logger.info('Reading resize_disk_not_implemented')
-          File.exists?(raise_resize_disk_not_implemented_path)
+          File.exist?(raise_resize_disk_not_implemented_path)
         end
 
         private
@@ -653,6 +672,10 @@ module Bosh
 
         def raise_vmnotfound_path
           File.join(@cpi_commands, 'delete_vm', 'fail')
+        end
+
+        def raise_detach_disk_not_implemented_path
+          File.join(@cpi_commands, 'detach_disk', 'not_implemented')
         end
 
         def raise_resize_disk_not_implemented_path
