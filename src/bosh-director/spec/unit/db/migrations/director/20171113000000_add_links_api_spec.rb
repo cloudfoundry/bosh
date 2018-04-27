@@ -9,8 +9,7 @@ module Bosh::Director
       DBSpecHelper.migrate_all_before(migration_file)
     end
 
-
-    context 'verify all the tables columns constraints' do
+    context 'verify table columns' do
       it 'creates the appropriate tables' do
         DBSpecHelper.migrate(migration_file)
         expect(db.table_exists? :link_providers).to be_truthy
@@ -265,8 +264,6 @@ module Bosh::Director
         end
       end
     end
-
-
 
     context 'link migration' do
       context 'when spec_json is populated with consumed links in the instances table' do
@@ -687,6 +684,250 @@ module Bosh::Director
             expect(dataset[1][:link_id]).to eq(2)
             expect(dataset[1][:serial_id]).to eq(0)
           end
+        end
+      end
+    end
+
+    context 'verify all unique constraints' do
+      let(:link_spec_json) do
+        {
+          'provider_instance_group_1': {
+            'provider_job_1': {
+              'link_name_1': {
+                'link_type_1': {'my_val': 'hello'}
+              },
+              'link_name_2': {
+                'link_type_2': {'foo': 'bar'}
+              }
+            }
+          },
+          'provider_instance_group_2': {
+            'provider_job_1': {
+              'link_name_3': {
+                'link_type_1': {'bar': 'baz'}
+              },
+            },
+            'provider_job_2': {
+              'link_name_4': {
+                'link_type_2': {'foobar': 'bazbaz'}
+              }
+            }
+          }
+        }
+      end
+      let(:instance_spec_json) do
+        {
+          "deployment": "fake-deployment",
+          "name": "provider_instance_group_1",
+          "job": {
+            "name": "provider_instance_group_1",
+            "templates": [
+              {
+                "name": "http_proxy_with_requires",
+                "version": "760680c4a796a2ffca24026c561c06dd5bdef6b3",
+                "sha1": "fdf0d8acd01055f32fb28caee3b5a2d383848e53",
+                "blobstore_id": "e6a084ab-541c-4f9e-8132-573627bded5a",
+                "logs": []
+              }
+            ]
+          },
+          "links": {
+            "http_proxy_with_requires": {
+              "proxied_http_endpoint": {
+                "instance_group": "provider_deployment_node",
+                "instances": [
+                  {
+                    "name": "provider_deployment_node",
+                    "id": "19dea4c6-c25f-478c-893e-db29ba7042b5",
+                    "index": 0,
+                    "bootstrap": true,
+                    "az": "z1",
+                    "address": "192.168.1.10"
+                  }
+                ],
+                "properties": {
+                  "listen_port": 15672,
+                  "name_space": {
+                    "fibonacci": "((fibonacci_placeholder))",
+                    "prop_a": "default"
+                  }
+                }
+              },
+              "proxied_http_endpoint2": {
+                "instance_group": "provider_deployment_node",
+                "instances": [
+                  {
+                    "name": "provider_deployment_node",
+                    "id": "19dea4c6-c25f-478c-893e-db29ba7042b5",
+                    "index": 0,
+                    "bootstrap": true,
+                    "az": "z1",
+                    "address": "192.168.1.10"
+                  }
+                ],
+                "properties": {
+                  "a": 1,
+                  "name_space": {
+                    "asdf": "((fibonacci_placeholder))",
+                    "dbxcv": "default"
+                  }
+                }
+              }
+            }
+          }
+        }
+      end
+      before do
+        db[:deployments] << {name: 'fake-deployment', id: 42, link_spec_json: link_spec_json.to_json}
+        db[:variable_sets] << {id: 1, deployment_id: 42, created_at: Time.now}
+        db[:instances] << {
+          job: 'provider_instance_group_1',
+          id: 22,
+          index: 0,
+          deployment_id: 42,
+          state: "started",
+          variable_set_id: 1,
+          spec_json: instance_spec_json.to_json
+        }
+        DBSpecHelper.migrate(migration_file)
+      end
+
+      context 'link_providers table' do
+        context 'when all constraint columns are the same' do
+          it 'should raise an error' do
+            expect { db[:link_providers] << {instance_group: 'provider_instance_group_1', deployment_id: 42, type: 'job', name: 'provider_job_1'} }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+
+        context 'when existing record gets updated to violate constraint' do
+          it 'should raise an error' do
+            expect { db[:link_providers] << {instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'test', name: 'provider_job_1'} }.to_not raise_error
+            link_provider = db[:link_providers].where(instance_group: 'provider_instance_group_2', deployment_id: 42, type: 'test', name: 'provider_job_1')
+            expect { link_provider.update(type: 'job') }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+      end
+
+      context 'link_consumers table' do
+        context 'when all constraint columns are the same' do
+          it 'should raise an error' do
+            link_consumer = db[:link_consumers].first
+            expect { db[:link_consumers] << {deployment_id: link_consumer[:deployment_id], instance_group: link_consumer[:instance_group], name: link_consumer[:name], type: link_consumer[:type]} }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+
+        context 'when existing record gets updated to violate constraint' do
+          it 'should raise an error' do
+            original_link_consumer = db[:link_consumers].first
+            expect { db[:link_consumers] << {deployment_id: original_link_consumer[:deployment_id], instance_group: original_link_consumer[:instance_group], name: 'test', type: 'job'} }.to_not raise_error
+            new_link_consumer = db[:link_consumers].where(deployment_id: original_link_consumer[:deployment_id], instance_group: original_link_consumer[:instance_group], name: 'test', type: 'job')
+            expect { new_link_consumer.update(name: original_link_consumer[:name]) }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+      end
+
+      context 'link_provider_intents table' do
+        context 'when all constraint columns are the same' do
+          it 'should raise an error' do
+            link_provider_intent = db[:link_provider_intents].first
+            expect { db[:link_provider_intents] << {link_provider_id: link_provider_intent[:link_provider_id], original_name: link_provider_intent[:original_name], type: 'job'} }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+
+        context 'when existing record gets updated to violate constraint' do
+          it 'should raise an error' do
+            original_link_provider_intents = db[:link_provider_intents].first
+            expect { db[:link_provider_intents] << {link_provider_id: original_link_provider_intents[:link_provider_id], original_name: 'test-original-name', type: 'test'} }.to_not raise_error
+            new_link_provider_intents = db[:link_provider_intents].where(link_provider_id: original_link_provider_intents[:link_provider_id], original_name: 'test-original-name', type: 'test')
+            expect { new_link_provider_intents.update(original_name: original_link_provider_intents[:name]) }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+      end
+
+      context 'link_consumer_intents table' do
+        context 'when all constraint columns are the same' do
+          it 'should raise an error' do
+            link_consumer_intent = db[:link_consumer_intents].first
+            expect { db[:link_consumer_intents] << {link_consumer_id: link_consumer_intent[:link_consumer_id], original_name: link_consumer_intent[:original_name], type: 'job'} }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+
+        context 'when existing record gets updated to violate constraint' do
+          it 'should raise an error' do
+            original_link_consumer_intents = db[:link_consumer_intents].first
+            expect { db[:link_consumer_intents] << {link_consumer_id: original_link_consumer_intents[:link_consumer_id], original_name: 'test-original-name', type: 'job'} }.to_not raise_error
+            new_link_consumer_intents = db[:link_consumer_intents].where(link_consumer_id: original_link_consumer_intents[:link_consumer_id], original_name: 'test-original-name', type: 'job')
+            expect { new_link_consumer_intents.update(original_name: original_link_consumer_intents[:name]) }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+      end
+
+      context 'instances_links table' do
+        context 'when all constraint columns are the same' do
+          it 'should raise an error' do
+            instance_link = db[:instances_links].first
+            expect { db[:instances_links] << {link_id: instance_link[:link_id], instance_id: instance_link[:instance_id]} }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+
+        context 'when existing record gets updated to violate constraint' do
+          it 'should raise an error' do
+            existing_link = db[:links].first
+            db[:links] << {link_provider_intent_id: existing_link[:link_provider_intent_id], link_consumer_intent_id: existing_link[:link_consumer_intent_id], name: 'test', link_content: 'test'}
+            new_link = db[:links].where(name: 'test', link_content: 'test').first
+
+            original_instances_link = db[:instances_links].first
+            expect { db[:instances_links] << {link_id: new_link[:id], instance_id: original_instances_link[:instance_id]} }.to_not raise_error
+            new_instances_link = db[:instances_links].where(link_id: new_link[:id], instance_id: original_instances_link[:instance_id])
+            expect { new_instances_link.update(link_id: original_instances_link[:link_id]) }.to raise_error(/UNIQUE constraint failed/)
+          end
+        end
+      end
+    end
+
+    context 'verify unique constraints are named' do
+      before do
+        db[:deployments] << {name: 'fake-deployment', id: 42}
+        DBSpecHelper.migrate(migration_file)
+      end
+
+      context 'link_providers table' do
+        it 'has named unique constraint' do
+          indices = db.indexes(:link_providers)
+          expect(indices.keys.length).to eq(1)
+          expect(indices.has_key?(:link_providers_constraint)).to be_truthy
+        end
+      end
+
+      context 'link_provider_intents table' do
+        it 'has named unique constraint' do
+          indices = db.indexes(:link_provider_intents)
+          expect(indices.keys.length).to eq(1)
+          expect(indices.has_key?(:link_provider_intents_constraint)).to be_truthy
+        end
+      end
+
+      context 'link_consumers table' do
+        it 'has named unique constraint' do
+          indices = db.indexes(:link_consumers)
+          expect(indices.keys.length).to eq(1)
+          expect(indices.has_key?(:link_consumers_constraint)).to be_truthy
+        end
+      end
+
+      context 'link_consumer_intents table' do
+        it 'has named unique constraint' do
+          indices = db.indexes(:link_consumer_intents)
+          expect(indices.keys.length).to eq(1)
+          expect(indices.has_key?(:link_consumer_intents_constraint)).to be_truthy
+        end
+      end
+
+      context 'instances_links table' do
+        it 'has named unique constraint' do
+          indices = db.indexes(:instances_links)
+          expect(indices.keys.length).to eq(1)
+          expect(indices.has_key?(:instances_links_constraint)).to be_truthy
         end
       end
     end
