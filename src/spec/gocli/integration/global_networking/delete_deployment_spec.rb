@@ -4,11 +4,11 @@ describe 'deleting deployment', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should clean environment properly and free up resources', no_create_swap_delete: true do
-    run_test false
+    run_test create_swap_delete_enabled: false
   end
 
   it 'should clean environment properly and free up resources', create_swap_delete: true do
-    run_test true
+    run_test create_swap_delete_enabled: true
   end
 
   it 'should clean environment properly and free up resources even after a failed deployment' do
@@ -64,7 +64,7 @@ describe 'deleting deployment', type: :integration do
     expect(bosh_runner.run('deployments', failure_expected: true)).to include('0 deployments')
   end
 
-  def run_test(create_swap_delete_enabled)
+  def run_test(create_swap_delete_enabled: false)
     assert_sandbox_contains_elements(0)
 
     expect(bosh_runner.run('deployments', failure_expected: true)).to match(/0 deployments/)

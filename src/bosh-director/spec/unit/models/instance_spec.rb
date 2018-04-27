@@ -42,9 +42,22 @@ module Bosh::Director::Models
       end
 
       context 'when the update strategy is create-swap-delete' do
-        it 'is orphanable ' do
+        before do
           subject.spec = { 'update' => { 'vm_strategy' => 'create-swap-delete' } }
+        end
+
+        it 'is orphanable ' do
           expect(subject.orphanable?).to eq(true)
+        end
+
+        context 'when there are static ips' do
+          before do
+            subject.ip_addresses << IpAddress.make(static: true)
+          end
+
+          it 'is not orphanable ' do
+            expect(subject.orphanable?).to eq(false)
+          end
         end
       end
 

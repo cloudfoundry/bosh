@@ -43,9 +43,7 @@ describe 'global networking', type: :integration do
     deploy_with_ips(first_manifest_hash, [ip])
   end
 
-  # Currently we orphan VMs regardless of whether or not they have a static ip.
-  # These should be reenabled when we do not orphan if the VM has a static ip.
-  context 'when allocating static IPs', no_create_swap_delete: true do
+  context 'when allocating static IPs' do
     before do
       create_and_upload_test_release
       upload_stemcell

@@ -67,6 +67,8 @@ module Bosh::Director::Models
     def orphanable?
       return false if spec.nil? || spec['update'].nil?
 
+      return false if ip_addresses.any? { |ip| ip.type == 'static' }
+
       strategy = spec['update']['vm_strategy']
       strategy == Bosh::Director::DeploymentPlan::UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE
     end
