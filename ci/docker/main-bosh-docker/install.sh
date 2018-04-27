@@ -15,8 +15,8 @@ apt-get install -y --no-install-recommends \
   ruby \
   software-properties-common
 
-curl -o /tmp/download https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
-echo "1862f4c3d3907e59b04a757cfda0ea7aa9ef39274af99a784f5be843c80c6772 /tmp/download" | sha256sum -c
+curl -o /tmp/download https://storage.googleapis.com/golang/go1.9.5.linux-amd64.tar.gz
+echo "d21bdabf4272c2248c41b45cec606844bdc5c7c04240899bde36c01a28c51ee7 /tmp/download" | sha256sum -c
 mkdir /usr/local/go
 tar -xzf /tmp/download -C /usr/local/go --strip-components=1
 rm /tmp/download
