@@ -71,18 +71,17 @@ module Bosh::Director
     private
 
     def add_event(deployment_name, instance_name, parent_id = nil, error = nil)
-      event  = Config.current_job.event_manager.create_event(
-          {
-              parent_id:   parent_id,
-              user:        Config.current_job.username,
-              action:      'delete',
-              object_type: 'instance',
-              object_name: instance_name,
-              task:        Config.current_job.task_id,
-              deployment:  deployment_name,
-              instance:    instance_name,
-              error:       error
-          })
+      event = Config.current_job.event_manager.create_event(
+        parent_id:   parent_id,
+        user:        Config.current_job.username,
+        action:      'delete',
+        object_type: 'instance',
+        object_name: instance_name,
+        task:        Config.current_job.task_id,
+        deployment:  deployment_name,
+        instance:    instance_name,
+        error:       error,
+      )
       event.id
     end
 

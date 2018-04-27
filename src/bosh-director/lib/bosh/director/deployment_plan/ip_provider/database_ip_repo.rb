@@ -30,7 +30,7 @@ module Bosh::Director::DeploymentPlan
         reservation.instance_model,
         cidr_ip,
         reservation,
-        reservation_type.eql?(:static)
+        reservation_type.eql?(:static),
       )
 
       reservation.resolve_type(reservation_type)

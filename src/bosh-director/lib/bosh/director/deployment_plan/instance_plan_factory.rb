@@ -31,8 +31,6 @@ module Bosh
 
         def desired_existing_instance_plan(existing_instance_model, desired_instance)
           existing_instance_state = instance_state(existing_instance_model)
-          need_to_fix = (@fix && existing_instance_state.key?('current_state') && existing_instance_state['current_state'] == 'unresponsive')
-          existing_instance_state = {} if need_to_fix
           desired_instance.index = @index_assigner.assign_index(desired_instance.instance_group.name, existing_instance_model)
 
           instance = @instance_repo.fetch_existing(existing_instance_model, existing_instance_state, desired_instance.instance_group, desired_instance.index, desired_instance.deployment)

@@ -30,7 +30,9 @@ module Bosh::Director
           instance_plan.persist_current_spec
           instance_plan.instance.update_variable_set
           if @links_manager.nil?
-            @links_manager = Bosh::Director::Links::LinksManagerFactory.create(instance_plan.instance.deployment_model.links_serial_id).create_manager
+            @links_manager = Bosh::Director::Links::LinksManagerFactory.create(
+              instance_plan.instance.deployment_model.links_serial_id,
+            ).create_manager
           end
           @links_manager.bind_links_to_instance(instance_plan.instance)
           false
@@ -91,16 +93,24 @@ module Bosh::Director
 
     def delete_unneeded_instances
       unneeded_instance_plans = @instance_group.obsolete_instance_plans
-      if unneeded_instance_plans.empty?
-        return
-      else
-        @instance_group.did_change = true
-      end
+      return if unneeded_instance_plans.empty?
 
-      event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instance_plans.size, [@instance_group.name])
+      @instance_group.did_change = true
+
+      event_log_stage = @event_log.begin_stage(
+        'Deleting unneeded instances',
+        unneeded_instance_plans.size,
+        [@instance_group.name],
+      )
+
       powerdns_manager = PowerDnsManagerProvider.create
       deleter = InstanceDeleter.new(@ip_provider, powerdns_manager, @disk_manager)
-      deleter.delete_instance_plans(unneeded_instance_plans, event_log_stage, max_threads: @instance_group.update.max_in_flight(unneeded_instance_plans.size))
+
+      deleter.delete_instance_plans(
+        unneeded_instance_plans,
+        event_log_stage,
+        max_threads: @instance_group.update.max_in_flight(unneeded_instance_plans.size),
+      )
 
       @logger.info('Deleted no longer needed instances')
     end
