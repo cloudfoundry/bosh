@@ -3,7 +3,8 @@ require_relative '../spec_helper'
 describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'displays deployment events' do
+  # TODO: Add regex for delete/orphan vms when orphan vm events are added
+  it 'displays deployment events', no_create_swap_delete: true do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'][0]['persistent_disk_pool'] = 'disk_a'
     manifest_hash['instance_groups'][0]['instances'] = 1

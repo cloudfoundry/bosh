@@ -34,36 +34,37 @@ module Bosh::Director
 
     it 'fails when ignored instances exist in the to-be-deleted deployment' do
       deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-      BD::Models::Instance.make(deployment: deployment,job: 'foo-job', index: 0, ignore: true)
-      expect { job.perform }.to raise_exception DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment 'test_deployment', " +
+      BD::Models::Instance.make(deployment: deployment, job: 'foo-job', index: 0, ignore: true)
+      expect do
+        job.perform
+      end.to raise_exception DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment 'test_deployment', " \
           'which contains ignored instance(s). Operation not allowed.'
     end
 
     it 'should store new events' do
       Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-      expect {
+      expect do
         job.perform
-      }.to change {
-        Bosh::Director::Models::Event.count }.from(0).to(2)
+      end.to change { Bosh::Director::Models::Event.count }.from(0).to(2)
 
-      event_1 = Bosh::Director::Models::Event.first
-      expect(event_1.user).to eq(task.username)
-      expect(event_1.action).to eq('delete')
-      expect(event_1.object_type).to eq('deployment')
-      expect(event_1.object_name).to eq('test_deployment')
-      expect(event_1.deployment).to eq('test_deployment')
-      expect(event_1.task).to eq("#{task.id}")
-      expect(event_1.timestamp).to eq(Time.now)
+      event1 = Bosh::Director::Models::Event.order(:id).first
+      expect(event1.user).to eq(task.username)
+      expect(event1.action).to eq('delete')
+      expect(event1.object_type).to eq('deployment')
+      expect(event1.object_name).to eq('test_deployment')
+      expect(event1.deployment).to eq('test_deployment')
+      expect(event1.task).to eq(task.id.to_s)
+      expect(event1.timestamp).to eq(Time.now)
 
-      event_2 = Bosh::Director::Models::Event.order(:id).last
-      expect(event_2.parent_id).to eq(1)
-      expect(event_2.user).to eq(task.username)
-      expect(event_2.action).to eq('delete')
-      expect(event_2.object_type).to eq('deployment')
-      expect(event_2.object_name).to eq('test_deployment')
-      expect(event_2.deployment).to eq('test_deployment')
-      expect(event_2.task).to eq("#{task.id}")
-      expect(event_2.timestamp).to eq(Time.now)
+      event2 = Bosh::Director::Models::Event.order(:id).last
+      expect(event2.parent_id).to eq(1)
+      expect(event2.user).to eq(task.username)
+      expect(event2.action).to eq('delete')
+      expect(event2.object_type).to eq('deployment')
+      expect(event2.object_name).to eq('test_deployment')
+      expect(event2.deployment).to eq('test_deployment')
+      expect(event2.task).to eq(task.id.to_s)
+      expect(event2.timestamp).to eq(Time.now)
     end
   end
 end

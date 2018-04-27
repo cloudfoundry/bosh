@@ -113,7 +113,7 @@ describe 'ignoring zone', type: :integration do
     end
   end
 
-  context 'when using static IPs' do
+  context 'when using static IPs', no_create_swap_delete: true do
     it 'balances vms, errors removing azs containing ignored vms, and errors removing static IP assigned to an ignored VM' do
       manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].clear

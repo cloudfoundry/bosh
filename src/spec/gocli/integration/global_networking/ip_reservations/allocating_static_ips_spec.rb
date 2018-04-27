@@ -43,7 +43,9 @@ describe 'global networking', type: :integration do
     deploy_with_ips(first_manifest_hash, [ip])
   end
 
-  context 'when allocating static IPs' do
+  # Currently we orphan VMs regardless of whether or not they have a static ip.
+  # These should be reenabled when we do not orphan if the VM has a static ip.
+  context 'when allocating static IPs', no_create_swap_delete: true do
     before do
       create_and_upload_test_release
       upload_stemcell
@@ -98,7 +100,7 @@ describe 'global networking', type: :integration do
       expect(exit_code).to_not eq(0)
     end
 
-    it 'IPs used by one deployment can be used by another deployment after first deployment is deleted' do
+    it 'IPs used by a deployment can be used by another deployment once the deployment is deleted' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_with_ip(simple_manifest, '192.168.1.10')
@@ -141,7 +143,7 @@ describe 'global networking', type: :integration do
       end
     end
 
-    it 'IPs released by one deployment via scaling down can be used by another deployment' do
+    it 'IPs released by scaling down a deploymentcan be used by another deployment' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.11'])

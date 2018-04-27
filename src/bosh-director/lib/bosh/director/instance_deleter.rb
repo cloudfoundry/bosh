@@ -25,7 +25,8 @@ module Bosh::Director
           stop(instance_plan)
         end
 
-        vm_deleter.delete_for_instance(instance_model)
+        async = !instance_plan.unresponsive_agent?
+        vm_deleter.delete_for_instance(instance_model, true, async)
 
         unless instance_model.compilation
           error_ignorer.with_force_check do

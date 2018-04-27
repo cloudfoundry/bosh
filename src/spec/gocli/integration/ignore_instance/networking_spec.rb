@@ -96,7 +96,7 @@ describe 'netowrking', type: :integration do
     end
   end
 
-  context 'when using static IPs' do
+  context 'when using static IPs', no_create_swap_delete: true do
     it 'doesnt re-assign static IPs for ignored VM, and fails when adding/removing static networks' do
       manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].clear

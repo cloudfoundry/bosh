@@ -64,6 +64,13 @@ module Bosh::Director::Models
       self.cloud_properties = JSON.dump(hash)
     end
 
+    def orphanable?
+      return false if spec.nil? || spec['update'].nil?
+
+      strategy = spec['update']['vm_strategy']
+      strategy == Bosh::Director::DeploymentPlan::UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE
+    end
+
     def dns_record_names
       return nil if dns_records.nil?
 
