@@ -132,14 +132,14 @@ module Bosh::Director
         rescue StandardError => e
           failed_orphan_snapshot_count += 1
           @logger.warn(e.backtrace.join("\n"))
-          @logger.info("Failed to deleted snapshot #{orphan_snapshot.snapshot_cid} disk" \
+          @logger.info("Failed to deleted snapshot #{orphan_snapshot.snapshot_cid} disk " \
             "of #{orphan_disk.disk_cid}. Failed with: #{e.message}")
         end
       end
 
       return unless failed_orphan_snapshot_count.positive?
 
-      raise Bosh::Clouds::CloudError, "Failed to delete #{failed_orphan_snapshot_count}" \
+      raise Bosh::Clouds::CloudError, "Failed to delete #{failed_orphan_snapshot_count} " \
         "snapshot(s) of disk #{orphan_disk.disk_cid}"
     end
 
