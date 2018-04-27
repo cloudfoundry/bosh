@@ -47,6 +47,8 @@ module Bosh::Director
           expect(orphaned_vm.cpi).to eq vm.cpi
           expect(orphaned_vm.stemcell_api_version).to eq(9876)
           expect(orphaned_vm.orphaned_at).to be_a Time
+          expect(orphaned_vm.deployment_name).to eq(instance.deployment.name)
+          expect(orphaned_vm.instance_name).to eq(instance.name)
         end
 
         it 'moves ips over to the orphaned vm' do
