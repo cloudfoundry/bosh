@@ -70,14 +70,14 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-ruby/ruby-2.3.6.tar.gz:
-  size: 17840901
-  object_id: 23cebe9d-b206-4b0a-7df5-6d5e4f8e52b7
-  sha: 4e6a0f828819e15d274ae58485585fc8b7caace0
-ruby/rubygems-2.7.3.tgz:
-  size: 849187
-  object_id: 9ff8f6ad-66be-49b7-660a-4362c936a1cd
-  sha: 0f2b8ca36246eb8fa2c5e6b555ae3202fdf3e998
+ruby/ruby-2.3.7.tar.gz:
+  size: 17859100
+  object_id: d58807cc-4f23-4108-6136-2b01b4af04a9
+  sha: 540996fec64984ab6099e34d2f5820b14904f15a
+ruby/rubygems-2.7.6.tgz:
+  size: 852486
+  object_id: c56063f1-f10e-481a-53a6-2bb5d162d340
+  sha: 72a14791b96cc05a79d2a649fe7170fd1faf3e0a
 ruby/yaml-0.1.7.tar.gz:
   size: 527518
   object_id: 638fbb05-dabe-4ae1-4f1a-7ae43721d77d

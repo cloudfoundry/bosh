@@ -1,8 +1,8 @@
 ---
 name: ruby
 files:
-- ruby/ruby-2.3.6.tar.gz
-- ruby/rubygems-2.7.3.tgz
+- ruby/ruby-2.3.7.tar.gz
+- ruby/rubygems-2.7.6.tgz
 - ruby/yaml-0.1.7.tar.gz
 - config/config.guess
 - config/config.sub
