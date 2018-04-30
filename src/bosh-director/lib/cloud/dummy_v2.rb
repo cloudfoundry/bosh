@@ -22,7 +22,6 @@ module Bosh
         [
           vm_cid,
           {},
-          {},
         ]
       end
 

@@ -5,7 +5,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   include FakeFS::SpecHelpers
 
   let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
-  let(:cpi_api_version) { 2 }
   let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
   let(:additional_expected_args) { nil }
 
@@ -27,35 +26,16 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       allow(Random).to receive(:rand).and_return('fake-request-id')
     end
 
-    context 'api version specified' do
-      before do
-        #subject.request_cpi_api_version = cpi_api_version
-      end
+    it 'should call cpi binary with correct arguments' do
+      stub_const('ENV', 'TMPDIR' => '/some/tmp')
 
-      it 'should call cpi binary with correct arguments' do
-        stub_const('ENV', 'TMPDIR' => '/some/tmp')
+      expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
+      expected_cmd = '/path/to/fake-cpi/bin/cpi'
+      arguments << additional_expected_args unless additional_expected_args.nil?
+      expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{cpi_api_version}})
 
-        expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
-        expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        arguments << additional_expected_args unless additional_expected_args.nil?
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{cpi_api_version}})
-
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
-        call_cpi_method
-      end
-    end
-
-    context 'api version not specified' do
-      it 'should call cpi binary with correct arguments' do
-        stub_const('ENV', 'TMPDIR' => '/some/tmp')
-
-        expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
-        expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{cpi_api_version}})
-
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
-        call_cpi_method
-      end
+      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+      call_cpi_method
     end
 
     context 'if properties from cpi config are given' do
@@ -130,7 +110,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json},"api_version":#{cpi_api_version}})
         expected_request_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json},"api_version":#{cpi_api_version}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_request_log)
-        # expect(logger).to receive(:debug).with
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -190,8 +169,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     end
 
     describe 'result' do
-      #let(:cpi_response) { JSON.dump(result: {'vm_cid':'fake-result'}, error: nil, log: 'fake-log') }
-
       it 'returns result' do
         expect(call_cpi_method).to eq(expected_response)
       end
@@ -364,6 +341,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   end
 
   describe 'when cpi_version is 2' do
+    let(:cpi_api_version) { 2 }
+
     describe '#create_vm' do
       let(:redacted_network_settings) { nil }
       let(:instance_cid) { 'i-0478554' }
@@ -392,8 +371,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         }
       }
 
-      let(:cpi_response) { JSON.dump(result: [instance_cid, networks, disk_hints], error: nil, log: 'fake-log') }
-      let(:expected_response) { [instance_cid, networks, disk_hints] }
+      let(:cpi_response) { JSON.dump(result: [instance_cid, disk_hints], error: nil, log: 'fake-log') }
+      let(:expected_response) { [instance_cid, disk_hints] }
 
       it_calls_cpi_method(
         :create_vm,
@@ -709,6 +688,4 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       end
     end
   end
-
-
 end
