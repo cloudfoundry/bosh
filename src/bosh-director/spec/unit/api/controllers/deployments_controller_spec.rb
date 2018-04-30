@@ -1849,7 +1849,15 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq("{\"context\":{\"cloud_config_ids\":[#{cloud_config.id}],\"runtime_config_ids\":[#{runtime_config_2.id},#{runtime_config_3.id}]},\"diff\":[[\"jobs: []\",\"removed\"],[\"\",null],[\"name: fake-dep-name\",\"added\"]]}")
+
+              body = JSON.parse(last_response.body)
+              expect(body['context']).to_not be_nil
+              expect(body['context']['cloud_config_ids']).to contain_exactly(cloud_config.id)
+              expect(body['context']['runtime_config_ids']).to contain_exactly(
+                runtime_config_2.id,
+                runtime_config_3.id,
+              )
+              expect(body['diff']).to eq([['jobs: []', 'removed'], ['', nil], ['name: fake-dep-name', 'added']])
             end
 
             it 'gives a nice error when request body is not a valid yml' do
