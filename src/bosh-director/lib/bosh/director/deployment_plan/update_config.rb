@@ -1,9 +1,9 @@
 module Bosh::Director
   module DeploymentPlan
     class UpdateConfig
-      VM_STRATEGY_CREATE_SWAP_DELETE = 'create-swap-delete'.freeze
-      VM_STRATEGY_DELETE_CREATE = 'delete-create'.freeze
-      ALLOWED_VM_STRATEGY = [VM_STRATEGY_CREATE_SWAP_DELETE, VM_STRATEGY_DELETE_CREATE].freeze
+      VM_STRATEGY_CREATE_SWAP_DELETE = ['create-swap-delete', 'overlap', 1].freeze
+      VM_STRATEGY_DELETE_CREATE = ['delete-create', 'no-overlap', 0].freeze
+      ALLOWED_VM_STRATEGY = [VM_STRATEGY_CREATE_SWAP_DELETE, VM_STRATEGY_DELETE_CREATE].flatten.freeze
 
       include ValidationHelper
 
@@ -52,6 +52,18 @@ module Bosh::Director
           class: String,
           optional: true,
           default: default_update_config ? default_update_config.vm_strategy : Config.default_update_vm_strategy,
+        ) || safe_property(
+          update_config,
+          'max_vm_surge_per_instance',
+          class: Integer,
+          optional: true,
+          default: default_update_config ? default_update_config.vm_strategy : Config.default_update_vm_strategy,
+        ) || safe_property(
+          update_config,
+          'max_extra_vms_per_instance',
+          class: Integer,
+          optional: true,
+          default: default_update_config ? default_update_config.vm_strategy : Config.default_update_vm_strategy,
         )
 
         unless @vm_strategy.nil?
@@ -86,7 +98,7 @@ module Bosh::Director
           'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
           'serial' => serial?,
-          'vm_strategy' => @vm_strategy.nil? ? VM_STRATEGY_DELETE_CREATE : @vm_strategy,
+          'vm_strategy' => @vm_strategy.nil? ? VM_STRATEGY_DELETE_CREATE.sample : @vm_strategy,
         }
       end
 

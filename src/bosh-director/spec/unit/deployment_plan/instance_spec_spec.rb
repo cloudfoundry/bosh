@@ -67,7 +67,7 @@ module Bosh::Director::DeploymentPlan
         properties: properties,
         lifecycle: lifecycle,
         vm_resources: nil,
-        vm_strategy: UpdateConfig::VM_STRATEGY_DELETE_CREATE,
+        vm_strategy: UpdateConfig::VM_STRATEGY_DELETE_CREATE.sample,
       )
     end
     let(:index) { 0 }

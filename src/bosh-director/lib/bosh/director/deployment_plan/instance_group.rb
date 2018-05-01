@@ -186,7 +186,7 @@ module Bosh::Director
       end
 
       def create_swap_delete?
-        vm_strategy == UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE
+        UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE.include?(vm_strategy)
       end
 
       def should_create_swap_delete?

@@ -70,7 +70,7 @@ module Bosh::Director::Models
       return false if ip_addresses.any? { |ip| ip.type == 'static' }
 
       strategy = spec['update']['vm_strategy']
-      strategy == Bosh::Director::DeploymentPlan::UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE
+      Bosh::Director::DeploymentPlan::UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE.include?(strategy)
     end
 
     def dns_record_names
