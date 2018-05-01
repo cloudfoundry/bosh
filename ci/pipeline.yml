@@ -12,7 +12,6 @@ groups:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
-      - integration-tests-sample
       - load-tests-postgres
       - load-tests-mysql
       - legacy-load-tests-postgres
@@ -470,32 +469,6 @@ jobs:
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
-
-  - name: integration-tests-sample
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - aggregate:
-        - get: uninstalled-bosh-src
-          resource: bosh-src
-          trigger: true
-        - get: bosh-cli
-          trigger: true
-        - get: bosh-agent
-        - get: integration-tests-parallel-runtime
-
-      - <<: *install-dependencies
-
-      - task: tests
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration-gocli.yml
-        params:
-          DB:           postgresql
-          SHA2_MODE:    true
-          SAMPLE:       10
-        on_failure:
-          <<: *slack-alert
 
   - name: upgrade-tests
     public: true

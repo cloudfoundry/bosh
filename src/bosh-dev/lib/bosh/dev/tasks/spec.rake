@@ -18,12 +18,7 @@ namespace :spec do
   namespace :integration do
     desc 'Run BOSH gocli integration tests against a local sandbox'
     task gocli: :install_dependencies do
-      spec_path = 'spec/gocli/integration'
-      sample_size = ENV['SAMPLE'].to_i
-      if sample_size.positive?
-        spec_path = `find #{spec_path} -iname '*_spec.rb'`.split("\n").sample(sample_size).join(" ")
-      end
-      run_integration_specs(spec_path: spec_path)
+      run_integration_specs(spec_path: 'spec/gocli/integration')
     end
 
     desc 'Run health monitor integration tests against a local sandbox'
@@ -109,7 +104,7 @@ namespace :spec do
           #{tag} https_proxy= http_proxy= bundle exec parallel_test \
             --runtime-log parallel_runtime_rspec.log \
             -m 0.5 \
-            #{test_path}#{count} --type rspec
+            '#{test_path}'#{count} --type rspec
           BASH
         end
       end
