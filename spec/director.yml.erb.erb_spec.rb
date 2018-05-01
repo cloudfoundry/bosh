@@ -136,7 +136,7 @@ describe 'director.yml.erb.erb' do
     end
 
     it 'should contain the version' do
-      expect(parsed_yaml['version']).to eq('263.9.0')
+      expect(parsed_yaml['version']).to eq('263.10.0')
     end
 
     it 'should keep dynamic, COMPONENT-based logging paths' do
