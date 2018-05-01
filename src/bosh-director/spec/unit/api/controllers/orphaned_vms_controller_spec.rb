@@ -38,14 +38,14 @@ module Bosh::Director
           expect(first['cid']).to eq(orphaned_vm1.cid)
           expect(first['deployment_name']).to eq(orphaned_vm1.deployment_name)
           expect(first['instance_name']).to eq(orphaned_vm1.instance_name)
-          expect(first['availability_zone']).to eq(orphaned_vm1.availability_zone)
+          expect(first['az']).to eq(orphaned_vm1.availability_zone)
           expect(first['ip_addresses']).to contain_exactly(*orphaned_vm1.ip_addresses.map(&:address))
           expect(first['orphaned_at']).to eq(orphaned_vm1.orphaned_at.to_s)
 
           expect(last['cid']).to eq(orphaned_vm2.cid)
           expect(last['deployment_name']).to eq(orphaned_vm2.deployment_name)
           expect(last['instance_name']).to eq(orphaned_vm2.instance_name)
-          expect(last['availability_zone']).to eq(orphaned_vm2.availability_zone)
+          expect(last['az']).to eq(orphaned_vm2.availability_zone)
           expect(last['ip_addresses']).to eq([])
           expect(last['orphaned_at']).to eq(orphaned_vm2.orphaned_at.to_s)
         end

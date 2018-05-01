@@ -12,7 +12,7 @@ module Bosh::Director
 
         elements = Models::OrphanedVm.all.map do |vm|
           {
-            'availability_zone' => vm.availability_zone,
+            'az' => vm.availability_zone,
             'cid' => vm.cid,
             'deployment_name' => vm.deployment_name,
             'instance_name' => vm.instance_name,
