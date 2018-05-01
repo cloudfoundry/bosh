@@ -16,7 +16,7 @@ module Bosh::Director
             'cid' => vm.cid,
             'deployment_name' => vm.deployment_name,
             'instance_name' => vm.instance_name,
-            'ip_addresses' => vm.ip_addresses.map(&:address),
+            'ip_addresses' => vm.ip_addresses.map(&:formatted_ip),
             'orphaned_at' => vm.orphaned_at.to_s,
           }
         end

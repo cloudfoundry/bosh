@@ -17,13 +17,13 @@ describe 'deploy with create-swap-delete', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest) do
-    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1)
+    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])
     manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
     manifest
   end
 
   let(:cloud_config) do
-    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs
     cloud_config['networks'][0]['type'] = network_type
     cloud_config
   end
@@ -48,6 +48,8 @@ describe 'deploy with create-swap-delete', type: :integration do
     it 'should show new vms in bosh vms command' do
       old_vm = table(bosh_runner.run('vms', json: true))[0]
 
+      original_vm = table(bosh_runner.run('vms', json: true))[0]
+
       deploy_simple_manifest(manifest_hash: manifest, recreate: true)
       vms = table(bosh_runner.run('vms', json: true))
 
@@ -55,7 +57,7 @@ describe 'deploy with create-swap-delete', type: :integration do
 
       vm_pattern = {
         'active' => /true|false/,
-        'az' => '',
+        'az' => 'z1',
         'instance' => instance_slug_regex,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
         'process_state' => /[a-z]{7}/,
@@ -68,6 +70,20 @@ describe 'deploy with create-swap-delete', type: :integration do
       expect(new_vm).to match(vm_pattern)
 
       expect(new_vm).to be_create_swap_deleted(old_vm)
+
+      orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
+      expect(orphaned_vms.length).to eq(1)
+
+      orphaned_vm = orphaned_vms[0]
+      expect(orphaned_vm).to match(
+        'az' => 'z1',
+        'deployment' => manifest['name'],
+        'instance' => original_vm['instance'],
+        'ips' => '',
+        'vm_cid' => original_vm['vm_cid'],
+        'orphaned_at' => /.*/,
+      )
+      expect(Time.parse(orphaned_vm['orphaned_at'])).to be_within(5.minutes).of(Time.now)
     end
 
     it 'should show the new vm only in bosh instances command' do
@@ -145,12 +161,16 @@ describe 'deploy with create-swap-delete', type: :integration do
               'static' => [],
               'reserved' => [],
               'cloud_properties' => {},
+              'az' => 'z1',
             },
           ],
         }
         upload_cloud_config(cloud_config_hash: cloud_config)
         manifest['instance_groups'][0]['networks'][0]['default'] = %w[dns gateway]
         manifest['instance_groups'][0]['networks'] << { 'name' => 'crazy-train' }
+
+        original_vm = table(bosh_runner.run('vms', json: true))[0]
+
         out = deploy_simple_manifest(manifest_hash: manifest)
         expect(out).to match(/Creating missing vms: foobar/)
         expect(out).to match(/Downloading packages: foobar/)
@@ -161,7 +181,7 @@ describe 'deploy with create-swap-delete', type: :integration do
 
         vm_pattern = {
           'active' => /true|false/,
-          'az' => '',
+          'az' => 'z1',
           'instance' => instance_slug_regex,
           'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
           'process_state' => /[a-z]{7}/,
@@ -172,8 +192,21 @@ describe 'deploy with create-swap-delete', type: :integration do
         new_vm = vms[0]
 
         expect(new_vm).to match(vm_pattern)
-
         expect(new_vm).to be_create_swap_deleted(old_vm)
+
+        orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
+        expect(orphaned_vms.length).to eq(1)
+
+        orphaned_vm = orphaned_vms[0]
+        expect(orphaned_vm).to match(
+          'az' => 'z1',
+          'deployment' => manifest['name'],
+          'instance' => original_vm['instance'],
+          'ips' => original_vm['ips'],
+          'vm_cid' => original_vm['vm_cid'],
+          'orphaned_at' => /.*/,
+        )
+        expect(Time.parse(orphaned_vm['orphaned_at'])).to be_within(5.minutes).of(Time.now)
       end
     end
 

@@ -39,7 +39,8 @@ module Bosh::Director
           expect(first['deployment_name']).to eq(orphaned_vm1.deployment_name)
           expect(first['instance_name']).to eq(orphaned_vm1.instance_name)
           expect(first['az']).to eq(orphaned_vm1.availability_zone)
-          expect(first['ip_addresses']).to contain_exactly(*orphaned_vm1.ip_addresses.map(&:address))
+          expect(first['ip_addresses']).to contain_exactly(/\d+\.\d+\.\d+\.\d+/, /\d+\.\d+\.\d+\.\d+/)
+          expect(first['ip_addresses']).to contain_exactly(*orphaned_vm1.ip_addresses.map(&:formatted_ip))
           expect(first['orphaned_at']).to eq(orphaned_vm1.orphaned_at.to_s)
 
           expect(last['cid']).to eq(orphaned_vm2.cid)
