@@ -14,8 +14,7 @@ module Bosh::Director
         validate_link_payload(json_payload)
         consumer_data = json_payload['link_consumer']
 
-        provider_intent = find_provider_intent(json_payload['link_provider_id'])
-        raise "Invalid link_provider_id: #{json_payload['link_provider_id']}" if provider_intent.nil?
+        provider_intent = find_and_validate_provider_intent(json_payload['link_provider_id'])
 
         validate_consumer_network(provider_intent, json_payload['network'], consumer_data['owner_object']['name']) unless json_payload['network'].nil?
 
@@ -73,6 +72,13 @@ module Bosh::Director
       end
 
       private
+
+      def find_and_validate_provider_intent(provider_intent_id)
+        provider_intent = find_provider_intent(provider_intent_id)
+        raise Bosh::Director::LinkProviderLookupError, "Invalid link_provider_id: #{provider_intent_id}" if provider_intent.nil?
+        raise Bosh::Director::LinkProviderNotSharedError, "Provider not `shared`" unless provider_intent.shared
+        provider_intent
+      end
 
       def delete_link_and_cleanup(link)
         consumer_intent = link.link_consumer_intent

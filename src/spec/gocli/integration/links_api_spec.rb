@@ -977,6 +977,28 @@ describe 'links api', type: :integration do
             end
           end
         end
+
+        context 'when provider is NOT shared' do
+          let(:jobs) do
+            [
+              {
+                'name' => 'provider',
+                'provides' => {
+                  'provider' => {
+                    'as' => 'foo',
+                    'shared' => false,
+                  },
+                },
+              },
+            ]
+          end
+          it 'should returns error' do
+            response = send_director_post_request('/links', '', JSON.generate(payload_json))
+            error_response = JSON.parse(response.read_body)
+            expect(error_response['code']).to eq(Bosh::Director::LinkProviderNotSharedError.new.error_code)
+            expect(error_response['description']).to eq("Provider not `shared`")
+          end
+        end
       end
 
       context 'when link_provider_id do not exists' do

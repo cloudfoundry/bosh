@@ -348,4 +348,5 @@ module Bosh::Director
   LinkIdRequiredError = err(810006, BAD_REQUEST)
   LinkInvalidStatusError = err(810007, BAD_REQUEST)
   LinkInvalidAzsError = err(810008, BAD_REQUEST)
+  LinkProviderNotSharedError = err(810009, FORBIDDEN)
 end

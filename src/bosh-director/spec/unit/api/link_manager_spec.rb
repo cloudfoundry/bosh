@@ -90,7 +90,7 @@ module Bosh::Director
       context 'when link_provider_id is invalid' do
         let(:provider_id) { '42' }
         it 'return error' do
-          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid link_provider_id: #{provider_id}/)
+          expect { subject.create_link(username, payload_json) }.to raise_error(Bosh::Director::LinkProviderLookupError, "Invalid link_provider_id: #{provider_id}")
         end
       end
 
@@ -106,6 +106,24 @@ module Bosh::Director
           expect(Bosh::Director::Models::Links::LinkProviderIntent).to receive(:find).and_return(provider_1_intent_1)
 
           subject.create_link(username, payload_json)
+        end
+
+        context 'when provider_id (provider_intent_id) is not shared' do
+          let(:provider_1_intent_1) do
+            Models::Links::LinkProviderIntent.create(
+              name: 'link_name_1',
+              link_provider: provider_1,
+              shared: false,
+              consumable: true,
+              type: 'job',
+              original_name: 'provider_name_1',
+              content: provider_json_content.to_json,
+              serial_id: link_serial_id,
+              )
+          end
+          it 'return error' do
+            expect { subject.create_link(username, payload_json) }.to raise_error(Bosh::Director::LinkProviderNotSharedError, "Provider not `shared`")
+          end
         end
       end
 

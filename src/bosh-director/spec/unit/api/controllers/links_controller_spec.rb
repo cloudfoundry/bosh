@@ -149,6 +149,7 @@ module Bosh::Director
               expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be a String"}')
             end
           end
+
           context 'when link_consumer is invalid' do
             it 'raise error for missing link_consumer' do
               post '/', JSON.generate('link_provider_id' => '3'), 'CONTENT_TYPE' => 'application/json'
@@ -179,7 +180,7 @@ module Bosh::Director
             it 'raise error for non-existing provider_id' do
               post '/', JSON.generate(payload_json), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid link_provider_id: 42"}')
+              expect(last_response.body).to eq('{"code":810002,"description":"Invalid link_provider_id: 42"}')
             end
 
             context 'when a valid link_provider_id is provided' do
@@ -286,6 +287,27 @@ module Bosh::Director
                     error_string = '{"code":810003,"description":"Can\'t resolve network: `invalid-network-name` in provider id: 1 for `external_consumer_1`"}'
                     expect(last_response.body).to eq(error_string)
                   end
+                end
+              end
+
+              context 'when provider is NOT shared' do
+                let(:provider_1_intent_1) do
+                  Bosh::Director::Models::Links::LinkProviderIntent.create(
+                    name: 'provider_intent_1_name_1',
+                    link_provider: provider_1,
+                    shared: false,
+                    consumable: true,
+                    type: 'link_type_1',
+                    original_name: 'provider_name_1',
+                    content: provider_json_content,
+                    serial_id: link_serial_id,
+                    )
+                end
+
+                it 'raise error' do
+                  post '/', JSON.generate(payload_json), 'CONTENT_TYPE' => 'application/json'
+                  expect(last_response.status).to eq(403)
+                  expect(last_response.body).to eq('{"code":810009,"description":"Provider not `shared`"}')
                 end
               end
             end
