@@ -16,6 +16,7 @@ module Bosh::Director
 
       def initialize(config)
         @config = config
+        @orphaned_vm_deleter = OrphanedVMDeleter.new(logger)
         @orphan_disk_manager = OrphanDiskManager.new(Config.logger)
         release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
@@ -47,6 +48,8 @@ module Bosh::Director
           dns_blob_age = 3600
           dns_blobs_to_keep = 10
         end
+
+        @orphaned_vm_deleter.delete_all
 
         unused_release_name_and_versions = @releases_to_delete_picker.pick(releases_to_keep)
         release_count = unused_release_name_and_versions.map { |r| r['versions'] }.flatten.count

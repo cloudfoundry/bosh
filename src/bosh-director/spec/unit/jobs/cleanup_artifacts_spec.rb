@@ -39,6 +39,7 @@ module Bosh::Director
       let(:thread_pool) { ThreadPool.new }
       let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+      let(:orphaned_vm_deleter) { instance_double(Bosh::Director::OrphanedVMDeleter) }
       subject(:cleanup_artifacts) { Jobs::CleanupArtifacts.new(config) }
 
       def make_stemcell(name:, version:, operating_system: '')
@@ -78,10 +79,14 @@ module Bosh::Director
         allow(cloud).to receive(:delete_stemcell)
         allow(cloud).to receive(:delete_disk)
 
+
+        allow(Bosh::Director::OrphanedVMDeleter).to receive(:new).and_return(orphaned_vm_deleter)
+        expect(orphaned_vm_deleter).to receive(:delete_all)
+
         Timecop.freeze(Time.now)
       end
 
-      context 'when cleaning up ALL artifacts (stemcells, releases AND orphaned disks)' do
+      context 'when cleaning up ALL artifacts (orphaned vms, stemcells, releases AND orphaned disks)' do
         let(:config) { { 'remove_all' => true } }
         before do
           expect(blobstore).to receive(:delete).with('compiled-package-1')
@@ -215,7 +220,7 @@ module Bosh::Director
         end
       end
 
-      context 'when cleaning up only stemcells, releases, and exported releases' do
+      context 'when cleaning up only orphaned vms, stemcells, releases, and exported releases' do
         let(:config) { {} }
         it 'logs and returns the result' do
           expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
