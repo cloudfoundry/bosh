@@ -94,7 +94,7 @@ describe 'deploy with create-swap-delete', type: :integration do
       original_instance = instances[0]
 
       expect(original_instance).to match(
-        'az' => '',
+        'az' => 'z1',
         'instance' => %r|foobar/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
         'process_state' => 'running',
@@ -228,7 +228,7 @@ describe 'deploy with create-swap-delete', type: :integration do
 
         vm_pattern = {
           'active' => /true|false/,
-          'az' => '',
+          'az' => 'z1',
           'instance' => instance_slug_regex,
           'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
           'process_state' => /[a-z]{7}/,
@@ -257,7 +257,7 @@ describe 'deploy with create-swap-delete', type: :integration do
 
         vm_pattern = {
           'active' => /true|false/,
-          'az' => '',
+          'az' => 'z1',
           'instance' => instance_slug_regex,
           'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
           'process_state' => /[a-z]{7}/,
@@ -283,7 +283,7 @@ describe 'deploy with create-swap-delete', type: :integration do
 
           vm_pattern = {
             'active' => /true|false/,
-            'az' => '',
+            'az' => 'z1',
             'instance' => instance_slug_regex,
             'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
             'process_state' => /[a-z]{7}/,
