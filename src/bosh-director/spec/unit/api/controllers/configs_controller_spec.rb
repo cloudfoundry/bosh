@@ -248,7 +248,7 @@ module Bosh::Director
     describe 'POST', '/' do
       let(:config_data) { 'a: 1' }
       let(:request_body) do
-        JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => config_data)
+        JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => config_data, 'expected_latest_id' => '0')
       end
 
       describe 'when user has admin access' do
@@ -337,9 +337,9 @@ module Bosh::Director
               )
             end.to_not change(Models::Config, :count)
             expect(last_response.status).to eq(412)
-            expect(JSON.parse(last_response.body)['latest_id']).to be_nil
+            expect(JSON.parse(last_response.body)['latest_id']).to eq('0')
             expect(JSON.parse(last_response.body)['description']).to include(
-              "Latest Id: '' does not match expected latest id",
+              "Latest Id: '0' does not match expected latest id",
             )
           end
 
@@ -430,7 +430,7 @@ module Bosh::Director
         end
 
         context 'when the content is no YAML hash' do
-          let(:request_body) { '{"name":"n","type":"t","content":"I am a string"}' }
+          let(:request_body) { '{"name":"n","type":"t","content":"I am a string","expected_latest_id":"0"}' }
 
           it 'return 400' do
             post '/', request_body, 'CONTENT_TYPE' => 'application/json'
@@ -443,7 +443,7 @@ module Bosh::Director
 
         context 'when `type` argument is missing' do
           let(:request_body) do
-            JSON.generate('name' => 'my-name', 'content' => '{}')
+            JSON.generate('name' => 'my-name', 'content' => '{}', 'expected_latest_id' => '0')
           end
 
           it 'creates a new event and return 400' do
@@ -464,7 +464,7 @@ module Bosh::Director
 
         context 'when `name` argument is missing' do
           let(:request_body) do
-            JSON.generate('type' => 'my-type', 'content' => '{}')
+            JSON.generate('type' => 'my-type', 'content' => '{}', 'expected_latest_id' => '0')
           end
 
           it 'creates a new event and return 400' do
@@ -796,7 +796,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
+              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]],"from":{"id":"0"}}')
             end
           end
 

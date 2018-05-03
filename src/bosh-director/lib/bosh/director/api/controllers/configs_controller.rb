@@ -33,7 +33,7 @@ module Bosh::Director
             limit: 1,
           ).first
           expected_latest_id = config_hash['expected_latest_id']&.to_s
-          config_id = config&.id&.to_s
+          config_id = config ? config.id.to_s : '0'
 
           if !expected_latest_id.nil? && config_id != expected_latest_id
             status(412)
@@ -197,13 +197,14 @@ module Bosh::Director
           ).first
 
           old_config_hash = Hash(old_config&.raw_manifest)
+          old_config_id = old_config ? old_config.id : 0
         rescue StandardError => e
           raise BadConfig, e.message
         end
 
         @permission_authorizer.granted_or_raise(old_config, :admin, token_scopes) unless old_config.nil?
 
-        [old_config_hash, new_config_hash, old_config&.id]
+        [old_config_hash, new_config_hash, old_config_id]
       end
 
       def validate_diff_request(config_request)
