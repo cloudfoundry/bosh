@@ -7,27 +7,30 @@ module Bosh::Director
     end
 
     def delete_all(lock_timeout = 5)
-      orphaned_vms = Models::OrphanedVm.all
       ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
-        orphaned_vms.each do |vm|
+        Models::OrphanedVm.all.each do |vm|
           pool.process do
-            begin
-              Lock.new("lock:orphan_vm_cleanup:#{vm.cid}", timeout: lock_timeout).lock do
-                @vm_deleter.delete_vm_by_cid(vm.cid, vm.stemcell_api_version, vm.cpi)
-                destroy_vm(vm)
-              end
-            rescue Bosh::Clouds::VMNotFound => e
-              @logger.debug('VM already gone; deleting orphaned references')
-              destroy_vm(vm)
-            rescue Timeout => e
-              @logger.debug("Timed out acquiring lock to delete #{vm.cid}")
-            rescue StandardError => e
-              @logger.debug('Failed to delete Orphaned VM due to unhandled exception')
-            ensure
-              add_event(vm.cid, e)
-            end
+            delete_vm(vm, lock_timeout)
           end
         end
+      end
+    end
+
+    def delete_vm(vm, lock_timeout)
+      begin
+        Lock.new("lock:orphan_vm_cleanup:#{vm.cid}", timeout: lock_timeout).lock do
+          @vm_deleter.delete_vm_by_cid(vm.cid, vm.stemcell_api_version, vm.cpi)
+          destroy_vm(vm)
+        end
+      rescue Bosh::Clouds::VMNotFound => e
+        @logger.debug('VM already gone; deleting orphaned references')
+        destroy_vm(vm)
+      rescue Timeout => e
+        @logger.debug("Timed out acquiring lock to delete #{vm.cid}")
+      rescue StandardError => e
+        @logger.debug('Failed to delete Orphaned VM due to unhandled exception')
+      ensure
+        add_event(vm.cid, e)
       end
     end
 
