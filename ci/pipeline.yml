@@ -779,6 +779,7 @@ jobs:
     plan:
       - aggregate:
         - get: bosh-src
+          version: every
           trigger: true
           passed:
           - bats-ubuntu
