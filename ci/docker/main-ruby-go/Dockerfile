@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:xenial
 
 # basic deps {
 RUN \

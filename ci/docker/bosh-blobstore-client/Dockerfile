@@ -1,14 +1,20 @@
-FROM ubuntu:latest
+FROM ubuntu:xenial
 
-RUN apt-get update; apt-get -y upgrade; apt-get clean
-
-RUN apt-get install -y git curl tar make; apt-get clean
-
-RUN apt-get install -y python-dateutil python-magic; apt-get clean
-
-RUN apt-get install -y libsqlite3-dev libmysqlclient-dev libpq-dev; apt-get clean
-
-RUN apt-get install -y locales; apt-get clean
+RUN \
+  apt-get update \
+  && apt-get -y upgrade \
+  && apt-get -y install \
+    curl \
+    git \
+    libmysqlclient-dev \
+    libpq-dev \
+    libsqlite3-dev \
+    locales \
+    make \
+    python-dateutil \
+    python-magic \
+    tar \
+  && apt-get clean
 
 RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
