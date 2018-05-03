@@ -85,7 +85,7 @@ module Bosh
             user: 'foo',
             action: 'delete',
             object_type: 'vm',
-            task: 42,
+            task: '42',
             error: nil,
           }
 
