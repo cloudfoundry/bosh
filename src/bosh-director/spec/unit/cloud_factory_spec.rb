@@ -11,7 +11,7 @@ module Bosh::Director
     let(:cpi_info) {
       {
         'stemcell_formats' => 'some-stemcell-support-format',
-        'api_version': cpi_api_version
+        'api_version' => cpi_api_version
       }
     }
     let(:stemcell_api_version) { nil }
@@ -22,6 +22,38 @@ module Bosh::Director
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: stemcell_api_version).and_return(cloud)
       allow(cloud).to receive(:info).and_return(cpi_info)
       allow(cloud).to receive(:request_cpi_api_version=)
+    end
+
+    describe 'CPI API version' do
+      context 'info result includes CPI API version' do
+        before do
+          allow(cloud).to receive(:info).and_return(cpi_info)
+        end
+
+        it 'creates cloud with the CPI API version' do
+          expect(cloud).to receive(:request_cpi_api_version=).with(cpi_info['api_version'])
+
+          cloud_factory.get(nil, stemcell_api_version)
+        end
+
+        context 'when CPI version requested is higher than director supports' do
+          let(:cpi_api_version) { 10 }
+
+          it 'creates cloud with the director max supported version' do
+            expect(cloud).to receive(:request_cpi_api_version=).with(Bosh::Director::CloudFactory::MAX_SUPPORTED_CPI_VERSION)
+            cloud_factory.get(nil, stemcell_api_version)
+          end
+        end
+      end
+
+      context 'old CPIs do not return the version from info' do
+        let(:cpi_info) { {} }
+
+        it 'creates cloud with CPI API version of 1' do
+          expect(cloud).to receive(:request_cpi_api_version=).with(1)
+          cloud_factory.get(nil, stemcell_api_version)
+        end
+      end
     end
 
     describe '.create' do
@@ -91,17 +123,6 @@ module Bosh::Director
 
         it 'creates the default external CPI instance with correct stemcell API version' do
           expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: stemcell_api_version).and_return(cloud)
-          expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).and_return(cloud_wrapper)
-          expect(cloud_factory.get(nil, stemcell_api_version)).to eq(cloud_wrapper)
-        end
-      end
-
-      context 'info result includes CPI API version' do
-        let(:stemcell_api_version) { 25 }
-
-        it 'creates cloud with the CPI API version' do
-          expect(cloud).to receive(:request_cpi_api_version=).with(cpi_info[:api_version])
-
           cloud_factory.get(nil, stemcell_api_version)
         end
       end

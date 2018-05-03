@@ -340,6 +340,14 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     end
   end
 
+  describe 'supported CPI versions' do
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi).as_null_object }
+
+    it 'raises an exception if the CPI API version is not supported' do
+      expect{ Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, 100) }.to raise_error(Bosh::Clouds::NotSupported)
+    end
+  end
+
   describe 'when cpi_version is 2' do
     let(:cpi_api_version) { 2 }
 

@@ -1,5 +1,7 @@
 module Bosh::Director
   class CloudFactory
+    MAX_SUPPORTED_CPI_VERSION = 2
+
     class << self
       def create
         new(parse_cpi_configs)
@@ -61,8 +63,8 @@ module Bosh::Director
       rescue
         # ignored
       end
-      #TODO: request_cpi_api_version should be minimum of director's and cpi's highest supported api_version
-      Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version)
+      supported_cpi_version = [cpi_api_version, MAX_SUPPORTED_CPI_VERSION].min
+      Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, supported_cpi_version)
     end
 
     private

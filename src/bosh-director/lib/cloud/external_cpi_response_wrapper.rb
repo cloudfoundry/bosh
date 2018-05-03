@@ -4,6 +4,8 @@ module Bosh::Clouds
       @cpi = cpi
       @cpi_api_version = cpi_api_version
       @cpi.request_cpi_api_version = @cpi_api_version
+
+      check_cpi_api_support
     end
 
     def current_vm_id(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
@@ -34,9 +36,10 @@ module Bosh::Clouds
       cpi_response = @cpi.create_vm(*args)
 
       response = []
-      if @cpi_api_version >= 2
+      case @cpi_api_version
+      when 2
         response = cpi_response
-      else
+      when 1
         response << cpi_response
       end
 
@@ -49,6 +52,12 @@ module Bosh::Clouds
       end
 
       @cpi.attach_disk(*args)
+    end
+
+    private
+
+    def check_cpi_api_support
+      raise Bosh::Clouds::NotSupported, "CPI API version #{@cpi_api_version} is not supported." unless @cpi_api_version <= Bosh::Director::CloudFactory::MAX_SUPPORTED_CPI_VERSION
     end
   end
 end
