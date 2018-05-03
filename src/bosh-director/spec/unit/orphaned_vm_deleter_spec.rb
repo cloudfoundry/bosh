@@ -11,6 +11,8 @@ module Bosh
               cid: 'cid1',
               orphaned_at: Time.now,
               stemcell_api_version: 1,
+              deployment_name: 'fake-deployment-1',
+              instance_name: 'fake-instance-1/fake-uuid-1',
               cpi: 'jims-cpi',
               )
         end
@@ -27,6 +29,8 @@ module Bosh
               cid: 'cid2',
               orphaned_at: Time.now,
               stemcell_api_version: 2,
+              deployment_name: 'fake-deployment-1',
+              instance_name: 'fake-instance-2/fake-uuid-1',
               cpi: 'joshs-cpi',
               )
         end
@@ -75,23 +79,45 @@ module Bosh
         it 'records bosh event for vm deletion' do
           subject.delete_all
 
-          expect(Models::Event.all.count).to eq(2)
+          expect(Models::Event.all.count).to eq(4)
 
-          event1 = Bosh::Director::Models::Event.first
-          expect(event1.user).to eq(task.username)
-          expect(event1.action).to eq('delete')
-          expect(event1.object_type).to eq('vm')
-          expect(event1.object_name).to eq(orphaned_vm1.cid)
-          expect(event1.error).to be_nil
-          expect(event1.task).to eq(task.id.to_s)
+          base_event_fields = {
+            user: 'foo',
+            action: 'delete',
+            object_type: 'vm',
+            task: 42,
+            error: nil,
+          }
 
-          event2 = Bosh::Director::Models::Event.last
-          expect(event2.user).to eq(task.username)
-          expect(event2.action).to eq('delete')
-          expect(event2.object_type).to eq('vm')
-          expect(event2.object_name).to eq(orphaned_vm2.cid)
-          expect(event2.error).to be_nil
-          expect(event2.task).to eq(task.id.to_s)
+          orphaned_vm1_event = Bosh::Director::Models::Event.where(base_event_fields.merge(
+            parent_id: nil,
+            object_name: orphaned_vm1.cid,
+            deployment: 'fake-deployment-1',
+            instance: 'fake-instance-1/fake-uuid-1',
+          )).first
+          expect(orphaned_vm1_event).to_not be_nil
+
+          expect(Bosh::Director::Models::Event.where(base_event_fields.merge(
+            parent_id: orphaned_vm1_event.id,
+            object_name: orphaned_vm1.cid,
+            deployment: 'fake-deployment-1',
+            instance: 'fake-instance-1/fake-uuid-1',
+          ))).to_not be_nil
+
+          orphaned_vm2_event = Bosh::Director::Models::Event.where(base_event_fields.merge(
+            parent_id: nil,
+            object_name: orphaned_vm2.cid,
+            deployment: 'fake-deployment-1',
+            instance: 'fake-instance-2/fake-uuid-1',
+          )).first
+          expect(orphaned_vm2_event).to_not be_nil
+
+          expect(Bosh::Director::Models::Event.where(base_event_fields.merge(
+            parent_id: orphaned_vm2_event.id,
+            object_name: orphaned_vm2.cid,
+            deployment: 'fake-deployment-1',
+            instance: 'fake-instance-2/fake-uuid-1',
+          ))).to_not be_nil
         end
 
         context 'when deleting the vm fails' do
@@ -106,13 +132,14 @@ module Bosh
 
           it 'reports the failure' do
             subject.delete_all
-            event1 = Bosh::Director::Models::Event.first
-            expect(event1.user).to eq(task.username)
-            expect(event1.action).to eq('delete')
-            expect(event1.object_type).to eq('vm')
-            expect(event1.object_name).to eq(orphaned_vm1.cid)
-            expect(event1.error).to eq('Bosh::Clouds::VMNotFound')
-            expect(event1.task).to eq(task.id.to_s)
+            expect(Bosh::Director::Models::Event.where(
+              user: task.username,
+              action: 'delete',
+              object_type: 'vm',
+              object_name: orphaned_vm1.cid,
+              error: 'Bosh::Clouds::VMNotFound',
+              task: task.id.to_s,
+            ).first).to_not be_nil
           end
         end
 

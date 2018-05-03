@@ -18,6 +18,7 @@ module Bosh::Director
 
     def delete_vm(vm, lock_timeout)
       begin
+        parent_id = add_event(vm)
         Lock.new("lock:orphan_vm_cleanup:#{vm.cid}", timeout: lock_timeout).lock do
           @vm_deleter.delete_vm_by_cid(vm.cid, vm.stemcell_api_version, vm.cpi)
           destroy_vm(vm)
@@ -30,7 +31,7 @@ module Bosh::Director
       rescue StandardError => e
         @logger.debug('Failed to delete Orphaned VM due to unhandled exception')
       ensure
-        add_event(vm.cid, e)
+        add_event(vm, parent_id, e)
       end
     end
 
@@ -43,15 +44,19 @@ module Bosh::Director
       vm.destroy
     end
 
-    def add_event(object_name = nil, error = nil)
-      Config.current_job.event_manager.create_event(
+    def add_event(vm, parent_id = nil, error = nil)
+      event = Config.current_job.event_manager.create_event(
+          parent_id:   parent_id,
           user:        Config.current_job.username,
           action:      'delete',
           object_type: 'vm',
-          object_name: object_name,
+          object_name: vm.cid,
           task:        Config.current_job.task_id,
+          deployment:  vm.deployment_name,
+          instance:    vm.instance_name,
           error:       error,
           )
+      event.id
     end
   end
 end
