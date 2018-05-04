@@ -1,7 +1,13 @@
 FROM ubuntu:xenial
 
+ENV TZ=Etc/UTC
+
 RUN \
   apt-get update \
+  && apt-get install -y \
+    tzdata \
+  && ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime \
+  && echo $TZ > /etc/timezone \
   && apt-get -y upgrade \
   && apt-get -y install \
     curl \
