@@ -717,7 +717,7 @@ module Bosh::Director
                   new_config,
                   'CONTENT_TYPE' => 'application/json',
                 )
-                expect(last_response.body).to match('\{"diff":\[\],"from":\{"id":"\d+"\}\}')
+                expect(last_response.body).to match('\{"from":\{"id":"\d+"\}\,"diff":\[\]}')
               end
             end
 
@@ -796,7 +796,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]],"from":{"id":"0"}}')
+              expect(last_response.body).to eq('{"from":{"id":"0"},"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
             end
           end
 
@@ -817,7 +817,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq(%({"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]],"from":{"id":"#{@config_id}"}}))
+              expect(last_response.body).to eq(%({"from":{"id":"#{@config_id}"},"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}))
             end
           end
         end

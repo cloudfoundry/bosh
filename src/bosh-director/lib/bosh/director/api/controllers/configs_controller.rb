@@ -27,14 +27,11 @@ module Bosh::Director
           validate_type_and_name(config_hash)
           validate_config_content(config_hash['content'])
 
-          config = Bosh::Director::Api::ConfigManager.new.find(
-            type: config_hash['type'],
-            name: config_hash['name'],
-            limit: 1,
-          ).first
-          expected_latest_id = config_hash['expected_latest_id']&.to_s
-          config_id = config ? config.id.to_s : '0'
+          config_manager = Bosh::Director::Api::ConfigManager.new
+          config = config_manager.current(config_hash['type'], config_hash['name'])
+          config_id = config_manager.id_as_string(config)
 
+          expected_latest_id = config_hash['expected_latest_id']&.to_s
           if !expected_latest_id.nil? && config_id != expected_latest_id
             status(412)
             return json_encode(
@@ -61,13 +58,21 @@ module Bosh::Director
       end
 
       post '/diff', scope: :list_configs, consumes: :json do
-        config_request = parse_request_body(request.body.read)
-        schema_name = validate_diff_request(config_request)
-
+        config_hash = parse_request_body(request.body.read)
+        schema_name = validate_diff_request(config_hash)
+        diff = {}
         begin
-          old_config_hash, new_config_hash, from_id = load_diff_request(config_request, schema_name)
-          diff = generate_diff(new_config_hash, old_config_hash)
-          diff['from'] = { 'id' => from_id.to_s } if from_id
+          if schema_name == 'from_content_to_current'
+            config_manager = Bosh::Director::Api::ConfigManager.new
+            config = config_manager.current(config_hash['type'], config_hash['name'])
+            config_id = config_manager.id_as_string(config)
+            diff['from'] = { 'id' => config_id }
+            old_config_hash, new_config_hash = content_and_current_to_hash(config_hash, config)
+          else
+            old_config_hash, new_config_hash = load_diff_request(config_hash, schema_name)
+          end
+
+          diff['diff'] = generate_diff(new_config_hash, old_config_hash)
           json_encode(diff)
         rescue BadConfig => error
           status(400)
@@ -185,26 +190,18 @@ module Bosh::Director
         content
       end
 
-      def contents_from_body_and_current(config_request)
+      def content_and_current_to_hash(config_request, old_config)
         begin
           validate_type_and_name(config_request)
           new_config_hash = validate_config_content(config_request['content'])
-
-          old_config = Bosh::Director::Api::ConfigManager.new.find(
-            type: config_request['type'],
-            name: config_request['name'],
-            limit: 1,
-          ).first
-
           old_config_hash = Hash(old_config&.raw_manifest)
-          old_config_id = old_config ? old_config.id : 0
         rescue StandardError => e
           raise BadConfig, e.message
         end
 
         @permission_authorizer.granted_or_raise(old_config, :admin, token_scopes) unless old_config.nil?
 
-        [old_config_hash, new_config_hash, old_config_id]
+        [old_config_hash, new_config_hash]
       end
 
       def validate_diff_request(config_request)
@@ -241,8 +238,6 @@ module Bosh::Director
       end
 
       def load_diff_request(config_request, schema_name)
-        return contents_from_body_and_current(config_request) if schema_name == 'from_content_to_current'
-
         old_config_hash = if schema_name.start_with?('from_id')
                             load_config_by_id(config_request['from']['id'])
                           elsif schema_name.start_with?('from_content')
@@ -259,8 +254,10 @@ module Bosh::Director
       end
 
       def generate_diff(new_config_hash, old_config_hash)
-        diff = Changeset.new(old_config_hash, new_config_hash).diff(true).order
-        { 'diff' => diff.map { |l| [l.to_s, l.status] } }
+        Changeset.new(old_config_hash, new_config_hash)
+                 .diff(true)
+                 .order
+                 .map { |l| [l.to_s, l.status] }
       rescue StandardError => error
         raise BadConfig, "Unable to diff config content: #{error.inspect}"
       end
