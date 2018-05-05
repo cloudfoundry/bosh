@@ -103,10 +103,14 @@ module Bosh::Director
         range == subnet.range ||
           range.contains?(subnet.range) ||
           subnet.range.contains?(range)
+      rescue NetAddr::VersionError
+        return false
       end
 
       def is_reservable?(ip)
         range.contains?(ip) && !restricted_ips.include?(ip.to_i)
+      rescue NetAddr::VersionError
+        return false
       end
 
       private
