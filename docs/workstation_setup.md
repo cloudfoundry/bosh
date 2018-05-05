@@ -43,6 +43,18 @@
 
         `createdb -U $USER`
 
+    * increase `max_connections` setting
+
+        ```sh
+        echo 'ALTER SYSTEM SET max_connections = 250' | psql
+        # Restart postgres
+        ## If you're using brew services to start and stop postgres
+        brew services restart postgresql
+        ## Otherwise, you can use launchctl directly
+        launchctl stop homebrew.mxcl.postgresql
+        launchctl start homebrew.mxcl.postgresql
+        ```
+
 6. Get Golang dependencies
 
     Install vet and golint
@@ -58,7 +70,18 @@
 
     `gem install bundler`
 
-8. Bundle BOSH
+8. Install Java 8
+
+    For certain components a java runtime is required. Currently java 8 is required, versions 9 and 10 are not supported at the moment.
+    On MacOS you can do something like
+
+    ```sh
+    brew tap caskroom/versions
+    brew cask install java8
+    export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
+    ```
+
+9. Bundle BOSH
 
     ```
     cd ~/workspace/bosh/src

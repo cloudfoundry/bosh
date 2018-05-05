@@ -47,7 +47,7 @@ bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
 
 ### Integration Tests
 
-Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](workstation_setup.md). Run the integration tests with the `spec:integration_gocli` rake task:
+Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](workstation_setup.md). Make sure you use the correct java version when running the test, and setup `JAVA_HOME` correctly in case your default system's java installation is not of version 8. Run the integration tests with the `spec:integration_gocli` rake task:
 
 ```
 bosh/src$ bundle exec rake spec:integration_gocli
