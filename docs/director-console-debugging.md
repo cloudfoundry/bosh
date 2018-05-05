@@ -26,4 +26,8 @@ Bosh::Director::Config.db[:schema_migrations] << {filename: "xxx"}
 
 # update first item in a table
 Bosh::Director::Models::Instance.first.update(boostrap: false)
+
+# verify and delete disk reference
+Bosh::Director::Models::PersistentDisk.where(disk_cid: "...").all
+Bosh::Director::Models::PersistentDisk.where(disk_cid: "...").delete
 ```
