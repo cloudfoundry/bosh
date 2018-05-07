@@ -110,9 +110,7 @@ jobs:
           - "build-main-base"
       - put: main-mysql-5.5
         params:
-          build: "bosh-src/ci/docker/main-mysql"
-          build_args:
-            DB_VERSION: "-5.5"
+          build: "bosh-src/ci/docker/main-trusty-mysql-5.5"
         get_params:
           skip_download: true
 
