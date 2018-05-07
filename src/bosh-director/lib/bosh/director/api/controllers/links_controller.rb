@@ -58,10 +58,10 @@ module Bosh::Director
 
       def generate_link_hash(model)
         {
-          :id => model.id,
+          :id => model.id.to_s,
           :name => model.name,
-          :link_consumer_id => model[:link_consumer_intent_id],
-          :link_provider_id => model[:link_provider_intent_id],
+          :link_consumer_id => model[:link_consumer_intent_id].to_s,
+          :link_provider_id => (model[:link_provider_intent_id].nil? ? nil : model[:link_provider_intent_id].to_s),
           :created_at => model.created_at,
         }
       end

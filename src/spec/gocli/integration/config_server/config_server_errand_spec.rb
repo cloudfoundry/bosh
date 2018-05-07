@@ -4,10 +4,19 @@ describe 'using director with config server and a deployment with errands', type
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
   let(:director_name) { current_sandbox.director_name }
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
-  let(:errand_manifest){ Bosh::Spec::NewDeployments.manifest_errand_with_placeholders }
-  let(:namespaced_key) { "/#{director_name}/#{errand_manifest["name"]}/placeholder" }
+  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
+  let(:client_env) do
+    { 'BOSH_CLIENT' => 'test',
+      'BOSH_CLIENT_SECRET' => 'secret',
+      'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
+  end
+  let(:errand_manifest) { Bosh::Spec::NewDeployments.manifest_errand_with_placeholders }
+  let(:namespaced_key) { "/#{director_name}/#{errand_manifest['name']}/placeholder" }
+  let(:errand_password) { "/#{director_name}/#{errand_manifest['name']}/errand_password" }
+
+  before do
+    config_server_helper.put_value(errand_password, 'test123')
+  end
 
   it 'replaces variables in properties' do
     config_server_helper.put_value(namespaced_key, 'some-smurfy-value')
@@ -17,7 +26,7 @@ describe 'using director with config server and a deployment with errands', type
       manifest_hash: errand_manifest,
       cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       include_credentials: false,
-      env: client_env
+      env: client_env,
     )
 
     errand_result = bosh_runner.run('run-errand fake-errand-name', deployment_name: 'errand', include_credentials: false,  env: client_env)
@@ -32,14 +41,18 @@ describe 'using director with config server and a deployment with errands', type
       manifest_hash: errand_manifest,
       cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
       include_credentials: false,
-      env: client_env
+      env: client_env,
     )
 
     config_server_helper.put_value(namespaced_key, 'sharshabeel')
 
-    errand_result = bosh_runner.run('run-errand fake-errand-name', deployment_name: 'errand', include_credentials: false,  env: client_env)
+    errand_result = bosh_runner.run('run-errand fake-errand-name',
+                                    deployment_name: 'errand',
+                                    include_credentials: false,
+                                    env: client_env)
     expect(errand_result).to include('gargamel')
     expect(errand_result).to_not include('sharshabeel')
+    expect(errand_manifest['env']).to eq('bosh' => { 'password' => '((errand_password))' })
   end
 
   context 'when config server does NOT have the variable' do

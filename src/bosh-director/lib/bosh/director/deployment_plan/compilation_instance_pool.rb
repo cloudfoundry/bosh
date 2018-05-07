@@ -304,11 +304,11 @@ module Bosh::Director
         nil
       end
 
-      def hot_swap?
+      def create_swap_delete?
         false
       end
 
-      def should_hot_swap?
+      def should_create_swap_delete?
         false
       end
 

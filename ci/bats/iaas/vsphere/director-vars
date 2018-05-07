@@ -6,6 +6,7 @@ exec jq '{
   "internal_ip": .directorIP,
   "network_name": env.BOSH_VSPHERE_VCENTER_VLAN,
   "external_ip": .directorIP,
+  "vcenter_rp": env.BOSH_VSPHERE_VCENTER_RP,
   "vcenter_ip": env.BOSH_VSPHERE_VCENTER,
   "vcenter_user": env.BOSH_VSPHERE_VCENTER_USER,
   "vcenter_password": env.BOSH_VSPHERE_VCENTER_PASSWORD,

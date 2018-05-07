@@ -37,6 +37,7 @@ module Bosh::Director
 
       let(:cloud_config) { Models::Config.make(:cloud_with_manifest) }
       let (:time) {Time.now}
+
       before do
         App.new(config)
         basic_authorize 'admin', 'admin'
@@ -118,21 +119,33 @@ module Bosh::Director
             context 'when provided cloud configs and runtime configs context to work within' do
               it 'should use the provided context instead of using the latest runtime and cloud config' do
                 cloud_config = Models::Config.make(:cloud_with_manifest)
-                runtime_config_1 = Models::Config.make(type: 'runtime')
-                runtime_config_2 = Models::Config.make(type: 'runtime')
+                runtime_config1 = Models::Config.make(type: 'runtime')
+                runtime_config2 = Models::Config.make(type: 'runtime')
 
                 Models::Config.make(:cloud_with_manifest)
                 Models::Config.make(type: 'runtime')
 
-                deployment_context = [['context', JSON.dump({'cloud_config_ids' => [cloud_config.id], 'runtime_config_ids' => [runtime_config_1.id, runtime_config_2.id]})]]
+                deployment_context = [[
+                  'context',
+                  JSON.dump(
+                    'cloud_config_ids' => [cloud_config.id],
+                    'runtime_config_ids' => [runtime_config1.id, runtime_config2.id],
+                  ),
+                ]]
 
-                allow_any_instance_of(DeploymentManager)
+                expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                  .with(anything, anything, [cloud_config], [runtime_config_1, runtime_config_2], anything, anything, anything)
-                  .and_return(Models::Task.make)
+                  .with(
+                    anything,
+                    anything,
+                    [cloud_config],
+                    a_collection_containing_exactly(runtime_config1, runtime_config2),
+                    anything,
+                    anything,
+                    anything,
+                  ).and_return(Models::Task.make)
 
-                post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
-
+                post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
                 expect_redirect_to_queued_task(last_response)
               end
 
@@ -172,7 +185,7 @@ module Bosh::Director
                 it 'should accept global and team-specific cloud and runtime configs' do
                   deployment_context = [['context', JSON.dump({'cloud_config_ids' => [cloud_config.id, dev_cloud_config.id], 'runtime_config_ids' => [runtime_config_3.id, dev_runtime_config.id]})]]
 
-                  allow_any_instance_of(DeploymentManager)
+                  expect_any_instance_of(DeploymentManager)
                     .to receive(:create_deployment)
                           .with(
                             anything,
@@ -238,7 +251,7 @@ module Bosh::Director
                 before { basic_authorize 'dev-team-member', 'dev-team-member' }
 
                 it 'filter cloud and runtime configs for team' do
-                  allow_any_instance_of(DeploymentManager)
+                  expect_any_instance_of(DeploymentManager)
                     .to receive(:create_deployment)
                           .with(
                             anything,
@@ -261,7 +274,7 @@ module Bosh::Director
                 let!(:deployment) { Models::Deployment.make(name: 'deployment-name').tap { |d| d.teams = [dev_team] } }
 
                 it 'uses the teams of the existing deployment' do
-                  allow_any_instance_of(DeploymentManager)
+                  expect_any_instance_of(DeploymentManager)
                     .to receive(:create_deployment)
                           .with(
                             anything,
@@ -297,7 +310,7 @@ module Bosh::Director
 
           context 'without the "skip_drain" param' do
             it 'does not skip draining' do
-              allow_any_instance_of(DeploymentManager)
+              expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'), anything())
                 .and_return(OpenStruct.new(:id => 1))
@@ -308,7 +321,7 @@ module Bosh::Director
 
           context 'with the "skip_drain" param as "*"' do
             it 'skips draining' do
-              allow_any_instance_of(DeploymentManager)
+              expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'),  anything())
                 .and_return(OpenStruct.new(:id => 1))
@@ -330,7 +343,7 @@ module Bosh::Director
 
           context 'with the "fix" param' do
             it 'passes the parameter' do
-              allow_any_instance_of(DeploymentManager)
+              expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true), anything())
                 .and_return(OpenStruct.new(:id => 1))
@@ -474,7 +487,7 @@ module Bosh::Director
                 match { |actual| actual != unexpected }
               end
               manifest = spec_asset('test_conf.yaml')
-              allow_any_instance_of(DeploymentManager).to receive(:create_deployment).
+              expect_any_instance_of(DeploymentManager).to receive(:create_deployment).
                   with(anything(), not_to_have_body(manifest), anything(), anything(), anything(), anything()).
                   and_return(OpenStruct.new(:id => 'no_content_length'))
               deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
@@ -718,11 +731,10 @@ module Bosh::Director
 
             shared_examples 'skip_drain' do
               it 'drains' do
-                allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
-                allow_any_instance_of(DeploymentManager)
-                    .to receive(:create_deployment)
-                            .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
-                            .and_return(OpenStruct.new(:id => 1))
+                expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment).twice
+                  .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
+                  .and_return(OpenStruct.new(:id => 1))
 
                 put "#{path}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
@@ -732,11 +744,10 @@ module Bosh::Director
               end
 
               it 'skips draining' do
-                allow_any_instance_of(DeploymentManager).to receive(:find_by_name).and_return(deployment)
-                allow_any_instance_of(DeploymentManager)
-                    .to receive(:create_deployment)
-                            .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
-                            .and_return(OpenStruct.new(:id => 1))
+                expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                  .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
+                  .and_return(OpenStruct.new(:id => 1))
 
                 put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
@@ -1073,7 +1084,7 @@ module Bosh::Director
             end
 
             it 'redirects to a delayed job' do
-              allow_any_instance_of(Api::InstanceManager).to receive(:fetch_instances_with_vm) do
+              expect_any_instance_of(Api::InstanceManager).to receive(:fetch_instances_with_vm) do
                 Bosh::Director::Models::Task.make(id: 10002)
               end
 
@@ -1887,7 +1898,15 @@ module Bosh::Director
 
             it 'returns diff with resolved aliases' do
               perform
-              expect(last_response.body).to eq("{\"context\":{\"cloud_config_ids\":[#{cloud_config.id}],\"runtime_config_ids\":[#{runtime_config_2.id},#{runtime_config_3.id}]},\"diff\":[[\"instance_groups: []\",\"removed\"],[\"\",null],[\"name: fake-dep-name\",\"added\"]]}")
+
+              body = JSON.parse(last_response.body)
+              expect(body['context']).to_not be_nil
+              expect(body['context']['cloud_config_ids']).to contain_exactly(cloud_config.id)
+              expect(body['context']['runtime_config_ids']).to contain_exactly(
+                runtime_config_2.id,
+                runtime_config_3.id,
+              )
+              expect(body['diff']).to eq([['instance_groups: []', 'removed'], ['', nil], ['name: fake-dep-name', 'added']])
             end
 
             it 'gives a nice error when request body is not a valid yml' do

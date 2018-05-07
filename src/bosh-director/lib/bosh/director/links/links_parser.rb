@@ -182,8 +182,8 @@ module Bosh::Director::Links
             else
               consumer_intent_params[:alias] = manifest_source['from'] if manifest_source.has_key?('from')
 
-              metadata[:ip_addresses] = manifest_source['ip_addresses'] if manifest_source.has_key? ('ip_addresses')
-              metadata[:network] = manifest_source['network'] if manifest_source.has_key? ('network')
+              metadata[:ip_addresses] = manifest_source['ip_addresses'] if manifest_source.has_key?('ip_addresses')
+              metadata[:network] = manifest_source['network'] if manifest_source.has_key?('network')
               if manifest_source['deployment']
                 from_deployment = Bosh::Director::Models::Deployment.find(name: manifest_source['deployment'])
                 if from_deployment
@@ -200,7 +200,8 @@ module Bosh::Director::Links
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,
           link_original_name: consumer_intent_params[:original_name],
-          link_type: consumer_intent_params[:type]
+          link_type: consumer_intent_params[:type],
+          new_intent_metadata: nil,
         )
         consumer_intent.name = consumer_intent_params[:alias].split(".")[-1]
         consumer_intent.blocked = consumer_intent_params[:blocked]

@@ -526,7 +526,7 @@ describe 'availability zones', type: :integration do
         expect(original_instances.map(&:availability_zone)).to contain_exactly('my-az', 'my-az')
       end
 
-      it 'updates instances when az cloud properties change and deployment is re-deployed', no_hotswap: true do
+      it 'updates instances when az cloud properties change and deployment is re-deployed', no_create_swap_delete: true do
         cloud_hash = cloud_config_hash
         cloud_hash['azs'] = [
           {
@@ -588,7 +588,7 @@ describe 'availability zones', type: :integration do
         expect(current_sandbox.cpi.invocations_for_method('create_vm').count).to eq(2)
       end
 
-      it 'updates instances when az cloud properties change and deployment is re-deployed', hotswap: true do
+      it 'updates instances when az cloud properties change and deployment is re-deployed', create_swap_delete: true do
         cloud_hash = cloud_config_hash
         cloud_hash['azs'] = [
           {

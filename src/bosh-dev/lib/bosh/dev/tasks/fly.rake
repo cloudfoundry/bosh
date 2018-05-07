@@ -4,51 +4,22 @@ namespace :fly do
   # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
-    execute('test-unit', '-p', {
-        DB: (ENV['DB'] || 'postgresql'),
-        DB_VERSION: (ENV['DB_VERSION'] || '9.4')
-    })
+    execute('test-unit', '-p',
+            DB: (ENV['DB'] || 'postgresql'),
+            DB_VERSION: (ENV['DB_VERSION'] || '9.4'))
   end
 
-  # bundle exec rake fly:integration_gocli
+  # bundle exec rake fly:integration
   desc 'Fly integration gocli specs'
-  task :integration_gocli do
-    execute('test-integration-gocli', '-p --inputs-from bosh/integration-postgres-gocli-sha2', {
-        DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil)
-    })
+  task :integration do
+    execute('test-integration-gocli', '-p --inputs-from bosh/integration-postgres-gocli-sha2',
+            DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil))
   end
 
   # bundle exec rake fly:run["pwd ; ls -al"]
   task :run, [:command] do |_, args|
-    execute('run', '-p', {
-        COMMAND: %Q|\"#{args[:command]}\"|
-    })
-  end
-
-  desc 'Fly integration gocli parallel specs'
-  task :integration_gocli_parallel do
-
-    num_workers = 3
-    num_groups = 24
-
-    groups = (1..num_groups).group_by { |i| i%num_workers }.values
-                 .map { |group_values| group_values.join(',') }
-
-    task_names = groups.each_with_index.map do |group, index|
-      name = "integration_#{index + 1}"
-      task name do
-        execute('test-integration-gocli', '-p --inputs-from=bosh/integration-postgres-gocli-sha2', {
-            DB: (ENV['DB'] || 'postgresql'),
-            SPEC_PATH: (ENV['SPEC_PATH'] || nil),
-            GROUP: group,
-            NUM_GROUPS: num_groups
-        })
-      end
-      name
-    end
-
-    multitask _parallel_integration: task_names
-    Rake::MultiTask[:_parallel_integration].invoke
+    execute('run', '-p',
+            COMMAND: %(\"#{args[:command]}\"))
   end
 
   private
@@ -59,12 +30,12 @@ namespace :fly do
   end
 
   def concourse_target
-    "-t #{ENV['CONCOURSE_TARGET']}" if ENV.has_key?('CONCOURSE_TARGET')
+    "-t #{ENV['CONCOURSE_TARGET']}" if ENV.key?('CONCOURSE_TARGET')
   end
 
   def prepare_env(additional_env = {})
     env = {
-        RUBY_VERSION: ENV['RUBY_VERSION'] || RUBY_VERSION
+      RUBY_VERSION: ENV['RUBY_VERSION'] || RUBY_VERSION,
     }
     env.merge!(additional_env)
 
@@ -74,9 +45,11 @@ namespace :fly do
   def execute(task, command_options = nil, additional_env = {})
     env = prepare_env(additional_env)
     sh("#{env} fly #{concourse_target} sync")
-    sh("#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../")
+    sh(
+      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../",
+    )
   end
 end
 
 desc 'Fly unit and integration specs'
-task :fly => %w(fly:unit fly:integration)
+task fly: %w[fly:unit fly:integration]

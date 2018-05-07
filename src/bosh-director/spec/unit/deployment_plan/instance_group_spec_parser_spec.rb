@@ -1774,11 +1774,11 @@ module Bosh::Director
             expect(parsed_instance_group.update.max_in_flight(nil)).to eq(8)
           end
 
-          context 'when provided an instance_group_spec with a strategy' do
-            let(:update) { { 'strategy' => 'duplicate-and-replace-vm' } }
+          context 'when provided an instance_group_spec with a vm_strategy' do
+            let(:update) { { 'vm_strategy' => 'create-swap-delete' } }
 
-            it 'should set the instance_group strategy as duplicate-and-replace-vm' do
-              expect(parsed_instance_group.update.strategy).to eq('duplicate-and-replace-vm')
+            it 'should set the instance_group strategy as create-swap-delete' do
+              expect(parsed_instance_group.update.vm_strategy).to eq('create-swap-delete')
             end
           end
         end

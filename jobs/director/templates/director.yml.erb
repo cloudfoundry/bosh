@@ -111,7 +111,12 @@ if_p('director.backup_schedule') do |backup_schedule|
 end
 
 params['scheduled_jobs'] << {
-  'command' => 'ScheduledOrphanCleanup',
+  'command' => 'ScheduledOrphanedVMCleanup',
+  'schedule' => p('director.vms.cleanup_schedule')
+}
+
+params['scheduled_jobs'] << {
+  'command' => 'ScheduledOrphanedDiskCleanup',
   'schedule' => p('director.disks.cleanup_schedule'),
   'params' => [{'max_orphaned_age_in_days' => p('director.disks.max_orphaned_age_in_days')}]
 }

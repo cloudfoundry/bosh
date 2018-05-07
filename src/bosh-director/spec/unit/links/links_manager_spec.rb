@@ -79,9 +79,9 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
-          type: "control_owner_object_type"
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type'
         )
 
         expect(actual_provider).to eq(expected_provider)
@@ -93,9 +93,9 @@ describe Bosh::Director::Links::LinksManager do
       it 'does not return a provider' do
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
-          type: "control_owner_object_type"
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type'
         )
         expect(actual_provider).to be_nil
       end
@@ -105,7 +105,7 @@ describe Bosh::Director::Links::LinksManager do
       let(:serial_id) { 55 }
 
       it 'returns nothing' do
-        expected_provider = Bosh::Director::Models::Links::LinkProvider.create(
+        Bosh::Director::Models::Links::LinkProvider.create(
           deployment: deployment_model,
           instance_group: 'control_instance_group',
           name: 'control_owner_object_name',
@@ -115,9 +115,9 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_provider = subject.find_provider(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
-          type: "control_owner_object_type"
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
+          type: 'control_owner_object_type'
         )
 
         expect(actual_provider).to be_nil
@@ -279,7 +279,8 @@ describe Bosh::Director::Links::LinksManager do
         actual_link_consumer_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
           link_original_name: 'test_original_link_name',
-          link_type: 'test_link_type'
+          link_type: 'test_link_type',
+          new_intent_metadata: nil,
         )
 
         expect(actual_link_consumer_intent).to eq(expected_link_consumer_intent)
@@ -299,7 +300,8 @@ describe Bosh::Director::Links::LinksManager do
         actual_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
           link_original_name: 'test_original_link_name',
-          link_type: 'my_new_link_type'
+          link_type: 'my_new_link_type',
+          new_intent_metadata: nil,
         )
 
         expect(actual_intent.id).to eq(expected_intent.id)
@@ -312,7 +314,8 @@ describe Bosh::Director::Links::LinksManager do
         expected_intent = subject.find_or_create_consumer_intent(
           link_consumer: link_consumer,
           link_original_name: 'test_original_link_name',
-          link_type: 'test_link_type'
+          link_type: 'test_link_type',
+          new_intent_metadata: {'abc':'def'}
         )
 
         actual_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
@@ -325,6 +328,7 @@ describe Bosh::Director::Links::LinksManager do
 
         expect(actual_intent).to eq(expected_intent)
         expect(actual_intent.serial_id).to eq(serial_id)
+        expect(actual_intent.metadata).to eq({'abc' => 'def'}.to_json)
       end
     end
   end
@@ -342,8 +346,8 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
           type: 'control_owner_object_type'
         )
         expect(actual_consumer).to eq(expected_consumer)
@@ -355,8 +359,8 @@ describe Bosh::Director::Links::LinksManager do
       it 'does not return a consumer' do
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
           type: 'job'
         )
         expect(actual_consumer).to be_nil
@@ -376,8 +380,8 @@ describe Bosh::Director::Links::LinksManager do
 
         actual_consumer = subject.find_consumer(
           deployment_model: deployment_model,
-          instance_group_name: "control_instance_group",
-          name: "control_owner_object_name",
+          instance_group_name: 'control_instance_group',
+          name: 'control_owner_object_name',
           type: 'control_owner_object_type'
         )
         expect(actual_consumer).to be_nil
@@ -504,19 +508,215 @@ describe Bosh::Director::Links::LinksManager do
     end
 
 
-    it 'creates a new link' do
-      expected_link = subject.find_or_create_link(
-        name: "test_link_name",
-        provider_intent: provider_intent,
-        consumer_intent: consumer_intent,
-        link_content: "{}"
-      )
+    context 'when link do not exist' do
+      it 'creates a new link' do
+        expected_link = subject.find_or_create_link(
+          name: 'test_link_name',
+          provider_intent: provider_intent,
+          consumer_intent: consumer_intent,
+          link_content: '{}'
+        )
 
-      actual_link = Bosh::Director::Models::Links::Link.find(
-        name: "test_link_name"
-      )
+        actual_link = Bosh::Director::Models::Links::Link.find(
+          name: 'test_link_name'
+        )
 
-      expect(actual_link).to eq(expected_link)
+        expect(actual_link).to eq(expected_link)
+      end
+    end
+
+    context 'when link already exists' do
+      let(:link_content_1) do
+        {
+          'deployment_name'=>'simple',
+          'domain'=>'bosh',
+          'default_network'=>'a',
+          'networks'=> ['b', 'a'],
+          'instance_group'=>'foobar',
+          'properties'=>{
+            'a'=>'default_a',
+            'b'=>nil,
+            'c'=>'default_c',
+            'nested'=> {
+              'one'=>'default_nested.one',
+              'two'=>'default_nested.two',
+              'three'=>nil,
+            },
+          },
+          'instances'=>[
+            {
+              'name'=>'foobar',
+              'id'=>'e836f635-cece-4531-a519-0bc857b190e8',
+              'index'=>0,
+              'bootstrap'=>true,
+              'az'=>nil,
+              'address'=>'192.168.1.2',
+            }
+          ]
+        }
+      end
+
+      before do
+        @expected_link_1 = subject.find_or_create_link(
+          name: 'test_link_name',
+          provider_intent: provider_intent,
+          consumer_intent: consumer_intent,
+          link_content: link_content_1.to_json
+        )
+
+        actual_link = Bosh::Director::Models::Links::Link.find(
+          name: 'test_link_name'
+        )
+        expect(actual_link).to_not be_nil
+      end
+
+      context 'when content matches' do
+        context 'when single link for provider anc consumer exists' do
+          it 'should return existing link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: 'test_link_name',
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+            )
+
+            expect(expected_link_2).to eq(@expected_link_1)
+          end
+        end
+
+        context 'when multiple links for provider and consumer exist' do
+          before do
+            @expected_link_with_different_content = Bosh::Director::Models::Links::Link.create(
+              name: "test_link_name_1",
+              link_provider_intent_id: provider_intent[:id],
+              link_consumer_intent_id: consumer_intent[:id],
+              link_content: "{\"d\":\"e\", \"f\":\"g\"}",
+            )
+
+            actual_links = Bosh::Director::Models::Links::Link.where(
+              link_provider_intent_id: provider_intent[:id],
+              link_consumer_intent_id: consumer_intent[:id],
+              )
+            expect(actual_links).to_not be_nil
+            expect(actual_links.count).to eq(2)
+          end
+
+          it 'should return correct link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: "test_link_name_1",
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: "{\"d\":\"e\", \"f\":\"g\"}"
+            )
+
+            expect(expected_link_2).to eq(@expected_link_with_different_content)
+            expect(expected_link_2[:link_content]).to eq(@expected_link_with_different_content[:link_content])
+            expect(Bosh::Director::Models::Links::Link.all.count).to eq(2)
+          end
+        end
+      end
+
+      context 'when content hash elements are in different order' do
+        context 'when properties are in different order' do
+          before do
+            link_content_1['properties']['nested'] = {
+              'two'=>'default_nested.two',
+              'one'=>'default_nested.one',
+              'three'=>nil,
+            }
+          end
+
+          it 'should return existing link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: 'test_link_name',
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+              )
+
+            expect(expected_link_2[:id]).to eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(JSON.parse(@expected_link_1[:link_content]).sort)
+          end
+        end
+
+        context 'when networks are in different order' do
+          before do
+            link_content_1['networks'] = ['a', 'b']
+          end
+
+          it 'should return existing link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: 'test_link_name',
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+            )
+
+            expect(expected_link_2[:id]).to eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(JSON.parse(@expected_link_1[:link_content]).sort)
+          end
+        end
+      end
+
+      context 'when content does not match' do
+        context 'when new network is added' do
+          before do
+            link_content_1['networks'] = ['a', 'b', 'c']
+          end
+
+          it 'should return new link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: 'test_link_name',
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+            )
+
+            expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+          end
+        end
+
+        context 'when there is new default network' do
+          before do
+            link_content_1['default_network'] = 'b'
+          end
+
+          it 'should return new link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: 'test_link_name',
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+             )
+
+            expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+          end
+        end
+
+        context 'when properties change' do
+          before do
+            link_content_1['properties']['nested'] = {
+              'two'=>'default_nested.two.changed',
+              'one'=>'default_nested.one.changed',
+              'three'=>'new.default_nested.three',
+            }
+          end
+
+          it 'should return new link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: 'test_link_name',
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json
+            )
+
+            expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+          end
+        end
+      end
     end
   end
 
@@ -2183,25 +2383,51 @@ describe Bosh::Director::Links::LinksManager do
         instance_double(Bosh::Director::DeploymentPlan::Link)
       end
 
-      before do
-        allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
-        allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2])
-        allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+      let(:use_short_dns_addresses) { false }
 
-        allow(link_1).to receive_message_chain(:spec, :to_json).and_return("{'foo_1':'bar_1'}")
-        allow(link_2).to receive_message_chain(:spec, :to_json).and_return("{'foo_2':'bar_2'}")
-        allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
-        allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
-        allow(link_5).to receive_message_chain(:spec, :to_json).and_return("{'foo_5':'bar_5'}")
-        allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
-        allow(deployment_plan).to receive(:model).and_return(deployment_model)
+      before do
+         allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
+         allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2])
+         allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+
+         allow(link_1).to receive_message_chain(:spec, :to_json).and_return("{'foo_1':'bar_1'}")
+         allow(link_2).to receive_message_chain(:spec, :to_json).and_return("{'foo_2':'bar_2'}")
+         allow(link_3).to receive_message_chain(:spec, :to_json).and_return("{'foo_3':'bar_3'}")
+         allow(link_4).to receive_message_chain(:spec, :to_json).and_return("{'foo_4':'bar_4'}")
+         allow(link_5).to receive_message_chain(:spec, :to_json).and_return("{'foo_5':'bar_5'}")
+         allow(deployment_plan).to receive(:instance_group).and_return(instance_group)
+         allow(deployment_plan).to receive(:model).and_return(deployment_model)
+         allow(deployment_plan).to receive(:use_short_dns_addresses?).and_return(use_short_dns_addresses)
        end
 
+      context 'and use_short_dns_addresses is enabled' do
+        let(:use_short_dns_addresses) { true }
+
+        it 'updates the contents field of the provider intents' do
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, true).and_return(link_1)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, true).and_return(link_2)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, true).and_return(link_3)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, true).and_return(link_4)
+
+          expect(provider_1_intent_1).to receive(:save)
+          expect(provider_1_intent_2).to receive(:save)
+          expect(provider_2_intent_1).to receive(:save)
+          expect(provider_2_intent_2).to receive(:save)
+
+          subject.update_provider_intents_contents(link_providers, deployment_plan)
+
+          expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
+          expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
+          expect(provider_2_intent_1.content).to eq("{'foo_3':'bar_3'}")
+          expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+        end
+      end
+
       it 'updates the contents field of the provider intents' do
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'a' => '1'}).and_return(link_1)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'b' => '2'}).and_return(link_2)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'c' => '1'}).and_return(link_3)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'d' => '2'}).and_return(link_4)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, false).and_return(link_1)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, false).and_return(link_2)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false).and_return(link_3)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, false).and_return(link_4)
 
         expect(provider_1_intent_1).to receive(:save)
         expect(provider_1_intent_2).to receive(:save)
@@ -2217,11 +2443,11 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       it 'should only update contents of provider_intents with matching provider serial_id' do
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'a' => '1'}).and_return(link_1)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'b' => '2'}).and_return(link_2)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'c' => '1'}).and_return(link_3)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, {'d' => '2'}).and_return(link_4)
-        expect(Bosh::Director::DeploymentPlan::Link).to_not receive(:new).with(deployment_model.name, instance_group, {'e' => '5'})
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, false).and_return(link_1)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, false).and_return(link_2)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false).and_return(link_3)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, false).and_return(link_4)
+        expect(Bosh::Director::DeploymentPlan::Link).to_not receive(:new).with(deployment_model.name, instance_group, { 'e' => '5' }, false)
 
         expect(provider_2_intent_3).to_not receive(:save)
         allow(provider_2).to receive(:intents).and_return([provider_2_intent_1, provider_2_intent_2, provider_2_intent_3])

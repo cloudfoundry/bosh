@@ -345,4 +345,8 @@ module Bosh::Director
   LinkNetworkLookupError = err(810003)
   LinkDeleteError = err(810004, INTERNAL_SERVER_ERROR)
   LinkNotExternalError = err(810005, BAD_REQUEST)
+  LinkIdRequiredError = err(810006, BAD_REQUEST)
+  LinkInvalidStatusError = err(810007, BAD_REQUEST)
+  LinkInvalidAzsError = err(810008, BAD_REQUEST)
+  LinkProviderNotSharedError = err(810009, FORBIDDEN)
 end

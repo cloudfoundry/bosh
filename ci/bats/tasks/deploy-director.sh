@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 source /etc/profile.d/chruby.sh
-chruby 2.1.7
+chruby ruby
 
 set -e
 

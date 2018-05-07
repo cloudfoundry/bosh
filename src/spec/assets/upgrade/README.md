@@ -1,19 +1,19 @@
 ## How to snapshot the state of the director
 
-To take snapshot of a director state, you'll need to take a snapshot of the database and the blobstore.  
+To take snapshot of a director state, you'll need to take a snapshot of the database and the blobstore.
 
 #### Choose a director version and run an integration test
 Usually you need to choose the state (git sha) of an already released director. Find that in the release section of the bosh github repo
 
-- Clone the director repo somewhere 
+- Clone the director repo somewhere
 - Checkout your chosen commit
 - Run `bundle exec rake spec:integration:install_dependencies` from the src folder
-- Create / Pick an integration test that will server as your utility to create the state
+- Create / Pick an integration test that will serve as your utility to create the state
 - In that integration test, make sure the state of all VMs created when taking the snapshot is set to **`hard stopped`**. Else it will fail!
 - Put a sleep statement at the end of the test to have time to take a snapshot of the DB and blobstore (see next steps)
 
 #### DB Snapshot
-- While your test is sleeping, take a snapshot of the DB. For postgres use `pg_dump`, for  mysql `mysqldump` 
+- While your test is sleeping, take a snapshot of the DB. For postgres use `pg_dump`, for  mysql `mysqldump`
 - The database name is logged when created
 - You'll need to repeat this test for postgres and mysql. Recommendation is to use the CI docker image to spin up these DBs
 - Save postgres SQL dump to a file named `postgres_db_snapshot.sql`
@@ -26,7 +26,7 @@ Usually you need to choose the state (git sha) of an already released director. 
 - Compress blobstore contents while running postgres to a file with name `blobstore_snapshot_with_postgres.tar.gz`
 - Compress blobstore contents while running mysql to a file with name `blobstore_snapshot_with_mysql.tar.gz`
 
-#### Saving to spec/assets/upgrade 
+#### Saving to spec/assets/upgrade
 After generating all the db and blobsore state files that are required
 
 - Create a folder in `spec/assets/upgrade` with name `bosh-{version}-{commit-sha}`. This helps to track which version of the director the state was created from

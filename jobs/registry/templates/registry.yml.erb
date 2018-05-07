@@ -15,11 +15,31 @@
       'port' =>  p('registry.db.port'),
       'database' =>  p('registry.db.database'),
       'connection_options' => p('registry.db.connection_options'),
+      'tls' => {
+        'enabled' => p('registry.db.tls.enabled', false),
+        'cert' => {
+          'ca' => '/var/vcap/jobs/registry/config/db/ca.pem',
+          'certificate' => '/var/vcap/jobs/registry/config/db/client_certificate.pem',
+          'private_key' => '/var/vcap/jobs/registry/config/db/client_private_key.key',
+        },
+        'bosh_internal' => {
+          'ca_provided' => false,
+          'mutual_tls_enabled' => false,
+        }
+      }
     }
   }
 
   if_p('registry.additional_users') do |registry_additional_users|
     params['http']['additional_users'] =  registry_additional_users
+  end
+
+  if_p('registry.db.tls.cert.ca') do
+    params['db']['tls']['bosh_internal']['ca_provided'] = true
+  end
+
+  if_p('registry.db.tls.cert.certificate', 'registry.db.tls.cert.private_key') do
+    params['db']['tls']['bosh_internal']['mutual_tls_enabled'] = true
   end
 
   if_p('aws.region') do |region|

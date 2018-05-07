@@ -45,8 +45,8 @@ module Bosh
           !changes.empty?
         end
 
-        def should_hot_swap?
-          @desired_instance.instance_group&.should_hot_swap?
+        def should_create_swap_delete?
+          @desired_instance.instance_group&.should_create_swap_delete?
         end
 
         def unresponsive_agent?

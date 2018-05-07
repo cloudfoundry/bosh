@@ -47,13 +47,11 @@ module Bosh::Director
         @deployment_plan.skip_drain,
         index_assigner,
         network_reservation_repository,
-        {
-          'recreate' => @deployment_plan.recreate,
-          'use_dns_addresses' => @deployment_plan.use_dns_addresses?,
-          'use_short_dns_addresses' => @deployment_plan.use_short_dns_addresses?,
-          'randomize_az_placement' => @deployment_plan.randomize_az_placement?,
-          'tags' => tags
-        }
+        'recreate' => @deployment_plan.recreate,
+        'use_dns_addresses' => @deployment_plan.use_dns_addresses?,
+        'use_short_dns_addresses' => @deployment_plan.use_short_dns_addresses?,
+        'randomize_az_placement' => @deployment_plan.randomize_az_placement?,
+        'tags' => tags,
       )
       instance_planner = Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, @logger)
       desired_instance_groups = @deployment_plan.instance_groups
@@ -79,7 +77,7 @@ module Bosh::Director
       bind_properties if should_bind_properties
       bind_new_variable_set if should_bind_new_variable_set # should_bind_new is true when doing deploy action
       bind_instance_networks
-      resolve_network_plans_for_hotswapped_instances(desired_instance_groups)
+      resolve_network_plans_for_create_swap_deleted_instances(desired_instance_groups)
       bind_instance_networks
       bind_dns
       bind_links if should_bind_links
@@ -225,12 +223,12 @@ module Bosh::Director
       end
     end
 
-    def resolve_network_plans_for_hotswapped_instances(desired_instance_groups)
+    def resolve_network_plans_for_create_swap_deleted_instances(desired_instance_groups)
       network_planner = DeploymentPlan::NetworkPlanner::Planner.new(@logger)
 
       desired_instance_groups.each do |desired_instance_group|
         desired_instance_group.sorted_instance_plans.each do |desired_instance_plan|
-          next unless desired_instance_plan.should_hot_swap? && desired_instance_plan.recreate_for_non_network_reasons?
+          next unless desired_instance_plan.should_create_swap_delete? && desired_instance_plan.recreate_for_non_network_reasons?
           next unless desired_instance_plan.network_plans.select(&:desired?).empty?
 
           desired_instance_group.networks.each do |network|

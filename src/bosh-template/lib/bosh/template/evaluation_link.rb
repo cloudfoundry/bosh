@@ -8,7 +8,7 @@ module Bosh
       attr_reader :instances
       attr_reader :properties
 
-      def initialize(instances, properties, instance_group, default_network, deployment_name, root_domain, dns_encoder)
+      def initialize(instances, properties, instance_group, default_network, deployment_name, root_domain, dns_encoder, use_short_dns)
         @instances = instances
         @properties = properties
         @instance_group = instance_group
@@ -16,6 +16,7 @@ module Bosh
         @deployment_name = deployment_name
         @root_domain = root_domain
         @dns_encoder = dns_encoder
+        @use_short_dns = use_short_dns
       end
 
       def p(*args)
@@ -51,7 +52,7 @@ module Bosh
           root_domain: @root_domain,
         )
 
-        @dns_encoder.encode_query(full_criteria)
+        @dns_encoder.encode_query(full_criteria, @use_short_dns)
       end
     end
   end

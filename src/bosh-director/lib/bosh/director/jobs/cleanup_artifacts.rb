@@ -16,6 +16,7 @@ module Bosh::Director
 
       def initialize(config)
         @config = config
+        @orphaned_vm_deleter = OrphanedVMDeleter.new(logger)
         @orphan_disk_manager = OrphanDiskManager.new(Config.logger)
         release_manager = Api::ReleaseManager.new
         @stemcell_manager = Api::StemcellManager.new
@@ -46,6 +47,18 @@ module Bosh::Director
           stemcells_to_keep = 2
           dns_blob_age = 3600
           dns_blobs_to_keep = 10
+        end
+
+        orphaned_vms = Models::OrphanedVm.all
+        orphaned_vm_stage = Config.event_log.begin_stage('Deleting orphaned vms', orphaned_vms.count)
+        ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
+          orphaned_vms.each do |orphaned_vm|
+            pool.process do
+              orphaned_vm_stage.advance_and_track(orphaned_vm.cid) do
+                @orphaned_vm_deleter.delete_vm(orphaned_vm, 10)
+              end
+            end
+          end
         end
 
         unused_release_name_and_versions = @releases_to_delete_picker.pick(releases_to_keep)
@@ -112,7 +125,7 @@ module Bosh::Director
           dns_blob_message = ScheduledDnsBlobsCleanup.new(cleanup_params).perform
         end
 
-        "Deleted #{release_count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s), #{exported_releases_count} exported release(s)\n#{dns_blob_message}"
+        "Deleted #{release_count} release(s), #{stemcells_to_delete.count} stemcell(s), #{orphan_disks.count} orphaned disk(s), #{orphaned_vms.count} orphaned vm(s), #{exported_releases_count} exported release(s)\n#{dns_blob_message}"
       end
     end
   end

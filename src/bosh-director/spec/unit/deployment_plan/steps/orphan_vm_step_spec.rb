@@ -6,17 +6,26 @@ module Bosh::Director
       describe OrphanVmStep do
         subject(:step) { described_class.new(vm) }
 
-        let(:instance) { Models::Instance.make }
+        let(:deployment) { Models::Deployment.make(name: 'fake-name-1') }
+        let(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job-1', uuid: 'fake-uuid-1') }
         let!(:vm) do
           Models::Vm.make(
             instance: instance,
             active: false,
             cpi: 'vm-cpi',
             stemcell_api_version: 9876,
+            cid: 'fake-vm-cid-1',
           )
         end
         let!(:ip_address) { Models::IpAddress.make(instance: instance, vm: vm) }
         let(:report) { double(:report) }
+        let(:job) { instance_double(BD::Jobs::BaseJob,username: 'fake-username',  task_id: 'fake-task-id') }
+        let!(:event_manager) { Api::EventManager.new(true) }
+
+        before do
+          allow(job).to receive(:event_manager).and_return(event_manager)
+          allow(Config).to receive(:current_job).and_return(job)
+        end
 
         it 'removes the vm record' do
           expect do
@@ -45,9 +54,10 @@ module Bosh::Director
           expect(orphaned_vm.cid).to eq vm.cid
           expect(orphaned_vm.cloud_properties).to eq instance.cloud_properties
           expect(orphaned_vm.cpi).to eq vm.cpi
-          expect(orphaned_vm.instance_id).to eq instance.id
           expect(orphaned_vm.stemcell_api_version).to eq(9876)
           expect(orphaned_vm.orphaned_at).to be_a Time
+          expect(orphaned_vm.deployment_name).to eq(instance.deployment.name)
+          expect(orphaned_vm.instance_name).to eq(instance.name)
         end
 
         it 'moves ips over to the orphaned vm' do
@@ -64,6 +74,51 @@ module Bosh::Director
           expect(ip1.reload.vm_id).to equal(nil)
           expect(ip2.reload.orphaned_vm_id).to equal(orphaned_vm.id)
           expect(ip2.reload.vm_id).to equal(nil)
+        end
+
+        let(:base_orphan_vm_event) do
+          {
+            user: 'fake-username',
+            action: 'orphan',
+            object_type: 'vm',
+            object_name: 'fake-vm-cid-1',
+            task: 'fake-task-id',
+            deployment: 'fake-name-1',
+            instance: 'fake-job-1/fake-uuid-1',
+          }
+        end
+        it 'stores events' do
+          expect(event_manager).to receive(:create_event).with(base_orphan_vm_event.merge(
+            parent_id: nil,
+            error: nil,
+          )).and_return(instance_double(Models::Event, id: 123))
+
+          expect(event_manager).to receive(:create_event).with(base_orphan_vm_event.merge(
+            parent_id: 123,
+            error: nil,
+          )).and_return(instance_double(Models::Event, id: 456))
+
+          step.perform(report)
+        end
+
+        context 'errors during orphaning' do
+          let(:error) { RuntimeError.new('a fake error') }
+
+          it 'stores events with errors if they occur' do
+            expect(vm).to receive(:destroy).and_raise error
+
+            expect(event_manager).to receive(:create_event).with(base_orphan_vm_event.merge(
+              parent_id: nil,
+              error: nil,
+            )).and_return(instance_double(Models::Event, id: 123))
+
+            expect(event_manager).to receive(:create_event).with(base_orphan_vm_event.merge(
+              parent_id: 123,
+              error: error,
+            )).and_return(instance_double(Models::Event, id: 456))
+
+            expect { step.perform(report) }.to raise_error(error)
+          end
         end
       end
     end

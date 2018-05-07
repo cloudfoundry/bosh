@@ -10,7 +10,7 @@ module Bosh::Director
         let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
 
         let(:swap_instance_plan) { instance_double(DeploymentPlan::InstancePlan) }
-        let(:instance_plans_with_hot_swap_and_needs_duplicate_vm) { [swap_instance_plan] }
+        let(:instance_plans_with_create_swap_delete_and_needs_duplicate_vm) { [swap_instance_plan] }
 
         let(:instance0_plan) { instance_double(DeploymentPlan::InstancePlan) }
         let(:instance1_plan) { instance_double(DeploymentPlan::InstancePlan) }
@@ -26,7 +26,7 @@ module Bosh::Director
 
         let(:deployment_plan) do
           instance_double(DeploymentPlan::Planner,
-            instance_plans_with_hot_swap_and_needs_duplicate_vm: instance_plans_with_hot_swap_and_needs_duplicate_vm,
+            instance_plans_with_create_swap_delete_and_needs_duplicate_vm: instance_plans_with_create_swap_delete_and_needs_duplicate_vm,
             instance_plans_with_missing_vms: instance_plans_with_missing_vms,
             ip_provider: ip_provider,
             availability_zones: [
@@ -51,7 +51,7 @@ module Bosh::Director
         end
 
         describe '#perform' do
-          it 'calls prepare for all agents with instances in deployment_plan that are newly created or hotswap' do
+          it 'calls prepare for all agents with instances in deployment_plan that are newly created or create-swap-deleted' do
             expect(swap_prepare_step).to receive(:perform).with(an_instance_of(Report))
             expect(instance0_prepare_step).to receive(:perform).with(an_instance_of(Report))
             expect(instance1_prepare_step).to receive(:perform).with(an_instance_of(Report))

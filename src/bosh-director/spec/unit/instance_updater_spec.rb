@@ -54,7 +54,7 @@ module Bosh::Director
       instance
     end
     let(:instance_desired_state) { 'stopped' }
-    let(:job) { instance_double(DeploymentPlan::InstanceGroup, default_network: {}, should_hot_swap?: false) }
+    let(:job) { instance_double(DeploymentPlan::InstanceGroup, default_network: {}, should_create_swap_delete?: false) }
     let(:instance_plan) do
       desired_instance = DeploymentPlan::DesiredInstance.new(job)
       instance_plan = DeploymentPlan::InstancePlan.new(
@@ -367,7 +367,7 @@ module Bosh::Director
             end
           end
 
-          context 'when the instance uses duplicate-and-replace-vm strategy' do
+          context 'when the instance uses create-swap-delete strategy' do
             let(:elect_active_vm_step) { instance_double(DeploymentPlan::Steps::ElectActiveVmStep, perform: nil) }
             let!(:inactive_vm_model) { Models::Vm.make(instance_id: instance_model.id) }
             let(:attach_step) { instance_double(DeploymentPlan::Steps::AttachInstanceDisksStep, perform: nil) }
@@ -376,7 +376,7 @@ module Bosh::Director
             let(:orphan_vm_step) { instance_double(DeploymentPlan::Steps::OrphanVmStep, perform: nil) }
 
             before do
-              allow(instance_plan).to receive(:should_hot_swap?).and_return(true)
+              allow(instance_plan).to receive(:should_create_swap_delete?).and_return(true)
               allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
                 .and_return(elect_active_vm_step)
               allow(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)

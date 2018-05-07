@@ -70,15 +70,15 @@ module Bosh::Director
 
     describe '#update_instances' do
       it 'binds vms to instances, creates jobs configurations and updates dns' do
-        job_updater = instance_double(JobUpdater)
-        expect(JobUpdater).to receive(:new).with(
+        instance_group_updater = instance_double(InstanceGroupUpdater)
+        expect(InstanceGroupUpdater).to receive(:new).with(
           ip_provider,
           job,
           an_instance_of(DiskManager),
           template_blob_cache,
           dns_encoder,
-        ).and_return(job_updater)
-        expect(job_updater).to receive(:update).with(no_args)
+        ).and_return(instance_group_updater)
+        expect(instance_group_updater).to receive(:update).with(no_args)
 
         subject.update_instances
       end

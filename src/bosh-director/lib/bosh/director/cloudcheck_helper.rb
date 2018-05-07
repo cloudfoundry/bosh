@@ -126,6 +126,7 @@ module Bosh::Director
             {}
           ).apply(update_config, run_post_start)
         end
+
         InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)
       end
     end

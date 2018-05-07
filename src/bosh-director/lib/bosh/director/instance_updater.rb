@@ -109,7 +109,7 @@ module Bosh::Director
 
         instance_model = instance_plan.instance.model
 
-        if needs_recreate?(instance_plan) || (instance_plan.should_hot_swap? && instance_model.vms.count > 1)
+        if needs_recreate?(instance_plan) || (instance_plan.should_create_swap_delete? && instance_model.vms.count > 1)
           new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
 
           @logger.debug('Failed to update in place. Recreating VM')
@@ -129,7 +129,7 @@ module Bosh::Director
                                 .map(&:model)
                                 .map(&:disk_cid).compact
 
-          if instance_plan.should_hot_swap? && instance_model.vms.count > 1
+          if instance_plan.should_create_swap_delete? && instance_model.vms.count > 1
             old_vm = instance_report.vm
             instance_report.vm = new_vm
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)

@@ -20,8 +20,8 @@ module Bosh::Director
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      job_updater = JobUpdater.new(@deployment.ip_provider, @instance_group, @disk_manager, @template_blob_cache, @dns_encoder)
-      job_updater.update
+      instance_group_updater = InstanceGroupUpdater.new(@deployment.ip_provider, @instance_group, @disk_manager, @template_blob_cache, @dns_encoder)
+      instance_group_updater.update
     end
 
     def delete_vms

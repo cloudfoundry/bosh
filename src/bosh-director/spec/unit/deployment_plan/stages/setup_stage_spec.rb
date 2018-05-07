@@ -10,10 +10,10 @@ module Bosh::Director
         let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
         let(:vm_creator) { instance_double(VmCreator) }
 
-        let(:instance_model_hot_swap) { instance_double(Models::Instance) }
-        let(:deployment_plan_instance_hot_swap) { instance_double(DeploymentPlan::Instance, model: instance_model_hot_swap) }
-        let(:instance_plans_with_hot_swap_and_needs_duplicate_vm) do
-          [instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_hot_swap)]
+        let(:instance_model_create_swap_delete) { instance_double(Models::Instance) }
+        let(:deployment_plan_instance_create_swap_delete) { instance_double(DeploymentPlan::Instance, model: instance_model_create_swap_delete) }
+        let(:instance_plans_with_create_swap_delete_and_needs_duplicate_vm) do
+          [instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_create_swap_delete)]
         end
 
         let(:instance_model_0) { instance_double(Models::Instance) }
@@ -34,9 +34,9 @@ module Bosh::Director
 
         let(:deployment_plan) do
           instance_double(DeploymentPlan::Planner,
-                          instance_plans_with_hot_swap_and_needs_duplicate_vm: instance_plans_with_hot_swap_and_needs_duplicate_vm,
+                          instance_plans_with_create_swap_delete_and_needs_duplicate_vm: instance_plans_with_create_swap_delete_and_needs_duplicate_vm,
                           instance_plans_with_missing_vms: instance_plans_with_missing_vms,
-                          skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm: [],
+                          skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm: [],
                           ip_provider: ip_provider,
                           availability_zones: [
                             instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),
@@ -62,7 +62,7 @@ module Bosh::Director
         context 'when the director database contains no instances' do
           it 'creates vms for instance groups missing vms and checkpoints task' do
             expect(vm_creator).to receive(:create_for_instance_plans).with(
-              instance_plans_with_missing_vms + instance_plans_with_hot_swap_and_needs_duplicate_vm,
+              instance_plans_with_missing_vms + instance_plans_with_create_swap_delete_and_needs_duplicate_vm,
               ip_provider,
               tags,
             )

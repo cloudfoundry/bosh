@@ -1,9 +1,9 @@
 module Bosh::Director
   module DeploymentPlan
     class UpdateConfig
-      STRATEGY_HOT_SWAP = 'duplicate-and-replace-vm'.freeze
-      STRATEGY_LEGACY = 'in-place-replace-vm'.freeze
-      ALLOWED_STRATEGY = [STRATEGY_HOT_SWAP, STRATEGY_LEGACY].freeze
+      VM_STRATEGY_CREATE_SWAP_DELETE = 'create-swap-delete'.freeze
+      VM_STRATEGY_DELETE_CREATE = 'delete-create'.freeze
+      ALLOWED_VM_STRATEGY = [VM_STRATEGY_CREATE_SWAP_DELETE, VM_STRATEGY_DELETE_CREATE].freeze
 
       include ValidationHelper
 
@@ -16,7 +16,7 @@ module Bosh::Director
       attr_reader :canaries_before_calculation
       attr_reader :max_in_flight_before_calculation
 
-      attr_reader :strategy
+      attr_reader :vm_strategy
 
       # @param [Hash] update_config Raw update config from deployment manifest
       # @param [optional, Hash] default_update_config Default update config
@@ -46,18 +46,18 @@ module Bosh::Director
             parse_watch_times(update_watch_times)
         end
 
-        @strategy = safe_property(
+        @vm_strategy = safe_property(
           update_config,
-          'strategy',
+          'vm_strategy',
           class: String,
           optional: true,
-          default: default_update_config ? default_update_config.strategy : Config.default_update_strategy,
+          default: default_update_config ? default_update_config.vm_strategy : Config.default_update_vm_strategy,
         )
 
-        unless @strategy.nil?
-          unless UpdateConfig::ALLOWED_STRATEGY.include?(@strategy)
+        unless @vm_strategy.nil?
+          unless UpdateConfig::ALLOWED_VM_STRATEGY.include?(@vm_strategy)
             raise ValidationInvalidValue,
-                  "Invalid strategy '#{strategy}', valid strategies are: #{UpdateConfig::ALLOWED_STRATEGY.join(', ')}"
+                  "Invalid vm_strategy '#{vm_strategy}', valid strategies are: #{UpdateConfig::ALLOWED_VM_STRATEGY.join(', ')}"
           end
         end
 
@@ -86,7 +86,7 @@ module Bosh::Director
           'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
           'serial' => serial?,
-          'strategy' => @strategy.nil? ? STRATEGY_LEGACY : @strategy,
+          'vm_strategy' => @vm_strategy.nil? ? VM_STRATEGY_DELETE_CREATE : @vm_strategy,
         }
       end
 

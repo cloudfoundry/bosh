@@ -12,3 +12,4 @@ The contents of docs include:
 * [NATS Server](nats.md)
 * [Director Database Schema Diagram](director_schema/README.md)
 * [Code style](code_style.md)
+* [Bumping blobs](bumping_blobs.md)

@@ -111,7 +111,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'properties' => props,
         'template' => %w[foo bar],
         'update' => update,
-        'strategy' => 'duplicate-and-replace-vm',
       }
     end
 
@@ -577,50 +576,50 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
   end
 
-  describe '#hot_swap?' do
-    context 'when strategy is duplicate-and-replace-vm' do
+  describe '#create_swap_delete?' do
+    context 'when vm_strategy is create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'duplicate-and-replace-vm'
+        allow(update_config).to receive(:vm_strategy).and_return 'create-swap-delete'
       end
 
-      it { should be_hot_swap }
+      it { should be_create_swap_delete }
     end
 
-    context 'when strategy is not duplicate-and-replace-vm' do
+    context 'when vm_strategy is not create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'something-else'
+        allow(update_config).to receive(:vm_strategy).and_return 'something-else'
       end
 
-      it { should_not be_hot_swap }
+      it { should_not be_create_swap_delete }
     end
   end
 
-  describe '#should_hot_swap?' do
-    context 'when strategy is duplicate-and-replace-vm' do
+  describe '#should_create_swap_delete?' do
+    context 'when vm_strategy is create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'duplicate-and-replace-vm'
+        allow(update_config).to receive(:vm_strategy).and_return 'create-swap-delete'
         subject.networks = [job_network]
       end
 
       context 'when instance_group does not have static ips' do
         let(:job_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork, static?: false) }
 
-        it { should be_should_hot_swap }
+        it { should be_should_create_swap_delete }
       end
 
       context 'when instance_group has static ips' do
         let(:job_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork, static?: true) }
 
-        it { should_not be_should_hot_swap }
+        it { should_not be_should_create_swap_delete }
       end
     end
 
-    context 'when strategy is not duplicate-and-replace-vm' do
+    context 'when vm_strategy is not create-swap-delete' do
       before do
-        allow(update_config).to receive(:strategy).and_return 'something-else'
+        allow(update_config).to receive(:vm_strategy).and_return 'something-else'
       end
 
-      it { should_not be_should_hot_swap }
+      it { should_not be_should_create_swap_delete }
     end
   end
 

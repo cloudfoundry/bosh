@@ -18,14 +18,13 @@ module Bosh::Director::Links
         deployment: deployment_model,
         instance_group: instance_group_name,
         name: name,
-        type: type
+        type: type,
       ).tap do |result|
         if result.serial_id != @serial_id
           result.serial_id = @serial_id
           result.save
         end
       end
-
     end
 
     def find_provider(
@@ -51,7 +50,7 @@ module Bosh::Director::Links
     )
       intent = Bosh::Director::Models::Links::LinkProviderIntent.find(
         link_provider: link_provider,
-        original_name: link_original_name
+        original_name: link_original_name,
       )
 
       if intent.nil?
@@ -59,14 +58,12 @@ module Bosh::Director::Links
           link_provider: link_provider,
           original_name: link_original_name,
           type: link_type,
-          )
+        )
       else
         intent.type = link_type
       end
 
-      if intent.serial_id != @serial_id
-        intent.serial_id = @serial_id
-      end
+      intent.serial_id = @serial_id if intent.serial_id != @serial_id
       intent.save
     end
 
@@ -80,7 +77,7 @@ module Bosh::Director::Links
         deployment: deployment_model,
         instance_group: instance_group_name,
         name: name,
-        type: type
+        type: type,
       ).tap do |result|
         if result.serial_id != @serial_id
           result.serial_id = @serial_id
@@ -100,18 +97,19 @@ module Bosh::Director::Links
         instance_group: instance_group_name,
         name: name,
         type: type,
-        serial_id: deployment_model.links_serial_id
+        serial_id: deployment_model.links_serial_id,
       )
     end
 
     def find_or_create_consumer_intent(
       link_consumer:,
       link_original_name:,
-      link_type:
+      link_type:,
+      new_intent_metadata:
     )
       intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
         link_consumer: link_consumer,
-        original_name: link_original_name
+        original_name: link_original_name,
       )
 
       if intent.nil?
@@ -119,8 +117,13 @@ module Bosh::Director::Links
           link_consumer: link_consumer,
           original_name: link_original_name,
           type: link_type,
+          metadata: new_intent_metadata.to_json,
         )
       else
+        if !new_intent_metadata.nil? && !new_intent_metadata.keys.empty?
+          existing_metadata = JSON.parse(intent.metadata) || {}
+          intent.metadata = existing_metadata.merge(new_intent_metadata).to_json
+        end
         intent.type = link_type
       end
 
@@ -134,20 +137,31 @@ module Bosh::Director::Links
       consumer_intent:,
       link_content:
     )
-      found_link = Bosh::Director::Models::Links::Link.find(
+      found_link = nil
+      found_links = Bosh::Director::Models::Links::Link.where(
         link_provider_intent_id: provider_intent && provider_intent[:id],
         link_consumer_intent_id: consumer_intent && consumer_intent[:id],
-        link_content: link_content
       )
 
+      found_links&.each do |link|
+        db_content = JSON.parse(link.link_content)
+        new_content = JSON.parse(link_content)
+        if are_equal(db_content, new_content)
+          found_link = link
+          break
+        end
+      end
+
       unless found_link
-        Bosh::Director::Models::Links::Link.create(
+        return Bosh::Director::Models::Links::Link.create(
           name: name,
           link_provider_intent_id: provider_intent && provider_intent[:id],
           link_consumer_intent_id: consumer_intent && consumer_intent[:id],
-          link_content: link_content
+          link_content: link_content,
         )
       end
+
+      found_link
     end
 
     def find_link(
@@ -158,7 +172,7 @@ module Bosh::Director::Links
       Bosh::Director::Models::Links::Link.find(
         link_provider_intent_id: provider_intent && provider_intent[:id],
         link_consumer_intent_id: consumer_intent && consumer_intent[:id],
-        name: name
+        name: name,
       )
     end
 
@@ -176,7 +190,7 @@ module Bosh::Director::Links
         consumer.intents.each do |consumer_intent|
           next if consumer_intent.serial_id != @serial_id
           begin
-            resolve_consumer_intent(consumer_intent, global_use_dns_entry, dry_run)
+            resolve_consumer_intent_and_generate_link(consumer_intent, global_use_dns_entry, dry_run)
           rescue => e
             errors.push e.message
           end
@@ -251,7 +265,7 @@ module Bosh::Director::Links
     end
 
     def update_provider_intents_contents(link_providers, deployment_plan)
-      link_providers.select {|provider| provider.type == 'job' && provider.serial_id == deployment_plan.model.links_serial_id}.each do |provider|
+      link_providers.select { |provider| provider.type == 'job' && provider.serial_id == deployment_plan.model.links_serial_id }.each do |provider|
         instance_group = deployment_plan.instance_group(provider.instance_group)
         provider.intents.each do |provider_intent|
           next if provider_intent.serial_id != deployment_plan.model.links_serial_id
@@ -260,7 +274,7 @@ module Bosh::Director::Links
 
           properties = metadata['mapped_properties']
 
-          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties).spec.to_json
+          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_short_dns_addresses?).spec.to_json
           provider_intent.content = content
           provider_intent.save
         end
@@ -274,20 +288,16 @@ module Bosh::Director::Links
         provider.intents.each do |provider_intent|
           provider_intent.delete unless provider_intent.serial_id == serial_id
         end
-        unless provider.serial_id == serial_id
-          provider.delete
-        end
+        provider.delete unless provider.serial_id == serial_id
       end
 
       deployment_model.link_consumers.each do |consumer|
-        next if consumer.type == "external"
+        next if consumer.type == 'external'
         consumer.intents.each do |consumer_intent|
           if consumer_intent.serial_id == serial_id
             Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).each do |link|
               instances_links = Bosh::Director::Models::Links::InstancesLink.where(link_id: link.id, serial_id: consumer_intent.serial_id)
-              if instances_links.count == 0
-                link.delete
-              end
+              link.delete if instances_links.count == 0
             end
           else
             consumer_intent.destroy
@@ -297,7 +307,7 @@ module Bosh::Director::Links
       end
     end
 
-    def resolve_consumer_intent(consumer_intent, global_use_dns_entry, dry_run)
+    def resolve_consumer_intent_and_generate_link(consumer_intent, global_use_dns_entry, dry_run)
       consumer_intent_metadata = {}
       consumer_intent_metadata = JSON.parse(consumer_intent.metadata) unless consumer_intent.metadata.nil?
       is_manual_link = !!consumer_intent_metadata['manual_link']
@@ -306,12 +316,14 @@ module Bosh::Director::Links
         provider_intent = get_manual_link_provider_for_consumer(consumer_intent)
         link_content = provider_intent.content || '{}'
 
-        find_or_create_link(
-          name: consumer_intent.original_name,
-          provider_intent: provider_intent,
-          consumer_intent: consumer_intent,
-          link_content: link_content
-        ) unless dry_run
+        unless dry_run
+          find_or_create_link(
+            name: consumer_intent.original_name,
+            provider_intent: provider_intent,
+            consumer_intent: consumer_intent,
+            link_content: link_content,
+          )
+        end
       else
         found_provider_intents = provider_intents_for_consumer_intent(consumer_intent, consumer_intent_metadata)
         consumer = consumer_intent.link_consumer
@@ -329,7 +341,7 @@ module Bosh::Director::Links
         unless dry_run
           provider_intent = found_provider_intents.first
 
-          #TODO Links: discuss about possibility of value of content being empty; will cause nil class error
+          # TODO: Links: discuss about possibility of value of content being empty; will cause nil class error
           if is_explicit_link
             content = provider_intent.content || '{}'
             provider_intent_networks = JSON.parse(content)['networks']
@@ -345,14 +357,14 @@ module Bosh::Director::Links
             name: consumer_intent.original_name,
             provider_intent: provider_intent,
             consumer_intent: consumer_intent,
-            link_content: link_content
+            link_content: link_content,
           )
         end
       end
     end
 
     def migrate_links_provider_instance_group(deployment_model, instance_group_model)
-      instance_group_list = instance_group_model.migrated_from.map{|h| h['name']}
+      instance_group_list = instance_group_model.migrated_from.map { |h| h['name'] }
 
       instance_group_list.each do |instance_group_name|
         deployment_model.link_providers.each do |link_provider|
@@ -366,7 +378,7 @@ module Bosh::Director::Links
     end
 
     def migrate_links_consumer_instance_group(deployment_model, instance_group_model)
-      instance_group_list = instance_group_model.migrated_from.map{|h| h['name']}
+      instance_group_list = instance_group_model.migrated_from.map { |h| h['name'] }
 
       instance_group_list.each do |instance_group_name|
         deployment_model.link_consumers.each do |link_consumer|
@@ -434,7 +446,7 @@ module Bosh::Director::Links
         deployment_model: consumer_intent.link_consumer.deployment,
         instance_group_name: consumer_instance_group,
         name: consumer_name,
-        type: 'manual'
+        type: 'manual',
       )
 
       error_msg = "Failed to find manual link provider for consumer '#{consumer_intent_name}' in job '#{consumer_name}' in instance group '#{consumer_intent_name}'"
@@ -448,7 +460,7 @@ module Bosh::Director::Links
 
     def update_addresses(provider_intent_content, preferred_network_name, global_use_dns_entry, link_use_ip_address)
       provider_intent_content_copy = Bosh::Common::DeepCopy.copy(provider_intent_content)
-      if !provider_intent_content_copy.has_key?('default_network')
+      if !provider_intent_content_copy.key?('default_network')
         unless link_use_ip_address.nil?
           raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'
         end
@@ -506,13 +518,13 @@ module Bosh::Director::Links
         if is_explicit_link
           all_link_paths = ''
           found_provider_intents.each do |provider_intent|
-            all_link_paths = all_link_paths + "\n   #{provider_intent.original_name}#{" aliased as '#{provider_intent.name}'" unless provider_intent.name.nil?} (job: #{provider_intent.link_provider.name}, instance group: #{provider_intent.link_provider.instance_group})"
+            all_link_paths += "\n   #{provider_intent.original_name}#{" aliased as '#{provider_intent.name}'" unless provider_intent.name.nil?} (job: #{provider_intent.link_provider.name}, instance group: #{provider_intent.link_provider.instance_group})"
           end
           raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias '#{consumer_intent.name}' found for job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
         else
           all_link_paths = ''
           found_provider_intents.each do |provider_intent|
-            all_link_paths = all_link_paths + "\n   Deployment: #{provider_intent.link_provider.deployment.name}, instance group: #{provider_intent.link_provider.instance_group}, job: #{provider_intent.link_provider.name}, link name/alias: #{provider_intent.name}"
+            all_link_paths += "\n   Deployment: #{provider_intent.link_provider.deployment.name}, instance group: #{provider_intent.link_provider.instance_group}, job: #{provider_intent.link_provider.name}, link name/alias: #{provider_intent.name}"
           end
           raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of type '#{consumer_intent.type}' found for consumer link '#{consumer_intent.original_name}' in job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
         end
@@ -529,6 +541,34 @@ module Bosh::Director::Links
         @logger.warn(message)
         @event_logger.warn(message)
       end
+    end
+
+    def are_equal(content1, content2)
+      if content1.is_a?(Hash)
+        return false unless content1.keys.count.equal?(content2.keys.count)
+        content1.each_key do |key|
+          return false unless content2.has_key?(key) #only checking for key, not value
+          if content1[key].is_a?(Enumerable) && content1[key].class == content2[key].class
+            return false unless are_equal(content1[key], content2[key])
+          else
+            return false unless content1[key].eql?(content2[key])
+          end
+        end
+      end
+
+      if content1.is_a?(Array)
+        return false unless content2.count.equal?(content1.count)
+        content1.each do |item|
+          return false unless content2.include?(item)
+          if item.is_a?(Enumerable) && item.class == content2.fetch(content2.find_index(item)).class
+            return false unless are_equal(item, content2.fetch(content2.find_index(item)))
+          else
+            return false unless item.eql?(content2.fetch(content2.find_index(item)))
+          end
+        end
+      end
+
+      true
     end
   end
 end

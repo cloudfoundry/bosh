@@ -63,7 +63,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        if @instance_plan.should_hot_swap? &&
+        if @instance_plan.should_create_swap_delete? &&
            (@instance_plan.recreate_for_non_network_reasons? || desired_reservations.length.positive?)
           unplaced_existing_reservations += existing_network_plans.map(&:reservation)
           existing_network_plans = []

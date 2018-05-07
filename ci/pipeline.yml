@@ -58,7 +58,7 @@ shared:
       outputs:
       - name: bosh-src
       params:
-        RUBY_VERSION: 2.4.2
+        RUBY_VERSION: 2.4.4
       run:
         path: /bin/bash
         args:
@@ -81,7 +81,7 @@ shared:
 
   - &deploy-director
     task: deploy-director
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/deploy-director.yml
     params:
       BAT_INFRASTRUCTURE: vsphere
@@ -98,20 +98,23 @@ shared:
       BOSH_VSPHERE_VCENTER_VM_FOLDER:       ((vcenter-vm-folder))
       BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: ((vcenter-template-folder))
       BOSH_VSPHERE_VCENTER_DISK_PATH:       ((vcenter-disk-path))
+      BOSH_VSPHERE_VCENTER_RP:              ((vcenter-rp))
+      DEPLOY_ARGS: |
+        -o bosh-deployment/vsphere/resource-pool.yml
 
   - &prepare-bats-config
     task: prepare-bats
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
 
   - &run-bats
     task: run-bats
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bats/ci/tasks/run-bats.yml
 
   - &teardown
     task: teardown
-    tags: [vsphere-v5.1]
+    tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/destroy-director.yml
 
   - &slack-alert
@@ -137,7 +140,6 @@ jobs:
         timeout: 1h
         file: bosh-src/ci/tasks/test-unit.yml
         params:
-          RUBY_VERSION: 2.4.2
           DB: sqlite
         on_failure:
           <<: *slack-alert
@@ -147,59 +149,34 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-main-mysql-5.5
+        - get: bosh-main-mysql-5.6
+        - get: bosh-main-mysql-5.7
       - aggregate:
         - task: test-mysql-5.5
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.5
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              RUBY_VERSION: 2.4.2
-              DB: mysql
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-mysql-5.5
+          params:
+            DB: mysql
         - task: test-mysql-5.6
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.6
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              RUBY_VERSION: 2.4.2
-              DB: mysql
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-mysql-5.6
+          params:
+            DB: mysql
         - task: test-mysql-5.7
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              RUBY_VERSION: 2.4.2
-              DB: mysql
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-mysql-5.7
+          params:
+            DB: mysql
         on_failure:
           <<: *slack-alert
 
@@ -208,80 +185,46 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-main-postgres-9.3
+        - get: bosh-main-postgres-9.4
+        - get: bosh-main-postgres-9.5
+        - get: bosh-main-postgres-9.6
       - aggregate:
         - task: test-postgres-9.3
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.3
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              RUBY_VERSION: 2.4.2
-              DB: postgresql
-              DB_VERSION: 9.3
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.3
+          params:
+            DB: postgresql
+            DB_VERSION: 9.3
         - task: test-postgres-9.4
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.4
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              RUBY_VERSION: 2.4.2
-              DB: postgresql
-              DB_VERSION: 9.4
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.4
+          params:
+            DB: postgresql
+            DB_VERSION: 9.4
         - task: test-postgres-9.5
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.5
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              RUBY_VERSION: 2.4.2
-              DB: postgresql
-              DB_VERSION: 9.5
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.5
+          params:
+            DB: postgresql
+            DB_VERSION: 9.5
         - task: test-postgres-9.6
           timeout: 2h
           privileged: true
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-postgres-9.6
-            inputs:
-              - name: bosh-src
-            run:
-              path: bosh-src/ci/tasks/test-unit.sh
-            params:
-              RUBY_VERSION: 2.4.2
-              DB: postgresql
-              DB_VERSION: 9.6
-
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-9.6
+          params:
+            DB: postgresql
+            DB_VERSION: 9.6
         on_failure:
           <<: *slack-alert
 
@@ -296,7 +239,6 @@ jobs:
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
           params:
-            RUBY_VERSION: 2.4.2
             DB: mysql
             DB_HOST: ((mysql-rds-host))
             DB_USER: ((mysql-rds-user))
@@ -309,7 +251,6 @@ jobs:
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
           params:
-            RUBY_VERSION: 2.4.2
             DB: postgresql
             DB_HOST: ((postgresql-rds-host))
             DB_USER: ((postgresql-rds-user))
@@ -367,45 +308,24 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-7"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-8"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-9"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-1"]
+        params:
+          DB:           postgresql
+          SHA2_MODE:    true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: parallel-runtime-log/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: integration-mysql-gocli-sha1
     public: true
@@ -419,42 +339,24 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-4"]
-          params:
-            DB:           mysql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS: 24
-            GROUP:      1,4,7,10,13,16,19,22
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-5"]
-          params:
-            DB:           mysql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS: 24
-            GROUP:      2,5,8,11,14,17,20,23
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-6"]
-          params:
-            DB:           mysql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS: 24
-            GROUP:      3,6,9,12,15,18,21,24
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-2"]
+        params:
+          DB:           mysql
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: parallel-runtime-log/parallel_runtime_rspec.log
+          acl: public-read
+
 
   - name: integration-db-tls-postgres
     public: true
@@ -468,46 +370,25 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-postgres"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-            DB_TLS:       true
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-3"]
+        params:
+          DB:           postgresql
+          SHA2_MODE:    true
+          DB_TLS:       true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: parallel-runtime-log/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: integration-db-tls-postgres-hotswap
     public: true
@@ -521,49 +402,26 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-hotswap"]
-          params:
-            DB:           postgresql
-            DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-hotswap"]
-          params:
-            DB:           postgresql
-            DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-            DB_TLS:       true
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-db-tls-hotswap"]
-          params:
-            DB:           postgresql
-            DEFAULT_UPDATE_STRATEGY: duplicate-and-replace-vm
-            RUBY_VERSION: 2.4.2
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-            DB_TLS:       true
-
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        tags: ["bosh-integration-4"]
+        params:
+          DB:           postgresql
+          DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
+          SHA2_MODE:    true
+          DB_TLS:       true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: parallel-runtime-log/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: integration-db-tls-mysql
     public: true
@@ -577,79 +435,40 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: bosh-main-mysql-5.7
+        - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
 
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          tags: ["bosh-integration-db-tls-mysql"]
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-            - name: bosh-src
-            - name: bosh-cli
-            - name: bosh-agent
-            run:
-              path: bosh-src/ci/tasks/test-integration-gocli.sh
-            params:
-              DB:           mysql
-              RUBY_VERSION: 2.4.2
-              NUM_GROUPS:   24
-              GROUP:        1,4,7,10,13,16,19,22
-              SHA2_MODE:    true
-              DB_TLS:       true
-        - task: test-group-2
-          privileged: true
-          tags: ["bosh-integration-db-tls-mysql"]
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-            - name: bosh-src
-            - name: bosh-cli
-            - name: bosh-agent
-            run:
-              path: bosh-src/ci/tasks/test-integration-gocli.sh
-            params:
-              DB:           mysql
-              RUBY_VERSION: 2.4.2
-              NUM_GROUPS:   24
-              GROUP:        2,5,8,11,14,17,20,23
-              SHA2_MODE:    true
-              DB_TLS:       true
-        - task: test-group-3
-          privileged: true
-          tags: ["bosh-integration-db-tls-mysql"]
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: bosh/main-mysql-5.7
-            inputs:
-            - name: bosh-src
-            - name: bosh-cli
-            - name: bosh-agent
-            run:
-              path: bosh-src/ci/tasks/test-integration-gocli.sh
-            params:
-              DB:           mysql
-              RUBY_VERSION: 2.4.2
-              NUM_GROUPS:   24
-              GROUP:        3,6,9,12,15,18,21,24
-              SHA2_MODE:    true
-              DB_TLS:       true
-
+      - task: tests
+        privileged: true
+        tags: ["bosh-integration-5"]
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: bosh/main-mysql-5.7
+          inputs:
+          - name: bosh-src
+          - name: bosh-cli
+          - name: bosh-agent
+          outputs:
+          - name: parallel-runtime-log
+          run:
+            path: bosh-src/ci/tasks/test-integration-gocli.sh
+          params:
+            RUBY_VERSION: 2.4.4
+            DB:           mysql
+            SHA2_MODE:    true
+            DB_TLS:       true
         on_failure:
           <<: *slack-alert
+
+      - put: integration-tests-parallel-runtime
+        params:
+          file: parallel-runtime-log/parallel_runtime_rspec.log
+          acl: public-read
 
   - name: upgrade-tests
     public: true
@@ -666,18 +485,16 @@ jobs:
         - task: upgrade-with-postgres
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
-          tags: ["bosh-integration"]
+          tags: ["bosh-integration-6"]
           params:
             DB: postgresql
-            RUBY_VERSION: 2.4.2
 
         - task: upgrade-with-mysql
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
-          tags: ["bosh-integration"]
+          tags: ["bosh-integration-7"]
           params:
             DB: mysql
-            RUBY_VERSION: 2.4.2
 
   - name: load-tests-postgres
     public: true
@@ -797,10 +614,10 @@ jobs:
     - task: test
       privileged: true
       file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration"]
+      tags: ["bosh-integration-8"]
       params:
         BOSH_SRC_PATH: bosh-src/src
-        RUBY_VERSION: 2.4.2
+        RUBY_VERSION: 2.4.4
       on_failure:
         <<: *slack-alert
 
@@ -962,6 +779,7 @@ jobs:
     plan:
       - aggregate:
         - get: bosh-src
+          version: every
           trigger: true
           passed:
           - bats-ubuntu
@@ -1030,6 +848,14 @@ resources:
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
       versioned_file: "bosh-dev-release.tgz"
+
+  - name: integration-tests-parallel-runtime
+    type: s3
+    source:
+      bucket: ((integration_runtime_bucket))
+      access_key_id: ((integration_runtime_access_key_id))
+      secret_access_key: ((integration_runtime_secret_access_key))
+      versioned_file: "parallel_runtime_rspec.log"
 
   - name: davcli
     type: s3
@@ -1146,6 +972,41 @@ resources:
       token: ((tracker_api_token))
       project_id: ((tracker_project_id))
       tracker_url: https://www.pivotaltracker.com
+
+  - name: bosh-main-mysql-5.5
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.5
+
+  - name: bosh-main-mysql-5.6
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.6
+
+  - name: bosh-main-mysql-5.7
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.7
+
+  - name: bosh-main-postgres-9.3
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.3
+
+  - name: bosh-main-postgres-9.4
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.4
+
+  - name: bosh-main-postgres-9.5
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.5
+
+  - name: bosh-main-postgres-9.6
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.6
 
 resource_types:
 - name: slack-notification

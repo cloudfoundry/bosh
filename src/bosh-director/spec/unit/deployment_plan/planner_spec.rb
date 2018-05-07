@@ -154,10 +154,10 @@ module Bosh::Director
           expect(planner.vm_resources_cache).to be_instance_of(VmResourcesCache)
         end
 
-        describe '#instance_plans_with_hot_swap_and_needs_duplicate_vm' do
+        describe '#instance_plans_with_create_swap_delete_and_needs_duplicate_vm' do
           before { subject.add_instance_group(instance_group) }
           let(:instance_plan) { instance_double(InstancePlan) }
-          let(:should_hot_swap?) { true }
+          let(:should_create_swap_delete?) { true }
           let(:instance_group) do
             instance_double(
               'Bosh::Director::DeploymentPlan::InstanceGroup',
@@ -165,29 +165,29 @@ module Bosh::Director
               canonical_name: 'fake-job1-cname',
               service?: true,
               errand?: false,
-              should_hot_swap?: should_hot_swap?,
+              should_create_swap_delete?: should_create_swap_delete?,
               unignored_instance_plans_needing_duplicate_vm: [instance_plan],
             )
           end
 
-          it 'should return instance groups that are duplicate-and-replace-vm enabled' do
-            expect(subject.instance_plans_with_hot_swap_and_needs_duplicate_vm).to eq([instance_plan])
+          it 'should return instance groups that are create-swap-delete enabled' do
+            expect(subject.instance_plans_with_create_swap_delete_and_needs_duplicate_vm).to eq([instance_plan])
           end
 
-          context 'when no instance groups have duplicate-and-replace-vm enabled' do
-            let(:should_hot_swap?) { false }
+          context 'when no instance groups have create-swap-delete enabled' do
+            let(:should_create_swap_delete?) { false }
 
             it 'should return empty array' do
-              expect(subject.instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
+              expect(subject.instance_plans_with_create_swap_delete_and_needs_duplicate_vm).to be_empty
             end
           end
         end
 
-        describe '#skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm' do
+        describe '#skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm' do
           before { subject.add_instance_group(instance_group) }
           let(:instance_plan) { instance_double(InstancePlan) }
-          let(:should_hot_swap?) { false }
-          let(:hot_swap?) { true }
+          let(:should_create_swap_delete?) { false }
+          let(:create_swap_delete?) { true }
           let(:instance_group) do
             instance_double(
               'Bosh::Director::DeploymentPlan::InstanceGroup',
@@ -195,31 +195,31 @@ module Bosh::Director
               canonical_name: 'fake-job1-cname',
               service?: true,
               errand?: false,
-              should_hot_swap?: should_hot_swap?,
-              hot_swap?: hot_swap?,
+              should_create_swap_delete?: should_create_swap_delete?,
+              create_swap_delete?: create_swap_delete?,
               unignored_instance_plans_needing_duplicate_vm: [instance_plan],
             )
           end
 
-          it 'returns instances that want duplicate-and-replace-vm but cannot be' do
-            expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to eq([instance_plan])
+          it 'returns instances that want create-swap-delete but cannot be' do
+            expect(subject.skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm).to eq([instance_plan])
           end
 
-          context 'when instance_group does not want duplicate-and-replace-vm' do
-            let(:should_hot_swap?) { false }
-            let(:hot_swap?) { false }
+          context 'when instance_group does not want create-swap-delete' do
+            let(:should_create_swap_delete?) { false }
+            let(:create_swap_delete?) { false }
 
             it 'should return empty array' do
-              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
+              expect(subject.skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm).to be_empty
             end
           end
 
-          context 'when instance_group wants duplicate-and-replace-vm and can be' do
-            let(:should_hot_swap?) { true }
-            let(:hot_swap?) { true }
+          context 'when instance_group wants create-swap-delete and can be' do
+            let(:should_create_swap_delete?) { true }
+            let(:create_swap_delete?) { true }
 
             it 'should return empty array' do
-              expect(subject.skipped_instance_plans_with_hot_swap_and_needs_duplicate_vm).to be_empty
+              expect(subject.skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm).to be_empty
             end
           end
         end

@@ -2,17 +2,21 @@
 name: registry
 
 templates:
+  pre-start.erb: bin/pre-start
   bpm.yml: config/bpm.yml
   bosh-registry: bin/bosh-registry
   cacert.pem.erb:   config/cacert.pem
   registry.yml.erb: config/registry.yml
+  db_ca.pem.erb: config/db/ca.pem
+  db_client_certificate.pem.erb: config/db/client_certificate.pem
+  db_client_private_key.key.erb: config/db/client_private_key.key
   registry: bin/registry
 
 packages:
   - registry
   - libpq
   - mysql
-  - ruby-2.4-r3
+  - ruby-2.4-r4
 
 properties:
   registry.port:
@@ -58,6 +62,15 @@ properties:
     default:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
+  registry.db.tls.enabled:
+    description: Flag for enabling tls for database
+    default: false
+  registry.db.tls.cert.ca:
+    description: Database CA certificate
+  registry.db.tls.cert.certificate:
+    description: Client certificate for mutual TLS connections to DB
+  registry.db.tls.cert.private_key:
+    description: Client private key for mutual TLS connections to DB
 
   # For AWS
   aws.credentials_source:

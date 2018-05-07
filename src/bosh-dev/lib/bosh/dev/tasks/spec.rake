@@ -3,7 +3,6 @@ require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/sandbox/nginx'
-require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
 require 'bosh/dev/sandbox/services/uaa_service'
@@ -18,54 +17,39 @@ require 'fileutils'
 namespace :spec do
   namespace :integration do
     desc 'Run BOSH gocli integration tests against a local sandbox'
-    task :gocli => :install_dependencies do
+    task gocli: :install_dependencies do
       run_integration_specs(spec_path: 'spec/gocli/integration')
     end
 
     desc 'Run health monitor integration tests against a local sandbox'
-    task :health_monitor => :install_dependencies do
+    task health_monitor: :install_dependencies do
       run_integration_specs(spec_path: 'spec/gocli/integration', tags: 'hm')
     end
 
     desc 'Run BOSH gocli upgrade tests against a local sandbox'
-    task :upgrade => :install_dependencies do
+    task upgrade: :install_dependencies do
       run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
     end
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
-      FileUtils.mkdir_p("tmp")
-      File.open("tmp/compilation.log", "w") do |compilation_log|
+      FileUtils.mkdir_p('tmp')
+      File.open('tmp/compilation.log', 'w') do |compilation_log|
         unless ENV['SKIP_DEPS'] == 'true'
           unless ENV['SKIP_NGINX'] == 'true'
             nginx = Bosh::Dev::Sandbox::Nginx.new(Bosh::Core::Shell.new(compilation_log))
             install_with_retries(nginx)
           end
 
-          unless ENV['SKIP_TCP_PROXY_NGINX'] == 'true'
-            tcp_proxy_nginx = Bosh::Dev::Sandbox::TCPProxyNginx.new(Bosh::Core::Shell.new(compilation_log))
-            install_with_retries(tcp_proxy_nginx)
-          end
+          Bosh::Dev::Sandbox::UaaService.install unless ENV['SKIP_UAA'] == 'true'
 
-          unless ENV['SKIP_UAA'] == 'true'
-            Bosh::Dev::Sandbox::UaaService.install
-          end
+          Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
 
-          unless ENV['SKIP_CONFIG_SERVER'] == 'true'
-            Bosh::Dev::Sandbox::ConfigServerService.install
-          end
+          Bosh::Dev::LegacyAgentManager.install unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
 
-          unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
-            Bosh::Dev::LegacyAgentManager.install
-          end
+          Bosh::Dev::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
 
-          unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
-            Bosh::Dev::VerifyMultidigestManager.install
-          end
-
-          unless ENV['SKIP_GNATSD'] == 'true'
-            Bosh::Dev::GnatsdManager.install
-          end
+          Bosh::Dev::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
         end
 
         compile_dependencies
@@ -86,23 +70,21 @@ namespace :spec do
       retries = 3
       begin
         to_install.install
-      rescue
+      rescue StandardError
         retries -= 1
-        retry if retries > 0
+        retry if retries.positive?
         raise
       end
     end
 
-    def run_integration_specs(run_options={})
+    def run_integration_specs(run_options = {})
       Bosh::Dev::Sandbox::Workspace.clean
 
-      num_processes   = ENV['NUM_GROUPS']
-      num_processes ||= ENV['TRAVIS'] ? 4 : nil
+      num_processes = ENV['NUM_PROCESSES']
 
       options = {}
       options.merge!(run_options)
       options[:count] = num_processes if num_processes
-      options[:group] = ENV['GROUP'] if ENV['GROUP']
 
       spec_path = options.fetch(:spec_path)
 
@@ -110,16 +92,20 @@ namespace :spec do
       run_in_parallel(spec_path, options)
     end
 
-    def run_in_parallel(test_path, options={})
+    def run_in_parallel(test_path, options = {})
       spec_path = ENV['SPEC_PATH'] || ''
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
-      group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
       tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
       command = begin
-        if '' != spec_path
+        if spec_path != ''
           "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
         else
-          "#{tag} https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec -o '--format documentation'"
+          <<-BASH
+          #{tag} https_proxy= http_proxy= bundle exec parallel_test \
+            --runtime-log parallel_runtime_rspec.log \
+            -m 0.5 \
+            '#{test_path}'#{count} --type rspec
+          BASH
         end
       end
       puts command
@@ -131,20 +117,20 @@ namespace :spec do
     end
   end
 
-  task :integration_gocli => %w(spec:integration:gocli)
+  task integration_gocli: %w[spec:integration:gocli]
 
-  task :upgrade => %w(spec:integration:upgrade)
+  task upgrade: %w[spec:integration:upgrade]
 
   desc 'Run all release unit tests (ERB templates)'
   task :release_unit do
-    puts "Release unit tests (ERB templates)"
-    sh("cd .. && rspec --tty --backtrace -c -f p spec/")
+    puts 'Release unit tests (ERB templates)'
+    sh('cd .. && rspec --tty --backtrace -c -f p spec/')
   end
 
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
   task :template_test_unit do
-    puts "Template test unit tests (ERB templates)"
-    sh("rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb")
+    puts 'Template test unit tests (ERB templates)'
+    sh('rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb')
   end
 
   namespace :unit do
@@ -172,9 +158,9 @@ namespace :spec do
     end
   end
 
-  desc "Run all unit tests"
-  task :unit => %w(spec:release_unit spec:unit:ruby spec:template_test_unit)
+  desc 'Run all unit tests'
+  task unit: %w[spec:release_unit spec:unit:ruby spec:template_test_unit]
 end
 
 desc 'Run unit and gocli integration specs'
-task :spec => %w(spec:unit spec:integration:gocli)
+task spec: %w[spec:unit spec:integration:gocli]
