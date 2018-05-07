@@ -16,6 +16,7 @@ RUN \
     libxslt-dev \
     locales \
     locales-all \
+    ruby \
     tar \
     wget \
   && apt-get autoremove \
