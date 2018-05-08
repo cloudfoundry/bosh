@@ -36,7 +36,7 @@ require_secure_transport=ON
 max_allowed_packet=6M' >> /etc/mysql/my.cnf
     fi
 
-    sudo service mysql start
+    service mysql start
     sleep 5
     ;;
   postgresql)
@@ -108,7 +108,7 @@ pushd bosh-src/src
   bundle_exit_code=$?
 
   if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
-    sudo service mysql stop
+    service mysql stop
   fi
 popd
 

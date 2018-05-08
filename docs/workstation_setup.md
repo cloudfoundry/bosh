@@ -98,11 +98,6 @@ If you have trouble bundling, you may have to install pg gem manually by specify
 
 ## Notes
 
-### Custom bosh-cli
-
-To use a custom go-cli in integration tests change `bosh` in  `src/spec/gocli/support/bosh_go_cli_runner.rb`.
-You can also export `BOSH_CLI` to point to a binary.
-
 ### Special instructions for nginx on  Mac
 
     Before running `rake spec:integration:install_dependencies`, modify the nginx packaging script to fix compilation on OSX.
@@ -124,30 +119,3 @@ You can also export `BOSH_CLI` to point to a binary.
          make
          make install
     ```
-
-### Cleaning the sandbox cache manually
-
-Preparing the sandbox for integration tests caches dependencies like nginx.
-To force a recompilation either delete the complete `src/tmp` folder or just the 'work' folder:
-
-```
-bosh/src$ rm -fr tmp/integration-nginx-work/
-```
-
-### Running integration test databases in docker
-
-Instead of installing MySQL and PostgreSQL locally use `docker-compose` to spin up containers:
-
-```
-cd docs
-docker-compose up
-```
-
-### Reset integration test environment
-
-1. Delete blobs/ folder at the root of your bosh repo
-2. Do a `bosh sync-blobs`
-3. Delete `src/tmp` folder in your repo
-4. Run `bundle install` in `src` folder
-5. Run `bundle exec rake spec:integration:download_bosh_agent`
-6. Run `bundle exec rake spec:integration:install_dependencies`

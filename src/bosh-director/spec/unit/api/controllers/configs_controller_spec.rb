@@ -248,7 +248,7 @@ module Bosh::Director
     describe 'POST', '/' do
       let(:config_data) { 'a: 1' }
       let(:request_body) do
-        JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => config_data)
+        JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => config_data, 'expected_latest_id' => '0')
       end
 
       describe 'when user has admin access' do
@@ -272,26 +272,102 @@ module Bosh::Director
           )
         end
 
-        it 'creates a new config when one exists with different content' do
-          Models::Config.make(
-            name: 'my-name',
-            type: 'my-type',
-            content: 'a: 123',
-          )
-
-          expect do
-            post(
-              '/',
-              JSON.generate(
-                'name' => 'my-name',
-                'type' => 'my-type',
-                'content' => 'b: 12345',
-              ),
-              'CONTENT_TYPE' => 'application/json',
+        context 'when config exists with different content' do
+          it 'creates a new config if expected latest id is not specified' do
+            Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123',
             )
-          end.to change(Models::Config, :count)
+            expect do
+              post(
+                '/',
+                JSON.generate(
+                  'name' => 'my-name',
+                  'type' => 'my-type',
+                  'content' => 'b: 12345',
+                ),
+                'CONTENT_TYPE' => 'application/json',
+              )
+            end.to change(Models::Config, :count)
+            expect(last_response.status).to eq(201)
+          end
 
-          expect(last_response.status).to eq(201)
+          it 'does not create a new config if expected latest id is not latest id' do
+            config1 = Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123',
+            )
+            config2 = Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 456',
+            )
+            expect do
+              post(
+                '/',
+                JSON.generate(
+                  'name' => 'my-name',
+                  'type' => 'my-type',
+                  'content' => 'b: 789',
+                  'expected_latest_id' => config1.id,
+                ),
+                'CONTENT_TYPE' => 'application/json',
+              )
+            end.to_not change(Models::Config, :count)
+            expect(last_response.status).to eq(412)
+            expect(JSON.parse(last_response.body)['latest_id']).to eq(config2.id.to_s)
+            expect(JSON.parse(last_response.body)['description']).to include(
+              "Latest Id: '#{config2.id}' does not match expected latest id",
+            )
+          end
+
+          it 'does not create a new config if using expected latest id with empty configs' do
+            expect do
+              post(
+                '/',
+                JSON.generate(
+                  'name' => 'my-name',
+                  'type' => 'my-type',
+                  'content' => 'b: 789',
+                  'expected_latest_id' => '123',
+                ),
+                'CONTENT_TYPE' => 'application/json',
+              )
+            end.to_not change(Models::Config, :count)
+            expect(last_response.status).to eq(412)
+            expect(JSON.parse(last_response.body)['latest_id']).to eq('0')
+            expect(JSON.parse(last_response.body)['description']).to include(
+              "Latest Id: '0' does not match expected latest id",
+            )
+          end
+
+          it 'creates a new config if expected latest id matches latest id' do
+            Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123',
+            )
+            config2 = Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 456',
+            )
+            expect do
+              post(
+                '/',
+                JSON.generate(
+                  'name' => 'my-name',
+                  'type' => 'my-type',
+                  'content' => 'b: 12345',
+                  'expected_latest_id' => config2.id,
+                ),
+                'CONTENT_TYPE' => 'application/json',
+              )
+            end.to change(Models::Config, :count)
+            expect(last_response.status).to eq(201)
+          end
         end
 
         it 'ignores config when config already exists' do
@@ -354,7 +430,7 @@ module Bosh::Director
         end
 
         context 'when the content is no YAML hash' do
-          let(:request_body) { '{"name":"n","type":"t","content":"I am a string"}' }
+          let(:request_body) { '{"name":"n","type":"t","content":"I am a string","expected_latest_id":"0"}' }
 
           it 'return 400' do
             post '/', request_body, 'CONTENT_TYPE' => 'application/json'
@@ -367,7 +443,7 @@ module Bosh::Director
 
         context 'when `type` argument is missing' do
           let(:request_body) do
-            JSON.generate('name' => 'my-name', 'content' => '{}')
+            JSON.generate('name' => 'my-name', 'content' => '{}', 'expected_latest_id' => '0')
           end
 
           it 'creates a new event and return 400' do
@@ -388,7 +464,7 @@ module Bosh::Director
 
         context 'when `name` argument is missing' do
           let(:request_body) do
-            JSON.generate('type' => 'my-type', 'content' => '{}')
+            JSON.generate('type' => 'my-type', 'content' => '{}', 'expected_latest_id' => '0')
           end
 
           it 'creates a new event and return 400' do
@@ -641,7 +717,7 @@ module Bosh::Director
                   new_config,
                   'CONTENT_TYPE' => 'application/json',
                 )
-                expect(last_response.body).to eq('{"diff":[]}')
+                expect(last_response.body).to match('\{"from":\{"id":"\d+"\}\,"diff":\[\]}')
               end
             end
 
@@ -656,13 +732,14 @@ module Bosh::Director
                 )
                 expect(last_response.status).to eq(200)
                 json_response = JSON.parse(last_response.body)
-                expect(json_response).to eq(
+                expect(json_response).to match(
                   'diff' => [
                     ['azs:', nil],
                     ['- name: az2', 'removed'],
                     ['  properties:', 'removed'],
                     ['    some-key: "<redacted>"', 'removed'],
                   ],
+                  'from' => { 'id' => anything }
                 )
               end
             end
@@ -719,17 +796,17 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
+              expect(last_response.body).to eq('{"from":{"id":"0"},"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
             end
           end
 
           context 'when previous config is nil' do
             before do
-              Models::Config.create(
+              @config_id = Models::Config.create(
                 type: 'myType',
                 name: 'myName',
                 raw_manifest: nil,
-              )
+              ).id
             end
             let(:new_content) { YAML.dump(config_hash_with_one_az) }
 
@@ -740,7 +817,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}')
+              expect(last_response.body).to eq(%({"from":{"id":"#{@config_id}"},"diff":[["azs:","added"],["- name: az1","added"],["  properties: {}","added"]]}))
             end
           end
         end
@@ -776,7 +853,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+              expect(last_response.body).to eq(%'{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
             end
           end
 
@@ -812,7 +889,7 @@ module Bosh::Director
                 'CONTENT_TYPE' => 'application/json',
               )
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
+              expect(last_response.body).to eq(%'{"diff":[["a: 5","removed"],["",null],["b: 5","added"]]}')
             end
 
             context 'where the `content` is an empty config' do

@@ -160,6 +160,23 @@ describe 'registry.yml.erb' do
     end
   end
 
+  context 'registry with multiple users settings' do
+    before do
+      deployment_manifest_fragment['properties']['registry']['additional_users'] = [
+          {'username' => 'admin1', 'password' => 'pass1'},
+          {'username' => 'admin2', 'password' => 'pass2'},
+      ]
+    end
+    it 'renders database properties' do
+      expect(parsed_yaml['http']['additional_users']).to eq([
+          {'username' => 'admin1', 'password' => 'pass1'},
+          {'username' => 'admin2', 'password' => 'pass2'},
+      ])
+      expect(parsed_yaml['http']['user']).to eq('user')
+      expect(parsed_yaml['http']['password']).to eq('password')
+    end
+  end
+
   context 'aws' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {

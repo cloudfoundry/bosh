@@ -49,6 +49,25 @@ describe 'cli configs', type: :integration do
       expect(output).to include('Succeeded')
       expect(exit_code).to eq(0)
     end
+
+    it 'uploads when expected latest id matches' do
+      expect(bosh_runner.run("update-config --type=my-type --name=default #{config.path}")).to include('Succeeded')
+      id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
+
+      output = bosh_runner.run("update-config --expected-latest-id=#{id} --type=my-type --name=default #{config.path}")
+      expect(output).to include('Succeeded')
+    end
+
+    it 'does not upload when expected latest id is not the latest' do
+      expect(bosh_runner.run("update-config --type=my-type --name=default #{config.path}")).to include('Succeeded')
+      id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
+
+      output = bosh_runner.run(
+        "update-config --expected-latest-id=#{id.to_i - 1} --type=my-type --name=default #{config.path}",
+        failure_expected: true,
+      )
+      expect(output).to include('Config update rejected')
+    end
   end
 
   context 'can get a config' do
