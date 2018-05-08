@@ -61,7 +61,7 @@ module Bosh::Director
         info_response = cloud.info || {}
         cpi_api_version = info_response.fetch('api_version', 1)
       rescue
-        # ignored
+        cpi_api_version = 1
       end
       supported_cpi_version = [cpi_api_version, MAX_SUPPORTED_CPI_VERSION].min
       Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, supported_cpi_version)
