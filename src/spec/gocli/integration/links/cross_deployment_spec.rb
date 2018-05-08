@@ -32,6 +32,7 @@ describe 'cross deployment links', type: :integration do
   end
 
   def add_extra_networks_with_single_ip(cloud_config_hash)
+
     new_network_b = {
       'name' => 'b',
       'subnets' => [{
@@ -373,6 +374,110 @@ describe 'cross deployment links', type: :integration do
       expect do
         deploy_simple_manifest(manifest_hash: second_manifest)
       end.to raise_error(RuntimeError, /Can't resolve link 'node1' for job 'node' in instance group 'second_deployment_node' in deployment 'second'/)
+    end
+  end
+
+  describe 'when director local_dns is enabled' do
+    with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true})
+
+    before do
+      upload_links_release
+      upload_stemcell
+
+      add_extra_networks_with_single_ip(cloud_config)
+      upload_cloud_config(cloud_config_hash: cloud_config) 
+      first_manifest
+    end
+
+    context 'when link is provided and consumed (cross-deployment) and provider has default DNS enabled' do
+      before do
+        deploy_simple_manifest(manifest_hash: first_manifest)
+        deploy_simple_manifest(manifest_hash: second_manifest)
+      end
+
+      it 'should create link with DNS' do
+        second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+        second_deployment_template = YAML.safe_load(second_deployment_instance.read_job_template('node', 'config.yml'))
+
+        expect(second_deployment_template['instances']['node1_ips'][0]).to match(/.first-deployment-node.a.first.bosh/)
+        expect(second_deployment_template['instances']['node2_ips'][0]).to match(/.second-deployment-node.a.second.bosh/)
+      end
+    end
+
+    context 'when provider use_dns_address is not specified (default get director behaviour)' do
+      context 'when consumer specifies use_dns_address as FALSE' do
+        let(:features_hash) { { 'use_dns_addresses' => false } }
+        before do
+          deploy_simple_manifest(manifest_hash: first_manifest)
+          second_manifest['features'] = features_hash
+          deploy_simple_manifest(manifest_hash: second_manifest)
+        end
+
+        it 'should create link with DNS only for cross-deployment' do
+          second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+          second_deployment_template = YAML.safe_load(second_deployment_instance.read_job_template('node', 'config.yml'))
+
+          expect(second_deployment_template['instances']['node1_ips'][0]).to match(/.first-deployment-node.a.first.bosh/)
+          expect(second_deployment_template['instances']['node2_ips']).to eq(['192.168.1.11'])
+        end
+      end
+
+      context 'when consumer specifies use_dns_address as TRUE' do
+        let(:features_hash) { { 'use_dns_addresses' => true } }
+        before do
+          deploy_simple_manifest(manifest_hash: first_manifest)
+          second_manifest['features'] = features_hash
+          deploy_simple_manifest(manifest_hash: second_manifest)
+        end
+
+        it 'should create link with DNS address for all links' do
+          second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+          second_deployment_template = YAML.safe_load(second_deployment_instance.read_job_template('node', 'config.yml'))
+
+          expect(second_deployment_template['instances']['node1_ips'][0]).to match(/.first-deployment-node.a.first.bosh/)
+          expect(second_deployment_template['instances']['node2_ips'][0]).to match(/.second-deployment-node.a.second.bosh/)
+        end
+
+        context 'when consumer explicitly request for ip_address' do
+          let(:second_deployment_consumed_links) do
+            {
+              'node1' => { 'from' => 'node1', 'deployment' => 'first', 'ip_addresses' => true },
+              'node2' => { 'from' => 'node2', 'deployment' => 'second' },
+            }
+          end
+
+          it 'should create link with IP for cross-deployment link and DNS for implicit link' do
+            second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+            second_deployment_template = YAML.safe_load(second_deployment_instance.read_job_template('node', 'config.yml'))
+
+            expect(second_deployment_template['instances']['node1_ips']).to eq(['192.168.1.10'])
+            expect(second_deployment_template['instances']['node2_ips'][0]).to match(/.second-deployment-node.a.second.bosh/)
+          end
+        end
+
+      end
+    end
+
+    context 'when provider use_dns_address is FALSE' do
+      let(:features_hash) { { 'use_dns_addresses' => false } }
+
+      before do
+        first_manifest['features'] = features_hash
+        deploy_simple_manifest(manifest_hash: first_manifest)
+
+        deploy_output = deploy_simple_manifest(manifest_hash: second_manifest)
+        task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+        @task_debug_logs = bosh_runner.run("task --debug #{task_id}")
+      end
+
+      it 'should create link with IP' do
+        second_deployment_instance = director.instance('second_deployment_node', '0', deployment_name: 'second')
+        second_deployment_template = YAML.safe_load(second_deployment_instance.read_job_template('node', 'config.yml'))
+
+        expect(second_deployment_template['instances']['node1_ips']).to eq(['192.168.1.10'])
+        expect(second_deployment_template['instances']['node2_ips'][0]).to match(/.second-deployment-node.a.second.bosh/)
+        expect(@task_debug_logs).to match("DirectorJobRunner: DNS address not available for the link provider instance: first_deployment_node")
+      end
     end
   end
 end

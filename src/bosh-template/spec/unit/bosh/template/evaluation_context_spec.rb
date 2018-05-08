@@ -11,6 +11,7 @@ module Bosh
       end
 
       let(:dns_encoder) { double('some dns encoder', encode_query: 'some.fqdn') }
+      let(:instances) { [{'address' => '123.456.789.101', 'properties' => {'prop1' => 'value'}}] }
 
       before do
         @spec = {
@@ -29,7 +30,7 @@ module Bosh
               'instance_group' => 'fake-instance-group-1',
               'default_network' => 'default',
               'domain' => 'otherbosh',
-              'instances' => [{'address' => '123.456.789.101', 'properties' => {'prop1' => 'value'}}]
+              'instances' => instances
             },
             'fake-link-2' => {
               'deployment_name' => 'fake-deployment',
@@ -220,6 +221,12 @@ module Bosh
           end
         end
 
+        describe 'when use_short_dns is enabled in provider' do
+          let(:instances) { [{'address' => 'q-n1s0.q-g1.bosh', 'properties' => {'prop1' => 'value'}}] }
+          it 'should evaluate the short dns for instances' do
+            expect(eval_template("<%= link('fake-link-1').instances[0].address %>", @context)).to eq('q-n1s0.q-g1.bosh')
+          end
+        end
       end
 
       describe 'p' do

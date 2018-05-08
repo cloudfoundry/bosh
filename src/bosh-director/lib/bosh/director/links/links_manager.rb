@@ -274,7 +274,7 @@ module Bosh::Director::Links
 
           properties = metadata['mapped_properties']
 
-          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_short_dns_addresses?).spec.to_json
+          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_dns_addresses?, deployment_plan.use_short_dns_addresses?).spec.to_json
           provider_intent.content = content
           provider_intent.save
         end
@@ -460,6 +460,7 @@ module Bosh::Director::Links
 
     def update_addresses(provider_intent_content, preferred_network_name, global_use_dns_entry, link_use_ip_address)
       provider_intent_content_copy = Bosh::Common::DeepCopy.copy(provider_intent_content)
+      provider_dns_enabled = provider_intent_content_copy['use_dns_addresses']
       if !provider_intent_content_copy.key?('default_network')
         unless link_use_ip_address.nil?
           raise Bosh::Director::LinkLookupError, 'Unable to retrieve default network from provider. Please redeploy provider deployment'
@@ -474,26 +475,21 @@ module Bosh::Director::Links
           end
         end
       else
-        if link_use_ip_address.nil?
-          use_dns_entries = global_use_dns_entry
-        else
-          use_dns_entries = !link_use_ip_address
-        end
-
         network_name = preferred_network_name || provider_intent_content_copy['default_network']
         provider_intent_content_copy['default_network'] = network_name
 
         provider_intent_content_copy['instances'].each do |instance|
-          if use_dns_entries
-            desired_addresses = instance['dns_addresses']
+          if link_use_ip_address.nil?
+            desired_addresses = provider_dns_enabled ? instance['dns_addresses'] : instance['addresses']
           else
-            desired_addresses = instance['addresses']
+            desired_addresses = link_use_ip_address ? instance['addresses'] : instance['dns_addresses']
+            global_use_dns_entry = !link_use_ip_address
           end
 
           raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{network_name}'" unless desired_addresses.key?(network_name)
 
           instance['address'] = desired_addresses[network_name]
-          log_warning_if_applicable(instance['address'], use_dns_entries, instance['name'], instance['id'])
+          log_warning_if_applicable(instance['address'], global_use_dns_entry, instance['name'], instance['id'])
         end
       end
 
