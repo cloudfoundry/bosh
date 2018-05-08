@@ -9,7 +9,7 @@ cleanup() {
   echo "Cleaning up"
 
   if [ "$DB" = "mysql" ]; then
-    sudo service mysql stop
+    service mysql stop
   fi
 }
 
@@ -23,7 +23,7 @@ case "$DB" in
     mount -t tmpfs -o size=256M tmpfs /var/lib/mysql
     mv /var/lib/mysql-src/* /var/lib/mysql/
 
-    sudo service mysql start
+    service mysql start
     ;;
   postgresql)
     mkdir /tmp/postgres
