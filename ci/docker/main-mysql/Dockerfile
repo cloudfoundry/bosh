@@ -14,7 +14,9 @@ RUN \
 # install the correct version of mysql {
 ARG DB_VERSION
 RUN \
-  apt-get update \
+  echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections \
+  && echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections \
+  && apt-get update \
   && apt-get install -y \
     mysql-server$DB_VERSION \
   && apt-get autoremove \
