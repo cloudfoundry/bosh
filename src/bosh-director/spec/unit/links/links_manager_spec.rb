@@ -1038,6 +1038,7 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         context 'and the providers are ambiguous' do
+          let(:consumable) { true }
           before do
             provider = Bosh::Director::Models::Links::LinkProvider.create(
               deployment: deployment_model,
@@ -1052,15 +1053,16 @@ describe Bosh::Director::Links::LinksManager do
               original_name: 'pi1',
               name: 'provider_alias',
               type: 'foo',
-              serial_id: serial_id
-            )
+              serial_id: serial_id,
+              consumable: consumable
+              )
 
             Bosh::Director::Models::Links::LinkProviderIntent.create(
               link_provider: provider,
               original_name: 'pi2',
               name: 'provider_alias2',
               type: 'foo',
-              serial_id: serial_id
+              serial_id: serial_id,
             )
           end
 
@@ -1071,6 +1073,17 @@ describe Bosh::Director::Links::LinksManager do
             }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for consumer link 'ci1' in job 'c1' in instance group 'ig1'. All of these match:
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
+          end
+
+          context 'when one of the providers is not consumable' do
+            let(:consumable) { false }
+            let(:dry_run) { false }
+
+            it 'resolves the consumer' do
+              expect(deployment_model.link_consumers.count).to be > 0
+              expect {subject.resolve_deployment_links(deployment_model, options)}.to_not raise_error
+              expect(Bosh::Director::Models::Links::Link.count).to eq(1)
+            end
           end
 
           context 'when link consumer intent is optional' do

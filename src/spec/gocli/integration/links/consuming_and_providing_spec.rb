@@ -316,4 +316,88 @@ describe 'consuming and providing', type: :integration do
       end
     end
   end
+
+  context 'when the consumer implicitly consumes a link' do
+    context 'when there are multiple providers providing a link and one of the providers is set to nil' do
+      let(:db_provider) {{ 'as' => 'link_db_alias' }}
+      let(:provider_instance_group_1) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'provider_instance_group_1',
+          jobs: [{
+                   'name' => 'database',
+                   'provides' => { 'db' => 'nil' },
+                   'properties' => {
+                     'foo' => 'props_db_bar',
+                   },
+                 },
+                 {
+                   'name' => 'backup_database',
+                   'provides' => { 'backup_db' => { 'as' => 'link_backup_db_alias' } },
+                   'properties' => {
+                     'foo' => 'props_backup_db_bar',
+                   },
+                 }],
+          instances: 1,
+          )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:provider_instance_group_2) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'provider_instance_group_2',
+          jobs: [{
+                   'name' => 'database',
+                   'provides' => { 'db' => db_provider },
+                   'properties' => {
+                     'foo' => 'props_db_bar',
+                   },
+                 },
+                 {
+                   'name' => 'backup_database',
+                   'provides' => { 'backup_db' => { 'as' => 'link_backup_db_alias2' } },
+                   'properties' => {
+                     'foo' => 'props_backup_db_bar',
+                   },
+                 }],
+          instances: 1,
+          )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:consumer_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'consumer_instance_group',
+          jobs: [
+            {
+              'name' => 'api_server',
+              'consumes' => {
+                'db' => { 'from' => 'link_db_alias' },
+                'backup_db' => { 'from' => 'link_backup_db_alias' },
+              },
+            },
+          ],
+          instances: 1,
+          )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [provider_instance_group_1, provider_instance_group_2, consumer_instance_group]
+        manifest
+      end
+
+      it 'can resolve the links' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        consumer_instance = director.instance('consumer_instance_group', '0')
+        template = YAML.safe_load(consumer_instance.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['main_properties']).to eq('props_db_bar')
+        expect(template['databases']['backup_properties']).to eq('props_backup_db_bar')
+      end
+    end
+  end
 end

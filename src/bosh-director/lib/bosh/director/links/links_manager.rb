@@ -430,6 +430,7 @@ module Bosh::Director::Links
             end
 
             next if provider_intent.serial_id != deployment.links_serial_id
+            next unless provider_intent.consumable
             found_provider_intents << provider_intent
           end
         end
