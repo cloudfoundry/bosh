@@ -31,16 +31,42 @@ module Bosh::Director
         let(:ip1) { NetAddr::CIDR.create('192.168.0.1').to_i }
         let(:ip2) { NetAddr::CIDR.create('192.168.0.2').to_i }
 
-        before do
-          ip_model1 = Models::IpAddress.make(address_str: ip1.to_s, network_name: 'fake-network')
-          instance_model.add_ip_address(ip_model1)
-          ip_model2 = Models::IpAddress.make(address_str: ip2.to_s, network_name: 'fake-network')
-          instance_model.add_ip_address(ip_model2)
+        let(:ip_model1) do
+          Models::IpAddress.make(address_str: ip1.to_s, network_name: 'fake-network')
         end
 
-        it 'creates reservations based on IP addresses' do
-          reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
-          expect(reservations.map(&:ip)).to eq([ip1, ip2])
+        let(:ip_model2) do
+          Models::IpAddress.make(address_str: ip2.to_s, network_name: 'fake-network')
+        end
+
+        context 'when there is a last VM with IP addresses' do
+          before do
+            vm1 = BD::Models::Vm.make(instance_id: instance_model.id)
+            vm2 = BD::Models::Vm.make(instance_id: instance_model.id)
+
+            vm2.add_ip_address(ip_model1)
+            vm2.add_ip_address(ip_model2)
+
+            instance_model.add_vm vm1
+            instance_model.add_vm vm2
+          end
+
+          it 'creates reservations from the last VM associated with an instance' do
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            expect(reservations.map(&:ip)).to eq([ip1, ip2])
+          end
+        end
+
+        context 'when there are no IP addresses on the last VM or no VM' do
+          before do
+            instance_model.add_ip_address(ip_model1)
+            instance_model.add_ip_address(ip_model2)
+          end
+
+          it 'creates reservations based on IP addresses' do
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            expect(reservations.map(&:ip)).to eq([ip1, ip2])
+          end
         end
       end
 

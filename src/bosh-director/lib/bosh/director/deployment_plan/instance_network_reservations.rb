@@ -19,7 +19,8 @@ module Bosh::Director
         reservations = new(logger)
         reservations.logger.debug("Creating instance network reservations from database for instance '#{instance_model}'")
 
-        ip_addresses = instance_model.ip_addresses.clone
+        ip_addresses = Array(instance_model.vms_dataset.order_by(:id).last&.ip_addresses).clone
+        ip_addresses = instance_model.ip_addresses.clone if ip_addresses.empty?
 
         ip_addresses.each do |ip_address|
           reservations.add_existing(instance_model, deployment, ip_address.network_name, ip_address.address, ip_address.type, 'manual')

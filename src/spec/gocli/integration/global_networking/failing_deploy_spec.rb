@@ -1,5 +1,18 @@
 require_relative '../../spec_helper'
 
+def make_subnet_spec(range, static_ips, zone_names = nil)
+  spec = {
+    'range' => range,
+    'gateway' => NetAddr::CIDR.create(range)[1].ip,
+    'dns' => ['8.8.8.8'],
+    'static' => static_ips,
+    'reserved' => [],
+    'cloud_properties' => {},
+  }
+  spec['azs'] = zone_names if zone_names
+  spec
+end
+
 describe 'failing deploy', type: :integration do
   with_reset_sandbox_before_each
 
@@ -143,28 +156,110 @@ describe 'failing deploy', type: :integration do
       manifest
     end
 
-    let(:cloud_config) do
-      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
-      cloud_config['networks'][0]['type'] = 'dynamic'
-      cloud_config
-    end
-
     before do
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config)
     end
 
-    it 'reuses vms that were created in the failed deploy' do
-      current_sandbox.cpi.commands.make_detach_disk_to_raise_not_implemented
-      deploy_simple_manifest(manifest_hash: manifest, recreate: true, failure_expected: true)
+    context 'given a failed create-swap-delete deploy' do
+      before do
+        current_sandbox.cpi.commands.make_detach_disk_to_raise_not_implemented
+        deploy_simple_manifest(manifest_hash: manifest, recreate: true, failure_expected: true)
 
-      create_vm_invocations_after_recreate = current_sandbox.cpi.invocations_for_method('create_vm').count
-      expect(create_vm_invocations_after_recreate).to be > 2
+        current_sandbox.cpi.commands.allow_detach_disk_to_succeed
+      end
 
-      current_sandbox.cpi.commands.allow_detach_disk_to_succeed
-      deploy_simple_manifest(manifest_hash: manifest)
+      context 'manual network' do
+        let(:cloud_config) do
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+          cloud_config['networks'][0]['type'] = 'manual'
+          cloud_config
+        end
 
-      create_vm_invocations_after_deploy = current_sandbox.cpi.invocations_for_method('create_vm').count
-      expect(create_vm_invocations_after_deploy).to eq(create_vm_invocations_after_recreate)
+        context 'when we make a simple deploy again' do
+          it 'reuses vms that were created in the failed deploy' do
+            create_vm_invocations_after_recreate = current_sandbox.cpi.invocations_for_method('create_vm').count
+            expect(create_vm_invocations_after_recreate).to be > 2
+
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            create_vm_invocations_after_deploy = current_sandbox.cpi.invocations_for_method('create_vm').count
+            expect(create_vm_invocations_after_deploy).to eq(create_vm_invocations_after_recreate)
+            expect(director.instances(deployment_name: 'simple').map(&:ips).flatten)
+              .to match_array(['192.168.1.4', '192.168.1.5'])
+          end
+
+          context 'starting with multiple networks' do
+            let(:cloud_config) do
+              cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+              cloud_config['networks'] = networks_spec
+              cloud_config
+            end
+            let(:networks_spec) do
+              [
+                {
+                  'name' => 'a',
+                  'type' => 'manual',
+                  'subnets' => [
+                    make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14']),
+                    make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14']),
+                  ],
+                },
+                {
+                  'name' => 'b',
+                  'type' => 'manual',
+                  'subnets' => [
+                    make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14']),
+                    make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14']),
+                  ],
+                },
+              ]
+            end
+            let(:manifest) do
+              manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 2)
+              manifest['instance_groups'][0]['persistent_disk'] = 660
+              manifest['instance_groups'][0]['networks'] = [
+                { 'name' => 'a', 'default' => %w[dns gateway] },
+                { 'name' => 'b' },
+              ]
+              manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
+              manifest
+            end
+
+            context 'when we scale down the networks' do
+              it 'results in a successful deployment with the smaller set of networks' do
+                manifest['instance_groups'][0]['networks'] = [
+                  { 'name' => 'a', 'default' => %w[dns gateway] },
+                ]
+
+                deploy_simple_manifest(manifest_hash: manifest)
+
+                expect(director.instances(deployment_name: 'simple').map(&:ips).flatten)
+                  .to match_array(['192.168.1.6', '192.168.1.7'])
+              end
+            end
+          end
+        end
+      end
+
+      context 'dynamic network' do
+        let(:cloud_config) do
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+          cloud_config['networks'][0]['type'] = 'dynamic'
+          cloud_config
+        end
+
+        context 'when we make a simple deploy again' do
+          it 'reuses vms that were created in the failed deploy' do
+            create_vm_invocations_after_recreate = current_sandbox.cpi.invocations_for_method('create_vm').count
+            expect(create_vm_invocations_after_recreate).to be > 2
+
+            deploy_simple_manifest(manifest_hash: manifest)
+
+            create_vm_invocations_after_deploy = current_sandbox.cpi.invocations_for_method('create_vm').count
+            expect(create_vm_invocations_after_deploy).to eq(create_vm_invocations_after_recreate)
+          end
+        end
+      end
     end
   end
 end

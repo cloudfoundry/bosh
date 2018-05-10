@@ -64,12 +64,13 @@ module Bosh::Director::DeploymentPlan
         end
 
         if @instance_plan.should_create_swap_delete? &&
-           (@instance_plan.recreate_for_non_network_reasons? || desired_reservations.length.positive?)
+           (@instance_plan.recreate_for_non_network_reasons? ||
+            network_allocations_changed?(desired_reservations, unplaced_existing_reservations))
           unplaced_existing_reservations += existing_network_plans.map(&:reservation)
-          existing_network_plans = []
           reconciled_reservations.each do |reservation|
             desired_reservations << reservation
           end
+          existing_network_plans = []
         end
 
         desired_network_plans = desired_reservations.map do |reservation|
@@ -121,6 +122,10 @@ module Bosh::Director::DeploymentPlan
         return false if desired_az.nil?
 
         ip_az_names.to_a.include?(desired_az.name)
+      end
+
+      def network_allocations_changed?(desired_reservations, unplaced_existing_reservations)
+        desired_reservations.length.positive? || unplaced_existing_reservations.length.positive?
       end
     end
   end
