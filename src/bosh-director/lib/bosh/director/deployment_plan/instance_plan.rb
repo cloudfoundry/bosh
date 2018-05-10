@@ -217,10 +217,6 @@ module Bosh
           changed
         end
 
-        def mark_desired_network_plans_as_existing
-          network_plans.select(&:desired?).each { |network_plan| network_plan.existing = true }
-        end
-
         def release_obsolete_network_plans(ip_provider)
           network_plans.select(&:obsolete?).each do |network_plan|
             reservation = network_plan.reservation
