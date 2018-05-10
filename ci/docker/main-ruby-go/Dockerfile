@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:trusty
 
 # basic deps {
 RUN \
@@ -15,7 +15,6 @@ RUN \
     libxml2-dev \
     libxslt-dev \
     locales \
-    locales-all \
     ruby \
     tar \
     wget \
