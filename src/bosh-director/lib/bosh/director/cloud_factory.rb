@@ -1,6 +1,6 @@
 module Bosh::Director
   class CloudFactory
-    MAX_SUPPORTED_CPI_VERSION = 2
+    MAX_SUPPORTED_CPI_VERSION = 1
 
     class << self
       def create
