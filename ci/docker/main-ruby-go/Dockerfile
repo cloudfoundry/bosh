@@ -1,5 +1,10 @@
 FROM ubuntu:trusty
 
+RUN locale-gen en_US.UTF-8
+RUN dpkg-reconfigure locales
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
 # basic deps {
 RUN \
   apt-get update \
@@ -15,17 +20,13 @@ RUN \
     libxml2-dev \
     libxslt-dev \
     locales \
+    realpath \
     ruby \
     tar \
     wget \
   && apt-get autoremove \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
-
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-RUN dpkg-reconfigure locales
 # }
 
 # ruby {
