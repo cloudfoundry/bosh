@@ -7,7 +7,7 @@ RUN \
   && apt-get update \
   && apt-get install -y \
     mysql-client \
-    libmariadb-client-lgpl-dev \
+    libmariadb-client-dev \
     postgresql-client-9.4 \
     libpq-dev \
     sqlite3 \
