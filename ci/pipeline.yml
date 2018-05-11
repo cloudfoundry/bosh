@@ -52,7 +52,8 @@ shared:
         source:
           repository: bosh/main
       inputs:
-      - name: uninstalled-bosh-src
+      - name: bosh-src
+        path: uninstalled-bosh-src
       - name: bosh-cli
       - name: bosh-agent
       outputs:
@@ -302,8 +303,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: uninstalled-bosh-src
-          resource: bosh-src
+        - get: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
@@ -333,8 +333,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: uninstalled-bosh-src
-          resource: bosh-src
+        - get: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
@@ -364,8 +363,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: uninstalled-bosh-src
-          resource: bosh-src
+        - get: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
@@ -396,8 +394,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: uninstalled-bosh-src
-          resource: bosh-src
+        - get: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
@@ -429,8 +426,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - aggregate:
-        - get: uninstalled-bosh-src
-          resource: bosh-src
+        - get: bosh-src
           trigger: true
         - get: bosh-cli
           trigger: true
