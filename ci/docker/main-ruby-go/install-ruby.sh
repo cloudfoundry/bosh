@@ -8,8 +8,6 @@ CHRUBY_URL=https://github.com/postmodern/chruby/archive/v${CHRUBY_VER}.tar.gz
 RUBY_INSTALL_VER="0.5.0"
 RUBY_INSTALL_URL=https://github.com/postmodern/ruby-install/archive/v${RUBY_INSTALL_VER}.tar.gz
 
-apt-get update
-
 echo "Installing chruby v${CHRUBY_VER}..."
 wget -O chruby-${CHRUBY_VER}.tar.gz https://github.com/postmodern/chruby/archive/v${CHRUBY_VER}.tar.gz
 tar -xzvf chruby-${CHRUBY_VER}.tar.gz
@@ -33,19 +31,18 @@ install_ruby() {
     local sha=$2
 
     echo "Installing ruby $version..."
-    ruby-install --cleanup --sha256 "$sha" ruby "$version"
+    ruby-install --sha256 "$sha" ruby "$version"
 
     source /etc/profile.d/chruby.sh
 
     chruby "ruby-$version"
     ruby -v
     gem update --system
+
 }
 
+install_ruby 2.1.7 b02c1a5ecd718e3f6b316384d4ed6572f862a46063f5ae23d0340b0a245859b6
+install_ruby 2.3.6 07aa3ed3bffbfb97b6fc5296a86621e6bb5349c6f8e549bd0db7f61e3e210fd0
 install_ruby 2.3.7 18b12fafaf37d5f6c7139c1b445355aec76baa625a40300598a6c8597fc04d8e
 install_ruby 2.4.2 08e72d0cbe870ed1317493600fbbad5995ea3af2d0166585e7ecc85d04cc50dc
 install_ruby 2.4.4 45a8de577471b90dc4838c5ef26aeb253a56002896189055a44dc680644243f1
-
-apt-get autoremove
-apt-get clean
-rm -rf /var/lib/apt/lists/*

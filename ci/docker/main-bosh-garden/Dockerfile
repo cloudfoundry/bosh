@@ -1,6 +1,5 @@
-FROM ubuntu
+FROM ubuntu:xenial
 
-# install basic deps {
 RUN \
   apt-get update && \
   apt-get -y install \
@@ -13,7 +12,6 @@ RUN \
     git \
     iproute2 \
     iptables \
-    jq \
     lsb-release \
     openssh-client \
     pkg-config \
@@ -23,14 +21,13 @@ RUN \
     sshpass \
     sudo \
     uidmap \
-    ulogd2 \
+    ulogd \
     xfsprogs \
     zip \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-# }
+  && \
+  apt-get clean
 
-# install libseccomp (needed for garden-runc) {
+# install libseccomp (needed for garden-runc)
 RUN \
   curl -LO https://github.com/seccomp/libseccomp/releases/download/v2.3.1/libseccomp-2.3.1.tar.gz && \
   tar zxf libseccomp-2.3.1.tar.gz && \
@@ -38,35 +35,22 @@ RUN \
   ./configure && \
   make && \
   make install
-# }
 
-# golang {
-WORKDIR /usr/local
-
+# install go
 RUN \
-  GO_INFO=$(curl 'https://golang.org/dl/?mode=json' | jq '.[0].files[] | select(.os == "linux" and .arch == "amd64")') && \
-  GO_TAR="$(echo "$GO_INFO" | jq -r '.filename')" && \
-  GO_SHA="$(echo "$GO_INFO" | jq -r '.sha256')" && \
-  curl -fSL https://storage.googleapis.com/golang/$GO_TAR -o $GO_TAR \
-  && echo $GO_SHA $GO_TAR | sha256sum -c - \
-  && tar -xzf $GO_TAR
+  curl -o /tmp/download https://storage.googleapis.com/golang/go1.10.1.linux-amd64.tar.gz && \
+  echo "72d820dec546752e5a8303b33b009079c15c2390ce76d67cf514991646c6127b /tmp/download" | sha256sum -c && \
+  mkdir /usr/local/go && \
+  tar -xzf /tmp/download -C /usr/local/go --strip-components=1 && \
+  rm /tmp/download
 
-ENV \
-  PATH=/usr/local/go/bin:$PATH \
-  GOPATH=/root/go \
-  GOROOT=/usr/local/go
-# }
+ENV GOROOT /usr/local/go
+ENV PATH $GOROOT/bin:$PATH
 
-# install garden {
 ADD ./install-garden.sh /tmp/install-garden.sh
 RUN /tmp/install-garden.sh
 RUN rm /tmp/install-garden.sh
 
-COPY start-garden.sh /usr/local/bin/start-garden
-RUN chmod +x /usr/local/bin/start-garden
-# }
-
-# install bosh {
 COPY bosh /usr/local/bin/
 RUN chmod +x /usr/local/bin/bosh
 
@@ -74,4 +58,6 @@ COPY bosh-deployment /usr/local/bosh-deployment/
 
 COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh
-# }
+
+COPY start-garden.sh /usr/local/bin/start-garden
+RUN chmod +x /usr/local/bin/start-garden

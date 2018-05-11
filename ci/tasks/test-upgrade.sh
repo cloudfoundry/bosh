@@ -15,7 +15,7 @@ case "$DB" in
     mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
     mv /var/lib/mysql-src/* /var/lib/mysql/
 
-    service mysql start
+    sudo service mysql start
     ;;
   postgresql)
     export PATH=/usr/lib/postgresql/9.4/bin:$PATH
