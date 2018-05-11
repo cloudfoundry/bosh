@@ -13,7 +13,10 @@ inputs:
   - name: bosh-cli
 
 run:
-  path: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-garden-dependencies.sh
+  path: bosh-src/ci/tasks/prepare-container-bosh-docker-build-context.sh
 
 outputs:
-  - name: bosh-src-with-garden-dependencies
+  - name: docker-build-context
+
+params:
+  container_engine: ~ # docker|garden

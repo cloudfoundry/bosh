@@ -188,10 +188,12 @@ jobs:
         - get: bosh-deployment
           trigger: true
       - task: copy-dependencies
-        file: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-docker-dependencies.yml
+        file: bosh-src/ci/tasks/prepare-container-bosh-docker-build-context.yml
+        params:
+          container_engine: docker
       - put: main-bosh-docker
         params:
-          build: "bosh-src-with-docker-dependencies/ci/docker/main-bosh-docker"
+          build: docker-build-context
         get_params:
           skip_download: true
 
@@ -207,10 +209,12 @@ jobs:
         - get: bosh-deployment
           trigger: true
       - task: copy-dependencies
-        file: bosh-src/ci/pipelines/docker-images/tasks/copy-bosh-garden-dependencies.yml
+        file: bosh-src/ci/tasks/prepare-container-bosh-docker-build-context.yml
+        params:
+          container_engine: garden
       - put: main-bosh-garden
         params:
-          build: "bosh-src-with-garden-dependencies/ci/docker/main-bosh-garden"
+          build: docker-build-context
         get_params:
           skip_download: true
 
