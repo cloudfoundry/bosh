@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::Links::LinksParser do
   let(:subject) do
-    allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
+    allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
     Bosh::Director::Links::LinksParser.new
   end
 

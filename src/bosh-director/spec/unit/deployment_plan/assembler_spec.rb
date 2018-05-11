@@ -16,12 +16,6 @@ module Bosh::Director
     let(:stemcell_manager) {nil}
     let(:powerdns_manager) {PowerDnsManagerProvider.create}
     let(:event_log) {Config.event_log}
-    let(:links_manager_factory) do
-      instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
-        expect(double).to receive(:create_manager).and_return(links_manager)
-      end
-    end
-
     let(:links_manager) do
       instance_double(Bosh::Director::Links::LinksManager).tap do |double|
         allow(double).to receive(:resolve_deployment_links)
@@ -29,7 +23,7 @@ module Bosh::Director
     end
 
     before do
-      allow(Bosh::Director::Links::LinksManagerFactory).to receive(:create).and_return(links_manager_factory)
+      allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
       allow(links_manager).to receive(:update_provider_intents_contents)
     end
 

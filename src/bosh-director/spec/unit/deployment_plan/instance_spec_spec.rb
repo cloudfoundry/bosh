@@ -99,7 +99,7 @@ module Bosh::Director::DeploymentPlan
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
     before do
-      allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
+      allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
 
       persistent_disk_collection.add_by_disk_size(0)
 

@@ -30,9 +30,7 @@ module Bosh::Director
           instance_plan.persist_current_spec
           instance_plan.instance.update_variable_set
           if @links_manager.nil?
-            @links_manager = Bosh::Director::Links::LinksManagerFactory.create(
-              instance_plan.instance.deployment_model.links_serial_id,
-            ).create_manager
+            @links_manager = Bosh::Director::Links::LinksManager.new(instance_plan.instance.deployment_model.links_serial_id)
           end
           @links_manager.bind_links_to_instance(instance_plan.instance)
           false

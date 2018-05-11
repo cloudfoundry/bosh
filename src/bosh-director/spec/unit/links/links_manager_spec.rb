@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::Links::LinksManager do
-  subject {Bosh::Director::Links::LinksManager.new(logger, event_logger, serial_id)}
+  subject {Bosh::Director::Links::LinksManager.new(serial_id, logger, event_logger)}
 
   let(:logger) {Logging::Logger.new('TestLogger')}
   let(:event_logger) {Bosh::Director::EventLog::Log.new}

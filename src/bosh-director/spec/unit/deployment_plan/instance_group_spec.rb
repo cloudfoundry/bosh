@@ -71,7 +71,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:links_serial_id) { 7 }
   subject { described_class.new(logger) }
 
-  let(:links_manager) { Bosh::Director::Links::LinksManager.new(logger, event_log, links_serial_id) }
+  let(:links_manager) { Bosh::Director::Links::LinksManager.new(links_serial_id, logger, event_log) }
 
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new).and_return update_config

@@ -9,7 +9,7 @@ module Bosh::Director
         end
 
         if deployment.is_deploy?
-          @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment.model.links_serial_id).create_manager
+          @links_manager = Bosh::Director::Links::LinksManager.new(deployment.model.links_serial_id)
           @links_manager.resolve_deployment_links(deployment.model, {dry_run: true, global_use_dns_entry: deployment.use_dns_addresses?})
         end
       end

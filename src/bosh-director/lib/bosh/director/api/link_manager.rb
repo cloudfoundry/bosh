@@ -18,7 +18,7 @@ module Bosh::Director
 
         validate_consumer_network(provider_intent, json_payload['network'], consumer_data['owner_object']['name']) unless json_payload['network'].nil?
 
-        @links_manager = Bosh::Director::Links::LinksManager.new(Bosh::Director::Config.logger, Bosh::Director::Config.event_log, provider_intent.serial_id)
+        @links_manager = Bosh::Director::Links::LinksManager.new(provider_intent.serial_id)
         provider = provider_intent.link_provider # find_provider_by_id(provider_intent.link_provider_id)
 
         consumer = @links_manager.find_or_create_consumer(

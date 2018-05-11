@@ -2,7 +2,7 @@ module Bosh::Director::Links
   class LinksManager
     include Bosh::Director::IpUtil
 
-    def initialize(logger, event_logger, serial_id)
+    def initialize(serial_id, logger = Bosh::Director::Config.logger, event_logger = Bosh::Director::Config.event_log)
       @logger = logger
       @event_logger = event_logger
       @serial_id = serial_id
