@@ -1,4 +1,6 @@
 require 'rspec'
+require 'json'
+require 'bosh/template/test'
 require 'bosh/template/evaluation_context'
 require_relative './template_example_group'
 
@@ -202,6 +204,66 @@ describe 'director templates' do
                 }
               }
             end
+          end
+        end
+      end
+    end
+
+    describe 'scheduled jobs' do
+      let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
+      let(:job) { release.job('director') }
+      let(:template) { job.template('config/director.yml') }
+      let(:properties) { default_properties }
+      let(:default_properties) do
+        {
+          'blobstore' => {
+            'address' => '127.0.0.1',
+            'director' => {
+              'user' => 'fake-director',
+              'password' => 'fake-director-password',
+            },
+            'tls' => {
+              'cert' => {
+                'ca' => 'fake-ca',
+              },
+            },
+          },
+          'director' => {
+            'cpi_job' => 'fake-cpi',
+            'db' => {
+              'password' => 'fake-password',
+            },
+            'name' => 'test',
+          },
+          'nats' => {
+            'address' => '127.0.0.1',
+          },
+        }
+      end
+      let(:rendered) { YAML.safe_load(template.render(properties)) }
+
+      context 'scheduled orphan VM job' do
+        it 'defaults to 5 min' do
+          expect(rendered['scheduled_jobs']).to include(
+            'command' => 'ScheduledOrphanedVMCleanup',
+            'schedule' => '*/5 * * * * UTC',
+          )
+        end
+
+        context 'given a configured schedule' do
+          let(:properties) do
+            properties = default_properties
+            properties['director']['vms'] = {
+              'cleanup_schedule' => '*/15 * * * *',
+            }
+            properties
+          end
+
+          it 'respects the configured schedule' do
+            expect(rendered['scheduled_jobs']).to include(
+              'command' => 'ScheduledOrphanedVMCleanup',
+              'schedule' => '*/15 * * * *',
+            )
           end
         end
       end

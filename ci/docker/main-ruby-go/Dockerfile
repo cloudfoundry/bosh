@@ -1,39 +1,54 @@
-FROM ubuntu:14.04
+FROM ubuntu:trusty
 
 RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
-#basic deps
-RUN apt-get update
-RUN apt-get -y upgrade && apt-get clean
-RUN apt-get install -y \
-	build-essential \
-	git \
-	curl \
-	wget \
-	tar \
-	libssl-dev \
-	libreadline-dev \
-	dnsutils \
-	xvfb \
-	jq \
-	realpath \
-	&& apt-get clean
+# basic deps {
+RUN \
+  apt-get update \
+  && apt-get -y upgrade \
+  && apt-get install -y \
+    build-essential \
+    curl \
+    dnsutils \
+    git \
+    jq \
+    libreadline-dev \
+    libssl-dev \
+    libxml2-dev \
+    libxslt-dev \
+    locales \
+    realpath \
+    ruby \
+    tar \
+    wget \
+  && apt-get autoremove \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+# }
 
-#global - ruby will need these
-# Nokogiri dependencies
-RUN apt-get install -y libxslt-dev libxml2-dev && apt-get clean
-
-#global
+# ruby {
 ADD install-ruby.sh /tmp/install-ruby.sh
 RUN chmod a+x /tmp/install-ruby.sh
 RUN cd /tmp && ./install-ruby.sh && rm install-ruby.sh
+# }
 
-#global
-ENV GOROOT /usr/local/go
-ENV PATH $GOROOT/bin:$PATH
-ADD install-go.sh /tmp/install-go.sh
-RUN chmod a+x /tmp/install-go.sh
-RUN cd /tmp && ./install-go.sh && rm install-go.sh
+# golang {
+WORKDIR /usr/local
+
+RUN \
+  GO_INFO=$(curl 'https://golang.org/dl/?mode=json' | jq '.[0].files[] | select(.os == "linux" and .arch == "amd64")') && \
+  GO_TAR="$(echo "$GO_INFO" | jq -r '.filename')" && \
+  GO_SHA="$(echo "$GO_INFO" | jq -r '.sha256')" && \
+  curl -fSL https://storage.googleapis.com/golang/$GO_TAR -o $GO_TAR \
+  && echo $GO_SHA $GO_TAR | sha256sum -c - \
+  && tar -xzf $GO_TAR \
+  && rm -f $GO_TAR
+
+ENV \
+  PATH=/usr/local/go/bin:$PATH \
+  GOPATH=/root/go \
+  GOROOT=/usr/local/go
+# }

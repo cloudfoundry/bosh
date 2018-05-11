@@ -12,22 +12,29 @@ module Bosh::Director
         begin
           parent_id = add_event('orphan', disk.instance.deployment.name, instance_name, disk.disk_cid)
           orphan_disk = Models::OrphanDisk.create(
-              disk_cid:          disk.disk_cid,
-              size:              disk.size,
-              cpi:               disk.cpi,
-              availability_zone: disk.instance.availability_zone,
-              deployment_name:   disk.instance.deployment.name,
-              instance_name:     instance_name,
-              cloud_properties:  disk.cloud_properties
+            disk_cid:          disk.disk_cid,
+            size:              disk.size,
+            cpi:               disk.cpi,
+            availability_zone: disk.instance.availability_zone,
+            deployment_name:   disk.instance.deployment.name,
+            instance_name:     instance_name,
+            cloud_properties:  disk.cloud_properties,
           )
 
           orphan_snapshots(disk.snapshots, orphan_disk)
-          @logger.info("Orphaning disk: '#{disk.disk_cid}', #{disk.active ? "active" : "inactive"}")
+          @logger.info("Orphaning disk: '#{disk.disk_cid}', #{disk.active ? 'active' : 'inactive'}")
           disk.destroy
-        rescue Exception => e
+        rescue StandardError => e
           raise e
         ensure
-          add_event('orphan', disk.instance.deployment.name, instance_name, orphan_disk.nil? ? nil : orphan_disk.disk_cid, parent_id, e)
+          add_event(
+            'orphan',
+            disk.instance.deployment.name,
+            instance_name,
+            orphan_disk&.disk_cid,
+            parent_id,
+            e,
+          )
         end
       end
     end
@@ -37,12 +44,12 @@ module Bosh::Director
 
       @transactor.retryable_transaction(Bosh::Director::Config.db) do
         new_disk = Models::PersistentDisk.create(
-            disk_cid: disk.disk_cid,
-            instance_id: instance_id,
-            active: true,
-            size: disk.size,
-            cloud_properties: disk.cloud_properties,
-            cpi: disk.cpi
+          disk_cid: disk.disk_cid,
+          instance_id: instance_id,
+          active: true,
+          size: disk.size,
+          cloud_properties: disk.cloud_properties,
+          cpi: disk.cpi,
         )
 
         disk.orphan_snapshots.each do |snapshot|
@@ -65,7 +72,7 @@ module Bosh::Director
           'deployment_name' => disk.deployment_name,
           'instance_name' => disk.instance_name,
           'cloud_properties' => disk.cloud_properties,
-          'orphaned_at' => disk.created_at.to_s
+          'orphaned_at' => disk.created_at.to_s,
         }
       end
     end
@@ -103,18 +110,17 @@ module Bosh::Director
     private
 
     def add_event(action, deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
-      event  = Config.current_job.event_manager.create_event(
-          {
-              parent_id:   parent_id,
-              user:        Config.current_job.username,
-              action:      action,
-              object_type: 'disk',
-              object_name: object_name,
-              deployment:  deployment_name,
-              instance:    instance_name,
-              task:        Config.current_job.task_id,
-              error:       error
-          })
+      event = Config.current_job.event_manager.create_event(
+        parent_id:   parent_id,
+        user:        Config.current_job.username,
+        action:      action,
+        object_type: 'disk',
+        object_name: object_name,
+        deployment:  deployment_name,
+        instance:    instance_name,
+        task:        Config.current_job.task_id,
+        error:       error,
+      )
       event.id
     end
 
@@ -123,26 +129,29 @@ module Bosh::Director
       orphan_disk.orphan_snapshots.each do |orphan_snapshot|
         begin
           delete_orphan_snapshot(orphan_snapshot)
-        rescue Exception => e
+        rescue StandardError => e
           failed_orphan_snapshot_count += 1
           @logger.warn(e.backtrace.join("\n"))
-          @logger.info("Failed to deleted snapshot #{orphan_snapshot.snapshot_cid} disk of #{orphan_disk.disk_cid}. Failed with: #{e.message}")
+          @logger.info("Failed to deleted snapshot #{orphan_snapshot.snapshot_cid} disk " \
+            "of #{orphan_disk.disk_cid}. Failed with: #{e.message}")
         end
       end
-      raise Bosh::Clouds::CloudError.new("Failed to delete #{failed_orphan_snapshot_count} snapshot(s) of disk #{orphan_disk.disk_cid}") if failed_orphan_snapshot_count > 0
+
+      return unless failed_orphan_snapshot_count.positive?
+
+      raise Bosh::Clouds::CloudError, "Failed to delete #{failed_orphan_snapshot_count} " \
+        "snapshot(s) of disk #{orphan_disk.disk_cid}"
     end
 
     def delete_orphan_snapshot(orphan_snapshot)
-      begin
-        snapshot_cid = orphan_snapshot.snapshot_cid
-        @logger.info("Deleting orphan snapshot: #{snapshot_cid}")
-        cloud = CloudFactory.create.get(orphan_snapshot.orphan_disk.cpi)
-        cloud.delete_snapshot(snapshot_cid)
-        orphan_snapshot.destroy
-      rescue Bosh::Clouds::DiskNotFound
-        @logger.debug("Disk not found in IaaS: #{snapshot_cid}")
-        orphan_snapshot.destroy
-      end
+      snapshot_cid = orphan_snapshot.snapshot_cid
+      @logger.info("Deleting orphan snapshot: #{snapshot_cid}")
+      cloud = CloudFactory.create.get(orphan_snapshot.orphan_disk.cpi)
+      cloud.delete_snapshot(snapshot_cid)
+      orphan_snapshot.destroy
+    rescue Bosh::Clouds::DiskNotFound
+      @logger.debug("Disk not found in IaaS: #{snapshot_cid}")
+      orphan_snapshot.destroy
     end
 
     def orphan_snapshots(snapshots, orphan_disk)
@@ -152,7 +161,7 @@ module Bosh::Director
           orphan_disk: orphan_disk,
           snapshot_cid: snapshot.snapshot_cid,
           clean: snapshot.clean,
-          snapshot_created_at: snapshot.created_at
+          snapshot_created_at: snapshot.created_at,
         )
         snapshot.destroy
       end

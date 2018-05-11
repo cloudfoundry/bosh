@@ -89,7 +89,7 @@ describe 'Links with local_dns enabled', type: :integration do
 
           context 'when deployment manifest features specifies use_dns_addresses to FALSE' do
             before do
-              manifest['features'] = {'use_dns_addresses' => false}
+              manifest['features'] = { 'use_dns_addresses' => false }
             end
 
             it 'outputs ip address when accessing instance.address of the link' do
@@ -225,6 +225,50 @@ describe 'Links with local_dns enabled', type: :integration do
             expect(rendered_template['db_az_link']['address']).to eq('broker.external-db.com')
             expect(rendered_template['optional_backup_link'][0]['address']).to eq('nothing')
           end
+        end
+
+        context 'using link.instances[x].address helper' do
+          let(:rendered_template) do
+            api_instance = director.find_instance(director.instances, 'my_api', '0')
+            YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+          end
+
+          let(:dns_address) { nil }
+          let(:features_hash) {{ 'use_dns_addresses' => true, 'use_short_dns_addresses' => true }}
+
+          shared_examples 'matching DNS names' do
+            it 'expects DNS address to match' do
+              if features_hash
+                manifest['features'] = features_hash
+              end
+
+              deploy_simple_manifest(manifest_hash: manifest)
+              expect(rendered_template['databases']['main'][0]['address']).to match(dns_address)
+            end
+          end
+
+          context 'uses short DNS name if manifest so indicates' do
+            let(:dns_address) { /q-m\dn\ds0.q-g2.bosh/ }
+            it_should_behave_like 'matching DNS names'
+          end
+
+          context 'use FULL DNS if manifest doesnt specify short DNS' do
+            let(:dns_address) { /.mysql.manual-network.simple.bosh/ }
+            let(:features_hash) { nil }
+            it_should_behave_like 'matching DNS names'
+          end
+
+
+          # it 'uses short DNS name if manifest so indicates' do
+          #   manifest['features'] = {'use_short_dns_addresses' => true}
+          #   deploy_simple_manifest(manifest_hash: manifest)
+          #   expect(rendered_template['databases']['main'][0]['address']).to match(/q-m\dn\ds0.q-g2.bosh/)
+          # end
+
+          # it 'use FULL DNS if manifest doesnt specify short DNS' do
+          #   deploy_simple_manifest(manifest_hash: manifest)
+          #   expect(rendered_template['databases']['main'][0]['address']).to match(/q-s0.mysql.manual-network.simple.bosh/)
+          # end
         end
       end
 

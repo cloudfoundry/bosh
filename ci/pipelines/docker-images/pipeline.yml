@@ -2,7 +2,6 @@ groups:
 - name: bosh:docker-images
   jobs:
   - build-bosh-agent
-  - build-bosh-utils
   - build-bosh-blobstore-client
   - build-main-bats-aws
   - build-main-ruby-go
@@ -111,9 +110,7 @@ jobs:
           - "build-main-base"
       - put: main-mysql-5.5
         params:
-          build: "bosh-src/ci/docker/main-mysql"
-          build_args:
-            DB_VERSION: "-5.5"
+          build: "bosh-src/ci/docker/main-trusty-mysql-5.5"
         get_params:
           skip_download: true
 
@@ -127,9 +124,7 @@ jobs:
           - "build-main-base"
       - put: main-mysql-5.6
         params:
-          build: "bosh-src/ci/docker/main-mysql"
-          build_args:
-            DB_VERSION: "-5.6"
+          build: "bosh-src/ci/docker/main-trusty-mysql-5.6"
         get_params:
           skip_download: true
 
@@ -143,9 +138,7 @@ jobs:
           - "build-main-base"
       - put: main-mysql-5.7
         params:
-          build: "bosh-src/ci/docker/main-mysql"
-          build_args:
-            DB_VERSION: ""
+          build: "bosh-src/ci/docker/main-trusty-mysql-5.7"
         get_params:
           skip_download: true
 
@@ -298,18 +291,6 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-bosh-utils
-    public: true
-    serial: true
-    plan:
-      - get: bosh-utils-src
-        trigger: true
-      - put: bosh-utils
-        params:
-          build: "bosh-utils-src/ci/docker/bosh-utils"
-        get_params:
-          skip_download: true
-
   - name: build-bosh-agent
     public: true
     serial: true
@@ -331,14 +312,6 @@ resources:
       paths:
         - "ci/docker"
         - "ci/pipelines/docker-images/tasks"
-
-  - name: bosh-utils-src
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh-utils
-      branch: develop
-      paths:
-        - "ci/docker"
 
   - name: bosh-agent-src
     type: git
@@ -501,14 +474,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/blobstore_client
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: bosh-utils
-    type: docker-image
-    source:
-      repository: bosh/utils
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))

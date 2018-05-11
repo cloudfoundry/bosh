@@ -45,29 +45,27 @@ module Bosh::Director
       private
 
       def add_event(parent_id = nil, error = nil)
-        event  = event_manager.create_event(
-            {
-                parent_id:   parent_id,
-                user:        username,
-                action:      "delete",
-                object_type: "deployment",
-                object_name: @deployment_name,
-                deployment:  @deployment_name,
-                task:        task_id,
-                error:       error
-            })
+        event = event_manager.create_event(
+          parent_id:   parent_id,
+          user:        username,
+          action:      'delete',
+          object_type: 'deployment',
+          object_name: @deployment_name,
+          deployment:  @deployment_name,
+          task:        task_id,
+          error:       error,
+        )
         event.id
       end
 
       def fail_if_ignored_instances_found(deployment_model)
         deployment_model.instances.each do |instance_model|
           if instance_model.ignore
-            raise DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment '#{deployment_model.name}', which " +
+            raise DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment '#{deployment_model.name}', which " \
                 'contains ignored instance(s). Operation not allowed.'
           end
         end
       end
-
     end
   end
 end

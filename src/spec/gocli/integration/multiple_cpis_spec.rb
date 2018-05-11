@@ -194,7 +194,7 @@ describe 'Using multiple CPIs', type: :integration do
   end
 
   context 'when an az references a CPI that was deleted' do
-    it 'fails to redeploy and orphans the VM associated with the deleted CPI', no_hotswap: true do
+    it 'fails to redeploy and orphans the VM associated with the deleted CPI', no_create_swap_delete: true do
       # deploy with initial cpi config, and 2 azs
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
       expect(output).to include("Using deployment 'simple'")
@@ -260,7 +260,7 @@ describe 'Using multiple CPIs', type: :integration do
       )
     end
 
-    it 'fails to redeploy and orphans the VM associated with the deleted CPI', hotswap: true do
+    it 'fails to redeploy and orphans the VM associated with the deleted CPI', create_swap_delete: true do
       # deploy with initial cpi config, and 2 azs
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
       expect(output).to include("Using deployment 'simple'")

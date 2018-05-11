@@ -36,6 +36,39 @@ module Bosh::Director::Models
       end
     end
 
+    describe '#orphanable?' do
+      it 'is not orphanable by default' do
+        expect(subject.orphanable?).to eq(false)
+      end
+
+      context 'when the update strategy is create-swap-delete' do
+        before do
+          subject.spec = { 'update' => { 'vm_strategy' => 'create-swap-delete' } }
+        end
+
+        it 'is orphanable ' do
+          expect(subject.orphanable?).to eq(true)
+        end
+
+        context 'when there are static ips' do
+          before do
+            subject.ip_addresses << IpAddress.make(static: true)
+          end
+
+          it 'is not orphanable ' do
+            expect(subject.orphanable?).to eq(false)
+          end
+        end
+      end
+
+      context 'when the spec does not contain an update config' do
+        it 'is not orphanable' do
+          subject.spec = {}
+          expect(subject.orphanable?).to eq(false)
+        end
+      end
+    end
+
     describe '#latest_rendered_templates_archive' do
       def perform
         subject.latest_rendered_templates_archive

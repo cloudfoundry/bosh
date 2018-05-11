@@ -1,0 +1,159 @@
+require 'spec_helper'
+
+describe 'broken links', type: :integration do
+  with_reset_sandbox_before_each
+
+  def upload_links_release
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: true)
+    bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
+    bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
+  end
+
+  let(:cloud_config) do
+    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
+    cloud_config_hash['networks'].first['subnets'].first['static'] = [
+      '192.168.1.10',
+      '192.168.1.11',
+      '192.168.1.12',
+      '192.168.1.13',
+    ]
+    cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
+    cloud_config_hash['compilation']['az'] = 'z1'
+    cloud_config_hash['networks'] << {
+      'name' => 'dynamic-network',
+      'type' => 'dynamic',
+      'subnets' => [{ 'az' => 'z1' }],
+    }
+
+    cloud_config_hash
+  end
+
+  before do
+    upload_links_release
+    upload_stemcell
+
+    upload_cloud_config(cloud_config_hash: cloud_config)
+  end
+
+  let(:manifest) do
+    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest['instance_groups'] = [first_node_instance_group_spec, second_node_instance_group_spec]
+    manifest
+  end
+
+  let(:first_node_instance_group_spec) do
+    Bosh::Spec::NewDeployments.simple_instance_group(
+      name: 'first_node',
+      jobs: [{ 'name' => 'node', 'consumes' => first_node_links, 'provides' => { 'node2' => { 'as' => 'alias2' } } }],
+      instances: 1,
+      static_ips: ['192.168.1.10'],
+      azs: ['z1'],
+    )
+  end
+
+  let(:first_node_links) do
+    {
+      'node1' => { 'from' => 'node1' },
+      'node2' => { 'from' => 'alias2' },
+    }
+  end
+
+  let(:second_node_instance_group_spec) do
+    Bosh::Spec::NewDeployments.simple_instance_group(
+      name: 'second_node',
+      jobs: [{ 'name' => 'node', 'consumes' => second_node_links, 'provides' => { 'node2' => { 'as' => 'alias2' } } }],
+      instances: 1,
+      static_ips: ['192.168.1.11'],
+      azs: ['z1'],
+    )
+  end
+
+  let(:second_node_links) do
+    {
+      'node1' => { 'from' => 'broken', 'deployment' => 'broken' },
+      'node2' => { 'from' => 'blah', 'deployment' => 'other' },
+    }
+  end
+
+  context 'when validation of link resolution fails' do
+    let(:manifest) do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['instance_groups'] = [
+        first_consumer_instance,
+        second_consumer_instance,
+        first_provider_instance,
+        second_provider_instance,
+      ]
+      manifest
+    end
+
+    let(:first_provider_instance) do
+      Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'first_provider',
+        jobs: [{ 'name' => 'provider', 'provides' => provide_links }],
+        instances: 1,
+        static_ips: ['192.168.1.11'],
+        azs: ['z1'],
+      )
+    end
+
+    let(:second_provider_instance) do
+      Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'second_provider',
+        jobs: [{ 'name' => 'provider', 'provides' => provide_links }],
+        instances: 1,
+        static_ips: ['192.168.1.12'],
+        azs: ['z1'],
+      )
+    end
+
+    let(:provide_links) do
+      {
+        'provider' => { 'as' => 'alias1' },
+      }
+    end
+
+    let(:first_consumer_instance) do
+      Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'first_consumer',
+        jobs: [{ 'name' => 'consumer', 'consumes' => consume_links }],
+        instances: 1,
+        static_ips: ['192.168.1.13'],
+        azs: ['z1'],
+      )
+    end
+
+    let(:second_consumer_instance) do
+      Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'second_consumer',
+        jobs: [{ 'name' => 'consumer' }],
+        instances: 1,
+        static_ips: ['192.168.1.14'],
+        azs: ['z1'],
+      )
+    end
+
+    let(:consume_links) do
+      {
+        'provider' => { 'from' => 'alias1' },
+      }
+    end
+
+    it 'should raise an error listing all issues before updating vms' do
+      output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      expect(exit_code).not_to eq(0)
+      expect(director.instances).to eq([])
+      expect(output).to include(<<~OUTPUT.strip)
+        Multiple providers of name/alias 'alias1' found for job 'consumer' in instance group 'first_consumer'. All of these match:
+           provider aliased as 'alias1' (job: provider, instance group: first_provider)
+           provider aliased as 'alias1' (job: provider, instance group: second_provider)
+      OUTPUT
+      expect(output).to include(<<~OUTPUT.strip)
+        Multiple providers of type 'provider' found for consumer link 'provider' in job 'consumer' in instance group 'second_consumer'. All of these match:
+           Deployment: simple, instance group: first_provider, job: provider, link name/alias: alias1
+           Deployment: simple, instance group: second_provider, job: provider, link name/alias: alias1
+      OUTPUT
+    end
+  end
+end

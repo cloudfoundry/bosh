@@ -146,6 +146,14 @@ module Bosh::Director::Models
     instance_name   { Sham.name }
   end
 
+  OrphanedVm.blueprint do
+    cid               { Sham.vm_cid }
+    deployment_name   { Sham.name }
+    instance_name     { Sham.name }
+    availability_zone { Sham.name }
+    orphaned_at       { Time.now }
+  end
+
   OrphanSnapshot.blueprint do
     orphan_disk         { OrphanDisk.make }
     snapshot_cid        { Sham.snapshot_cid }

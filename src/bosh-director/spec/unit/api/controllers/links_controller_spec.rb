@@ -141,36 +141,38 @@ module Bosh::Director
             it 'raise error for missing link_provider_id' do
               post '/', JSON.generate('{}'), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be an Integer"}')
+              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be provided"}')
             end
             it 'raise error for invalid link_provider_id' do
-              # TODO: Links: check if Integer validation is required or not?
-              post '/', JSON.generate('link_provider_id' => '3'), 'CONTENT_TYPE' => 'application/json'
+              post '/', JSON.generate('link_provider_id' => 3), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be an Integer"}')
+              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_provider_id` must be a String"}')
             end
           end
+
           context 'when link_consumer is invalid' do
             it 'raise error for missing link_consumer' do
-              post '/', JSON.generate('link_provider_id' => 3), 'CONTENT_TYPE' => 'application/json'
+              post '/', JSON.generate('link_provider_id' => '3'), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
               expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer` section must be defined"}')
             end
-            it 'raise error for invalid owner_object_name' do
-              post '/', JSON.generate('link_provider_id' => 3, 'link_consumer' => {'owner_object_name' => ''}), 'CONTENT_TYPE' => 'application/json'
+            it 'raise error for invalid owner_object.name' do
+              post '/', JSON.generate('link_provider_id' => '3', 'link_consumer' => {'owner_object' => {'name' => ''}}), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer.owner_object_type` should be \'external\'"}')
+              expect(last_response.body).to eq('{"code":810001,"description":"Invalid request: `link_consumer.owner_object.type` should be \'external\'"}')
             end
           end
 
           context 'when link_provider_id and link_consumer are provided' do
-            let(:provider_id) {42}
+            let(:provider_id) {'42'}
             let!(:payload_json) do
               {
                 'link_provider_id' => provider_id,
                 'link_consumer' => {
-                  'owner_object_name' => 'external_consumer_1',
-                  'owner_object_type' => 'external',
+                  'owner_object' => {
+                    'name' => 'external_consumer_1',
+                    'type' => 'external',
+                  },
                 },
               }
             end
@@ -178,7 +180,7 @@ module Bosh::Director
             it 'raise error for non-existing provider_id' do
               post '/', JSON.generate(payload_json), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810001,"description":"Invalid link_provider_id: 42"}')
+              expect(last_response.body).to eq('{"code":810002,"description":"Invalid link_provider_id: 42"}')
             end
 
             context 'when a valid link_provider_id is provided' do
@@ -205,7 +207,7 @@ module Bosh::Director
                   serial_id: link_serial_id,
                   )
               end
-              let(:provider_id) {provider_1_intent_1.id}
+              let(:provider_id) {provider_1_intent_1.id.to_s}
 
               shared_examples 'creates consumer and link' do
                 it 'returns links' do
@@ -219,7 +221,7 @@ module Bosh::Director
                     type: 'external',
                     )
                   expect(new_external_consumer).to_not be_nil
-                  expect(new_external_consumer.name).to eq(payload_json['link_consumer']['owner_object_name'])
+                  expect(new_external_consumer.name).to eq(payload_json['link_consumer']['owner_object']['name'])
 
                   new_external_link = Bosh::Director::Models::Links::Link.find(
                     link_provider_intent_id: provider_1_intent_1 && provider_1_intent_1[:id],
@@ -253,8 +255,10 @@ module Bosh::Director
                     {
                       'link_provider_id' => provider_id,
                       'link_consumer' => {
-                        'owner_object_name' => 'external_consumer_1',
-                        'owner_object_type' => 'external',
+                        'owner_object' => {
+                          'name' => 'external_consumer_1',
+                          'type' => 'external',
+                        },
                       },
                       'network' => networks[0],
                     }
@@ -267,8 +271,10 @@ module Bosh::Director
                     {
                       'link_provider_id' => provider_id,
                       'link_consumer' => {
-                        'owner_object_name' => 'external_consumer_1',
-                        'owner_object_type' => 'external',
+                        'owner_object' => {
+                          'name' => 'external_consumer_1',
+                          'type' => 'external',
+                        },
                       },
                       'network' => 'invalid-network-name',
                     }
@@ -281,6 +287,27 @@ module Bosh::Director
                     error_string = '{"code":810003,"description":"Can\'t resolve network: `invalid-network-name` in provider id: 1 for `external_consumer_1`"}'
                     expect(last_response.body).to eq(error_string)
                   end
+                end
+              end
+
+              context 'when provider is NOT shared' do
+                let(:provider_1_intent_1) do
+                  Bosh::Director::Models::Links::LinkProviderIntent.create(
+                    name: 'provider_intent_1_name_1',
+                    link_provider: provider_1,
+                    shared: false,
+                    consumable: true,
+                    type: 'link_type_1',
+                    original_name: 'provider_name_1',
+                    content: provider_json_content,
+                    serial_id: link_serial_id,
+                    )
+                end
+
+                it 'raise error' do
+                  post '/', JSON.generate(payload_json), 'CONTENT_TYPE' => 'application/json'
+                  expect(last_response.status).to eq(403)
+                  expect(last_response.body).to eq('{"code":810009,"description":"Provider not `shared`"}')
                 end
               end
             end
@@ -377,10 +404,10 @@ module Bosh::Director
 
       def generate_link_hash(model)
         {
-          'id' => model.id,
+          'id' => model.id.to_s,
           'name' => model.name,
-          'link_consumer_id' => model[:link_consumer_intent_id],
-          'link_provider_id' => model[:link_provider_intent_id],
+          'link_consumer_id' => model[:link_consumer_intent_id].to_s,
+          'link_provider_id' => (model[:link_provider_intent_id].nil? ? nil : model[:link_provider_intent_id].to_s),
           'created_at' => model.created_at.to_s,
         }
       end

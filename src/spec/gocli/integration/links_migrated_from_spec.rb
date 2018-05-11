@@ -125,7 +125,7 @@ describe 'Links', type: :integration do
       end
 
       let(:provided_link_migrated_response) do
-        [{'id' => 1,
+        [{'id' => '1',
           'name' => 'link_alias',
           'shared' => false,
           'deployment' => 'simple',
@@ -137,14 +137,14 @@ describe 'Links', type: :integration do
       end
 
       let(:consumed_link_migrated_response) do
-        [{"id" => 1,
+        [{"id" => '1',
           "name" => "link_alias",
           "optional" => false,
           "deployment" => "simple",
           "owner_object" =>
             {"type" => "job", "name" => "api_server", "info" => {"instance_group" => "new_api_job"}},
           "link_consumer_definition" => {"name" => "db", "type" => "db"}},
-         {"id" => 2,
+         {"id" => '2',
           "name" => "link_alias",
           "optional" => false,
           "deployment" => "simple",

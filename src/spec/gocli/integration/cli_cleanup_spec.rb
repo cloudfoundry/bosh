@@ -3,6 +3,12 @@ require_relative '../spec_helper'
 describe 'cli: cleanup', type: :integration do
   with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false})
 
+  def ensure_orphaned_vms_exist(manifest_hash)
+    manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
+    deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
+    expect(table(bosh_runner.run('orphaned-vms', json: true))).to_not be_empty
+  end
+
   shared_examples_for 'removing an exported release' do
     before do
       bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
@@ -27,7 +33,7 @@ describe 'cli: cleanup', type: :integration do
   context 'clean-up' do
     let(:clean_command) { 'clean-up' }
 
-    it 'should remove releases and stemcells and dns blobs, leaving recent versions. Also leaves orphaned disks.' do
+    it 'should remove orphaned vms, releases, stemcells and dns blobs, leaving recent versions. Also leaves orphaned disks.' do
       manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       manifest_hash['name'] = 'deployment-a'
       manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job')]
@@ -41,11 +47,14 @@ describe 'cli: cleanup', type: :integration do
 
       disk_cid = director.instances(deployment_name: 'deployment-a')[0].disk_cids[0]
 
+      ensure_orphaned_vms_exist(manifest_hash)
+
       bosh_runner.run('delete-deployment', deployment_name: 'deployment-a')
 
       bosh_runner.run(clean_command)
 
       expect(table(bosh_runner.run('disks --orphaned', json: true))[0]['disk_cid']).to eq(disk_cid)
+      expect(table(bosh_runner.run('orphaned-vms', json: true))).to be_empty
 
       releases_output = table(bosh_runner.run('releases', json: true))
       release_versions = releases_output.map { |r| r['version'] }

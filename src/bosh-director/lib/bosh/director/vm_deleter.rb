@@ -7,24 +7,47 @@ module Bosh::Director
       @force = force
     end
 
-    def delete_for_instance(instance_model, store_event = true)
-      return unless instance_model.active_vm
-
-      DeploymentPlan::Steps::DeleteVmStep.new(
-        store_event,
-        @force,
-        @enable_virtual_delete_vm,
-      ).perform(DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance_model.active_vm })
+    def delete_for_instance(instance_model, store_event = true, async = false)
+      if async && instance_model.orphanable?
+        unmount_and_detach_disk(instance_model)
+        orphan_vms(instance_model)
+      else
+        delete_vms(instance_model, store_event)
+      end
     end
 
-    def delete_vm_by_cid(cid, stemcell_api_version)
+    def delete_vm_by_cid(cid, stemcell_api_version, cpi_name = nil)
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
         # if there are multiple cpis, it's too dangerous to try and delete just vm cid on every cloud.
         cloud_factory = CloudFactory.create
         unless cloud_factory.uses_cpi_config?
-          cloud_factory.get(nil, stemcell_api_version).delete_vm(cid) unless @enable_virtual_delete_vm
+          cloud_factory.get(cpi_name, stemcell_api_version).delete_vm(cid) unless @enable_virtual_delete_vm
         end
+      end
+    end
+
+    private
+
+    def delete_vms(instance_model, store_event)
+      instance_model.vms.each do |vm|
+        DeploymentPlan::Steps::DeleteVmStep.new(
+          store_event,
+          @force,
+          @enable_virtual_delete_vm,
+        ).perform(DeploymentPlan::Stages::Report.new.tap { |r| r.vm = vm })
+      end
+    end
+
+    def unmount_and_detach_disk(instance_model)
+      return if instance_model.vms.empty?
+      DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(DeploymentPlan::Stages::Report.new)
+      DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(DeploymentPlan::Stages::Report.new)
+    end
+
+    def orphan_vms(instance_model)
+      instance_model.vms.each do |vm|
+        DeploymentPlan::Steps::OrphanVmStep.new(vm).perform(DeploymentPlan::Stages::Report.new)
       end
     end
   end

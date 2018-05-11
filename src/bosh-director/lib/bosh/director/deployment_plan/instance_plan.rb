@@ -45,8 +45,8 @@ module Bosh
           !changes.empty?
         end
 
-        def should_hot_swap?
-          @desired_instance.instance_group&.should_hot_swap?
+        def should_create_swap_delete?
+          @desired_instance.instance_group&.should_create_swap_delete?
         end
 
         def unresponsive_agent?
@@ -215,10 +215,6 @@ module Bosh
           changed = instance.configuration_hash != instance_model.spec_p('configuration_hash')
           log_changes(__method__, instance_model.spec_p('configuration_hash'), instance.configuration_hash, instance) if changed
           changed
-        end
-
-        def mark_desired_network_plans_as_existing
-          network_plans.select(&:desired?).each { |network_plan| network_plan.existing = true }
         end
 
         def release_obsolete_network_plans(ip_provider)

@@ -81,7 +81,7 @@ describe 'orphaned disks', type: :integration do
     )
   end
 
-  it 'does not detach and reattach disks unnecessarily', no_hotswap: true do
+  it 'does not detach and reattach disks unnecessarily', no_create_swap_delete: true do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['persistent_disk'] = 3000
@@ -111,7 +111,7 @@ describe 'orphaned disks', type: :integration do
     )
   end
 
-  it 'does not detach and reattach disks unnecessarily', hotswap: true do
+  it 'does not detach and reattach disks unnecessarily', create_swap_delete: true do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['persistent_disk'] = 3000

@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'displays deployment events' do
+  def first_part_of_test
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'][0]['persistent_disk_pool'] = 'disk_a'
     manifest_hash['instance_groups'][0]['instances'] = 1
@@ -19,14 +19,14 @@ describe 'cli: events', type: :integration do
     deploy(manifest_hash: manifest_hash, deployment_name: 'simple', failure_expected: true)
 
     bosh_runner.run('delete-deployment', deployment_name: 'simple')
-    output = bosh_runner.run('events', json: true)
+    bosh_events_output = bosh_runner.run('events', json: true)
 
-    data = table(output)
+    data = table(bosh_events_output)
     id = data[-1]["id"]
     event_output =  bosh_runner.run("event #{id}")
     expect(event_output.split.join(" ")).to include("ID #{id}")
 
-    data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
+    data = scrub_event_time(scrub_random_cids(scrub_random_ids(table(bosh_events_output))))
     stable_data = get_details(data, ['id', 'time', 'user', 'task_id'])
     flexible_data = get_details(data, [ 'action', 'object_type', 'object_name', 'deployment', 'instance', 'context', 'error'])
 
@@ -43,8 +43,8 @@ describe 'cli: events', type: :integration do
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'orphan', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'orphan', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => /delete|orphan/, 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => /delete|orphan/, 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'update', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1", 'error' => "'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' is not running after update. Review logs for failed jobs: process-3"},
@@ -88,22 +88,49 @@ describe 'cli: events', type: :integration do
       {'action' => 'acquire', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_name' => 'lock:release:bosh-release', 'object_type' => 'lock'},
     )
 
-    instance_name = parse_first_instance_name(output)
+    bosh_events_output
+  end
+
+  it 'deletes vms', no_create_swap_delete: true do
+    bosh_events_output = first_part_of_test
+
+    instance_name = parse_first_instance_name(bosh_events_output)
     output = bosh_runner.run("events --task 6 --instance #{instance_name} --action delete", deployment_name: 'simple', json: true)
     data = table(output)
     columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
     expect(get_details(data, columns)).to contain_exactly(
-        {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
-        {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
-        {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
-        {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
+                                              {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'delete', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
 
     output = bosh_runner.run("events --task 6 --instance #{instance_name} --action orphan", deployment_name: 'simple', json: true)
     data = table(output)
     columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
     expect(get_details(data, columns)).to contain_exactly(
-        {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
-        {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
+                                              {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
+  end
+
+  it 'orphans vms', create_swap_delete: true do
+    bosh_events_output = first_part_of_test
+
+    instance_name = parse_first_instance_name(bosh_events_output)
+    output = bosh_runner.run("events --task 6 --instance #{instance_name} --action delete", deployment_name: 'simple', json: true)
+    data = table(output)
+    columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
+    expect(get_details(data, columns)).to contain_exactly(
+                                              {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'delete', 'object_type' => 'instance', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
+
+    output = bosh_runner.run("events --task 6 --instance #{instance_name} --action orphan", deployment_name: 'simple', json: true)
+    data = table(output)
+    columns = ['action', 'object_type', 'deployment', 'instance', 'task_id']
+    expect(get_details(data, columns)).to contain_exactly(
+                                              {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'orphan', 'object_type' => 'disk', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'orphan', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name},
+                                              {'action' => 'orphan', 'object_type' => 'vm', 'task_id' => '6', 'deployment' => 'simple', 'instance' => instance_name})
   end
 
   def get_details(table, keys)

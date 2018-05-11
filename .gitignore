@@ -74,3 +74,4 @@ spec_reports
 **/tmp
 coverage/
 tags
+src/parallel_runtime_rspec.log

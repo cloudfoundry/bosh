@@ -90,6 +90,9 @@ describe Bosh::Registry::InstanceManager do
         expect(config[:access_key_id]).to be nil
         expect(config[:secret_access_key]).to be nil
       end
+
+      expect(Aws::InstanceProfileCredentials).to receive(:new).with(retries: 10)
+
       Bosh::Registry.configure(@config)
     end
 

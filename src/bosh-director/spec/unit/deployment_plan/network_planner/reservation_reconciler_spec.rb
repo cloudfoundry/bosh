@@ -45,11 +45,11 @@ module Bosh::Director::DeploymentPlan
       let(:dynamic_network_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
       let(:static_network_reservation) { BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2') }
 
-      let(:should_hot_swap?) { false }
+      let(:should_create_swap_delete?) { false }
 
       before do
         existing_reservations.each(&:mark_reserved)
-        allow(instance_plan).to receive(:should_hot_swap?).and_return(should_hot_swap?)
+        allow(instance_plan).to receive(:should_create_swap_delete?).and_return(should_create_swap_delete?)
       end
 
       context 'when the instance group is on a dynamic network' do
@@ -71,49 +71,32 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when the instance is a hotswap instance' do
-        let(:should_hot_swap?) { true }
+      context 'when the instance is a create-swap-delete instance' do
+        let(:should_create_swap_delete?) { true }
         let(:desired_reservations) do
           [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)]
+        end
+        let(:existing_reservations) do
+          [
+            BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'manual'),
+          ]
         end
 
         context 'when desired reservation and existing reservations are dynamic' do
           before do
             existing_reservations.map { |reservation| reservation.resolve_type(:dynamic) }
+            allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
           end
 
-          context 'when instance does not need recreate' do
-            before do
-              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
-            end
+          it 'reuses the existing reservation' do
+            network_plans = network_planner.reconcile(existing_reservations)
+            obsolete_plans = network_plans.select(&:obsolete?)
+            existing_plans = network_plans.select(&:existing?)
+            desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
-            it 'uses the existing reservation and mark the existing reservations as placed' do
-              network_plans = network_planner.reconcile(existing_reservations)
-              obsolete_plans = network_plans.select(&:obsolete?)
-              existing_plans = network_plans.select(&:existing?)
-              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
-
-              expect(desired_plans.count).to eq(0)
-              expect(existing_plans.count).to eq(1)
-              expect(obsolete_plans.count).to eq(1)
-            end
-          end
-
-          context 'when instance needs recreate' do
-            before do
-              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(true)
-            end
-
-            it 'does not use the existing reservation and mark the existing reservations as placed' do
-              network_plans = network_planner.reconcile(existing_reservations)
-              obsolete_plans = network_plans.select(&:obsolete?)
-              existing_plans = network_plans.select(&:existing?)
-              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
-
-              expect(desired_plans.count).to eq(1)
-              expect(existing_plans.count).to eq(0)
-              expect(obsolete_plans.count).to eq(2)
-            end
+            expect(desired_plans.count).to eq(0)
+            expect(existing_plans.count).to eq(1)
+            expect(obsolete_plans.count).to eq(0)
           end
         end
 
@@ -122,12 +105,16 @@ module Bosh::Director::DeploymentPlan
             existing_reservations.map { |reservation| reservation.resolve_type(:static) }
           end
 
-          context 'when instance does not need recreate' do
+          context 'when instance does not need recreate for non-network reasons' do
             before do
               allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
             end
 
-            it 'does not use the existing reservation and mark the existing reservations as placed' do
+            let(:desired_reservations) do
+              [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)]
+            end
+
+            it 'does not reuse the existing reservation' do
               network_plans = network_planner.reconcile(existing_reservations)
               obsolete_plans = network_plans.select(&:obsolete?)
               existing_plans = network_plans.select(&:existing?)
@@ -135,16 +122,68 @@ module Bosh::Director::DeploymentPlan
 
               expect(desired_plans.count).to eq(1)
               expect(existing_plans.count).to eq(0)
-              expect(obsolete_plans.count).to eq(2)
+              expect(obsolete_plans.count).to eq(1)
             end
           end
+        end
 
-          context 'when instance needs recreate' do
+        context 'when instance needs recreate for non-network or network allocation reasons' do
+          context 'when there is a non-network reason to recreate' do
             before do
               allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(true)
             end
 
-            it 'does not use the existing reservation and mark the existing reservations as placed' do
+            it 'does not reuse the existing reservation' do
+              network_plans = network_planner.reconcile(existing_reservations)
+              obsolete_plans = network_plans.select(&:obsolete?)
+              existing_plans = network_plans.select(&:existing?)
+              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+              expect(desired_plans.count).to eq(1)
+              expect(existing_plans.count).to eq(0)
+              expect(obsolete_plans.count).to eq(1)
+            end
+          end
+
+          context 'when there are new networks to be added to the instance(s)' do
+            before do
+              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
+            end
+
+            let(:desired_reservations) do
+              [BD::DesiredNetworkReservation.new_dynamic(instance_model, network),
+               BD::DesiredNetworkReservation.new_dynamic(instance_model, network)]
+            end
+
+            it 'does not reuse the existing reservation' do
+              network_plans = network_planner.reconcile(existing_reservations)
+              obsolete_plans = network_plans.select(&:obsolete?)
+              existing_plans = network_plans.select(&:existing?)
+              desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+              expect(desired_plans.count).to eq(2)
+              expect(existing_plans.count).to eq(0)
+              expect(obsolete_plans.count).to eq(1)
+            end
+          end
+
+          context 'when the instance plan has fewer desired networks than existing networks' do
+            before do
+              allow(instance_plan).to receive(:recreate_for_non_network_reasons?).and_return(false)
+            end
+
+            let(:existing_reservations) do
+              [
+                BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'manual'),
+                BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.3', 'manual'),
+              ]
+            end
+
+            let(:desired_reservations) do
+              [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)]
+            end
+
+            it 'does not reuse the existing reservation' do
               network_plans = network_planner.reconcile(existing_reservations)
               obsolete_plans = network_plans.select(&:obsolete?)
               existing_plans = network_plans.select(&:existing?)

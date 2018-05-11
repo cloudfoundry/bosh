@@ -144,6 +144,26 @@ module Bosh::Director
           end
         end
       end
+
+      describe 'short DNS names are enabled' do
+        let(:short_dns_enabled) { true }
+
+        context 'and forcing query to not use short dns names' do
+          it 'should return only long dns names' do
+            expect(subject.encode_query(criteria, false)).to eq('q-s0.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+      end
+
+      describe 'short DNS names are disabled' do
+        let(:short_dns_enabled) { false }
+
+        context 'and forcing query to use short dns names' do
+          it 'should return only short dns names' do
+            expect(subject.encode_query(criteria, true)).to eq('q-n1s0.q-g3.sub.bosh')
+          end
+        end
+      end
     end
 
     describe '#id_for_group_tuple' do

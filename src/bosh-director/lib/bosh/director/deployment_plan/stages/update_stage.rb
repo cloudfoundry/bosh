@@ -2,11 +2,11 @@ module Bosh::Director
   module DeploymentPlan
     module Stages
       class UpdateStage
-        def initialize(base_job, deployment_plan, multi_job_updater, dns_encoder)
+        def initialize(base_job, deployment_plan, multi_instance_group_updater, dns_encoder)
           @base_job = base_job
           @logger = base_job.logger
           @deployment_plan = deployment_plan
-          @multi_job_updater = multi_job_updater
+          @multi_instance_group_updater = multi_instance_group_updater
           @dns_encoder = dns_encoder
         end
 
@@ -17,7 +17,7 @@ module Bosh::Director
             UpdateActiveVmCpisStage.new(@logger, @deployment_plan).perform
             setup_stage.perform
             DownloadPackagesStage.new(@base_job, @deployment_plan).perform
-            UpdateJobsStage.new(@base_job, @deployment_plan, @multi_job_updater).perform
+            UpdateInstanceGroupsStage.new(@base_job, @deployment_plan, @multi_instance_group_updater).perform
             UpdateErrandsStage.new(@base_job, @deployment_plan).perform
             @logger.info('Committing updates')
             PersistDeploymentStage.new(@deployment_plan).perform

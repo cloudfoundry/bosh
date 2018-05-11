@@ -16,7 +16,12 @@ module Bosh
           job: 'fake-job',
           deployment: deployment,
           availability_zone: 'az1',
+          spec_json: JSON.generate(spec_json),
         )
+      end
+
+      let(:spec_json) do
+        { 'update' => { 'vm_strategy' => 'delete-create' } }
       end
 
       before do
@@ -27,18 +32,58 @@ module Bosh
       end
 
       describe '#delete_for_instance' do
-        context 'when there is an active vm' do
+        context 'when there are vms' do
+          let(:vm_model2) { Models::Vm.make(cid: 'vm-cid2', instance_id: instance_model.id, cpi: 'cpi1') }
+
           before do
             vm_model.update(active: true)
           end
 
-          let(:step) { instance_double(DeploymentPlan::Steps::DeleteVmStep) }
+          context 'when the instance is orphanable' do
+            let(:orphan_step) { instance_double(DeploymentPlan::Steps::OrphanVmStep, perform: true) }
+            let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep, perform: true) }
+            let(:detach_step) { instance_double(DeploymentPlan::Steps::DetachInstanceDisksStep, perform: true) }
 
-          it 'delegates to a step' do
-            expect(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).with(true, false, false).and_return(step)
-            expect(step).to receive(:perform)
+            let(:spec_json) do
+              { 'update' => { 'vm_strategy' => 'create-swap-delete' } }
+            end
 
-            subject.delete_for_instance(instance_model)
+            context 'and async is true' do
+              it 'orphans the vms' do
+                expect(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new)
+                  .with(instance_model).and_return(unmount_step)
+                expect(DeploymentPlan::Steps::DetachInstanceDisksStep).to receive(:new)
+                  .with(instance_model).and_return(detach_step)
+                expect(DeploymentPlan::Steps::OrphanVmStep).to receive(:new)
+                  .with(vm_model).and_return(orphan_step)
+                expect(DeploymentPlan::Steps::OrphanVmStep).to receive(:new)
+                  .with(vm_model2).and_return(orphan_step)
+
+                subject.delete_for_instance(instance_model, true, true)
+              end
+            end
+
+            context 'and async is false' do
+              let(:step) { instance_double(DeploymentPlan::Steps::DeleteVmStep) }
+
+              it 'deletes the vms' do
+                expect(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).with(true, false, false).and_return(step)
+                expect(step).to receive(:perform)
+
+                subject.delete_for_instance(instance_model, true, false)
+              end
+            end
+          end
+
+          context 'when the instance is not orphanable' do
+            let(:step) { instance_double(DeploymentPlan::Steps::DeleteVmStep) }
+
+            it 'deletes the VMs immediately' do
+              expect(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).with(true, false, false).and_return(step)
+              expect(step).to receive(:perform)
+
+              subject.delete_for_instance(instance_model)
+            end
           end
         end
       end

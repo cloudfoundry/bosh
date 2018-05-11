@@ -303,7 +303,7 @@ describe Bosh::Director::Links::LinksParser do
           type: 'job'
         ).and_return(nil)
         expect(links_manager).to receive(:find_or_create_consumer).with(deployment_model: deployment_model, instance_group_name: "old_ig1",name: "foobar",type: "job").and_return(consumer)
-        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'chocolate', link_type: 'flavour').and_return(consumer_intent)
+        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'chocolate', link_type: 'flavour', new_intent_metadata: nil).and_return(consumer_intent)
         subject.parse_migrated_from_consumers_from_job(job_spec, deployment_model, template, "new-ig", migrated_from)
       end
     end
@@ -338,7 +338,7 @@ describe Bosh::Director::Links::LinksParser do
           type: 'job'
         ).and_return(nil)
         expect(links_manager).to receive(:find_or_create_consumer).with(deployment_model: deployment_model, instance_group_name: "instance-group-name",name: "jobby1",type: "job").and_return(consumer)
-        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'link_1_name', link_type: 'link_1_type').and_return(consumer_intent)
+        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'link_1_name', link_type: 'link_1_type',  new_intent_metadata: nil).and_return(consumer_intent)
 
         subject.parse_migrated_from_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name", migrated_from)
       end
@@ -787,7 +787,8 @@ describe Bosh::Director::Links::LinksParser do
           expected_consumer_intent_params = {
             link_consumer: consumer,
             link_original_name: 'link_1_name',
-            link_type: 'link_1_type'
+            link_type: 'link_1_type',
+            new_intent_metadata: nil
           }
 
           expect(links_manager).to receive(:find_or_create_consumer_intent).with(expected_consumer_intent_params).and_return(consumer_intent)
@@ -857,7 +858,8 @@ describe Bosh::Director::Links::LinksParser do
           expected_consumer_intent_params = {
             link_consumer: consumer,
             link_original_name: 'link_1_name',
-            link_type: 'link_1_type'
+            link_type: 'link_1_type',
+            new_intent_metadata: nil
           }
 
           expect(links_manager).to receive(:find_or_create_consumer_intent).with(expected_consumer_intent_params).and_return(consumer_intent)

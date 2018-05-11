@@ -4,6 +4,10 @@ set -e
 
 source bosh-src/ci/tasks/utils.sh
 
+if [ -d integration-tests-parallel-runtime ]; then
+  cp integration-tests-parallel-runtime/parallel_runtime_rspec.log bosh-src/src/parallel_runtime_rspec.log
+fi
+
 check_param RUBY_VERSION
 check_param DB
 
@@ -15,6 +19,9 @@ case "$DB" in
     mkdir /var/lib/mysql
     mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
     mv /var/lib/mysql-src/* /var/lib/mysql/
+    echo '
+[mysqld]
+max_connections = 1024' >> /etc/mysql/my.cnf
 
     if [ "$DB_TLS" = true ]; then
       echo "....... DB TLS enabled ......."
@@ -23,14 +30,13 @@ case "$DB" in
       cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $MYSQLDIR/server-key.pem
       cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $MYSQLDIR/server-cert.pem
       echo '
-[mysqld]
 ssl-cert=server-cert.pem
 ssl-key=server-key.pem
 require_secure_transport=ON
 max_allowed_packet=6M' >> /etc/mysql/my.cnf
     fi
 
-    sudo service mysql start
+    service mysql start
     sleep 5
     ;;
   postgresql)
@@ -52,6 +58,9 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
       echo $DB_PASSWORD > /tmp/bosh-postgres.password
       initdb -U postgres -D $PGDATA --pwfile /tmp/bosh-postgres.password
     '
+
+    echo "max_connections = 1024" >> $PGDATA/postgresql.conf
+    echo "shared_buffers = 240MB" >> $PGDATA/postgresql.conf
 
     if [ "$DB_TLS" = true ]; then
       echo "....... DB TLS enabled ......."
@@ -88,19 +97,22 @@ agent_path=bosh-src/src/go/src/github.com/cloudfoundry/
 mkdir -p $agent_path
 cp -r bosh-agent $agent_path
 
-cd bosh-src/src
+pushd bosh-src/src
+  print_git_state
 
-print_git_state
+  bundle install --local
 
-bundle install --local
+  set +e
+  bundle exec rake --trace spec:integration_gocli
 
-set +e
-bundle exec rake --trace spec:integration_gocli
+  bundle_exit_code=$?
 
-bundle_exit_code=$?
+  if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
+    service mysql stop
+  fi
+popd
 
-if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
-  sudo service mysql stop
-fi
+mkdir -p parallel-runtime-log
+cp bosh-src/src/parallel_runtime_rspec.log parallel-runtime-log/parallel_runtime_rspec.log
 
 exit $bundle_exit_code

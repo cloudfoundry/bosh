@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Link do
-      subject { described_class.new(deployment_name, source_instance_group, mapped_properties) }
+      subject { described_class.new(deployment_name, source_instance_group, mapped_properties, use_dns_addresses, use_short_dns_addresses) }
 
       let(:deployment_name) { 'smurf_deployment' }
       let(:link_name) { 'smurf_link' }
@@ -14,7 +14,8 @@ module Bosh::Director
         )
       end
       let(:network_name) { 'smurf_network' }
-      let(:use_short_dns_addresses) { true }
+      let(:use_short_dns_addresses) { false }
+      let(:use_dns_addresses) { false }
       let(:instance_group_private_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
       let(:instance_group_public_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
       let(:default_networks) { { 'gateway' => network_name } }
@@ -74,6 +75,8 @@ module Bosh::Director
               'networks' => ['private_network_name', 'smurf_network'],
               'instance_group' => 'my_source_instance_group_name',
               'properties' => { 'a' => 'b' },
+              'use_short_dns_addresses' => false,
+              'use_dns_addresses' => false,
               'instances' => [
                 {
                   'name' => 'my_source_instance_group_name',
@@ -105,8 +108,58 @@ module Bosh::Director
               'networks' => ['private_network_name', 'smurf_network'],
               'instance_group' => 'my_source_instance_group_name',
               'properties' => { 'a' => 'b' },
+              'use_short_dns_addresses' => false,
+              'use_dns_addresses' => false,
               'instances' => []
             })
+          end
+        end
+
+        context 'when use_dns_addresses is true' do
+          let(:use_dns_addresses) { true }
+
+          before do
+            allow(source_instance_group).to receive(:needed_instance_plans).and_return([])
+          end
+
+          it 'should be stored in the spec' do
+            expect(subject.spec['use_dns_addresses']).to be_truthy
+          end
+        end
+
+        context 'when use_short_dns_addresses is true' do
+          let(:use_short_dns_addresses) { true }
+
+          before do
+            allow(source_instance_group).to receive(:needed_instance_plans).and_return([])
+          end
+
+          it 'should be stored in the spec' do
+            expect(subject.spec['use_short_dns_addresses']).to be_truthy
+          end
+        end
+
+        context 'when use_short_dns_addresses is false' do
+          let(:use_short_dns_addresses) { false }
+
+          before do
+            allow(source_instance_group).to receive(:needed_instance_plans).and_return([])
+          end
+
+          it 'should be stored in the spec' do
+            expect(subject.spec['use_short_dns_addresses']).to be_falsey
+          end
+        end
+
+        context 'when use_short_dns_addresses is false' do
+          let(:use_dns_addresses) { false }
+
+          before do
+            allow(source_instance_group).to receive(:needed_instance_plans).and_return([])
+          end
+
+          it 'should be stored in the spec' do
+            expect(subject.spec['use_dns_addresses']).to be_falsey
           end
         end
       end

@@ -16,9 +16,11 @@ dir: <%= sandbox_root %>/boshdir
 
 scheduled_jobs:
   - command: SnapshotDeployments
-    schedule: '*/2 * * * * *'
+    schedule: '*/10 * * * * *'
   - command: ScheduledBackup
-    schedule: '*/1 * * * * *'
+    schedule: '*/10 * * * * *'
+  - command: ScheduledOrphanedVMCleanup
+    schedule: '*/10 * * * * *'
 
 db: &bosh_db
   adapter: <%= database.adapter %>
@@ -125,7 +127,7 @@ user_management:
 enable_post_deploy: <%= enable_post_deploy %>
 enable_nats_delivered_templates: <%= enable_nats_delivered_templates %>
 enable_cpi_resize_disk: <%= enable_cpi_resize_disk %>
-default_update_strategy: <%= default_update_strategy %>
+default_update_vm_strategy: <%= default_update_vm_strategy %>
 
 <% if config_server_enabled %>
 config_server:

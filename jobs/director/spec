@@ -44,7 +44,7 @@ packages:
 - libpq
 - postgres-9.4
 - mysql
-- ruby-2.4-r3
+- ruby-2.4-r4
 - s3cli
 - davcli
 - bosh-gcscli
@@ -172,6 +172,11 @@ properties:
   director.disks.cleanup_schedule:
     description: RufusScheduler cron formatted schedule for cleanup of orphaned disks and orphaned snapshots
     default: '0 0,30 * * * * UTC' #every 30min
+
+  #Orphaned VMs automated cleanup
+  director.vms.cleanup_schedule:
+    description: RufusScheduler cron formatted schedule for cleanup of orphaned vms
+    default: '*/5 * * * * UTC' #every 5min
 
   # Config Server
   director.config_server.enabled:

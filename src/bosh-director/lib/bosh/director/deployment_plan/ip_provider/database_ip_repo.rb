@@ -30,7 +30,7 @@ module Bosh::Director::DeploymentPlan
         reservation.instance_model,
         cidr_ip,
         reservation,
-        reservation_type.eql?(:static)
+        reservation_type.eql?(:static),
       )
 
       reservation.resolve_type(reservation_type)
@@ -113,11 +113,15 @@ module Bosh::Director::DeploymentPlan
         end
 
         return ip_address
+      elsif reserved_instance.nil?
+        raise Bosh::Director::NetworkReservationAlreadyInUse,
+              "Failed to reserve IP '#{ip}' for instance '#{instance_model}': " \
+              'already reserved by orphaned instance'
       else
         raise Bosh::Director::NetworkReservationAlreadyInUse,
-          "Failed to reserve IP '#{ip}' for instance '#{instance_model}': " +
-            "already reserved by instance '#{reserved_instance.name}' " +
-            "from deployment '#{reserved_instance.deployment.name}'"
+              "Failed to reserve IP '#{ip}' for instance '#{instance_model}': " \
+              "already reserved by instance '#{reserved_instance.name}' " \
+              "from deployment '#{reserved_instance.deployment.name}'"
       end
     end
 

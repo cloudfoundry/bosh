@@ -42,21 +42,21 @@ The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
 ```
-bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:unit
+bosh/src$ CONCOURSE_TARGET=bosh bundle exec rake fly:unit
 ```
 
 ### Integration Tests
 
-Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](workstation_setup.md). Run the integration tests with the `spec:integration` rake task:
+Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](workstation_setup.md). Make sure you use the correct java version when running the test, and setup `JAVA_HOME` correctly in case your default system's java installation is not of version 8. Run the integration tests with the `spec:integration_gocli` rake task:
 
 ```
-bosh/src$ bundle exec rake spec:integration
+bosh/src$ bundle exec rake spec:integration_gocli
 ```
 
-You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
+In order to run the integration tests in parallel:
 
 ```
-bosh/src$ CONCOURSE_TARGET=bosh CONCOURSE_TAG= bundle exec rake fly:integration_gocli
+export NUM_PROCESSES=<n>
 ```
 
 You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` and `rake  spec:integration:download_bosh_agent`. More information about the integration test set up can  be found in the [workstation setup docs](workstation_setup.md).
@@ -72,6 +72,67 @@ bosh/src$ DB=mysql bundle exec rspec spec/gocli/integration/cli_env_spec.rb
 ```
 
 The integration test are run in a sandbox, detailed logs can be found in folder like `src/tmp/integration-tests-workspace/pid-<pid>/sandbox/boshdir/tasks/<n>/debug`.
+
+#### Custom bosh-cli
+
+To use a custom go-cli in integration tests change `bosh` in  `src/spec/gocli/support/bosh_go_cli_runner.rb`.
+You can also export `BOSH_CLI` to point to a binary.
+
+#### Cleaning the sandbox cache manually
+
+Preparing the sandbox for integration tests caches dependencies like nginx.
+To force a recompilation either delete the complete `src/tmp` folder or just the 'work' folder:
+
+```
+bosh/src$ rm -fr tmp/integration-nginx-work/
+```
+
+#### Running integration test databases in docker
+
+Instead of installing MySQL and PostgreSQL locally use `docker-compose` to spin up containers:
+
+```
+cd docs
+docker-compose up
+```
+
+#### Reset integration test environment
+
+1. Delete blobs/ folder at the root of your bosh repo
+2. Do a `bosh sync-blobs`
+3. Delete `src/tmp` folder in your repo
+4. Run `bundle install` in `src` folder
+5. Run `bundle exec rake spec:integration:download_bosh_agent`
+6. Run `bundle exec rake spec:integration:install_dependencies`
+
+#### Fly One-off on Concourse
+
+You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
+
+```
+bosh/src$ CONCOURSE_TARGET=bosh bundle exec rake fly:integration
+```
+
+To run integration tests with a custom bosh-cli, build the CLI first and prepare the `out` folder to be a Concourse input.
+
+```
+go/src/github.com/cloudfoundry/bosh-cli$ bin/build-linux-amd64
+go/src/github.com/cloudfoundry/bosh-cli$ cd out && git init
+go/src/github.com/cloudfoundry/bosh-cli/out$ mv bosh bosh-cli-dev-linux-amd64
+```
+
+In `src/bosh-dev/lib/bosh/dev/tasks/fly.rake` append the input folder as follows
+
+```
+   def execute(task, command_options = nil, additional_env = {})
+     env = prepare_env(additional_env)
+     sh("#{env} fly #{concourse_target} sync")
+     sh(
+-      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../",
++      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../ -i bosh-cli=~/go/src/github.com/cloudfoundry/bosh-cli/out/",
+     )
+   end
+```
 
 ### Acceptance Tests (BATs)
 

@@ -100,9 +100,11 @@ describe 'migrated from', type: :integration do
   let(:etcd_z1_instance_group) do
     Bosh::Spec::Deployments.simple_instance_group(instances: 1, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
   end
+
   let(:etcd_z2_instance_group) do
     Bosh::Spec::Deployments.simple_instance_group(instances: 1, name: 'etcd_z2', persistent_disk_pool: 'fast_disks')
   end
+
   let(:etcd_instance_group) do
     Bosh::Spec::NewDeployments.simple_instance_group(instances: 2, name: 'etcd', persistent_disk_type: 'fast_disks', env: {'bosh' => {'password' => 'foobar'}})
   end
@@ -324,10 +326,17 @@ describe 'migrated from', type: :integration do
 
     context 'when the number of original instances is less than the number of new instances' do
       let(:etcd_instance_group) do
-        Bosh::Spec::NewDeployments.simple_instance_group(instances: 3, name: 'etcd', persistent_disk_type: 'fast_disks', env: {'bosh' => {'password' => 'foobar'}})
+        Bosh::Spec::NewDeployments.simple_instance_group(
+          instances: 3,
+          name: 'etcd',
+          persistent_disk_type: 'fast_disks',
+          env: { 'bosh' => { 'password' => 'foobar' } },
+        )
       end
+
       # make it use 2nd subnet for etcd_z2 instance
       let(:subnet1) { subnet_with_1_available_ip }
+
       # make room for 3rd instance in my-az-1
       let(:subnet_with_az1) do
         subnet1.merge('range' => '192.168.1.0/24', 'az' => 'my-az-1')
@@ -338,7 +347,7 @@ describe 'migrated from', type: :integration do
 
         new_instances = director.instances
         expect(new_instances.size).to eq(3)
-        expect(new_instances.map(&:instance_group_name)).to eq(['etcd', 'etcd', 'etcd'])
+        expect(new_instances.map(&:instance_group_name)).to eq(%w[etcd etcd etcd])
         expect((new_instances.map(&:vm_cid) & original_instances.map(&:vm_cid)).size).to eq 1
 
         new_disks = current_sandbox.cpi.disk_cids

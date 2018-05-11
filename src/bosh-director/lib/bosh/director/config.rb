@@ -47,7 +47,7 @@ module Bosh::Director
         :verify_multidigest_path,
         :version,
         :enable_cpi_resize_disk,
-        :default_update_strategy,
+        :default_update_vm_strategy,
       )
 
       attr_reader(
@@ -219,7 +219,7 @@ module Bosh::Director
         end
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
-        @default_update_strategy = config.fetch('default_update_strategy', nil)
+        @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
       end
 
       def agent_env

@@ -66,7 +66,10 @@ describe 'Changing cloud config', type: :integration do
       resurrected_instance = director.kill_vm_and_wait_for_resurrection(original_instance)
       resurrected_vms_output = bosh_runner.run('vms', deployment_name: 'simple')
 
-      expect(original_instance.ips).to eq(resurrected_instance.ips), "Original vm IPs '#{original_instance.ips}' do not match resurrected vm IPs '#{resurrected_instance.ips}', original output: #{original_vms_output}, resurrected output: #{resurrected_vms_output}"
+      expect(original_instance.ips).to eq(resurrected_instance.ips),
+                                       "Original vm IPs '#{original_instance.ips}' do not match resurrected vm IPs " \
+                                       "'#{resurrected_instance.ips}', original output: #{original_vms_output}," \
+                                       " resurrected output: #{resurrected_vms_output}"
     end
   end
 

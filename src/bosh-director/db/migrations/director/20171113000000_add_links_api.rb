@@ -10,7 +10,7 @@ Sequel.migration do
     end
 
     alter_table(:link_providers) do
-      add_index [:deployment_id, :instance_group, :name, :type], unique: true
+      add_index [:deployment_id, :instance_group, :name, :type], unique: true, name: 'link_providers_constraint'
     end
 
     create_table :link_provider_intents do
@@ -27,7 +27,7 @@ Sequel.migration do
     end
 
     alter_table(:link_provider_intents) do
-      add_index [:link_provider_id, :original_name], unique: true
+      add_index [:link_provider_id, :original_name], unique: true, name: 'link_provider_intents_constraint'
     end
 
     create_table :link_consumers do
@@ -40,7 +40,7 @@ Sequel.migration do
     end
 
     alter_table(:link_consumers) do
-      add_index [:deployment_id, :instance_group, :name], unique: true
+      add_index [:deployment_id, :instance_group, :name, :type], unique: true, name: 'link_consumers_constraint'
     end
 
     create_table :link_consumer_intents do
@@ -56,7 +56,7 @@ Sequel.migration do
     end
 
     alter_table(:link_consumer_intents) do
-      add_index [:link_consumer_id, :original_name], unique: true
+      add_index [:link_consumer_id, :original_name], unique: true, name: 'link_consumer_intents_constraint'
     end
 
     create_table :links do
@@ -73,15 +73,14 @@ Sequel.migration do
       foreign_key :link_id, :links, :on_delete => :cascade, :null => false
       foreign_key :instance_id, :instances, :on_delete => :cascade, :null => false
       Integer :serial_id
-      unique [:instance_id, :link_id]
     end
 
     alter_table(:instances_links) do
-      add_index [:link_id, :instance_id], unique: true
+      add_index [:link_id, :instance_id], unique: true, name: 'instances_links_constraint'
     end
 
     alter_table(:deployments) do
-        add_column :has_stale_errand_links, 'boolean', null: false, default: false
+      add_column :has_stale_errand_links, 'boolean', null: false, default: false
     end
 
     if [:mysql, :mysql2].include? adapter_scheme

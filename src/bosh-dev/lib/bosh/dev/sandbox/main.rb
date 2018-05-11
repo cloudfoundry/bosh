@@ -12,7 +12,6 @@ require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
 require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
-require 'bosh/dev/sandbox/services/connection_proxy_service'
 require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/gnatsd_manager'
@@ -45,8 +44,6 @@ module Bosh::Dev::Sandbox
 
     attr_reader :director_service
     attr_reader :port_provider
-
-    attr_reader :database_proxy
 
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
@@ -175,8 +172,6 @@ module Bosh::Dev::Sandbox
       FileUtils.rm_rf(logs_path)
       FileUtils.mkdir_p(logs_path)
 
-      @database_proxy && @database_proxy.start
-
       @nginx_service.start
 
       @nats_process.start
@@ -218,7 +213,7 @@ module Bosh::Dev::Sandbox
         users_in_manifest: @users_in_manifest,
         enable_post_deploy: @enable_post_deploy,
         enable_cpi_resize_disk: @enable_cpi_resize_disk,
-        default_update_strategy: @default_update_strategy,
+        default_update_vm_strategy: @default_update_vm_strategy,
         enable_nats_delivered_templates: @enable_nats_delivered_templates,
         generate_vm_passwords: @generate_vm_passwords,
         remove_dev_tools: @remove_dev_tools,
@@ -271,7 +266,6 @@ module Bosh::Dev::Sandbox
       @config_server_service.stop
 
       @database.drop_db
-      @database_proxy&.stop
 
       @sandbox_log_file.close
 
@@ -337,7 +331,7 @@ module Bosh::Dev::Sandbox
       @enable_post_deploy = options.fetch(:enable_post_deploy, false)
       @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
       @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
-      @default_update_strategy = options.fetch(:default_update_strategy, ENV['DEFAULT_UPDATE_STRATEGY'])
+      @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, ENV['DEFAULT_UPDATE_VM_STRATEGY'])
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
@@ -515,13 +509,9 @@ module Bosh::Dev::Sandbox
         if db_config[:type] == 'mysql'
           @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
         else
-          proxy_port = @port_provider.get_port(:postgres)
           postgres_options = db_config.dup
-          postgres_options[:port] = proxy_port
 
           @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, postgres_options)
-          # all postgres connections go through this proxy (for testing automatic reconnect)
-          @database_proxy = ConnectionProxyService.new(sandbox_root, '127.0.0.1', 5432, proxy_port, base_log_path, @logger)
         end
       end
     end

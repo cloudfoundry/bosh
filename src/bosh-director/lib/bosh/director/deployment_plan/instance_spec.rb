@@ -132,6 +132,7 @@ module Bosh::Director
           'deployment_name',
           'domain',
           'address',
+          'use_short_dns_addresses',
         ]
 
         template_hash = @full_spec.select {|k,v| keys.include?(k) }

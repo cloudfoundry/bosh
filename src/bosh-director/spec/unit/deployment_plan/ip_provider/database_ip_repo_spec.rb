@@ -197,6 +197,23 @@ module Bosh::Director::DeploymentPlan
           }.to raise_error BD::NetworkReservationAlreadyInUse
         end
 
+        it 'should fail if the reserved instance does not exist' do
+          network_spec['subnets'].first['static'] = ['192.168.1.5']
+
+          other_instance_model = Bosh::Director::Models::Instance.make(availability_zone: 'az-2')
+          original_static_network_reservation = BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
+          new_static_network_reservation = BD::DesiredNetworkReservation.new_static(other_instance_model, network, '192.168.1.5')
+
+          ip_repo.add(original_static_network_reservation)
+
+          vm = Bosh::Director::Models::OrphanedVm.create(cid: 'some-cid', orphaned_at: Time.now)
+          Bosh::Director::Models::IpAddress.first.update(instance_id: nil, orphaned_vm: vm)
+
+          expect do
+            ip_repo.add(new_static_network_reservation)
+          end.to raise_error BD::NetworkReservationAlreadyInUse
+        end
+
         it 'should succeed if it is reserved by the same instance' do
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 

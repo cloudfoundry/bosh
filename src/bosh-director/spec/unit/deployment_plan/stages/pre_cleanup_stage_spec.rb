@@ -1,6 +1,6 @@
 require 'spec_helper'
-require 'bosh/director/deployment_plan/multi_job_updater'
-require 'bosh/director/job_updater'
+require 'bosh/director/deployment_plan/multi_instance_group_updater'
+require 'bosh/director/instance_group_updater'
 
 module Bosh::Director
   module DeploymentPlan::Stages

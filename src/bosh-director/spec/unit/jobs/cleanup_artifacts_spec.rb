@@ -39,6 +39,7 @@ module Bosh::Director
       let(:thread_pool) { ThreadPool.new }
       let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+      let(:orphaned_vm_deleter) { instance_double(Bosh::Director::OrphanedVMDeleter) }
       subject(:cleanup_artifacts) { Jobs::CleanupArtifacts.new(config) }
 
       def make_stemcell(name:, version:, operating_system: '')
@@ -78,10 +79,12 @@ module Bosh::Director
         allow(cloud).to receive(:delete_stemcell)
         allow(cloud).to receive(:delete_disk)
 
+        allow(Bosh::Director::OrphanedVMDeleter).to receive(:new).and_return(orphaned_vm_deleter)
+
         Timecop.freeze(Time.now)
       end
 
-      context 'when cleaning up ALL artifacts (stemcells, releases AND orphaned disks)' do
+      context 'when cleaning up ALL artifacts (orphaned vms, stemcells, releases AND orphaned disks)' do
         let(:config) { { 'remove_all' => true } }
         before do
           expect(blobstore).to receive(:delete).with('compiled-package-1')
@@ -101,7 +104,7 @@ module Bosh::Director
 
             result = subject.perform
 
-            expect(result).to eq("Deleted 2 release(s), 2 stemcell(s), 0 orphaned disk(s), 2 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}")
+            expect(result).to eq("Deleted 2 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 2 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}")
             expect(Models::Blob.all).to be_empty
           end
         end
@@ -122,7 +125,34 @@ module Bosh::Director
             expect(event_log).to receive(:begin_stage).with('Deleting orphaned disks', 2).and_return(stage)
 
             result = subject.perform
-            expect(result).to eq("Deleted 2 release(s), 2 stemcell(s), 2 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}")
+            expect(result).to eq("Deleted 2 release(s), 2 stemcell(s), 2 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}")
+
+            expect(Models::OrphanDisk.all).to be_empty
+            expect(Models::Release.all).to be_empty
+            expect(Models::Stemcell.all).to be_empty
+          end
+        end
+
+        context 'when there are orphaned vms' do
+          let(:orphaned_vm_1) { Models::OrphanedVm.make(cid: 'fake-cid-1') }
+          let(:orphaned_vm_2) { Models::OrphanedVm.make(cid: 'fake-cid-2') }
+          before do
+            allow(event_log).to receive(:begin_stage).and_return(stage)
+          end
+
+          it 'logs and returns the result' do
+            expect(event_log).to receive(:begin_stage).with('Deleting packages', 1).and_return(stage)
+            expect(event_log).to receive(:begin_stage).with('Deleting jobs', 0).and_return(stage)
+            expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 2).and_return(stage)
+            expect(event_log).to receive(:begin_stage).with('Deleting releases', 2).and_return(stage)
+            expect(event_log).to receive(:begin_stage).with('Deleting orphaned disks', 0).and_return(stage)
+            expect(event_log).to receive(:begin_stage).with('Deleting orphaned vms', 2).and_return(stage)
+
+            expect(orphaned_vm_deleter).to receive(:delete_vm).with(orphaned_vm_1, 10)
+            expect(orphaned_vm_deleter).to receive(:delete_vm).with(orphaned_vm_2, 10)
+
+            result = subject.perform
+            expect(result).to eq("Deleted 2 release(s), 2 stemcell(s), 0 orphaned disk(s), 2 orphaned vm(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}")
 
             expect(Models::OrphanDisk.all).to be_empty
             expect(Models::Release.all).to be_empty
@@ -145,7 +175,7 @@ module Bosh::Director
               allow(blobstore).to receive(:delete).with('package_blob_id_1')
               result = subject.perform
 
-              expected_result = "Deleted 4 release(s), 4 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+              expected_result = "Deleted 4 release(s), 4 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\n" \
                                 "Deleted 0 dns blob(s) created before #{Time.now}"
 
               expect(result).to eq(expected_result)
@@ -175,7 +205,7 @@ module Bosh::Director
 
             expect(locks_acquired).to eq(locks_acquired.uniq)
 
-            expected_result = "Deleted 4 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}"
+            expected_result = "Deleted 4 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}"
             expect(result).to eq(expected_result)
           end
         end
@@ -215,7 +245,7 @@ module Bosh::Director
         end
       end
 
-      context 'when cleaning up only stemcells, releases, and exported releases' do
+      context 'when cleaning up only orphaned vms, stemcells, releases, and exported releases' do
         let(:config) { {} }
         it 'logs and returns the result' do
           expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
@@ -224,7 +254,7 @@ module Bosh::Director
           expect(thread_pool).not_to receive(:process)
           result = subject.perform
 
-          expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+          expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\n" \
                                "Deleted 0 dns blob(s) created before #{Time.now - 3600}")
 
           expect(Models::Release.all.count).to eq(2)
@@ -246,7 +276,7 @@ module Bosh::Director
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = subject.perform
 
-            expected_result = "Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+            expected_result = "Deleted 0 release(s), 2 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\n" \
               "Deleted 0 dns blob(s) created before #{Time.now - 3600}"
             expect(result).to eq(expected_result)
 
@@ -269,7 +299,7 @@ module Bosh::Director
             expect(thread_pool).to receive(:process).exactly(2).times.and_yield
             result = subject.perform
 
-            expected_result = "Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\n" \
+            expected_result = "Deleted 2 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\n" \
               "Deleted 0 dns blob(s) created before #{Time.now - 3600}"
             expect(result).to eq(expected_result)
 
@@ -305,7 +335,7 @@ module Bosh::Director
             expect(thread_pool).not_to receive(:process)
             result = subject.perform
 
-            expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}")
+            expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}")
 
             expect(Models::Release.all.count).to eq(4)
             expect(Models::Stemcell.all.count).to eq(4)
@@ -326,7 +356,7 @@ module Bosh::Director
 
             result = subject.perform
 
-            expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 2 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}")
+            expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 2 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}")
             expect(Models::Blob.all).to be_empty
           end
         end
@@ -349,7 +379,7 @@ module Bosh::Director
 
             result = subject.perform
 
-            expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 exported release(s)\nDeleted 1 dns blob(s) created before #{Time.now - 3600}")
+            expect(result).to eq("Deleted 0 release(s), 0 stemcell(s), 0 orphaned disk(s), 0 orphaned vm(s), 0 exported release(s)\nDeleted 1 dns blob(s) created before #{Time.now - 3600}")
             expect(Models::LocalDnsBlob.all).to match_array(recent_dns_blobs)
             expect(Models::Blob.all).to match_array(recent_dns_blobs.map(&:blob))
           end
