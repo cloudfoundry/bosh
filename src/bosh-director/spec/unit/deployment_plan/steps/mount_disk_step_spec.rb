@@ -12,7 +12,7 @@ module Bosh::Director
         let(:agent_client) do
           instance_double(AgentClient, list_disk: [disk&.disk_cid], mount_disk: nil)
         end
-        let(:report) { Stages::Report.new }
+        let(:report) { Stages::Report.new(disk_hint: '/dev/sdc') }
 
         before do
           allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(agent_client)
@@ -21,7 +21,7 @@ module Bosh::Director
         describe '#perform' do
           it 'sends mount_disk method to agent' do
             expect(agent_client).to receive(:wait_until_ready)
-            expect(agent_client).to receive(:mount_disk).with(disk.disk_cid)
+            expect(agent_client).to receive(:mount_disk).with(disk.disk_cid, report.disk_hint)
 
             step.perform(report)
           end

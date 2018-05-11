@@ -63,8 +63,9 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(step_report)
-      mount_disk(disk) if disk.managed?
+      report = step_report
+      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(report)
+      mount_disk(disk, report) if disk.managed?
     end
 
     def detach_disk(disk)
@@ -133,8 +134,8 @@ module Bosh::Director
       AgentClient.with_agent_id(instance_model.agent_id)
     end
 
-    def mount_disk(disk)
-      DeploymentPlan::Steps::MountDiskStep.new(disk).perform(step_report)
+    def mount_disk(disk, report = step_report)
+      DeploymentPlan::Steps::MountDiskStep.new(disk).perform(report)
     rescue => e
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")
 

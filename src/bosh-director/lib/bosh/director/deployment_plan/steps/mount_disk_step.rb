@@ -7,7 +7,7 @@ module Bosh::Director
           @logger = Config.logger
         end
 
-        def perform(_report)
+        def perform(report)
           return if @disk.nil?
 
           instance_model = @disk.instance
@@ -15,7 +15,7 @@ module Bosh::Director
 
           agent_client(instance_model).wait_until_ready
           @logger.info("Mounting disk '#{disk_cid}' for instance '#{instance_model}'")
-          agent_client(instance_model).mount_disk(disk_cid)
+          agent_client(instance_model).mount_disk(disk_cid, report.disk_hint)
         end
 
         private

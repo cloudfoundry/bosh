@@ -14,7 +14,7 @@ module Bosh::Director
         let(:metadata_updater_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:tags) { { 'mytag' => 'myvalue' } }
         let(:meta_updater) { instance_double(MetadataUpdater, update_disk_metadata: nil) }
-        let(:report) { Stages::Report.new }
+        let(:report) { instance_double(Stages::Report).as_null_object }
 
         before do
           allow(CloudFactory).to receive(:create).and_return(cloud_factory)
@@ -29,6 +29,27 @@ module Bosh::Director
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk.disk_cid)
 
           step.perform(report)
+        end
+
+        context 'when the cpi returns a disk hint for attach disk' do
+          let(:disk_hint) { nil }
+          before do
+            allow(cloud).to receive(:attach_disk).and_return(disk_hint)
+          end
+
+          it 'updates the report with disk hint with the disk hint' do
+            expect(report).to receive(:disk_hint=).with(disk_hint)
+            step.perform(report)
+          end
+
+          context 'when the cpi returned non-nil disk hint for attach disk' do
+            let(:disk_hint) { 'foo' }
+
+            it 'should update the report with the disk hint' do
+              expect(report).to receive(:disk_hint=).with(disk_hint)
+              step.perform(report)
+            end
+          end
         end
 
         it 'logs notification of attaching' do

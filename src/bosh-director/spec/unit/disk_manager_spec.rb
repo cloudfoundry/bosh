@@ -42,6 +42,8 @@ module Bosh::Director
     let(:event_manager) { Api::EventManager.new(true) }
     let(:task_id) { 42 }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
+    let(:step_report) { instance_double(Bosh::Director::DeploymentPlan::Stages::Report) }
+    let(:disk_hint) { '/dev/sdc' }
 
     before do
       instance.bind_existing_instance_model(instance_model)
@@ -60,6 +62,9 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:enable_cpi_resize_disk).and_return(enable_cpi_resize_disk)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)
+      allow(DeploymentPlan::Stages::Report).to receive(:new).and_return(step_report)
+      allow(step_report).to receive(:disk_hint).and_return(disk_hint)
+      allow(step_report).to receive(:disk_hint=)
     end
 
     describe '#attach_disk' do
@@ -75,7 +80,7 @@ module Bosh::Director
         it 'attaches + mounts disk' do
           expect(attach_step).to receive(:perform)
           expect(agent_client).to receive(:wait_until_ready)
-          expect(agent_client).to receive(:mount_disk).with('disk123')
+          expect(agent_client).to receive(:mount_disk).with('disk123', disk_hint)
           disk_manager.attach_disk(persistent_disk, tags)
         end
       end
@@ -381,7 +386,7 @@ module Bosh::Director
               end
 
               it 'mounts the new disk' do
-                expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
+                expect(agent_client).to receive(:mount_disk).with('new-disk-cid', disk_hint)
                 disk_manager.update_persistent_disk(instance_plan)
               end
 
@@ -405,7 +410,7 @@ module Bosh::Director
                 end
 
                 it 'mounts the new disk' do
-                  expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
+                  expect(agent_client).to receive(:mount_disk).with('new-disk-cid', disk_hint)
                   disk_manager.update_persistent_disk(instance_plan)
                 end
               end
@@ -461,7 +466,7 @@ module Bosh::Director
                 context 'when mounting the disk raises' do
                   before do
                     allow(agent_client).to receive(:list_disk).and_return(['disk123'])
-                    expect(agent_client).to receive(:mount_disk).with('new-disk-cid').and_raise(disk_error)
+                    expect(agent_client).to receive(:mount_disk).with('new-disk-cid', disk_hint).and_raise(disk_error)
                   end
 
                   it 'detaches the disk and re-raises the error' do
@@ -476,7 +481,6 @@ module Bosh::Director
                 context 'when migrating the disk raises' do
                   before do
                     allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
-                    allow(agent_client).to receive(:mount_disk).with('new-disk-cid')
                     expect(agent_client).to receive(:migrate_disk).with('disk123', 'new-disk-cid').and_raise(disk_error)
                   end
 
