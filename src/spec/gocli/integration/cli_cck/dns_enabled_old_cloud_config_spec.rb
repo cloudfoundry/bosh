@@ -79,46 +79,4 @@ describe 'cli: cloudcheck', type: :integration do
       end
     end
   end
-
-  def bosh_run_cck_with_resolution(num_errors, option = 1, env = {})
-    env.each do |key, value|
-      ENV[key] = value
-    end
-
-    output = ''
-    bosh_runner.run_interactively('cck', deployment_name: 'simple') do |runner|
-      (1..num_errors).each do
-        expect(runner).to have_output 'Skip for now'
-
-        runner.send_keys option.to_s
-      end
-
-      expect(runner).to have_output 'Continue?'
-      runner.send_keys 'y'
-
-      expect(runner).to have_output 'Succeeded'
-      output = runner.output
-    end
-    output
-  end
-
-  def scrub_text_random_ids(text)
-    text.gsub(/[0-9a-f]{8}-[0-9a-f-]{27}/, 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
-  end
-
-  def scrub_text_disk_ids(text)
-    text.gsub(/[0-9a-z]{32}/, 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-  end
-
-  def scrub_randoms(text)
-    scrub_vm_cid(scrub_index(scrub_text_disk_ids(scrub_text_random_ids(text))))
-  end
-
-  def scrub_vm_cid(text)
-    text.gsub(/'\d+'/, "'xxx'")
-  end
-
-  def scrub_index(text)
-    text.gsub(/\(\d+\)/, '(x)')
-  end
 end

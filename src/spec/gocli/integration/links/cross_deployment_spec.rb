@@ -9,11 +9,7 @@ describe 'cross deployment links', type: :integration do
     bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
   end
 
-  def bosh_run_cck_with_resolution_with_name(deployment_name, num_errors, option = 1, env = {})
-    env.each do |key, value|
-      ENV[key] = value
-    end
-
+  def bosh_run_cck_with_resolution_with_name(deployment_name, num_errors, option = 1)
     output = ''
     bosh_runner.run_interactively('cck', deployment_name: deployment_name) do |runner|
       (1..num_errors).each do

@@ -35,11 +35,7 @@ describe 'cli: cloudcheck', type: :integration do
     end
   end
 
-  def bosh_run_cck_with_resolution(num_errors, option = 1, env = {})
-    env.each do |key, value|
-      ENV[key] = value
-    end
-
+  def bosh_run_cck_with_resolution(num_errors, option = 1)
     output = ''
     bosh_runner.run_interactively('cck', deployment_name: 'simple') do |runner|
       (1..num_errors).each do
