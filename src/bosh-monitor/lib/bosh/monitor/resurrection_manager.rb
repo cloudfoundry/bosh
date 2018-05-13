@@ -1,68 +1,73 @@
 module Bosh::Monitor
   class ResurrectionManager
-    def initialize()
+    def initialize
       @parsed_rules = []
       @logger = Bhm.logger
-      @active_ids = []
+      @resurrection_config_sha = []
     end
 
     def resurrection_enabled?(deployment_name, instance_group)
       enabled = true
       @parsed_rules.each do |parsed_rule|
-        enabled = enabled && parsed_rule.enabled? if parsed_rule.applies?(deployment_name, instance_group)
+        enabled &&= parsed_rule.enabled? if parsed_rule.applies?(deployment_name, instance_group)
       end
 
-      return enabled
+      enabled
     end
 
     def update_rules(resurrection_configs)
       new_parsed_rules = []
       return if resurrection_configs.nil? || resurrection_configs.empty?
 
-      ids = resurrection_configs.map {|resurrection_config| resurrection_config['id']}
-      if @active_ids.to_set != ids.to_set
-        @logger.info("Resurrection config update starting...")
+      resurrection_config_sha = resurrection_configs.map do |resurrection_config|
+        Digest::SHA256.digest(resurrection_config['content'])
+      end
+      if @resurrection_config_sha.to_set != resurrection_config_sha.to_set
+        @logger.info('Resurrection config update starting...')
 
-        resurrection_rule_hashes = resurrection_configs.map {|resurrection_config| YAML.load(resurrection_config['content'])['rules']}.flatten || []
+        resurrection_rule_hashes = resurrection_configs.map do |resurrection_config|
+          YAML.safe_load(resurrection_config['content'])['rules']
+        end.flatten || []
         resurrection_rule_hashes.each do |resurrection_rule_hash|
           begin
             new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)
-          rescue Exception => e
+          rescue StandardError => e
             @logger.error("Failed to parse resurrection config rule #{resurrection_rule_hash.inspect}: #{e.inspect}")
           end
         end
         @parsed_rules = new_parsed_rules
-        @active_ids = ids
-        @logger.info("Resurrection config update finished")
+        @resurrection_config_sha = resurrection_config_sha
+        @logger.info('Resurrection config update finished')
       else
-        @logger.info("Resurrection config remains the same")
+        @logger.info('Resurrection config remains the same')
       end
     end
 
-    private
-
     class ResurrectionRule
-      def initialize(options, include_filter, exclude_filter)
-        @options = options
+      def initialize(enabled, include_filter, exclude_filter)
+        @enabled = enabled
         @include_filter = include_filter
         @exclude_filter = exclude_filter
       end
 
       def self.parse(resurrection_rule_hash)
-        if !resurrection_rule_hash.kind_of?(Hash) || !resurrection_rule_hash.key?('options')
-          raise ConfigProcessingError, "Invalid format for resurrection config: expected 'options' to be presented"
+        if !resurrection_rule_hash.is_a?(Hash) || !resurrection_rule_hash.key?('enabled')
+          raise ConfigProcessingError, "Required property 'enabled' was not specified in object"
         end
-        options = resurrection_rule_hash.fetch('options')
-        if !options.kind_of?(Hash) || !options.key?('enabled')
-          raise ConfigProcessingError, "Invalid format for resurrection config: expected 'enabled' option, got #{options.class}: #{options}"
+
+        enabled = resurrection_rule_hash.fetch('enabled')
+
+        unless enabled.is_a?(TrueClass) || enabled.is_a?(FalseClass)
+          raise ConfigProcessingError, "Property 'enabled' value (#{enabled.inspect}) did not match the required type 'Boolean'"
         end
+
         include_filter = Filter.parse(resurrection_rule_hash.fetch('include', {}), :include)
         exclude_filter = Filter.parse(resurrection_rule_hash.fetch('exclude', {}), :exclude)
-        new(options, include_filter, exclude_filter)
+        new(enabled, include_filter, exclude_filter)
       end
 
       def enabled?
-        !!@options['enabled']
+        @enabled
       end
 
       def applies?(deployment_name, instance_group)
@@ -78,30 +83,31 @@ module Bosh::Monitor
       end
 
       def self.parse(filter_hash, filter_type)
-        applicable_deployment_names =  filter_hash.fetch('deployments', [])
+        applicable_deployment_names = filter_hash.fetch('deployments', [])
         applicable_instance_groups = filter_hash.fetch('instance_groups', [])
         new(applicable_deployment_names, applicable_instance_groups, filter_type)
       end
 
       def applies?(deployment_name, instance_group)
-        if has_instance_groups? && !@applicable_instance_groups.include?(instance_group)
-          return false
-        end
+        return false if instance_groups? && !@applicable_instance_groups.include?(instance_group)
 
-        if has_deployments? &&  !@applicable_deployment_names.include?(deployment_name)
-          return false
-        end
+        return false if deployments? && !@applicable_deployment_names.include?(deployment_name)
 
         return true if @filter_type == :include
-        return @filter_type == :exclude && (has_deployments? || has_instance_groups?)
+
+        any_filter?
       end
 
-      def has_deployments?
+      def deployments?
         !@applicable_deployment_names.nil? && !@applicable_deployment_names.empty?
       end
 
-      def has_instance_groups?
+      def instance_groups?
         !@applicable_instance_groups.nil? && !@applicable_instance_groups.empty?
+      end
+
+      def any_filter?
+        (deployments? || instance_groups?)
       end
     end
   end

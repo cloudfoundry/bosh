@@ -63,7 +63,7 @@ module Bosh::Monitor
     end
 
     def update_resurrection_config
-      @logger.debug("Getting resurrection config from director...")
+      @logger.debug('Getting resurrection config from director...')
       Fiber.new { fetch_resurrection_config }.resume
     end
 
@@ -181,9 +181,9 @@ module Bosh::Monitor
     end
 
     def fetch_resurrection_config
-      @logger.debug("Fetching resurrection config information...")
+      @logger.debug('Fetching resurrection config information...')
 
-      resurrection_config = @director.get_resurrection_config
+      resurrection_config = @director.resurrection_config
       @resurrection_manager.update_rules(resurrection_config)
     rescue Bhm::DirectorError => e
       log_exception(e)

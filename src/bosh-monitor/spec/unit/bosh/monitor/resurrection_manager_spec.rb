@@ -2,45 +2,53 @@ require 'spec_helper'
 
 module Bhm
   describe ResurrectionManager do
-    let(:manager) {described_class.new}
+    let(:manager) { described_class.new }
 
-    let(:include_spec) {
+    let(:include_spec) do
       {
         'deployments' => ['deployment_include'],
-        'instance_groups' => ['foobar-1']
+        'instance_groups' => ['foobar-1'],
       }
-    }
+    end
     let(:exclude_spec) { { 'deployments' => ['deployment_exclude'] } }
 
-    let(:resurrection_config) { [{ "content" => YAML.dump(resurrection_config_content), "id" => "1", "type" => "resurrection", "name" => "some-name" }] }
-    let(:resurrection_configs) do
+    let(:resurrection_config) do
       [
-        {"content" => YAML.dump(resurrection_config_content), "id" => "1", "type" => "resurrection", "name" => "some-name"},
-        {"content" => YAML.dump(resurrection_config_content), "id" => "2", "type" => "resurrection", "name" => "another-name"}
+        {
+          'content' => YAML.dump(resurrection_config_content),
+          'id' => '1', 'type' => 'resurrection',
+          'name' => 'some-name'
+        },
       ]
     end
 
+    let(:resurrection_configs) do
+      [
+        { 'content' => YAML.dump(resurrection_config_content), 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name' },
+        { 'content' => YAML.dump(resurrection_config_content), 'id' => '2', 'type' => 'resurrection', 'name' => 'another-name' },
+      ]
+    end
 
     before do
       Bhm.config = { 'director' => {} }
-      Bhm.plugins = [{'name' => 'logger'}, {'name' => 'logger'}]
+      Bhm.plugins = [{ 'name' => 'logger' }, { 'name' => 'logger' }]
     end
 
     describe '#update_rules' do
-      let(:resurrection_config_content) {
+      let(:resurrection_config_content) do
         {
           'rules' => [
             {
-              'options' => { 'enabled' => true },
-              'include' => include_spec
+              'enabled' => true,
+              'include' => include_spec,
             },
             {
-              'options' => { 'enabled' => false },
-              'exclude' => exclude_spec
-            }
-          ]
+              'enabled' => false,
+              'exclude' => exclude_spec,
+            },
+          ],
         }
-      }
+      end
 
       it 'parses resurrection config' do
         expect(logger).to receive(:info).with('Resurrection config update starting...')
@@ -64,16 +72,39 @@ module Bhm
         expect(resurrection_rules[3].enabled?).to be_falsey
       end
 
-      it 'shows missing `enabled` value in the resurrection config error' do
-        wrong_resurrection_config = [{'content' => YAML.dump('rules' => ['options' => {'include' => {'deployments' => ["test"]}}]), 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name'}]
-        expect(logger).to receive(:error).with("Failed to parse resurrection config rule {\"options\"=>{\"include\"=>{\"deployments\"=>[\"test\"]}}}: #<Bosh::Monitor::ConfigProcessingError: Invalid format for resurrection config: expected 'enabled' option, got Hash: {\"include\"=>{\"deployments\"=>[\"test\"]}}>")
-        manager.update_rules(wrong_resurrection_config)
+      context 'when resurrection config does not have enabled property' do
+        let(:resurrection_config_content) do
+          {
+            'rules' => [
+              {
+                'include' => { 'deployments' => ['deployment_include'] },
+              },
+            ],
+          }
+        end
+
+        it 'returns an error' do
+          expect(logger).to receive(:error)
+            .with(/Required property 'enabled' was not specified in object>/)
+          manager.update_rules(resurrection_config)
+        end
       end
 
-      it 'shows missing `options` in the resurrection config error' do
-        wrong_resurrection_config = [{'content' => YAML.dump('rules' => [{'include' => {'deployments' => ["test"]}}]), 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name'}]
-        expect(logger).to receive(:error).with("Failed to parse resurrection config rule {\"include\"=>{\"deployments\"=>[\"test\"]}}: #<Bosh::Monitor::ConfigProcessingError: Invalid format for resurrection config: expected 'options' to be presented>")
-        manager.update_rules(wrong_resurrection_config)
+      context 'when enabled property is not boolean' do
+        let(:resurrection_config_content) do
+          {
+            'rules' => [
+              { 'enabled' => 5,
+                'include' => { 'deployments' => ['deployment_include'] } },
+            ],
+          }
+        end
+
+        it 'returns an error' do
+          expect(logger).to receive(:error)
+            .with(/Property 'enabled' value \(5\) did not match the required type 'Boolean'/)
+          manager.update_rules(resurrection_config)
+        end
       end
 
       context 'when resurrection config was not updated' do
@@ -91,32 +122,32 @@ module Bhm
     end
 
     describe '#resurrection_enabled?' do
-      let(:resurrection_config_content) {
+      let(:resurrection_config_content) do
         {
           'rules' => [
             {
-              'options' => enabled,
+              'enabled' => enabled,
               'include' => include_spec,
-              'exclude' => exclude_spec
-            }
-          ]
+              'exclude' => exclude_spec,
+            },
+          ],
         }
-      }
+      end
       let(:exclude_spec) { {} }
       before { manager.update_rules(resurrection_config) }
 
       context 'when `enabled` equals true' do
-        let(:enabled) { {'enabled' => true} }
+        let(:enabled) { true }
 
         context 'when the resurrection config is applicable by deployment name' do
-          let(:include_spec) { {'deployments' => ['deployment_include']} }
+          let(:include_spec) { { 'deployments' => ['deployment_include'] } }
           it 'sends to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_truthy
           end
         end
 
         context 'when the deployment is neither included nor excluded' do
-          let(:include_spec) { {'deployments' => ['no_findy']} }
+          let(:include_spec) { { 'deployments' => ['no_findy'] } }
 
           it 'sends to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_truthy
@@ -124,7 +155,7 @@ module Bhm
         end
 
         context 'when the resurrection config is applicable by instance group' do
-          let(:include_spec) { {'instance_groups' => ['foobar']} }
+          let(:include_spec) { { 'instance_groups' => ['foobar'] } }
 
           it 'sends to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_truthy
@@ -132,7 +163,7 @@ module Bhm
         end
 
         context 'when the instance group is neither included nor excluded' do
-          let(:include_spec) { {'instance_groups' => ['no_findy']} }
+          let(:include_spec) { { 'instance_groups' => ['no_findy'] } }
 
           it 'sends to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_truthy
@@ -149,8 +180,8 @@ module Bhm
         end
 
         context 'when the resurrection config has the same include and exclude ' do
-          let(:include_spec) { {'deployments' => ['deployment_include']} }
-          let(:exclude_spec) { {'deployments' => ['deployment_include']} }
+          let(:include_spec) { { 'deployments' => ['deployment_include'] } }
+          let(:exclude_spec) { { 'deployments' => ['deployment_include'] } }
 
           it 'sends to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_truthy
@@ -159,10 +190,10 @@ module Bhm
       end
 
       context 'when `enabled` equals false' do
-        let(:enabled) { {'enabled' => false} }
+        let(:enabled) { false }
 
         context 'when the resurrection config is applicable by deployment name' do
-          let(:include_spec) { {'deployments' => ['deployment_include']} }
+          let(:include_spec) { { 'deployments' => ['deployment_include'] } }
 
           it 'does not send to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_falsey
@@ -170,7 +201,7 @@ module Bhm
         end
 
         context 'when the deployment is neither included nor excluded' do
-          let(:include_spec) { {'deployments' => ['no_findy']} }
+          let(:include_spec) { { 'deployments' => ['no_findy'] } }
 
           it 'sends to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_truthy
@@ -178,7 +209,7 @@ module Bhm
         end
 
         context 'when the resurrection config is applicable by instance group' do
-          let(:include_spec) { {'instance_groups' => ['foobar']} }
+          let(:include_spec) { { 'instance_groups' => ['foobar'] } }
 
           it 'does not send to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_falsey
@@ -186,7 +217,7 @@ module Bhm
         end
 
         context 'when the instance group is neither included nor excluded' do
-          let(:include_spec) { {'instance_groups' => ['no_findy']} }
+          let(:include_spec) { { 'instance_groups' => ['no_findy'] } }
 
           it 'sends to resurrection' do
             expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_truthy
@@ -213,24 +244,20 @@ module Bhm
       end
 
       context 'when several rules are applied' do
-        let(:resurrection_config_content) {
+        let(:resurrection_config_content) do
           {
             'rules' => [
               {
-                'options' => {
-                  'enabled' => true
-                },
-                'include' => {'deployments' => ['deployment_include']}
+                'enabled' => true,
+                'include' => { 'deployments' => ['deployment_include'] },
               },
               {
-                'options' => {
-                  'enabled' => false
-                },
-                'include' => {'deployments' => ['deployment_include']}
-              }
-            ]
+                'enabled' => false,
+                'include' => { 'deployments' => ['deployment_include'] },
+              },
+            ],
           }
-        }
+        end
 
         it 'does not send to resurrection' do
           expect(manager.resurrection_enabled?('deployment_include', 'foobar')).to be_falsey

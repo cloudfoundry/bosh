@@ -578,15 +578,13 @@ module Bosh::Spec
       {
         'rules' => [
           {
-            'options' => {
-              'enabled' => true
-            },
+            'enabled' => true,
             'include' => {
               'deployments' => ['simple_enabled'],
-              'instance_groups' => ['foobar']
-            }
-          }
-        ]
+              'instance_groups' => ['foobar'],
+            },
+          },
+        ],
       }
     end
 
@@ -594,17 +592,15 @@ module Bosh::Spec
       {
         'rules' => [
           {
-            'options' => {
-              'enabled' => false
-            },
+            'enabled' => false,
             'include' => {
-              'deployments' => ['simple_disabled']
+              'deployments' => ['simple_disabled'],
             },
             'exclude' => {
-              'instance_groups' => ['foobar_without_packages']
-            }
-          }
-        ]
+              'instance_groups' => ['foobar_without_packages'],
+            },
+          },
+        ],
       }
     end
   end
