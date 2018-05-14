@@ -1351,5 +1351,62 @@ module Bosh::Director::DeploymentPlan
         end
       end
     end
+
+    describe '#release_network_plans_for_ips' do
+      let(:reservation1) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('192.168.1.25')
+        reservation
+      end
+
+      let(:reservation2) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('192.168.1.26')
+        reservation
+      end
+
+      let(:existing_reservation) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('192.168.1.4')
+        reservation
+      end
+
+      let(:reservation3) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('10.0.0.1')
+        reservation
+      end
+
+      let(:network_plans) do
+        [
+          NetworkPlanner::Plan.new(reservation: reservation1, existing: false, obsolete: true),
+          NetworkPlanner::Plan.new(reservation: reservation2, existing: false, obsolete: true),
+          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+          NetworkPlanner::Plan.new(reservation: reservation3, existing: false, obsolete: true),
+        ]
+      end
+
+      let(:ip_provider) { instance_double(IpProvider) }
+
+      let(:ip1) { NetAddr::CIDR.create('192.168.1.25').to_i }
+      let(:ip2) { NetAddr::CIDR.create('192.168.1.26').to_i }
+
+      let(:ip_address1) { Bosh::Director::Models::IpAddress.make(address_str: ip1.to_s) }
+      let(:ip_address2) { Bosh::Director::Models::IpAddress.make(address_str: ip2.to_s) }
+
+      describe 'when there are ips specified' do
+        it 'releases obsolete network plans of the specified ips' do
+          expect(ip_provider).to receive(:release).with(reservation1)
+          expect(ip_provider).to receive(:release).with(reservation2)
+
+          instance_plan.release_network_plans_for_ips(ip_provider, [ip_address1.address_str, ip_address2.address_str])
+
+          expect(instance_plan.network_plans).to contain_exactly(
+            network_plans[2],
+            network_plans[3],
+          )
+        end
+      end
+    end
   end
 end

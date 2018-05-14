@@ -15,4 +15,3 @@ module Bosh::Director
     end
   end
 end
-

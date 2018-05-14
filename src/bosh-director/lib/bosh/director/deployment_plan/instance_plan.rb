@@ -225,6 +225,19 @@ module Bosh
           network_plans.delete_if(&:obsolete?)
         end
 
+        def release_network_plans_for_ips(ip_provider, addresses)
+          return if addresses.empty?
+
+          plans_to_delete = []
+          network_plans.select(&:obsolete?).each do |plan|
+            next unless addresses.include?(plan.reservation.ip.to_s)
+            ip_provider.release(plan.reservation)
+            plans_to_delete << plan
+          end
+
+          @network_plans -= plans_to_delete
+        end
+
         def release_all_network_plans
           network_plans.clear
         end
