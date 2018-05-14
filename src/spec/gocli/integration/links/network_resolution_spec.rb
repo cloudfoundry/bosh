@@ -126,7 +126,7 @@ describe 'network resolution', type: :integration do
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest)
-      should_contain_network_for_job('my_api', 'api_server', /.b./)
+      should_contain_network_for_job('my_api', 'api_server', /.b\.simple\.bosh/)
     end
 
     it 'raises an error if network name specified is not one of the networks on the link' do
@@ -228,6 +228,29 @@ describe 'network resolution', type: :integration do
       }
       deploy_simple_manifest(manifest_hash: manifest)
       should_contain_network_for_job('my_api', 'api_server', /.dynamic-network./)
+    end
+
+    context 'when provider has addressable flag in one of its network' do
+
+      before do
+        cloud_config['networks'] << {
+          'name' => 'another',
+          'type' => 'dynamic',
+          'subnets' => [{'az' => 'z1'}],
+        }
+
+        mysql_instance_group_spec['networks'] << {
+          'name' => 'another',
+          'default' => ['addressable'],
+        }
+
+        upload_cloud_config(cloud_config_hash: cloud_config)
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+
+      it 'uses the default `addressable`' do
+        should_contain_network_for_job('my_api', 'api_server', /\.another\.simple\.bosh/)
+      end
     end
   end
 end

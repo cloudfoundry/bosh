@@ -895,6 +895,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     it 'returns the gateway network name' do
       expect(subject.default_network_name).to eq('gateway-default-network')
     end
+
+    context 'when addressable is specified' do
+      before do
+        subject.default_network['addressable'] = 'something'
+      end
+
+      it 'returns the addressable network' do
+        expect(subject.default_network_name).to eq('something')
+      end
+    end
   end
 
   describe '#unignored_instance_plans_needing_duplicate_vm' do
