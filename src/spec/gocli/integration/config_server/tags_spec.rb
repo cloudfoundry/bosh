@@ -47,12 +47,8 @@ describe 'tags', type: :integration do
   end
 
   def bosh_run_cck_with_resolution(num_errors, option = 1, env = {})
-    env.each do |key, value|
-      ENV[key] = value
-    end
-
     output = ''
-    bosh_runner.run_interactively('cck', deployment_name: 'simple', no_login: true, include_credentials: false) do |runner|
+    bosh_runner.run_interactively('cck', deployment_name: 'simple', client: env['BOSH_CLIENT'], client_secret: env['BOSH_CLIENT_SECRET']) do |runner|
       (1..num_errors).each do
         expect(runner).to have_output 'Skip for now'
 

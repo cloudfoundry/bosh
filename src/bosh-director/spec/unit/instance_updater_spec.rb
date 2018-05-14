@@ -92,7 +92,7 @@ module Bosh::Director
       allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).and_return(dns_encoder)
       allow(rendered_templates_persistor).to receive(:persist)
       allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
-      allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
+      allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
     end
 
     context 'for any state' do

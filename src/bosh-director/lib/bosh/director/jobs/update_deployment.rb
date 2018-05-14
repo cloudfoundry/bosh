@@ -81,7 +81,7 @@ module Bosh::Director
 
             # that's where the link path is created
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
-            @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_plan.model.links_serial_id).create_manager
+            @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
 
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)

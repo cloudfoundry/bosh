@@ -33,7 +33,7 @@ module Bosh::Director
 
       before do
         App.new(config)
-        allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:create, :create_manager).and_return(links_manager)
+        allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
         allow(job).to receive(:task_id).and_return(task.id)
         allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
       end

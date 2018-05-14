@@ -65,12 +65,6 @@ module Bosh::Director
           allow(instance_plan).to receive(:instance).and_return(needed_instance)
           [instance_plan]
         end
-        let(:links_manager_factory) do
-          instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
-            expect(double).to receive(:create_manager).and_return(links_manager)
-          end
-        end
-
         let(:links_manager) do
           instance_double(Bosh::Director::Links::LinksManager).tap do |double|
             allow(double).to receive(:resolve_deployment_links)
@@ -189,13 +183,6 @@ module Bosh::Director
         let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
         let(:changed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (2)") }
         let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: nil, index: 1, model: canary_model) }
-
-        let(:links_manager_factory) do
-          instance_double(Bosh::Director::Links::LinksManagerFactory).tap do |double|
-            expect(double).to receive(:create_manager).and_return(links_manager)
-          end
-        end
-
         let(:links_manager) do
           instance_double(Bosh::Director::Links::LinksManager).tap do |double|
             allow(double).to receive(:bind_links_to_instance)

@@ -23,7 +23,7 @@ module Bosh::Director
 
       before do
         allow(links_manager).to receive(:resolve_deployment_links).with(deployment_model, anything)
-        allow(Bosh::Director::Links::LinksManagerFactory).to receive_message_chain(:new, :create_manager).and_return(links_manager)
+        allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
         allow(deployment).to receive(:is_deploy?).and_return(true)
       end
 

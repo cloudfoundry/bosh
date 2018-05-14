@@ -46,7 +46,7 @@ module Bosh::Director
 
     def update(instance_plan, options = {})
       instance = instance_plan.instance
-      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(instance.deployment_model.links_serial_id).create_manager
+      @links_manager = Bosh::Director::Links::LinksManager.new(instance.deployment_model.links_serial_id)
       instance_report = DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance.model.active_vm }
       action, context = get_action_and_context(instance_plan)
       parent_id = add_event(instance.deployment_model.name, action, instance.model.name, context) if instance_plan.changed?

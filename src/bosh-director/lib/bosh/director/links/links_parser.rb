@@ -45,7 +45,7 @@ module Bosh::Director::Links
     end
 
     def parse_providers_from_job(manifest_job_spec, deployment_model, current_release_template_model, job_properties, instance_group_name)
-      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
+      @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
       manifest_provides_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'provides', class: Hash, optional: true, default: {}))
       job_name = safe_property(manifest_job_spec, 'name', class: String)
@@ -130,7 +130,7 @@ module Bosh::Director::Links
     end
 
     def parse_consumers_from_job(manifest_job_spec, deployment_model, current_release_template_model, instance_group_name)
-      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
+      @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
       consumes_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'consumes', class: Hash, optional: true, default: {}))
       job_name = safe_property(manifest_job_spec, 'name', class: String)
@@ -223,7 +223,7 @@ module Bosh::Director::Links
     end
 
     def parse_provider_from_disk(disk_spec, deployment_model, instance_group_name)
-      @links_manager = Bosh::Director::Links::LinksManagerFactory.create(deployment_model.links_serial_id).create_manager
+      @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
       disk_name = disk_spec['name'] # All the parsing we need
 
