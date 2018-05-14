@@ -39,7 +39,7 @@ module Bosh
         settings = read_agent_settings(agent_id)
         settings['disks']['persistent'][disk_id] = 'attached'
         write_agent_settings(agent_id, settings)
-        {persistent: {"#{disk_id}": {path: "#{file}"}}}
+        file
       end
 
       def info

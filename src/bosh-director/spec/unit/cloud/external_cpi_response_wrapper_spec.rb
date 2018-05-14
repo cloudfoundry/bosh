@@ -441,32 +441,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       end
     end
 
-    describe '#attach_disk' do
-      let(:disk_hints) {
-        {
-          'system' => '/dev/sda',
-          'ephemeral' => '/dev/sdb',
-          'persistent' => {}
-        }
-      }
-      let(:expected_response) {
-        {
-          'system' => '/dev/sda',
-          'ephemeral' => '/dev/sdb',
-          'persistent' => {
-            'vol-3475945' => { 'volume_id' => '3' },
-            'vol-7447851' => { 'path' => '/dev/sdd' },
-          }
-        }
-      }
-      let(:json_object) {
-        expected_response
-      }
-      let(:cpi_response) { JSON.dump(result: json_object, error: nil, log: 'fake-log') }
-      let(:additional_expected_args) { disk_hints }
-      it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
-    end
-
     describe 'forwards all other methods without change' do
       let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
       let(:expected_response) { 'fake-result' }
@@ -513,6 +487,10 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
       context("#delete_disk") do
         it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
+      end
+
+      context("#attach_disk") do
+        it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
       end
 
       context("#detach_disk") do
@@ -613,12 +591,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       end
     end
 
-    describe '#attach_disk' do
-      let(:expected_response) { nil }
-      let(:cpi_response) { JSON.dump(result: nil, error: nil, log: 'fake-log') }
-      it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
-    end
-
     describe 'forwards all other methods without change' do
       let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
       let(:expected_response) { 'fake-result' }
@@ -665,6 +637,10 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
       context("#delete_disk") do
         it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
+      end
+
+      context("#attach_disk") do
+        it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
       end
 
       context("#detach_disk") do

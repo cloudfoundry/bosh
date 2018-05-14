@@ -19,6 +19,7 @@ module Bosh::Clouds
     def create_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def has_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def attach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def detach_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def snapshot_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_snapshot(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
@@ -44,14 +45,6 @@ module Bosh::Clouds
       end
 
       response
-    end
-
-    def attach_disk(*args)
-      if @cpi_api_version == 2 && args.count == 2
-        args << {'disk_hints' => {}}
-      end
-
-      @cpi.attach_disk(*args)
     end
 
     private
