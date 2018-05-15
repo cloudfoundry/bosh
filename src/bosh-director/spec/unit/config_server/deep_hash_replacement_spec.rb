@@ -2,8 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director::ConfigServer
   describe DeepHashReplacement do
-    describe "#variables_paths" do
+    let(:subject) { DeepHashReplacement.new }
 
+    describe '#variables_paths' do
       let(:global_props) do
         {'a' => 'test', 'b' => '((bla))'}
       end
@@ -60,27 +61,24 @@ module Bosh::Director::ConfigServer
         }
       end
 
-      let(:replacement_list) do
-        DeepHashReplacement.new.variables_path(sample_hash)
-      end
-
       it 'creates replacement map for all necessary variables' do
         expected_result = [
-          {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
-          {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-          {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-          {'variables'=>['((nuclear_launch_code))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c']},
-          {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-          {'variables'=>['((bla))'], 'path'=>['properties', 'b']},
-          {'variables'=>['((secret_key))'], 'path'=>['instance_groups', 0, 'properties', 'a', 2]},
-          {'variables'=>['((my_domain))'], 'path'=>['instance_groups', 0, 'properties', 'b']},
-          {'variables'=>['((my_domain))', '((port))'], 'path'=>['instance_groups', 0, 'properties', 'c']},
-          {'variables'=>['((my_index))', '((/smurf/hello))'], 'path'=>['instance_groups', 0, 'properties', 'd', 3]},
-          {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
-          {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
+          {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid'],'is_key'=> false},
+          {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf'], 'is_key'=>false},
+          {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel'], 'is_key'=>false},
+          {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f'], 'is_key'=> false},
+          {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1], 'is_key'=>false},
+          {'variables'=>['((nuclear_launch_code))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c'], 'is_key'=>false},
+          {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name'], 'is_key'=>false},
+          {'variables'=>['((secret_key))'], 'path'=>['instance_groups', 0, 'properties', 'a', 2], 'is_key'=>false},
+          {'variables'=>['((my_domain))'], 'path'=>['instance_groups', 0, 'properties', 'b'], 'is_key'=>false},
+          {'variables'=>['((my_domain))', '((port))'], 'path'=>['instance_groups', 0, 'properties', 'c'], 'is_key'=>false},
+          {'variables'=>['((my_index))', '((/smurf/hello))'], 'path'=>['instance_groups', 0, 'properties', 'd', 3], 'is_key'=>false},
+          {'variables'=>['((bla))'], 'path'=>['properties', 'b'], 'is_key'=>false}
         ]
 
-        expect(replacement_list).to match_array(expected_result)
+        replacement_list = subject.variables_path(sample_hash)
+        expect(replacement_list).to eq(expected_result)
       end
 
       context 'when key starts with a bang' do
@@ -95,11 +93,12 @@ module Bosh::Director::ConfigServer
 
         it 'handles it correctly and removes ! from key (for spiff)' do
           expected_result = [
-            {'variables'=>['((!blue))'], 'path'=>['smurf']},
-            {'variables'=>['((!what_is_my_color))'], 'path'=>['gargamel', 'color']}
+            {'variables'=>['((!blue))'], 'path'=>['smurf'], 'is_key'=>false},
+            {'variables'=>['((!what_is_my_color))'], 'path'=>['gargamel', 'color'], 'is_key'=>false}
           ]
 
-          expect(replacement_list).to match_array(expected_result)
+          replacement_list = subject.variables_path(sample_hash)
+          expect(replacement_list).to eq(expected_result)
         end
       end
 
@@ -137,62 +136,74 @@ module Bosh::Director::ConfigServer
           ignored_subtrees << ['instance_groups', index, 'properties']
           ignored_subtrees << ['properties']
 
-          replacements = DeepHashReplacement.new.variables_path(sample_hash, ignored_subtrees)
-
           expected_replacements = [
-            {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f']},
-            {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1]},
-            {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name']},
-            {'variables'=>['((address_placeholder))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address']},
-            {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid']},
-            {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf']},
-            {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel']}
+            {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid'], 'is_key' =>false},
+            {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f'], 'is_key' =>false},
+            {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf'], 'is_key' =>false},
+            {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel'], 'is_key' =>false},
+            {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1], 'is_key' =>false},
+            {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name'], 'is_key' =>false},
+            {'variables'=>['((address_placeholder))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address'], 'is_key' =>false}
           ]
-          expect(replacements).to match_array(expected_replacements)
+
+          replacement_list = subject.variables_path(sample_hash, ignored_subtrees)
+          expect(replacement_list).to match_array(expected_replacements)
+        end
+      end
+
+      context 'when the key is a variable' do
+        let(:sample_hash) do
+          {
+            '((my_key))' => {
+              '((my_other_key))' => '((what_is_my_color))',
+            },
+          }
+        end
+
+        it 'handles it correctly and removes ! from key (for spiff)' do
+          expected_result = [
+            { 'variables' => ['((what_is_my_color))'], 'path' => ['((my_key))', '((my_other_key))'], 'is_key' => false },
+            { 'variables' => ['((my_other_key))'], 'path' => ['((my_key))'], 'is_key' => true },
+            { 'variables' => ['((my_key))'], 'path' => [], 'is_key' => true },
+          ]
+
+          replacement_list = subject.variables_path(sample_hash)
+          expect(replacement_list).to eq(expected_result)
         end
       end
     end
 
-    describe "#replace_variables" do
+    describe '#replace_variables' do
       let(:values) do
         {
+          '((key_0))' => 'smurf_0',
           '((key_1))' => 'smurf_1',
           '((key_2))' => 'smurf_2',
           '((key_3))' => 'smurf_3',
-          '((key_4))' => {
-            'name' => 'papa-smurf'
-          },
+          '((key_4))' => { 'name' => 'papa-smurf' },
           '((key_5))' => 504,
           '((key_6))' => nil,
           '((key_7))' => '((key_8))',
           '((key_8))' => '((key_7))',
+          '((deep_key))' => 'mama-smurf',
+          '((deeper_key))' => 'auntie-smurf',
+          '((deepest_key))' => 'grandma-smurf',
         }
       end
 
       it 'replaces variables in simple unnested objects' do
         obj = {
           'bla' => '((key_1))',
-          'test' => '((key_4))'
+          'test' => '((key_4))',
         }
 
         paths = [
-          {
-            'variables' => ['((key_1))'],
-            'path' => ['bla']
-          },
-          {
-            'variables' => ['((key_4))'],
-            'path' => ['test']
-          }
+          { 'variables' => ['((key_1))'], 'path' => ['bla'] },
+          { 'variables' => ['((key_4))'], 'path' => ['test'] },
         ]
 
-        result = DeepHashReplacement.new.replace_variables(obj, paths, values)
-        expect(result).to eq({
-                               'bla' => 'smurf_1',
-                               'test' => {
-                                 'name' => 'papa-smurf'
-                               }
-                             })
+        result = subject.replace_variables(obj, paths, values)
+        expect(result) .to eq('bla' => 'smurf_1', 'test' => { 'name' => 'papa-smurf' })
       end
 
       it 'replaces variables in nested objects' do
@@ -340,6 +351,43 @@ module Bosh::Director::ConfigServer
               expect(e.message).to eq(expected_error_msg)
             }
           end
+        end
+      end
+
+      context 'when the key is a variable' do
+        it 'replaces the key variables' do
+          obj = {
+            '((key_0))' => '((key_1))',
+            '((deep_key))' => {
+              '((deeper_key))' => {
+                '((deepest_key))' => {
+                  'hello' => 'smile',
+                  'state' => '((key_4))',
+                  'number' => '((key_5))',
+                },
+              },
+            },
+          }
+
+
+          expected = {
+            'smurf_0' => 'smurf_1',
+            'mama-smurf' => {
+              'auntie-smurf' => {
+                'grandma-smurf' => {
+                  'hello' => 'smile',
+                  'state' => { 'name' => 'papa-smurf' },
+                  'number' => 504,
+                },
+              },
+            },
+          }
+
+
+          paths = subject.variables_path(obj)
+          result = subject.replace_variables(obj, paths, values)
+
+          expect(result).to eq(expected)
         end
       end
     end

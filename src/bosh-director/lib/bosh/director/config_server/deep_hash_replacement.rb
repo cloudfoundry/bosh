@@ -33,6 +33,17 @@ module Bosh::Director::ConfigServer
         variable_list = variables_path['variables']
         target_to_replace = ret[config_path.last]
 
+        if variables_path['is_key']
+          uninterpolated_key = variable_list.first
+          interpolated_key = variable_values_copy[uninterpolated_key]
+          if config_path.length >= 1
+             ret[config_path.last][interpolated_key] = ret[config_path.last].delete(uninterpolated_key)
+          else
+            ret[interpolated_key] = ret.delete(uninterpolated_key)
+          end
+          next
+        end
+
         if variable_list.size == 1 && variable_list.first == target_to_replace
           ret[config_path.last] = variable_values_copy[variable_list.first]
         else
@@ -65,23 +76,22 @@ module Bosh::Director::ConfigServer
 
     private
 
-    def construct_variables_paths(result, obj, path = nil)
+    def construct_variables_paths(result, obj, path=nil, is_key=false)
       if obj.is_a? Array
         obj.each_with_index do |item, index|
           new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
-          new_path << index
-          construct_variables_paths(result, item, new_path)
+          construct_variables_paths(result, item, new_path + [index])
         end
       elsif obj.is_a? Hash
         obj.each do |key, value|
           new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
-          new_path << key
-          construct_variables_paths(result, value, new_path)
+          construct_variables_paths(result, value, new_path + [key])
+          construct_variables_paths(result, key, new_path, true) if ConfigServerHelper.is_full_variable?(key)
         end
       else
         path ||= []
         variables = ConfigServerHelper.extract_variables_from_string(obj.to_s)
-        result << {'variables' => variables, 'path' => path} unless variables.empty?
+        result << { 'variables' => variables, 'path' => path, 'is_key' => is_key } unless variables.empty?
       end
     end
 

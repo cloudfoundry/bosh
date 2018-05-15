@@ -111,13 +111,7 @@ module Bosh::Director
           validate_properties_format(@properties[instance_group_name], name)
 
           provided_property_value = lookup_property(@properties[instance_group_name], name)
-          property_value_to_use = @config_server_client.prepare_and_get_property(
-            provided_property_value,
-            definition['default'],
-            definition['type'],
-            deployment_name,
-            options
-          )
+          property_value_to_use = provided_property_value.nil? ? definition['default'] : provided_property_value
           sorted_property = sort_property(property_value_to_use)
           set_property(bound_properties, name, sorted_property)
         end
