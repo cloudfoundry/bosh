@@ -1,0 +1,90 @@
+---
+groups:
+  - name: cpi-ruby
+    jobs:
+      - unit-tests
+      - publish-major
+      - publish-minor
+      - publish-patch
+
+jobs:
+  - name: unit-tests
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - { get: bosh-cpi-ruby-gem, trigger: true }
+      - task: test
+        file: bosh-cpi-ruby-gem/ci/tasks/test-unit.yml
+
+  - name: publish-minor
+    serial: true
+    plan:
+      - get: bosh-cpi-ruby-gem
+        passed: [unit-tests]
+        trigger: false
+      - get: version-semver
+        params: { bump: minor }
+      - &publish
+        do:
+        - put: bosh-cpi-ruby-gem
+          params:
+            repository: bosh-cpi-ruby-gem/
+            tag: version-semver/version
+            tag_prefix: v
+            only_tag: true
+        - task: publish
+          file: bosh-cpi-ruby-gem/ci/tasks/publish-gem.yml
+          params:
+            RUBYGEMS_API_KEY: {{rubygems_api_key}}
+        - put: version-semver
+          params: { file: version-semver/number }
+      - &tracker-publish
+        put: tracker-output
+        params:
+          repos:
+          - bosh-cpi-ruby-gem
+
+  - name: publish-major
+    serial: true
+    plan:
+      - get: bosh-cpi-ruby-gem
+        passed: [unit-tests]
+        trigger: false
+      - get: version-semver
+        params: { bump: major }
+      - *publish
+      - *tracker-publish
+
+  - name: publish-patch
+    serial: true
+    plan:
+      - get: bosh-cpi-ruby-gem
+        passed: [unit-tests]
+        trigger: false
+      - get: version-semver
+        params: { bump: patch }
+      - *publish
+      - *tracker-publish
+
+resources:
+  - name: bosh-cpi-ruby-gem
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh-cpi-ruby.git
+      branch: master
+      private_key: {{github_deployment_key__bosh_cpi_ruby}}
+
+  - name: version-semver
+    type: semver
+    source:
+      key: current-version
+      access_key_id: {{bosh_cpi_ruby__access_key}}
+      secret_access_key: {{bosh_cpi_ruby__secret_key}}
+      bucket: {{bosh_cpi_ruby__bucket}}
+
+  - name: tracker-output
+    type: tracker
+    source:
+      token: {{tracker_api_token}}
+      project_id: {{tracker_project_id}}
+      tracker_url: https://www.pivotaltracker.com

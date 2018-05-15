@@ -2,6 +2,8 @@
 
 require 'json'
 require 'yaml'
+require 'cloud'
+
 require_relative '../lib/cloud/dummy'
 require_relative '../lib/cloud/dummy_v2'
 

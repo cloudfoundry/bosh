@@ -34,7 +34,7 @@ describe 'director behaviour', type: :integration do
 
   context 'when cpi_version is 2' do
     context 'create_vm' do
-      let(:response_string) { /"result":\["\d+",{.*},{.*}\]/ }
+      let(:response_string) { /"result":\["\d+",{.*}\]/ }
       let(:search_filter_string) { 'DEBUG - Dummy: create_vm' }
 
       it_behaves_like 'using CPI specific cpi_api_version'
@@ -42,7 +42,7 @@ describe 'director behaviour', type: :integration do
 
     context 'attach_disk' do
       # response is expected to be filepath (from dummy_v2:attach_disk)
-      let(:response_string) { /"result":{"persistent":{"\w+":{"path":"(\/.*\/)\d+"}}/ }
+      let(:response_string) { /"result":"(\/.*\/)\d+"/ }
       let(:search_filter_string) { 'DEBUG - Saving input for attach_disk' }
 
       it_behaves_like 'using CPI specific cpi_api_version'

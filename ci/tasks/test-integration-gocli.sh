@@ -98,6 +98,11 @@ mkdir -p $agent_path
 cp -r bosh-agent $agent_path
 
 pushd bosh-src/src
+  pushd bosh_cpi
+    gem build bosh_cpi
+  popd
+
+  gem install bosh_cpi/bosh_cpi-2.4.2.gem
   print_git_state
 
   bundle install --local

@@ -30,7 +30,7 @@ PATH
       bosh-registry (~> 0.0.0)
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
-      bosh_cpi (= 2.4.1)
+      bosh_cpi
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.2.0)
       httpclient (~> 2.8.3)
@@ -91,6 +91,13 @@ PATH
       logging (~> 2.2.2)
       semi_semantic (~> 1.2.0)
 
+PATH
+  remote: bosh_cpi
+  specs:
+    bosh_cpi (2.4.2)
+      httpclient (~> 2.8.3)
+      membrane (~> 1.1.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -115,9 +122,6 @@ GEM
     beefcake (1.0.0)
     blue-shell (0.3.0)
       rspec
-    bosh_cpi (2.4.1)
-      httpclient (~> 2.8.3)
-      membrane (~> 1.1.0)
     builder (3.1.4)
     byebug (9.1.0)
     cf-uaa-lib (3.2.5)
@@ -143,6 +147,7 @@ GEM
     excon (0.49.0)
     fakefs (0.11.1)
     ffi (1.9.18)
+    ffi (1.9.23)
     fog-core (1.40.1)
       builder
       excon (~> 0.49)
@@ -203,6 +208,7 @@ GEM
       slop (~> 3.0)
     public_suffix (3.0.0)
     puma (3.11.0)
+    puma (3.11.3)
     rack (1.6.8)
     rack-protection (1.5.3)
       rack
@@ -302,6 +308,7 @@ DEPENDENCIES
   bosh-registry!
   bosh-template!
   bosh_common!
+  bosh_cpi!
   bundler (~> 1.16.0)
   eventmachine (~> 1.2)
   fakefs

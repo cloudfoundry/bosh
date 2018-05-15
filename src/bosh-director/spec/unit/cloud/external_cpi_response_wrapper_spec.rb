@@ -371,16 +371,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
           }
         }
       }
-      let(:disk_hints) {
-        {
-          'system' => '/dev/sda',
-          'ephemeral' => '/dev/sdb',
-          'persistent' => {}
-        }
-      }
-
-      let(:cpi_response) { JSON.dump(result: [instance_cid, disk_hints], error: nil, log: 'fake-log') }
-      let(:expected_response) { [instance_cid, disk_hints] }
+      let(:cpi_response) { JSON.dump(result: [instance_cid, networks], error: nil, log: 'fake-log') }
+      let(:expected_response) { [instance_cid, networks] }
 
       it_calls_cpi_method(
         :create_vm,

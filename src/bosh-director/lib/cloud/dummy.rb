@@ -4,11 +4,11 @@ require 'securerandom'
 require 'membrane'
 require 'netaddr'
 require_relative '../cloud/errors'
-require 'cloud'
 
 module Bosh
   module Clouds
-    class Dummy < Bosh::Cloud
+    class Dummy
+      include Bosh::CloudV1
       class NotImplemented < StandardError; end
 
       attr_reader :commands

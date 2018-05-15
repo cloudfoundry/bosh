@@ -470,6 +470,7 @@ module Bosh::Dev::Sandbox
 
       @nginx_service.restart_if_needed
 
+      write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
       @cpi.reset
     end
 

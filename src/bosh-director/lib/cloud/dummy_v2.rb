@@ -25,9 +25,9 @@ module Bosh
         ]
       end
 
-      ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { { vm_cid: String, disk_id: String, disk_hints: Hash } }
-      def attach_disk(vm_cid, disk_id, disk_hints)
-        validate_and_record_inputs(ATTACH_DISK_SCHEMA, __method__, vm_cid, disk_id, disk_hints)
+      ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { { vm_cid: String, disk_id: String } }
+      def attach_disk(vm_cid, disk_id)
+        validate_and_record_inputs(ATTACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
         raise "#{disk_id} is already attached to an instance" if disk_attached?(disk_id)
         file = attachment_file(vm_cid, disk_id)
         FileUtils.mkdir_p(File.dirname(file))
