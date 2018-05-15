@@ -273,6 +273,8 @@ module Bosh::Director
           allow(disk_manager).to receive(:update_persistent_disk)
           allow(job).to receive(:update)
           allow(instance).to receive(:update_instance_settings)
+
+          expect(instance_plan).to receive(:release_obsolete_network_plans).with(ip_provider)
         end
 
         it 'does NOT drain, stop, post-stop, snapshot, but persists rendered templates to the blobstore, updates DNS and bind links' do
@@ -413,12 +415,13 @@ module Bosh::Director
               expect(elect_active_vm_step).to receive(:perform)
               expect(orphan_vm_step).to receive(:perform)
 
+              expected_ips = instance_model.active_vm.ip_addresses.map(&:address_str)
+              expect(instance_plan).to receive(:remove_obsolete_network_plans_for_ips).with(expected_ips)
+
               updater.update(instance_plan)
             end
 
             context 'and has unresponsive agent' do
-              let(:expected_ip_addresses) { instance_model.active_vm.ip_addresses.map(&:address_str) }
-
               before do
                 allow(instance_plan).to receive(:unresponsive_agent?).and_return(true)
               end
@@ -429,7 +432,6 @@ module Bosh::Director
                 expect(delete_step).to receive(:perform) do |report|
                   expect(report.vm).to eql(instance_model.active_vm)
                 end
-                expect(instance_plan).to receive(:release_network_plans_for_ips).with(ip_provider, expected_ip_addresses)
                 expect(vm_creator).not_to receive(:create_for_instance_plan)
 
                 expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)
@@ -525,6 +527,8 @@ module Bosh::Director
       before do
         allow(DiskManager).to receive(:new).and_return(disk_manager)
         allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
+
+        expect(instance_plan).to receive(:release_obsolete_network_plans).with(ip_provider)
       end
 
       it 'updates the instance settings and bind links' do

@@ -1352,41 +1352,36 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#release_network_plans_for_ips' do
-      let(:reservation1) do
+    describe '#remove_network_plans_for_ips' do
+      let(:plan1) do
         reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('192.168.1.25')
-        reservation
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
 
-      let(:reservation2) do
+      let(:plan2) do
         reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('192.168.1.26')
-        reservation
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
 
-      let(:existing_reservation) do
+      let(:plan3) do
         reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('192.168.1.4')
-        reservation
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: true)
       end
 
-      let(:reservation3) do
+      let(:plan4) do
         reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('10.0.0.1')
-        reservation
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
 
-      let(:network_plans) do
-        [
-          NetworkPlanner::Plan.new(reservation: reservation1, existing: false, obsolete: true),
-          NetworkPlanner::Plan.new(reservation: reservation2, existing: false, obsolete: true),
-          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-          NetworkPlanner::Plan.new(reservation: reservation3, existing: false, obsolete: true),
-        ]
-      end
-
-      let(:ip_provider) { instance_double(IpProvider) }
+      let(:network_plans) { [plan1, plan2, plan3, plan4] }
 
       let(:ip1) { NetAddr::CIDR.create('192.168.1.25').to_i }
       let(:ip2) { NetAddr::CIDR.create('192.168.1.26').to_i }
@@ -1396,15 +1391,8 @@ module Bosh::Director::DeploymentPlan
 
       describe 'when there are ips specified' do
         it 'releases obsolete network plans of the specified ips' do
-          expect(ip_provider).to receive(:release).with(reservation1)
-          expect(ip_provider).to receive(:release).with(reservation2)
-
-          instance_plan.release_network_plans_for_ips(ip_provider, [ip_address1.address_str, ip_address2.address_str])
-
-          expect(instance_plan.network_plans).to contain_exactly(
-            network_plans[2],
-            network_plans[3],
-          )
+          instance_plan.remove_obsolete_network_plans_for_ips([ip_address1.address_str, ip_address2.address_str])
+          expect(instance_plan.network_plans).to contain_exactly(plan3, plan4)
         end
       end
     end

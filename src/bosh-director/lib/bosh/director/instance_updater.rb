@@ -115,15 +115,12 @@ module Bosh::Director
 
           @logger.debug('Failed to update in place. Recreating VM')
           if instance_plan.unresponsive_agent?
-            deleted_ip_addresses = instance_report.vm.ip_addresses.map(&:address_str)
             deleted_vm_id = instance_report.vm.id
             deleted_vm = true
 
             DeploymentPlan::Steps::DeleteVmStep
               .new(true, false, Config.enable_virtual_delete_vms)
               .perform(instance_report)
-
-            instance_plan.release_network_plans_for_ips(@ip_provider, deleted_ip_addresses)
           else
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
             DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
@@ -140,7 +137,9 @@ module Bosh::Director
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
 
             instance_model.vms.reject { |vm| vm.id == new_vm.id || vm.id == deleted_vm_id }.each do |inactive_vm|
+              ips = inactive_vm.ip_addresses.map(&:address_str)
               DeploymentPlan::Steps::OrphanVmStep.new(inactive_vm).perform(instance_report)
+              instance_plan.remove_obsolete_network_plans_for_ips(ips)
             end
 
             instance_report.vm = instance_model.active_vm
@@ -161,6 +160,7 @@ module Bosh::Director
           recreated = true
         end
 
+        instance_plan.release_obsolete_network_plans(@ip_provider)
         instance_report.vm = instance_model.active_vm
 
         update_dns(instance_plan)
