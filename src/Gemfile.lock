@@ -147,7 +147,6 @@ GEM
     excon (0.49.0)
     fakefs (0.11.1)
     ffi (1.9.18)
-    ffi (1.9.23)
     fog-core (1.40.1)
       builder
       excon (~> 0.49)
@@ -208,7 +207,6 @@ GEM
       slop (~> 3.0)
     public_suffix (3.0.0)
     puma (3.11.0)
-    puma (3.11.3)
     rack (1.6.8)
     rack-protection (1.5.3)
       rack
