@@ -157,6 +157,38 @@ describe Bosh::Cpi::Cli do
 
         expect(result_io.string).to match(make_result_regexp('fake-vm-cid'))
       end
+      context 'when cpi_version >=2' do
+        let(:cpi) { instance_double('Bosh::CloudV2') }
+        it 'return additional network based on cpi_version' do
+          expect(cpi).to receive(:create_vm).
+            with(
+              'fake-agent-id',
+              'fake-stemcell-cid',
+              {'cloud' => 'props'},
+              {'net' => 'props'},
+              ['fake-disk-cid'],
+              {'env' => 'props'},
+              ) { logs_io.write('fake-log') }.
+            and_return(['fake-vm-cid', {'public': 'network', 'private': 'network'}])
+
+          subject.run <<-JSON
+          {
+            "method": "create_vm",
+            "arguments": [
+              "fake-agent-id",
+              "fake-stemcell-cid",
+              {"cloud": "props"},
+              {"net": "props"},
+              ["fake-disk-cid"],
+              {"env": "props"}
+            ],
+            "context" : { "director_uuid" : "abc" }
+          }
+          JSON
+
+          expect(result_io.string).to include('"fake-vm-cid",{"public":"network","private":"network"}')
+        end
+      end
     end
 
     describe 'delete_vm' do

@@ -48,9 +48,22 @@ module Bosh
     # Sample return value:
     # [
     #   "vm-cid-123",
-    #   {
-    #     "system": "/dev/sda",
-    #     "ephemeral": "/dev/sdb"
+    #   { # ... networks ...
+    #     "private": {
+    #       "type": "manual",
+    #       "netmask": "255.255.255.0",
+    #       "gateway": "10.230.13.1",
+    #       "ip": "10.230.13.6",
+    #       "default": [ "dns", "gateway" ],
+    #       "cloud_properties": {
+    #         "net_id": "d29fdb0d-44d8-4e04-818d-5b03888f8eaa"
+    #       }
+    #      },
+    #     "public": {
+    #       "type": "vip",
+    #       "ip": "173.101.112.104",
+    #       "cloud_properties": {}
+    #     }
     #   }
     # ]
     #
@@ -63,7 +76,7 @@ module Bosh
     # @param [String, Array] disk_locality disk id(s) if known of the disk(s) that will be
     #                                    attached to this vm
     # @param [Hash] env environment that will be passed to this vm
-    # @return [Array] Contains VM ID
+    # @return [Array] [VM_ID, {...networks...}]
     def create_vm(agent_id, stemcell_id, resource_pool, networks, disk_locality, env)
       not_implemented(:create_vm)
     end
