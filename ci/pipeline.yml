@@ -18,7 +18,7 @@ groups:
       - legacy-load-tests-mysql
       - fuzz-tests
       - candidate-release
-      # - finalize-bosh-release
+      - finalize-bosh-release
       - bats-centos
       - bats-ubuntu
       - brats-ubuntu
@@ -38,9 +38,9 @@ groups:
       - unit-2.4-db-migrations-rds
       - integration-db-tls-postgres-hotswap
 
-  # - name: finalize
-  #   jobs:
-  #     - finalize-bosh-release
+  - name: finalize
+    jobs:
+      - finalize-bosh-release
 
 shared:
   - &install-dependencies
@@ -638,7 +638,7 @@ jobs:
     - get: bosh-cli
     - get: candidate-version
       params:
-        bump: major
+        bump: minor
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
     - put: bosh-candidate-release-tarballs
@@ -786,47 +786,47 @@ jobs:
           repos:
           - bosh-src
 
-  # - name: finalize-bosh-release
-  #   serial: true
-  #   plan:
-  #     - aggregate:
-  #       - get: bosh-src
-  #         passed:
-  #           - bats-centos
-  #           - bats-ubuntu
-  #       - get: bosh-master
-  #       - get: bosh-dev-release
-  #         resource: bosh-candidate-release-tarballs
-  #         passed:
-  #           - bats-centos
-  #           - bats-ubuntu
-  #       - get: bosh-cli
-  #       - get: candidate-version
-  #         params:
-  #           bump: minor
-  #     - task: promote-release
-  #       file: bosh-src/ci/tasks/finalize-bosh-release.yml
-  #       params:
-  #         BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
-  #         BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
-  #     - put: candidate-version
-  #       params:
-  #         file: bumped-candidate-version/version
-  #     - put: bosh-master
-  #       params:
-  #         repository: bosh-master-with-final
-  #         tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
-  #         annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
-  #     - put: bosh-src
-  #       params:
-  #         repository: bosh-src-with-bumped-version
+  - name: finalize-bosh-release
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src
+          passed:
+            - bats-centos
+            - bats-ubuntu
+        - get: bosh-master
+        - get: bosh-dev-release
+          resource: bosh-candidate-release-tarballs
+          passed:
+            - bats-centos
+            - bats-ubuntu
+        - get: bosh-cli
+        - get: candidate-version
+          params:
+            bump: minor
+      - task: promote-release
+        file: bosh-src/ci/tasks/finalize-bosh-release.yml
+        params:
+          BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
+          BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
+      - put: candidate-version
+        params:
+          file: bumped-candidate-version/version
+      - put: bosh-master
+        params:
+          repository: bosh-master-with-final
+          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
+          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
+      - put: bosh-src
+        params:
+          repository: bosh-src-with-bumped-version
 
 resources:
   - name: bosh-src
     type: git
     source:
       uri: ((bosh_src_url))
-      branch: master
+      branch: 266.x
       private_key: ((github_deployment_key))
 
   - name: candidate-version
@@ -834,6 +834,7 @@ resources:
     source:
       bucket: ((candidate_release_bucket))
       key: version
+      initial_version: 266.0.0
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
 
@@ -843,7 +844,7 @@ resources:
       bucket: ((candidate_release_bucket))
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
-      versioned_file: "bosh-dev-release.tgz"
+      versioned_file: "266.x/bosh-dev-release.tgz"
 
   - name: integration-tests-parallel-runtime
     type: s3
@@ -872,12 +873,12 @@ resources:
       uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
       branch: master
 
-  # - name: bosh-master
-  #   type: git
-  #   source:
-  #     uri: ((bosh_src_url))
-  #     branch: master
-  #     private_key: ((github_deployment_key))
+  - name: bosh-master
+    type: git
+    source:
+      uri: ((bosh_src_url))
+      branch: master
+      private_key: ((github_deployment_key))
 
   - name: fuzz-interval-trigger
     type: time
