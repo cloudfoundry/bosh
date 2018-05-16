@@ -11,7 +11,7 @@ git checkout -b $1 $start_point
 
 sed -i '' -e "s/BRANCHNAME/$1/g" $release_patch_file
 
-BRANCH_VERSION={$OVERRIDE_VERSION:$(echo $1 | cut -d '.' -f1)}
+BRANCH_VERSION=${OVERRIDE_VERSION:-$(echo $1 | cut -d '.' -f1)}
 sed -i '' -e "s/BRANCHVER/$BRANCH_VERSION/g" $release_patch_file
 
 git apply $release_patch_file
@@ -22,8 +22,7 @@ git apply $finalize_job_patch_file
 git add -A .
 git ci -m "Create release branch $BRANCHNAME"
 
-git set-upstream origin $BRANCHNAME
-echo "Branch created successfully. Run 'git push' to push branch to Github."
+echo "Branch created successfully. Run 'git push -u origin $BRANCHNAME' to push branch to Github."
 
 echo "\n---------------------------\n"
 

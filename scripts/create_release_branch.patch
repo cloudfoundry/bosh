@@ -1,5 +1,5 @@
 diff --git a/ci/configure.sh b/ci/configure.sh
-index 77f6c671ba..b9097cb231 100755
+index 268b36f47..ea3e7d3e5 100755
 --- a/ci/configure.sh
 +++ b/ci/configure.sh
 @@ -2,7 +2,7 @@
@@ -10,12 +10,12 @@ index 77f6c671ba..b9097cb231 100755
 +fly -t production set-pipeline -p bosh:BRANCHNAME \
      -c ci/pipeline.yml \
      --load-vars-from <(lpass show -G "bosh concourse secrets" --notes) \
-     -l <(lpass show --note "bats-concourse-pool:vsphere secrets")
+     -l <(lpass show --note "bats-concourse-pool:vsphere secrets") \
 diff --git a/ci/pipeline.yml b/ci/pipeline.yml
-index 047a237a6e..943e7e2402 100644
+index d50164b86..15a6d3e09 100644
 --- a/ci/pipeline.yml
 +++ b/ci/pipeline.yml
-@@ -562,7 +562,7 @@ jobs:
+@@ -638,7 +638,7 @@ jobs:
      - get: bosh-cli
      - get: candidate-version
        params:
@@ -24,7 +24,7 @@ index 047a237a6e..943e7e2402 100644
      - task: make
        file: bosh-src/ci/tasks/make-candidate.yml
      - put: bosh-candidate-release-tarballs
-@@ -709,24 +709,25 @@ resources:
+@@ -826,7 +826,7 @@ resources:
      type: git
      source:
        uri: ((bosh_src_url))
@@ -33,32 +33,20 @@ index 047a237a6e..943e7e2402 100644
        private_key: ((github_deployment_key))
  
    - name: candidate-version
-     type: semver
+@@ -834,6 +834,7 @@ resources:
      source:
--      bucket: ((candidate_release_bucket))
--      key: version
--      access_key_id: ((candidate_release_access_key_id))
--      secret_access_key: ((candidate_release_secret_access_key))
-+      bucket: {{candidate_release_bucket}}
-+      key: BRANCHNAME/version
+       bucket: ((candidate_release_bucket))
+       key: version
 +      initial_version: BRANCHVER.0.0
-+      access_key_id: {{candidate_release_access_key_id}}
-+      secret_access_key: {{candidate_release_secret_access_key}}
+       access_key_id: ((candidate_release_access_key_id))
+       secret_access_key: ((candidate_release_secret_access_key))
  
-   - name: bosh-candidate-release-tarballs
-     type: s3
-     source:
--      bucket: ((candidate_release_bucket))
--      access_key_id: ((candidate_release_access_key_id))
--      secret_access_key: ((candidate_release_secret_access_key))
+@@ -843,7 +844,7 @@ resources:
+       bucket: ((candidate_release_bucket))
+       access_key_id: ((candidate_release_access_key_id))
+       secret_access_key: ((candidate_release_secret_access_key))
 -      versioned_file: "bosh-dev-release.tgz"
-+      bucket: {{candidate_release_bucket}}
-+      access_key_id: {{candidate_release_access_key_id}}
-+      secret_access_key: {{candidate_release_secret_access_key}}
 +      versioned_file: "BRANCHNAME/bosh-dev-release.tgz"
  
-   - name: davcli
+   - name: integration-tests-parallel-runtime
      type: s3
--- 
-2.14.2
-
