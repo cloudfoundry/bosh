@@ -154,18 +154,6 @@ describe 'using director with config server and deployments having links', type:
       end
     end
 
-    context 'when provider job has properties with type password and values are generated' do
-      let(:provider_job_name) { 'http_endpoint_provider_with_property_types' }
-
-      it 'replaces the placeholder values of properties consumed through links' do
-        deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-
-        link_instance = director.instance('my_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']['properties']['fibonacci']).to eq(config_server_helper.get_value(prepend_namespace('fibonacci_placeholder')))
-      end
-    end
-
     context 'when manual links are involved' do
       let (:instance_group_with_manual_consumes_link) do
         instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
@@ -382,23 +370,6 @@ describe 'using director with config server and deployments having links', type:
             end
           end
         end
-      end
-    end
-
-    context 'given a successful provider deployment containing generated job properties with type password' do
-      let(:provider_job_name) { 'http_endpoint_provider_with_property_types' }
-
-      before do
-        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
-      end
-
-      it 'should successfully use the generated shared link properties' do
-        generated_value = config_server_helper.get_value(prepend_namespace('fibonacci_placeholder'))
-        deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
-
-        link_instance = director.instance('consumer_deployment_node', '0', {:deployment_name => 'consumer_deployment_name', :env => client_env, include_credentials: false})
-        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']['properties']['fibonacci']).to eq(generated_value)
       end
     end
 
