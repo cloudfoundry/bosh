@@ -8,4 +8,5 @@ dependencies:
 files:
 - bosh_common/**/*
 - bosh-registry/**/*
+- bosh_cpi/**/*
 - vendor/cache/*.gem
