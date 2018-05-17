@@ -85,7 +85,7 @@ module Bosh::Director
 
             deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
-            generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
+            generate_variables_values(deployment_plan.variables, @deployment_name, deployment_plan.features.converge_variables) if is_deploy_action
 
             # that's where the links resolver is created
             deployment_assembler.bind_models({is_deploy_action: is_deploy_action, should_bind_new_variable_set: is_deploy_action})
@@ -318,9 +318,9 @@ module Bosh::Director
         context
       end
 
-      def generate_variables_values(variables, deployment_name)
+      def generate_variables_values(variables, deployment_name, converge_variables)
         config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
-        config_server_client.generate_values(variables, deployment_name)
+        config_server_client.generate_values(variables, deployment_name, converge_variables)
       end
     end
   end

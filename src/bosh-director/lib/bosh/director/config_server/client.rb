@@ -8,6 +8,7 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer = DeepHashReplacement.new
       @deployment_lookup = Bosh::Director::Api::DeploymentLookup.new
       @logger = logger
+      @converge_variables = false
     end
 
     # @param [Hash] raw_hash Hash to be interpolated. This method only supports Absolute Names.
@@ -70,7 +71,8 @@ module Bosh::Director::ConfigServer
 
     # @param [DeploymentPlan::Variables] variables Object representing variables passed by the user
     # @param [String] deployment_name
-    def generate_values(variables, deployment_name)
+    def generate_values(variables, deployment_name, converge_variables = false)
+      @converge_variables = converge_variables
       current_variable_set = @deployment_lookup.by_name(deployment_name).current_variable_set
 
       variables.spec.each do |variable|
@@ -308,6 +310,8 @@ module Bosh::Director::ConfigServer
         'type' => type,
         'parameters' => parameters
       }
+
+      request_body['mode'] = 'converge' if @converge_variables
 
       unless variable_set.writable
         raise Bosh::Director::ConfigServerGenerationError, "Variable '#{get_name_root(name)}' cannot be generated. Variable generation allowed only during deploy action"

@@ -79,6 +79,7 @@ module Bosh::Director
           allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
           allow(DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
           allow(planner).to receive(:variables).and_return(DeploymentPlan::Variables.new([]))
+          allow(planner).to receive(:features).and_return(DeploymentPlan::DeploymentFeatures.new)
           allow(variables_interpolator).to receive(:interpolate_template_spec_properties) { |properties, _| properties }
           allow(variables_interpolator).to receive(:interpolate_link_spec_properties) { |links_spec| links_spec }
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
@@ -343,7 +344,7 @@ module Bosh::Director
               end
 
               it 'generates the values through config server' do
-                expect(config_server_client).to receive(:generate_values).with(variables, 'deployment-name')
+                expect(config_server_client).to receive(:generate_values).with(variables, 'deployment-name', false)
                 job.perform
               end
             end
@@ -352,7 +353,7 @@ module Bosh::Director
               let (:options)  { {'deploy' => false} }
 
               it 'should NOT generate the variables' do
-                expect(config_server_client).to_not receive(:generate_values).with(variables, 'deployment-name')
+                expect(config_server_client).to_not receive(:generate_values).with(variables, 'deployment-name', false)
                 job.perform
               end
             end

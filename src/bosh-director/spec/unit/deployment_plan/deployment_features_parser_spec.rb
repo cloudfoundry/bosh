@@ -109,6 +109,33 @@ module Bosh::Director
               end
             end
           end
+
+          describe 'converge_variables' do
+            context 'when converge_variables is not a boolean' do
+              it 'raises an error' do
+                expect {
+                  deployment_features_parser.parse({'converge_variables' => 'vroom'})
+                }.to raise_error FeaturesInvalidFormat, "Key 'converge_variables' in 'features' expected to be a boolean, but received 'String'"
+              end
+            end
+
+            context 'when converge_variables is not present' do
+              it 'should default to false' do
+                features = deployment_features_parser.parse({})
+                expect(features.converge_variables).to eq(false)
+              end
+            end
+
+            context 'when converge_variables is set' do
+              it 'should reflect the set value' do
+                features = deployment_features_parser.parse({'converge_variables' => true})
+                expect(features.converge_variables).to eq(true)
+
+                features = deployment_features_parser.parse({'converge_variables' => false})
+                expect(features.converge_variables).to eq(false)
+              end
+            end
+          end
         end
       end
     end

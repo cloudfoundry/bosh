@@ -1613,6 +1613,28 @@ module Bosh::Director::ConfigServer
               expect(models.length).to eq(0)
             end
           end
+
+          context 'when converge_variables is true' do
+            let(:variables_spec) do
+              [{'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'ca' => '/my_ca', 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io']}},]
+            end
+
+            it 'should set the mode to converge' do
+              expect(http_client).to receive(:post).with(
+                {
+                  'name' => prepend_namespace('placeholder_b'),
+                  'type' => 'certificate',
+                  'parameters' => {'ca' => ('/my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)},
+                  'mode' => 'converge'
+                }
+              ).ordered.and_return(
+                generate_success_response(
+                  {
+                    "id": "some_id2",
+                  }.to_json))
+              client.generate_values(variables_obj, deployment_name, true)
+            end
+          end
         end
       end
     end
