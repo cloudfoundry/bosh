@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'vm orphan', type: :integration do
+describe 'orphaning a vm', type: :integration do
   with_reset_sandbox_before_each
 
   let(:cloud_config) do
@@ -51,6 +51,32 @@ describe 'vm orphan', type: :integration do
 
       orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
       expect(orphaned_vms.length).to eq(4)
+    end
+
+    context 'when a create-swap-delete deployment fails multiple times' do
+      it 'should not create more than a single inactive vm per instance' do
+        current_sandbox.cpi.commands.make_detach_disk_to_raise_not_implemented
+        deploy_simple_manifest(manifest_hash: manifest, recreate: true, failure_expected: true)
+
+        vms = table(bosh_runner.run('vms', json: true))
+        expect(vms.length).to eq(4)
+
+        orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
+        expect(orphaned_vms.length).to eq(0)
+
+        deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+
+        vms = table(bosh_runner.run('vms', json: true))
+        expect(vms.length).to eq(4)
+
+        deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+
+        vms = table(bosh_runner.run('vms', json: true))
+        expect(vms.length).to eq(4)
+
+        orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
+        expect(orphaned_vms.length).to eq(0)
+      end
     end
 
     context 'when there is an unresponsive agent' do

@@ -22,7 +22,6 @@ describe 'vm_types and stemcells', type: :integration do
     hash_copy['bosh']['dummy_agent_key_merged'] = 'This key must be sent to agent' # merged from the director yaml configuration (agent.env.bosh key)
     hash_copy
   end
-
   let(:manifest_hash) do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [{
@@ -210,6 +209,9 @@ describe 'vm_types and stemcells', type: :integration do
               expect(create_vm_invocations.count).to be_positive
 
               deploy_simple_manifest(manifest_hash: csd_manifest_hash_one_stemcell)
+
+              orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
+              expect(orphaned_vms.length).to eq(2)
 
               new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
               expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count + 1)
