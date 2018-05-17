@@ -16,7 +16,17 @@ module Bosh::Director
           let(:instance_plan) { instance_double(InstancePlan, spec: spec, instance: plan_instance) }
           let(:plan_instance) { instance_double(Instance, add_state_to_model: nil) }
           let(:spec) { instance_double(InstanceSpec) }
-          let(:vm) { instance_double(Models::Vm, :agent_id => 'my-agent', :network_spec= => nil) }
+          let(:vm) do
+            instance_double(
+              Models::Vm,
+              :agent_id => 'my-agent',
+              :network_spec= => nil,
+              :env_json= => nil,
+              :cloud_properties_json= => nil,
+              :stemcell_name= => nil,
+              :stemcell_version= => nil,
+            )
+          end
 
           before do
             allow(AgentClient).to receive(:with_agent_id).with('my-agent').and_return(agent_client)
@@ -37,9 +47,9 @@ module Bosh::Director
               'id' => 'my-id',
               'and' => 'other_keys',
               'as' => 'well',
-              'stemcell' => 'my-stemcell',
-              'vm_type' => 'my-type',
-              'env' => 'my-env',
+              'stemcell' => { 'name' => 'ubuntu', 'version' => '1' },
+              'vm_type' => { 'cloud_properties' => { 'a' => 'b' } },
+              'env' => { 'env' => 'json' },
             )
           end
 
@@ -58,9 +68,9 @@ module Bosh::Director
               'job' => 'my-job',
               'index' => 'my-index',
               'id' => 'my-id',
-              'stemcell' => 'my-stemcell',
-              'vm_type' => 'my-type',
-              'env' => 'my-env',
+              'stemcell' => { 'name' => 'ubuntu', 'version' => '1' },
+              'vm_type' => { 'cloud_properties' => { 'a' => 'b' } },
+              'env' => { 'env' => 'json' },
             )
 
             step.perform(report)
@@ -70,6 +80,48 @@ module Bosh::Director
             expect(vm).to receive(:network_spec=).with('agent-network')
 
             step.perform(report)
+          end
+
+          it 'sets env state on the vm' do
+            expect(vm).to receive(:env_json=).with({ 'env' => 'json' }.to_json)
+
+            step.perform(report)
+          end
+
+          it 'sets cloud properties on the vm' do
+            expect(vm).to receive(:cloud_properties_json=).with({ 'a' => 'b' }.to_json)
+
+            step.perform(report)
+          end
+
+          it 'sets stemcell name and version on the vm' do
+            expect(vm).to receive(:stemcell_name=).with('ubuntu')
+            expect(vm).to receive(:stemcell_version=).with('1')
+
+            step.perform(report)
+          end
+
+          context 'when cloud_properties are nil' do
+            before do
+              allow(spec).to receive(:full_spec).and_return(
+                'networks' => 'my-networks',
+                'deployment' => 'my-deployment',
+                'job' => 'my-job',
+                'index' => 'my-index',
+                'id' => 'my-id',
+                'and' => 'other_keys',
+                'as' => 'well',
+                'stemcell' => { 'name' => 'ubuntu', 'version' => '1' },
+                'vm_type' => {},
+                'env' => { 'env' => 'json' },
+              )
+            end
+
+            it 'should gracefully handle nil cloud_properties when updating the vm model' do
+              expect(vm).to receive(:cloud_properties_json=).with({}.to_json)
+
+              step.perform(report)
+            end
           end
         end
       end

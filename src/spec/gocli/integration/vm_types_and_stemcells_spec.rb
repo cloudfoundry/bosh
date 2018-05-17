@@ -89,10 +89,13 @@ describe 'vm_types and stemcells', type: :integration do
   end
 
   context 'when instance is deployed originally with stemcell specified with name' do
-    it 'should not re-deploy if the stemcell is the same one' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    let(:cloud_config) do
+      Bosh::Spec::NewDeployments.simple_cloud_config
+    end
 
+    it 'should not recreate if the stemcell is the same one' do
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(create_vm_invocations.count).to be > 0
 
@@ -113,6 +116,107 @@ describe 'vm_types and stemcells', type: :integration do
 
       new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count)
+    end
+
+    context 'when switching stemcells' do
+      let(:cloud_config) do
+        Bosh::Spec::NewDeployments.simple_os_specific_cloud_config
+      end
+      let(:manifest_hash_one_stemcell) do
+        m = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        m['instance_groups'] = [{
+          'name' => 'foobar',
+          'jobs' => [{ 'name' => 'foobar' }],
+          'vm_type' => 'a',
+          'stemcell' => 'default',
+          'instances' => 1,
+          'networks' => [{ 'name' => 'a' }],
+          'properties' => {},
+        }]
+        m
+      end
+
+      let(:manifest_hash_different_stemcell) do
+        m = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        m['instance_groups'] = [{
+          'name' => 'foobar',
+          'jobs' => [{ 'name' => 'foobar' }],
+          'vm_type' => 'a',
+          'stemcell' => 'centos',
+          'instances' => 1,
+          'networks' => [{ 'name' => 'a' }],
+          'properties' => {},
+        }]
+        m['stemcells'] = [
+          {
+            'alias' => 'centos',
+            'os' => 'toronto-centos',
+            'version' => 'latest',
+          },
+        ]
+        m
+      end
+
+      before do
+        upload_stemcell_2
+      end
+
+      it 'should recreate if the stemcell is a different one' do
+        deploy_from_scratch(
+          manifest_hash: manifest_hash_one_stemcell,
+          cloud_config_hash: cloud_config,
+        )
+
+        create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+
+        expect(create_vm_invocations.count).to be_positive
+
+        deploy_simple_manifest(manifest_hash: manifest_hash_different_stemcell)
+
+        new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+        expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count + 1)
+      end
+
+      context 'create-swap-delete' do
+        let(:csd_manifest_hash_one_stemcell) do
+          manifest = manifest_hash_one_stemcell
+          manifest['instance_groups'][0]['persistent_disk'] = 660
+          manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
+          manifest
+        end
+        let(:csd_manifest_hash_different_stemcell) do
+          manifest = manifest_hash_different_stemcell
+          manifest['instance_groups'][0]['persistent_disk'] = 660
+          manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
+          manifest
+        end
+
+        before do
+          deploy_from_scratch(manifest_hash: csd_manifest_hash_one_stemcell, cloud_config_hash: cloud_config)
+        end
+
+        context 'given a failed create-swap-delete deploy with a different stemcell' do
+          before do
+            current_sandbox.cpi.commands.make_detach_disk_to_raise_not_implemented
+            deploy_simple_manifest(manifest_hash: csd_manifest_hash_different_stemcell, recreate: true, failure_expected: true)
+
+            current_sandbox.cpi.commands.allow_detach_disk_to_succeed
+          end
+
+          context 'when deploying with the original stemcell' do
+            it 'should NOT reuse the failed VM and should recreate' do
+              create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+
+              expect(create_vm_invocations.count).to be_positive
+
+              deploy_simple_manifest(manifest_hash: csd_manifest_hash_one_stemcell)
+
+              new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+              expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count + 1)
+            end
+          end
+        end
+      end
     end
   end
 

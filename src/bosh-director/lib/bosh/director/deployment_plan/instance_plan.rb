@@ -286,6 +286,23 @@ module Bosh
           obsolete? || recreate_for_non_network_reasons? || networks_changed? || network_settings_changed?
         end
 
+        def vm_matches_plan?(vm)
+          desired_instance_group = @desired_instance.instance_group
+          desired_cloud_properties = @config_server_client.interpolate_with_versioning(
+            @instance.cloud_properties,
+            @instance.desired_variable_set,
+          )
+          vm_cloud_properties = @config_server_client.interpolate_with_versioning(
+            JSON.parse(vm.cloud_properties_json),
+            @instance.previous_variable_set,
+          )
+
+          vm.stemcell_name == @instance.stemcell.name &&
+            vm.stemcell_version == @instance.stemcell.version &&
+            JSON.parse(vm.env_json || '{}') == desired_instance_group.env.spec &&
+            vm_cloud_properties == desired_cloud_properties
+        end
+
         def needs_duplicate_vm?
           obsolete? || recreate_for_non_network_reasons? || networks_changed?
         end
