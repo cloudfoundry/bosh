@@ -378,7 +378,7 @@ module Bosh::Director
       end
 
       post '/', authorization: :create_deployment, consumes: :yaml do
-        manifest_text = request.body.read
+        manifest_text = request.body.read.force_encoding('utf-8')
         manifest_hash = validate_manifest_yml(manifest_text, nil)
 
         raise ValidationMissingField, "Deployment manifest must have a 'name' key" unless manifest_hash['name']
