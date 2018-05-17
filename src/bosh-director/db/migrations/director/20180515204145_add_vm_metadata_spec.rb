@@ -14,7 +14,8 @@ Sequel.migration do
 
     self[:vms].all do |vm|
       instance = self[:instances].where(id: vm[:instance_id]).first
-      spec_json = JSON.parse(String(instance[:spec_json]) == '' ? '{}' : raw_spec_json)
+      raw_spec_json = String(instance[:spec_json])
+      spec_json = JSON.parse(raw_spec_json == '' ? '{}' : raw_spec_json)
       if spec_json['stemcells']
         stemcell_name = String(spec_json['stemcells']['name'])
         stemcell_version = String(spec_json['stemcells']['version'])

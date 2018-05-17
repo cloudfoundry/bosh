@@ -336,6 +336,8 @@ module Bosh::Director
 
             allow(DeploymentPlan::InstancePlanner).to receive(:new).and_return(instance_planner)
             allow(instance_planner).to receive(:plan_instance_group_instances).and_return(create_swap_delete_instance_plan)
+            allow(instance_planner).to receive(:orphan_unreusable_vms)
+            allow(instance_planner).to receive(:reconcile_network_plans)
             allow(instance_planner).to receive(:plan_obsolete_instance_groups)
             allow(create_swap_delete_instance_plan).to receive(:should_create_swap_delete?).and_return(true)
             allow(not_create_swap_delete_instance_plan).to receive(:should_create_swap_delete?).and_return(false)
