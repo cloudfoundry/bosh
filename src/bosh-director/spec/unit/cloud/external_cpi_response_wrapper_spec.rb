@@ -7,16 +7,33 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
   let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
   let(:additional_expected_args) { nil }
+  let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
+  let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
 
   subject { described_class.new(cloud, cpi_api_version) }
+
+  def self.it_should_raise_error(method, error_type, error_msg, *arguments)
+    define_method(:call_cpi_method) { subject.public_send(method, *arguments) }
+
+    before do
+      allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
+      stub_const('Bosh::Clouds::Config', config)
+      FileUtils.mkdir_p('/var/vcap/task/5')
+      allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status])
+      allow(Random).to receive(:rand).and_return('fake-request-id')
+    end
+
+    it 'should raise error' do
+      expect { call_cpi_method }.to raise_error(error_type, error_msg)
+    end
+
+  end
 
   def self.it_calls_cpi_method(method, *arguments)
     define_method(:call_cpi_method) { subject.public_send(method, *arguments) }
 
     let(:method) { method }
     let(:config) { double('Bosh::Clouds::Config', logger: double(:logger, debug: nil), cpi_task_log: cpi_log_path) }
-    let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
-    let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
     before do
       allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
@@ -482,7 +499,19 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       end
 
       context("#attach_disk") do
+        let(:cpi_response) { JSON.dump(result: '/fake/disk-hint', error: nil, log: 'fake-log') }
+        let(:expected_response) { '/fake/disk-hint' }
         it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
+
+        context 'when v2 cpi request does NOT retrun disk_hint' do
+          let(:cpi_response) { JSON.dump(result: nil, error: nil, log: 'fake-log') }
+          it_should_raise_error(
+            :attach_disk,
+            Bosh::Clouds::AttachDiskResponseError,
+            "No disk_hint",
+            'fake-vm-cid', 'fake-disk-cid'
+          )
+        end
       end
 
       context("#detach_disk") do

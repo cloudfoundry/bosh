@@ -3,6 +3,7 @@ module Bosh
     class CpiError < StandardError; end
     class NotImplemented < CpiError; end
     class NotSupported < CpiError; end
+    class AttachDiskResponseError < CpiError; end
 
     class CloudError < StandardError; end
     class VMNotFound < CloudError; end
