@@ -8,7 +8,13 @@ describe 'using director with nats server', type: :integration do
       # This test does not upload the specific release intentionally to force a failure
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
-      output = deploy_simple_manifest(manifest_hash: Bosh::Spec::Deployments.simple_manifest, no_track: true)
+      output, exit_code = deploy_from_scratch(
+        manifest_hash: Bosh::Spec::Deployments.simple_manifest,
+        failure_expected: true,
+        return_exit_code: true,
+      )
+      expect(exit_code).to_not eq(0)
+
       task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
 
       debug_output = bosh_runner.run("task #{task_id} --debug", failure_expected: true)

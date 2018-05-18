@@ -106,6 +106,7 @@ module Bosh::Director
 
         recreated = false
         deleted_vm = false
+        deleted_vm_id = -1
 
         instance_model = instance_plan.instance.model
 
@@ -114,10 +115,12 @@ module Bosh::Director
 
           @logger.debug('Failed to update in place. Recreating VM')
           if instance_plan.unresponsive_agent?
+            deleted_vm_id = instance_report.vm.id
+            deleted_vm = true
+
             DeploymentPlan::Steps::DeleteVmStep
               .new(true, false, Config.enable_virtual_delete_vms)
               .perform(instance_report)
-            deleted_vm = true
           else
             DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
             DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
@@ -130,10 +133,14 @@ module Bosh::Director
                                 .map(&:disk_cid).compact
 
           if instance_plan.should_create_swap_delete? && instance_model.vms.count > 1
-            old_vm = instance_report.vm
             instance_report.vm = new_vm
             DeploymentPlan::Steps::ElectActiveVmStep.new.perform(instance_report)
-            DeploymentPlan::Steps::OrphanVmStep.new(old_vm).perform(instance_report) unless deleted_vm
+
+            instance_model.vms.reject { |vm| vm.id == new_vm.id || vm.id == deleted_vm_id }.each do |inactive_vm|
+              ips = inactive_vm.ip_addresses.map(&:address_str)
+              DeploymentPlan::Steps::OrphanVmStep.new(inactive_vm).perform(instance_report)
+              instance_plan.remove_obsolete_network_plans_for_ips(ips)
+            end
 
             instance_report.vm = instance_model.active_vm
             if instance_plan.needs_disk?
@@ -145,16 +152,15 @@ module Bosh::Director
               DeploymentPlan::Steps::DeleteVmStep
                 .new(true, false, Config.enable_virtual_delete_vms)
                 .perform(instance_report)
-              deleted_vm = true
             end
+
             @vm_creator.create_for_instance_plan(instance_plan, @ip_provider, disks, tags)
           end
 
           recreated = true
         end
 
-        instance_plan.release_obsolete_network_plans(@ip_provider) if deleted_vm
-
+        instance_plan.release_obsolete_network_plans(@ip_provider)
         instance_report.vm = instance_model.active_vm
 
         update_dns(instance_plan)

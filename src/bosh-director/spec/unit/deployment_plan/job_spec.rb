@@ -67,26 +67,6 @@ module Bosh
           end
 
           it 'should drop user provided properties not specified in the release job spec properties' do
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options)
-              .and_return('www.cc.com')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with('def', nil, nil, deployment_name, options)
-              .and_return('def')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with(1024, 2048, nil, deployment_name, options)
-              .and_return(1024)
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with({ 'n2' => 'foo', 'n1' => 'foo' }, nil, nil, deployment_name, options)
-              .and_return('n2' => 'foo', 'n1' => 'foo')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with(%w[m3 m1], nil, nil, deployment_name, options)
-              .and_return(%w[m3 m1])
-
             subject.bind_properties('instance_group_name', deployment_name)
 
             expect(subject.properties).to eq(
@@ -106,26 +86,6 @@ module Bosh
           end
 
           it 'should include properties that are in the release job spec but not provided by a user' do
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options)
-              .and_return('www.cc.com')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with('def', nil, nil, deployment_name, options)
-              .and_return('def')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with(nil, 2048, nil, deployment_name, options)
-              .and_return(2048)
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with({ 'n2' => 'foo', 'n1' => 'foo' }, nil, nil, deployment_name, options)
-              .and_return('n2' => 'foo', 'n1' => 'foo')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with(%w[m3 m1], nil, nil, deployment_name, options)
-              .and_return(%w[m3 m1])
-
             user_defined_prop.delete('dea_max_memory')
             subject.bind_properties('instance_group_name', deployment_name)
 
@@ -146,26 +106,6 @@ module Bosh
           end
 
           it 'should not override user provided properties with release job spec defaults' do
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with('www.cc.com', 'cloudfoundry.com', nil, deployment_name, options)
-              .and_return('www.cc.com')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with('def', nil, nil, deployment_name, options)
-              .and_return('def')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with(1024, 2048, nil, deployment_name, options)
-              .and_return(1024)
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with({ 'n2' => 'foo', 'n1' => 'foo' }, nil, nil, deployment_name, options)
-              .and_return('n2' => 'foo', 'n1' => 'foo')
-
-            expect(config_server_client).to receive(:prepare_and_get_property)
-              .with(%w[m3 m1], nil, nil, deployment_name, options)
-              .and_return(%w[m3 m1])
-
             subject.bind_properties('instance_group_name', deployment_name)
             expect(subject.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
           end
@@ -173,79 +113,12 @@ module Bosh
           context 'when user specifies invalid property type for job' do
             let(:user_defined_prop) { { 'deep_property' => false } }
 
-            before do
-              allow(config_server_client).to receive(:prepare_and_get_property)
-                .with(nil, 'cloudfoundry.com', nil, deployment_name, options)
-
-              allow(config_server_client).to receive(:prepare_and_get_property)
-                .with(nil, 2048, nil, deployment_name, options)
-            end
-
             it 'raises an exception explaining which property is the wrong type' do
               expect do
                 subject.bind_properties('instance_group_name', deployment_name, {})
               end.to raise_error(
                 Bosh::Template::InvalidPropertyType,
                 "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'",
-              )
-            end
-          end
-
-          context 'properties interpolation' do
-            let(:options) do
-              {
-                'anything' => %w[1 2],
-              }
-            end
-
-            before do
-              user_defined_prop['cc_url'] = '((secret_url_password_placeholder))'
-
-              release_job_spec_prop['cc_url']['type'] = 'password'
-              release_job_spec_prop['deep_property.dont_override']['type'] = nil
-              release_job_spec_prop['dea_max_memory']['type'] = 'vroom'
-            end
-
-            it 'calls config server client prepare_and_get_property for all job spec properties' do
-              expect(config_server_client).to receive(:prepare_and_get_property).with(
-                '((secret_url_password_placeholder))',
-                'cloudfoundry.com',
-                'password',
-                deployment_name,
-                options,
-              ).and_return('generated secret')
-
-              expect(config_server_client).to receive(:prepare_and_get_property)
-                .with('def', nil, nil, deployment_name, options)
-                .and_return('def')
-
-              expect(config_server_client).to receive(:prepare_and_get_property)
-                .with(1024, 2048, 'vroom', deployment_name, options)
-                .and_return(1024)
-
-              expect(config_server_client).to receive(:prepare_and_get_property)
-                .with({ 'n2' => 'foo', 'n1' => 'foo' }, nil, nil, deployment_name, options)
-                .and_return('n2' => 'foo', 'n1' => 'foo')
-
-              expect(config_server_client).to receive(:prepare_and_get_property)
-                .with(%w[m3 m1], nil, nil, deployment_name, options)
-                .and_return(%w[m3 m1])
-
-              subject.bind_properties('instance_group_name', deployment_name, options)
-
-              expect(subject.properties).to eq(
-                'instance_group_name' => {
-                  'cc_url' => 'generated secret',
-                  'deep_property' => {
-                    'dont_override' => 'def',
-                  },
-                  'dea_max_memory' => 1024,
-                  'map_property' => {
-                    'n1' => 'foo',
-                    'n2' => 'foo',
-                  },
-                  'array_property' => %w[m3 m1],
-                },
               )
             end
           end

@@ -388,7 +388,7 @@ module Bosh::Director
       end
 
       def default_network_name
-        @default_network['gateway']
+        @default_network['addressable'] || @default_network['gateway']
       end
 
       def has_availability_zone?(az_name)

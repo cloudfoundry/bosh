@@ -12,7 +12,7 @@ module Bosh::Director::DeploymentPlan
 
       validate(spec)
 
-      DeploymentFeatures.new(spec['use_dns_addresses'],spec['use_short_dns_addresses'],spec['randomize_az_placement'])
+      DeploymentFeatures.new(spec['use_dns_addresses'], spec['use_short_dns_addresses'], spec['randomize_az_placement'], spec.fetch('converge_variables', false))
     end
 
     private
@@ -23,6 +23,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       validate_use_dns_addresses(spec)
+      validate_bool_or_nil(spec, 'converge_variables')
     end
 
     def validate_use_dns_addresses(spec)

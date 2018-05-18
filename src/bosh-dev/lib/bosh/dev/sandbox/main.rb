@@ -87,7 +87,10 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(@logs_path)
 
       @sandbox_log_file = File.open(sandbox_path('sandbox.log'), 'w+')
+
+      @sandbox_log_file = STDOUT unless ENV.fetch('LOG_STDOUT', '').empty?
       @logger = Logging.logger(@sandbox_log_file)
+
       @logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
 
       @dns_db_path = sandbox_path('director-dns.sqlite')
@@ -267,7 +270,7 @@ module Bosh::Dev::Sandbox
 
       @database.drop_db
 
-      @sandbox_log_file.close
+      @sandbox_log_file.close unless @sandbox_log_file == STDOUT
 
       FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(agent_tmp_path)

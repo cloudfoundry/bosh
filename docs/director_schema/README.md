@@ -13,6 +13,7 @@ The above PNG file was generated using RubyMine Database Plugin.
 There's also a [searchable SVG version.](https://cdn.rawgit.com/cloudfoundry/bosh/master/docs/director_schema/bosh-db-diagram.svg)
 Steps to generate:
 
-- Use RubyMine Database plugin (View » Tools Windows » Database) to connect to a BOSH database. Quick trick would be to connect to a database created by an integration test.
+- Use RubyMine Database plugin (View » Tool Windows » Database) to connect to a BOSH database. Quick trick would be to connect to a database created by an integration test.
+  - If you don't see the desired database, right click on the localhost postgres connection in the database pane -> Database Tools -> Manage Shown Schemas and select either All Schemas or Current Schema for the database you're interested in.
 - Right click database connection: Diagrams --> Show Visualizations . Make sure **UML Support** plugin is enabled.
 - Export the diagram.

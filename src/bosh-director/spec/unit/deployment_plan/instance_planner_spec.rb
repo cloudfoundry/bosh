@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'json'
 
 describe 'BD::DeploymentPlan::InstancePlanner' do
   include BD::IpUtil
@@ -59,23 +60,187 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       allow(instance_group).to receive(:networks).and_return([])
     end
 
+    it 'creates instance plans for existing instances' do
+      existing_instance_model = BD::Models::Instance.make(
+        job: 'foo-instance_group',
+        index: 0,
+        availability_zone: az.name,
+        variable_set: variable_set_model,
+      )
+
+      allow(instance_repo).to receive(:fetch_existing).with(
+        existing_instance_model,
+        nil,
+        instance_group,
+        0,
+        deployment,
+      ).and_return(tracer_instance)
+
+      instance_plans = instance_planner.plan_instance_group_instances(
+        instance_group,
+        [desired_instance],
+        [existing_instance_model],
+        vm_resources_cache,
+      )
+
+      expect(instance_plans.count).to eq(1)
+      existing_instance_plan = instance_plans.first
+
+      expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
+        instance_group,
+        deployment,
+        az,
+        0,
+      )
+      expect(existing_instance_plan.new?).to eq(false)
+      expect(existing_instance_plan.obsolete?).to eq(false)
+
+      expect(existing_instance_plan.desired_instance.instance_group).to eq(expected_desired_instance.instance_group)
+      expect(existing_instance_plan.desired_instance.deployment).to eq(expected_desired_instance.deployment)
+      expect(existing_instance_plan.desired_instance.az).to eq(expected_desired_instance.az)
+      expect(existing_instance_plan.instance.bootstrap?).to eq(true)
+
+      expect(existing_instance_plan.instance).to eq(tracer_instance)
+      expect(existing_instance_plan.existing_instance).to eq(existing_instance_model)
+    end
+
+    it 'updates descriptions for existing instances' do
+      existing_instance_model = BD::Models::Instance.make(
+        job: 'foo-instance_group',
+        index: 0,
+        availability_zone: az.name,
+        variable_set: variable_set_model,
+      )
+      allow(instance_repo).to receive(:fetch_existing).with(
+        existing_instance_model,
+        nil,
+        instance_group,
+        0,
+        deployment,
+      ).and_return(tracer_instance)
+      expect(tracer_instance).to receive(:update_description)
+
+      instance_planner.plan_instance_group_instances(
+        instance_group,
+        [desired_instance],
+        [existing_instance_model],
+        vm_resources_cache,
+      )
+    end
+
+    it 'creates instance plans for new instances' do
+      existing_instances = []
+      allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
+
+      instance_plans = instance_planner.plan_instance_group_instances(
+        instance_group,
+        [desired_instance],
+        existing_instances,
+        vm_resources_cache,
+      )
+
+      expect(instance_plans.count).to eq(1)
+      new_instance_plan = instance_plans.first
+
+      expect(new_instance_plan.new?).to eq(true)
+      expect(new_instance_plan.obsolete?).to eq(false)
+      expect(new_instance_plan.desired_instance).to eq(desired_instance)
+      expect(new_instance_plan.instance).to eq(tracer_instance)
+      expect(new_instance_plan.existing_instance).to be_nil
+      expect(new_instance_plan).to be_new
+    end
+
+    it 'creates instance plans for new, existing and obsolete instances' do
+      out_of_typical_range_index = 77
+      auto_picked_index = 0
+
+      desired_existing_instance_model = BD::Models::Instance.make(
+        job: 'foo-instance_group',
+        index: out_of_typical_range_index,
+        availability_zone: az.name,
+        variable_set: variable_set_model,
+      )
+
+      desired_instances = [
+        desired_instance,
+        BD::DeploymentPlan::DesiredInstance.new(
+          instance_group,
+          deployment,
+          az,
+          out_of_typical_range_index,
+        ),
+      ]
+
+      undesired_existing_instance_model = BD::Models::Instance.make(
+        job: 'foo-instance_group',
+        index: auto_picked_index,
+        availability_zone: undesired_az.name,
+        variable_set: variable_set_model,
+      )
+      existing_instances = [undesired_existing_instance_model, desired_existing_instance_model]
+      allow(instance_repo).to receive(:fetch_existing).with(
+        desired_existing_instance_model,
+        nil,
+        instance_group,
+        out_of_typical_range_index,
+        deployment,
+      ) do
+        make_instance(out_of_typical_range_index)
+      end
+
+      allow(instance_repo).to receive(:create).with(desired_instances[1], 0) { make_instance(auto_picked_index) }
+
+      instance_plans = instance_planner.plan_instance_group_instances(
+        instance_group,
+        desired_instances,
+        existing_instances,
+        vm_resources_cache,
+      )
+      expect(instance_plans.count).to eq(3)
+
+      obsolete_instance_plan = instance_plans.find(&:obsolete?)
+      expect(obsolete_instance_plan.new?).to eq(false)
+      expect(obsolete_instance_plan.obsolete?).to eq(true)
+      expect(obsolete_instance_plan.desired_instance).to be_nil
+      expect(obsolete_instance_plan.existing_instance).to eq(undesired_existing_instance_model)
+      expect(obsolete_instance_plan.instance).not_to be_nil
+
+      existing_instance_plan = instance_plans.find(&:existing?)
+      expect(existing_instance_plan.new?).to eq(false)
+      expect(existing_instance_plan.obsolete?).to eq(false)
+
+      new_instance_plan = instance_plans.find(&:new?)
+      expect(new_instance_plan.new?).to eq(true)
+      expect(new_instance_plan.obsolete?).to eq(false)
+    end
+
     context 'when instance should skip running drain script' do
       let(:skip_drain_decider) { BD::DeploymentPlan::SkipDrain.new('*') }
 
       it 'should set "skip_drain" on the instance plan' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(
+          instance_group,
+          [desired_instance],
+          [existing_instance_model],
+          vm_resources_cache,
+        )
         expect(instance_plans.select(&:skip_drain).count).to eq(instance_plans.count)
       end
     end
 
     context 'when deployment is being recreated' do
-      let(:options) { {'recreate' => true} }
+      let(:options) { { 'recreate' => true } }
 
       it 'should return instance plans with "recreate" option set on them' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
+        instance_plans = instance_planner.plan_instance_group_instances(
+          instance_group,
+          [desired_instance],
+          [existing_instance_model],
+          vm_resources_cache,
+        )
 
         expect(instance_plans.select(&:recreate_deployment).count).to eq(instance_plans.count)
       end
@@ -127,7 +292,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
     end
 
-    describe 'logging active vm presence' do
+    context 'logging active vm presence' do
       context 'when instance has active vm' do
         it 'logs that theres is a vm' do
           existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
@@ -149,7 +314,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
     end
 
-    describe 'moving an instance to a different az' do
+    context 'moving an instance to a different az' do
       it "should not attempt to reuse the existing instance's index" do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: undesired_az.name, deployment: deployment_model, :variable_set => variable_set_model)
         another_existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 1, availability_zone: undesired_az.name, deployment: deployment_model, :variable_set => variable_set_model)
@@ -170,94 +335,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         expect(new_instance_plan.new?).to eq(true)
         expect(new_instance_plan.obsolete?).to eq(false)
       end
-    end
-
-    it 'creates instance plans for existing instances' do
-      existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name, :variable_set => variable_set_model)
-
-      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
-
-      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
-
-      expect(instance_plans.count).to eq(1)
-      existing_instance_plan = instance_plans.first
-
-      expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
-        instance_group,
-        deployment,
-        az,
-        0
-      )
-      expect(existing_instance_plan.new?).to eq(false)
-      expect(existing_instance_plan.obsolete?).to eq(false)
-
-      expect(existing_instance_plan.desired_instance.instance_group).to eq(expected_desired_instance.instance_group)
-      expect(existing_instance_plan.desired_instance.deployment).to eq(expected_desired_instance.deployment)
-      expect(existing_instance_plan.desired_instance.az).to eq(expected_desired_instance.az)
-      expect(existing_instance_plan.instance.bootstrap?).to eq(true)
-
-      expect(existing_instance_plan.instance).to eq(tracer_instance)
-      expect(existing_instance_plan.existing_instance).to eq(existing_instance_model)
-    end
-
-    it 'updates descriptions for existing instances' do
-      existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name, :variable_set => variable_set_model)
-      allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
-      expect(tracer_instance).to receive(:update_description)
-
-      instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
-    end
-
-    it 'creates instance plans for new instances' do
-      existing_instances = []
-      allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
-
-      instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], existing_instances, vm_resources_cache)
-
-      expect(instance_plans.count).to eq(1)
-      new_instance_plan = instance_plans.first
-
-      expect(new_instance_plan.new?).to eq(true)
-      expect(new_instance_plan.obsolete?).to eq(false)
-      expect(new_instance_plan.desired_instance).to eq(desired_instance)
-      expect(new_instance_plan.instance).to eq(tracer_instance)
-      expect(new_instance_plan.existing_instance).to be_nil
-      expect(new_instance_plan).to be_new
-    end
-
-    it 'creates instance plans for new, existing and obsolete instances' do
-      out_of_typical_range_index = 77
-      auto_picked_index = 0
-
-      desired_existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: out_of_typical_range_index, availability_zone: az.name, :variable_set => variable_set_model)
-
-      desired_instances = [desired_instance, BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, out_of_typical_range_index)]
-
-      undesired_existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: auto_picked_index, availability_zone: undesired_az.name, :variable_set => variable_set_model)
-      existing_instances = [undesired_existing_instance_model, desired_existing_instance_model]
-      allow(instance_repo).to receive(:fetch_existing).with(desired_existing_instance_model, nil, instance_group, out_of_typical_range_index, deployment) do
-        make_instance(out_of_typical_range_index)
-      end
-
-      allow(instance_repo).to receive(:create).with(desired_instances[1], 0) { make_instance(auto_picked_index) }
-
-      instance_plans = instance_planner.plan_instance_group_instances(instance_group, desired_instances, existing_instances, vm_resources_cache)
-      expect(instance_plans.count).to eq(3)
-
-      obsolete_instance_plan = instance_plans.find(&:obsolete?)
-      expect(obsolete_instance_plan.new?).to eq(false)
-      expect(obsolete_instance_plan.obsolete?).to eq(true)
-      expect(obsolete_instance_plan.desired_instance).to be_nil
-      expect(obsolete_instance_plan.existing_instance).to eq(undesired_existing_instance_model)
-      expect(obsolete_instance_plan.instance).not_to be_nil
-
-      existing_instance_plan = instance_plans.find(&:existing?)
-      expect(existing_instance_plan.new?).to eq(false)
-      expect(existing_instance_plan.obsolete?).to eq(false)
-
-      new_instance_plan = instance_plans.find(&:new?)
-      expect(new_instance_plan.new?).to eq(true)
-      expect(new_instance_plan.obsolete?).to eq(false)
     end
 
     context 'when vm requirements are given' do
@@ -394,55 +471,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
     end
 
-    context 'reconciling network plans' do
-      let(:existing_instance) { make_instance_with_existing_model(existing_instance_model) }
-
-      let(:existing_instance_model) { BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: az.name) }
-
-      before do
-        BD::Models::IpAddress.make(address_str: ip_to_i('192.168.1.5').to_s, network_name: 'fake-network', instance: existing_instance_model)
-
-        allow(deployment).to receive(:network).with('fake-network') { manual_network }
-
-        ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-        ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'fake-network' => manual_network}, logger)
-        allow(deployment).to receive(:ip_provider) { ip_provider  }
-        fake_job
-      end
-
-      let(:manual_network) { BD::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }
-      let(:subnet) do
-        BD::DeploymentPlan::ManualNetworkSubnet.new(
-          'fake-network',
-          NetAddr::CIDR.create('192.168.1.0/24'),
-          nil, nil, nil, nil, ['foo-az'], [],
-          [])
-      end
-
-      it 'marks undesired existing network reservations as obsolete' do
-        instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
-
-        expect(instance_plans.count).to eq(1)
-        existing_instance_plan = instance_plans.first
-        expect(existing_instance_plan.network_plans.first.obsolete?).to be_truthy
-      end
-
-      context 'when network reservation is needed' do
-        before do
-          instance_group_network = BD::DeploymentPlan::JobNetwork.new('fake-network', nil, [], manual_network)
-          allow(instance_group).to receive(:networks).and_return([instance_group_network])
-        end
-
-        it 'marks desired existing reservations as existing' do
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
-
-          expect(instance_plans.count).to eq(1)
-          existing_instance_plan = instance_plans.first
-          expect(existing_instance_plan.network_plans.first.existing?).to be_truthy
-        end
-      end
-    end
-
     context 'when instance has vip networks' do
       let(:vip_network) { BD::DeploymentPlan::VipNetwork.new({'name' => 'fake-network'}, logger) }
       before do
@@ -492,6 +520,170 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
          Bosh::Director::DeploymentIgnoredInstancesDeletion,
          "You are trying to delete instance group 'bar-instance-group', which contains ignored instance(s). Operation not allowed."
       )
+    end
+  end
+
+  describe 'orphan_unreusable_vms' do
+    let(:instance_group) do
+      instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
+      instance_group.name = 'foo-instance_group'
+      instance_group.availability_zones << az
+      instance_group.stemcell = BD::DeploymentPlan::Stemcell.new('default', 'ubuntu-stemcell', 'ubuntu', '1')
+      instance_group.env = BD::DeploymentPlan::Env.new('env' => 'env-val')
+      instance_group.vm_type = BD::DeploymentPlan::VmType.new(
+        'name' => 'a',
+        'cloud_properties' => uninterpolated_cloud_properties_hash,
+      )
+      instance_group
+    end
+
+    let(:uninterpolated_cloud_properties_hash) do
+      { 'cloud' => '((interpolated_prop))' }
+    end
+
+    let(:existing_instance_model) do
+      BD::Models::Instance.make(
+        job: 'foo-instance_group',
+        index: 0,
+        availability_zone: az.name,
+      )
+    end
+
+    let(:existing_instance_models) { [existing_instance_model] }
+
+    let(:instance_plans) do
+      [instance_plan]
+    end
+
+    let(:instance_plan) do
+      instance_double(Bosh::Director::DeploymentPlan::InstancePlan)
+    end
+
+    before do
+      Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+      allow(Bosh::Director::Config.current_job).to receive(:username).and_return 'fake-username'
+      allow(instance_plan).to receive(:vm_matches_plan?).and_return false
+    end
+
+    it 'does NOT orphan active vms' do
+      vm = BD::Models::Vm.make(
+        instance: existing_instance_model,
+        active: true,
+      )
+
+      instance_planner.orphan_unreusable_vms(instance_plans, existing_instance_models)
+
+      expect(existing_instance_model.vms).to include(vm)
+    end
+
+    it 'does not orphan vms that match the instance plan' do
+      vm = BD::Models::Vm.make(
+        instance: existing_instance_model,
+        active: true,
+      )
+      usable_vm = BD::Models::Vm.make(instance: existing_instance_model)
+
+      allow(instance_plan).to receive(:vm_matches_plan?).with(usable_vm).and_return true
+
+      instance_planner.orphan_unreusable_vms(instance_plans, existing_instance_models)
+
+      expect(existing_instance_model.vms).to include(vm)
+      expect(existing_instance_model.vms).to include(usable_vm)
+    end
+
+    it 'orphans VMs that do not match' do
+      vm = BD::Models::Vm.make(
+        instance: existing_instance_model,
+        active: true,
+      )
+      unusable_vm = BD::Models::Vm.make(
+        instance: existing_instance_model,
+        active: false,
+      )
+
+      allow(instance_plan).to receive(:vm_matches_plan?).with(unusable_vm).and_return false
+
+      instance_planner.orphan_unreusable_vms(instance_plans, existing_instance_models)
+
+      expect(existing_instance_model.vms).to include(vm)
+      expect(existing_instance_model.vms).to_not include(unusable_vm)
+    end
+  end
+
+  describe 'reconcile_network_plans' do
+    let(:existing_instance) { make_instance_with_existing_model(existing_instance_model) }
+    let(:existing_instance_model) do
+      BD::Models::Instance.make(
+        job: 'foo-instance_group',
+        index: 0,
+        bootstrap: true,
+        availability_zone: az.name,
+      )
+    end
+
+    before do
+      BD::Models::IpAddress.make(
+        address_str: ip_to_i('192.168.1.5').to_s,
+        network_name: 'fake-network',
+        instance: existing_instance_model,
+      )
+
+      allow(deployment).to receive(:network).with('fake-network') { manual_network }
+
+      ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
+      ip_provider = BD::DeploymentPlan::IpProvider.new(
+        ip_repo,
+        { 'fake-network' => manual_network },
+        logger,
+      )
+      allow(deployment).to receive(:ip_provider) { ip_provider }
+      fake_job
+    end
+
+    let(:manual_network) { BD::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }
+    let(:subnet) do
+      BD::DeploymentPlan::ManualNetworkSubnet.new(
+        'fake-network',
+        NetAddr::CIDR.create('192.168.1.0/24'),
+        nil, nil, nil, nil, ['foo-az'], [],
+        []
+      )
+    end
+
+    it 'marks undesired existing network reservations as obsolete' do
+      instance_plans = instance_planner.plan_instance_group_instances(
+        instance_group,
+        [desired_instance],
+        [existing_instance_model],
+        vm_resources_cache,
+      )
+      instance_planner.reconcile_network_plans(instance_plans)
+
+      expect(instance_plans.count).to eq(1)
+      existing_instance_plan = instance_plans.first
+      expect(existing_instance_plan.network_plans.first.obsolete?).to be_truthy
+    end
+
+    context 'when network reservation is needed' do
+      before do
+        instance_group_network = BD::DeploymentPlan::JobNetwork.new('fake-network', nil, [], manual_network)
+        allow(instance_group).to receive(:networks).and_return([instance_group_network])
+      end
+
+      it 'marks desired existing reservations as existing' do
+        instance_plans = instance_planner.plan_instance_group_instances(
+          instance_group,
+          [desired_instance],
+          [existing_instance_model],
+          vm_resources_cache,
+        )
+        instance_planner.reconcile_network_plans(instance_plans)
+
+        expect(instance_plans.count).to eq(1)
+        existing_instance_plan = instance_plans.first
+        expect(existing_instance_plan.network_plans.first.existing?).to be_truthy
+      end
     end
   end
 end

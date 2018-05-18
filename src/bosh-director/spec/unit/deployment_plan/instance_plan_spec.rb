@@ -360,7 +360,11 @@ module Bosh::Director::DeploymentPlan
             end
 
             it 'compares the interpolated cloud_properties' do
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              expect(config_server_client).to receive(:interpolate_with_versioning)
+                .with(
+                  current_networks_hash,
+                  previous_variable_set,
+                ).and_return(interpolated_current_networks_hash)
               expect(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
 
               expect(simple_instance_plan.network_settings_changed?).to be_truthy
@@ -557,6 +561,171 @@ module Bosh::Director::DeploymentPlan
 
         it 'shuts down the instance' do
           expect(instance_plan.needs_shutting_down?).to be_truthy
+        end
+      end
+    end
+
+    describe '#vm_matches_plan?' do
+      let(:instance_group) do
+        instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
+        instance_group.name = 'foo-instance_group'
+        instance_group.availability_zones << availability_zone
+        instance_group.env = BD::DeploymentPlan::Env.new('env' => 'env-val')
+        instance_group.vm_type = BD::DeploymentPlan::VmType.new(
+          'name' => 'a',
+          'cloud_properties' => uninterpolated_cloud_properties_hash,
+        )
+        instance_group
+      end
+
+      let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+
+      let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+
+      let(:uninterpolated_cloud_properties_hash) { { 'cloud' => '((interpolated_prop))' } }
+
+      let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+      let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+      let(:desired_cloud_properties_hash) { { 'cloud' => 'prop' } }
+
+      let(:previous_cloud_properties_hash) { { 'cloud' => 'prop' } }
+
+      let(:simple_instance_plan) do
+        InstancePlan.new(
+          existing_instance: mock_existing_instance,
+          desired_instance: mock_desired_instance,
+          instance: mock_instance,
+        )
+      end
+
+      let(:mock_desired_instance) do
+        instance_double(
+          Bosh::Director::DeploymentPlan::DesiredInstance,
+          instance_group: instance_group,
+          availability_zone: availability_zone,
+        )
+      end
+
+      let(:mock_existing_instance) do
+        instance_double(
+          Bosh::Director::Models::Instance,
+        )
+      end
+
+      let(:mock_instance) do
+        instance_double(
+          Bosh::Director::DeploymentPlan::Instance,
+          previous_variable_set: previous_variable_set,
+          desired_variable_set: desired_variable_set,
+          stemcell: instance_double(Bosh::Director::Models::Stemcell, name: 'ubuntu-stemcell', version: '1'),
+          cloud_properties: uninterpolated_cloud_properties_hash,
+        )
+      end
+
+      before do
+        allow(client_factory).to receive(:create_client).and_return(config_server_client)
+        allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+
+        allow(instance_group.vm_type).to receive(:cloud_properties).and_return(uninterpolated_cloud_properties_hash)
+        allow(config_server_client).to receive(:interpolate_with_versioning).with(
+          uninterpolated_cloud_properties_hash,
+          desired_variable_set,
+        ).and_return(desired_cloud_properties_hash)
+        allow(config_server_client).to receive(:interpolate_with_versioning).with(
+          uninterpolated_cloud_properties_hash,
+          previous_variable_set,
+        ).and_return(previous_cloud_properties_hash)
+      end
+
+      it 'should match if all properties are the same' do
+        expect(
+          simple_instance_plan.vm_matches_plan?(
+            BD::Models::Vm.make(
+              instance: existing_instance,
+              stemcell_name: 'ubuntu-stemcell',
+              stemcell_version: '1',
+              env_json: { 'env' => 'env-val' }.to_json,
+              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
+              active: true,
+            ),
+          ),
+        ).to eq(true)
+      end
+
+      it 'should not match if stemcell differs' do
+        expect(
+          simple_instance_plan.vm_matches_plan?(
+            BD::Models::Vm.make(
+              instance: existing_instance,
+              stemcell_name: 'other-stemcell',
+              stemcell_version: '1',
+              env_json: { 'env' => 'env-val' }.to_json,
+              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
+              active: true,
+            ),
+          ),
+        ).to eq(false)
+
+        expect(
+          simple_instance_plan.vm_matches_plan?(
+            BD::Models::Vm.make(
+              instance: existing_instance,
+              stemcell_name: 'ubuntu-stemcell',
+              stemcell_version: '5',
+              env_json: { 'env' => 'env-val' }.to_json,
+              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
+              active: true,
+            ),
+          ),
+        ).to eq(false)
+      end
+
+      it 'should not match if env properties differ' do
+        expect(
+          simple_instance_plan.vm_matches_plan?(
+            BD::Models::Vm.make(
+              instance: existing_instance,
+              stemcell_name: 'ubuntu-stemcell',
+              stemcell_version: '1',
+              env_json: { 'other-env' => 'other-env-val' }.to_json,
+              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
+              active: true,
+            ),
+          ),
+        ).to eq(false)
+
+        expect(
+          simple_instance_plan.vm_matches_plan?(
+            BD::Models::Vm.make(
+              instance: existing_instance,
+              stemcell_name: 'ubuntu-stemcell',
+              stemcell_version: '1',
+              env_json: {}.to_json,
+              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
+              active: true,
+            ),
+          ),
+        ).to eq(false)
+      end
+
+      context 'when cloud properties differ' do
+        let(:desired_cloud_properties_hash) { { 'cloud' => 'new-prop' } }
+
+        it 'should not match' do
+          expect(
+            simple_instance_plan.vm_matches_plan?(
+              BD::Models::Vm.make(
+                instance: existing_instance,
+                stemcell_name: 'ubuntu-stemcell',
+                stemcell_version: '1',
+                env_json: { 'env' => 'env-val' }.to_json,
+                cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
+                active: true,
+              ),
+            ),
+          ).to eq(false)
         end
       end
     end
@@ -1348,6 +1517,51 @@ module Bosh::Director::DeploymentPlan
           it '#dns_changed? should return false' do
             expect(instance_plan.dns_changed?).to be(false)
           end
+        end
+      end
+    end
+
+    describe '#remove_network_plans_for_ips' do
+      let(:plan1) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('192.168.1.25')
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
+      end
+
+      let(:plan2) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('192.168.1.26')
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
+      end
+
+      let(:plan3) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('192.168.1.4')
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: true)
+      end
+
+      let(:plan4) do
+        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation.resolve_ip('10.0.0.1')
+
+        NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
+      end
+
+      let(:network_plans) { [plan1, plan2, plan3, plan4] }
+
+      let(:ip1) { NetAddr::CIDR.create('192.168.1.25').to_i }
+      let(:ip2) { NetAddr::CIDR.create('192.168.1.26').to_i }
+
+      let(:ip_address1) { Bosh::Director::Models::IpAddress.make(address_str: ip1.to_s) }
+      let(:ip_address2) { Bosh::Director::Models::IpAddress.make(address_str: ip2.to_s) }
+
+      describe 'when there are ips specified' do
+        it 'releases obsolete network plans of the specified ips' do
+          instance_plan.remove_obsolete_network_plans_for_ips([ip_address1.address_str, ip_address2.address_str])
+          expect(instance_plan.network_plans).to contain_exactly(plan3, plan4)
         end
       end
     end

@@ -18,8 +18,6 @@ module Bosh::Director
       let(:use_dns_addresses) { false }
       let(:instance_group_private_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
       let(:instance_group_public_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
-      let(:default_networks) { { 'gateway' => network_name } }
-
       let(:smurf_link_info) do
         {
           'name' => 'smurf_link',

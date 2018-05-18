@@ -999,6 +999,19 @@ describe 'links api', type: :integration do
             expect(error_response['description']).to eq("Provider not `shared`")
           end
         end
+
+        context 'when attempting to create the link a second time' do
+          before do
+            response = send_director_post_request('/links', '', JSON.generate(payload_json)).read_body
+            @link1 = JSON.parse(response)
+          end
+
+          it 'should return the existing link' do
+            response = send_director_post_request('/links', '', JSON.generate(payload_json)).read_body
+            link2 = JSON.parse(response)
+            expect(@link1).to eq(link2)
+          end
+        end
       end
 
       context 'when link_provider_id do not exists' do

@@ -8,6 +8,7 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer = DeepHashReplacement.new
       @deployment_lookup = Bosh::Director::Api::DeploymentLookup.new
       @logger = logger
+      @converge_variables = false
     end
 
     # @param [Hash] raw_hash Hash to be interpolated. This method only supports Absolute Names.
@@ -68,42 +69,10 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer.replace_variables(link_properties_hash, variables_paths, retrieved_config_server_values)
     end
 
-    # Refer to unit tests for full understanding of this method
-    # @param [Object] provided_prop property value
-    # @param [Object] default_prop property value
-    # @param [String] type of property
-    # @param [String] deployment_name
-    # @param [Hash] options hash containing extra options when needed
-    # @return [Object] either the provided_prop or the default_prop
-    def prepare_and_get_property(provided_prop, default_prop, type, deployment_name, options = {})
-      if provided_prop.nil?
-        result = default_prop
-      else
-        if ConfigServerHelper.is_full_variable?(provided_prop)
-          extracted_name = ConfigServerHelper.add_prefix_if_not_absolute(
-            ConfigServerHelper.extract_variable_name(provided_prop),
-            @director_name,
-            deployment_name
-          )
-          extracted_name = get_name_root(extracted_name)
-
-          if !type.nil? && !name_exists?(extracted_name)
-            if type == 'certificate'
-              generate_certificate(extracted_name, deployment_name, @deployment_lookup.by_name(deployment_name).current_variable_set, options)
-            else
-              generate_value_and_record_event(extracted_name, type, deployment_name, @deployment_lookup.by_name(deployment_name).current_variable_set, {})
-            end
-          end
-        end
-
-        result = provided_prop
-      end
-      result
-    end
-
     # @param [DeploymentPlan::Variables] variables Object representing variables passed by the user
     # @param [String] deployment_name
-    def generate_values(variables, deployment_name)
+    def generate_values(variables, deployment_name, converge_variables = false)
+      @converge_variables = converge_variables
       current_variable_set = @deployment_lookup.by_name(deployment_name).current_variable_set
 
       variables.spec.each do |variable|
@@ -341,6 +310,8 @@ module Bosh::Director::ConfigServer
         'type' => type,
         'parameters' => parameters
       }
+
+      request_body['mode'] = 'converge' if @converge_variables
 
       unless variable_set.writable
         raise Bosh::Director::ConfigServerGenerationError, "Variable '#{get_name_root(name)}' cannot be generated. Variable generation allowed only during deploy action"

@@ -11,7 +11,6 @@ module Bosh::Director::DeploymentPlan
       attr_accessor :existing
       attr_accessor :obsolete
 
-
       def obsolete?
         !!@obsolete
       end

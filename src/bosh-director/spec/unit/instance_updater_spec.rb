@@ -17,6 +17,8 @@ module Bosh::Director
     let(:active_persistent_disks) do
       instance_double(DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model])
     end
+
+    let!(:ip_address) { Models::IpAddress.make(vm: instance_model.active_vm, instance: instance_model) }
     let(:instance_model) do
       instance = Models::Instance.make(
         uuid: 'uuid-1',
@@ -204,6 +206,7 @@ module Bosh::Director
 
         it 'should update dns' do
           allow(instance_plan).to receive(:already_detached?).and_return(false)
+          expect(instance_plan).to receive(:release_obsolete_network_plans).with(ip_provider)
           expect(unmount_step).to receive(:perform)
           expect(delete_step).to receive(:perform)
           expect(director_state_updater).to receive(:update_dns_for_instance)
@@ -270,6 +273,8 @@ module Bosh::Director
           allow(disk_manager).to receive(:update_persistent_disk)
           allow(job).to receive(:update)
           allow(instance).to receive(:update_instance_settings)
+
+          expect(instance_plan).to receive(:release_obsolete_network_plans).with(ip_provider)
         end
 
         it 'does NOT drain, stop, post-stop, snapshot, but persists rendered templates to the blobstore, updates DNS and bind links' do
@@ -397,7 +402,6 @@ module Bosh::Director
               expect(detach_step).to receive(:perform)
               expect(DeploymentPlan::Steps::DeleteVmStep).to_not receive(:new)
               expect(vm_creator).not_to receive(:create_for_instance_plan)
-              expect(instance_plan).not_to receive(:release_obsolete_network_plans)
 
               expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)
               expect(elect_active_vm_step).to receive(:perform)
@@ -410,7 +414,9 @@ module Bosh::Director
             it 'orphans the old vm after activating the new one' do
               expect(elect_active_vm_step).to receive(:perform)
               expect(orphan_vm_step).to receive(:perform)
-              expect(instance_plan).not_to receive(:release_obsolete_network_plans)
+
+              expected_ips = instance_model.active_vm.ip_addresses.map(&:address_str)
+              expect(instance_plan).to receive(:remove_obsolete_network_plans_for_ips).with(expected_ips)
 
               updater.update(instance_plan)
             end
@@ -426,7 +432,6 @@ module Bosh::Director
                 expect(delete_step).to receive(:perform) do |report|
                   expect(report.vm).to eql(instance_model.active_vm)
                 end
-                expect(instance_plan).to receive(:release_obsolete_network_plans)
                 expect(vm_creator).not_to receive(:create_for_instance_plan)
 
                 expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)
@@ -439,20 +444,18 @@ module Bosh::Director
               end
             end
 
-            context 'and has no previously existing vm' do
+            context 'and has only one VM, which is currently active' do
               before do
                 inactive_vm_model.destroy
               end
 
-              it 'deletes the old vm and does NOT try to orphan it' do
+              it 'does NOT orphan the active VM and synchrously recreates the vm' do
                 expect(elect_active_vm_step).not_to receive(:perform)
                 expect(orphan_vm_step).not_to receive(:perform)
                 expect(delete_step).to receive(:perform) do |report|
                   expect(report.vm).to eql(instance_model.active_vm)
                 end
-                expect(instance_plan).to receive(:release_obsolete_network_plans)
                 expect(vm_creator).to receive(:create_for_instance_plan)
-
                 expect(instance_model).to receive(:most_recent_inactive_vm).and_return(inactive_vm_model)
                 expect(state_applier).to receive(:apply)
                 expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
@@ -524,6 +527,8 @@ module Bosh::Director
       before do
         allow(DiskManager).to receive(:new).and_return(disk_manager)
         allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
+
+        expect(instance_plan).to receive(:release_obsolete_network_plans).with(ip_provider)
       end
 
       it 'updates the instance settings and bind links' do

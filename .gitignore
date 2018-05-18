@@ -75,3 +75,6 @@ spec_reports
 coverage/
 tags
 src/parallel_runtime_rspec.log
+
+cscope.out
+.starscope.db
