@@ -20,7 +20,16 @@ case "$DB" in
     mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
     mv /var/lib/mysql-src/* /var/lib/mysql/
     echo '
+[client]
+default-character-set=utf8
+
+[mysql]
+default-character-set=utf8
+
 [mysqld]
+collation-server = utf8_unicode_ci
+init-connect='SET NAMES utf8'
+character-set-server = utf8
 max_connections = 1024' >> /etc/mysql/my.cnf
 
     if [ "$DB_TLS" = true ]; then
