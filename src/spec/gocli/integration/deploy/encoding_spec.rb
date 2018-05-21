@@ -10,7 +10,9 @@ describe 'encoding', type: :integration do
     manifest_hash['instance_groups'].first['properties']['moretest'] = '€ ©2017'
     manifest_hash['instance_groups'].first['properties']['arabic'] = 'كلام فارغ'
     manifest_hash['instance_groups'].first['properties']['japanese'] = '曇り'
-    manifest_hash['instance_groups'].first['properties']['russian'] = 'я люблю свою работу'
+    manifest_hash['instance_groups'].first['properties']['cyrillic'] = 'я люблю свою работу'
+    manifest_hash['instance_groups'].first['properties']['germanic'] = 'Øl weiß æther ångström'
+    manifest_hash['instance_groups'].first['properties']['hellenic'] = 'ελληνικά'
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
   end
 end
