@@ -1,11 +1,17 @@
 module Bosh::Spec
   class NewDeployments
     DEFAULT_DEPLOYMENT_NAME = 'simple'.freeze
+    DISK_TYPE = {
+      'name' => 'default',
+      'disk_size' => 1024,
+      'cloud_properties' => {},
+    }.freeze
 
     def self.simple_cloud_config
       minimal_cloud_config.merge(
         'networks' => [network],
         'vm_types' => [vm_type],
+        'disk_types' => [DISK_TYPE],
       )
     end
 
