@@ -44,78 +44,38 @@ module Bosh::Director::Links
       parse_consumers_from_job(manifest_job_spec, deployment_model, current_release_template_model, instance_group_name)
     end
 
+    def validate_custom_providers(manifest_defined_providers, release_defined_providers, job_name, instance_group_name, release_name)
+      errors = []
+      duplicate_manifest_provider_names = manifest_defined_providers.group_by do |provider|
+        provider['name']
+      end.select do |key, val|
+        val.size > 1
+      end
+
+      manifest_defined_providers.each do |custom_provider, index|
+        errors.concat(validate_custom_provider_definition(custom_provider, job_name, instance_group_name))
+        errors.push("Custom provider '#{custom_provider['name']}' in job '#{job_name}' in instance group '#{instance_group_name}' is already defined in release '#{release_name}'") if release_defined_providers.detect {|provider| provider['name'] == custom_provider['name']}
+      end
+
+      duplicate_manifest_provider_names.each do |duplicate_name, _|
+        errors.push("Custom provider '#{duplicate_name}' in job '#{job_name}' in instance group '#{instance_group_name}' is defined multiple times in manifest.")
+      end
+      raise errors.join("\n") unless errors.empty?
+    end
+
     def parse_providers_from_job(manifest_job_spec, deployment_model, current_release_template_model, job_properties, instance_group_name)
       @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
       manifest_provides_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'provides', class: Hash, optional: true, default: {}))
+      custom_manifest_providers = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'custom_provider_definitions', class: Array, optional: true, default: []))
       job_name = safe_property(manifest_job_spec, 'name', class: String)
 
-      # TODO links: add integration test to test for it, maybe not
-      if current_release_template_model.provides.empty? && !manifest_provides_links.empty?
-        raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies providers in the manifest but the job does not define any providers in the release spec"
-      end
-
-      return if current_release_template_model.provides.empty?
-
-      # potential TODO links: check if migrated_from and do not create new provider if migration occurring
-      provider = @links_manager.find_or_create_provider(
-        deployment_model: deployment_model,
-        instance_group_name: instance_group_name,
-        name: job_name,
-        type: 'job'
-      )
+      validate_custom_providers(custom_manifest_providers, current_release_template_model.provides, job_name, instance_group_name, current_release_template_model.release.name)
 
       errors = []
 
-      current_release_template_model.provides.each do |provides|
-        provider_original_name = provides['name']
-
-        provider_intent_params = {
-          original_name: provider_original_name,
-          type: provides['type'],
-          alias: provider_original_name,
-          shared: false,
-          consumable: true
-        }
-
-        if manifest_provides_links.has_key?(provider_original_name)
-          manifest_source = manifest_provides_links.delete(provider_original_name)
-
-          validation_errors = validate_provide_link(manifest_source, provider_original_name, job_name, instance_group_name)
-          errors.concat(validation_errors)
-          next unless validation_errors.empty?
-
-          if manifest_source.eql? 'nil'
-            provider_intent_params[:consumable] = false
-          else
-            provider_intent_params[:alias] = manifest_source['as'] if manifest_source.has_key?('as')
-            provider_intent_params[:shared] = !!manifest_source['shared']
-          end
-        end
-
-        exported_properties = provides['properties'] || []
-        default_job_properties = {
-          'properties' => current_release_template_model.properties,
-          'template_name' => current_release_template_model.name
-        }
-
-        mapped_properties, properties_errors = process_link_properties(job_properties, default_job_properties, exported_properties)
-        errors.concat(properties_errors)
-
-        next unless properties_errors.empty?
-
-        provider_intent = @links_manager.find_or_create_provider_intent(
-          link_provider: provider,
-          link_original_name: provider_intent_params[:original_name],
-          link_type: provider_intent_params[:type]
-        )
-
-        provider_intent.name = provider_intent_params[:alias]
-        provider_intent.shared = provider_intent_params[:shared]
-        provider_intent.metadata = {:mapped_properties => mapped_properties}.to_json
-        provider_intent.consumable = provider_intent_params[:consumable]
-        provider_intent.save
-      end
+      errors.concat(process_custom_providers(current_release_template_model, custom_manifest_providers, manifest_provides_links, deployment_model, job_properties, instance_group_name))
+      errors.concat(process_release_providers(current_release_template_model, manifest_provides_links, deployment_model, instance_group_name, job_properties))
 
       unless manifest_provides_links.empty?
         errors.push("Manifest defines unknown providers:")
@@ -247,6 +207,96 @@ module Bosh::Director::Links
     end
 
     private
+
+    def process_providers(release_properties, provider_definitions, manifest_provides_links, deployment_model, job_properties, instance_group_name, job_name, are_custom_definitions)
+      provider = @links_manager.find_or_create_provider(
+        deployment_model: deployment_model,
+        instance_group_name: instance_group_name,
+        name: job_name,
+        type: 'job',
+        )
+
+      errors = []
+
+      provider_definitions.each do |provider_definition|
+        provider_original_name = provider_definition['name']
+
+        provider_intent_params = {
+          original_name: provider_original_name,
+          type: provider_definition['type'],
+          alias: provider_original_name,
+          shared: false,
+          consumable: true
+        }
+
+        if manifest_provides_links.has_key?(provider_original_name)
+          manifest_source = manifest_provides_links.delete(provider_original_name)
+
+          validation_errors = validate_provide_link(manifest_source, provider_original_name, job_name, instance_group_name)
+          errors.concat(validation_errors)
+          next unless validation_errors.empty?
+
+          if manifest_source.eql? 'nil'
+            provider_intent_params[:consumable] = false
+          else
+            provider_intent_params[:alias] = manifest_source['as'] if manifest_source.has_key?('as')
+            provider_intent_params[:shared] = !!manifest_source['shared']
+          end
+        end
+
+        exported_properties = provider_definition['properties'] || []
+        default_job_properties = {
+          'properties' => release_properties,
+          'template_name' => job_name
+        }
+
+        mapped_properties, properties_errors = process_link_properties(job_properties, default_job_properties, exported_properties)
+        errors.concat(properties_errors)
+
+        next unless properties_errors.empty?
+
+        provider_intent = @links_manager.find_or_create_provider_intent(
+          link_provider: provider,
+          link_original_name: provider_intent_params[:original_name],
+          link_type: provider_intent_params[:type]
+        )
+
+        provider_intent.name = provider_intent_params[:alias]
+        provider_intent.shared = provider_intent_params[:shared]
+        is_custom = are_custom_definitions || false
+        provider_intent.metadata = {:mapped_properties => mapped_properties, :custom => is_custom}.to_json
+        provider_intent.consumable = provider_intent_params[:consumable]
+        provider_intent.save
+      end
+      errors
+    end
+
+    def process_custom_providers(current_release_template_model, custom_manifest_providers, manifest_provides_links, deployment_model, job_properties, instance_group_name)
+      return [] if custom_manifest_providers.empty?
+
+      process_providers(current_release_template_model.properties, custom_manifest_providers, manifest_provides_links, deployment_model,
+                        job_properties, instance_group_name, current_release_template_model.name, true)
+    end
+
+    def process_release_providers(current_release_template_model, manifest_provides_links, deployment_model, instance_group_name, job_properties)
+      job_name = current_release_template_model.name
+
+      if current_release_template_model.provides.empty? && !manifest_provides_links.empty?
+        raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies providers in the manifest but the job does not define any providers in the release spec"
+      end
+
+      return [] if current_release_template_model.provides.empty?
+
+      process_providers(current_release_template_model.properties, current_release_template_model.provides, manifest_provides_links, deployment_model,
+                        job_properties, instance_group_name, job_name, false)
+    end
+
+    def validate_custom_provider_definition(provider, job_name, instance_group_name)
+      errors = []
+      errors.push("Name for custom link provider definition in manifest in job '#{job_name}' in instance group '#{instance_group_name}' must be a valid non-empty string.") if !provider['name'].is_a?(String) || provider['name'].empty?
+      errors.push("Type for custom link provider definition in manifest in job '#{job_name}' in instance group '#{instance_group_name}' must be a valid non-empty string.") if !provider['type'].is_a?(String) || provider['type'].empty?
+      errors
+    end
 
     def validate_provide_link(source, link_name, job_name, instance_group_name)
       if source.eql? 'nil'

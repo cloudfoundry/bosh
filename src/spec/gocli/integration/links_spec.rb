@@ -149,7 +149,7 @@ describe 'Links', type: :integration do
       end
     end
 
-    context 'when link is not defined in provides spec but specified in manifest' do
+    context 'when provider in provides section is not defined' do
       let(:consume_instance_group) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group',
@@ -250,26 +250,97 @@ describe 'Links', type: :integration do
       end
     end
 
-    context 'deployment job does not have templates' do
-      let(:first_node_instance_group_spec) do
+    context 'when manifest has conflicting custom provider definitions' do
+      it 'returns error when conflicting with release spec in same job' do
+        custom_provider_job = {
+          'name' => 'mongo_db',
+          'custom_provider_definitions' => [
+            {
+              'name' => 'read_only_db',
+              'type' => 'smurf'
+            }
+          ]
+        }
+        mongo_db_spec['jobs'] = [custom_provider_job]
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [mongo_db_spec]
+
+        output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+        expect(output).to include("Custom provider 'read_only_db' in job 'mongo_db' in instance group 'mongo' is already defined in release 'bosh-release'")
+      end
+
+      it 'returns error when conflicting with another custom definition' do
+        custom_provider_job = {
+          'name' => 'mongo_db',
+          'custom_provider_definitions' => [
+            {
+              'name' => 'gargamel',
+              'type' => 'smurf'
+            },
+            {
+              'name' => 'gargamel',
+              'type' => 'person'
+            }
+          ]
+        }
+        mongo_db_spec['jobs'] = [custom_provider_job]
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [mongo_db_spec]
+
+        output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
+        expect(output).to include("Custom provider 'gargamel' in job 'mongo_db' in instance group 'mongo' is defined multiple times in manifest.")
+      end
+    end
+
+    context 'when manifest has non-conflicting custom provider definitions' do
+      let(:link_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
-          name: 'first_node',
-          jobs: [],
+          name: 'my_links',
+          jobs: [
+            {
+              'name' => 'provider_without_provides',
+              'custom_provider_definitions' => [
+                {
+                  'name' => 'provider',
+                  'type' => 'provider',
+                  'properties' => [
+                    'a',
+                    'b',
+                    'c',
+                    'nested.one',
+                    'nested.two',
+                    'nested.three',
+                  ]
+                }
+              ],
+              'properties' => { 'b' => 'value_b', 'nested' => {'three' => 'bar'} },
+            },
+            {'name' => 'consumer'},
+          ],
           instances: 1,
-          static_ips: ['192.168.1.10'],
-        )
+          )
         spec['azs'] = ['z1']
         spec
       end
 
-      let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['instance_groups'] = [first_node_instance_group_spec]
-        manifest
-      end
-
-      it 'renders link data in job template' do
+      it 'respects default properties and should create link successfully' do
+        manifest['instance_groups'] = [link_instance_group_spec]
         deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.find_instance(director.instances, 'my_links', '0')
+
+        template = YAML.safe_load(link_instance.read_job_template('consumer', 'config.yml'))
+
+        expect(template['a']).to eq('default_a')
+        expect(template['b']).to eq('value_b')
+        expect(template['c']).to eq('default_c')
+
+        expect(template['nested'].size).to eq(3)
+        expect(template['nested']).to eq(
+                                        'one' => 'default_nested.one',
+                                        'two' => 'default_nested.two',
+                                        'three' => 'bar',
+                                        )
       end
     end
 

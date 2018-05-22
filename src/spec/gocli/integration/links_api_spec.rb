@@ -249,6 +249,47 @@ describe 'links api', type: :integration do
       end
     end
 
+    context 'when deployment has a custom provider definition' do
+      let(:jobs) do
+        [
+          {
+            'name' => 'api_server_with_optional_db_link',
+            'provides' => {'smurf' => {'shared' => true}},
+            'custom_provider_definitions' => [
+              {
+                'name' => 'smurf',
+                'type' => 'gargamel',
+              }
+            ]
+          },
+        ]
+      end
+
+      it 'should create a provider' do
+        expected_response = [
+          {
+            'id' => String,
+            'name' => 'smurf',
+            'shared' => true,
+            'deployment' => 'simple',
+            'link_provider_definition' => {
+              'name' => 'smurf',
+              'type' => 'gargamel',
+            },
+            'owner_object' => {
+              'name' => 'api_server_with_optional_db_link',
+              'type' => 'job',
+              'info' => {
+                'instance_group' => 'foobar',
+              },
+            },
+          }
+        ]
+
+        expect(get_link_providers).to match_array(expected_response)
+      end
+    end
+
     context 'when deployment has a disk link provider' do
       let(:persistent_disks) do
         [low_iops_persistent_disk, high_iops_persistent_disk]
@@ -639,6 +680,38 @@ describe 'links api', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
         expect(get_links).to be_empty
+      end
+    end
+
+    context 'when deployment has a custom provider definition' do
+      context 'when definition satisfies a consumer' do
+        let(:jobs) do
+          [
+            {
+              'name' => 'api_server_with_optional_db_link',
+              'custom_provider_definitions' => [
+                {
+                  'name' => 'smurf',
+                  'type' => 'db',
+                }
+              ]
+            },
+          ]
+        end
+
+        it 'should create a link' do
+          expected_response = [
+            {
+              'id' => '1',
+              'name' => 'db',
+              'link_consumer_id' => '1',
+              'link_provider_id' => '1',
+              'created_at' => String,
+            }
+          ]
+
+          expect(get_links).to match_array(expected_response)
+        end
       end
     end
   end
