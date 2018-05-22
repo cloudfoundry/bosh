@@ -54,6 +54,25 @@ module Support
         @agent_id = agent_id
       end
     end
+
+    class InvocationIterator
+      START = 0
+
+      def initialize(array)
+        @array = array
+        @index = START
+      end
+
+      def next
+        result = @array[@index]
+        @index += 1
+        result
+      end
+
+      def size
+        @array.size
+      end
+    end
   end
 end
 
@@ -80,8 +99,6 @@ end
 
 RSpec::Matchers.define :be_agent_call do |message_name, argument_matcher|
   match do |actual|
-    # puts "invocation on agent: #{actual.agent_id}"
-
     matches = actual.target == Support::InvocationsHelper::AGENT_TARGET && actual.method == message_name
     matches && argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
     matches
