@@ -12,7 +12,9 @@ describe 'CPI and Agent:', type: :integration do
     manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
     task_output = deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config.merge(
+        'disk_types' => [Bosh::Spec::NewDeployments::DISK_TYPE],
+      ),
     )
 
     fresh_deploy_invocations = get_invocations(task_output)

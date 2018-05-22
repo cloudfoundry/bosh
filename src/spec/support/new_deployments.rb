@@ -11,7 +11,6 @@ module Bosh::Spec
       minimal_cloud_config.merge(
         'networks' => [network],
         'vm_types' => [vm_type],
-        'disk_types' => [DISK_TYPE],
       )
     end
 
