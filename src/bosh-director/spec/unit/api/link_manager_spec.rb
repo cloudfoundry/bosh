@@ -71,12 +71,13 @@ module Bosh::Director
             original_name: provider_1.name,
           )
           expect(external_consumer_intent).to_not be_nil
+          expect(external_consumer_intent.name).to eq(provider_1_intent_1.name)
           expect(external_consumer_intent.type).to eq(provider_1_intent_1.type)
 
           external_link = Bosh::Director::Models::Links::Link.find(
             link_provider_intent_id: provider_1_intent_1.id,
             link_consumer_intent_id: external_consumer_intent.id,
-            name: provider_1.name,
+            name: external_consumer_intent.original_name,
           )
           expect(external_link).to_not be_nil
 

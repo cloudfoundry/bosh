@@ -35,6 +35,8 @@ module Bosh::Director
           link_type: provider_intent.type,
           new_intent_metadata: network_metadata,
         )
+        consumer_intent.name = provider_intent.name
+        consumer_intent.save
 
         filter_content_and_create_link(consumer_intent)
       end

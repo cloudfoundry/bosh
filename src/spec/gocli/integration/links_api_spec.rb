@@ -853,6 +853,7 @@ describe 'links api', type: :integration do
           expect(response.count).to_not eq(0)
           consumer = response[0]
           expect(consumer['deployment']).to eq('simple')
+          expect(consumer['name']).to eq('foo')
           expect(consumer['owner_object']['type']).to eq('external')
           expect(consumer['owner_object']['info']).to be_nil
         end
