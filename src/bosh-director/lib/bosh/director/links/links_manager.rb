@@ -555,10 +555,6 @@ module Bosh::Director::Links
         message = "DNS address not available for the link provider instance: #{instance_name}/#{instance_id}"
         @logger.warn(message)
         @event_logger.warn(message)
-      elsif !dns_required && !ip_address?(address)
-        message = "IP address not available for the link provider instance: #{instance_name}/#{instance_id}"
-        @logger.warn(message)
-        @event_logger.warn(message)
       end
     end
 
