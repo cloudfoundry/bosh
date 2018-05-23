@@ -156,4 +156,59 @@ describe 'broken links', type: :integration do
       OUTPUT
     end
   end
+
+  context 'when a previous deploy failed' do
+
+    let(:manifest) do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['instance_groups'] = [first_node_instance_group_spec, second_node_instance_group_spec]
+      manifest
+    end
+
+    let(:first_node_instance_group_spec) do
+      Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'first_node',
+        jobs: [{ 'name' => 'node', 'consumes' => first_node_links, 'provides' => { 'node2' => { 'as' => 'alias1' } } }],
+        instances: 1,
+        static_ips: ['192.168.1.10'],
+        azs: ['z1'],
+        )
+    end
+
+    let(:first_node_links) do
+      {
+        'node1' => { 'from' => 'node1' },
+        'node2' => { 'from' => 'alias2' },
+      }
+    end
+
+    let(:second_node_instance_group_spec) do
+      Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'second_node',
+        jobs: [{ 'name' => 'node', 'consumes' => second_node_links, 'provides' => { 'node1' => { 'as' => 'node1a' }, 'node2' => { 'as' => 'alias2' } } }],
+        instances: 1,
+        static_ips: ['192.168.1.11'],
+        azs: ['z1'],
+        )
+    end
+
+    let(:second_node_links) do
+      {
+        'node1' => { 'from' => 'node1a' },
+        'node2' => { 'from' => 'alias1' },
+      }
+    end
+
+
+    it 'performing a restart uses the last known successfully deployed links' do
+      deploy_simple_manifest(manifest_hash: manifest)
+
+      manifest['instance_groups'][0]['azs'] = ['z4']
+
+      _, exit = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+      expect(exit).to_not eq(0)
+
+      expect { bosh_runner.run('restart', deployment_name: 'simple') }.to_not raise_error
+    end
+  end
 end
