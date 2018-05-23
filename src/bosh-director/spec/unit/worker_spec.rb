@@ -86,7 +86,11 @@ module Bosh::Director
       it 'raises error if migrations are never current' do
         allow(migrator).to receive(:current?).exactly(Worker::MAX_MIGRATION_ATTEMPTS).times.and_return(false)
 
+        logger = double(Logging::Logger)
+        allow(config).to receive(:worker_logger).and_return(logger.tap { |l| allow(l).to receive(:error) })
         allow(djworker).to receive(:start)
+
+        expect(logger).to receive(:error).with(/Migrations not current during worker start after #{Worker::MAX_MIGRATION_ATTEMPTS} attempts./)
         expect { worker.prep }.to raise_error(/Migrations not current after #{Worker::MAX_MIGRATION_ATTEMPTS} retries/)
         expect(djworker).not_to have_received(:start)
       end
