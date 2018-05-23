@@ -2299,6 +2299,94 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
+  describe '#get_links_for_instance' do
+    let(:instance_model) do
+      Bosh::Director::Models::Instance.make(deployment: deployment_model)
+    end
+
+    let(:instance) do
+      instance_double(Bosh::Director::DeploymentPlan::Instance).tap do |mock|
+        allow(mock).to receive(:instance_group_name).and_return('instance-group-name')
+        allow(mock).to receive(:deployment_model).and_return(deployment_model)
+        allow(mock).to receive(:model).and_return(instance_model)
+      end
+    end
+
+    context 'when there are links for the current serial id' do
+      let(:serial_id) { 1 }
+
+      before do
+        consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'instance-group-name',
+          name: 'consumer',
+          type: 'control_owner_object_type',
+          serial_id: serial_id
+        )
+
+        consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer,
+          original_name: 'foo2',
+          type: 'bar2',
+          name: 'foo-alias2',
+          serial_id: serial_id
+        )
+
+        Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: consumer_intent,
+          name: 'tweet',
+          link_content: '{"properties": {"puddy": "tat"}}'
+        )
+      end
+
+      it 'returns the current links' do
+        links = subject.get_links_for_instance(instance)
+        expect(links.length).to eq(1)
+        expect(links['consumer']['foo2']).to_not be_nil
+      end
+    end
+
+    context 'when there are no links for the current serial id' do
+      let(:serial_id) { 2 }
+
+      before do
+        consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'instance-group-name',
+          name: 'consumer',
+          type: 'control_owner_object_type',
+          serial_id: serial_id-1
+        )
+
+        consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer,
+          original_name: 'foo2',
+          type: 'bar2',
+          name: 'foo-alias2',
+          serial_id: serial_id-1
+        )
+
+        link = Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: consumer_intent,
+          name: 'tweet',
+          link_content: '{"properties": {"puddy": "tat"}}'
+        )
+
+        Bosh::Director::Models::Links::InstancesLink.create(
+          instance_id: instance.model.id,
+          link_id: link.id,
+          serial_id: serial_id-1
+        )
+      end
+
+      it 'uses the last successfully deployed links' do
+        links = subject.get_links_for_instance(instance)
+        expect(links.length).to eq(1)
+      end
+    end
+
+  end
+
   describe '#get_links_from_deployment' do
     before do
       consumer = Bosh::Director::Models::Links::LinkConsumer.create(

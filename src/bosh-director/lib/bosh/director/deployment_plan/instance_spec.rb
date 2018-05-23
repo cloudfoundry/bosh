@@ -141,7 +141,7 @@ module Bosh::Director
 
         template_hash['links'] = {}
 
-        links_hash = @links_manager.get_links_for_instance_group(@instance.deployment_model, @instance.instance_group_name)
+        links_hash = @links_manager.get_links_for_instance(@instance)
         links_hash.each do |job_name, links|
           template_hash['links'][job_name] ||= {}
           interpolated_links_spec = @variables_interpolator.interpolate_link_spec_properties(links, @variable_set)
