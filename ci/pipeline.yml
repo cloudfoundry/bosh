@@ -251,6 +251,8 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
+      - put: rds-pool
+        params: {acquire: true}
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-rds
@@ -277,6 +279,9 @@ jobs:
             DB_PASSWORD: ((postgresql-rds-password))
           on_failure:
             <<: *slack-alert
+        ensure:
+          put: rds-pool
+          params: {release: rds-pool}
 
   - name: blobstore-client-integration
     public: true
@@ -860,3 +865,11 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
+
+  - name: rds-pool
+    type: pool
+    source:
+      uri: git@github.com:cloudfoundry/bosh-ci-pools
+      branch: master
+      pool: unit-24-db-migrations-rds
+      private_key: ((bosh_ci_pools_deploy_key))
