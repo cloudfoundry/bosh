@@ -30,6 +30,7 @@ default-character-set=utf8
 collation-server = utf8_unicode_ci
 init-connect='SET NAMES utf8'
 character-set-server = utf8
+sql-mode="STRICT_TRANS_TABLES"
 max_connections = 1024' >> /etc/mysql/my.cnf
 
     if [ "$DB_TLS" = true ]; then
