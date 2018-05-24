@@ -103,9 +103,6 @@ module Bosh::Director
       queries.flatten.sort.join
     end
 
-    def healthiness_query(status)
-    end
-
     def encode_long_subdomains(criteria)
       [
         Canonicalizer.canonicalize(criteria[:instance_group]),
