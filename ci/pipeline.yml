@@ -233,6 +233,8 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
+      - put: rds-pool
+        params: {acquire: true}
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-rds
@@ -256,6 +258,9 @@ jobs:
             DB_HOST: ((postgresql-rds-host))
             DB_USER: ((postgresql-rds-user))
             DB_PASSWORD: ((postgresql-rds-password))
+        ensure:
+          put: rds-pool
+          params: {release: rds-pool}
         on_failure:
           <<: *slack-alert
 
@@ -1006,6 +1011,14 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-postgres-9.6
+
+  - name: rds-pool
+    type: pool
+    source:
+      uri: git@github.com:cloudfoundry/bosh-ci-pools
+      branch: master
+      pool: unit-24-db-migrations-rds
+      private_key: ((bosh_ci_pools_deploy_key))
 
 resource_types:
 - name: slack-notification
