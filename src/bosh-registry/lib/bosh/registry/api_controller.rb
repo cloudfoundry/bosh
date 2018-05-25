@@ -1,6 +1,11 @@
 module Bosh::Registry
 
   class ApiController < Sinatra::Base
+    configure do
+      set(:show_exceptions, false)
+      set(:raise_errors, false)
+      set(:dump_errors, false)
+    end
 
     not_found do
       exception = request.env["sinatra.error"]
