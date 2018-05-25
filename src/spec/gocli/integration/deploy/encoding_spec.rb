@@ -3,16 +3,21 @@ require 'spec_helper'
 describe 'encoding', type: :integration do
   with_reset_sandbox_before_each
 
+  let(:utf8_fixture) do
+    {
+      'moretest' => '€ ©2017',
+      'arabic' => 'كلام فارغ',
+      'japanese' => '曇り',
+      'cyrillic' => 'я люблю свою работу',
+      'germanic' => 'Øl weiß æther ångström',
+      'hellenic' => 'ελληνικά',
+    }
+  end
+
   let(:manifest_hash) do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
-    manifest_hash['instance_groups'].first['properties']['testme'] = 'v🤹🏿<U+200D>♂️ '
-    manifest_hash['instance_groups'].first['properties']['moretest'] = '€ ©2017'
-    manifest_hash['instance_groups'].first['properties']['arabic'] = 'كلام فارغ'
-    manifest_hash['instance_groups'].first['properties']['japanese'] = '曇り'
-    manifest_hash['instance_groups'].first['properties']['cyrillic'] = 'я люблю свою работу'
-    manifest_hash['instance_groups'].first['properties']['germanic'] = 'Øl weiß æther ångström'
-    manifest_hash['instance_groups'].first['properties']['hellenic'] = 'ελληνικά'
+    manifest_hash['instance_groups'].first['properties'] = utf8_fixture
     manifest_hash
   end
 
@@ -25,31 +30,41 @@ describe 'encoding', type: :integration do
 
     let(:runtime_config_hash) do
       runtime_config_hash = Bosh::Spec::Deployments.runtime_config_with_addon
-      runtime_config_hash['addons'].first['properties']['curren¢y'] = '$ € £ ¥ ₩'
+      runtime_config_hash['addons'].first['properties'] = utf8_fixture
       runtime_config_hash
     end
 
     let(:cpi_config_yml) do
-      cpi_hash = Bosh::Spec::NewDeployments.single_cpi_config('cpi', 'japanese' => '曇り')
+      cpi_hash = Bosh::Spec::NewDeployments.single_cpi_config('cpi', utf8_fixture)
       yaml_file('cpi.yml', cpi_hash)
     end
 
     it 'supports UTF-8 in deployment configuration changes, cloud configuration changes and runtime config changes' do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
-      cloud_config_hash['vm_types'][0]['properties'] = { 'проп1' => 'вал1' }
+      cloud_config_hash['vm_types'][0]['properties'] = utf8_fixture
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
-      expect(bosh_runner.run('cloud-config')).to match(/проп1: вал1/)
+      expect(bosh_runner.run('cloud-config')).to include('japanese: 曇り')
 
       upload_runtime_config(runtime_config_hash: runtime_config_hash)
       output = bosh_runner.run('config --name=default --type=runtime')
-      expect(output).to include('curren¢y: $ € £ ¥ ₩')
+      expect(output).to include('arabic: كلام فارغ')
 
       upload_cpi_yml_output = bosh_runner.run("update-config --name=cpi --type=cpi #{cpi_config_yml.path}")
       expect(upload_cpi_yml_output).to include('Succeeded')
 
       download_cpi_output = bosh_runner.run('config --name=cpi --type=cpi', tty: false)
-      expect(download_cpi_output).to include('cpi', 'japanese: 曇り')
+      expect(download_cpi_output).to include('cpi', 'cyrillic: я люблю свою работу')
+
+      delete_cpi_yml_output = bosh_runner.run('delete-config --name=cpi --type=cpi')
+      expect(delete_cpi_yml_output).to include('Succeeded')
+
+      upload_cpi_yml_output = bosh_runner.run("update-cpi-config #{cpi_config_yml.path}")
+      expect(upload_cpi_yml_output).to include('Succeeded')
+
+      download_cpi_output = bosh_runner.run('cpi-config', tty: false)
+      expect(download_cpi_output).to include('cpi', 'germanic: Øl weiß æther ångström')
+
 
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
