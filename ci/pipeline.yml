@@ -12,10 +12,6 @@ groups:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
-      # - load-tests-postgres
-      # - load-tests-mysql
-      # - legacy-load-tests-postgres
-      # - legacy-load-tests-mysql
       - fuzz-tests
       - candidate-release
       - finalize-bosh-release
@@ -466,104 +462,6 @@ jobs:
           params:
             DB: mysql
 
-# load tests block {
-  # - name: load-tests-postgres
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   interruptible: true
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: warden-ubuntu-trusty }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: bosh-src }
-  #   - { get: bosh-cli }
-
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
-  #     tags: ["bosh-load-tests"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: postgresql
-  #       LEGACY: false
-
-  # - name: legacy-load-tests-postgres
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   interruptible: true
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: bosh-cli }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: bosh-src }
-  #   - { get: warden-ubuntu-trusty }
-
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
-  #     tags: ["bosh-load-tests-2"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: postgresql
-  #       LEGACY: true
-
-  # - name: load-tests-mysql
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   interruptible: true
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: bosh-cli }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: bosh-src }
-  #   - { get: warden-ubuntu-trusty }
-
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
-  #     tags: ["bosh-load-tests-3"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: mysql
-  #       LEGACY: false
-
-  # - name: legacy-load-tests-mysql
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   interruptible: true
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: bosh-cli }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: bosh-src }
-  #   - { get: warden-ubuntu-trusty }
-
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
-  #     tags: ["bosh-load-tests-4"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: mysql
-  #       LEGACY: true
-# }
-
   - name: fuzz-tests
     public: true
     serial: true
@@ -833,12 +731,6 @@ resources:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
       branch: master
 
-  # - name: bosh-load-tests-workspace
-  #   type: git
-  #   source:
-  #     uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
-  #     branch: master
-
   - name: bosh-master
     type: git
     source:
@@ -850,11 +742,6 @@ resources:
     type: time
     source:
       interval: 15m
-
-  # - name: load-tests-interval
-  #   type: time
-  #   source:
-  #     interval: 5h
 
   - name: bosh-cli
     type: s3
@@ -902,11 +789,6 @@ resources:
     source:
       bucket: bosh-core-stemcells-candidate
       regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
-
-  # - name: warden-ubuntu-trusty
-  #   type: bosh-io-stemcell
-  #   source:
-  #     name: bosh-warden-boshlite-ubuntu-trusty-go_agent
 
   - name: vsphere-esxi-centos-7
     type: bosh-io-stemcell
