@@ -93,12 +93,6 @@ jobs:
         params:
           RUBY_VERSION: 2.3.1
           DB: sqlite
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
 
   - name: unit-2.3-mysql
     public: true
@@ -113,12 +107,6 @@ jobs:
         params:
           RUBY_VERSION: 2.3.1
           DB: mysql
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
 
   - name: unit-2.3-postgres
     public: true
@@ -133,12 +121,6 @@ jobs:
         params:
           RUBY_VERSION: 2.3.1
           DB: postgresql
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
 
   - name: blobstore-client-integration
     public: true
@@ -199,13 +181,6 @@ jobs:
             GROUP:        3,6,9,12,15,18,21,24
             SHA2_MODE:    true
 
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
-
   - name: integration-mysql-gocli-sha1
     public: true
     serial: true
@@ -247,13 +222,6 @@ jobs:
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
 
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
-
   - name: integration-2.3-postgres
     public: true
     serial: true
@@ -290,13 +258,6 @@ jobs:
             RUBY_VERSION: 2.3.1
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
-
-        on_failure:
-          put: slack-alert
-          params:
-            channel: {{slack_channel_name}}
-            icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-            text: {{slack_failure_message}}
 
   - name: upgrade-tests
     public: true
@@ -343,12 +304,6 @@ jobs:
   #       DB: postgresql
   #       RUBY_VERSION: 2.3.1
   #       LEGACY: false
-  #     on_failure:
-  #       put: slack-alert
-  #       params:
-  #         channel: {{slack_channel_name}}
-  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-  #         text: {{slack_failure_message}}
   #
   # - name: legacy-load-tests-postgres
   #   public: true
@@ -368,12 +323,6 @@ jobs:
   #       DB: postgresql
   #       RUBY_VERSION: 2.3.1
   #       LEGACY: true
-  #     on_failure:
-  #       put: slack-alert
-  #       params:
-  #         channel: {{slack_channel_name}}
-  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-  #         text: {{slack_failure_message}}
   #
   # - name: load-tests-mysql
   #   public: true
@@ -393,12 +342,6 @@ jobs:
   #       DB: mysql
   #       RUBY_VERSION: 2.3.1
   #       LEGACY: false
-  #     on_failure:
-  #       put: slack-alert
-  #       params:
-  #         channel: {{slack_channel_name}}
-  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-  #         text: {{slack_failure_message}}
   #
   # - name: legacy-load-tests-mysql
   #   public: true
@@ -419,12 +362,6 @@ jobs:
   #       DB: mysql
   #       RUBY_VERSION: 2.3.1
   #       LEGACY: true
-  #     on_failure:
-  #       put: slack-alert
-  #       params:
-  #         channel: {{slack_channel_name}}
-  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-  #         text: {{slack_failure_message}}
   #
   #   - name: fuzz-tests
   #     public: true
@@ -443,12 +380,6 @@ jobs:
   #     params:
   #       BOSH_SRC_PATH: bosh-src/src
   #       RUBY_VERSION: 2.3.1
-  #     on_failure:
-  #       put: slack-alert
-  #       params:
-  #         channel: {{slack_channel_name}}
-  #         icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-  #         text: {{slack_failure_message}}
 
   - name: candidate-release
     plan:
@@ -605,11 +536,6 @@ resources:
   #   type: time
   #   source:
   #     interval: 15m
-  #
-  - name: slack-alert
-    type: slack-notification
-    source:
-      url: {{slack_hook_url}}
 
   - name: bosh-cli
     type: s3
