@@ -10,6 +10,8 @@ services:
         environment:
             - POSTGRES_USER=postgres
             - POSTGRES_DB=bosh
+        networks:
+          - integration_test
     mysql:
         image: mysql
         container_name: mysql
@@ -21,3 +23,13 @@ services:
             - MYSQL_DB=bosh
         volumes:
             - /tmp/mysql:/var/lib/mysql
+        networks:
+          - integration_test
+
+networks:
+  integration_test:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 10.0.0.0/24
