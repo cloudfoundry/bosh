@@ -76,13 +76,6 @@ shared:
     tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/destroy-director.yml
 
-  - &slack-alert
-    put: slack-alert
-    params:
-      channel: ((slack_channel_name))
-      icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-      text: ((slack_failure_message))
-
 jobs:
   - name: unit-2.4
     public: true
@@ -97,8 +90,6 @@ jobs:
         params:
           RUBY_VERSION: 2.4.4
           DB: sqlite
-        on_failure:
-          <<: *slack-alert
 
   - name: unit-2.4-mysql
     public: true
@@ -123,8 +114,6 @@ jobs:
             params:
               RUBY_VERSION: 2.4.4
               DB: mysql
-          on_failure:
-            <<: *slack-alert
 
         - task: test-mysql-5.6
           privileged: true
@@ -141,8 +130,6 @@ jobs:
             params:
               RUBY_VERSION: 2.4.4
               DB: mysql
-          on_failure:
-            <<: *slack-alert
 
         - task: test-mysql-5.7
           privileged: true
@@ -159,8 +146,6 @@ jobs:
             params:
               RUBY_VERSION: 2.4.4
               DB: mysql
-          on_failure:
-            <<: *slack-alert
 
   - name: unit-2.4-postgres
     public: true
@@ -186,8 +171,6 @@ jobs:
               RUBY_VERSION: 2.4.4
               DB: postgresql
               DB_VERSION: 9.3
-          on_failure:
-            <<: *slack-alert
 
         - task: test-postgres-9.4
           privileged: true
@@ -205,8 +188,6 @@ jobs:
               RUBY_VERSION: 2.4.4
               DB: postgresql
               DB_VERSION: 9.4
-          on_failure:
-            <<: *slack-alert
 
         - task: test-postgres-9.5
           privileged: true
@@ -224,8 +205,6 @@ jobs:
               RUBY_VERSION: 2.4.4
               DB: postgresql
               DB_VERSION: 9.5
-          on_failure:
-            <<: *slack-alert
 
         - task: test-postgres-9.6
           privileged: true
@@ -243,8 +222,6 @@ jobs:
               RUBY_VERSION: 2.4.4
               DB: postgresql
               DB_VERSION: 9.6
-          on_failure:
-            <<: *slack-alert
 
   - name: unit-2.4-db-migrations-rds
     public: true
@@ -277,8 +254,6 @@ jobs:
             DB_HOST: ((postgresql-rds-host))
             DB_USER: ((postgresql-rds-user))
             DB_PASSWORD: ((postgresql-rds-password))
-          on_failure:
-            <<: *slack-alert
         ensure:
           put: rds-pool
           params: {release: rds-pool}
@@ -320,8 +295,6 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
-        on_failure:
-          <<: *slack-alert
 
   - name: integration-postgres-gocli-sha2
     public: true
@@ -369,9 +342,6 @@ jobs:
             GROUP:        3,6,9,12,15,18,21,24
             SHA2_MODE:    true
 
-        on_failure:
-          <<: *slack-alert
-
   - name: integration-mysql-gocli-sha1
     public: true
     serial: true
@@ -414,9 +384,6 @@ jobs:
             RUBY_VERSION: 2.4.4
             NUM_GROUPS: 24
             GROUP:      3,6,9,12,15,18,21,24
-
-        on_failure:
-          <<: *slack-alert
 
   - name: upgrade-tests
     public: true
@@ -468,8 +435,6 @@ jobs:
   #     params:
   #       DB: postgresql
   #       LEGACY: false
-  #     on_failure:
-  #       <<: *slack-alert
   #
   # - name: legacy-load-tests-postgres
   #   public: true
@@ -492,8 +457,6 @@ jobs:
   #     params:
   #       DB: postgresql
   #       LEGACY: true
-  #     on_failure:
-  #       <<: *slack-alert
   #
   # - name: load-tests-mysql
   #   public: true
@@ -516,8 +479,6 @@ jobs:
   #     params:
   #       DB: mysql
   #       LEGACY: false
-  #     on_failure:
-  #       <<: *slack-alert
   #
   # - name: legacy-load-tests-mysql
   #   public: true
@@ -540,8 +501,6 @@ jobs:
   #     params:
   #       DB: mysql
   #       LEGACY: true
-  #     on_failure:
-  #       <<: *slack-alert
   #
   - name: fuzz-tests
     public: true
@@ -561,8 +520,6 @@ jobs:
       params:
         BOSH_SRC_PATH: bosh-src/src
         RUBY_VERSION: 2.4.4
-      on_failure:
-        <<: *slack-alert
 
   - name: candidate-release
     plan:
@@ -792,11 +749,6 @@ resources:
       start: 1:00 PM
       stop: 9:00 PM
       days: [Sunday]
-
-  - name: slack-alert
-    type: slack-notification
-    source:
-      url: ((slack_hook_url))
 
   - name: bosh-cli
     type: s3
