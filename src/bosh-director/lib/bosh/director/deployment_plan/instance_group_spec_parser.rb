@@ -197,11 +197,35 @@ module Bosh::Director
             # get migrated_from_name = migarted_name : @instance_group.name
             if is_deploy_action
               unless migrated_from.to_a.empty?
-                @links_parser.parse_migrated_from_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name, migrated_from)
-                @links_parser.parse_migrated_from_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name, migrated_from)
+                @links_parser.parse_migrated_from_providers_from_job(
+                  job_spec,
+                  @deployment.model,
+                  current_template_model,
+                  job_properties: job_properties,
+                  instance_group_name: @instance_group.name,
+                  migrated_from: migrated_from,
+                )
+                @links_parser.parse_migrated_from_consumers_from_job(
+                  job_spec,
+                  @deployment.model,
+                  current_template_model,
+                  instance_group_name: @instance_group.name,
+                  migrated_from: migrated_from,
+                )
               else
-                @links_parser.parse_providers_from_job(job_spec, @deployment.model, current_template_model, job_properties, @instance_group.name)
-                @links_parser.parse_consumers_from_job(job_spec, @deployment.model, current_template_model, @instance_group.name)
+                @links_parser.parse_providers_from_job(
+                  job_spec,
+                  @deployment.model,
+                  current_template_model,
+                  job_properties: job_properties,
+                  instance_group_name: @instance_group.name,
+                )
+                @links_parser.parse_consumers_from_job(
+                  job_spec,
+                  @deployment.model,
+                  current_template_model,
+                  instance_group_name: @instance_group.name,
+                )
               end
             end
             @instance_group.jobs << job

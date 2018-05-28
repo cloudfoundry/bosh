@@ -165,11 +165,11 @@ module Bosh::Director
           it 'parses links using LinksParser' do
             allow(Bosh::Director::Links::LinksParser).to receive(:new).and_return(links_parser)
 
-            expect(links_parser).to receive(:parse_providers_from_job).with(jobs[0], deployment_model, dummy_with_properties_template, properties, 'foobar')
-            expect(links_parser).to receive(:parse_consumers_from_job).with(jobs[0], deployment_model, dummy_with_properties_template, 'foobar')
+            expect(links_parser).to receive(:parse_providers_from_job).with(jobs[0], deployment_model, dummy_with_properties_template, job_properties: properties, instance_group_name: 'foobar')
+            expect(links_parser).to receive(:parse_consumers_from_job).with(jobs[0], deployment_model, dummy_with_properties_template, instance_group_name: 'foobar')
 
-            expect(links_parser).to receive(:parse_providers_from_job).with(jobs[1], deployment_model, dummy_with_packages_template, properties, 'foobar')
-            expect(links_parser).to receive(:parse_consumers_from_job).with(jobs[1], deployment_model, dummy_with_packages_template, 'foobar')
+            expect(links_parser).to receive(:parse_providers_from_job).with(jobs[1], deployment_model, dummy_with_packages_template, job_properties: properties, instance_group_name: 'foobar')
+            expect(links_parser).to receive(:parse_consumers_from_job).with(jobs[1], deployment_model, dummy_with_packages_template, instance_group_name: 'foobar')
 
             addon.add_to_deployment(deployment)
           end
@@ -193,8 +193,8 @@ module Bosh::Director
               allow(links_parser).to receive(:parse_providers_from_job)
               allow(links_parser).to receive(:parse_consumers_from_job)
 
-              expect(links_parser).to_not receive(:parse_providers_from_job).with(anything, anything, anything, anything, 'excluded_ig')
-              expect(links_parser).to_not receive(:parse_consumers_from_job).with(anything, anything, anything, 'excluded_ig')
+              expect(links_parser).to_not receive(:parse_providers_from_job).with(anything, anything, anything, job_properties: anything, instance_group_name: 'excluded_ig')
+              expect(links_parser).to_not receive(:parse_consumers_from_job).with(anything, anything, anything, instance_group_name: 'excluded_ig')
 
               addon.add_to_deployment(deployment)
             end

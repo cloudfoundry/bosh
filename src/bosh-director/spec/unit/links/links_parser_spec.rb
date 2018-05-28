@@ -169,7 +169,12 @@ describe Bosh::Director::Links::LinksParser do
           .and_return(provider_1_intent)
 
         subject.parse_migrated_from_providers_from_job(
-          job_spec, deployment_model, template, job_properties, 'new-ig', migrated_from
+          job_spec,
+          deployment_model,
+          template,
+          job_properties: job_properties,
+          instance_group_name: 'new-ig',
+          migrated_from: migrated_from,
         )
       end
     end
@@ -214,7 +219,12 @@ describe Bosh::Director::Links::LinksParser do
           .and_return(provider_intent)
 
         subject.parse_migrated_from_providers_from_job(
-          job_spec, deployment_plan.model, template, job_properties, 'instance-group-name', migrated_from
+          job_spec,
+          deployment_plan.model,
+          template,
+          job_properties: job_properties,
+          instance_group_name: 'instance-group-name',
+          migrated_from: migrated_from,
         )
       end
     end
@@ -325,7 +335,13 @@ describe Bosh::Director::Links::LinksParser do
           .with(link_consumer: consumer, link_original_name: 'chocolate', link_type: 'flavour', new_intent_metadata: nil)
           .and_return(consumer_intent)
 
-        subject.parse_migrated_from_consumers_from_job(job_spec, deployment_model, template, 'new-ig', migrated_from)
+        subject.parse_migrated_from_consumers_from_job(
+          job_spec,
+          deployment_model,
+          template,
+          instance_group_name: 'new-ig',
+          migrated_from: migrated_from,
+        )
       end
     end
 
@@ -338,6 +354,8 @@ describe Bosh::Director::Links::LinksParser do
       end
 
       before do
+        allow(consumer).to receive(:name)
+        allow(consumer).to receive(:instance_group)
         allow(consumer_intent).to receive(:name=)
         allow(consumer_intent).to receive(:metadata=)
         allow(consumer_intent).to receive(:blocked=)
@@ -372,7 +390,11 @@ describe Bosh::Director::Links::LinksParser do
         ).and_return(consumer_intent)
 
         subject.parse_migrated_from_consumers_from_job(
-          job_spec, deployment_plan.model, template, 'instance-group-name', migrated_from
+          job_spec,
+          deployment_plan.model,
+          template,
+          instance_group_name: 'instance-group-name',
+          migrated_from: migrated_from,
         )
       end
     end
@@ -396,7 +418,11 @@ describe Bosh::Director::Links::LinksParser do
         it 'raise an error' do
           expect do
             subject.parse_providers_from_job(
-              job_spec, deployment_plan.model, template, {}, 'instance-group-name'
+              job_spec,
+              deployment_plan.model,
+              template,
+              job_properties: {},
+              instance_group_name: 'instance-group-name',
             )
           end.to raise_error "Job 'release1_job_name_1' in instance group 'instance-group-name' specifies providers"\
                              ' in the manifest but the job does not define any providers in the release spec'
@@ -414,7 +440,13 @@ describe Bosh::Director::Links::LinksParser do
           expect(links_manager).to_not receive(:find_or_create_provider)
           expect(links_manager).to_not receive(:find_or_create_provider_intent)
 
-          subject.parse_providers_from_job(job_spec, deployment_plan.model, template, {}, 'instance-group-name')
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: {},
+            instance_group_name: 'instance-group-name',
+          )
         end
       end
     end
@@ -497,7 +529,13 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:consumable=).with(true)
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
-          subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, 'instance-group-name')
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: job_properties,
+            instance_group_name: 'instance-group-name',
+          )
         end
 
         context 'when the exposed property is not defined in the release' do
@@ -536,7 +574,13 @@ describe Bosh::Director::Links::LinksParser do
             expect(provider_intent).to_not receive(:save)
 
             expect do
-              subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, 'instance-group-name')
+              subject.parse_providers_from_job(
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
+              )
             end.to raise_error(RuntimeError, 'Link property scope in template release1_job_name_1 is not defined in release spec')
           end
         end
@@ -575,7 +619,13 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
 
-          subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, 'instance-group-name')
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: job_properties,
+            instance_group_name: 'instance-group-name',
+          )
         end
       end
 
@@ -621,7 +671,13 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:consumable=).with(true)
           expect(provider_intent).to receive(:shared=).with(true)
           expect(provider_intent).to receive(:save)
-          subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, 'instance-group-name')
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: job_properties,
+            instance_group_name: 'instance-group-name',
+          )
           expect(job_spec).to eq(original_job_spec)
         end
       end
@@ -660,7 +716,13 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:consumable=).with(false)
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
-          subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, 'instance-group-name')
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: job_properties,
+            instance_group_name: 'instance-group-name',
+          )
         end
       end
 
@@ -685,7 +747,11 @@ describe Bosh::Director::Links::LinksParser do
 
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error(RuntimeError, "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name'"\
                                              " in job 'release1_job_name_1' in instance group 'instance-group-name'."\
@@ -706,12 +772,18 @@ describe Bosh::Director::Links::LinksParser do
 
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error(RuntimeError, "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name'"\
                                              " in job 'release1_job_name_1' in instance group 'instance-group-name'."\
                                              ' Please provide these keys in the release only.')
           end
+
+          # TODO: Should not fail if no properties in spec or manifest
         end
 
         context 'when the provides section is not a hash' do
@@ -726,7 +798,11 @@ describe Bosh::Director::Links::LinksParser do
 
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error(RuntimeError, "Provider 'link_1_name' in job 'release1_job_name_1' in instance group"\
                                 " 'instance-group-name' specified in the manifest should only be a hash or string 'nil'")
@@ -744,7 +820,11 @@ describe Bosh::Director::Links::LinksParser do
 
               expect do
                 subject.parse_providers_from_job(
-                  job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                  job_spec,
+                  deployment_plan.model,
+                  template,
+                  job_properties: job_properties,
+                  instance_group_name: 'instance-group-name',
                 )
               end.to raise_error(RuntimeError, "Provider 'link_1_name' in job 'release1_job_name_1' in instance group"\
                                   " 'instance-group-name' specified in the manifest should only be a hash or string 'nil'")
@@ -775,7 +855,11 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:save)
           expect do
             subject.parse_providers_from_job(
-              job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+              job_spec,
+              deployment_plan.model,
+              template,
+              job_properties: job_properties,
+              instance_group_name: 'instance-group-name',
             )
           end.to raise_error(RuntimeError, "Manifest defines unknown providers:\n  - Job 'release1_job_name_1'"\
                                            " does not provide link 'new_link_name' in the release spec")
@@ -821,7 +905,13 @@ describe Bosh::Director::Links::LinksParser do
           expect(metadata['custom']).to be_truthy
         end
 
-        subject.parse_providers_from_job(job_spec, deployment_model, template, job_properties, 'instance-group-name')
+        subject.parse_providers_from_job(
+          job_spec,
+          deployment_model,
+          template,
+          job_properties: job_properties,
+          instance_group_name: 'instance-group-name',
+        )
       end
 
       context 'but custom_provider_definitions is an empty array' do
@@ -831,7 +921,13 @@ describe Bosh::Director::Links::LinksParser do
           expect(links_manager).to_not receive(:find_or_create_provider)
           expect(links_manager).to_not receive(:find_or_create_provider_intent)
 
-          subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, 'instance-group-name')
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: job_properties,
+            instance_group_name: 'instance-group-name',
+          )
         end
       end
 
@@ -848,7 +944,11 @@ describe Bosh::Director::Links::LinksParser do
           it 'should return an error' do
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error("Name for custom link provider definition in manifest in job 'release1_job_name_1'"\
                                " in instance group 'instance-group-name' must be a valid non-empty string.")
@@ -868,7 +968,11 @@ describe Bosh::Director::Links::LinksParser do
           it 'should return an error' do
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error("Name for custom link provider definition in manifest in job 'release1_job_name_1'"\
                                " in instance group 'instance-group-name' must be a valid non-empty string.")
@@ -887,7 +991,11 @@ describe Bosh::Director::Links::LinksParser do
           it 'should return an error' do
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error("Type for custom link provider definition in manifest in job 'release1_job_name_1'"\
                                " in instance group 'instance-group-name' must be a valid non-empty string.")
@@ -907,7 +1015,11 @@ describe Bosh::Director::Links::LinksParser do
           it 'should return an error' do
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error("Type for custom link provider definition in manifest in job 'release1_job_name_1'"\
                                " in instance group 'instance-group-name' must be a valid non-empty string.")
@@ -928,7 +1040,11 @@ describe Bosh::Director::Links::LinksParser do
           it 'should return an error' do
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error do |e|
               expect(e.message).to include("Name for custom link provider definition in manifest in job 'release1_job_name_1'"\
@@ -947,7 +1063,11 @@ describe Bosh::Director::Links::LinksParser do
           it 'should return an error' do
             expect do
               subject.parse_providers_from_job(
-                job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+                job_spec,
+                deployment_plan.model,
+                template,
+                job_properties: job_properties,
+                instance_group_name: 'instance-group-name',
               )
             end.to raise_error do |e|
               expect(e.message).to include("Name for custom link provider definition in manifest in job 'release1_job_name_1'"\
@@ -977,7 +1097,11 @@ describe Bosh::Director::Links::LinksParser do
         it 'should raise an error' do
           expect do
             subject.parse_providers_from_job(
-              job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+              job_spec,
+              deployment_plan.model,
+              template,
+              job_properties: job_properties,
+              instance_group_name: 'instance-group-name',
             )
           end.to raise_error("Custom provider 'link_1_name' in job 'release1_job_name_1' in instance group 'instance-group-name'"\
                              " is already defined in release 'release1'")
@@ -1010,7 +1134,11 @@ describe Bosh::Director::Links::LinksParser do
         it 'should raise an error' do
           expect do
             subject.parse_providers_from_job(
-              job_spec, deployment_plan.model, template, job_properties, 'instance-group-name'
+              job_spec,
+              deployment_plan.model,
+              template,
+              job_properties: job_properties,
+              instance_group_name: 'instance-group-name',
             )
           end.to raise_error do |e|
             expect(e.message).to match("Custom provider 'link_1_name' in job 'release1_job_name_1' in instance group"\
@@ -1039,7 +1167,12 @@ describe Bosh::Director::Links::LinksParser do
         }
 
         expect do
-          subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+          subject.parse_consumers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            instance_group_name: 'instance-group-name',
+          )
         end.to raise_error("Job 'release1_job_name_1' in instance group 'instance-group-name' specifies consumers"\
                            ' in the manifest but the job does not define any consumers in the release spec')
       end
@@ -1056,7 +1189,11 @@ describe Bosh::Director::Links::LinksParser do
           expect(links_manager).to_not receive(:find_or_create_consumer_intent)
 
           subject.parse_providers_from_job(
-            job_spec, deployment_plan.model, template, {}, 'instance-group-name'
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: {},
+            instance_group_name: 'instance-group-name',
           )
         end
       end
@@ -1104,7 +1241,12 @@ describe Bosh::Director::Links::LinksParser do
           expect(consumer_intent).to receive(:metadata=).with({ explicit_link: false }.to_json)
           expect(consumer_intent).to receive(:save)
 
-          subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+          subject.parse_consumers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            instance_group_name: 'instance-group-name',
+          )
         end
 
         context 'when the release spec defines the link as optional' do
@@ -1124,7 +1266,12 @@ describe Bosh::Director::Links::LinksParser do
             expect(consumer_intent).to receive(:optional=).with(true)
             expect(consumer_intent).to receive(:save)
 
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
         end
       end
@@ -1144,6 +1291,8 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         before do
+          allow(consumer).to receive(:name)
+          allow(consumer).to receive(:instance_group)
           allow(links_manager).to receive(:find_or_create_consumer).and_return(consumer)
           allow(links_manager).to receive(:find_or_create_consumer_intent).and_return(consumer_intent)
         end
@@ -1177,7 +1326,12 @@ describe Bosh::Director::Links::LinksParser do
           expect(consumer_intent).to receive(:optional=).with(false)
           expect(consumer_intent).to receive(:save)
 
-          subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+          subject.parse_consumers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            instance_group_name: 'instance-group-name',
+          )
           expect(job_spec).to eq(original_job_spec)
         end
 
@@ -1193,7 +1347,12 @@ describe Bosh::Director::Links::LinksParser do
 
           it 'should use the last segment in "from" as the alias' do
             expect(consumer_intent).to receive(:name=).with('baz')
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
         end
 
@@ -1210,7 +1369,12 @@ describe Bosh::Director::Links::LinksParser do
           it 'should set the consumer intent blocked' do
             expect(consumer_intent).to receive(:blocked=).with(true)
 
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
         end
 
@@ -1227,7 +1391,12 @@ describe Bosh::Director::Links::LinksParser do
           it 'should set the consumer intent name to original name' do
             expect(consumer_intent).to receive(:name=).with('link_1_name')
 
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
         end
 
@@ -1243,7 +1412,12 @@ describe Bosh::Director::Links::LinksParser do
 
           it 'will add specified network name to the metadata' do
             allow(consumer_intent).to receive(:metadata=).with({ explicit_link: true, network: 'charlie' }.to_json)
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
         end
 
@@ -1259,7 +1433,12 @@ describe Bosh::Director::Links::LinksParser do
 
           it 'will set the ip_addresses flag in the metadata to true' do
             allow(consumer_intent).to receive(:metadata=).with({ explicit_link: true, ip_addresses: true }.to_json)
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
         end
 
@@ -1281,14 +1460,24 @@ describe Bosh::Director::Links::LinksParser do
             it 'will set the from_deployment flag in the metadata to the provider deployment name' do
               metadata_parameters = { explicit_link: true, from_deployment: 'some-other-deployment' }.to_json
               allow(consumer_intent).to receive(:metadata=).with(metadata_parameters)
-              subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+              subject.parse_consumers_from_job(
+                job_spec,
+                deployment_plan.model,
+                template,
+                instance_group_name: 'instance-group-name',
+              )
             end
           end
 
           context 'when the provider deployment exists' do
             it 'raise an error' do
               expect do
-                subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                subject.parse_consumers_from_job(
+                  job_spec,
+                  deployment_plan.model,
+                  template,
+                  instance_group_name: 'instance-group-name',
+                )
               end.to raise_error "Link 'link_1_name' in job 'release1_job_name_1' from instance group 'instance-group-name'"\
                                  " consumes from deployment 'some-other-deployment', but the deployment does not exist."
             end
@@ -1307,7 +1496,12 @@ describe Bosh::Director::Links::LinksParser do
 
           it 'raise an error' do
             expect do
-              subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+              subject.parse_consumers_from_job(
+                job_spec,
+                deployment_plan.model,
+                template,
+                instance_group_name: 'instance-group-name',
+              )
             end.to raise_error "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name'"\
                                " in job 'release1_job_name_1' in instance group 'instance-group-name'."\
                                ' Please provide these keys in the release only.'
@@ -1326,7 +1520,12 @@ describe Bosh::Director::Links::LinksParser do
 
           it 'raise an error' do
             expect do
-              subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+              subject.parse_consumers_from_job(
+                job_spec,
+                deployment_plan.model,
+                template,
+                instance_group_name: 'instance-group-name',
+              )
             end.to raise_error "Cannot specify 'name' or 'type' properties in the manifest for link 'link_1_name'"\
                                " in job 'release1_job_name_1' in instance group 'instance-group-name'."\
                                ' Please provide these keys in the release only.'
@@ -1371,7 +1570,12 @@ describe Bosh::Director::Links::LinksParser do
 
             expect(consumer_intent).to receive(:metadata=).with({ explicit_link: true, manual_link: true }.to_json)
 
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
 
           it 'creates a manual provider in the database' do
@@ -1384,7 +1588,12 @@ describe Bosh::Director::Links::LinksParser do
               type: 'manual',
             ).and_return(manual_provider)
 
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
 
           it 'creates a manual provider intent in the database' do
@@ -1406,7 +1615,12 @@ describe Bosh::Director::Links::LinksParser do
             expect(manual_provider_intent).to receive(:name=).with('link_1_name')
             expect(manual_provider_intent).to receive(:content=).with(expected_content.to_json)
 
-            subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+            subject.parse_consumers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              instance_group_name: 'instance-group-name',
+            )
           end
 
           context 'when the manual link has keys that are not whitelisted' do
@@ -1438,7 +1652,12 @@ describe Bosh::Director::Links::LinksParser do
 
               expect(manual_provider_intent).to receive(:content=).with(expected_content.to_json)
 
-              subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+              subject.parse_consumers_from_job(
+                job_spec,
+                deployment_plan.model,
+                template,
+                instance_group_name: 'instance-group-name',
+              )
             end
           end
         end
@@ -1450,7 +1669,12 @@ describe Bosh::Director::Links::LinksParser do
 
             it 'should raise an error' do
               expect do
-                subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                subject.parse_consumers_from_job(
+                  job_spec,
+                  deployment_plan.model,
+                  template,
+                  instance_group_name: 'instance-group-name',
+                )
               end.to raise_error do |e|
                 expect(e.message).to include("Cannot specify both 'instances' and 'from' keys for link 'link_1_name'"\
                                              " in job 'release1_job_name_1' in instance group 'instance-group-name'.")
@@ -1463,7 +1687,12 @@ describe Bosh::Director::Links::LinksParser do
 
             it 'should raise an error' do
               expect do
-                subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                subject.parse_consumers_from_job(
+                  job_spec,
+                  deployment_plan.model,
+                  template,
+                  instance_group_name: 'instance-group-name',
+                )
               end.to raise_error do |e|
                 expect(e.message).to include("Cannot specify both 'properties' and 'from' keys for link 'link_1_name'"\
                                              " in job 'release1_job_name_1' in instance group 'instance-group-name'.")
@@ -1476,7 +1705,12 @@ describe Bosh::Director::Links::LinksParser do
 
             it 'should raise an error' do
               expect do
-                subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                subject.parse_consumers_from_job(
+                  job_spec,
+                  deployment_plan.model,
+                  template,
+                  instance_group_name: 'instance-group-name',
+                )
               end.to raise_error do |e|
                 expect(e.message).to include("Cannot specify 'properties' without 'instances' for link 'link_1_name'"\
                                              " in job 'release1_job_name_1' in instance group 'instance-group-name'.")
@@ -1489,7 +1723,12 @@ describe Bosh::Director::Links::LinksParser do
 
             it 'should raise an error' do
               expect do
-                subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                subject.parse_consumers_from_job(
+                  job_spec,
+                  deployment_plan.model,
+                  template,
+                  instance_group_name: 'instance-group-name',
+                )
               end.to raise_error do |e|
                 expect(e.message).to include("Cannot specify non boolean values for 'ip_addresses' field for link 'link_1_name'"\
                                              " in job 'release1_job_name_1' in instance group 'instance-group-name'.")
@@ -1518,7 +1757,12 @@ describe Bosh::Director::Links::LinksParser do
               ].join("\n")
 
               expect do
-                subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                subject.parse_consumers_from_job(
+                  job_spec,
+                  deployment_plan.model,
+                  template,
+                  instance_group_name: 'instance-group-name',
+                )
               end.to raise_error(expected_error)
             end
           end
@@ -1529,7 +1773,12 @@ describe Bosh::Director::Links::LinksParser do
 
               it 'should raise an error' do
                 expect do
-                  subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                  subject.parse_consumers_from_job(
+                    job_spec,
+                    deployment_plan.model,
+                    template,
+                    instance_group_name: 'instance-group-name',
+                  )
                 end.to raise_error "Consumer 'link_1_name' in job 'release1_job_name_1' in instance group 'instance-group-name'"\
                                    " specified in the manifest should only be a hash or string 'nil'"
               end
@@ -1540,7 +1789,12 @@ describe Bosh::Director::Links::LinksParser do
 
               it 'should raise an error' do
                 expect do
-                  subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                  subject.parse_consumers_from_job(
+                    job_spec,
+                    deployment_plan.model,
+                    template,
+                    instance_group_name: 'instance-group-name',
+                  )
                 end.to raise_error "Consumer 'link_1_name' in job 'release1_job_name_1' in instance group 'instance-group-name'"\
                                    " specified in the manifest should only be a hash or string 'nil'"
               end
@@ -1551,7 +1805,12 @@ describe Bosh::Director::Links::LinksParser do
 
               it 'should raise an error' do
                 expect do
-                  subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, 'instance-group-name')
+                  subject.parse_consumers_from_job(
+                    job_spec,
+                    deployment_plan.model,
+                    template,
+                    instance_group_name: 'instance-group-name',
+                  )
                 end.to raise_error "Consumer 'link_1_name' in job 'release1_job_name_1' in instance group 'instance-group-name'"\
                                    " specified in the manifest should only be a hash or string 'nil'"
               end
