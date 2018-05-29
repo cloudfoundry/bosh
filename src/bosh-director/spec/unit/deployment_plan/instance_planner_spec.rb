@@ -559,11 +559,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       instance_double(Bosh::Director::DeploymentPlan::InstancePlan)
     end
 
+    let(:agent) { instance_double(Bosh::Director::AgentClient) }
+
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       allow(Bosh::Director::Config.current_job).to receive(:username).and_return 'fake-username'
       allow(instance_plan).to receive(:vm_matches_plan?).and_return false
+      allow(Bosh::Director::AgentClient).to receive(:with_agent_id).with('fake-agent-id').and_return(agent)
+      allow(agent).to receive(:shutdown)
     end
 
     it 'does NOT orphan active vms' do
@@ -600,6 +604,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       unusable_vm = BD::Models::Vm.make(
         instance: existing_instance_model,
         active: false,
+        agent_id: 'fake-agent-id',
       )
 
       allow(instance_plan).to receive(:vm_matches_plan?).with(unusable_vm).and_return false

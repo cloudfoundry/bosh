@@ -15,16 +15,20 @@ module Bosh::Director
             cpi: 'vm-cpi',
             stemcell_api_version: 9876,
             cid: 'fake-vm-cid-1',
+            agent_id: 'fake-agent-id',
           )
         end
         let!(:ip_address) { Models::IpAddress.make(instance: instance, vm: vm) }
         let(:report) { double(:report) }
-        let(:job) { instance_double(BD::Jobs::BaseJob,username: 'fake-username',  task_id: 'fake-task-id') }
+        let(:job) { instance_double(BD::Jobs::BaseJob, username: 'fake-username', task_id: 'fake-task-id') }
         let!(:event_manager) { Api::EventManager.new(true) }
+        let(:agent) { instance_double(AgentClient) }
 
         before do
           allow(job).to receive(:event_manager).and_return(event_manager)
           allow(Config).to receive(:current_job).and_return(job)
+          allow(AgentClient).to receive(:with_agent_id).with('fake-agent-id').and_return(agent)
+          allow(agent).to receive(:shutdown)
         end
 
         it 'removes the vm record' do
@@ -74,6 +78,12 @@ module Bosh::Director
           expect(ip1.reload.vm_id).to equal(nil)
           expect(ip2.reload.orphaned_vm_id).to equal(orphaned_vm.id)
           expect(ip2.reload.vm_id).to equal(nil)
+        end
+
+        it 'sends a shutdown to the agent' do
+          expect(agent).to receive(:shutdown)
+
+          step.perform(report)
         end
 
         let(:base_orphan_vm_event) do
