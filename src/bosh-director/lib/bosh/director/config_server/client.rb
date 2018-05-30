@@ -71,7 +71,8 @@ module Bosh::Director::ConfigServer
     # @param [DeploymentPlan::Variables] variables Object representing variables passed by the user
     # @param [String] deployment_name
     def generate_values(variables, deployment_name, converge_variables = false)
-      current_variable_set = @deployment_lookup.by_name(deployment_name).current_variable_set
+      deployment_model = @deployment_lookup.by_name(deployment_name)
+      current_variable_set = deployment_model.current_variable_set
 
       variables.spec.each do |variable|
         variable_name = variable['name']
@@ -80,15 +81,26 @@ module Bosh::Director::ConfigServer
         constructed_name = ConfigServerHelper.add_prefix_if_not_absolute(
           variable_name,
           @director_name,
-          deployment_name
+          deployment_name,
         )
 
         if variable['type'] == 'certificate' && variable['options'] && variable['options']['ca']
           variable['options']['ca'] = ConfigServerHelper.add_prefix_if_not_absolute(
             variable['options']['ca'],
             @director_name,
-            deployment_name
+            deployment_name,
           )
+        end
+
+        if variable['type'] == 'certificate'
+          link = find_variable_link(deployment_model, variable_name)
+
+          unless link.nil?
+            link_url = generate_dns_address_from_link(link)
+            variable['options'] ||= {}
+            variable['options']['alternative_names'] ||= []
+            variable['options']['alternative_names'] << link_url
+          end
         end
 
         generate_value_and_record_event(
@@ -103,6 +115,38 @@ module Bosh::Director::ConfigServer
     end
 
     private
+
+    def find_variable_link(deployment_model, variable_name)
+      links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
+
+      consumer = links_manager.find_consumer(
+        deployment_model: deployment_model,
+        instance_group_name: '',
+        name: variable_name,
+        type: 'variable',
+      )
+
+      return nil if consumer.nil?
+
+      consumer_intent = consumer.intents.first
+      consumer_intent.links.first
+    end
+
+    def generate_dns_address_from_link(link)
+      link_content = JSON.parse(link.link_content)
+
+      return link_content['address'] if link.link_provider_intent&.link_provider&.type == 'manual'
+
+      use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)
+      dns_encoder = Bosh::Director::LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
+      query_criteria = {
+        deployment_name: link_content['deployment_name'],
+        instance_group: link_content['instance_group'],
+        default_network: link_content['default_network'],
+        root_domain: link_content['domain'],
+      }
+      dns_encoder.encode_query(query_criteria)
+    end
 
     def fetch_values_with_deployment(variables, variable_set, must_be_absolute_name)
       ConfigServerHelper.validate_absolute_names(variables) if must_be_absolute_name

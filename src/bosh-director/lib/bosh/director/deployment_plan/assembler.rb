@@ -21,7 +21,8 @@ module Bosh::Director
     def bind_models(options = {})
       @logger.info('Binding models')
 
-      should_bind_links = options.fetch(:is_deploy_action, false) && options.fetch(:should_bind_links, true)
+      is_deploy_action = options.fetch(:is_deploy_action, false)
+      should_bind_links = is_deploy_action && options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
       should_bind_new_variable_set = options.fetch(:should_bind_new_variable_set, false)
       deployment_options = @deployment_plan.deployment_wide_options
@@ -88,6 +89,7 @@ module Bosh::Director
       bind_instance_networks
       bind_dns
       bind_links if should_bind_links
+      generate_variables if is_deploy_action
     end
 
     private
@@ -159,9 +161,14 @@ module Bosh::Director
 
       @links_manager.resolve_deployment_links(@deployment_plan.model, resolve_link_options)
       if @deployment_plan.model.has_stale_errand_links
-         @deployment_plan.model.has_stale_errand_links = false
-         @deployment_plan.model.save
+        @deployment_plan.model.has_stale_errand_links = false
+        @deployment_plan.model.save
       end
+    end
+
+    def generate_variables
+      config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
+      config_server_client.generate_values(@deployment_plan.variables, @deployment_plan.name, @deployment_plan.features.converge_variables)
     end
 
     # Binds template models for each release spec in the deployment plan

@@ -3,8 +3,9 @@ module Bosh::Director
     class RuntimeManifestParser
       include ValidationHelper
 
-      def initialize(logger)
+      def initialize(logger, variables_parser)
         @logger = logger
+        @variable_spec_parser = variables_parser
       end
 
       def parse(runtime_manifest)
@@ -27,7 +28,7 @@ module Bosh::Director
       end
 
       def parse_variables(runtime_manifest)
-        Bosh::Director::DeploymentPlan::VariablesSpecParser.new(@logger).parse(safe_property(runtime_manifest, 'variables', { :class => Array, :optional => true}))
+        @variable_spec_parser.parse(safe_property(runtime_manifest, 'variables', { :class => Array, :optional => true}))
       end
     end
   end

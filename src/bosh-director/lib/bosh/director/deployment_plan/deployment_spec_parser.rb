@@ -110,7 +110,7 @@ module Bosh::Director
 
       def parse_variables
         variables_spec = safe_property(@deployment_manifest, 'variables', :class => Array, :default => [])
-        @deployment.set_variables(VariablesSpecParser.new(@logger).parse(variables_spec))
+        @deployment.set_variables(VariablesSpecParser.new(@logger, @deployment.model).parse(variables_spec))
       end
 
       def parse_features

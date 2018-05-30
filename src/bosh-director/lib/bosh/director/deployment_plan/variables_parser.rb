@@ -3,18 +3,28 @@ require 'bosh/template/property_helper'
 module Bosh::Director::DeploymentPlan
   class VariablesSpecParser
 
-    def initialize(logger)
+    def initialize(logger, deployment_model)
       @logger = logger
+      @deployment_model = deployment_model
     end
 
     # @param [Array] spec Raw variables spec from the deployment manifest
     # @return [DeploymentPlan::Variables] Variables object
     def parse(spec)
       validate(spec) if spec
+      parse_links(spec)
       Variables.new(spec)
     end
 
     private
+
+    def parse_links(spec)
+      return if spec.nil?
+      parser = Bosh::Director::Links::LinksParser.new
+      spec.each do |variable|
+        parser.parse_consumers_from_variable(variable, @deployment_model)
+      end
+    end
 
     def validate(spec)
       unless spec.is_a?(Array)
@@ -24,6 +34,7 @@ module Bosh::Director::DeploymentPlan
 
       validate_elements_are_hashes(spec)
       validate_mandatory_fields(spec)
+      validate_consumes_field(spec)
       validate_duplicate_names(spec)
       validate_options(spec)
     end
@@ -66,6 +77,15 @@ module Bosh::Director::DeploymentPlan
         if variable['type'].strip.empty?
           raise Bosh::Director::VariablesInvalidFormat,
                 "Type for variable '#{variable['name']}' is empty; 'type' must not be empty"
+        end
+      end
+    end
+
+    def validate_consumes_field(spec)
+      spec.each do |variable|
+        if !variable['consumes'].nil? && !variable['consumes'].is_a?(Hash)
+          raise Bosh::Director::VariablesInvalidFormat,
+                "Consumes for variable '#{variable['name']}' must be a Hash or nil"
         end
       end
     end

@@ -3,15 +3,20 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::Assembler do
     subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager) }
-    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
-      name: 'simple',
-      using_global_networking?: false,
-      skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
-      recreate: false,
-      model: deployment_model,
+    let(:deployment_plan) do
+      instance_double(
+        Bosh::Director::DeploymentPlan::Planner,
+        name: 'simple',
+        using_global_networking?: false,
+        skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
+        recreate: false,
+        model: deployment_model,
+        variables: variables,
+        features: Bosh::Director::DeploymentPlan::DeploymentFeatures.new,
+      )
+    end
 
-    ) }
-
+    let(:variables) { Bosh::Director::DeploymentPlan::Variables.new(nil) }
     let(:deployment_model) {BD::Models::Deployment.make}
     let(:stemcell_manager) {nil}
     let(:powerdns_manager) {PowerDnsManagerProvider.create}
@@ -21,10 +26,16 @@ module Bosh::Director
         allow(double).to receive(:resolve_deployment_links)
       end
     end
+    let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+    let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
     before do
       allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
       allow(links_manager).to receive(:update_provider_intents_contents)
+
+      allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+      allow(client_factory).to receive(:create_client).and_return(config_server_client)
+      allow(config_server_client).to receive(:generate_values)
     end
 
     describe '#bind_models' do
@@ -178,8 +189,6 @@ module Bosh::Director
 
           allow(deployment_plan).to receive(:instance_groups).and_return([instance_group_1, instance_group_2])
           allow(deployment_plan).to receive(:vm_resources_cache)
-
-          allow(deployment_plan).to receive(:name).and_return([instance_group_1, instance_group_2])
         end
 
         it 'validates the instance_groups' do
@@ -245,6 +254,52 @@ module Bosh::Director
               assembler.bind_models(is_deploy_action: true)
 
               expect(deployment_model.has_stale_errand_links).to be_falsey
+            end
+          end
+        end
+
+        context 'variables are defined for the deployment' do
+          let(:variables) do
+            Bosh::Director::DeploymentPlan::Variables.new(
+              [
+                {
+                  'name' => 'placeholder_a',
+                  'type' => 'password',
+                },
+              ],
+            )
+          end
+
+          context 'when it is a deploy action' do
+            let(:converge_variables) do
+              false
+            end
+
+            before do
+              allow(deployment_plan).to receive_message_chain(:features, :converge_variables).and_return(converge_variables)
+            end
+
+            it 'generates the values through config server' do
+              expect(config_server_client).to receive(:generate_values).with(variables, 'simple', false)
+              assembler.bind_models(is_deploy_action: true)
+            end
+
+            context 'when the deployment wants to converge variables' do
+              let(:converge_variables) do
+                true
+              end
+
+              it 'should generate the values through config server' do
+                expect(config_server_client).to receive(:generate_values).with(variables, 'simple', true)
+                assembler.bind_models(is_deploy_action: true)
+              end
+            end
+          end
+
+          context 'when it is a NOT a deploy action' do
+            it 'should NOT generate the variables' do
+              expect(config_server_client).to_not receive(:generate_values)
+              assembler.bind_models(is_deploy_action: false)
             end
           end
         end
