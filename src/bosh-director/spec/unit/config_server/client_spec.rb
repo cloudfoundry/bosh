@@ -23,12 +23,13 @@ module Bosh::Director::ConfigServer
       result
     end
 
+    let(:deployment_model) { Bosh::Director::Models::Deployment.make(deployment_attrs) }
+
     def prepend_namespace(name)
       "/#{director_name}/#{deployment_name}/#{name}"
     end
 
     before do
-      deployment_model = Bosh::Director::Models::Deployment.make(deployment_attrs)
       Bosh::Director::Models::VariableSet.make(id: variables_set_id, deployment: deployment_model, writable: true)
 
       allow(logger).to receive(:info)
@@ -37,7 +38,6 @@ module Bosh::Director::ConfigServer
 
     describe '#interpolate' do
       let(:deployment_name) { 'my_deployment_name' }
-      let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
       let(:raw_hash) do
         {
           'properties' => {
@@ -390,7 +390,6 @@ module Bosh::Director::ConfigServer
 
     describe '#interpolate_with_versioning' do
       let(:deployment_name) { 'my_deployment_name' }
-      let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
       let(:variable_set_model) { instance_double(Bosh::Director::Models::VariableSet) }
       let(:raw_hash) do
         {
@@ -1446,6 +1445,84 @@ module Bosh::Director::ConfigServer
           end
 
           context 'when variable options contains a CA key' do
+            context 'when variable type is certificate' do
+              context 'and it consumes `alternative_names` link' do
+                let(:variables_spec) do
+                  [
+                    {
+                      'name' => 'placeholder_b',
+                      'type' => 'certificate',
+                      'consumes' => {
+                        'alternative_name' => { 'from' => 'foo' },
+                      },
+                      'options' => {
+                        'ca' => 'my_ca',
+                        'common_name' => 'bosh.io',
+                        'alternative_names' => ['a.bosh.io', 'b.bosh.io'],
+                      },
+                    },
+                  ]
+                end
+
+                let(:deployment_attrs) { { id: 1, name: deployment_name, links_serial_id: link_serial_id } }
+
+                let(:link_serial_id) { 8080 }
+
+                let(:consumer) do
+                  Bosh::Director::Models::Links::LinkConsumer.create(
+                    deployment: deployment_model,
+                    instance_group: '',
+                    type: 'variable',
+                    name: 'placeholder_b',
+                    serial_id: link_serial_id,
+                  )
+                end
+
+                let(:consumer_intent) do
+                  Bosh::Director::Models::Links::LinkConsumerIntent.create(
+                    link_consumer: consumer,
+                    original_name: 'alternative_name',
+                    type: 'address',
+                    name: 'foo',
+                    optional: false,
+                    blocked: false,
+                    serial_id: link_serial_id,
+                  )
+                end
+
+                before do
+                  Bosh::Director::Models::Links::Link.create(
+                    name: 'foo',
+                    link_provider_intent_id: nil,
+                    link_consumer_intent_id: consumer_intent.id,
+                    link_content: {
+                      deployment_name: deployment_name,
+                      use_short_dns_addresses: false,
+                      instance_group: 'ig1',
+                      default_network: 'net-a',
+                      domain: 'bosh',
+                    }.to_json,
+                    created_at: Time.now,
+                  )
+                end
+
+                it 'should generate the certificate with the SAN appended' do
+                  expect(http_client).to receive(:post).with(
+                    {
+                      'name' => prepend_namespace('placeholder_b'),
+                      'type' => 'certificate',
+                      'parameters' => { 'ca' => prepend_namespace('my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io q-s0.ig1.net-a.deployment-name.bosh) },
+                    }
+                  ).ordered.and_return(
+                    generate_success_response(
+                      {
+                        "id": "some_id2",
+                      }.to_json))
+
+                  client.generate_values(variables_obj, deployment_name)
+                end
+              end
+            end
 
             context 'when variable type is certificate & ca is relative' do
               let(:variables_spec) do
@@ -1532,8 +1609,6 @@ module Bosh::Director::ConfigServer
                 client.generate_values(variables_obj, deployment_name)
               end
             end
-
-
           end
 
           context 'when config server throws an error while generating' do
@@ -1593,7 +1668,6 @@ module Bosh::Director::ConfigServer
 
           context 'but variable set is not writable' do
             let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
-            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
             let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
             before do

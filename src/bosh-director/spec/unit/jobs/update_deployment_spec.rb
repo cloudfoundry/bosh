@@ -318,47 +318,6 @@ module Bosh::Director
             end
           end
 
-          context 'when variables exist in deployment plan' do
-            let(:variables) do
-              DeploymentPlan::Variables.new([{'name' => 'placeholder_a', 'type' => 'password'}])
-            end
-
-            let(:client_factory) { instance_double(ConfigServer::ClientFactory) }
-            let(:config_server_client) { instance_double(ConfigServer::ConfigServerClient) }
-
-            before do
-              allow(planner).to receive(:variables).and_return(variables)
-              allow(ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-              allow(client_factory).to receive(:create_client).and_return(config_server_client)
-            end
-
-            context 'when it is a deploy action' do
-              let (:options)  { {'deploy' => true} }
-
-              before do
-                allow(variable_set_1).to receive(:update)
-                allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
-                allow(variable_set).to receive(:update).with(:deployed_successfully => true)
-                allow(links_manager).to receive(:remove_unused_links)
-                allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
-              end
-
-              it 'generates the values through config server' do
-                expect(config_server_client).to receive(:generate_values).with(variables, 'deployment-name', false)
-                job.perform
-              end
-            end
-
-            context 'when it is a NOT a deploy action' do
-              let (:options)  { {'deploy' => false} }
-
-              it 'should NOT generate the variables' do
-                expect(config_server_client).to_not receive(:generate_values).with(variables, 'deployment-name', false)
-                job.perform
-              end
-            end
-          end
-
           context 'when a cloud_config is passed in' do
             let(:cloud_config_id) { Models::Config.make(:cloud).id }
             it 'uses the cloud config' do

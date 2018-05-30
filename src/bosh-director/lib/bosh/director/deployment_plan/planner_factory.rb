@@ -96,7 +96,8 @@ module Bosh
           end
 
           if runtime_config_consolidator.have_runtime_configs?
-            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new(@logger).parse(runtime_config_consolidator.interpolate_manifest_for_deployment(name))
+            variables_spec_parser = Bosh::Director::DeploymentPlan::VariablesSpecParser.new(@logger, deployment.model)
+            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new(@logger, variables_spec_parser).parse(runtime_config_consolidator.interpolate_manifest_for_deployment(name))
 
             parsed_runtime_config.get_applicable_releases(deployment).each do |release|
               release.add_to_deployment(deployment)

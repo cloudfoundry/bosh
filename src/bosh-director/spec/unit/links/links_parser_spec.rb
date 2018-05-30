@@ -1852,4 +1852,136 @@ describe Bosh::Director::Links::LinksParser do
       end
     end
   end
+
+  describe '#parse_consumers_from_variable' do
+    let(:consumer) { instance_double(Bosh::Director::Models::Links::LinkConsumer) }
+    let(:consumer_intent) { instance_double(Bosh::Director::Models::Links::LinkConsumerIntent) }
+
+    context 'when the variable defines "alternative_name" consumer' do
+      it 'makes consumer and consumer intent' do
+        expected_consumer_params = {
+          deployment_model: deployment_plan.model,
+          instance_group_name: '',
+          name: 'bbs',
+          type: 'variable',
+        }
+        expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+        expected_consumer_intent_params = {
+          link_consumer: consumer,
+          link_original_name: 'alternative_name',
+          link_type: 'address',
+          new_intent_metadata: { explicit_link: true },
+        }
+        expect(links_manager).to receive(:find_or_create_consumer_intent)
+                                   .with(expected_consumer_intent_params)
+                                   .and_return(consumer_intent)
+        expect(consumer_intent).to receive(:name=).with('foo')
+        expect(consumer_intent).to receive(:save)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'consumes' => {
+            'alternative_name' => { 'from' => 'foo' },
+          },
+        }
+        subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+      end
+
+      context 'and the `from` is not specified' do
+        it 'makes consumer and consumer intent' do
+          expected_consumer_params = {
+            deployment_model: deployment_plan.model,
+            instance_group_name: '',
+            name: 'bbs',
+            type: 'variable',
+          }
+          expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+          expected_consumer_intent_params = {
+            link_consumer: consumer,
+            link_original_name: 'alternative_name',
+            link_type: 'address',
+            new_intent_metadata: { explicit_link: true },
+          }
+          expect(links_manager).to receive(:find_or_create_consumer_intent)
+                                     .with(expected_consumer_intent_params)
+                                     .and_return(consumer_intent)
+          expect(consumer_intent).to receive(:name=).with('alternative_name')
+          expect(consumer_intent).to receive(:save)
+
+          variable_spec = {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'alternative_name' => {},
+            },
+          }
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end
+      end
+    end
+
+    context 'when the variable does not define a consumes block' do
+      it 'should not create any implicit consumers or intents' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+        }
+        subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+      end
+    end
+
+    context 'when the variable does not define any consumers in the consumes block' do
+      it 'should not create any implicit consumers or intents' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'consumes' => {},
+        }
+        subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+      end
+    end
+
+    context 'when the variable is not of type certificate' do
+      it 'should raise an error if it defines consumers' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'foobar',
+          'consumes' => {
+            'alternative_name' => { 'from' => 'foo' },
+          },
+        }
+        expect do
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end.to raise_error "Variable 'bbs' can not define 'consumes' key for type 'foobar'"
+      end
+    end
+
+    context 'when the variable define non-acceptable consumers' do
+      it 'should raise an error' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'consumes' => {
+            'foobar' => { 'from' => 'foo' },
+          },
+        }
+        expect do
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end.to raise_error "Consumer name 'foobar' is not a valid consumer for variable 'bbs'. Acceptable consumer types are: alternative_name"
+      end
+    end
+  end
 end
