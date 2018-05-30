@@ -26,21 +26,22 @@ module Bosh::Director
       end
 
       def self.parse(addon_hash, addon_level = RUNTIME_LEVEL)
-        name = safe_property(addon_hash, 'name', :class => String)
-        addon_job_hashes = safe_property(addon_hash, 'jobs', :class => Array, :default => [])
+        name = safe_property(addon_hash, 'name', class: String)
+        addon_job_hashes = safe_property(addon_hash, 'jobs', class: Array, default: [])
         parsed_addon_jobs = []
         addon_job_hashes.each do |addon_job_hash|
           parsed_addon_jobs << parse_and_validate_job(addon_job_hash)
         end
         addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
-        addon_include = Filter.parse(safe_property(addon_hash, 'include', :class => Hash, :optional => true), :include, addon_level)
-        addon_exclude = Filter.parse(safe_property(addon_hash, 'exclude', :class => Hash, :optional => true), :exclude, addon_level)
+        addon_include = Filter.parse(safe_property(addon_hash, 'include', class: Hash, optional: true), :include, addon_level)
+        addon_exclude = Filter.parse(safe_property(addon_hash, 'exclude', class: Hash, optional: true), :exclude, addon_level)
 
         new(name, parsed_addon_jobs, addon_level_properties, addon_include, addon_exclude)
       end
 
       def applies?(deployment_name, deployment_teams, deployment_instance_group)
-        @addon_include.applies?(deployment_name, deployment_teams, deployment_instance_group) && !@addon_exclude.applies?(deployment_name, deployment_teams, deployment_instance_group)
+        @addon_include.applies?(deployment_name, deployment_teams, deployment_instance_group) &&
+          !@addon_exclude.applies?(deployment_name, deployment_teams, deployment_instance_group)
       end
 
       def add_to_deployment(deployment)
@@ -57,17 +58,19 @@ module Bosh::Director
         end.uniq
       end
 
-      private
-
       def self.parse_and_validate_job(addon_job)
         {
-          'name' => safe_property(addon_job, 'name', :class => String),
-          'release' => safe_property(addon_job, 'release', :class => String),
+          'name' => safe_property(addon_job, 'name', class: String),
+          'release' => safe_property(addon_job, 'release', class: String),
           'provides' => safe_property(addon_job, 'provides', class: Hash, default: {}),
           'consumes' => safe_property(addon_job, 'consumes', class: Hash, default: {}),
           'properties' => safe_property(addon_job, 'properties', class: Hash, optional: true),
         }
       end
+
+      private_class_method :parse_and_validate_job
+
+      private
 
       def add_addon_jobs_to_instance_groups(deployment, eligible_instance_groups)
         @addon_job_hashes.each do |addon_job_hash|
@@ -80,16 +83,25 @@ module Bosh::Director
           eligible_instance_groups.each do |instance_group|
             instance_group_name = instance_group.name
 
-            if addon_job_hash['properties']
-              job_properties = addon_job_hash['properties']
-            else
-              job_properties = @addon_level_properties
-            end
+            job_properties = if addon_job_hash['properties']
+                               addon_job_hash['properties']
+                             else
+                               @addon_level_properties
+                             end
 
             addon_job_object.add_properties(job_properties, instance_group_name)
 
-            @links_parser.parse_providers_from_job(addon_job_hash, deployment.model, addon_job_object.model, job_properties, instance_group_name)
-            @links_parser.parse_consumers_from_job(addon_job_hash, deployment.model, addon_job_object.model, instance_group_name)
+            @links_parser.parse_providers_from_job(
+              addon_job_hash,
+              deployment.model,
+              addon_job_object.model,
+              job_properties: job_properties,
+              instance_group_name: instance_group_name,
+            )
+
+            @links_parser.parse_consumers_from_job(
+              addon_job_hash, deployment.model, addon_job_object.model, instance_group_name: instance_group_name
+            )
 
             instance_group.add_job(addon_job_object)
           end

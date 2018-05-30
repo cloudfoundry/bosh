@@ -31,7 +31,7 @@ install_ruby() {
     local sha=$2
 
     echo "Installing ruby $version..."
-    ruby-install --sha256 "$sha" ruby "$version"
+    ruby-install --cleanup --sha256 "$sha" ruby "$version"
 
     source /etc/profile.d/chruby.sh
 

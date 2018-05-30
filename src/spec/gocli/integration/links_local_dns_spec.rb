@@ -147,34 +147,6 @@ describe 'Links with local_dns enabled', type: :integration do
           end
         end
 
-        context 'when network is dynamic' do
-          let(:provider_network_name) { 'dynamic-network' }
-
-          context "when 'ip_addresses' is set to true on the consumer jobs link options" do
-            before do
-              api_instance_group_spec['jobs'][0]['consumes']['db']['ip_addresses'] = true
-            end
-
-            it 'logs to debug that IP address is not available for the link provider instance' do
-              deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-              task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
-              task_debug_logs = bosh_runner.run("task --debug #{task_id}")
-              mysql_instance = director.find_instance(director.instances, 'mysql', '0')
-
-              expect(task_debug_logs).to match("DirectorJobRunner: IP address not available for the link provider instance: mysql/#{mysql_instance.id}")
-            end
-
-            it 'logs to events that IP address is not available for the link provider instance' do
-              deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-              task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
-              task_event_logs = bosh_runner.run("task --event #{task_id}")
-              mysql_instance = director.find_instance(director.instances, 'mysql', '0')
-
-              expect(task_event_logs).to match("\"type\":\"warning\",\"message\":\"IP address not available for the link provider instance: mysql/#{mysql_instance.id}\"")
-            end
-          end
-        end
-
         context 'using link.address helper' do
           let(:job_link_overrided_spec) do
             instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
@@ -257,18 +229,6 @@ describe 'Links with local_dns enabled', type: :integration do
             let(:features_hash) { nil }
             it_should_behave_like 'matching DNS names'
           end
-
-
-          # it 'uses short DNS name if manifest so indicates' do
-          #   manifest['features'] = {'use_short_dns_addresses' => true}
-          #   deploy_simple_manifest(manifest_hash: manifest)
-          #   expect(rendered_template['databases']['main'][0]['address']).to match(/q-m\dn\ds0.q-g2.bosh/)
-          # end
-
-          # it 'use FULL DNS if manifest doesnt specify short DNS' do
-          #   deploy_simple_manifest(manifest_hash: manifest)
-          #   expect(rendered_template['databases']['main'][0]['address']).to match(/q-s0.mysql.manual-network.simple.bosh/)
-          # end
         end
       end
 
@@ -393,36 +353,6 @@ describe 'Links with local_dns enabled', type: :integration do
             end
 
             expect(addresses).to eq(["#{mysql_instance.id}.mysql.dynamic-network.provider-deployment.bosh"])
-          end
-
-          context "when consumer job set 'ip_addresses' to true in its manifest link options" do
-            before do
-              api_instance_group_spec['jobs'][0]['consumes']['db']['ip_addresses'] = true
-            end
-
-            it 'logs to debug that IP address is not available for the link provider instance' do
-              deploy_simple_manifest(manifest_hash: provider_deployment_manifest)
-              consumer_deployment_output = deploy_simple_manifest(manifest_hash: consumer_deployment_manifest)
-
-              task_id = Bosh::Spec::OutputParser.new(consumer_deployment_output).task_id
-              task_debug_logs = bosh_runner.run("task --debug #{task_id}")
-              instances = director.instances(deployment_name: 'provider_deployment')
-              mysql_instance = director.find_instance(instances, 'mysql', '0')
-
-              expect(task_debug_logs).to match("DirectorJobRunner: IP address not available for the link provider instance: mysql/#{mysql_instance.id}")
-            end
-
-            it 'logs to events that IP address is not available for the link provider instance' do
-              deploy_simple_manifest(manifest_hash: provider_deployment_manifest)
-              consumer_deployment_output = deploy_simple_manifest(manifest_hash: consumer_deployment_manifest)
-
-              task_id = Bosh::Spec::OutputParser.new(consumer_deployment_output).task_id
-              task_event_logs = bosh_runner.run("task --event #{task_id}")
-              instances = director.instances(deployment_name: 'provider_deployment')
-              mysql_instance = director.find_instance(instances, 'mysql', '0')
-
-              expect(task_event_logs).to match("\"type\":\"warning\",\"message\":\"IP address not available for the link provider instance: mysql/#{mysql_instance.id}\"")
-            end
           end
         end
       end
@@ -637,30 +567,6 @@ describe 'Links with local_dns enabled', type: :integration do
 
       context 'when provider job network is dynamic' do
         let(:network_name) { 'dynamic-network' }
-
-        it 'logs to debug that IP address is not available for the link provider instance' do
-          deploy_simple_manifest(manifest_hash: provider_deployment_manifest)
-          consumer_deployment_output = deploy_simple_manifest(manifest_hash: consumer_deployment_manifest)
-
-          task_id = Bosh::Spec::OutputParser.new(consumer_deployment_output).task_id
-          task_debug_logs = bosh_runner.run("task --debug #{task_id}")
-          instances = director.instances(deployment_name: 'provider_deployment')
-          mysql_instance = director.find_instance(instances, 'mysql', '0')
-
-          expect(task_debug_logs).to match("DirectorJobRunner: IP address not available for the link provider instance: mysql/#{mysql_instance.id}")
-        end
-
-        it 'logs to events that IP address is not available for the link provider instance' do
-          deploy_simple_manifest(manifest_hash: provider_deployment_manifest)
-          consumer_deployment_output = deploy_simple_manifest(manifest_hash: consumer_deployment_manifest)
-
-          task_id = Bosh::Spec::OutputParser.new(consumer_deployment_output).task_id
-          task_event_logs = bosh_runner.run("task --event #{task_id}")
-          instances = director.instances(deployment_name: 'provider_deployment')
-          mysql_instance = director.find_instance(instances, 'mysql', '0')
-
-          expect(task_event_logs).to match("\"type\":\"warning\",\"message\":\"IP address not available for the link provider instance: mysql/#{mysql_instance.id}\"")
-        end
 
         context "when consumer job set 'ip_addresses' to FALSE in its manifest link options" do
           before do

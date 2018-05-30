@@ -118,17 +118,6 @@ shared:
     tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/destroy-director.yml
 
-  - &slack-alert
-    do:
-      - task: prep-slack-alert
-        file: bosh-src/ci/tasks/prep-slack-alert.yml
-      - put: slack-alert
-        params:
-          channel: ((slack_channel_name))
-          icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
-          attachments_file: slack-notification/attachments
-          text: ((slack_failure_message))
-
 jobs:
   - name: unit-2.4
     public: true
@@ -142,8 +131,6 @@ jobs:
         file: bosh-src/ci/tasks/test-unit.yml
         params:
           DB: sqlite
-        on_failure:
-          <<: *slack-alert
 
   - name: unit-2.4-mysql
     public: true
@@ -178,8 +165,6 @@ jobs:
           image: bosh-main-mysql-5.7
           params:
             DB: mysql
-        on_failure:
-          <<: *slack-alert
 
   - name: unit-2.4-postgres
     public: true
@@ -226,13 +211,13 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 9.6
-        on_failure:
-          <<: *slack-alert
 
   - name: unit-2.4-db-migrations-rds
     serial: true
     build_logs_to_retain: 250
     plan:
+      - put: rds-pool
+        params: {acquire: true}
       - { get: bosh-src, trigger: true }
       - aggregate:
         - task: test-mysql-rds
@@ -256,8 +241,9 @@ jobs:
             DB_HOST: ((postgresql-rds-host))
             DB_USER: ((postgresql-rds-user))
             DB_PASSWORD: ((postgresql-rds-password))
-        on_failure:
-          <<: *slack-alert
+        ensure:
+          put: rds-pool
+          params: {release: rds-pool}
 
   - name: blobstore-client-integration
     public: true
@@ -294,8 +280,6 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
-        on_failure:
-          <<: *slack-alert
 
   - name: integration-postgres-gocli-sha2
     public: true
@@ -319,8 +303,6 @@ jobs:
         params:
           DB:           postgresql
           SHA2_MODE:    true
-        on_failure:
-          <<: *slack-alert
 
       - put: integration-tests-parallel-runtime
         params:
@@ -348,8 +330,6 @@ jobs:
         tags: ["bosh-integration-2"]
         params:
           DB:           mysql
-        on_failure:
-          <<: *slack-alert
 
       - put: integration-tests-parallel-runtime
         params:
@@ -380,8 +360,6 @@ jobs:
           DB:           postgresql
           SHA2_MODE:    true
           DB_TLS:       true
-        on_failure:
-          <<: *slack-alert
 
       - put: integration-tests-parallel-runtime
         params:
@@ -412,8 +390,6 @@ jobs:
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
           SHA2_MODE:    true
           DB_TLS:       true
-        on_failure:
-          <<: *slack-alert
 
       - put: integration-tests-parallel-runtime
         params:
@@ -458,8 +434,6 @@ jobs:
             DB:           mysql
             SHA2_MODE:    true
             DB_TLS:       true
-        on_failure:
-          <<: *slack-alert
 
       - put: integration-tests-parallel-runtime
         params:
@@ -515,8 +489,6 @@ jobs:
       params:
         DB: postgresql
         LEGACY: false
-      on_failure:
-        <<: *slack-alert
 
   - name: legacy-load-tests-postgres
     public: true
@@ -541,8 +513,6 @@ jobs:
       params:
         DB: postgresql
         LEGACY: true
-      on_failure:
-        <<: *slack-alert
 
   - name: load-tests-mysql
     public: true
@@ -567,8 +537,6 @@ jobs:
       params:
         DB: mysql
         LEGACY: false
-      on_failure:
-        <<: *slack-alert
 
   - name: legacy-load-tests-mysql
     public: true
@@ -593,8 +561,6 @@ jobs:
       params:
         DB: mysql
         LEGACY: true
-      on_failure:
-        <<: *slack-alert
 
   - name: fuzz-tests
     public: true
@@ -614,8 +580,6 @@ jobs:
       params:
         BOSH_SRC_PATH: bosh-src/src
         RUBY_VERSION: 2.4.4
-      on_failure:
-        <<: *slack-alert
 
   - name: candidate-release
     plan:
@@ -889,11 +853,6 @@ resources:
     source:
       interval: 5h
 
-  - name: slack-alert
-    type: slack-notification
-    source:
-      url: ((slack_hook_url))
-
   - name: bosh-cli
     type: s3
     source:
@@ -1004,9 +963,10 @@ resources:
     source:
       repository: bosh/main-postgres-9.6
 
-resource_types:
-- name: slack-notification
-  type: docker-image
-  source:
-    repository: cfcommunity/slack-notification-resource
-    tag: latest
+  - name: rds-pool
+    type: pool
+    source:
+      uri: git@github.com:cloudfoundry/bosh-ci-pools
+      branch: master
+      pool: unit-24-db-migrations-rds
+      private_key: ((bosh_ci_pools_deploy_key))

@@ -240,6 +240,28 @@ module Bosh::Director::Links
       links
     end
 
+    def get_links_for_instance(instance)
+      links = get_links_for_instance_group(instance.deployment_model,instance.instance_group_name)
+      return links unless links.empty?
+
+      newest_instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id).order(Sequel.desc(:serial_id)).first
+      instance_links = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id)
+
+      instance_links.each do |instance_link|
+        next if instance_link.serial_id < newest_instance_link.serial_id
+
+        link = instance_link.link
+        consumer_intent = link.link_consumer_intent
+        consumer = consumer_intent.link_consumer
+        content = JSON.parse(link.link_content)
+
+        links[consumer.name] ||= {}
+        links[consumer.name][consumer_intent.original_name] = content
+      end
+
+      links
+    end
+
     def bind_links_to_instance(instance)
       consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: instance.deployment_model, instance_group: instance.instance_group_name)
 
@@ -531,10 +553,6 @@ module Bosh::Director::Links
     def log_warning_if_applicable(address, dns_required, instance_name, instance_id)
       if dns_required && ip_address?(address)
         message = "DNS address not available for the link provider instance: #{instance_name}/#{instance_id}"
-        @logger.warn(message)
-        @event_logger.warn(message)
-      elsif !dns_required && !ip_address?(address)
-        message = "IP address not available for the link provider instance: #{instance_name}/#{instance_id}"
         @logger.warn(message)
         @event_logger.warn(message)
       end

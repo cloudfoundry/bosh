@@ -309,6 +309,50 @@ module Bosh::Director
           expect { client.delete_arp_entries(ips: ['10.10.10.1', '10.10.10.2']) }.to_not raise_error
         end
       end
+
+      describe 'shutdown' do
+        subject(:client) { AgentClient.with_agent_id('fake-agent-id') }
+        let(:task) do
+          {
+            'agent_task_id' => 'fake-agent_task_id',
+            'state' => 'running',
+            'value' => 'task value',
+          }
+        end
+        let(:nats_rpc) { instance_double(Bosh::Director::NatsRpc, cancel_request: nil) }
+        let(:request_id) { 'my-request-id' }
+
+        before do
+          allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
+          allow(Api::ResourceManager).to receive(:new)
+        end
+
+        it 'sends shutdown to the agent' do
+          expect(client).to receive(:send_nats_request_quietly) do |message_name, args|
+            expect(message_name).to eq(:shutdown)
+            expect(args).to eq([])
+          end
+
+          client.shutdown
+        end
+
+        it 'cancels the request on the NatsRPC to avoid memory leaks' do
+          allow(client).to receive(:send_nats_request_quietly).and_return(request_id)
+          expect(nats_rpc).to receive(:cancel_request).with(request_id)
+
+          client.shutdown
+        end
+
+        it 'does not raise an exception for failures' do
+          allow(client).to receive(:send_nats_request_quietly).and_raise(RpcRemoteException, 'random failure!')
+
+          expect(Config.logger).to receive(:warn).with(
+            "Ignoring 'random failure!' error from the agent: #<Bosh::Director::RpcRemoteException: random failure!>." \
+            " Received while trying to run: shutdown on client: 'fake-agent-id'",
+          )
+          expect { client.shutdown }.to_not raise_error
+        end
+      end
     end
 
     describe '#sync_dns' do

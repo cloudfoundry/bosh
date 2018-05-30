@@ -8,7 +8,6 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer = DeepHashReplacement.new
       @deployment_lookup = Bosh::Director::Api::DeploymentLookup.new
       @logger = logger
-      @converge_variables = false
     end
 
     # @param [Hash] raw_hash Hash to be interpolated. This method only supports Absolute Names.
@@ -72,7 +71,6 @@ module Bosh::Director::ConfigServer
     # @param [DeploymentPlan::Variables] variables Object representing variables passed by the user
     # @param [String] deployment_name
     def generate_values(variables, deployment_name, converge_variables = false)
-      @converge_variables = converge_variables
       current_variable_set = @deployment_lookup.by_name(deployment_name).current_variable_set
 
       variables.spec.each do |variable|
@@ -93,7 +91,14 @@ module Bosh::Director::ConfigServer
           )
         end
 
-        generate_value_and_record_event(constructed_name, variable['type'], deployment_name, current_variable_set, variable['options'])
+        generate_value_and_record_event(
+          constructed_name,
+          variable['type'],
+          deployment_name,
+          current_variable_set,
+          variable['options'],
+          converge_variables,
+        )
       end
     end
 
@@ -302,7 +307,7 @@ module Bosh::Director::ConfigServer
       variable_set.add_variable(variable_name: name_root, variable_id: variable_id)
     end
 
-    def generate_value(name, type, variable_set, options)
+    def generate_value(name, type, variable_set, options, converge_variable)
       parameters = options.nil? ? {} : options
 
       request_body = {
@@ -311,7 +316,7 @@ module Bosh::Director::ConfigServer
         'parameters' => parameters
       }
 
-      request_body['mode'] = 'converge' if @converge_variables
+      request_body['mode'] = 'converge' if converge_variable
 
       unless variable_set.writable
         raise Bosh::Director::ConfigServerGenerationError, "Variable '#{get_name_root(name)}' cannot be generated. Variable generation allowed only during deploy action"
@@ -373,9 +378,9 @@ module Bosh::Director::ConfigServer
         })
     end
 
-    def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options)
+    def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options, converge_variable)
       begin
-        result = generate_value(variable_name, variable_type, variable_set, options)
+        result = generate_value(variable_name, variable_type, variable_set, options, converge_variable)
         add_event(
           :action => 'create',
           :deployment_name => deployment_name,

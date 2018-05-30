@@ -102,6 +102,10 @@ module Bosh::Director
       send_message(:unmount_disk, *args)
     end
 
+    def shutdown
+      fire_and_forget(:shutdown)
+    end
+
     def info(*args)
       begin
         send_message(:info, *args)

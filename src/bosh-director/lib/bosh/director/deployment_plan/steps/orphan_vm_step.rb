@@ -29,6 +29,8 @@ module Bosh::Director
                 ip_address.save
               end
 
+              AgentClient.with_agent_id(@vm.agent_id).shutdown
+
               @vm.destroy
             rescue Exception => e
               raise e

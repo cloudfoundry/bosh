@@ -36,16 +36,8 @@ RUN \
   make && \
   make install
 
-# install go
-RUN \
-  curl -o /tmp/download https://storage.googleapis.com/golang/go1.10.1.linux-amd64.tar.gz && \
-  echo "72d820dec546752e5a8303b33b009079c15c2390ce76d67cf514991646c6127b /tmp/download" | sha256sum -c && \
-  mkdir /usr/local/go && \
-  tar -xzf /tmp/download -C /usr/local/go --strip-components=1 && \
-  rm /tmp/download
-
-ENV GOROOT /usr/local/go
-ENV PATH $GOROOT/bin:$PATH
+COPY --from=golang:1 /usr/local/go /usr/local/go
+ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 ADD ./install-garden.sh /tmp/install-garden.sh
 RUN /tmp/install-garden.sh
