@@ -27,15 +27,26 @@ module Bosh::Director
 
       attr_reader :vm_extensions
 
+      attr_reader :orphan_workers
+
       def initialize(compilation_config, azs_list, vm_types = [], vm_extensions = [])
         @workers = safe_property(compilation_config, 'workers', class: Integer, min: 1)
 
         @network_name = safe_property(compilation_config, 'network', class: String)
 
-        @reuse_compilation_vms = safe_property(compilation_config,
+        @orphan_workers = safe_property(
+          compilation_config,
+          'orphan_workers',
+          class: :boolean,
+          default: false,
+        )
+
+        @reuse_compilation_vms = safe_property(
+          compilation_config,
           'reuse_compilation_vms',
           class: :boolean,
-          optional: true)
+          optional: true,
+        )
 
         @cloud_properties = safe_property(compilation_config, 'cloud_properties', class: Hash, default: {})
         @env = safe_property(compilation_config, 'env', class: Hash, optional: true, default: {})

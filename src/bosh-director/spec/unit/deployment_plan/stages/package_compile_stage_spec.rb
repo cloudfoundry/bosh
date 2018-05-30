@@ -41,7 +41,13 @@ module Bosh::Director
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil) }
     let(:instance_provider) { DeploymentPlan::InstanceProvider.new(plan, vm_creator, logger) }
     let(:compilation_instance_pool) do
-      DeploymentPlan::CompilationInstancePool.new(instance_reuser, instance_provider, logger, instance_deleter, 4)
+      DeploymentPlan::CompilationInstancePool.new(
+        instance_reuser,
+        instance_provider,
+        logger,
+        instance_deleter,
+        compilation_config,
+      )
     end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -751,6 +757,7 @@ module Bosh::Director
         let(:reuse_compilation_vms) { true }
         let(:network) { instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'default', network_settings: nil) }
         let(:instance_reuser) { instance_double('Bosh::Director::InstanceReuser') }
+        let(:number_of_workers) { 4 }
 
         before do
           allow(plan).to receive(:network).with('default').and_return(network)
