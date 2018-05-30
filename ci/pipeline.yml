@@ -602,6 +602,8 @@ jobs:
           trigger: true
           passed:
             - candidate-release
+      - put: brats-mutex
+        params: {acquire: true}
       - task: test-brats
         file: bosh-src/ci/tasks/test-brats.yml
         tags: ["worker-brats"]
@@ -630,10 +632,14 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-postgres-external-db-client-certificate))
           GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-postgres-external-db-client-private-key))
         ensure:
-          task: cleanup-external-dbs
-          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
-          params: *brats-dbs-params
-          attempts: 3
+          do:
+            - task: cleanup-external-dbs
+              file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+              params: *brats-dbs-params
+              attempts: 3
+          ensure:
+            put: brats-mutex
+            params: {release: brats-mutex}
 
   - name: delivery
     plan:
@@ -854,4 +860,12 @@ resources:
       uri: git@github.com:cloudfoundry/bosh-ci-pools
       branch: master
       pool: unit-24-db-migrations-rds
+      private_key: ((bosh_ci_pools_deploy_key))
+
+  - name: brats-mutex
+    type: pool
+    source:
+      uri: git@github.com:cloudfoundry/bosh-ci-pools
+      branch: master
+      pool: brats
       private_key: ((bosh_ci_pools_deploy_key))
