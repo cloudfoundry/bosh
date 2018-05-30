@@ -18,7 +18,8 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	var backupDir []string
 
 	BeforeEach(func() {
-		startInnerBosh()
+		bbrSdkOps := fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml"))
+		startInnerBosh(bbrSdkOps)
 	})
 
 	AfterEach(func() {
