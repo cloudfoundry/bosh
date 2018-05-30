@@ -22,10 +22,10 @@ export CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath ${src_dir}candidate-warden-ub
 export BOSH_DNS_ADDON_OPS_FILE_PATH="/usr/local/bosh-deployment/experimental/dns-addon-with-api-certificates.yml"
 
 mkdir -p bbr-binary
-export BBR_VERSION=1.1.4
+export BBR_VERSION=1.2.2
 curl -L -o bbr-binary/bbr https://s3.amazonaws.com/bosh-dependencies/bbr-$BBR_VERSION
 
-export BBR_SHA256=0833b9ee4f7b04ce3e716ac57fbe6bf13c05fefeb9a35deb57d1ed9e58ac5334
+export BBR_SHA256=829160a61a44629a2626b578668777074c7badd75a9b5dab536defdbdd84b17a
 export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr"
 
 echo "${BBR_SHA256} ${BBR_BINARY_PATH}" | sha256sum -c -
