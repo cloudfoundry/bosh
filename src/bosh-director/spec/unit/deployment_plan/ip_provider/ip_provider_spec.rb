@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:networks) do
       { 'my-manual-network' => manual_network }
     end
-    let(:manual_network_spec) {
+    let(:manual_network_spec) do
       {
         'name' => 'my-manual-network',
         'subnets' => [
@@ -38,11 +38,10 @@ module Bosh::Director::DeploymentPlan
             'reserved' => [],
             'cloud_properties' => {},
             'azs' => ['az-2'],
-          }
-
-        ]
+          },
+        ],
       }
-    }
+    end
     let(:manual_network) do
       ManualNetwork.parse(
         manual_network_spec,
@@ -70,12 +69,12 @@ module Bosh::Director::DeploymentPlan
         logger
       )
     end
-    let(:vip_network_spec) {
+    let(:vip_network_spec) do
       {
         'name' => 'my-vip-network',
-        'type' => 'vip'
+        'type' => 'vip',
       }
-    }
+    end
     let(:vip_network) { VipNetwork.new(vip_network_spec, logger) }
     let(:ip_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network) }
 

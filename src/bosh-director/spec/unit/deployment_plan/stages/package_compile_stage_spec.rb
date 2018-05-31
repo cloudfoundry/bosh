@@ -65,27 +65,27 @@ module Bosh::Director
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, job_task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: job_task.id, event_manager: event_manager)}
-    let(:expected_groups) {
+    let(:expected_groups) do
       [
         'fake-director-name',
         'mycloud',
         'compilation-deadbeef',
         'fake-director-name-mycloud',
         'mycloud-compilation-deadbeef',
-        'fake-director-name-mycloud-compilation-deadbeef'
+        'fake-director-name-mycloud-compilation-deadbeef',
       ]
-    }
-    let(:initial_state) {
+    end
+    let(:initial_state) do
       {
         'deployment' => 'mycloud',
         'job' => {
-          'name' => 'compilation-deadbeef'
+          'name' => 'compilation-deadbeef',
         },
         'index' => 0,
         'id' => 'deadbeef',
-        'networks' => net
+        'networks' => net,
       }
-    }
+    end
 
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment)

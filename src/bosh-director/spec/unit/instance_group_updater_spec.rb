@@ -29,9 +29,14 @@ module Bosh::Director
       })
     end
 
-    let(:update_config) {
-      DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
-    }
+    let(:update_config) do
+      DeploymentPlan::UpdateConfig.new(
+        'canaries' => 1,
+        'max_in_flight' => 1,
+        'canary_watch_time' => '1000-2000',
+        'update_watch_time' => '1000-2000',
+      )
+    end
 
     describe 'update' do
       let(:needed_instance_plans) { [] }
@@ -314,9 +319,14 @@ module Bosh::Director
       end
 
       context 'when there are multiple AZs' do
-        let(:update_config) {
-          DeploymentPlan::UpdateConfig.new({'canaries' => canaries, 'max_in_flight' => max_in_flight, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
-        }
+        let(:update_config) do
+          DeploymentPlan::UpdateConfig.new(
+            'canaries' => canaries,
+            'max_in_flight' => max_in_flight,
+            'canary_watch_time' => '1000-2000',
+            'update_watch_time' => '1000-2000',
+          )
+        end
 
         let (:canaries) { 1 }
         let (:max_in_flight) { 2 }

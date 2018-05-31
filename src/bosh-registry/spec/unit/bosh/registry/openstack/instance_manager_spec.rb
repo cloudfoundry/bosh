@@ -3,20 +3,22 @@ require 'json'
 
 describe Bosh::Registry::InstanceManager do
   let(:connection_options) { nil }
-  let(:config) {
-    valid_config.merge({'cloud' => {
-      'plugin' => 'openstack',
-      'openstack' => {
-        'auth_url' => 'http://127.0.0.1:5000/v3',
-        'username' => 'foo',
-        'api_key' => 'bar',
-        'project' => 'foo',
-        'domain' => 'mydomain',
-        'region' => '',
-        'connection_options' => connection_options,
-      }
-    }})
-  }
+  let(:config) do
+    valid_config.merge(
+      'cloud' => {
+        'plugin' => 'openstack',
+        'openstack' => {
+          'auth_url' => 'http://127.0.0.1:5000/v3',
+          'username' => 'foo',
+          'api_key' => 'bar',
+          'project' => 'foo',
+          'domain' => 'mydomain',
+          'region' => '',
+          'connection_options' => connection_options,
+        },
+      },
+    )
+  end
   let(:manager) do
     Bosh::Registry.configure(config)
     Bosh::Registry.instance_manager
@@ -37,20 +39,20 @@ describe Bosh::Registry::InstanceManager do
   end
 
   describe :openstack do
-    let(:openstack_compute) {
+    let(:openstack_compute) do
       {
-        :provider => 'OpenStack',
-        :openstack_auth_url => 'http://127.0.0.1:5000/v3/auth/tokens',
-        :openstack_username => 'foo',
-        :openstack_api_key => 'bar',
-        :openstack_tenant => nil,
-        :openstack_project_name => 'foo',
-        :openstack_domain_name => 'mydomain',
-        :openstack_region => '',
-        :openstack_endpoint_type => nil,
-        :connection_options => connection_options,
+        provider: 'OpenStack',
+        openstack_auth_url: 'http://127.0.0.1:5000/v3/auth/tokens',
+        openstack_username: 'foo',
+        openstack_api_key: 'bar',
+        openstack_tenant: nil,
+        openstack_project_name: 'foo',
+        openstack_domain_name: 'mydomain',
+        openstack_region: '',
+        openstack_endpoint_type: nil,
+        connection_options: connection_options,
       }
-    }
+    end
 
     it 'should create a Fog::Compute connection' do
       expect(Fog::Compute).to receive(:new).with(openstack_compute).and_return(compute)
@@ -58,11 +60,9 @@ describe Bosh::Registry::InstanceManager do
     end
 
     context 'with connection options' do
-      let(:connection_options) {
-        JSON.generate({
-          'ssl_verify_peer' => false,
-        })
-      }
+      let(:connection_options) do
+        JSON.generate('ssl_verify_peer' => false)
+      end
 
       it 'should add optional options to the Fog::Compute connection' do
         expect(Fog::Compute).to receive(:new).with(openstack_compute).and_return(compute)

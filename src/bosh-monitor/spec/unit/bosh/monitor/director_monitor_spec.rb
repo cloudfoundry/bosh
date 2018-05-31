@@ -8,13 +8,15 @@ describe Bosh::Monitor::DirectorMonitor do
 
   subject(:monitor) { described_class.new(config) }
 
-  let(:payload) { {
+  let(:payload) do
+    {
       'id' => 'payload-id',
       'severity' => 3,
       'title' => 'payload-title',
       'summary' => 'payload-summary',
-      'created_at' => Time.now.to_i
-  } }
+      'created_at' => Time.now.to_i,
+    }
+  end
 
   before do
     allow(EM).to receive(:schedule).and_yield

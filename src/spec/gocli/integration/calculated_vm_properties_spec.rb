@@ -3,13 +3,13 @@ require_relative '../spec_helper'
 describe 'calculated vm properties', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:vm_resources) {
+  let(:vm_resources) do
     {
       'cpu' => 2,
       'ram' => 1024,
-      'ephemeral_disk_size' => 10
+      'ephemeral_disk_size' => 10,
     }
-  }
+  end
 
   let(:cloud_config_without_vm_types) do
     cloud_config = Bosh::Spec::Deployments.simple_cloud_config

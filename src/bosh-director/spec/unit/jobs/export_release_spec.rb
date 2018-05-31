@@ -409,11 +409,11 @@ version: 0.1-dev
 
         context 'when an empty list of jobs are specified' do
           let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
-          let(:options) {
+          let(:options) do
             {
-              'jobs' => []
+              'jobs' => [],
             }
-          }
+          end
 
           it 'should contain all jobs' do
             allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
@@ -440,11 +440,11 @@ version: 0.1-dev
         context 'when specific jobs are specified' do
           let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
 
-          let(:options) {
+          let(:options) do
             {
-              'jobs' => [{'name' => 'foobaz'}]
+              'jobs' => [{ 'name' => 'foobaz' }],
             }
-          }
+          end
 
           it 'should contain only specified jobs' do
             allow(archiver).to receive(:compress) { |download_dir, sources, output_path|

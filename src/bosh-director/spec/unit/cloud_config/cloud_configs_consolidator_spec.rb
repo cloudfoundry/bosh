@@ -3,78 +3,84 @@ require 'spec_helper'
 module Bosh::Director
   describe CloudConfig::CloudConfigsConsolidator do
     subject(:consolidator) { described_class.new(cloud_configs) }
-    let(:cc_model_1) { Bosh::Director::Models::Config.make(id: 1, content: cloud_config_1.to_yaml, raw_manifest: cloud_config_1)}
-    let(:cc_model_2) { Bosh::Director::Models::Config.make(id: 21, content: cloud_config_2.to_yaml, raw_manifest: cloud_config_2)}
-    let(:cc_model_3) { Bosh::Director::Models::Config.make(id: 65, content: cloud_config_3.to_yaml, raw_manifest: cloud_config_3)}
-    let(:cloud_configs) { [ cc_model_1, cc_model_2, cc_model_3] }
-    let(:cloud_config_1) {
+    let(:cc_model_1) do
+      Bosh::Director::Models::Config.make(id: 1, content: cloud_config_1.to_yaml, raw_manifest: cloud_config_1)
+    end
+    let(:cc_model_2) do
+      Bosh::Director::Models::Config.make(id: 21, content: cloud_config_2.to_yaml, raw_manifest: cloud_config_2)
+    end
+    let(:cc_model_3) do
+      Bosh::Director::Models::Config.make(id: 65, content: cloud_config_3.to_yaml, raw_manifest: cloud_config_3)
+    end
+    let(:cloud_configs) { [cc_model_1, cc_model_2, cc_model_3] }
+    let(:cloud_config_1) do
       {
         'azs' => [az_1],
         'vm_types' => [vm_typ_1],
         'disk_types' => [disk_type_1],
-        'networks' => [network_1]
+        'networks' => [network_1],
       }
-    }
+    end
 
-    let(:cloud_config_2) {
+    let(:cloud_config_2) do
       {
         'azs' => [az_2],
         'vm_types' => [vm_type_2],
         'networks' => [network_2],
-        'vm_extensions' => [vm_extension_1]
+        'vm_extensions' => [vm_extension_1],
       }
-    }
+    end
 
-    let(:cloud_config_3) {
+    let(:cloud_config_3) do
       {
         'compilation' => compilation,
         'disk_types' => [disk_type_2],
-        'vm_extensions' => [vm_extension_2]
+        'vm_extensions' => [vm_extension_2],
       }
-    }
-    let(:az_1) {
-      { 'name' => 'z1', }
-    }
+    end
+    let(:az_1) do
+      { 'name' => 'z1' }
+    end
 
-    let(:az_2) {
-      { 'name' => 'z2', }
-    }
+    let(:az_2) do
+      { 'name' => 'z2' }
+    end
 
-    let(:vm_typ_1) {
-      { 'name' => 'small', }
-    }
+    let(:vm_typ_1) do
+      { 'name' => 'small' }
+    end
 
-    let(:vm_type_2) {
+    let(:vm_type_2) do
       { 'name' => 'medium' }
-    }
+    end
 
-    let(:disk_type_1) {
-      { 'disk_size' => 3000 }
-    }
+    let(:disk_type_1) do
+      { 'disk_size' => 3_000 }
+    end
 
-    let(:disk_type_2) {
-      { 'disk_size' => 50000 }
-    }
+    let(:disk_type_2) do
+      { 'disk_size' => 50_000 }
+    end
 
-    let(:network_1) {
+    let(:network_1) do
       { 'name' => 'private' }
-    }
+    end
 
-    let(:network_2) {
+    let(:network_2) do
       { 'type' => 'vip', 'name' => 'vip' }
-    }
+    end
 
-    let(:compilation) {
-      { 'workers' => 5, }
-    }
+    let(:compilation) do
+      { 'workers' => 5 }
+    end
 
-    let(:vm_extension_1) {
+    let(:vm_extension_1) do
       { 'name' => 'pub-lbs' }
-    }
+    end
 
-   let(:vm_extension_2) {
+    let(:vm_extension_2) do
       { 'name' => 'pub-lbs2' }
-    }
+    end
 
     describe '#create_from_model_ids' do
       it 'calls initialize with the models' do
@@ -84,31 +90,31 @@ module Bosh::Director
     end
 
     describe '#raw_manifest' do
-      let(:consolidated_manifest) {
+      let(:consolidated_manifest) do
         {
           'azs' => [
             az_1,
-            az_2
+            az_2,
           ],
           'vm_types' => [
             vm_typ_1,
-            vm_type_2
+            vm_type_2,
           ],
           'disk_types' => [
             disk_type_1,
-            disk_type_2
+            disk_type_2,
           ],
           'networks' => [
             network_1,
-            network_2
+            network_2,
           ],
           'compilation' => compilation,
           'vm_extensions' => [
             vm_extension_1,
             vm_extension_2,
-          ]
+          ],
         }
-      }
+      end
 
       it 'returns a consolidated manifest consisting of the specified configs manifests' do
         expect(consolidator.raw_manifest).to eq(consolidated_manifest)
@@ -165,17 +171,17 @@ module Bosh::Director
       end
 
       context 'when more than one cloud config defines the compilation key' do
-        let(:cloud_config_2) {
+        let(:cloud_config_2) do
           {
-              'compilation' => {'foo' => 'bar'}
+            'compilation' => { 'foo' => 'bar' },
           }
-        }
+        end
 
-        let(:cloud_config_3) {
+        let(:cloud_config_3) do
           {
-              'compilation' => {'moop' => 'yarb'}
+            'compilation' => { 'moop' => 'yarb' },
           }
-        }
+        end
 
         it 'returns an error' do
           expect {
@@ -211,14 +217,24 @@ module Bosh::Director
         let(:mock_manifest) do
           { disk_types: '((disk_type_array))' }
         end
-        let(:interpolated_cloud_config) { {disk_types: [[{
-          'name' => 'small',
-          'cloud_properties' => {'type' => 'gp2'}
-        }]]} }
-        let(:flattened_interpolated_cloud_config) { {disk_types: [{
-          'name' => 'small',
-          'cloud_properties' => {'type' => 'gp2'}
-        }]} }
+        let(:interpolated_cloud_config) do
+          {
+            disk_types: [
+              [{
+                'name' => 'small',
+                'cloud_properties' => { 'type' => 'gp2' },
+              }],
+            ],
+          }
+        end
+        let(:flattened_interpolated_cloud_config) do
+          {
+            disk_types: [{
+              'name' => 'small',
+              'cloud_properties' => { 'type' => 'gp2' },
+            }],
+          }
+        end
 
         it 'flattens any top-level nested array' do
           result = consolidator.interpolate_manifest_for_deployment(deployment_name)

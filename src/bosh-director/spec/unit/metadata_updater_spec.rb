@@ -7,12 +7,18 @@ describe Bosh::Director::MetadataUpdater do
   let(:director_metadata) do
     {}
   end
-  let(:vm) {
+  let(:vm) do
     BD::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id, cpi: 'cpi1')
-  }
-  let(:instance) {
-    BD::Models::Instance.make(deployment: deployment, uuid: 'some_instance_id', job: 'job-value', index: 12345, availability_zone: 'az1')
-  }
+  end
+  let(:instance) do
+    BD::Models::Instance.make(
+      deployment: deployment,
+      uuid: 'some_instance_id',
+      job: 'job-value',
+      index: 12_345,
+      availability_zone: 'az1',
+    )
+  end
   let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }
   let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 

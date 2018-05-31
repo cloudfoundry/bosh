@@ -28,23 +28,23 @@ module Bosh::Director::DeploymentPlan
       reservation.resolve_ip('10.0.0.6')
       [reservation]
     end
-    let(:manual_network) {
-      ManualNetwork.parse({
+    let(:manual_network) do
+      ManualNetwork.parse(
+        {
           'name' => 'net_a',
           'dns' => ['1.2.3.4'],
           'subnets' => [{
-              'range' => '10.0.0.1/24',
-              'gateway' => '10.0.0.1',
-              'dns' => ['1.2.3.4'],
-              'cloud_properties' => {'foo' => 'bar'}
-            }
-          ]
+            'range' => '10.0.0.1/24',
+            'gateway' => '10.0.0.1',
+            'dns' => ['1.2.3.4'],
+            'cloud_properties' => { 'foo' => 'bar' },
+          }],
         },
         [],
         GlobalNetworkResolver.new(plan, [], logger),
-        logger
+        logger,
       )
-    }
+    end
 
     let(:plan) { instance_double(Planner, using_global_networking?: true, name: 'fake-deployment') }
     let(:use_short_dns_addresses) { false }

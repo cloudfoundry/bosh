@@ -159,7 +159,7 @@ module Bosh::Director
       end
 
       describe '#take_snapshot' do
-        let(:expected_metadata) {
+        let(:expected_metadata) do
           {
             deployment: 'deployment',
             job: 'job',
@@ -169,7 +169,7 @@ module Bosh::Director
             agent_id: 'agent0',
             instance_id: '12abdc456',
           }
-        }
+        end
 
         before(:each) do
           allow(cloud_factory).to receive(:get_for_az).with(@instance.availability_zone).and_return(cloud)
@@ -195,12 +195,12 @@ module Bosh::Director
         end
 
         context 'with custom tags' do
-          let(:custom_tags){
+          let(:custom_tags) do
             {
               tag1: 'value1',
-              tag2: 'value2'
+              tag2: 'value2',
             }
-          }
+          end
 
           it 'adds the custom tags to the snapshot metadata' do
             expect(@instance.deployment).to receive(:tags).and_return(custom_tags)

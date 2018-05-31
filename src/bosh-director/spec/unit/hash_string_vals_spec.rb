@@ -1,12 +1,9 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe 'Bosh::Director.hash_string_vals' do
-
-  let(:h) { {
-      a: 1,
-      b: :c,
-      c: 'd'
-  } }
+  let(:h) do
+    { a: 1, b: :c, c: 'd' }
+  end
 
   it 'converts integers to strings' do
     Bosh::Director.hash_string_vals(h, :a)
@@ -39,11 +36,9 @@ describe 'Bosh::Director.hash_string_vals' do
 
   context 'with a multi-level hash' do
 
-    let(:h) { {
-        a: {
-            b: 1
-        },
-    } }
+    let(:h) do
+      { a: { b: 1 } }
+    end
 
     it 'adds the key as an empty string' do
       Bosh::Director.hash_string_vals(h[:a], :b)

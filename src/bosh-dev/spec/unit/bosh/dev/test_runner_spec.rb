@@ -5,9 +5,9 @@ require 'bosh/dev/test_runner'
 module Bosh::Dev
   describe TestRunner do
     let(:dir) { Dir.mktmpdir }
-    let(:subprojects) {
-      %w(one-with-specs two-with-specs three-no-specs with-specs_cpi no-specs_cpi)
-    }
+    let(:subprojects) do
+      %w[one-with-specs two-with-specs three-no-specs with-specs_cpi no-specs_cpi]
+    end
     subject(:runner) { TestRunner.new }
 
     before do

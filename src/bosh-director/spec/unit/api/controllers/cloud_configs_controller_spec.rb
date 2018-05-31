@@ -177,31 +177,31 @@ module Bosh::Director
 
     describe 'diff' do
 
-      let(:cloud_config_hash_with_one_az) {
+      let(:cloud_config_hash_with_one_az) do
         {
           'azs' => [
             {
               'name' => 'az1',
-              'cloud_properties' => {}
-            }
-          ]
+              'cloud_properties' => {},
+            },
+          ],
         }
-      }
+      end
 
-      let(:cloud_config_hash_with_two_azs) {
+      let(:cloud_config_hash_with_two_azs) do
         {
           'azs' => [
             {
               'name' => 'az1',
-              'cloud_properties' => {}
+              'cloud_properties' => {},
             },
             {
               'name' => 'az2',
-              'cloud_properties' => {}
-            }
-          ]
+              'cloud_properties' => {},
+            },
+          ],
         }
-      }
+      end
 
       context 'authenticated access' do
 

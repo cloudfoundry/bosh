@@ -55,9 +55,9 @@ describe Bhm::Agent do
 
     context 'when given an instance' do
 
-      let(:instance) {
+      let(:instance) do
         double('instance', job: 'job', index: 1, cid: 'cid', id: 'id')
-      }
+      end
 
       it 'populates the corresponding attributes' do
         agent = make_agent('agent_with_instance')

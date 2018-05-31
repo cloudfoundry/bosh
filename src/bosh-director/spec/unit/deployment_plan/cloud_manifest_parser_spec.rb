@@ -3,12 +3,12 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::CloudManifestParser do
     subject(:parser) { described_class.new(logger) }
-    let(:planner_attributes) {
+    let(:planner_attributes) do
       {
         name: 'deployment-name',
-        properties: {}
+        properties: {},
       }
-    }
+    end
     let(:event_log) { Config.event_log }
     let(:global_network_resolver) { instance_double(BD::DeploymentPlan::GlobalNetworkResolver, reserved_ranges: []) }
     let(:ip_provider_factory) { Bosh::Director::DeploymentPlan::IpProviderFactory.new(false, logger) }
@@ -19,24 +19,25 @@ module Bosh::Director
 
       context 'when availability zones section is specified' do
         describe 'availability zones' do
-          let(:availability_zones) {
-            {'azs' => [
-              {'name' => 'z1',
-                'cloud_properties' =>
-                  {'availability_zone' =>
-                    'us-east-1a'
-                  }
-              },
-              {'name' => 'z2',
-                'cloud_properties' =>
-                  {'availability_zone' =>
-                    'us-east-2a'
+          let(:availability_zones) do
+            {
+              'azs' => [
+                {
+                  'name' => 'z1',
+                  'cloud_properties' => {
+                    'availability_zone' => 'us-east-1a',
                   },
-                'cpi' => 'cpi1'
-              }
-            ]
+                },
+                {
+                  'name' => 'z2',
+                  'cloud_properties' => {
+                    'availability_zone' => 'us-east-2a',
+                  },
+                  'cpi' => 'cpi1',
+                },
+              ],
             }
-          }
+          end
 
           before { cloud_manifest.merge!(availability_zones) }
 
@@ -522,24 +523,25 @@ module Bosh::Director
     describe '#parse_availability_zones' do
       let(:parsed_availability_zones) { subject.parse_availability_zones(cloud_manifest) }
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
-      let(:availability_zones) {
-        {'azs' => [
-          {'name' => 'z1',
-            'cloud_properties' =>
-              {'availability_zone' =>
-                'us-east-1a'
-              }
-          },
-          {'name' => 'z2',
-            'cloud_properties' =>
-              {'availability_zone' =>
-                'us-east-2a'
+      let(:availability_zones) do
+        {
+          'azs' => [
+            {
+              'name' => 'z1',
+              'cloud_properties' => {
+                'availability_zone' => 'us-east-1a',
               },
-            'cpi' => 'cpi1'
-          }
-        ]
+            },
+            {
+              'name' => 'z2',
+              'cloud_properties' => {
+                'availability_zone' => 'us-east-2a',
+              },
+              'cpi' => 'cpi1',
+            },
+          ],
         }
-      }
+      end
       before { cloud_manifest.merge!(availability_zones) }
 
       context 'if name is not present' do

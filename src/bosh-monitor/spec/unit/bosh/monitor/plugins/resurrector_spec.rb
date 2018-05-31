@@ -4,7 +4,7 @@ module Bosh::Monitor::Plugins
   describe Resurrector do
     include Support::UaaHelpers
 
-    let(:options) {
+    let(:options) do
       {
         'director' => {
           'endpoint' => 'http://foo.bar.com:25555',
@@ -12,10 +12,10 @@ module Bosh::Monitor::Plugins
           'password' => 'password',
           'client_id' => 'client-id',
           'client_secret' => 'client-secret',
-          'ca_cert' => 'ca-cert'
-        }
+          'ca_cert' => 'ca-cert',
+        },
       }
-    }
+    end
     let(:plugin) { Bhm::Plugins::Resurrector.new(options) }
     let(:uri) { 'http://foo.bar.com:25555' }
     let(:status_uri) { "#{uri}/info" }

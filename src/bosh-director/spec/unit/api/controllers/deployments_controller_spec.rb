@@ -1226,19 +1226,19 @@ module Bosh::Director
           let(:default_manifest) { Bosh::Spec::Deployments.remote_stemcell_manifest('stemcell_url', 'stemcell_sha1') }
 
           context 'multiple instances' do
-            let(:manifest) {
+            let(:manifest) do
               jobs = []
               15.times do |i|
                 jobs << {
-                    'name' => "job-#{i}",
-                    'spec' => {'templates' => [{'name' => 'job_using_pkg_1'}]},
-                    'instances' => 1,
-                    'resource_pool' => 'a',
-                    'networks' => [{ 'name' => 'a' }]
+                  'name' => "job-#{i}",
+                  'spec' => { 'templates' => [{ 'name' => 'job_using_pkg_1' }] },
+                  'instances' => 1,
+                  'resource_pool' => 'a',
+                  'networks' => [{ 'name' => 'a' }],
                 }
               end
-              YAML.dump(default_manifest.merge({'jobs' => jobs}))
-            }
+              YAML.dump(default_manifest.merge('jobs' => jobs))
+            end
 
             it 'returns all' do
               15.times do |i|

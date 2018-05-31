@@ -7,12 +7,12 @@ module Bosh::Director
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
     let(:cpi_api_version) { 1 }
-    let(:cpi_info) {
+    let(:cpi_info) do
       {
         'stemcell_formats' => 'some-stemcell-support-format',
-        'api_version' => cpi_api_version
+        'api_version' => cpi_api_version,
       }
-    }
+    end
     let(:stemcell_api_version) { nil }
 
     before do

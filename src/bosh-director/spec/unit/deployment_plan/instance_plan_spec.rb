@@ -546,11 +546,11 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the env has changed' do
-        let(:instance_group_spec) {
+        let(:instance_group_spec) do
           instance_group = Bosh::Spec::NewDeployments.simple_instance_group
-          instance_group['env'] = {'key' => 'changed-value'}
+          instance_group['env'] = { 'key' => 'changed-value' }
           instance_group
-        }
+        end
 
         before do
           instance_plan.existing_instance.update(spec: {
@@ -876,11 +876,11 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the env has changed' do
-        let(:instance_group_spec) {
+        let(:instance_group_spec) do
           instance_group = Bosh::Spec::NewDeployments.simple_instance_group
-          instance_group['env'] = {'key' => 'changed-value'}
+          instance_group['env'] = { 'key' => 'changed-value' }
           instance_group
-        }
+        end
 
         before do
           instance_plan.existing_instance.update(spec: {

@@ -38,12 +38,12 @@ module Bosh::Director
 
         context 'when the task does exist' do
           let(:state) { :processing }
-          let!(:task) {
+          let!(:task) do
             Models::Task.make(
               type: :update_deployment,
-              state: state
+              state: state,
             )
-          }
+          end
 
           before { delete "/#{task.id}" }
 

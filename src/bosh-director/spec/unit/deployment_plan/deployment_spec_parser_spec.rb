@@ -27,12 +27,12 @@ module Bosh::Director
           'resource_pools' => [],
         }
       end
-      let(:planner_attributes) {
+      let(:planner_attributes) do
         {
           name: manifest_hash['name'],
-          properties: manifest_hash['properties'] || {}
+          properties: manifest_hash['properties'] || {},
         }
-      }
+      end
 
       before { allow(DeploymentPlan::CompilationConfig).to receive(:new).and_return(compilation_config) }
       let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }

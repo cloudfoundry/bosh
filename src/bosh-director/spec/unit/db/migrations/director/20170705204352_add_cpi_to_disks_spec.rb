@@ -49,13 +49,15 @@ module Bosh::Director
         end
 
         context 'if cloud config has 3 AZs, in an instance without an AZ' do
-          let(:cloud_config_properties) { {
-            'azs' => [
-              { 'name' => 'z4', 'cpi' => 'my-cpi-1' },
-              { 'name' => 'z2', 'cpi' => 'my-cpi-2' },
-              { 'name' => 'z3', 'cpi' => 'my-cpi-3' },
-            ]
-          } }
+          let(:cloud_config_properties) do
+            {
+              'azs' => [
+                { 'name' => 'z4', 'cpi' => 'my-cpi-1' },
+                { 'name' => 'z2', 'cpi' => 'my-cpi-2' },
+                { 'name' => 'z3', 'cpi' => 'my-cpi-3' },
+              ],
+            }
+          end
 
           it 'does not assign cpi to disk' do
             DBSpecHelper.migrate(migration_file)

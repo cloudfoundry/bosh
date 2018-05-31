@@ -75,12 +75,14 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
     context 'when there is a consumer deployment made by the new director which uses links from a provider deployment deployed by old director' do
 
       context 'when ip_address flag is not set by consumer link' do
-        let (:consumes) {{
-          'provider' => {
-            'from' => 'provider_link',
-            'deployment' => 'simple'
+        let(:consumes) do
+          {
+            'provider' => {
+              'from' => 'provider_link',
+              'deployment' => 'simple',
+            },
           }
-        }}
+        end
 
         it 'gives a dns address for the link address' do
           deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -91,13 +93,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       end
 
       context 'when ip_address flag is set to false for consumer link' do
-        let (:consumes) {{
-          'provider' => {
-            'from' => 'provider_link',
-            'deployment' => 'simple',
-            'ip_addresses' => false
+        let(:consumes) do
+          {
+            'provider' => {
+              'from' => 'provider_link',
+              'deployment' => 'simple',
+              'ip_addresses' => false,
+            },
           }
-        }}
+        end
 
         it 'raises an error requesting provider redeployment' do
           output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
@@ -106,13 +110,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       end
 
       context 'when ip_address flag is set to true for consumer link' do
-        let (:consumes) {{
-          'provider' => {
-            'from' => 'provider_link',
-            'deployment' => 'simple',
-            'ip_addresses' => true
+        let(:consumes) do
+          {
+            'provider' => {
+              'from' => 'provider_link',
+              'deployment' => 'simple',
+              'ip_addresses' => true,
+            },
           }
-        }}
+        end
 
         it 'raises an error requesting provider redeployment' do
           output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
@@ -130,12 +136,14 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
 
       context 'when there is a consumer deployment deployed by the new director which uses links from the provider deployment' do
         context 'when ip_address flag is not set by consumer link' do
-          let (:consumes) {{
-            'provider' => {
-              'from' => 'provider_link',
-              'deployment' => 'simple'
+          let(:consumes) do
+            {
+              'provider' => {
+                'from' => 'provider_link',
+                'deployment' => 'simple',
+              },
             }
-          }}
+          end
 
           it 'gives a dns address for the link address' do
             deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -152,13 +160,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
           end
 
           context 'when ip_address flag is set to false for consumer link' do
-            let (:consumes) {{
-              'provider' => {
-                'from' => 'provider_link',
-                'deployment' => 'simple',
-                'ip_addresses' => false
+            let(:consumes) do
+              {
+                'provider' => {
+                  'from' => 'provider_link',
+                  'deployment' => 'simple',
+                  'ip_addresses' => false,
+                },
               }
-            }}
+            end
 
             it 'gives a dns address for the link address' do
               instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
@@ -168,13 +178,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
           end
 
           context 'when ip_address flag is set to true for consumer link' do
-            let (:consumes) {{
-              'provider' => {
-                'from' => 'provider_link',
-                'deployment' => 'simple',
-                'ip_addresses' => true
+            let(:consumes) do
+              {
+                'provider' => {
+                  'from' => 'provider_link',
+                  'deployment' => 'simple',
+                  'ip_addresses' => true,
+                },
               }
-            }}
+            end
 
             it 'gives an ip address for the link address' do
               instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
@@ -198,12 +210,14 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
 
     context 'when there is a consumer deployment made by the new director which uses links from a provider deployment deployed by old director' do
       context 'when ip_address flag is not set by consumer link (very common case)' do
-        let (:consumes) {{
-          'provider' => {
-            'from' => 'provider_link',
-            'deployment' => 'simple'
+        let(:consumes) do
+          {
+            'provider' => {
+              'from' => 'provider_link',
+              'deployment' => 'simple',
+            },
           }
-        }}
+        end
 
         it 'uses the spec address of the provider deployment' do
           deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -214,13 +228,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       end
 
       context 'when ip_address flag is set to false for consumer link' do
-        let (:consumes) {{
-          'provider' => {
-            'from' => 'provider_link',
-            'deployment' => 'simple',
-            'ip_addresses' => false
+        let(:consumes) do
+          {
+            'provider' => {
+              'from' => 'provider_link',
+              'deployment' => 'simple',
+              'ip_addresses' => false,
+            },
           }
-        }}
+        end
 
         it 'raises an error requesting provider redeployment' do
           output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
@@ -229,13 +245,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
       end
 
       context 'when ip_address flag is set to true for consumer link' do
-        let (:consumes) {{
-          'provider' => {
-            'from' => 'provider_link',
-            'deployment' => 'simple',
-            'ip_addresses' => true
+        let(:consumes) do
+          {
+            'provider' => {
+              'from' => 'provider_link',
+              'deployment' => 'simple',
+              'ip_addresses' => true,
+            },
           }
-        }}
+        end
 
         it 'raises an error requesting provider redeployment' do
           output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
@@ -260,12 +278,14 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
         end
 
         context 'when ip_address flag is not set by consumer link' do
-          let (:consumes) {{
-            'provider' => {
-              'from' => 'provider_link',
-              'deployment' => 'simple'
+          let(:consumes) do
+            {
+              'provider' => {
+                'from' => 'provider_link',
+                'deployment' => 'simple',
+              },
             }
-          }}
+          end
 
           it 'gives a ip address for the link address' do
             instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
@@ -275,13 +295,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
         end
 
         context 'when ip_address flag is set to false for consumer link' do
-          let (:consumes) {{
-            'provider' => {
-              'from' => 'provider_link',
-              'deployment' => 'simple',
-              'ip_addresses' => false
+          let(:consumes) do
+            {
+              'provider' => {
+                'from' => 'provider_link',
+                'deployment' => 'simple',
+                'ip_addresses' => false,
+              },
             }
-          }}
+          end
 
           it 'gives a ip address for the link address since local_dns is not enabled' do
             instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)
@@ -291,13 +313,15 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
         end
 
         context 'when ip_address flag is set to true for consumer link' do
-          let (:consumes) {{
-            'provider' => {
-              'from' => 'provider_link',
-              'deployment' => 'simple',
-              'ip_addresses' => true
+          let(:consumes) do
+            {
+              'provider' => {
+                'from' => 'provider_link',
+                'deployment' => 'simple',
+                'ip_addresses' => true,
+              },
             }
-          }}
+          end
 
           it 'gives an ip address for the link address' do
             instance = director.instance('ig_consumer', '0', deployment_name: 'simple_consumer', json: true)

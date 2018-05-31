@@ -816,14 +816,14 @@ module Bosh::Director
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let!(:release) { Models::Release.make(name: 'appcloud') }
 
-      let!(:release_version_model) {
+      let!(:release_version_model) do
         Models::ReleaseVersion.make(
           release: release,
           version: '42+dev.1',
           commit_hash: '12345678',
-          uncommitted_changes: true
+          uncommitted_changes: true,
         )
-      }
+      end
       before do
         allow(Dir).to receive(:mktmpdir).and_return(release_dir)
         allow(job).to receive(:with_release_lock).and_yield
@@ -840,7 +840,7 @@ module Bosh::Director
             'packages' => manifest_packages,
           }
         end
-        let(:manifest_jobs) {
+        let(:manifest_jobs) do
           [
             {
               'sha1' => 'fakesha2',
@@ -853,7 +853,7 @@ module Bosh::Director
               'templates' => {},
             },
           ]
-        }
+        end
         let(:manifest_packages) do
           [
             {

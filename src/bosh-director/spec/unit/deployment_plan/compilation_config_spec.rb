@@ -37,13 +37,13 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       let(:cloud_properties) do
         { 'instance_type' => 'super-large' }
       end
-      let (:compilation_config) {
+      let(:compilation_config) do
         {
           'workers' => 2,
           'network' => 'foo',
-          'cloud_properties' => cloud_properties
+          'cloud_properties' => cloud_properties,
         }
-      }
+      end
 
       it 'should parse the property' do
         config = BD::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])

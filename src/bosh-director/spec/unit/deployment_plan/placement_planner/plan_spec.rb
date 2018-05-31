@@ -22,13 +22,13 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:desired) { [DesiredInstance.new(job, deployment), DesiredInstance.new(job, deployment), DesiredInstance.new(job, deployment)] }
-    let(:existing) {
+    let(:existing) do
       [
         existing_instance_with_az(2, zone_1.name),
         existing_instance_with_az(0, zone_3.name),
-        existing_instance_with_az(1, zone_2.name)
+        existing_instance_with_az(1, zone_2.name),
       ]
-    }
+    end
     let(:deployment) { instance_double(Planner, model: deployment_model) }
     let(:deployment_model) {  Bosh::Director::Models::Deployment.make }
 

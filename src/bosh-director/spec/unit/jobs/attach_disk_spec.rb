@@ -6,11 +6,11 @@ module Bosh::Director
     let(:manifest) do
       { 'tags' => { 'mytag' => 'myvalue' } }
     end
-    let(:deployment) {
+    let(:deployment) do
       deployment = Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest))
       Models::VariableSet.make(deployment_id: deployment.id)
       deployment
-    }
+    end
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
     let(:job_name) { 'job_name' }

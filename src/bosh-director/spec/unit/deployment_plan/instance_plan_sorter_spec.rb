@@ -2,35 +2,40 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlanSorter do
-    let (:instance_plan_sorter) { InstancePlanSorter.new(logger) }
+    let(:instance_plan_sorter) { InstancePlanSorter.new(logger) }
 
     describe '#sort' do
-      let (:desired_instance) { DesiredInstance.new(instance_group) }
-      let (:instance_group) do
+      let(:desired_instance) { DesiredInstance.new(instance_group) }
+      let(:instance_group) do
         instance_group = InstanceGroup.new(logger)
         instance_group.name = 'job_name'
         instance_group
       end
-      let (:bootstrap_az) { AvailabilityZone.new('bootstrap_name', {}) }
-      let (:bootstrap_instance) {
+      let(:bootstrap_az) { AvailabilityZone.new('bootstrap_name', {}) }
+      let(:bootstrap_instance) do
         bootstrap_instance = Instance.create_from_instance_group(instance_group, 0, 'started', nil, {}, bootstrap_az, logger)
-        bootstrap_instance.bind_existing_instance_model(BD::Models::Instance.make(uuid: 'a-uuid', index: 0, job: 'job_name', bootstrap: true))
+        bootstrap_instance.bind_existing_instance_model(
+          BD::Models::Instance.make(uuid: 'a-uuid', index: 0, job: 'job_name', bootstrap: true),
+        )
         bootstrap_instance
-      }
+      end
 
-      let (:bootstrap_instance_plan) { InstancePlan.new(
-        existing_instance: bootstrap_instance.model,
-        desired_instance: desired_instance,
-        instance: bootstrap_instance,
-        network_plans: []) }
+      let(:bootstrap_instance_plan) do
+        InstancePlan.new(
+          existing_instance: bootstrap_instance.model,
+          desired_instance: desired_instance,
+          instance: bootstrap_instance,
+          network_plans: [],
+        )
+      end
 
       context 'when there are multiple instance plans' do
-        let (:az_2) { AvailabilityZone.new('az2_name', {}) }
-        let (:instance_in_bootstrap_az) {
+        let(:az_2) { AvailabilityZone.new('az2_name', {}) }
+        let(:instance_in_bootstrap_az) do
           instance = Instance.create_from_instance_group(instance_group, 4, 'started', nil, {}, bootstrap_az, logger)
           instance.bind_existing_instance_model(BD::Models::Instance.make(uuid: 'bb-uuid1', index: 4, job: 'job_name'))
           instance
-        }
+        end
 
         let (:instance_plan_in_bootstrap_az) { InstancePlan.new(
           existing_instance: instance_in_bootstrap_az.model,

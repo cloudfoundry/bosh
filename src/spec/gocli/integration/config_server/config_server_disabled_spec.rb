@@ -155,19 +155,19 @@ describe 'using director with config server disabled', type: :integration do
 
   context 'when cpi config contains placeholders' do
 
-    let(:cpi_config) {
+    let(:cpi_config) do
       {
         'cpis' => [
           {
             'name' => 'cpi-name',
             'type' => 'cpi-type',
             'properties' => {
-              'prop' => '((/prop))'
-            }
-          }
-        ]
+              'prop' => '((/prop))',
+            },
+          },
+        ],
       }
-    }
+    end
 
     let(:cpi_config_file) {yaml_file('cpi_manifest', cpi_config) }
 

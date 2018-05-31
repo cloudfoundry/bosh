@@ -8,22 +8,22 @@ describe Bosh::Director::NatsRpc do
   let(:nats_client_certificate_path) { '/path/to/enlightenment.pem' }
   let(:max_reconnect_attempts) { 4 }
   let(:reconnect_time_wait) { 2 }
-  let(:nats_options) {
+  let(:nats_options) do
     {
-      :uris => Array.new(max_reconnect_attempts, nats_url),
-      :max_reconnect_attempts => max_reconnect_attempts,
-      :reconnect_time_wait => reconnect_time_wait,
-      :reconnect => true,
-      :ssl => true,
-      :tls => {
-        :private_key_file => nats_client_private_key_path,
-        :cert_chain_file => nats_client_certificate_path,
-        :verify_peer => true,
-        :ca_file => nats_server_ca_path
-      }
+      uris: Array.new(max_reconnect_attempts, nats_url),
+      max_reconnect_attempts: max_reconnect_attempts,
+      reconnect_time_wait: reconnect_time_wait,
+      reconnect: true,
+      ssl: true,
+      tls: {
+        private_key_file: nats_client_private_key_path,
+        cert_chain_file: nats_client_certificate_path,
+        verify_peer: true,
+        ca_file: nats_server_ca_path,
+      },
     }
-  }
-  let(:some_logger){ instance_double(Logger) }
+  end
+  let(:some_logger) { instance_double(Logger) }
   let(:options) do
     {}
   end

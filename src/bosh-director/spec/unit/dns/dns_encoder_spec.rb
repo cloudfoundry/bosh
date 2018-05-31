@@ -22,14 +22,18 @@ module Bosh::Director
       }.merge(specific_query)
     end
 
-    let(:service_groups) {{
-      { instance_group: 'potato-group',
-        deployment:     'fake-deployment',
-      } => 3,
-      { instance_group: 'lemon-group',
-        deployment:     'fake-deployment',
-      } => 7,
-    }}
+    let(:service_groups) do
+      {
+        {
+          instance_group: 'potato-group',
+          deployment:     'fake-deployment',
+        } => 3,
+        {
+          instance_group: 'lemon-group',
+          deployment:     'fake-deployment',
+        } => 7,
+      }
+    end
 
     before(:each) do
       Models::LocalDnsEncodedNetwork.make(id: default_network_id, name: default_network)

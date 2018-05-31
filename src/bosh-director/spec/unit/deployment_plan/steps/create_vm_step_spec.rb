@@ -106,16 +106,16 @@ module Bosh
             }
           end
 
-          let(:expected_groups) {
+          let(:expected_groups) do
             [
               'fake-director-name',
               'deployment-name',
               'fake-job',
               'fake-director-name-deployment-name',
               'deployment-name-fake-job',
-              'fake-director-name-deployment-name-fake-job'
+              'fake-director-name-deployment-name-fake-job',
             ]
-          }
+          end
           let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
           let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
           let(:extra_ip) do

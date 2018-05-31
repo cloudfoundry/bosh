@@ -4,7 +4,7 @@ module Bosh::Director::DeploymentPlan
   describe DatabaseIpRepo do
     let(:ip_repo) { DatabaseIpRepo.new(logger) }
     let(:instance_model) { Bosh::Director::Models::Instance.make }
-    let(:network_spec) {
+    let(:network_spec) do
       {
         'name' => 'my-manual-network',
         'subnets' => [
@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
           }
         ]
       }
-    }
+    end
     let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_ranges: Set.new) }
     let(:availability_zones) { [BD::DeploymentPlan::AvailabilityZone.new('az-1', {})] }
     let(:network) do

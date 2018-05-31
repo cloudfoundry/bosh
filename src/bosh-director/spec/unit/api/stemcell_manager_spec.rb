@@ -27,9 +27,9 @@ module Bosh::Director
       end
 
       context 'when a sha1 is provided for the stemcell' do
-        let(:options) {
-          {sha1: 'shawone'}
-        }
+        let(:options) do
+          { sha1: 'shawone' }
+        end
 
         it 'enqueues a task to upload a remote stemcell' do
           expect(job_queue).to receive(:enqueue).with(
@@ -62,9 +62,9 @@ module Bosh::Director
         end
 
         context 'when a sha1 is provided for the stemcell' do
-          let(:options) {
-            {sha1: 'shawone'}
-          }
+          let(:options) do
+            { sha1: 'shawone' }
+          end
 
           before { allow(File).to receive(:exists?).with(stemcell_path).and_return(true) }
 

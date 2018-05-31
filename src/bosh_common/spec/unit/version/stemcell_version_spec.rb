@@ -124,9 +124,9 @@ module Bosh::Common::Version
       end
 
       context 'when stemcell uses semantic versioning' do
-        let(:version) {
+        let(:version) do
           described_class.parse('1.1.1')
-        }
+        end
 
         it 'matches the same version' do
           newer_patch = described_class.parse('1.1.1')

@@ -589,15 +589,16 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       }
     end
     context 'when there are no variables to interpolate' do
-      let(:raw_cpi_config) {
+      let(:raw_cpi_config) do
         {
           'name' => 'some-cpi',
           'type' => 'foo-type',
           'properties' => {
-              'someKeyFoo1' => 'cpi-someFooVal1', 'someKeyBar2' => 'cpi-someFooVal2'
-          }
+            'someKeyFoo1' => 'cpi-someFooVal1',
+            'someKeyBar2' => 'cpi-someFooVal2',
+          },
         }
-      }
+      end
 
       it 'returns the original hash' do
         expect(config_server_client).to receive(:interpolate)
@@ -609,25 +610,27 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     end
 
     context 'when all variables to interpolate are absolute' do
-      let(:raw_cpi_config) {
-        {
-            'name' => 'some-cpi',
-            'type' => 'foo-type',
-            'properties' => {
-                'someKeyFoo1' => '((/cpi-someFooVal1-var))', 'someKeyBar2' => '((/cpi-someFooVal2-var))'
-            }
-        }
-      }
-
-      let(:interpolated_cpi_config) {
+      let(:raw_cpi_config) do
         {
           'name' => 'some-cpi',
           'type' => 'foo-type',
           'properties' => {
-            'someKeyFoo1' => 'cpi-someFooVal1-val', 'someKeyBar2' => 'cpi-someFooVal2-val'
-          }
+            'someKeyFoo1' => '((/cpi-someFooVal1-var))',
+            'someKeyBar2' => '((/cpi-someFooVal2-var))',
+          },
         }
-      }
+      end
+
+      let(:interpolated_cpi_config) do
+        {
+          'name' => 'some-cpi',
+          'type' => 'foo-type',
+          'properties' => {
+            'someKeyFoo1' => 'cpi-someFooVal1-val',
+            'someKeyBar2' => 'cpi-someFooVal2-val',
+          },
+        }
+      end
 
       it 'returns the interpolated hash' do
         expect(config_server_client).to receive(:interpolate)
@@ -639,15 +642,16 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     end
 
     context 'when some variables are relative' do
-      let(:raw_cpi_config) {
+      let(:raw_cpi_config) do
         {
           'name' => 'some-cpi',
           'type' => 'foo-type',
           'properties' => {
-              'someKeyFoo1' => '((cpi-someFooVal1-var))', 'someKeyBar2' => '((/cpi-someFooVal2-var))'
-          }
+            'someKeyFoo1' => '((cpi-someFooVal1-var))',
+            'someKeyBar2' => '((/cpi-someFooVal2-var))',
+          },
         }
-      }
+      end
 
       it 'raises an error' do
         expect(config_server_client).to receive(:interpolate)

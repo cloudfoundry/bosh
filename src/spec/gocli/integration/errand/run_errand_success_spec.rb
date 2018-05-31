@@ -408,13 +408,13 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
     with_tmp_dir_before_all
 
-    let(:runtime_config_hash) {
+    let(:runtime_config_hash) do
       config_hash = Bosh::Spec::Deployments.runtime_config_with_addon
       config_hash['releases'][0]['name'] = 'bosh-release'
       config_hash['releases'][0]['version'] = '0.1-dev'
-      config_hash['addons'][0]['jobs'] = [{'name' => 'has_drain_script', 'release' => 'bosh-release'}]
+      config_hash['addons'][0]['jobs'] = [{ 'name' => 'has_drain_script', 'release' => 'bosh-release' }]
       config_hash
-    }
+    end
 
     let(:manifest_with_errand) do
       errand = Bosh::Spec::NewDeployments.manifest_with_errand

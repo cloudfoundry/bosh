@@ -10,9 +10,9 @@ module Bosh::Director::ConfigServer
     end
     let(:logger) { double('Logging::Logger') }
     let(:variables_set_id) { 2000 }
-    let(:success_post_response) {
+    let(:success_post_response) do
       generate_success_response({ :id => 'some_id1'}.to_json)
-    }
+    end
     let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
     let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}

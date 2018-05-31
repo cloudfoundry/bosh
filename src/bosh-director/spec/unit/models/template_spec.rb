@@ -8,7 +8,7 @@ module Bosh::Director::Models
 
     describe '#find_or_init_from_release_meta' do
       context 'when the template exists' do
-        let(:existing_template) {
+        let(:existing_template) do
           Template.find_or_init_from_release_meta(
             release: template.release,
             job_meta: {
@@ -18,15 +18,15 @@ module Bosh::Director::Models
               'version' => template.version,
             },
             job_manifest: {
-              'properties' => {'park_place' => 'house', 'boardwalk' => 'hotel'},
+              'properties' => { 'park_place' => 'house', 'boardwalk' => 'hotel' },
               'provides' => ['shelter'],
               'consumes' => ['food'],
-              'templates' => {'tem' => 'bowls'},
+              'templates' => { 'tem' => 'bowls' },
               'logs' => ['lincoln'],
-              'packages' => ['potato', 'tomato'],
+              'packages' => %w[potato tomato],
             },
           )
-        }
+        end
 
         it 'returns the existing template' do
           expect(existing_template.id).to eq(template.id)
@@ -55,8 +55,8 @@ module Bosh::Director::Models
       end
 
       context 'when the template does not exist' do
-        let(:release) { Release.make() }
-        let(:new_template) {
+        let(:release) { Release.make }
+        let(:new_template) do
           Template.find_or_init_from_release_meta(
             release: release,
             job_meta: {
@@ -66,15 +66,15 @@ module Bosh::Director::Models
               'version' => '3',
             },
             job_manifest: {
-              'properties' => {'park_place' => 'house', 'boardwalk' => 'hotel'},
+              'properties' => { 'park_place' => 'house', 'boardwalk' => 'hotel' },
               'provides' => ['shelter'],
               'consumes' => ['food'],
-              'templates' => {'tem' => 'bowls'},
+              'templates' => { 'tem' => 'bowls' },
               'logs' => ['lincoln'],
-              'packages' => ['potato', 'tomato'],
+              'packages' => %w[potato tomato],
             },
           )
-        }
+        end
 
         it 'does not write to db' do
           expect(new_template.id).to eq(nil)
@@ -105,7 +105,7 @@ module Bosh::Director::Models
 
       context 'when unknown keys are present in the release_metadata' do
         let(:release) { Release.make }
-        let(:new_template) {
+        let(:new_template) do
           Template.find_or_init_from_release_meta(
             release: release,
             job_meta: {
@@ -117,7 +117,7 @@ module Bosh::Director::Models
             },
             job_manifest: {},
           )
-        }
+        end
 
         it 'ignores them and only uses valid keys' do
           expect(new_template.release_id).to eq(release.id)

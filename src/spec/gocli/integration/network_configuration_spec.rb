@@ -280,7 +280,7 @@ describe 'network configuration', type: :integration do
     with_reset_sandbox_before_each
 
     context 'instance group has multiple networks' do
-      let(:cloud_config_hash) {
+      let(:cloud_config_hash) do
         cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config_hash['vm_types'].first['size'] = 1
         cloud_config_hash['networks'] = [
@@ -294,8 +294,8 @@ describe 'network configuration', type: :integration do
                 'static' => ['192.168.1.10'],
                 'reserved' => [],
                 'cloud_properties' => {},
-              }
-            ]
+              },
+            ],
           },
           {
             'name' => 'b',
@@ -307,18 +307,18 @@ describe 'network configuration', type: :integration do
                 'static' => ['192.168.2.10'],
                 'reserved' => [],
                 'cloud_properties' => {},
-              }
-            ]
-          }
+              },
+            ],
+          },
         ]
         cloud_config_hash
-      }
+      end
 
-      let(:manifest_hash) {
+      let(:manifest_hash) do
         manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash
-      }
+      end
 
       context 'default "addressable" network is specified' do
         it 'uses ip from default "addressable" network' do

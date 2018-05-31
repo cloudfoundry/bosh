@@ -3,19 +3,19 @@ require_relative '../spec_helper'
 describe 'restart job', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:manifest_hash) {
+  let(:manifest_hash) do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] << {
-        'name' => 'another-job',
-        'jobs' => [{'name' => 'foobar'}],
-        'vm_type' => 'a',
-        'instances' => 1,
-        'networks' => [{'name' => 'a'}],
-        'stemcell' => 'default',
+      'name' => 'another-job',
+      'jobs' => [{ 'name' => 'foobar' }],
+      'vm_type' => 'a',
+      'instances' => 1,
+      'networks' => [{ 'name' => 'a' }],
+      'stemcell' => 'default',
     }
     manifest_hash['instance_groups'].first['instances'] = 2
     manifest_hash
-  }
+  end
 
   it 'restarts a job instance / job / all jobs' do
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)

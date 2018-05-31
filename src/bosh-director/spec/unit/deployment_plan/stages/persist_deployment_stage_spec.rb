@@ -47,7 +47,7 @@ module Bosh::Director
       end
       let(:cloud_config) { Models::Config.make(:cloud)}
       let(:runtime_configs) { [Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime)] }
-      let(:link_spec) {
+      let(:link_spec) do
         {
           'instance_group' => {
             'job_1' => {
@@ -55,14 +55,14 @@ module Bosh::Director
                 'db' => {
                   'properties' => {
                     'username' => 'name',
-                    'password' => 'password'
-                  }
-                }
-              }
-            }
-          }
+                    'password' => 'password',
+                  },
+                },
+              },
+            },
+          },
         }
-      }
+      end
 
       before do
         allow(deployment_planner).to receive(:uninterpolated_manifest_hash).and_return(minimal_manifest)

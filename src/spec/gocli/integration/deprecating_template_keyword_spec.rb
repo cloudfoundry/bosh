@@ -2,11 +2,11 @@ require_relative '../spec_helper'
 
 describe "Director deprecating the 'template' syntax", type: :integration do
   with_reset_sandbox_before_each
-  let(:manifest_hash) {
+  let(:manifest_hash) do
     manifest_hash = Bosh::Spec::Deployments.legacy_manifest
     manifest_hash['jobs'][0]['instances'] = 1
     manifest_hash
-  }
+  end
 
   context 'when the manifest uses template with an array' do
     it 'issues a deprecation warning' do

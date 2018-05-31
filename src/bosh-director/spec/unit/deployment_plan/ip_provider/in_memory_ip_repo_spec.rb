@@ -22,7 +22,7 @@ module Bosh::Director::DeploymentPlan
       ]
     end
 
-    let(:network_spec) {
+    let(:network_spec) do
       {
         'name' => 'my-network',
         'subnets' => [
@@ -34,10 +34,10 @@ module Bosh::Director::DeploymentPlan
             'reserved' => [],
             'cloud_properties' => {},
             'az' => 'zone_1',
-          }
-        ]
+          },
+        ],
       }
-    }
+    end
     let(:global_network_resolver) { instance_double(BD::DeploymentPlan::GlobalNetworkResolver, reserved_ranges: []) }
     let(:ip_provider_factory) { BD::DeploymentPlan::IpProviderFactory.new(logger, {}) }
     let(:network_name) { network_spec['name'] }
@@ -107,7 +107,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'when IPs released from dynamic pool' do
-      let(:network_spec) {
+      let(:network_spec) do
         {
           'name' => 'my-network',
           'subnets' => [
@@ -128,10 +128,10 @@ module Bosh::Director::DeploymentPlan
               'reserved' => ['192.168.2.2', '192.168.2.3', '192.168.2.4'],
               'cloud_properties' => {},
               'az' => 'zone_2',
-            }
-          ]
+            },
+          ],
         }
-      }
+      end
 
       it 'should allocate the least recently released IP' do
         subnet_1_ip_1 = NetAddr::CIDR.create('192.168.1.5')

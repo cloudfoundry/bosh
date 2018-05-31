@@ -10,11 +10,13 @@ module Bosh::Director
     let(:network_name_hash) do
       { 'net-name1' => '1', 'net-name2' => '2', 'net-name3' => '3' }
     end
-    let(:groups_hash) {{
-      {instance_group: 'group-name1', deployment: 'dep-name1'} => '11',
-      {instance_group: 'group-name2', deployment: 'dep-name2'} => '12',
-      {instance_group: 'group_name3', deployment: 'dep_name3'} => '13',
-    }}
+    let(:groups_hash) do
+      {
+        { instance_group: 'group-name1', deployment: 'dep-name1' } => '11',
+        { instance_group: 'group-name2', deployment: 'dep-name2' } => '12',
+        { instance_group: 'group_name3', deployment: 'dep_name3' } => '13',
+      }
+    end
     let(:dns_encoder) { DnsEncoder.new(groups_hash, az_hash, network_name_hash) }
     let(:dns_records) { DnsRecords.new(version, include_index_records, dns_encoder) }
 

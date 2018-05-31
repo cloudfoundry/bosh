@@ -32,10 +32,9 @@ describe Bosh::Common do
   end
 
   describe "::which" do
-    let(:path) {
-      path = ENV["PATH"]
-      path += ":#{File.expand_path('../../assets', __FILE__)}"
-    }
+    let(:path) do
+      ENV['PATH'] + ":#{File.expand_path('../../assets', __FILE__)}"
+    end
 
     it "should return the path when it finds the executable" do
       expect(Bosh::Common.which("foo1", path)).to_not be_nil
