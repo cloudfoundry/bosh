@@ -33,7 +33,8 @@ module Bosh::Dev::Sandbox
       :nats_server_ca_path,
       :nats_client_ca_private_key_path,
       :nats_client_ca_certificate_path,
-      :nats_director_tls
+      :nats_director_tls,
+      :cpi_api_test_max_version
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -81,6 +82,7 @@ module Bosh::Dev::Sandbox
       @nats_client_ca_private_key_path = attrs.fetch(:nats_client_ca_private_key_path)
       @nats_client_ca_certificate_path = attrs.fetch(:nats_client_ca_certificate_path)
       @nats_director_tls = attrs.fetch(:nats_director_tls)
+      @cpi_api_test_max_version = attrs.fetch(:cpi_api_test_max_version)
     end
 
     def render(template_path)

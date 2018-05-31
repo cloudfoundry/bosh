@@ -90,6 +90,7 @@ describe 'director.yml.erb' do
         'max_vm_create_tries' => 5,
         'user_management' => { 'provider' => 'local' },
         'trusted_certs' => "test_trusted_certs\nvalue",
+        'cpi_api_test_max_version' => 2,
       }
     }
   end
@@ -510,7 +511,6 @@ describe 'director.yml.erb' do
           expect(parsed_yaml['puma_workers']).to eq(3)
         end
       end
-
     end
 
     describe 'ignore_missing_gateway property' do
@@ -652,6 +652,37 @@ describe 'director.yml.erb' do
               }
             }
           }
+        end
+      end
+    end
+
+    context 'director.cpi_api_test_max_version' do
+      subject(:parsed_yaml) do
+        release = Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '../'))
+        job = release.job('director')
+        template = job.template('config/director.yml')
+        YAML.load(template.render(merged_manifest_properties))
+      end
+
+      before do
+        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
+      end
+
+      context 'when default' do
+        it 'should be the default value' do
+          expect(parsed_yaml['cpi_api_test_max_version']).to eq(2)
+        end
+      end
+
+      context 'when set to a specified version' do
+        let(:cpi_version) { 10 }
+
+        before do
+          merged_manifest_properties['director']['cpi_api_test_max_version'] = cpi_version
+        end
+
+        it 'should be the specified version' do
+          expect(parsed_yaml['cpi_api_test_max_version']).to eq(cpi_version)
         end
       end
     end

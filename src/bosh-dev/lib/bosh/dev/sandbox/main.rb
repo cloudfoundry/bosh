@@ -225,7 +225,9 @@ module Bosh::Dev::Sandbox
         nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
         nats_client_ca_certificate_path: get_nats_client_ca_certificate_path,
         nats_director_tls: nats_certificate_paths['clients']['director'],
+        cpi_api_test_max_version: @dummy_cpi_api_version
       }
+
       DirectorConfig.new(attributes, @port_provider)
     end
 
@@ -341,7 +343,7 @@ module Bosh::Dev::Sandbox
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
       old_tls_enabled_value = @db_config[:tls_enabled]
       @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS']=='true')
-      @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, nil)
+      @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, 2)
 
       check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
       setup_database(@db_config, old_tls_enabled_value)

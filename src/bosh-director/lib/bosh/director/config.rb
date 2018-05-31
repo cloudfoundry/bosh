@@ -48,6 +48,7 @@ module Bosh::Director
         :version,
         :enable_cpi_resize_disk,
         :default_update_vm_strategy,
+        :cpi_api_test_max_version,
       )
 
       attr_reader(
@@ -210,6 +211,7 @@ module Bosh::Director
           end
         end
 
+        @cpi_api_test_max_version = config['cpi_api_test_max_version']
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new

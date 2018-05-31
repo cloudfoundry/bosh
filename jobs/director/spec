@@ -155,6 +155,9 @@ properties:
   director.enable_virtual_delete_vms:
     description: When true, bosh will not delete vm from cloud when instance update, just destroy vm record in db
     default: false
+  director.cpi_api_test_max_version:
+    description: CPI Max Version for director to communicate to CPI with
+    default: 2
   director.local_dns.enabled:
     description: Enables local DNS, i.e., sending sync_dns messages with all names/IPs to all agents managed by this director
     default: false

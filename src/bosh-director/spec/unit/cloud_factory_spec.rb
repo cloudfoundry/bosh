@@ -40,7 +40,7 @@ module Bosh::Director
           let(:cpi_api_version) { 10 }
 
           it 'creates cloud with the director max supported version' do
-            expect(cloud).to receive(:request_cpi_api_version=).with(Bosh::Director::CloudFactory::MAX_SUPPORTED_CPI_VERSION)
+            expect(cloud).to receive(:request_cpi_api_version=).with(Bosh::Director::CloudFactory.max_supported_cpi_version)
             cloud_factory.get(nil, stemcell_api_version)
           end
         end

@@ -62,7 +62,7 @@ module Bosh::Clouds
     private
 
     def check_cpi_api_support
-      raise Bosh::Clouds::NotSupported, "CPI API version #{@cpi_api_version} is not supported." unless @cpi_api_version <= Bosh::Director::CloudFactory::MAX_SUPPORTED_CPI_VERSION
+      raise Bosh::Clouds::NotSupported, "CPI API version #{@cpi_api_version} is not supported." unless @cpi_api_version <= Bosh::Director::CloudFactory.max_supported_cpi_version
     end
   end
 end
