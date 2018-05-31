@@ -33,23 +33,46 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_model) {  Bosh::Director::Models::Deployment.make }
 
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
-    let(:deployment_subnets) { [
-      ManualNetworkSubnet.new(
-        'network_A',
-        NetAddr::CIDR.create('192.168.1.0/24'),
-        nil, nil, nil, nil, ['zone_1'], [],
-        ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '192.168.1.14']),
-      ManualNetworkSubnet.new(
-        'network_A',
-        NetAddr::CIDR.create('10.10.1.0/24'),
-        nil, nil, nil, nil, ['zone_2'], [],
-        ['10.10.1.10', '10.10.1.11', '10.10.1.12', '10.10.1.13', '10.10.1.14']),
-      ManualNetworkSubnet.new(
-        'network_A',
-        NetAddr::CIDR.create('10.0.1.0/24'),
-        nil, nil, nil, nil, ['zone_3'], [],
-        ['10.0.1.10', '10.0.1.11', '10.0.1.12', '10.0.1.13', '10.0.1.14']),
-    ] }
+    let(:deployment_subnets) do
+      [
+        ManualNetworkSubnet.new(
+          'network_A',
+          NetAddr::CIDR.create('192.168.1.0/24'),
+          nil, nil, nil, nil, ['zone_1'], [],
+          %w[
+            192.168.1.10
+            192.168.1.11
+            192.168.1.12
+            192.168.1.13
+            192.168.1.14
+          ]
+        ),
+        ManualNetworkSubnet.new(
+          'network_A',
+          NetAddr::CIDR.create('10.10.1.0/24'),
+          nil, nil, nil, nil, ['zone_2'], [],
+          %w[
+            10.10.1.10
+            10.10.1.11
+            10.10.1.12
+            10.10.1.13
+            10.10.1.14
+          ]
+        ),
+        ManualNetworkSubnet.new(
+          'network_A',
+          NetAddr::CIDR.create('10.0.1.0/24'),
+          nil, nil, nil, nil, ['zone_3'], [],
+          %w[
+            10.0.1.10
+            10.0.1.11
+            10.0.1.12
+            10.0.1.13
+            10.0.1.14
+          ]
+        ),
+      ]
+    end
     let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
 
     before do

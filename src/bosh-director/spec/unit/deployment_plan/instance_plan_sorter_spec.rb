@@ -37,11 +37,14 @@ module Bosh::Director::DeploymentPlan
           instance
         end
 
-        let (:instance_plan_in_bootstrap_az) { InstancePlan.new(
-          existing_instance: instance_in_bootstrap_az.model,
-          desired_instance: desired_instance,
-          instance: instance_in_bootstrap_az,
-          network_plans: []) }
+        let(:instance_plan_in_bootstrap_az) do
+          InstancePlan.new(
+            existing_instance: instance_in_bootstrap_az.model,
+            desired_instance: desired_instance,
+            instance: instance_in_bootstrap_az,
+            network_plans: [],
+          )
+        end
 
         it 'should put the bootstrap node first' do
           sorted_instance_plans = instance_plan_sorter.sort([instance_plan_in_bootstrap_az, bootstrap_instance_plan])

@@ -130,10 +130,12 @@ module Bosh::Director::DeploymentPlan
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
         let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
-        let(:network_plans) {[
-         NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-         NetworkPlanner::Plan.new(reservation: reservation)
-        ]}
+        let(:network_plans) do
+          [
+            NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+            NetworkPlanner::Plan.new(reservation: reservation),
+          ]
+        end
         let(:network_settings) do
           {
             'existing-network' =>{
@@ -163,10 +165,12 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when dns_record_name exists in network_settings' do
-          let(:network_plans) { [
-            NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-            NetworkPlanner::Plan.new(reservation: reservation, existing: true)
-          ] }
+          let(:network_plans) do
+            [
+              NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+              NetworkPlanner::Plan.new(reservation: reservation, existing: true),
+            ]
+          end
           let(:network_settings) do
             {
               'existing-network' => {
@@ -254,10 +258,12 @@ module Bosh::Director::DeploymentPlan
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
         let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
-        let(:network_plans) {[
-          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-          NetworkPlanner::Plan.new(reservation: reservation)
-        ]}
+        let(:network_plans) do
+          [
+            NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+            NetworkPlanner::Plan.new(reservation: reservation),
+          ]
+        end
         let(:network_settings) do
           {
             'existing-network' =>{
@@ -464,10 +470,12 @@ module Bosh::Director::DeploymentPlan
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
         let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
-        let(:network_plans) { [
-          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-          NetworkPlanner::Plan.new(reservation: reservation)
-        ] }
+        let(:network_plans) do
+          [
+            NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+            NetworkPlanner::Plan.new(reservation: reservation),
+          ]
+        end
         let(:network_settings) do
           {
             'existing-network' => {
@@ -818,10 +826,12 @@ module Bosh::Director::DeploymentPlan
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
         let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
-        let(:network_plans) { [
-          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-          NetworkPlanner::Plan.new(reservation: reservation)
-        ] }
+        let(:network_plans) do
+          [
+            NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+            NetworkPlanner::Plan.new(reservation: reservation),
+          ]
+        end
         let(:network_settings) do
           {
             'existing-network' => {
@@ -1074,10 +1084,12 @@ module Bosh::Director::DeploymentPlan
       let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
       let(:existing_reservation) { reservation = BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
-      let(:network_plans) { [
-        NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
-        NetworkPlanner::Plan.new(reservation: reservation)
-      ] }
+      let(:network_plans) do
+        [
+          NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
+          NetworkPlanner::Plan.new(reservation: reservation),
+        ]
+      end
 
       before do
         instance_plan.existing_instance.update(spec: {

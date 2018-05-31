@@ -9,10 +9,12 @@ module Bosh::Director
     let(:runtime_configs) { [ rc_model_1, rc_model_2, rc_model_3] }
 
     describe '#create_from_model_ids' do
-      let(:runtime_configs) { [
-        instance_double(Bosh::Director::Models::Config),
-        instance_double(Bosh::Director::Models::Config),
-      ]}
+      let(:runtime_configs) do
+        [
+          instance_double(Bosh::Director::Models::Config),
+          instance_double(Bosh::Director::Models::Config),
+        ]
+      end
 
       let(:runtime_config_ids) { [1, 21, 65] }
       before do

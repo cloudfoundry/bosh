@@ -958,14 +958,16 @@ module Bosh::Director
             release_version_model.add_package(package)
             package
           end
-          let!(:compiled_package) { Models::CompiledPackage.make(
-            package: package,
-            sha1: 'fakecompiledsha1',
-            blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
-            dependency_key: 'fake-dep-key-1',
-            stemcell_os: 'windows me',
-            stemcell_version: '4.5'
-          )}
+          let!(:compiled_package) do
+            Models::CompiledPackage.make(
+              package: package,
+              sha1: 'fakecompiledsha1',
+              blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
+              dependency_key: 'fake-dep-key-1',
+              stemcell_os: 'windows me',
+              stemcell_version: '4.5',
+            )
+          end
 
           it 'eliminates package when broken or missing' do
             expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
