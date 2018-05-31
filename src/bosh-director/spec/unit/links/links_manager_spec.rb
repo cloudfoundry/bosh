@@ -2253,7 +2253,7 @@ describe Bosh::Director::Links::LinksManager do
         allow(mock).to receive(:instance_group_name).and_return('instance-group-name')
         allow(mock).to receive(:deployment_model).and_return(deployment_model)
         allow(mock).to receive(:model).and_return(instance_model)
-        allow(mock).to receive(:is_deploying?).and_return(is_deploying)
+        allow(mock).to receive(:is_deploy_action?).and_return(is_deploying)
       end
     end
 
