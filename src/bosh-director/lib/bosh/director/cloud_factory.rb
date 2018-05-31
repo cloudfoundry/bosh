@@ -66,6 +66,7 @@ module Bosh::Director
         cpi_api_version = 1
       end
       supported_cpi_version = [cpi_api_version, CloudFactory.max_supported_cpi_version].min
+      @logger.debug("Using cpi_version #{supported_cpi_version} for CPI #{cpi_name}")
       Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, supported_cpi_version)
     end
 
