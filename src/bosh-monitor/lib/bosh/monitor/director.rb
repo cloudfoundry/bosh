@@ -19,6 +19,17 @@ module Bosh::Monitor
       parse_json(body, Array)
     end
 
+    def resurrection_config
+      http = perform_request(:get, '/configs?type=resurrection&latest=true')
+
+      body   = http.response
+      status = http.response_header.http_status
+
+      raise DirectorError, "Cannot get resurrection config from director at #{http.uri}: #{status} #{body}" if status != '200'
+
+      parse_json(body, Array)
+    end
+
     def get_deployment_instances(name)
       http = perform_request(:get, "/deployments/#{name}/instances")
 
