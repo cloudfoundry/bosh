@@ -76,6 +76,10 @@ module Bosh::Director
         instance_planner.orphan_unreusable_vms(instance_plans, existing_instances)
         instance_planner.reconcile_network_plans(instance_plans)
         desired_instance_group.add_instance_plans(instance_plans)
+
+        desired_instance_group.unignored_instance_plans.each do |instance_plan|
+          instance_plan.instance.is_deploy_action = is_deploy_action
+        end
       end
 
       instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(desired_instance_groups, @deployment_plan.existing_instances)
