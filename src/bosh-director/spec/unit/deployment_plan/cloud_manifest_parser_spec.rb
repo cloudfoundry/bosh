@@ -543,14 +543,18 @@ module Bosh::Director
       before { cloud_manifest.merge!(availability_zones) }
 
       context 'if name is not present' do
-        let(:availability_zones) { {'azs' => [{'cloud_properties' => {'availability_zone' => 'us-east-1a'}}]} }
+        let(:availability_zones) do
+          { 'azs' => [{ 'cloud_properties' => { 'availability_zone' => 'us-east-1a' } }] }
+        end
         it 'raises error' do
           expect { parsed_availability_zones }.to raise_error(ValidationMissingField)
         end
       end
 
       context 'if an availability zone is duplicated' do
-        let(:availability_zones) { {'azs' => [{'name' => 'z1'}, {'name' => 'z1'}]} }
+        let(:availability_zones) do
+          { 'azs' => [{ 'name' => 'z1' }, { 'name' => 'z1' }] }
+        end
 
         it 'raises error' do
           expect { parsed_availability_zones }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate az name 'z1'")

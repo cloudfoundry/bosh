@@ -199,7 +199,9 @@ module Bosh::Director
         end
 
         context 'links binding' do
-          let(:resolver_options) {{dry_run: false, global_use_dns_entry: boolean}}
+          let(:resolver_options) do
+            { dry_run: false, global_use_dns_entry: boolean }
+          end
 
           let(:provider) do
             Models::Links::LinkProvider.make(

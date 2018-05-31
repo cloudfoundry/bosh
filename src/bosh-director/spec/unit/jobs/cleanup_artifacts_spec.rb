@@ -11,7 +11,9 @@ module Bosh::Director
 
     describe '.enqueue' do
       let(:job_queue) { instance_double(JobQueue) }
-      let(:config) { { 'remove_all' => remove_all } }
+      let(:config) do
+        { 'remove_all' => remove_all }
+      end
 
       describe 'when user specifies --all at the command line' do
         let(:remove_all) { true }
@@ -85,7 +87,9 @@ module Bosh::Director
       end
 
       context 'when cleaning up ALL artifacts (orphaned vms, stemcells, releases AND orphaned disks)' do
-        let(:config) { { 'remove_all' => true } }
+        let(:config) do
+          { 'remove_all' => true }
+        end
         before do
           expect(blobstore).to receive(:delete).with('compiled-package-1')
         end
@@ -246,7 +250,9 @@ module Bosh::Director
       end
 
       context 'when cleaning up only orphaned vms, stemcells, releases, and exported releases' do
-        let(:config) { {} }
+        let(:config) do
+          {}
+        end
         it 'logs and returns the result' do
           expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
           expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)
@@ -387,7 +393,9 @@ module Bosh::Director
       end
 
       context 'when director was unable to delete a disk' do
-        let(:config) { { 'remove_all' => true } }
+        let(:config) do
+          { 'remove_all' => true }
+        end
 
         before do
           Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
@@ -405,7 +413,9 @@ module Bosh::Director
       end
 
       context 'when find_and_delete_release raises' do
-        let(:config) { {'remove_all' => true} }
+        let(:config) do
+          { 'remove_all' => true }
+        end
 
         before do
           allow(blobstore).to receive(:delete).and_raise('nope')

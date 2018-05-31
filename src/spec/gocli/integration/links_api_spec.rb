@@ -16,7 +16,9 @@ describe 'links api', type: :integration do
     )
   end
 
-  let(:features) {{}}
+  let(:features) do
+    {}
+  end
 
   let(:instance_group) do
     {

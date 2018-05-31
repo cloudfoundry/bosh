@@ -9,7 +9,9 @@ module Bosh::Director
 
     let(:deployment) { Models::Deployment.make(name: 'name-1') }
     let(:variable_set) { Models::VariableSet.make(deployment: deployment) }
-    let(:target) { {'job' => 'fake-job', 'indexes' => [1]} }
+    let(:target) do
+      { 'job' => 'fake-job', 'indexes' => [1] }
+    end
     let(:agent) { double(AgentClient) }
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
@@ -48,7 +50,9 @@ module Bosh::Director
     end
 
     context 'when instance does not have vm' do
-      let(:target) { {'job' => 'fake-job', 'indexes' => [1, 2]} }
+      let(:target) do
+        { 'job' => 'fake-job', 'indexes' => [1, 2] }
+      end
 
       it 'performs only for instances with vm' do
         instance_with_vm = Models::Instance.reject { |instance| instance.active_vm.nil? }.first
@@ -81,7 +85,9 @@ module Bosh::Director
     end
 
     context 'when instance id was passed in' do
-      let(:target) { {'job' => 'fake-job', 'ids' => ['fake-uuid-1']} }
+      let(:target) do
+        { 'job' => 'fake-job', 'ids' => ['fake-uuid-1'] }
+      end
 
       context 'when id is instance uuid' do
         it 'finds instance by its id and generates response with id' do
@@ -97,7 +103,9 @@ module Bosh::Director
       end
 
       context 'when id is instance index' do
-        let(:target) { {'job' => 'fake-job', 'ids' => [1]} }
+        let(:target) do
+          { 'job' => 'fake-job', 'ids' => [1] }
+        end
 
         it 'finds instance by its index and generates response with id' do
           job.perform

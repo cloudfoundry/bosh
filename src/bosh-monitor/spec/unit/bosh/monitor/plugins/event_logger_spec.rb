@@ -26,7 +26,9 @@ describe 'Bhm::Plugins::Resurrector' do
   end
   let(:time) { time = Time.new }
   let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i')) }
-  let(:user_authentication) { {} }
+  let(:user_authentication) do
+    {}
+  end
 
   it 'should construct a usable url' do
     expect(plugin.url.to_s).to eq(uri)

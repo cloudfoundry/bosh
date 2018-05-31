@@ -27,7 +27,9 @@ module Bosh::Monitor::Plugins
 
     let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i', severity: 1)) }
 
-    let(:user_authentication) { {} }
+    let(:user_authentication) do
+      {}
+    end
 
     context 'when the event machine reactor is not running' do
       it 'should not start' do

@@ -57,7 +57,9 @@ describe Bosh::Director::Links::LinksParser do
     let(:provider) { instance_double(Bosh::Director::Models::Links::LinkProvider) }
     let(:provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent) }
 
-    let(:job_properties) { {} }
+    let(:job_properties) do
+      {}
+    end
 
     let(:release_providers) do
       [{ name: 'link_1_name', type: 'link_1_type' }]
@@ -234,7 +236,9 @@ describe Bosh::Director::Links::LinksParser do
     let(:consumer) { instance_double(Bosh::Director::Models::Links::LinkConsumer) }
     let(:consumer_intent) { instance_double(Bosh::Director::Models::Links::LinkConsumerIntent) }
 
-    let(:job_properties) { {} }
+    let(:job_properties) do
+      {}
+    end
 
     let(:release_consumers) do
       [{ name: 'link_1_name', type: 'link_1_type' }]
@@ -404,7 +408,9 @@ describe Bosh::Director::Links::LinksParser do
     let(:provider) { instance_double(Bosh::Director::Models::Links::LinkProvider) }
     let(:provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent) }
 
-    let(:job_properties) { {} }
+    let(:job_properties) do
+      {}
+    end
 
     context 'when the job does NOT define any provider in its release spec' do
       context 'when the manifest specifies provided links for that job' do
@@ -643,7 +649,9 @@ describe Bosh::Director::Links::LinksParser do
           }
         end
 
-        let(:job_properties) { {} }
+        let(:job_properties) do
+          {}
+        end
 
         it 'should add correct link providers and link providers intent to the DB' do
           original_job_spec = Bosh::Common::DeepCopy.copy(job_spec)
@@ -1280,8 +1288,12 @@ describe Bosh::Director::Links::LinksParser do
         let(:release_consumers) do
           [{ name: 'link_1_name', type: 'link_1_type' }]
         end
-        let(:consumer_options) { { 'from' => 'snoopy' } }
-        let(:manifest_link_consumers) { { 'link_1_name' => consumer_options } }
+        let(:consumer_options) do
+          { 'from' => 'snoopy' }
+        end
+        let(:manifest_link_consumers) do
+          { 'link_1_name' => consumer_options }
+        end
         let(:job_spec) do
           {
             'name' => 'release1_job_name_1',
@@ -1336,7 +1348,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer alias is separated by "."' do
-          let(:consumer_options) { { 'from' => 'foo.bar.baz' } }
+          let(:consumer_options) do
+            { 'from' => 'foo.bar.baz' }
+          end
 
           before do
             allow(consumer_intent).to receive(:blocked=)
@@ -1379,7 +1393,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer does not have a from key' do
-          let(:consumer_options) { {} }
+          let(:consumer_options) do
+            {}
+          end
 
           before do
             allow(consumer_intent).to receive(:blocked=)
@@ -1401,7 +1417,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies a specific network' do
-          let(:consumer_options) { { 'network' => 'charlie' } }
+          let(:consumer_options) do
+            { 'network' => 'charlie' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1422,7 +1440,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies to use ip addresses only' do
-          let(:consumer_options) { { 'ip_addresses' => true } }
+          let(:consumer_options) do
+            { 'ip_addresses' => true }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1443,7 +1463,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies to use a deployment' do
-          let(:consumer_options) { { 'deployment' => 'some-other-deployment' } }
+          let(:consumer_options) do
+            { 'deployment' => 'some-other-deployment' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1485,7 +1507,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies the name key in the consumes section of the manifest' do
-          let(:consumer_options) { { 'name' => 'i should not be here' } }
+          let(:consumer_options) do
+            { 'name' => 'i should not be here' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1509,7 +1533,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies the type key in the consumes section of the manifest' do
-          let(:consumer_options) { { 'type' => 'i should not be here' } }
+          let(:consumer_options) do
+            { 'type' => 'i should not be here' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1665,7 +1691,9 @@ describe Bosh::Director::Links::LinksParser do
         context 'consumer validation' do
           # rubocop:disable Style/MultilineBlockChain
           context "when 'instances' and 'from' keywords are specified at the same time" do
-            let(:consumer_options) { { 'from' => 'snoopy', 'instances' => ['1.2.3.4'] } }
+            let(:consumer_options) do
+              { 'from' => 'snoopy', 'instances' => ['1.2.3.4'] }
+            end
 
             it 'should raise an error' do
               expect do
@@ -1683,7 +1711,9 @@ describe Bosh::Director::Links::LinksParser do
           end
 
           context "when 'properties' and 'from' keywords are specified at the same time" do
-            let(:consumer_options) { { 'from' => 'snoopy', 'properties' => { 'meow' => 'cat' } } }
+            let(:consumer_options) do
+              { 'from' => 'snoopy', 'properties' => { 'meow' => 'cat' } }
+            end
 
             it 'should raise an error' do
               expect do
@@ -1701,7 +1731,9 @@ describe Bosh::Director::Links::LinksParser do
           end
 
           context "when 'properties' is defined but 'instances' is not" do
-            let(:consumer_options) { { 'properties' => 'snoopy' } }
+            let(:consumer_options) do
+              { 'properties' => 'snoopy' }
+            end
 
             it 'should raise an error' do
               expect do
@@ -1719,7 +1751,9 @@ describe Bosh::Director::Links::LinksParser do
           end
 
           context "when 'ip_addresses' value is not a boolean" do
-            let(:consumer_options) { { 'ip_addresses' => 'not a boolean' } }
+            let(:consumer_options) do
+              { 'ip_addresses' => 'not a boolean' }
+            end
 
             it 'should raise an error' do
               expect do

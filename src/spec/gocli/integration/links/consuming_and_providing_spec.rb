@@ -319,7 +319,9 @@ describe 'consuming and providing', type: :integration do
 
   context 'when the consumer implicitly consumes a link' do
     context 'when there are multiple providers providing a link and one of the providers is set to nil' do
-      let(:db_provider) {{ 'as' => 'link_db_alias' }}
+      let(:db_provider) do
+        { 'as' => 'link_db_alias' }
+      end
       let(:provider_instance_group_1) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group_1',

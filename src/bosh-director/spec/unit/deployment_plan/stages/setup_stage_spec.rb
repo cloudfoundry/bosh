@@ -28,7 +28,9 @@ module Bosh::Director
           ]
         end
         let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
-        let(:tags) { { 'some' => 'tags' } }
+        let(:tags) do
+          { 'some' => 'tags' }
+        end
         let(:local_dns_repo) { instance_double(LocalDnsRepo) }
         let(:dns_publisher) { instance_double(BlobstoreDnsPublisher) }
 

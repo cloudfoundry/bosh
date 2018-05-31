@@ -30,7 +30,9 @@ module Bosh::Director
       instance
     end
     let!(:vm) { Models::Vm.make(instance: instance, active: true) }
-    let(:spec) { {'apply' => 'spec', 'env' => {'vm_env' => 'json'}} }
+    let(:spec) do
+      { 'apply' => 'spec', 'env' => { 'vm_env' => 'json' } }
+    end
     let(:deployment_model) do
       manifest = Bosh::Spec::Deployments.legacy_manifest
       Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))

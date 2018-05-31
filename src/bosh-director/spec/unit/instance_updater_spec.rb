@@ -8,7 +8,9 @@ module Bosh::Director
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
     let(:vm_creator) { instance_double(VmCreator) }
     let(:agent_client) { instance_double(AgentClient) }
-    let(:credentials) { { 'user' => 'secret' } }
+    let(:credentials) do
+      { 'user' => 'secret' }
+    end
     let(:credentials_json) { JSON.generate(credentials) }
     let(:persistent_disk_model) { instance_double(Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid') }
     let(:disk_collection_model) do

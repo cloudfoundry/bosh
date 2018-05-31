@@ -116,8 +116,12 @@ module Bosh::Dev::Sandbox
     def db_config
       connection_config = YAML.load_file(@director_config)['db']
 
-      custom_connection_options = connection_config.delete('connection_options') {{}}
-      tls_options = connection_config.delete('tls') { {} }
+      custom_connection_options = connection_config.delete('connection_options') do
+        {}
+      end
+      tls_options = connection_config.delete('tls') do
+        {}
+      end
       if tls_options.fetch('enabled', false)
         certificate_paths = tls_options.fetch('cert')
         db_ca_path = certificate_paths.fetch('ca')

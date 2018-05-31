@@ -35,10 +35,14 @@ describe 'using director with config server', type: :integration do
     }
   end
 
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
+  let(:client_env) do
+    { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
+  end
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
 
-  let(:log_options) { { include_credentials: false, env: client_env } }
+  let(:log_options) do
+    { include_credentials: false, env: client_env }
+  end
 
   def bosh_run_cck_with_resolution(num_errors, option=1, env={})
     output = ''

@@ -17,7 +17,9 @@ module Bosh::Director
             'consumes_links' => [] },
         ]
       end
-      let(:properties) { { 'echo_value' => 'addon_prop_value' } }
+      let(:properties) do
+        { 'echo_value' => 'addon_prop_value' }
+      end
 
       let(:cloud_configs) { [Models::Config.make(:cloud_with_manifest_v2)] }
 
@@ -65,7 +67,9 @@ module Bosh::Director
       let(:include_spec) { nil }
 
       describe '#add_to_deployment' do
-        let(:include_spec) { { 'deployments' => [deployment_name] } }
+        let(:include_spec) do
+          { 'deployments' => [deployment_name] }
+        end
         let(:instance_group) do
           instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
           jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
@@ -152,7 +156,9 @@ module Bosh::Director
         end
 
         context 'when addon does not apply to the instance group' do
-          let(:include_spec) { { 'deployments' => ['no_findy'] } }
+          let(:include_spec) do
+            { 'deployments' => ['no_findy'] }
+          end
 
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
@@ -162,7 +168,9 @@ module Bosh::Director
         end
 
         context 'when addon does not apply to the deployment teams' do
-          let(:include_spec) { { 'teams' => ['team_2'] } }
+          let(:include_spec) do
+            { 'teams' => ['team_2'] }
+          end
 
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
@@ -285,7 +293,9 @@ module Bosh::Director
             end
 
             context 'when the addon has no addon level properties' do
-              let(:properties) { {} }
+              let(:properties) do
+                {}
+              end
 
               it 'adds empty properties to addon job to avoid override by instance group or manifest level properties' do
                 added_jobs = []
@@ -319,8 +329,12 @@ module Bosh::Director
         end
 
         context 'when the addon has deployments in include and jobs in exclude' do
-          let(:include_spec) { { 'deployments' => [deployment_name] } }
-          let(:exclude_spec) { { 'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy' }] } }
+          let(:include_spec) do
+            { 'deployments' => [deployment_name] }
+          end
+          let(:exclude_spec) do
+            { 'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy' }] }
+          end
 
           it 'adds filtered jobs only' do
             expect(instance_group).not_to receive(:add_job)
@@ -330,7 +344,9 @@ module Bosh::Director
         end
 
         context 'when addon does not apply to the availability zones' do
-          let(:include_spec) { { 'azs' => ['z3'] } }
+          let(:include_spec) do
+            { 'azs' => ['z3'] }
+          end
 
           it 'does nothing' do
             expect(instance_group).to_not receive(:add_job)
@@ -342,7 +358,9 @@ module Bosh::Director
 
       describe '#parse' do
         context 'when name, jobs, include, and properties' do
-          let(:include_hash) { { 'jobs' => [], 'properties' => [] } }
+          let(:include_hash) do
+            { 'jobs' => [], 'properties' => [] }
+          end
           let(:addon_hash) do
             {
               'name' => 'addon-name',
@@ -364,7 +382,9 @@ module Bosh::Director
         end
 
         context 'when jobs, properties and include are empty' do
-          let(:addon_hash) { { 'name' => 'addon-name' } }
+          let(:addon_hash) do
+            { 'name' => 'addon-name' }
+          end
 
           it 'returns addon' do
             addon = Addon.parse(addon_hash)
@@ -375,7 +395,9 @@ module Bosh::Director
         end
 
         context 'when jobs, properties and include are empty' do
-          let(:addon_hash) { { 'name' => 'addon-name' } }
+          let(:addon_hash) do
+            { 'name' => 'addon-name' }
+          end
 
           it 'returns addon' do
             addon = Addon.parse(addon_hash)
@@ -386,7 +408,9 @@ module Bosh::Director
         end
 
         context 'when name is empty' do
-          let(:addon_hash) { { 'jobs' => ['addon-name'] } }
+          let(:addon_hash) do
+            { 'jobs' => ['addon-name'] }
+          end
 
           it 'errors' do
             error_string = "Required property 'name' was not specified in object ({\"jobs\"=>[\"addon-name\"]})"
@@ -397,7 +421,9 @@ module Bosh::Director
 
       describe '#applies?' do
         context 'when the addon is applicable by deployment name' do
-          let(:include_spec) { { 'deployments' => [deployment_name] } }
+          let(:include_spec) do
+            { 'deployments' => [deployment_name] }
+          end
           let(:deployment_instance_group) do
             instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
             instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
@@ -409,7 +435,9 @@ module Bosh::Director
         end
 
         context 'when the addon is not applicable by deployment name' do
-          let(:include_spec) { { 'deployments' => [deployment_name] } }
+          let(:include_spec) do
+            { 'deployments' => [deployment_name] }
+          end
           let(:deployment_instance_group) do
             instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
             instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
@@ -421,7 +449,9 @@ module Bosh::Director
         end
 
         context 'when the addon is applicable by team' do
-          let(:include_spec) { { 'teams' => ['team_1'] } }
+          let(:include_spec) do
+            { 'teams' => ['team_1'] }
+          end
 
           it 'applies' do
             expect(addon.applies?(deployment_name, ['team_1'], nil)).to eq(true)
@@ -429,7 +459,9 @@ module Bosh::Director
         end
 
         context 'when the addon is not applicable by team' do
-          let(:include_spec) { { 'teams' => ['team_5'] } }
+          let(:include_spec) do
+            { 'teams' => ['team_5'] }
+          end
 
           it 'does not apply' do
             expect(addon.applies?(deployment_name, ['team_1'], nil)).to eq(false)
@@ -437,7 +469,9 @@ module Bosh::Director
         end
 
         context 'when the addon has empty include' do
-          let(:include_spec) { {} }
+          let(:include_spec) do
+            {}
+          end
           let(:deployment_instance_group) do
             instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
             instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
@@ -449,8 +483,12 @@ module Bosh::Director
         end
 
         context 'when the addon has empty include and exclude' do
-          let(:include_spec) { {} }
-          let(:exclude_spec) { {} }
+          let(:include_spec) do
+            {}
+          end
+          let(:exclude_spec) do
+            {}
+          end
           let(:deployment_instance_group) do
             instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
             instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
@@ -462,9 +500,13 @@ module Bosh::Director
         end
 
         context 'when the addon has include and exclude' do
-          let(:include_spec) { { 'deployments' => [deployment_name] } }
+          let(:include_spec) do
+            { 'deployments' => [deployment_name] }
+          end
           context 'when they are the same' do
-            let(:exclude_spec) { { 'deployments' => [deployment_name] } }
+            let(:exclude_spec) do
+              { 'deployments' => [deployment_name] }
+            end
             let(:deployment_instance_group) do
               instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
               instance_group_parser.parse(Bosh::Spec::Deployments.dummy_job)
@@ -476,7 +518,9 @@ module Bosh::Director
           end
 
           context 'when include is for deployment and exlude is for job' do
-            let(:exclude_spec) { { 'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy' }] } }
+            let(:exclude_spec) do
+              { 'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy' }] }
+            end
             let(:instance_group_parser) { DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger) }
             let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
             let(:release_version_model) do
@@ -548,14 +592,18 @@ module Bosh::Director
             end
 
             context 'when the addon is applicable by availability zones' do
-              let(:include_spec) { { 'azs' => ['z1'] } }
+              let(:include_spec) do
+                { 'azs' => ['z1'] }
+              end
               it 'it applies' do
                 expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(true)
               end
             end
 
             context 'when the addon is not applicable by availability zones' do
-              let(:include_spec) { { 'azs' => ['z5'] } }
+              let(:include_spec) do
+                { 'azs' => ['z5'] }
+              end
               it 'does not apply' do
                 expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
               end

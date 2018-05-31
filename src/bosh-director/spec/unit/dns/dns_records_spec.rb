@@ -4,8 +4,12 @@ module Bosh::Director
   describe DnsRecords do
     let(:include_index_records) { false }
     let(:version) { 2 }
-    let(:az_hash) {{ 'az1' => '3', 'az2' => '7', 'az3' => '11' }}
-    let(:network_name_hash) {{ 'net-name1' => '1', 'net-name2' => '2', 'net-name3' => '3' }}
+    let(:az_hash) do
+      { 'az1' => '3', 'az2' => '7', 'az3' => '11' }
+    end
+    let(:network_name_hash) do
+      { 'net-name1' => '1', 'net-name2' => '2', 'net-name3' => '3' }
+    end
     let(:groups_hash) {{
       {instance_group: 'group-name1', deployment: 'dep-name1'} => '11',
       {instance_group: 'group-name2', deployment: 'dep-name2'} => '12',
@@ -74,7 +78,9 @@ module Bosh::Director
         end
 
         context 'canonicalization' do
-          let(:network_name_hash) {{ 'net-name1' => '1', 'net-name2' => '2', 'net_name3' => '3' }}
+          let(:network_name_hash) do
+            { 'net-name1' => '1', 'net-name2' => '2', 'net_name3' => '3' }
+          end
           before do
             dns_records.add_record('uuid4', 3, 4, 'group_name3', 'az3', 'net_name3', 'dep_name3', 'ip-addr4', 'bosh3.tld', 'fake-agent-uuid3')
           end

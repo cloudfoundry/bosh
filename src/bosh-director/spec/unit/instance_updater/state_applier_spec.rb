@@ -8,7 +8,9 @@ module Bosh::Director
       InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
     end
 
-    let(:options) { {} }
+    let(:options) do
+      {}
+    end
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(
         existing_instance: instance_model,

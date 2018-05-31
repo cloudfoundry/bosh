@@ -9,7 +9,9 @@ module Bosh::Director
 
     let(:deployment) { Models::Deployment.make(name: 'deployment') }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
-    let(:options) { { foo: 'bar' } }
+    let(:options) do
+      { foo: 'bar' }
+    end
 
     before do
       # instance 1: one disk with two snapshots

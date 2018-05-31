@@ -48,7 +48,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment_plan, availability_zone) }
-    let(:current_state) { {'current' => 'state', 'job' => instance_group_spec, 'job_state' => job_state} }
+    let(:current_state) do
+      { 'current' => 'state', 'job' => instance_group_spec, 'job_state' => job_state }
+    end
     let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
     let(:instance) { Instance.create_from_instance_group(instance_group, 1, instance_state, deployment_plan.model, current_state, availability_zone, logger) }
     let(:instance_state) { 'started' }
@@ -92,7 +94,9 @@ module Bosh::Director::DeploymentPlan
       Assembler.create(plan).bind_models
       plan
     end
-    let(:network_settings) { { 'a' => { 'type' => 'dynamic', 'cloud_properties' => {}, 'dns' => ['10.0.0.1'], 'default' => ['dns', 'gateway'] } } }
+    let(:network_settings) do
+      { 'a' => { 'type' => 'dynamic', 'cloud_properties' => {}, 'dns' => ['10.0.0.1'], 'default' => %w[dns gateway] } }
+    end
 
     before do
       fake_app
@@ -311,7 +315,9 @@ module Bosh::Director::DeploymentPlan
           end
           let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', subnet_cloud_properties, ['foo-az']) }
           let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
-          let(:subnet_cloud_properties) { {} }
+          let(:subnet_cloud_properties) do
+            {}
+          end
 
           context 'when dns is changed' do
             it 'should return true' do
@@ -320,11 +326,21 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'when variables exist in the spec' do
-            let(:current_networks_hash) { {'a' => {'b' => '((a_var))'}} }
-            let(:interpolated_current_networks_hash) { {'a' => {'b' => 'smurf'}} }
+            let(:current_networks_hash) do
+              { 'a' => { 'b' => '((a_var))' } }
+            end
 
-            let(:desired_networks_hash) { {'a' => {'b' => '((a_var))'}} }
-            let(:interpolated_desired_networks_hash) { {'a' => {'b' => 'gargamel'}} }
+            let(:interpolated_current_networks_hash) do
+              { 'a' => { 'b' => 'smurf' } }
+            end
+
+            let(:desired_networks_hash) do
+              { 'a' => { 'b' => '((a_var))' } }
+            end
+
+            let(:interpolated_desired_networks_hash) do
+              { 'a' => { 'b' => 'gargamel' } }
+            end
 
             let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
             let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
@@ -582,15 +598,21 @@ module Bosh::Director::DeploymentPlan
 
       let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
-      let(:uninterpolated_cloud_properties_hash) { { 'cloud' => '((interpolated_prop))' } }
+      let(:uninterpolated_cloud_properties_hash) do
+        { 'cloud' => '((interpolated_prop))' }
+      end
 
       let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
       let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
-      let(:desired_cloud_properties_hash) { { 'cloud' => 'prop' } }
+      let(:desired_cloud_properties_hash) do
+        { 'cloud' => 'prop' }
+      end
 
-      let(:previous_cloud_properties_hash) { { 'cloud' => 'prop' } }
+      let(:previous_cloud_properties_hash) do
+        { 'cloud' => 'prop' }
+      end
 
       let(:simple_instance_plan) do
         InstancePlan.new(
@@ -711,7 +733,9 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when cloud properties differ' do
-        let(:desired_cloud_properties_hash) { { 'cloud' => 'new-prop' } }
+        let(:desired_cloud_properties_hash) do
+          { 'cloud' => 'new-prop' }
+        end
 
         it 'should not match' do
           expect(
@@ -1291,7 +1315,9 @@ module Bosh::Director::DeploymentPlan
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
       context 'when an instance exists (with the same job name & instance index)' do
-        let(:current_state) { {'job' => instance_group.spec} }
+        let(:current_state) do
+          { 'job' => instance_group.spec }
+        end
 
         context 'that fully matches the job spec' do
           before { allow(instance).to receive(:current_job_spec).and_return(instance_group.spec) }
@@ -1328,7 +1354,9 @@ module Bosh::Director::DeploymentPlan
             }
           end
 
-          let(:current_state) { {'job' => instance_group.spec.merge('version' => 'old-version')} }
+          let(:current_state) do
+            { 'job' => instance_group.spec.merge('version' => 'old-version') }
+          end
 
           it 'returns true' do
             expect(instance_plan.job_changed?).to eq(true)

@@ -133,7 +133,9 @@ module Bosh::Director
       end
 
       context 'with an empty cloud config (previously supported before generic configs)' do
-        let(:cloud_config_1) { {'networks' => ['fooba']} }
+        let(:cloud_config_1) do
+          { 'networks' => ['fooba'] }
+        end
         let(:cloud_config_2) { nil }
         let(:cloud_config_3) { nil }
 
@@ -186,9 +188,13 @@ module Bosh::Director
 
     describe '#interpolate_manifest_for_deployment' do
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-      let(:mock_manifest) { {name: '((manifest_name))'} }
+      let(:mock_manifest) do
+        { name: '((manifest_name))' }
+      end
       let(:deployment_name) { 'some_deployment_name' }
-      let(:interpolated_cloud_config) { {name: 'interpolated manifest'} }
+      let(:interpolated_cloud_config) do
+        { name: 'interpolated manifest' }
+      end
 
       before do
         allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
@@ -202,7 +208,9 @@ module Bosh::Director
       end
 
       context 'with variable being an array at top-level' do
-        let(:mock_manifest) { {disk_types: '((disk_type_array))'} }
+        let(:mock_manifest) do
+          { disk_types: '((disk_type_array))' }
+        end
         let(:interpolated_cloud_config) { {disk_types: [[{
           'name' => 'small',
           'cloud_properties' => {'type' => 'gp2'}

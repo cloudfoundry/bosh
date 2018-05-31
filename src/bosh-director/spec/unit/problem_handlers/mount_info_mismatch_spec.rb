@@ -9,7 +9,9 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
   let(:az_cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
   let(:base_cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
-  let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}
+  let(:manifest) do
+    { 'tags' => { 'mytag' => 'myvalue' } }
+  end
 
   before(:each) do
     @agent = double('agent')

@@ -45,7 +45,9 @@ module Bosh::Director
 
     shared_examples :addon_filters do
       context 'when ONLY deployments key is present in the filter spec' do
-        let(:filter_spec) { {'jobs' => [], 'deployments' => deployments} }
+        let(:filter_spec) do
+          { 'jobs' => [], 'deployments' => deployments }
+        end
 
         context 'if deployment name is in filter section' do
           let(:deployments) { ['dep1'] }
@@ -115,7 +117,9 @@ module Bosh::Director
         end
 
         context 'when NEITHER deployments key nor jobs key are present' do
-          let(:filter_spec) { {'jobs' => [], 'deployments' => []} }
+          let(:filter_spec) do
+            { 'jobs' => [], 'deployments' => [] }
+          end
 
           it 'returns true' do
             expect(subject.applies?(deployment_name, [], instance_group1)).to eq(true)
@@ -137,7 +141,9 @@ module Bosh::Director
         end
 
         context 'when NEITHER deployments key nor jobs key are present' do
-          let(:filter_spec) { {'jobs' => [], 'deployments' => []} }
+          let(:filter_spec) do
+            { 'jobs' => [], 'deployments' => [] }
+          end
 
           it 'returns true' do
             expect(subject.applies?(deployment_name, [], instance_group1)).to eq(false)

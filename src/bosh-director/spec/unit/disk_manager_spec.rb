@@ -14,7 +14,9 @@ module Bosh::Director
                                        network_plans: [],
                                        tags: tags)
     end
-    let(:tags) { { 'tags' => { 'mytag' => 'myvalue' } } }
+    let(:tags) do
+      { 'tags' => { 'mytag' => 'myvalue' } }
+    end
 
     let(:job_persistent_disk_size) { 1024 }
     let(:instance_group) do
@@ -35,7 +37,9 @@ module Bosh::Director
     end
 
     let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'my-cpi') }
-    let(:cloud_properties) { { 'cloud' => 'properties' } }
+    let(:cloud_properties) do
+      { 'cloud' => 'properties' }
+    end
     let(:disk_name) { '' }
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
 
@@ -64,7 +68,9 @@ module Bosh::Director
 
     describe '#attach_disk' do
       let(:attach_step) { instance_double(DeploymentPlan::Steps::AttachDiskStep, perform: nil) }
-      let(:tags) { {} }
+      let(:tags) do
+        {}
+      end
 
       before do
         allow(DeploymentPlan::Steps::AttachDiskStep).to receive(:new)
@@ -90,7 +96,9 @@ module Bosh::Director
       end
 
       context 'when tags are set' do
-        let(:tags) { { 'mytag' => 'myvalue' } }
+        let(:tags) do
+          { 'mytag' => 'myvalue' }
+        end
 
         it 'passes tags to attach step' do
           expect(attach_step).to receive(:perform)
@@ -558,8 +566,12 @@ module Bosh::Director
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
         let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
-        let(:cloud_properties) { { 'cloud' => '((cloud_placeholder))' } }
-        let(:interpolated_cloud_properties) { { 'cloud' => 'unicorns' } }
+        let(:cloud_properties) do
+          { 'cloud' => '((cloud_placeholder))' }
+        end
+        let(:interpolated_cloud_properties) do
+          { 'cloud' => 'unicorns' }
+        end
 
         let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 

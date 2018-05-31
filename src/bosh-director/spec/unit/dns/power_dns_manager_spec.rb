@@ -16,13 +16,17 @@ module Bosh::Director
     let(:spec_json) { '{}' }
     let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh', type: 'NATIVE') }
-    let(:dns_config) { {} }
+    let(:dns_config) do
+      {}
+    end
     let(:dns_provider) { nil }
     let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:root_domain) { 'bosh1.tld' }
 
     describe '#flush_dns_cache' do
-      let(:dns_config) { {'domain_name' => domain.name, 'flush_command' => flush_command} }
+      let(:dns_config) do
+        { 'domain_name' => domain.name, 'flush_command' => flush_command }
+      end
       let(:flush_command) { nil }
 
       context 'when flush command is present' do
@@ -119,7 +123,9 @@ module Bosh::Director
 
       describe '#configure_nameserver' do
         context 'dns is enabled' do
-          let(:dns_config) { {'domain_name' => domain.name, 'address' => '1.2.3.4'} }
+          let(:dns_config) do
+            { 'domain_name' => domain.name, 'address' => '1.2.3.4' }
+          end
           it 'creates name server records' do
             powerdns_manager.configure_nameserver
             ns_record = Models::Dns::Record.find(name: 'bosh', type: 'NS')

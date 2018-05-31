@@ -60,7 +60,9 @@ module Bosh::Director
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager) }
 
-    let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
+    let(:networks) do
+      { 'A' => { 'ip' => '1.1.1.1' }, 'B' => { 'ip' => '2.2.2.2' }, 'C' => { 'ip' => '3.3.3.3' } }
+    end
 
     let :handler do
       make_handler(@instance, @cloud, @agent)

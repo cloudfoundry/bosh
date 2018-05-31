@@ -80,7 +80,9 @@ module Bosh::Director
             },
         }
       end
-      let(:options) { {} }
+      let(:options) do
+        {}
+      end
 
       subject(:instance_plan_factory) do
         InstancePlanFactory.new(
@@ -136,7 +138,9 @@ module Bosh::Director
           end
 
           context 'when passed as TRUE in the options' do
-            let(:options) { { 'use_dns_addresses' => true } }
+            let(:options) do
+              { 'use_dns_addresses' => true }
+            end
             let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
@@ -153,7 +157,9 @@ module Bosh::Director
             end
 
             context 'when also passing use_short_dns_addresses' do
-              let(:options) { { 'use_short_dns_addresses' => true, 'use_dns_addresses' => true } }
+              let(:options) do
+                { 'use_short_dns_addresses' => true, 'use_dns_addresses' => true }
+              end
               it 'provides the instance_plan with the correct use_dns_addresses' do
                 expect(InstancePlan).to receive(:new).with(
                   desired_instance: anything,
@@ -170,7 +176,9 @@ module Bosh::Director
           end
 
           context 'when passed as FALSE in the options' do
-            let(:options) { { 'use_dns_addresses' => false } }
+            let(:options) do
+              { 'use_dns_addresses' => false }
+            end
             let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
@@ -204,7 +212,9 @@ module Bosh::Director
           let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
           context 'when passed as TRUE in the options' do
-            let(:options) { { 'randomize_az_placement' => true } }
+            let(:options) do
+              { 'randomize_az_placement' => true }
+            end
 
             it 'knows whether to randomize az placement' do
               expect(instance_plan_factory.randomize_az_placement?).to be(true)
@@ -212,7 +222,9 @@ module Bosh::Director
           end
 
           context 'when passed as FALSE in the options' do
-            let(:options) { { 'randomize_az_placement' => false } }
+            let(:options) do
+              { 'randomize_az_placement' => false }
+            end
 
             it 'knows whether to randomize az placement' do
               expect(instance_plan_factory.randomize_az_placement?).to be(false)
@@ -222,8 +234,12 @@ module Bosh::Director
       end
 
       describe '#desired_existing_instance_plan' do
-        let(:tags) { { 'key1' => 'value1' } }
-        let(:options) { { 'tags' => tags } }
+        let(:tags) do
+          { 'key1' => 'value1' }
+        end
+        let(:options) do
+          { 'tags' => tags }
+        end
 
         it 'passes tags to instance plan creation' do
           expect(InstancePlan).to receive(:new).with(
@@ -254,7 +270,9 @@ module Bosh::Director
           end
 
           context 'when passed as TRUE in the options' do
-            let(:options) { { 'use_dns_addresses' => true } }
+            let(:options) do
+              { 'use_dns_addresses' => true }
+            end
             let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
@@ -272,7 +290,9 @@ module Bosh::Director
             end
 
             context 'when also passing use_short_dns_addresses' do
-              let(:options) { { 'use_short_dns_addresses' => true, 'use_dns_addresses' => true } }
+              let(:options) do
+                { 'use_short_dns_addresses' => true, 'use_dns_addresses' => true }
+              end
               it 'provides the instance_plan with the correct use_dns_addresses' do
                 expect(InstancePlan).to receive(:new).with(
                   desired_instance: anything,
@@ -289,7 +309,9 @@ module Bosh::Director
           end
 
           context 'when passed as FALSE in the options' do
-            let(:options) { { 'use_dns_addresses' => false } }
+            let(:options) do
+              { 'use_dns_addresses' => false }
+            end
             let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
@@ -310,8 +332,12 @@ module Bosh::Director
       end
 
       describe '#desired_new_instance_plan' do
-        let(:tags) { { 'key1' => 'value1' } }
-        let(:options) { { 'tags' => tags } }
+        let(:tags) do
+          { 'key1' => 'value1' }
+        end
+        let(:options) do
+          { 'tags' => tags }
+        end
 
         it 'passes tags to instance plan creation' do
           expect(InstancePlan).to receive(:new).with(
@@ -342,7 +368,9 @@ module Bosh::Director
           end
 
           context 'when passed as TRUE in the options' do
-            let(:options) { { 'use_dns_addresses' => true } }
+            let(:options) do
+              { 'use_dns_addresses' => true }
+            end
             let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
@@ -360,7 +388,9 @@ module Bosh::Director
             end
 
             context 'when also passing use_short_dns_addresses' do
-              let(:options) { { 'use_short_dns_addresses' => true, 'use_dns_addresses' => true } }
+              let(:options) do
+                { 'use_short_dns_addresses' => true, 'use_dns_addresses' => true }
+              end
               it 'provides the instance_plan with the correct use_dns_addresses' do
                 expect(InstancePlan).to receive(:new).with(
                   desired_instance: anything,
@@ -377,7 +407,9 @@ module Bosh::Director
           end
 
           context 'when passed as FALSE in the options' do
-            let(:options) { { 'use_dns_addresses' => false } }
+            let(:options) do
+              { 'use_dns_addresses' => false }
+            end
             let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do

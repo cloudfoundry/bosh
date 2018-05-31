@@ -4,7 +4,9 @@ module Bosh::Director
   describe Api::ReleaseManager do
     let(:task) { double('Task') }
     let(:username) { 'username-1' }
-    let(:options) { { foo: 'bar' } }
+    let(:options) do
+      { foo: 'bar' }
+    end
 
     before { allow(Dir).to receive(:mktmpdir).with('release').and_return(tmp_release_dir) }
     let(:tmp_release_dir) { 'fake-tmp-release-dir' }

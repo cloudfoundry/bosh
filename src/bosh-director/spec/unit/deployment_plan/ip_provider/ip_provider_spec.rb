@@ -5,7 +5,9 @@ module Bosh::Director::DeploymentPlan
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment', using_global_networking?: using_global_networking) }
     let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_ranges: Set.new) }
-    let(:networks) { {'my-manual-network' => manual_network} }
+    let(:networks) do
+      { 'my-manual-network' => manual_network }
+    end
     let(:manual_network_spec) {
       {
         'name' => 'my-manual-network',
@@ -531,7 +533,9 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'when reservation network was deleted' do
-            let(:networks) { {'my-another-network' => another_manual_network} }
+            let(:networks) do
+              { 'my-another-network' => another_manual_network }
+            end
 
             it 'finds the network that has subnet that includes reservation IP' do
               ip_provider.reserve_existing_ips(existing_network_reservation)

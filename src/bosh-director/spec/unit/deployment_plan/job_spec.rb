@@ -52,7 +52,9 @@ module Bosh
 
           let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
           let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
-          let(:options) { {} }
+          let(:options) do
+            {}
+          end
 
           before do
             allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
@@ -111,7 +113,9 @@ module Bosh
           end
 
           context 'when user specifies invalid property type for job' do
-            let(:user_defined_prop) { { 'deep_property' => false } }
+            let(:user_defined_prop) do
+              { 'deep_property' => false }
+            end
 
             it 'raises an exception explaining which property is the wrong type' do
               expect do

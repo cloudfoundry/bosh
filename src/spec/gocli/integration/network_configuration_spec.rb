@@ -273,7 +273,9 @@ describe 'network configuration', type: :integration do
   end
 
   context '#spec.ip' do
-    let (:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
+    let(:client_env) do
+      { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' }
+    end
 
     with_reset_sandbox_before_each
 

@@ -10,7 +10,9 @@ module Bosh::Director
     let(:default_network_id) { 1 }
     let(:deployment_name) { 'fake-deployment' }
     let(:root_domain) { 'sub.bosh' }
-    let(:specific_query) { {} }
+    let(:specific_query) do
+      {}
+    end
     let(:criteria) do
       {
         instance_group: instance_group,
@@ -43,7 +45,9 @@ module Bosh::Director
 
       describe 'status' do
         context 'when default' do
-          let(:specific_query) { { status: 'default' } }
+          let(:specific_query) do
+            { status: 'default' }
+          end
 
           it 'includes the health code in the query' do
             expect(subject.encode_query(criteria)).to eq('q-s0.potato-group.potato-net.fake-deployment.sub.bosh')
@@ -51,7 +55,9 @@ module Bosh::Director
         end
 
         context 'when healthy' do
-          let(:specific_query) { { status: 'healthy' } }
+          let(:specific_query) do
+            { status: 'healthy' }
+          end
 
           it 'includes the health code in the query' do
             expect(subject.encode_query(criteria)).to eq('q-s3.potato-group.potato-net.fake-deployment.sub.bosh')
@@ -59,7 +65,9 @@ module Bosh::Director
         end
 
         context 'when unhealthy' do
-          let(:specific_query) { { status: 'unhealthy' } }
+          let(:specific_query) do
+            { status: 'unhealthy' }
+          end
 
           it 'includes the health code in the query' do
             expect(subject.encode_query(criteria)).to eq('q-s1.potato-group.potato-net.fake-deployment.sub.bosh')
@@ -67,7 +75,9 @@ module Bosh::Director
         end
 
         context 'when all' do
-          let(:specific_query) { { status: 'all' } }
+          let(:specific_query) do
+            { status: 'all' }
+          end
 
           it 'includes the health code in the query' do
             expect(subject.encode_query(criteria)).to eq('q-s4.potato-group.potato-net.fake-deployment.sub.bosh')
@@ -75,7 +85,10 @@ module Bosh::Director
         end
 
         context 'when it is an invalid value' do
-          let(:specific_query) { { status: 'laksjdfl;kasdfklasd' } }
+          let(:specific_query) do
+            { status: 'laksjdfl
+              kasdfklasd' }
+          end
 
           it 'includes the health code in the query' do
             expect(subject.encode_query(criteria)).to eq('q-s0.potato-group.potato-net.fake-deployment.sub.bosh')
@@ -84,7 +97,9 @@ module Bosh::Director
       end
 
       describe 'individual instance query' do
-        let(:specific_query) { {uuid: 'uuid-1'} }
+        let(:specific_query) do
+          { uuid: 'uuid-1' }
+        end
 
         it 'includes uuid at start of name instead of q- syntax' do
           expect(subject.encode_query(criteria)).to eq('uuid-1.potato-group.potato-net.fake-deployment.sub.bosh')
@@ -92,17 +107,23 @@ module Bosh::Director
       end
 
       describe 'encoding AZ indices' do
-        let(:az_hash) { {'zone1' => '1', 'zone2' => '2'} }
+        let(:az_hash) do
+          { 'zone1' => '1', 'zone2' => '2' }
+        end
 
         context 'single az filter' do
-          let(:specific_query) { {azs: ['zone1']} }
+          let(:specific_query) do
+            { azs: ['zone1'] }
+          end
           it 'includes an a# code' do
             expect(subject.encode_query(criteria)).to eq('q-a1s0.potato-group.potato-net.fake-deployment.sub.bosh')
           end
         end
 
         context 'multiple az filter' do
-          let(:specific_query) { {azs: ['zone2','zone1']} }
+          let(:specific_query) do
+            { azs: %w[zone2 zone1] }
+          end
           it 'includes all the codes in order' do
             expect(subject.encode_query(criteria)).to eq('q-a1a2s0.potato-group.potato-net.fake-deployment.sub.bosh')
           end
@@ -124,7 +145,9 @@ module Bosh::Director
         end
 
         context 'when including a UUID in the criteria' do
-          let(:specific_query) {{uuid: 'uuid-1'}}
+          let(:specific_query) do
+            { uuid: 'uuid-1' }
+          end
           it 'includes the m# code in the query' do
             expect(subject.encode_query(criteria)).to eq('q-m1n1s0.q-g3.sub.bosh')
           end
@@ -216,7 +239,9 @@ module Bosh::Director
     end
 
     describe '#id_for_az' do
-      let(:az_hash) { { 'zone1' => '1', 'zone2' => '2' } }
+      let(:az_hash) do
+        { 'zone1' => '1', 'zone2' => '2' }
+      end
 
       it 'matches if found' do
         expect(subject.id_for_az('zone1')).to eq('1')

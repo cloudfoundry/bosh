@@ -98,7 +98,9 @@ module Bosh::Director
       end
 
       describe 'when scheduled jobs is not an Array' do
-        let(:scheduled_jobs) { {} }
+        let(:scheduled_jobs) do
+          {}
+        end
         it 'raises' do
           expect { scheduler }.to raise_error('scheduled_jobs must be an array')
         end

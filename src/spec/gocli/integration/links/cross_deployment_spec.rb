@@ -402,7 +402,9 @@ describe 'cross deployment links', type: :integration do
 
     context 'when provider use_dns_address is not specified (default get director behaviour)' do
       context 'when consumer specifies use_dns_address as FALSE' do
-        let(:features_hash) { { 'use_dns_addresses' => false } }
+        let(:features_hash) do
+          { 'use_dns_addresses' => false }
+        end
         before do
           deploy_simple_manifest(manifest_hash: first_manifest)
           second_manifest['features'] = features_hash
@@ -419,7 +421,9 @@ describe 'cross deployment links', type: :integration do
       end
 
       context 'when consumer specifies use_dns_address as TRUE' do
-        let(:features_hash) { { 'use_dns_addresses' => true } }
+        let(:features_hash) do
+          { 'use_dns_addresses' => true }
+        end
         before do
           deploy_simple_manifest(manifest_hash: first_manifest)
           second_manifest['features'] = features_hash
@@ -455,7 +459,9 @@ describe 'cross deployment links', type: :integration do
     end
 
     context 'when provider use_dns_address is FALSE' do
-      let(:features_hash) { { 'use_dns_addresses' => false } }
+      let(:features_hash) do
+        { 'use_dns_addresses' => false }
+      end
 
       before do
         first_manifest['features'] = features_hash

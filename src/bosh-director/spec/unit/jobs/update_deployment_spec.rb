@@ -10,7 +10,9 @@ module Bosh::Director
       let(:manifest_content) { YAML.dump ManifestHelper.default_legacy_manifest }
       let(:cloud_config_id) { nil }
       let(:runtime_config_ids) { [] }
-      let(:options) { {} }
+      let(:options) do
+        {}
+      end
       let(:deployment_instance_group) { DeploymentPlan::InstanceGroup.new(logger) }
       let(:task) { Models::Task.make(:id => 42, :username => 'user') }
       let(:errand_instance_group) do
@@ -106,7 +108,9 @@ module Bosh::Director
           end
 
           context "when it is a 'deploy' action" do
-            let(:options) { {'deploy' => true} }
+            let(:options) do
+              { 'deploy' => true }
+            end
             let(:fixed_time) { Time.now }
             let(:instance_plan1) {instance_double(Bosh::Director::DeploymentPlan::InstancePlan)}
             let(:instance_plan2) {instance_double(Bosh::Director::DeploymentPlan::InstancePlan)}
@@ -194,7 +198,9 @@ module Bosh::Director
           end
 
           context "when options hash does NOT contain 'deploy'" do
-            let (:options) { {'deploy' => false} }
+            let(:options) do
+              { 'deploy' => false }
+            end
             let(:manifest) { instance_double( Bosh::Director::Manifest)}
 
             before do
@@ -261,7 +267,9 @@ module Bosh::Director
           end
 
           context 'errands variables versioning' do
-            let(:errand_properties) { { 'some-key' => 'some-value' } }
+            let(:errand_properties) do
+              { 'some-key' => 'some-value' }
+            end
 
             let(:job_1_links) do
               {
@@ -356,7 +364,9 @@ module Bosh::Director
 
           context 'when manifest_text is specified in options' do
             let(:manifest_text) { '{ name: raw }' }
-            let(:options) { {'manifest_text' => manifest_text} }
+            let(:options) do
+              { 'manifest_text' => manifest_text }
+            end
 
             it 'uses options manifest_text value as manifest_text' do
               expect(Bosh::Director::Manifest).to receive(:load_from_hash).with(Hash, manifest_text, nil, Array)
@@ -416,7 +426,9 @@ module Bosh::Director
           end
 
           context 'when `new` option is specified' do
-            let (:options) { {'new' => true} }
+            let(:options) do
+              { 'new' => true }
+            end
 
             it 'should store new events with specific action' do
               expect {
@@ -441,7 +453,9 @@ module Bosh::Director
           end
 
           context 'when option deploy is set' do
-            let(:options) { {'deploy' => true} }
+            let(:options) do
+              { 'deploy' => true }
+            end
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(variable_set_1).to receive(:update).with(:deployed_successfully => true)
@@ -507,7 +521,9 @@ Unable to render instance groups for deployment. Errors are:
           end
 
           context 'when option deploy is set' do
-            let(:options) { {'deploy' => true} }
+            let(:options) do
+              { 'deploy' => true }
+            end
             it 'should mark variable_set.writable to false' do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
@@ -578,7 +594,9 @@ Unable to render instance groups for deployment. Errors are:
 
         context 'when job is being dry-run' do
           let(:manifest) { instance_double( Bosh::Director::Manifest)}
-          let(:options) { {'dry_run' => true} }
+          let(:options) do
+            { 'dry_run' => true }
+          end
 
           before do
             allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
@@ -626,7 +644,9 @@ Unable to render instance groups for deployment. Errors are:
 
       describe '#dry_run?' do
         context 'when job is being dry run' do
-          let(:options) { {'dry_run' => true} }
+          let(:options) do
+            { 'dry_run' => true }
+          end
 
           it 'should return true ' do
             expect(job.dry_run?).to be_truthy

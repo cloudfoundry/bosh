@@ -3,7 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::AttachDisk do
 
-    let(:manifest) {{'tags' => {'mytag' => 'myvalue'}}}
+    let(:manifest) do
+      { 'tags' => { 'mytag' => 'myvalue' } }
+    end
     let(:deployment) {
       deployment = Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest))
       Models::VariableSet.make(deployment_id: deployment.id)

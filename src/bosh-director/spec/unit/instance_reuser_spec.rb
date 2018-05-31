@@ -4,7 +4,9 @@ module Bosh::Director
   describe InstanceReuser do
     let(:reuser) { described_class.new }
     let(:reservation) { instance_double('Bosh::Director::NetworkReservation') }
-    let(:network_settings) { {} }
+    let(:network_settings) do
+      {}
+    end
     let(:instance) { instance_double(DeploymentPlan::Instance) }
 
     let!(:stemcell_model) { Models::Stemcell.make(name: 'stemcell-name', version: '1') }

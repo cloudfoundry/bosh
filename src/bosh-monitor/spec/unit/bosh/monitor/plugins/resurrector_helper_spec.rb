@@ -3,7 +3,9 @@ require 'spec_helper'
 module Bosh::Monitor::Plugins::ResurrectorHelper
   describe AlertTracker do
     subject(:tracker) { AlertTracker.new(config) }
-    let(:config) { {} }
+    let(:config) do
+      {}
+    end
     let(:agents) { build_agents(10) }
     let(:alerts) { 0 }
     let(:deployment) { 'deployment'}
@@ -30,7 +32,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
       end
 
       context 'when the number of unresponsive agents is below the meltdown count threshold' do
-        let(:config) { { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.0 } }
+        let(:config) do
+          { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.0 }
+        end
         let(:alerts) { 1 }
 
         it 'reports as "managed"' do
@@ -42,7 +46,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
       context 'when the number of unresponsive agents is at/above the meltdown count threshold' do
         context 'and below the percent threshold' do
-          let(:config) { { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.21 } }
+          let(:config) do
+            { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.21 }
+          end
           let(:alerts) { 2 }
 
           it 'reports as "managed"' do
@@ -53,7 +59,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         end
 
         context 'and at/above the percent threshold' do
-          let(:config) { { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.20 } }
+          let(:config) do
+            { 'minimum_down_jobs' => 2, 'percent_threshold' => 0.20 }
+          end
           let(:alerts) { 2 }
 
           it 'reports as "meltdown"' do
@@ -65,7 +73,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
       end
 
       context 'when recorded alerts are outside of the time threshold' do
-        let(:config) { { 'minimum_down_jobs' => 2, 'time_threshold' => 600 } }
+        let(:config) do
+          { 'minimum_down_jobs' => 2, 'time_threshold' => 600 }
+        end
         let(:alerts) { 0 }
 
         it 'excludes those alerts' do

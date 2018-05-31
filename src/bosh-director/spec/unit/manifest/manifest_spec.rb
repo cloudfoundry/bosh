@@ -6,10 +6,16 @@ module Bosh::Director
       described_class.new(manifest_hash, manifest_text, cloud_config_hash, runtime_config_hash)
     end
 
-    let(:manifest_hash) { {} }
+    let(:manifest_hash) do
+      {}
+    end
     let(:manifest_text) { '{}' }
-    let(:cloud_config_hash) { {} }
-    let(:runtime_config_hash) { {} }
+    let(:cloud_config_hash) do
+      {}
+    end
+    let(:runtime_config_hash) do
+      {}
+    end
 
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
@@ -38,7 +44,9 @@ module Bosh::Director
     describe '.load_from_model' do
       let(:deployment_model) {instance_double(Bosh::Director::Models::Deployment)}
       let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
-      let(:manifest_hash) { {'name' => 'a_deployment', 'name-1' => 'my-name-1'} }
+      let(:manifest_hash) do
+        { 'name' => 'a_deployment', 'name-1' => 'my-name-1' }
+      end
       let(:manifest_text) do
         %Q(---
          name: a_deployment
@@ -131,7 +139,9 @@ module Bosh::Director
       end
       let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
 
-      let(:runtime_config_hash) { { 'raw_runtime' => '((foo))' } }
+      let(:runtime_config_hash) do
+        { 'raw_runtime' => '((foo))' }
+      end
       let(:cloud_config_hash) { cloud_config.raw_manifest }
       let(:manifest_text) do
         %Q(---
@@ -163,7 +173,9 @@ module Bosh::Director
       end
 
       context 'when resolving manifest' do
-        let(:passed_in_manifest_hash) { { 'smurf' => '((smurf_placeholder))' } }
+        let(:passed_in_manifest_hash) do
+          { 'smurf' => '((smurf_placeholder))' }
+        end
 
         before do
           allow(Api::CloudConfigManager).to receive(:interpolated_manifest).and_return({})

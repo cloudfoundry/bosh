@@ -47,7 +47,9 @@ module Bosh::Director
         'networks' => networks,
       }
     end
-    let(:networks) { { 'a' => { 'ip' => '192.168.1.2' } } }
+    let(:networks) do
+      { 'a' => { 'ip' => '192.168.1.2' } }
+    end
 
     before do
       allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)

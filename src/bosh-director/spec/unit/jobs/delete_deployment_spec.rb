@@ -6,7 +6,9 @@ module Bosh::Director
     before { fake_locks }
 
     subject(:job) { described_class.new('test_deployment', job_options) }
-    let(:job_options) { {} }
+    let(:job_options) do
+      {}
+    end
     let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }

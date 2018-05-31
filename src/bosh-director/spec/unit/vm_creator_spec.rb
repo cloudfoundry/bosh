@@ -31,7 +31,9 @@ module Bosh
         )
       end
 
-      let(:tags) { { 'mytag' => 'foobar' } }
+      let(:tags) do
+        { 'mytag' => 'foobar' }
+      end
 
       let(:instance_group) do
         instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
@@ -51,7 +53,9 @@ module Bosh
       end
 
       let(:global_network_resolver) { instance_double(DeploymentPlan::GlobalNetworkResolver, reserved_ranges: Set.new) }
-      let(:networks) { { 'my-manual-network' => manual_network } }
+      let(:networks) do
+        { 'my-manual-network' => manual_network }
+      end
       let(:manual_network_spec) do
         {
           'name' => 'my-manual-network',

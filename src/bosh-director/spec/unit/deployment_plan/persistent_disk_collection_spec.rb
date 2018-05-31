@@ -5,7 +5,9 @@ module Bosh::Director
     describe PersistentDiskCollection do
       let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
       let(:disk_size) { 30 }
-      let(:cloud_properties) { {} }
+      let(:cloud_properties) do
+        {}
+      end
       let(:disk_type) { DiskType.new('disk_name', disk_size, cloud_properties) }
 
       describe '#add_by_disk_size' do

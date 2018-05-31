@@ -3,7 +3,9 @@ require_relative '../../spec_helper'
 describe 'cpi config', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
+  let(:client_env) do
+    { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
+  end
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:cpi_path) { current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI) }
   let(:valid_cpi_config_file) {yaml_file('cpi_manifest', Bosh::Spec::Deployments.multi_cpi_config_with_variables(cpi_path)) }

@@ -24,7 +24,9 @@ module Bosh::Director
 
     let(:deployment) { Models::Deployment[1] }
     let(:jobs) { [['job1', 'job1index0'], ['job1', 'job1index1'], ['job2', 'job2index0']] }
-    let(:resolutions) { {'1' => :recreate_vm, '2' => :recreate_vm} }
+    let(:resolutions) do
+      { '1' => :recreate_vm, '2' => :recreate_vm }
+    end
     let(:fix_stateful_jobs) { true }
     let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
 

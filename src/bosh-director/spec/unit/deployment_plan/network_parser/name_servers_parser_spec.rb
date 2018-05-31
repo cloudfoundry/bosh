@@ -20,7 +20,9 @@ module Bosh::Director
       end
 
       context 'when power dns is not enabled' do
-        let(:dns_config) { {'server' => '9.10.11.12'} }
+        let(:dns_config) do
+          { 'server' => '9.10.11.12' }
+        end
 
         before do
           allow(Config).to receive(:dns_db).and_return(false)
@@ -34,7 +36,9 @@ module Bosh::Director
 
       context 'when power dns is enabled' do
         context 'when there is a default server' do
-          let(:dns_config) { {'server' => '9.10.11.12'} }
+          let(:dns_config) do
+            { 'server' => '9.10.11.12' }
+          end
 
           before do
             allow(Config).to receive(:dns_db).and_return(true)
@@ -54,7 +58,9 @@ module Bosh::Director
           end
 
           context 'when dns server is 127.0.0.1' do
-            let(:dns_config) { {'server' => '127.0.0.1'} }
+            let(:dns_config) do
+              { 'server' => '127.0.0.1' }
+            end
 
             it 'should not add default dns server if it is 127.0.0.1' do
               expect(name_servers_parser.parse('network', {'dns' => %w[1.2.3.4]})).to eq(%w[1.2.3.4])

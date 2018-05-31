@@ -35,11 +35,21 @@ module Bosh::Director
         allow(rc_model_3).to receive(:raw_manifest).and_return(runtime_config_3)
       end
 
-      let(:release_1) { {'name' => 'release_1', 'version' => '1'} }
-      let(:release_2) { {'name' => 'release_2', 'version' => '2'} }
-      let(:release_3) { {'name' => 'release_3', 'version' => '3'} }
-      let(:release_4) { {'name' => 'release_4', 'version' => '4'} }
-      let(:release_5) { {'name' => 'release_5', 'version' => '5'} }
+      let(:release_1) do
+        { 'name' => 'release_1', 'version' => '1' }
+      end
+      let(:release_2) do
+        { 'name' => 'release_2', 'version' => '2' }
+      end
+      let(:release_3) do
+        { 'name' => 'release_3', 'version' => '3' }
+      end
+      let(:release_4) do
+        { 'name' => 'release_4', 'version' => '4' }
+      end
+      let(:release_5) do
+        { 'name' => 'release_5', 'version' => '5' }
+      end
 
       let(:addon_1) {
         {
@@ -247,9 +257,13 @@ module Bosh::Director
 
     describe '#interpolate_manifest_for_deployment' do
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-      let(:mock_manifest) { {name: '((manifest_name))'} }
+      let(:mock_manifest) do
+        { name: '((manifest_name))' }
+      end
       let(:deployment_name) { 'some_deployment_name' }
-      let(:interpolated_runtime_config) { {name: 'interpolated manifest'} }
+      let(:interpolated_runtime_config) do
+        { name: 'interpolated manifest' }
+      end
 
       before do
         allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)

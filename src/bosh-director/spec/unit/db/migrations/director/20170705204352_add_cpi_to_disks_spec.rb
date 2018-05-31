@@ -9,7 +9,9 @@ module Bosh::Director
     before { DBSpecHelper.migrate_all_before(migration_file) }
 
     describe 'backfilling persistent_disks data' do
-      let(:cloud_config_properties) { {} }
+      let(:cloud_config_properties) do
+        {}
+      end
 
       before do
         db[:cloud_configs] << { properties: cloud_config_properties.to_yaml, created_at: created_at_time, id: 37 }
@@ -20,7 +22,9 @@ module Bosh::Director
       end
 
       context 'using cloud config' do
-        let(:cloud_config_properties) { { 'azs' => [ { 'name' => 'z1', 'cpi' => 'my-cpi' } ] } }
+        let(:cloud_config_properties) do
+          { 'azs' => [{ 'name' => 'z1', 'cpi' => 'my-cpi' }] }
+        end
 
         before do
           db[:deployments].where(id: 42).update(cloud_config_id: 37)
@@ -33,7 +37,9 @@ module Bosh::Director
         end
 
         context 'az does not configure cpi' do
-          let(:cloud_config_properties) { { 'azs' => [ { 'name' => 'z1' } ] } }
+          let(:cloud_config_properties) do
+            { 'azs' => [{ 'name' => 'z1' }] }
+          end
 
           it 'does not assign cpi to disk' do
             DBSpecHelper.migrate(migration_file)
@@ -59,7 +65,9 @@ module Bosh::Director
         end
 
         context 'if no AZs defined' do
-          let(:cloud_config_properties) {{}}
+          let(:cloud_config_properties) do
+            {}
+          end
 
           it 'does not assign cpi to disk' do
             DBSpecHelper.migrate(migration_file)

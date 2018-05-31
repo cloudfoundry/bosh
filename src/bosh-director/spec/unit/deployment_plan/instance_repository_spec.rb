@@ -33,7 +33,9 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   end
 
   describe '#fetch_existing' do
-    let(:instance_spec) { {} }
+    let(:instance_spec) do
+      {}
+    end
 
     it 'returns an DeploymentPlan::Instance with a bound Models::Instance' do
       instance = instance_repository.fetch_existing(existing_instance, {}, job, nil, plan)
@@ -73,7 +75,9 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
       context 'when instance does not have reservations in database' do
         context 'when instance has reservations on dynamic networks' do
-          let(:instance_spec) { {'networks' => {'name-7' => {'type' => 'dynamic', 'ip' => '10.10.0.10'}}} }
+          let(:instance_spec) do
+            { 'networks' => { 'name-7' => { 'type' => 'dynamic', 'ip' => '10.10.0.10' } } }
+          end
 
           it 'creates reservations from state' do
             instance = instance_repository.fetch_existing(existing_instance, {'networks' => {'name-7' => {'ip' => 345}}}, job, nil, plan)
@@ -143,7 +147,9 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
 
     describe 'when existing instance has no spec' do
-      let(:instance_spec) { {} }
+      let(:instance_spec) do
+        {}
+      end
       it 'returns an instance with no spec' do
         instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
         expect(instance.model).to eq(existing_instance)

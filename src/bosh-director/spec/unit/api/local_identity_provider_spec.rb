@@ -22,7 +22,9 @@ module Bosh::Director
     end
 
     context 'given valid HTTP basic authentication credentials' do
-      let(:request_env) { { 'HTTP_AUTHORIZATION' => credentials[:admin] } }
+      let(:request_env) do
+        { 'HTTP_AUTHORIZATION' => credentials[:admin] }
+      end
 
       it 'returns the username of the authenticated user' do
         local_user = identity_provider.get_user(request_env, {})
@@ -31,7 +33,9 @@ module Bosh::Director
     end
 
     context 'given bogus HTTP basic authentication credentials' do
-      let(:request_env) { { 'HTTP_AUTHORIZATION' => credentials[:bogus] } }
+      let(:request_env) do
+        { 'HTTP_AUTHORIZATION' => credentials[:bogus] }
+      end
 
       it 'raises' do
         expect {

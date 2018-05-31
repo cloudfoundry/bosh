@@ -6,7 +6,9 @@ module Bosh::Director
       variables_spec_parser = Bosh::Director::DeploymentPlan::VariablesSpecParser.new(@logger, Bosh::Director::Models::Deployment.make)
       described_class.new(logger, variables_spec_parser)
     end
-    let(:planner_options) { {} }
+    let(:planner_options) do
+      {}
+    end
     let(:event_log) { Config.event_log }
 
     describe '#parse' do

@@ -34,7 +34,9 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     end
 
     context 'when cloud_properties are configured' do
-      let (:cloud_properties) { {'instance_type' => 'super-large'} }
+      let(:cloud_properties) do
+        { 'instance_type' => 'super-large' }
+      end
       let (:compilation_config) {
         {
           'workers' => 2,

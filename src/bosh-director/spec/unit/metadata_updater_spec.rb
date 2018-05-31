@@ -4,7 +4,9 @@ require 'timecop'
 
 describe Bosh::Director::MetadataUpdater do
   subject(:metadata_updater) { described_class.new(director_metadata, logger) }
-  let(:director_metadata) { {} }
+  let(:director_metadata) do
+    {}
+  end
   let(:vm) {
     BD::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id, cpi: 'cpi1')
   }

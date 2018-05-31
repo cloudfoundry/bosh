@@ -58,7 +58,9 @@ describe Bosh::Clouds::ExternalCpi do
     context 'if properties from cpi config are given' do
       let(:director_uuid) {'fake-director-uuid'}
       let(:request_id) {'cpi-fake-request-id'}
-      let(:cpi_config_properties) { {'key1' => {'nestedkey1' => 'nestedvalue1'}, 'key2' => 'value2'} }
+      let(:cpi_config_properties) do
+        { 'key1' => { 'nestedkey1' => 'nestedvalue1' }, 'key2' => 'value2' }
+      end
       let(:options) do
         {
           properties_from_cpi_config: cpi_config_properties

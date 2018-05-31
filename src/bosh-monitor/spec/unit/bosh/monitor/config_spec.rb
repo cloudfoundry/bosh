@@ -2,7 +2,9 @@ require 'spec_helper'
 
 describe Bosh::Monitor do
   describe 'config=' do
-    let(:http_config) { {} }
+    let(:http_config) do
+      {}
+    end
     let(:valid_config) { {
       'logfile' => Tempfile.new('logfile').path,
       'director' => {},

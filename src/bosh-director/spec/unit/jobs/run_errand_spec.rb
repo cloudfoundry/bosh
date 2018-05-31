@@ -387,7 +387,9 @@ module Bosh::Director
                     context 'when errand succeeded on the previous run' do
                       context 'when the errand configuration has NOT changed' do
                         let(:successful_configuration_hash) { 'last_successful_config' }
-                        let(:successful_packages_spec) { { 'packages' => 'last_successful_packages' } }
+                        let(:successful_packages_spec) do
+                          { 'packages' => 'last_successful_packages' }
+                        end
 
                         before do
                           allow(instance).to receive(:current_packages).and_return(successful_packages_spec)

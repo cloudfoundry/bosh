@@ -52,7 +52,9 @@ describe 'disk types', type: :integration do
   end
 
   context 'with existing disk type with cloud_properties' do
-    let(:cloud_properties) { {'type' => 'gp2'} }
+    let(:cloud_properties) do
+      { 'type' => 'gp2' }
+    end
     before { deploy_with_disk_type(disk_size, cloud_properties) }
 
     context 'when disk size is 0' do
@@ -74,7 +76,9 @@ describe 'disk types', type: :integration do
       end
 
       context 'when cloud_properties were changed' do
-        let(:cloud_properties) { {'type' => 'ssd'} }
+        let(:cloud_properties) do
+          { 'type' => 'ssd' }
+        end
 
         it 'does not update the job' do
           old_disk_cids = director.instances.map(&:disk_cids)

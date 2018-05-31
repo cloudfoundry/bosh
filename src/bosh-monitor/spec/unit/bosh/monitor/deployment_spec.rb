@@ -4,7 +4,9 @@ describe Bhm::Deployment do
 
   describe '.create' do
     context 'from valid hash' do
-      let(:deployment_data) { {'name' => 'deployment_name', 'teams' => ['ateam'] } }
+      let(:deployment_data) do
+        { 'name' => 'deployment_name', 'teams' => ['ateam'] }
+      end
 
       it 'creates a deployment' do
         deployment = Bhm::Deployment.create(deployment_data)
@@ -14,7 +16,9 @@ describe Bhm::Deployment do
     end
 
     context 'from invalid hash' do
-      let(:deployment_data) { {} }
+      let(:deployment_data) do
+        {}
+      end
 
       it 'fails to create a deployment' do
         deployment = Bhm::Deployment.create(deployment_data)

@@ -46,7 +46,9 @@ module Bosh::Director
       end
 
       context 'old CPIs do not return the version from info' do
-        let(:cpi_info) { {} }
+        let(:cpi_info) do
+          {}
+        end
 
         it 'creates cloud with CPI API version of 1' do
           expect(cloud).to receive(:request_cpi_api_version=).with(1)

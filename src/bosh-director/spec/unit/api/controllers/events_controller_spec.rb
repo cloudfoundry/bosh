@@ -479,7 +479,9 @@ module Bosh::Director
 
       describe 'post' do
         let(:action) { 'create' }
-        let(:context) { {'information' => 'blah blah'} }
+        let(:context) do
+          { 'information' => 'blah blah' }
+        end
         let(:payload) {
           {
             action: action,

@@ -16,7 +16,9 @@ module Bosh::Director
     let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
     let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
-    let(:options) { {} }
+    let(:options) do
+      {}
+    end
 
     before do
       fake_locks

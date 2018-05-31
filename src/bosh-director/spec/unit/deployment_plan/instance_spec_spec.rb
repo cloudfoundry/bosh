@@ -9,9 +9,15 @@ module Bosh::Director::DeploymentPlan
         allow(double).to receive(:get_links_from_deployment).and_return([])
       end
     end
-    let(:job_spec) { { 'name' => 'smurf-job', 'release' => 'release', 'templates' => [] } }
-    let(:packages) { { 'pkg' => { 'name' => 'package', 'version' => '1.0' } } }
-    let(:properties) { { 'key' => 'value' } }
+    let(:job_spec) do
+      { 'name' => 'smurf-job', 'release' => 'release', 'templates' => [] }
+    end
+    let(:packages) do
+      { 'pkg' => { 'name' => 'package', 'version' => '1.0' } }
+    end
+    let(:properties) do
+      { 'key' => 'value' }
+    end
     let(:links) do
       {
         'smurf-job' => {
@@ -71,7 +77,9 @@ module Bosh::Director::DeploymentPlan
       )
     end
     let(:index) { 0 }
-    let(:instance_state) { {} }
+    let(:instance_state) do
+      {}
+    end
     let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
     let(:instance) do
       instance = Instance.create_from_instance_group(

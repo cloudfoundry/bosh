@@ -360,7 +360,9 @@ describe Bosh::Director::Config do
 
   describe '#identity_provider' do
     subject(:config) { Bosh::Director::Config.new(test_config) }
-    let(:provider_options) { {'blobstore_path' => blobstore_dir} }
+    let(:provider_options) do
+      { 'blobstore_path' => blobstore_dir }
+    end
 
     after { FileUtils.rm_rf(temp_dir) }
 
@@ -393,9 +395,13 @@ describe Bosh::Director::Config do
 
       context 'when uaa provider is supplied' do
         let(:provider) { 'uaa' }
-        let(:provider_options) { {'symmetric_key' => 'some-key', 'url' => 'some-url'} }
+        let(:provider_options) do
+          { 'symmetric_key' => 'some-key', 'url' => 'some-url' }
+        end
         let(:token) { CF::UAA::TokenCoder.new(skey: 'some-key').encode(payload) }
-        let(:payload) { {'user_name' => 'larry', 'aud' => ['bosh_cli'], 'scope' => ['bosh.admin']} }
+        let(:payload) do
+          { 'user_name' => 'larry', 'aud' => ['bosh_cli'], 'scope' => ['bosh.admin'] }
+        end
         before { test_config['user_management']['uaa'] = provider_options }
 
         it 'creates a UAAIdentityProvider' do

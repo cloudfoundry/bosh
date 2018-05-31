@@ -40,7 +40,9 @@ module Bosh::Director
         end
 
         context 'when attributes are are empty strings' do
-          let(:cleansed_filter_attributes) { { deployment: anything, job: '', index: nil } }
+          let(:cleansed_filter_attributes) do
+            { deployment: anything, job: '', index: nil }
+          end
 
           it 'converts the empty string to nil so that postgres will not raise on trying to convert an empty string to integer' do
             expect(Models::Instance).to receive(:find).with(cleansed_filter_attributes).and_return(instance)

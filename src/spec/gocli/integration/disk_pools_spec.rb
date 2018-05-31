@@ -47,7 +47,9 @@ describe 'disk pools', type: :integration do
   end
 
   context 'with existing disk pool with cloud_properties' do
-    let(:cloud_properties) { {'type' => 'gp2'} }
+    let(:cloud_properties) do
+      { 'type' => 'gp2' }
+    end
     before { deploy_with_disk_pool(disk_size, cloud_properties) }
 
     context 'when disk size is 0' do
@@ -64,7 +66,9 @@ describe 'disk pools', type: :integration do
       end
 
       context 'when cloud_properties were changed' do
-        let(:cloud_properties) { {'type' => 'ssd'} }
+        let(:cloud_properties) do
+          { 'type' => 'ssd' }
+        end
 
         it 'does not update the job' do
           expect(deploy_with_disk_pool(disk_size, cloud_properties)).to_not include('Updating instance foobar: ')

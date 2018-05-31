@@ -19,7 +19,9 @@ describe 'env values in instance groups and resource pools', type: :integration 
   let(:director_name) { current_sandbox.director_name }
   let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
-  let(:client_env) { { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s } }
+  let(:client_env) do
+    { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
+  end
   let(:job_properties) do
     {
       'gargamel' => {

@@ -5,7 +5,9 @@ require 'httpclient'
 describe Bosh::Director::ConfigServer::AuthHTTPClient do
   subject { Bosh::Director::ConfigServer::AuthHTTPClient.new }
   let(:http_client) { instance_double('Net::HTTP') }
-  let(:config_server_hash) { {'url' => 'http://127.0.0.1:8080'} }
+  let(:config_server_hash) do
+    { 'url' => 'http://127.0.0.1:8080' }
+  end
   let(:uaa_auth_provider) { instance_double('Bosh::Director::ConfigServer::UAAAuthProvider') }
   let(:uaa_token) { instance_double('Bosh::Director::ConfigServer::UAAToken') }
   let(:successful_response) { Net::HTTPSuccess.new(nil, "200", nil) }

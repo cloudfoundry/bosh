@@ -711,13 +711,17 @@ module Bosh::Director
 
             context 'with an instance_group' do
               let(:path) {'/foo/jobs/dea?state=recreate'}
-              let(:options) { {'job_states' => {'dea' => {'state' => 'recreate'}}} }
+              let(:options) do
+                { 'job_states' => { 'dea' => { 'state' => 'recreate' } } }
+              end
               it_behaves_like 'recreates with configs'
             end
 
             context 'with an index or ID' do
               let(:path) {'/foo/jobs/dea/2?state=recreate'}
-              let(:options) { {'job_states' => {'dea' => {'instance_states' => {2 => 'recreate'}}}} }
+              let(:options) do
+                { 'job_states' => { 'dea' => { 'instance_states' => { 2 => 'recreate' } } } }
+              end
               it_behaves_like 'recreates with configs'
             end
           end
@@ -1885,7 +1889,9 @@ module Bosh::Director
           context 'authenticated access' do
             before { authorize 'admin', 'admin' }
 
-            let(:manifest_hash) { {'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}}
+            let(:manifest_hash) do
+              { 'instance_groups' => [], 'releases' => [{ 'name' => 'simple', 'version' => 5 }] }
+            end
 
             let(:dev_team) { Models::Team.make(name: 'dev') }
             let(:other_team) { Models::Team.make(name: 'other') }
@@ -1937,7 +1943,13 @@ module Bosh::Director
             end
 
             context 'when cloud config exists' do
-              let(:manifest_hash) { {'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
+              let(:manifest_hash) do
+                {
+                  'instance_groups' => [],
+                  'releases' => [{ 'name' => 'simple', 'version' => 5 }],
+                  'networks' => [{ 'name' => 'non-cloudy-network' }],
+                }
+              end
 
               it 'ignores cloud config if network section exists' do
                 Models::Deployment.create(

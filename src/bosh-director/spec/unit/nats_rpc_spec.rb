@@ -24,7 +24,9 @@ describe Bosh::Director::NatsRpc do
     }
   }
   let(:some_logger){ instance_double(Logger) }
-  let(:options) {{}}
+  let(:options) do
+    {}
+  end
 
   subject(:nats_rpc) {
     Bosh::Director::NatsRpc.new(nats_url, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)

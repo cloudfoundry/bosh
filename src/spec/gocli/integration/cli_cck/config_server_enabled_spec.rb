@@ -14,7 +14,9 @@ describe 'cli: cloudcheck', type: :integration do
     with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
 
     let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
-    let(:client_env) { { 'BOSH_LOG_LEVEL' => 'debug', 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' } }
+    let(:client_env) do
+      { 'BOSH_LOG_LEVEL' => 'debug', 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' }
+    end
 
     before do
       pending('cli2: #131927867 gocli drops the context path from director.info.auth uaa url')

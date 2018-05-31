@@ -45,9 +45,15 @@ module Bosh::Director
     end
 
     describe 'instance group encodings' do
-      let(:basic_ig)                {{name: 'test_ig',    deployment_id: 42}}
-      let(:ig_in_other_deployment)  {{name: 'test_ig',    deployment_id: 28}}
-      let(:ig_with_other_name)      {{name: 'test_ig_2',  deployment_id: 42}}
+      let(:basic_ig) do
+        { name: 'test_ig', deployment_id: 42 }
+      end
+      let(:ig_in_other_deployment) do
+        { name: 'test_ig', deployment_id: 28 }
+      end
+      let(:ig_with_other_name) do
+        { name: 'test_ig_2', deployment_id: 42 }
+      end
 
       before do
         DBSpecHelper.migrate(migration_file)

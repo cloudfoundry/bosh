@@ -824,7 +824,9 @@ module Bosh::Director
 
         context 'when diffing two configs' do
           let(:dev_team) { Models::Team.create(name: 'dev') }
-          let(:dev_team_config_manifest) { { 'a' => 5 } }
+          let(:dev_team_config_manifest) do
+            { 'a' => 5 }
+          end
           let(:dev_team_config) do
             Models::Config.create(
               type: 'custom',
@@ -835,7 +837,9 @@ module Bosh::Director
           end
 
           let(:other_team) { Models::Team.create(name: 'other') }
-          let(:other_team_config_manifest) { { 'b' => 5 } }
+          let(:other_team_config_manifest) do
+            { 'b' => 5 }
+          end
           let(:other_team_config) do
             Models::Config.create(
               type: 'custom',

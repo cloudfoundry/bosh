@@ -7,7 +7,9 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
     BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, reserved_ranges)
   end
 
-  let(:reserved_ranges) { {} }
+  let(:reserved_ranges) do
+    {}
+  end
   let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
 
   def create_static_reservation(ip)

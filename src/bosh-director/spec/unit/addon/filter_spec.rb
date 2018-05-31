@@ -9,7 +9,9 @@ module Bosh::Director
 
       shared_examples :common_filter_checks do
         describe 'when the filter has a job with an empty job name' do
-          let(:filter_hash) { { 'jobs' => [{ 'name' => '', 'release' => 'release_name' }] } }
+          let(:filter_hash) do
+            { 'jobs' => [{ 'name' => '', 'release' => 'release_name' }] }
+          end
 
           it 'raises' do
             expect do
@@ -23,7 +25,9 @@ module Bosh::Director
         end
 
         describe 'when the filter has a job with a missing release name' do
-          let(:filter_hash) { { 'jobs' => [{ 'name' => 'job-name', 'release' => '' }] } }
+          let(:filter_hash) do
+            { 'jobs' => [{ 'name' => 'job-name', 'release' => '' }] }
+          end
 
           it 'raises' do
             expect do
@@ -38,7 +42,9 @@ module Bosh::Director
 
         describe 'when the filter has a stemcell property' do
           describe 'when the stemcell property has an os missing a name' do
-            let(:filter_hash) { { 'stemcell' => [{ 'os' => '' }] } }
+            let(:filter_hash) do
+              { 'stemcell' => [{ 'os' => '' }] }
+            end
 
             it 'raises' do
               expect do
@@ -49,7 +55,9 @@ module Bosh::Director
           end
 
           describe 'when the stemcell os matches the instance group stemcell os' do
-            let(:filter_hash) { { 'stemcell' => [{ 'os' => 'my_os' }] } }
+            let(:filter_hash) do
+              { 'stemcell' => [{ 'os' => 'my_os' }] }
+            end
 
             it 'applies' do
               allow(instance_group).to receive(:has_os?).with('my_os').and_return(true)
@@ -58,7 +66,9 @@ module Bosh::Director
           end
 
           describe 'when the stemcell os does not match the instance group stemcell os' do
-            let(:filter_hash) { { 'stemcell' => [{ 'os' => 'my_os' }] } }
+            let(:filter_hash) do
+              { 'stemcell' => [{ 'os' => 'my_os' }] }
+            end
 
             it 'does not apply' do
               allow(instance_group).to receive(:has_os?).with('my_os').and_return(false)
@@ -68,7 +78,9 @@ module Bosh::Director
         end
 
         describe 'when the filter spec has only a deployments section' do
-          let(:filter_hash) { { 'deployments' => %w[deployment_1 deployment_2] } }
+          let(:filter_hash) do
+            { 'deployments' => %w[deployment_1 deployment_2] }
+          end
 
           describe 'when the deployment name matches one from the include spec' do
             it 'applies' do
@@ -84,7 +96,9 @@ module Bosh::Director
         end
 
         describe 'when the filter spec has only a teams section' do
-          let(:filter_hash) { { 'teams' => %w[team_1 team_2] } }
+          let(:filter_hash) do
+            { 'teams' => %w[team_1 team_2] }
+          end
 
           describe 'when one of the teams matches one from the included spec' do
             it 'applies' do
@@ -93,7 +107,9 @@ module Bosh::Director
           end
 
           describe 'when none of the teams match the filter spec' do
-            let(:filter_hash) { { 'teams' => %w[team_1 team_2] } }
+            let(:filter_hash) do
+              { 'teams' => %w[team_1 team_2] }
+            end
             it 'does not apply' do
               expect(addon_include.applies?('anything', ['team_5'], nil)).to be(false)
             end
@@ -101,7 +117,9 @@ module Bosh::Director
         end
 
         describe 'when the filter spec has only a networks section' do
-          let(:filter_hash) { { 'networks' => %w[net_1 net_2] } }
+          let(:filter_hash) do
+            { 'networks' => %w[net_1 net_2] }
+          end
 
           describe 'when the network name matches one from the include spec' do
             it 'applies' do
@@ -120,7 +138,9 @@ module Bosh::Director
         end
 
         describe 'when the filter spec has only a lifecycle section' do
-          let(:filter_hash) { { 'lifecycle' => 'errand' } }
+          let(:filter_hash) do
+            { 'lifecycle' => 'errand' }
+          end
 
           describe 'when the lifecycle type matches the one from the include spec' do
             it 'applies' do
@@ -138,7 +158,9 @@ module Bosh::Director
         end
 
         describe 'when the filter spec has only a jobs section' do
-          let(:filter_hash) { { 'jobs' => [{ 'name' => 'job_name', 'release' => 'release_name' }] } }
+          let(:filter_hash) do
+            { 'jobs' => [{ 'name' => 'job_name', 'release' => 'release_name' }] }
+          end
 
           describe 'when the instance group contains a matching job from the include spec' do
             it 'applies' do
@@ -225,7 +247,9 @@ module Bosh::Director
         end
 
         context 'when there is a deployment filter' do
-          let(:filter_hash) { { 'deployments' => %w[deployment_1 deployment_2] } }
+          let(:filter_hash) do
+            { 'deployments' => %w[deployment_1 deployment_2] }
+          end
           context 'when addon is in deployment manifest' do
             let(:addon_level) { DEPLOYMENT_LEVEL }
 
@@ -265,7 +289,9 @@ module Bosh::Director
           context 'when the addon is in the deployment manifest' do
             context 'when the team filter is specified' do
               let(:addon_level) { DEPLOYMENT_LEVEL }
-              let(:filter_hash) { { 'teams' => ['team_5'] } }
+              let(:filter_hash) do
+                { 'teams' => ['team_5'] }
+              end
 
               it 'does not consider' do
                 expect(addon_include.applies?('anything', ['team_3'], instance_group)).to be(true)
@@ -274,7 +300,9 @@ module Bosh::Director
           end
 
           context 'when the azs filter is specified' do
-            let(:filter_hash) { { 'azs' => ['z5'] } }
+            let(:filter_hash) do
+              { 'azs' => ['z5'] }
+            end
 
             context 'in the deployment manifest' do
               let(:addon_level) { DEPLOYMENT_LEVEL }
@@ -315,7 +343,9 @@ module Bosh::Director
           context 'when the addon is in the deployment manifest' do
             context 'when the team filter is specified' do
               let(:addon_level) { DEPLOYMENT_LEVEL }
-              let(:filter_hash) { { 'teams' => ['team_3'] } }
+              let(:filter_hash) do
+                { 'teams' => ['team_3'] }
+              end
 
               it 'does not consider' do
                 expect(addon_exclude.applies?('anything', ['team_3'], instance_group)).to be(false)
@@ -324,7 +354,9 @@ module Bosh::Director
           end
 
           context 'when the azs filter is specified' do
-            let(:filter_hash) { { 'azs' => ['z1'] } }
+            let(:filter_hash) do
+              { 'azs' => ['z1'] }
+            end
 
             context 'in the deployment manifest' do
               let(:addon_level) { DEPLOYMENT_LEVEL }

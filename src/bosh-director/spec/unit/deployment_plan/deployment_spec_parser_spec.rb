@@ -4,13 +4,17 @@ module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do
     subject(:parser) { described_class.new(deployment, event_log, logger) }
     let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, YAML.dump(manifest_hash), cloud_config, runtime_configs, deployment_model, planner_options) }
-    let(:planner_options) { {} }
+    let(:planner_options) do
+      {}
+    end
     let(:event_log) { Config.event_log }
     let(:cloud_config) { Models::Config.make(:cloud) }
     let(:runtime_configs) { [Models::Config.make(:runtime)] }
 
     describe '#parse' do
-      let(:options) { {'is_deploy_action' => true} }
+      let(:options) do
+        { 'is_deploy_action' => true }
+      end
       let(:parsed_deployment) { subject.parse(manifest_hash, options) }
       let(:deployment_model) { Models::Deployment.make }
       let(:manifest_hash) do
@@ -281,7 +285,9 @@ module Bosh::Director
           end
 
           context 'when canaries value is present in options' do
-              let(:options) { { 'is_deploy_action' => true, 'canaries'=> '42' } }
+            let(:options) do
+              { 'is_deploy_action' => true, 'canaries' => '42' }
+            end
               it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::UpdateConfig).to receive(:new)
                   .with( {'foo'=> 'bar', 'is_deploy_action' => true, 'canaries' => '42'} )
@@ -290,7 +296,9 @@ module Bosh::Director
               end
           end
           context 'when max_in_flight value is present in options' do
-            let(:options) { { 'is_deploy_action' => true, 'max_in_flight'=> '42' } }
+            let(:options) do
+              { 'is_deploy_action' => true, 'max_in_flight' => '42' }
+            end
             it "replaces max_in_flight value from job's update section with option's value" do
               expect(DeploymentPlan::UpdateConfig).to receive(:new)
                 .with( {'foo'=> 'bar', 'is_deploy_action' => true, 'max_in_flight' => '42'} )
@@ -357,7 +365,9 @@ module Bosh::Director
             end
 
             context 'when canaries value is present in options' do
-              let(:options) { { 'is_deploy_action' => true, 'canaries'=> '42' } }
+              let(:options) do
+                { 'is_deploy_action' => true, 'canaries' => '42' }
+              end
               it "replaces canaries value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
                   .with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, options)
@@ -372,7 +382,9 @@ module Bosh::Director
             end
 
             context 'when max_in_flight value is present in options' do
-              let(:options) { { 'is_deploy_action' => true, 'max_in_flight'=> '42' } }
+              let(:options) do
+                { 'is_deploy_action' => true, 'max_in_flight' => '42' }
+              end
               it "replaces max_in_flight value from job's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
                    .with(be_a(DeploymentPlan::Planner), {'name' => 'instance-group-1-name'}, event_log, logger, options)

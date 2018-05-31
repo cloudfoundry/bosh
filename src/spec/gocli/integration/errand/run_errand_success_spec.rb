@@ -531,7 +531,9 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
   end
 
   describe 'behavior on older stemcells' do
-    let(:cloud_properties) { {'legacy_agent_path' => get_legacy_agent_path('before-info-endpoint-20170719')} }
+    let(:cloud_properties) do
+      { 'legacy_agent_path' => get_legacy_agent_path('before-info-endpoint-20170719') }
+    end
 
     let(:manifest_hash) do
       Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance

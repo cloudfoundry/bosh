@@ -57,7 +57,9 @@ module Bosh::Director
       thread_pool
     end
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
-    let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
+    let(:net) do
+      { 'default' => { 'network_name' => { 'property' => 'settings' } } }
+    end
     let(:event_manager) {Api::EventManager.new(true)}
     let(:job_task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, job_task.id)}

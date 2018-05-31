@@ -481,7 +481,9 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
     end
     let(:current_deployment) { instance_double(Bosh::Director::Models::Deployment)}
     let(:current_variable_set) { instance_double(Bosh::Director::Models::VariableSet)}
-    let(:deployment_manifest) {{'name' => 'smurf-deployment', 'properties' => {'a' => '{{placeholder}}'}}}
+    let(:deployment_manifest) do
+      { 'name' => 'smurf-deployment', 'properties' => { 'a' => '{{placeholder}}' } }
+    end
 
     before do
       allow(Bosh::Director::Models::Deployment).to receive(:[]).with(name: deployment_manifest['name']).and_return(current_deployment)
@@ -523,8 +525,12 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
   end
 
   describe '#interpolate_cloud_manifest' do
-    let(:cloud_manifest) { {'name' => '((placeholder))'} }
-    let(:interpolated_cloud_manifest) { {'name' => 'kobu'} }
+    let(:cloud_manifest) do
+      { 'name' => '((placeholder))' }
+    end
+    let(:interpolated_cloud_manifest) do
+      { 'name' => 'kobu' }
+    end
 
     let(:ignored_subtrees) do
       index_type = Integer
