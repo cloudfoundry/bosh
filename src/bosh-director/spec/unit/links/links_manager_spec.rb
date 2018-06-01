@@ -2287,7 +2287,6 @@ describe Bosh::Director::Links::LinksManager do
       it 'returns the current links' do
         links = subject.get_links_for_instance(instance)
         expect(links.length).to eq(1)
-        puts links
         expect(links['consumer']['tweet']).to_not be_nil
       end
     end
