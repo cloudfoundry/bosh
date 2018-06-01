@@ -68,6 +68,10 @@ module Bosh::Director
         existing_instances = job_migrator.find_existing_instances(desired_instance_group)
         instance_plans = instance_planner.plan_instance_group_instances(desired_instance_group, desired_instances, existing_instances, @deployment_plan.vm_resources_cache)
         desired_instance_group.add_instance_plans(instance_plans)
+
+        desired_instance_group.unignored_instance_plans.each do |instance_plan|
+          instance_plan.instance.is_deploy_action = is_deploy_action
+        end
       end
 
       instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(desired_instance_groups, @deployment_plan.existing_instances)
