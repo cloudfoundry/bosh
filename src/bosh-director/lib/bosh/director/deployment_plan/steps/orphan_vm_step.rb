@@ -8,6 +8,8 @@ module Bosh::Director
         end
 
         def perform(_)
+          AgentClient.with_agent_id(@vm.agent_id).shutdown
+
           @transactor.retryable_transaction(Bosh::Director::Config.db) do
             begin
               parent_id = add_event(@vm.instance.deployment.name, @vm.instance.name, @vm.cid)
@@ -28,8 +30,6 @@ module Bosh::Director
                 ip_address.orphaned_vm = orphaned_vm
                 ip_address.save
               end
-
-              AgentClient.with_agent_id(@vm.agent_id).shutdown
 
               @vm.destroy
             rescue Exception => e
