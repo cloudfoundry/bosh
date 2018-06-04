@@ -716,10 +716,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error do |e|
-              expect(e.message).to include("Failed to resolve links from deployment 'test_deployment'. See errors below:")
-              expect(e.message).to include("Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
-            end
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
           end
 
 
@@ -740,7 +737,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
 
               expect(Bosh::Director::Models::Links::Link.count).to eq(0)
             end
@@ -779,7 +776,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
 
             expect(Bosh::Director::Models::Links::Link.count).to eq(0)
           end
@@ -900,7 +897,6 @@ describe Bosh::Director::Links::LinksManager do
           Bosh::Director::Models::Links::LinkConsumerIntent.create(
             link_consumer: consumer,
             original_name: 'ci1',
-            name: 'ci1',
             type: 'foo',
             metadata: metadata.to_json,
             serial_id: serial_id
@@ -938,7 +934,7 @@ describe Bosh::Director::Links::LinksManager do
             expect {
               expect(deployment_model.link_consumers.count).to be > 0
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job  'c1' in instance_group 'ig1' in deployment 'test_deployment'")
           end
 
           context 'when link consumer intent is optional' do
@@ -1166,7 +1162,7 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
             end
           end
         end
@@ -1177,7 +1173,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
           end
         end
 
@@ -1299,7 +1295,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
             end
           end
 
@@ -1309,7 +1305,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
             end
           end
 
@@ -1808,7 +1804,6 @@ describe Bosh::Director::Links::LinksManager do
           Bosh::Director::Models::Links::LinkConsumerIntent.create(
             link_consumer: consumer,
             original_name: 'ci1',
-            name: 'ci1',
             type: 'foo',
             metadata: {explicit_link: false}.to_json,
             serial_id: serial_id
@@ -1862,7 +1857,7 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job  'c1' in instance_group 'ig1' in deployment 'test_deployment'")
             end
           end
         end
@@ -1873,7 +1868,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job  'c1' in instance_group 'ig1' in deployment 'test_deployment'")
           end
         end
 
@@ -1913,35 +1908,6 @@ describe Bosh::Director::Links::LinksManager do
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
           end
-        end
-      end
-
-      context 'when the consumer does not include an instance group' do
-        let(:consumer) do
-          Bosh::Director::Models::Links::LinkConsumer.create(
-            deployment: deployment_model,
-            name: 'c1',
-            type: 'job',
-            instance_group: '',
-            serial_id: serial_id
-          )
-        end
-
-        before do
-          Bosh::Director::Models::Links::LinkConsumerIntent.create(
-            link_consumer: consumer,
-            original_name: 'ci1',
-            name: 'ci1',
-            type: 'foo',
-            metadata: {explicit_link: false}.to_json,
-            serial_id: serial_id
-          )
-        end
-
-        it 'should not include empty instance group in error messages' do
-          expect {
-            subject.resolve_deployment_links(deployment_model, options)
-          }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in deployment 'test_deployment'")
         end
       end
 
