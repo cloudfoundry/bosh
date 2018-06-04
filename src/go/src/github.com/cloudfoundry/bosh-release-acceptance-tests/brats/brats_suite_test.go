@@ -38,6 +38,7 @@ var (
 	deploymentName,
 	boshDirectorReleasePath,
 	candidateWardenLinuxStemcellPath,
+	stemcellOS,
 	dnsReleasePath string
 )
 
@@ -56,6 +57,7 @@ var _ = BeforeSuite(func() {
 	dnsReleasePath = assertEnvExists("DNS_RELEASE_PATH")
 	boshDirectorReleasePath = assertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
 	candidateWardenLinuxStemcellPath = assertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
+	stemcellOS = assertEnvExists("STEMCELL_OS")
 
 	assertEnvExists("BOSH_ENVIRONMENT")
 })

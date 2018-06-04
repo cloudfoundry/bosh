@@ -36,7 +36,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			osConfManifestPath := assetPath("os-conf-manifest.yml")
 
 			By("create syslog deployment", func() {
-				uploadStemcell("https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent")
+				uploadStemcell(candidateWardenLinuxStemcellPath)
 				uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 
 				session := bosh("-n", "deploy", syslogManifestPath, "-d", "syslog-deployment")
@@ -46,7 +46,10 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			By("create os-conf deployment", func() {
 				uploadRelease("https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=12")
 
-				session := bosh("-n", "deploy", osConfManifestPath, "-d", "os-conf-deployment")
+				session := bosh("-n", "deploy", osConfManifestPath,
+					"-d", "os-conf-deployment",
+					"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+				)
 				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
 			})
 
@@ -66,7 +69,11 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("expect deploy to fail because the release/stemcell won't be there", func() {
-				session := bosh("-n", "deploy", syslogManifestPath, "-d", "syslog-deployment", "--recreate")
+				session := bosh("-n", "deploy", syslogManifestPath,
+					"-d", "syslog-deployment",
+					"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+					"--recreate",
+				)
 				Eventually(session, time.Minute).Should(gexec.Exit(1))
 			})
 
@@ -86,8 +93,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
-				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
-				session = bosh("-n", "upload-stemcell", "--fix", stemcellUrl)
+				session = bosh("-n", "upload-stemcell", "--fix", candidateWardenLinuxStemcellPath)
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 			})
 
@@ -100,7 +106,10 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--resolution", "delete_disk_reference")
 				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
-				session = bosh("-n", "deploy", osConfManifestPath, "-d", "os-conf-deployment")
+				session = bosh("-n", "deploy", osConfManifestPath,
+					"-d", "os-conf-deployment",
+					"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+				)
 				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
 			})
 
@@ -131,11 +140,14 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 		It("can backup and restore (reattaches to underlying deployment)", func() {
 			By("Set up a deployment that uses the syslog release", func() {
-				uploadStemcell("https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent")
+				uploadStemcell(candidateWardenLinuxStemcellPath)
 				uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 
 				manifestPath := assetPath("syslog-manifest.yml")
-				session := bosh("-n", "deploy", manifestPath, "-d", "syslog-deployment")
+				session := bosh("-n", "deploy", manifestPath,
+					"-d", "syslog-deployment",
+					"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+				)
 
 				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
 			})
@@ -169,8 +181,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
-				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
-				session = bosh("-n", "upload-stemcell", "--fix", stemcellUrl)
+				session = bosh("-n", "upload-stemcell", "--fix", candidateWardenLinuxStemcellPath)
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				session = bosh("-n", "-d", "syslog-deployment", "cck", "--report")

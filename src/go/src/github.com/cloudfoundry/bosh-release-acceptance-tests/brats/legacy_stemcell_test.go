@@ -31,7 +31,10 @@ var _ = Describe("Legacy Stemcells", func() {
 		uploadRelease("https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=12")
 
 		By("Deploying successfully")
-		session := bosh("-n", "deploy", assetPath("os-conf-manifest.yml"), "-d", "os-conf-deployment")
+		session := bosh("-n", "deploy", assetPath("os-conf-manifest.yml"),
+			"-d", "os-conf-deployment",
+			"-v", "stemcell-os=ubuntu-trusty",
+		)
 		Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
 	}
 
