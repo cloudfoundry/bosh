@@ -106,7 +106,7 @@ describe 'optional links', type: :integration do
       expect(exit_code).not_to eq(0)
       expect(out).to include(<<~OUTPUT.strip)
         Error: Failed to resolve links from deployment 'simple'. See errors below:
-          - Can't resolve link 'backup_db' for job 'api_server_with_optional_links_1' in instance group 'my_api' in deployment 'simple'
+          - Can't resolve link 'backup_db' with type 'optional_link_type' for job 'api_server_with_optional_links_1' in instance group 'my_api' in deployment 'simple'
       OUTPUT
     end
   end
@@ -197,7 +197,7 @@ describe 'optional links', type: :integration do
         out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).not_to eq(0)
         expect(out).to include(
-          "- Can't resolve link 'db' for job 'api_server_with_optional_links_1' " \
+          "- Can't resolve link 'db' with type 'db' for job 'api_server_with_optional_links_1' " \
           "in instance group 'my_api' in deployment 'simple'",
         )
       end

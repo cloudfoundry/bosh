@@ -192,7 +192,8 @@ describe 'cross deployment links', type: :integration do
         it 'should fail to resolve the link' do
           expect do
             deploy_simple_manifest(manifest_hash: second_manifest)
-          end.to raise_error(RuntimeError, /Can't resolve link 'node1' for job 'node' in instance group 'second_deployment_node' in deployment 'second'/)
+          end.to raise_error(RuntimeError, Regexp.new("Can't resolve link 'node1' with type "\
+              "'node1' for job 'node' in instance group 'second_deployment_node' in deployment 'second'"))
         end
       end
     end
@@ -369,7 +370,8 @@ describe 'cross deployment links', type: :integration do
 
       expect do
         deploy_simple_manifest(manifest_hash: second_manifest)
-      end.to raise_error(RuntimeError, /Can't resolve link 'node1' for job 'node' in instance group 'second_deployment_node' in deployment 'second'/)
+      end.to raise_error(RuntimeError, Regexp.new("Can't resolve link 'node1' with type 'node1' "\
+                "for job 'node' in instance group 'second_deployment_node' in deployment 'second'"))
     end
   end
 

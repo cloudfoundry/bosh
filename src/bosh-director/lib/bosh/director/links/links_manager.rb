@@ -358,7 +358,7 @@ module Bosh::Director::Links
             provider_intent_networks = JSON.parse(content)['networks']
 
             if link_network && !provider_intent_networks.include?(link_network)
-              raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' in instance group '#{consumer.instance_group}' on job '#{consumer.name}' in deployment '#{current_deployment_name}' with network '#{link_network}'"
+              raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}'#{" in instance group '#{consumer.instance_group}'" unless consumer.instance_group.empty?} on job '#{consumer.name}' in deployment '#{current_deployment_name}' with network '#{link_network}'"
             end
           end
 
@@ -515,11 +515,7 @@ module Bosh::Director::Links
 
     def validate_found_providers(found_provider_intents, consumer, consumer_intent, is_explicit_link, current_deployment_name, link_network)
       if found_provider_intents.empty?
-        if is_explicit_link
-          raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' for job '#{consumer.name}' in instance group '#{consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
-        else
-          raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.original_name}' with type '#{consumer_intent.type}' for job  '#{consumer.name}' in instance_group '#{consumer_intent.link_consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
-        end
+        raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' with type '#{consumer_intent.type}' for job '#{consumer.name}'#{" in instance group '#{consumer.instance_group}'" unless consumer.instance_group.empty?} in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
       end
 
       if found_provider_intents.size > 1
