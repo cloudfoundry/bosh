@@ -67,6 +67,11 @@ module Bosh::Director
           App.instance.blobstores.blobstore.get(blobstore_id, f)
         end
 
+        downloaded_blob_sha1 = Digest::SHA1.file(path).to_s
+        if downloaded_blob_sha1 != present_model.sha1
+          raise DirectorError, "Blob sha1: '#{present_model.sha1}' doesn't match file sha1: '#{downloaded_blob_sha1}'"
+        end
+
         @logger.debug("Job '#{@name}' downloaded to #{path} " +
                       "(took #{Time.now - t1}s)")
 

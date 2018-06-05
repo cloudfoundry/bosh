@@ -4,12 +4,12 @@ module Bosh
   module Director
     module DeploymentPlan
       describe Job do
+        let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
         let(:deployment_name) { 'deployment_name' }
 
         subject { Job.new(release_version, 'foo', deployment_name) }
 
         describe '#bind_properties' do
-          let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
           let(:template_model) { instance_double('Bosh::Director::Models::Template') }
 
           let(:release_job_spec_prop) do
@@ -129,7 +129,6 @@ module Bosh
         end
 
         describe '#runs_as_errand' do
-          let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
           let(:template_model) { instance_double('Bosh::Director::Models::Template') }
 
           before do
@@ -154,6 +153,45 @@ module Bosh
               allow(template_model).to receive(:runs_as_errand?).and_return(false)
 
               expect(subject.runs_as_errand?).to eq false
+            end
+          end
+        end
+
+        describe '#download_blob' do
+          let(:template_model) do
+            Bosh::Director::Models::Template.make(name: 'foo', blobstore_id: 'blobstore-id-1', sha1: file_content_sha1)
+          end
+          let(:instance) { instance_double(Bosh::Director::App, blobstores: blobstores) }
+          let(:blobstore) { instance_double(Bosh::Blobstore::RetryableBlobstoreClient) }
+          let(:blobstores) do
+            instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
+          end
+          let(:file_content) { 'job-template' }
+          let(:file_content_sha1) { Digest::SHA1.hexdigest(file_content) }
+
+          before do
+            expect(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
+            expect(App).to receive(:instance).and_return(instance)
+            expect(blobstore).to receive(:get).with('blobstore-id-1', anything) do |_, file|
+              File.open(file.path, 'w') { |f| f.write(file_content) }
+            end
+
+            subject.bind_models
+          end
+
+          it 'downloads blob from blobstore' do
+            path = subject.download_blob
+            expect(path).to_not be_nil
+
+            expect(Digest::SHA1.file(path).to_s).to eq(file_content_sha1)
+          end
+
+          context 'when checksum does NOT match' do
+            let(:file_content) { 'malicious-job-template' }
+            let(:file_content_sha1) { '73479f3f31e8be5361f98259d7044a23a3c14a0b' }
+
+            it 'raises error' do
+              expect { subject.download_blob }.to raise_error(/doesn't match file sha1/)
             end
           end
         end
