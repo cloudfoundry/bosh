@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "this only logs if health monitor plugins run" > /tmp/log-file

@@ -1,0 +1,12 @@
+---
+- type: replace
+  path: /instance_groups/name=bosh/jobs/-
+  value:
+    name: logger
+    release: hm-json-plugin
+
+- type: replace
+  path: /releases/-
+  value:
+    name: hm-json-plugin
+    url: file://((hm-json-plugin-release-tarball))
