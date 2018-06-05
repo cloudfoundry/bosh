@@ -1,11 +1,25 @@
 #!/usr/bin/env bash
+
 set -e
 
-JOB_PATH="/var/vcap/jobs/director"
+source /var/vcap/packages/ruby-2.4-r4/bosh/runtime.env
+PATH=$PATH:/var/vcap/jobs/director/bin
 
-# Anything placed in the BBR_ARTIFACT_DIRECTORY by the backup script will be available to the restore script at restore time.
-# The BBR CLI is responsible for setting the BBR_ARTIFACT_DIRECTORY
-BBR_ARTIFACT_FILE_PATH="${BBR_ARTIFACT_DIRECTORY}/bosh-director-artifact-file"
-CONFIG_PATH="${JOB_PATH}/config/bbr.json"
+# Postgres
+PATH=/var/vcap/packages/postgres-9.4/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
 
-"/var/vcap/jobs/database-backup-restorer/bin/restore" --config "${CONFIG_PATH}" --artifact-file "${BBR_ARTIFACT_FILE_PATH}"
+# MySQL
+PATH=/var/vcap/packages/mysql/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/mysql/lib/mysql:$LD_LIBRARY_PATH
+
+export LD_LIBRARY_PATH
+export PATH
+
+export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
+
+/var/vcap/packages/director/bin/bosh-restore
+
+# BBR does not clean out the backup directory
+rm -rf $ARTIFACT_DIRECTORY/*
