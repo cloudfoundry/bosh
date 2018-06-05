@@ -21,14 +21,11 @@ popd > /dev/null
 
 export bosh_release_path
 
-cd /usr/local/bosh-deployment
+cd ${BOSH_DEPLOYMENT_PATH}
 
-local_bosh_dir="/tmp/local-bosh/director"
 inner_bosh_dir="/tmp/inner-bosh/director"
 
 export BOSH_DIRECTOR_IP="10.245.0.34"
-export DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
-export DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 
 mkdir -p ${inner_bosh_dir}
 
@@ -43,14 +40,12 @@ bosh int bosh.yml \
   -v docker_host="${DOCKER_HOST}" \
   -v network=director_network \
   -v docker_tls="${DOCKER_CERTS}" \
-  -o "/usr/local/bosh-deployment/local-bosh-release-tarball.yml" \
+  -o "${BOSH_DEPLOYMENT_PATH}/local-bosh-release-tarball.yml" \
   -v local_bosh_release="${bosh_release_path}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
 bosh upload-stemcell ${stemcell}
 
-# point to our outer director and launch the inner director
-source "${local_bosh_dir}/env"
 bosh -n deploy -d bosh "${inner_bosh_dir}/bosh-director.yml" --vars-store="${inner_bosh_dir}/creds.yml"
 
 # set up inner director
@@ -60,7 +55,7 @@ bosh int "${inner_bosh_dir}/creds.yml" --path /director_ssl/ca > "${inner_bosh_d
 bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${inner_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
 
 bosh int "${inner_bosh_dir}/creds.yml" --path /jumpbox_ssh/private_key > "${inner_bosh_dir}/jumpbox_private_key.pem"
-chmod 400 "${inner_bosh_dir}/jumpbox_private_key.pem"
+chmod 600 "${inner_bosh_dir}/jumpbox_private_key.pem"
 
 cat <<EOF > "${inner_bosh_dir}/bosh"
 #!/bin/bash

@@ -12,14 +12,20 @@ source /tmp/local-bosh/director/env
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
 chmod 400 /tmp/jumpbox_ssh_key.pem
 
-export BOSH_SSH_PRIVATE_KEY_PATH="/tmp/jumpbox_ssh_key.pem"
-export BOSH_BINARY_PATH=$(which bosh)
-export BOSH_RELEASE="${PWD}/bosh-src/src/spec/assets/dummy-release.tgz"
 export BOSH_DIRECTOR_IP="10.245.0.3"
+
+BOSH_BINARY_PATH=$(which bosh)
+export BOSH_BINARY_PATH
+export BOSH_RELEASE="${PWD}/bosh-src/src/spec/assets/dummy-release.tgz"
 export BOSH_DIRECTOR_RELEASE_PATH="${PWD}/bosh-release"
-export DNS_RELEASE_PATH="$(realpath $(find ${PWD}/bosh-dns-release -maxdepth 1 -path '*.tgz'))"
-export CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath ${src_dir}/stemcell/*.tgz)"
-export BOSH_DNS_ADDON_OPS_FILE_PATH="/usr/local/bosh-deployment/experimental/dns-addon-with-api-certificates.yml"
+DNS_RELEASE_PATH="$(realpath "$(find "${PWD}"/bosh-dns-release -maxdepth 1 -path '*.tgz')")"
+export DNS_RELEASE_PATH
+CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath "${src_dir}"/stemcell/*.tgz)"
+export CANDIDATE_STEMCELL_TARBALL_PATH
+export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/experimental/dns-addon-with-api-certificates.yml"
+
+export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
 
 
 mkdir -p bbr-binary
@@ -31,14 +37,14 @@ export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr"
 
 echo "${BBR_SHA256} ${BBR_BINARY_PATH}" | sha256sum -c -
 
-chmod +x ${BBR_BINARY_PATH}
+chmod +x "${BBR_BINARY_PATH}"
 
-pushd bosh-src/src/go
-  export GOPATH=$(pwd)
-  export PATH="${GOPATH}/bin":$PATH
+cp "${BBR_BINARY_PATH}" /usr/local/bin/bbr
 
-  pushd src/github.com/cloudfoundry/bosh-release-acceptance-tests
-    go install ./vendor/github.com/onsi/ginkgo/ginkgo
-    ginkgo -v -r -race -randomizeSuites -randomizeAllSpecs .
-  popd
-popd
+DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
+export DOCKER_CERTS
+DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
+export DOCKER_HOST
+
+cd bosh-src
+scripts/test-brats

@@ -39,7 +39,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 
 				session := bosh("-n", "deploy", syslogManifestPath, "-d", "syslog-deployment")
-				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("create os-conf deployment", func() {

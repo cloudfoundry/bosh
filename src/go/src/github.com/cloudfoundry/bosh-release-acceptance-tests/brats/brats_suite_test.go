@@ -60,6 +60,7 @@ var _ = BeforeSuite(func() {
 	stemcellOS = assertEnvExists("STEMCELL_OS")
 
 	assertEnvExists("BOSH_ENVIRONMENT")
+	assertEnvExists("BOSH_DEPLOYMENT_PATH")
 })
 
 var _ = AfterSuite(func() {
@@ -123,7 +124,7 @@ func releaseTarball(releasePath string) string {
 }
 
 func boshDeploymentAssetPath(assetPath string) string {
-	return filepath.Join("/usr/local/bosh-deployment/", assetPath)
+	return filepath.Join(os.Getenv("BOSH_DEPLOYMENT_PATH"), assetPath)
 }
 
 func execCommand(binaryPath string, args ...string) *gexec.Session {

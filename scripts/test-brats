@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# assumes targeting director already
+# and variables have been exported
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# TODO(db, ja): validate required variables have been set
+
+cd src/go
+export GOPATH=$(pwd)
+export PATH="${GOPATH}/bin":$PATH
+
+cd src/github.com/cloudfoundry/bosh-release-acceptance-tests
+go install ./vendor/github.com/onsi/ginkgo/ginkgo
+ginkgo -v -r -race -randomizeSuites -randomizeAllSpecs .
