@@ -2952,100 +2952,167 @@ describe Bosh::Director::Links::LinksManager do
     end
 
     context 'cleanup links' do
-      before do
-        consumer_1 = Bosh::Director::Models::Links::LinkConsumer.create(
-          deployment: deployment_model,
-          instance_group: 'ig1',
-          name: 'c1',
-          type: 'job',
-          serial_id: serial_id
-        )
 
-        consumer_1_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          link_consumer: consumer_1,
-          original_name: 'ci1-1',
-          type: 'foo',
-          metadata: {explicit_link: true}.to_json,
-          serial_id: serial_id
-        )
-        consumer_1_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          link_consumer: consumer_1,
-          original_name: 'ci1-2',
-          type: 'foo',
-          metadata: {explicit_link: true}.to_json,
-          serial_id: serial_id
-        )
+      context 'when there are old links' do
+        before do
+          consumer_1 = Bosh::Director::Models::Links::LinkConsumer.create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'job',
+            serial_id: serial_id
+          )
 
-        provider = Bosh::Director::Models::Links::LinkProvider.create(
-          deployment: deployment_model,
-          instance_group: 'ig1',
-          name: 'c1',
-          type: 'manual',
-          serial_id: serial_id - 1
-        )
+          consumer_1_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer_1,
+            original_name: 'ci1-1',
+            type: 'foo',
+            metadata: {explicit_link: true}.to_json,
+            serial_id: serial_id
+          )
 
-        provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-          link_provider: provider,
-          original_name: 'ci1',
-          type: 'foo',
-          content: '{}',
-          serial_id: serial_id - 1
-        )
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer_1,
+            original_name: 'ci1-2',
+            type: 'foo',
+            metadata: {explicit_link: true}.to_json,
+            serial_id: serial_id
+          )
 
-        link_1 = Bosh::Director::Models::Links::Link.create(
-          link_provider_intent: provider_intent,
-          link_consumer_intent: consumer_1_intent_1,
-          name: consumer_1_intent_1.original_name,
-          link_content: '{}'
-        )
+          provider = Bosh::Director::Models::Links::LinkProvider.create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'manual',
+            serial_id: serial_id - 1
+          )
 
-        instance_model.add_link(link_1)
-        instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_1.id).first
-        instance_link.serial_id = serial_id - 1
-        instance_link.save
+          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+            link_provider: provider,
+            original_name: 'ci1',
+            type: 'foo',
+            content: '{}',
+            serial_id: serial_id - 1
+          )
 
-        provider_2 = Bosh::Director::Models::Links::LinkProvider.find_or_create(
-          deployment: deployment_model,
-          instance_group: 'ig1',
-          name: 'c1',
-          type: 'manual',
-        )
-        provider_2.serial_id = serial_id
-        provider_2.save
+          link_1 = Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: provider_intent,
+            link_consumer_intent: consumer_1_intent_1,
+            name: consumer_1_intent_1.original_name,
+            link_content: '{}'
+          )
 
-        provider_2_intent_1 = Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
-          link_provider: provider_2,
-          original_name: 'ci1',
-          type: 'foo',
-        )
-        provider_2_intent_1.content = '{"foo": "bar"}'
-        provider_2_intent_1.serial_id = serial_id
-        provider_2_intent_1.save
+          instance_model.add_link(link_1)
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_1.id).first
+          instance_link.serial_id = serial_id - 1
+          instance_link.save
 
-        link_2 = Bosh::Director::Models::Links::Link.create(
-          link_provider_intent: provider_intent,
-          link_consumer_intent: consumer_1_intent_1,
-          name: consumer_1_intent_1.original_name,
-          link_content: '{"foo": "bar"}'
-        )
+          provider_2 = Bosh::Director::Models::Links::LinkProvider.find_or_create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'manual',
+            )
+          provider_2.serial_id = serial_id
+          provider_2.save
 
-        instance_model.add_link(link_2)
-        instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_2.id).first
-        instance_link.serial_id = serial_id
-        instance_link.save
+          provider_2_intent_1 = Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
+            link_provider: provider_2,
+            original_name: 'ci1',
+            type: 'foo',
+            )
+          provider_2_intent_1.content = '{"foo": "bar"}'
+          provider_2_intent_1.serial_id = serial_id
+          provider_2_intent_1.save
+
+          link_2 = Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: provider_intent,
+            link_consumer_intent: consumer_1_intent_1,
+            name: consumer_1_intent_1.original_name,
+            link_content: '{"foo": "bar"}'
+          )
+
+          instance_model.add_link(link_2)
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_2.id).first
+          instance_link.serial_id = serial_id
+          instance_link.save
+        end
+
+        it 'removes links with instances_link with old serial_ids' do
+          subject.remove_unused_links(deployment_model)
+          links = Bosh::Director::Models::Links::Link.all
+          expect(links.first.link_content).to eq('{"foo": "bar"}')
+        end
+
+        it 'removes instances_links with old serial_ids' do
+          subject.remove_unused_links(deployment_model)
+          expect(Bosh::Director::Models::Links::InstancesLink.count).to eq(1)
+        end
       end
 
-      it 'removes links with instances_link with old serial_ids' do
-        subject.remove_unused_links(deployment_model)
-        links = Bosh::Director::Models::Links::Link.all
-        expect(links.first.link_content).to eq('{"foo": "bar"}')
-      end
+      context 'when the link type external or variable' do
 
-      it 'removes instances_links with old serial_ids' do
-        subject.remove_unused_links(deployment_model)
-        expect(Bosh::Director::Models::Links::InstancesLink.count).to eq(1)
-      end
+        before do
+          consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+            deployment: deployment_model,
+            instance_group: '',
+            name: 'c1',
+            type: consumer_type,
+            serial_id: serial_id
+          )
 
+          consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'consumer_intent',
+            type: 'address',
+            metadata: {explicit_link: true}.to_json,
+            serial_id: serial_id
+          )
+
+          provider = Bosh::Director::Models::Links::LinkProvider.create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'job',
+            serial_id: serial_id
+          )
+
+          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+            link_provider: provider,
+            original_name: 'ci2',
+            type: 'address',
+            content: '{}',
+            serial_id: serial_id
+          )
+
+          Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: provider_intent,
+            link_consumer_intent: consumer_intent,
+            name: 'link',
+            link_content: '{}'
+          )
+        end
+
+        context 'when the consumer is a variable' do
+          let(:consumer_type) { 'variable' }
+
+          it 'should not delete the link' do
+            subject.remove_unused_links(deployment_model)
+            link = Bosh::Director::Models::Links::Link.where(name: 'link')
+            expect(link.count).to eq(1)
+          end
+        end
+
+        context 'when the consumer is external' do
+          let(:consumer_type) { 'external' }
+
+          it 'should not delete the link' do
+            subject.remove_unused_links(deployment_model)
+            link = Bosh::Director::Models::Links::Link.where(name: 'link')
+            expect(link.count).to eq(1)
+          end
+        end
+      end
     end
   end
 end

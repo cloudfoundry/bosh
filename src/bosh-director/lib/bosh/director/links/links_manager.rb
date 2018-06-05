@@ -303,7 +303,7 @@ module Bosh::Director::Links
       end
 
       deployment_model.link_consumers.each do |consumer|
-        next if consumer.type == 'external'
+        next if link_types_to_skip_removal.include?(consumer.type)
         consumer.intents.each do |consumer_intent|
           if consumer_intent.serial_id == serial_id
             Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).each do |link|
@@ -570,5 +570,10 @@ module Bosh::Director::Links
 
       true
     end
+
+    def link_types_to_skip_removal
+      %w(variable external)
+    end
+
   end
 end

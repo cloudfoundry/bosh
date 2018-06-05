@@ -597,10 +597,6 @@ module Bosh::Director::Links
       end
 
       def extract_provider_definition_properties(manifest_details)
-        # job_properties = manifest_details.fetch(:job_properties, {})
-        # instance_group_name = manifest_details.fetch(:instance_group_name, nil)
-        # migrated_from = manifest_details.fetch(:migrated_from, [])
-
         are_custom_definitions = manifest_details.fetch(:are_custom_definitions, nil)
         instance_group_name = manifest_details.fetch(:instance_group_name, nil)
         job_name = manifest_details.fetch(:job_name, nil)

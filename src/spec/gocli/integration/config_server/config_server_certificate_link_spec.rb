@@ -23,6 +23,19 @@ describe 'using director with config server and deployments having links', type:
     "/#{director_name}/#{deployment_name}/#{key}"
   end
 
+  def get(path, params)
+    director_url = build_director_api_url(path, params)
+    JSON.parse(send_request('GET', director_url, nil).body)
+  end
+
+  def send_request(verb, url, body)
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+    http.ca_file = Bosh::Dev::Sandbox::UaaService::ROOT_CERT
+    http.send_request(verb, url.request_uri, body, {'Authorization' => config_server_helper.auth_header, 'Content-Type' => 'application/json'})
+  end
+
   let(:director_name) { current_sandbox.director_name }
 
   let(:deployment_name) { 'simple' }
@@ -155,6 +168,19 @@ describe 'using director with config server and deployments having links', type:
       end
 
       expect(alternative_names).to match_array(['127.0.0.1', 'q-s0.my-instance-group.a.simple.bosh'])
+    end
+
+    it 'create respective consumer and link object' do
+      deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+      consumers = get('/link_consumers', "deployment=#{deployment_name}")
+      expect(consumers.count).to eq(1)
+      expect(consumers[0]['owner_object']['name']).to eq('bbs')
+
+      links = get('/links', "deployment=#{deployment_name}")
+      expect(links.count).to eq(1)
+      expect(links[0]['link_consumer_id']).to eq(consumers[0]['id'])
+
     end
   end
 end
