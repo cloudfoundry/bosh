@@ -38,8 +38,11 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				uploadStemcell(candidateWardenLinuxStemcellPath)
 				uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 
-				session := bosh("-n", "deploy", syslogManifestPath, "-d", "syslog-deployment")
-				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+				session := bosh("-n", "deploy", syslogManifestPath,
+					"-d", "syslog-deployment",
+					"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+				)
+				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("create os-conf deployment", func() {

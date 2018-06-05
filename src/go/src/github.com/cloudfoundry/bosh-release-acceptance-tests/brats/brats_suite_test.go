@@ -82,7 +82,12 @@ func startInnerBosh(args ...string) {
 }
 
 func startInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch string, args ...string) {
-	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), args...)
+	effectiveArgs := args
+	if stemcellOS == "ubuntu-xenial" {
+		effectiveArgs = append(args, "-o", assetPath("inner-bosh-xenial-ops.yml"))
+	}
+
+	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), effectiveArgs...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
 
