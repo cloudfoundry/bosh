@@ -1,0 +1,10 @@
+---
+name: logger
+
+templates:
+  log: bin/bosh-monitor/log
+
+
+packages: []
+
+properties: {}
