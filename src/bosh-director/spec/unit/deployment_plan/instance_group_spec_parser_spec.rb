@@ -1544,7 +1544,7 @@ module Bosh::Director
           context 'when there are multiple networks specified as default for a property' do
             it 'errors' do
               instance_group_spec['instances'] = 3
-              instance_group_spec['networks'].first['default'] = %w[gateway dns]
+              instance_group_spec['networks'].first['default'] = %w[gateway addressable dns]
               instance_group_spec['networks'] << instance_group_spec['networks'].first.merge('name' => 'duped-network') # dupe it
               duped_network = ManualNetwork.new('duped-network', [], logger)
               allow(deployment_plan).to receive(:networks).and_return([duped_network, network])
@@ -1555,8 +1555,22 @@ module Bosh::Director
                 JobNetworkMultipleDefaults,
                 "Instance group 'instance-group-name' specified more than one network to contain default. " \
                   "'dns' has default networks: 'fake-network-name', 'duped-network'. " \
-                  "'gateway' has default networks: 'fake-network-name', 'duped-network'.",
+                  "'addressable' has default networks: 'fake-network-name', 'duped-network'.",
               )
+            end
+
+            it 'does not error for multiple networks specifying gateway and picks first network association as default for instance group' do
+              instance_group_spec['instances'] = 3
+              instance_group_spec['networks'].first['default'] = %w[gateway dns]
+              instance_group_spec['networks'] << instance_group_spec['networks'].first.merge('name' => 'duped-network') # dupe it
+              instance_group_spec['networks'].last['default'] = %w[gateway]
+
+              duped_network = ManualNetwork.new('duped-network', [], logger)
+              allow(deployment_plan).to receive(:networks).and_return([duped_network, network])
+
+              instance_group = parsed_instance_group
+              expect(instance_group.default_network['dns']).to eq('fake-network-name')
+              expect(instance_group.default_network['gateway']).to eq('fake-network-name')
             end
           end
 

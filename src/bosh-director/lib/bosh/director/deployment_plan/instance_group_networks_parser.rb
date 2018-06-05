@@ -97,8 +97,8 @@ module Bosh::Director
       end
 
       def validate_only_one_default_network(default_networks_for_properties, job_name)
-        multiple_defaults = default_networks_for_properties.select { |_, networks|
-          networks.count > 1
+        multiple_defaults = default_networks_for_properties.select { |property, networks|
+          property != 'gateway' && networks.count > 1
         }
         unless multiple_defaults.empty?
           message_for_each_property = multiple_defaults.map do |property, networks|
