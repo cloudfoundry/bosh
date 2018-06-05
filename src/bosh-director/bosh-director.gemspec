@@ -26,6 +26,8 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-director-sync-dns'
   spec.executables << 'bosh-director-trigger-one-time-sync-dns'
   spec.executables << 'bosh-director-worker'
+  spec.executables << 'bosh-backup'
+  spec.executables << 'bosh-restore'
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the
   # external CPIs, in order to ensure appropriate versions are installed.
