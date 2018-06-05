@@ -64,7 +64,7 @@ module Bosh::Director
         t1 = Time.now
 
         File.open(path, "w") do |f|
-          App.instance.blobstores.blobstore.get(blobstore_id, f)
+          App.instance.blobstores.blobstore.get(blobstore_id, f, sha1: present_model.sha1)
         end
 
         @logger.debug("Job '#{@name}' downloaded to #{path} " +
