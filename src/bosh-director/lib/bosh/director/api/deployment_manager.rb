@@ -12,15 +12,16 @@ module Bosh::Director
       end
 
       def all_by_name_asc
-        Bosh::Director::Models::Deployment
-          .eager(
-            :stemcells,
-            release_versions: :release,
-            teams: proc{|ds| ds.select(:id, :name)},
-            cloud_configs: proc{|ds| ds.select(:id, :type)}
-          )
-          .order_by(Sequel.asc(:name))
-          .all
+        all_by_name_eagerly_asc([:stemcells,
+                                 release_versions: :release,
+                                 teams: proc { |ds| ds.select(:id, :name) },
+                                 cloud_configs: proc { |ds| ds.select(:id, :type) }])
+      end
+
+      def all_by_name_without_configs_asc
+        all_by_name_eagerly_asc([:stemcells,
+                                 release_versions: :release,
+                                 teams: proc { |ds| ds.select(:id, :name) }])
       end
 
       def create_deployment(username, manifest_text, cloud_configs, runtime_configs, deployment, options = {}, context_id = '')
@@ -35,6 +36,15 @@ module Bosh::Director
 
       def delete_deployment(username, deployment, options = {}, context_id = '')
         JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment, context_id)
+      end
+
+      private
+
+      def all_by_name_eagerly_asc(eager_list)
+        Bosh::Director::Models::Deployment
+          .eager(eager_list)
+          .order_by(Sequel.asc(:name))
+          .all
       end
     end
   end

@@ -842,91 +842,135 @@ module Bosh::Director
 
           before { basic_authorize 'reader', 'reader' }
 
-          it 'lists deployment info in deployment name order' do
-            release_1 = Models::Release.create(:name => 'release-1')
-            release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
-            release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
-            release_2 = Models::Release.create(:name => 'release-2')
-            release_2_1 = Models::ReleaseVersion.create(:release => release_2, :version => 1)
+          context 'with deployment info' do
+            before do
+              release_1 = Models::Release.create(:name => 'release-1')
+              release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
+              release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
+              release_2 = Models::Release.create(:name => 'release-2')
+              release_2_1 = Models::ReleaseVersion.create(:release => release_2, :version => 1)
 
-            stemcell_1_1 = Models::Stemcell.create(name: 'stemcell-1', version: 1, cid: 123)
-            stemcell_1_2 = Models::Stemcell.create(name: 'stemcell-1', version: 2, cid: 123)
-            stemcell_2_1 = Models::Stemcell.create(name: 'stemcell-2', version: 1, cid: 124)
+              stemcell_1_1 = Models::Stemcell.create(name: 'stemcell-1', version: 1, cid: 123)
+              stemcell_1_2 = Models::Stemcell.create(name: 'stemcell-1', version: 2, cid: 123)
+              stemcell_2_1 = Models::Stemcell.create(name: 'stemcell-2', version: 1, cid: 124)
 
-            old_cloud_config = Models::Config.make(:cloud, raw_manifest: {}, created_at: Time.now - 60)
-            new_cloud_config = Models::Config.make(:cloud, raw_manifest: {})
-            new_other_cloud_config = Models::Config.make(:cloud, name: 'other-config', raw_manifest: {})
+              old_cloud_config = Models::Config.make(:cloud, raw_manifest: {}, created_at: Time.now - 60)
+              new_cloud_config = Models::Config.make(:cloud, raw_manifest: {})
+              new_other_cloud_config = Models::Config.make(:cloud, name: 'other-config', raw_manifest: {})
 
-            good_team = Models::Team.create(name: 'dabest')
-            bad_team = Models::Team.create(name: 'daworst')
+              good_team = Models::Team.create(name: 'dabest')
+              bad_team = Models::Team.create(name: 'daworst')
 
-            deployment_3 = Models::Deployment.create(
-              name: 'deployment-3',
-            ).tap do |deployment|
-              deployment.teams = [bad_team]
+              Models::Deployment.create(
+                name: 'deployment-3',
+              ).tap do |deployment|
+                deployment.teams = [bad_team]
+              end
+
+              Models::Deployment.create(
+                name: 'deployment-2',
+              ).tap do |deployment|
+                deployment.add_stemcell(stemcell_1_1)
+                deployment.add_stemcell(stemcell_1_2)
+                deployment.add_release_version(release_1_1)
+                deployment.add_release_version(release_2_1)
+                deployment.teams = [good_team]
+                deployment.cloud_configs = [new_other_cloud_config, new_cloud_config]
+              end
+
+              Models::Deployment.create(
+                name: 'deployment-1',
+              ).tap do |deployment|
+                deployment.add_stemcell(stemcell_1_1)
+                deployment.add_stemcell(stemcell_2_1)
+                deployment.add_release_version(release_1_1)
+                deployment.add_release_version(release_1_2)
+                deployment.teams = [good_team, bad_team]
+                deployment.cloud_configs = [old_cloud_config]
+              end
             end
 
-            deployment_2 = Models::Deployment.create(
-              name: 'deployment-2',
-            ).tap do |deployment|
-              deployment.add_stemcell(stemcell_1_1)
-              deployment.add_stemcell(stemcell_1_2)
-              deployment.add_release_version(release_1_1)
-              deployment.add_release_version(release_2_1)
-              deployment.teams = [good_team]
-              deployment.cloud_configs = [new_other_cloud_config, new_cloud_config]
+            it 'lists in name order' do
+              get '/', {}, {}
+              expect(last_response.status).to eq(200)
+
+              body = JSON.parse(last_response.body)
+              expect(body).to eq([
+                                   {
+                                     'name' => 'deployment-1',
+                                     'releases' => [
+                                       { 'name' => 'release-1', 'version' => '1' },
+                                       { 'name' => 'release-1', 'version' => '2' },
+                                     ],
+                                     'stemcells' => [
+                                       { 'name' => 'stemcell-1', 'version' => '1' },
+                                       { 'name' => 'stemcell-2', 'version' => '1' },
+                                     ],
+                                     'cloud_config' => 'outdated',
+                                     'teams' => ['dabest', 'daworst'],
+                                   },
+                                   {
+                                     'name' => 'deployment-2',
+                                     'releases' => [
+                                       { 'name' => 'release-1', 'version' => '1' },
+                                       { 'name' => 'release-2', 'version' => '1' },
+                                     ],
+                                     'stemcells' => [
+                                       { 'name' => 'stemcell-1', 'version' => '1' },
+                                       { 'name' => 'stemcell-1', 'version' => '2' },
+                                     ],
+                                     'cloud_config' => 'latest',
+                                     'teams' => ['dabest'],
+                                   },
+                                   {
+                                     'name' => 'deployment-3',
+                                     'releases' => [],
+                                     'stemcells' => [],
+                                     'cloud_config' => 'none',
+                                     'teams' => ['daworst'],
+                                   },
+                                ])
             end
 
-            deployment_1 = Models::Deployment.create(
-              name: 'deployment-1',
-            ).tap do |deployment|
-              deployment.add_stemcell(stemcell_1_1)
-              deployment.add_stemcell(stemcell_2_1)
-              deployment.add_release_version(release_1_1)
-              deployment.add_release_version(release_1_2)
-              deployment.teams = [good_team, bad_team]
-              deployment.cloud_configs = [old_cloud_config]
+            it 'lists without configs if specified' do
+              get '/?exclude_configs=true', {}, {}
+              expect(last_response.status).to eq(200)
+
+              body = JSON.parse(last_response.body)
+              expect(body).to eq([
+                                   {
+                                     'name' => 'deployment-1',
+                                     'releases' => [
+                                       { 'name' => 'release-1', 'version' => '1' },
+                                       { 'name' => 'release-1', 'version' => '2' },
+                                     ],
+                                     'stemcells' => [
+                                       { 'name' => 'stemcell-1', 'version' => '1' },
+                                       { 'name' => 'stemcell-2', 'version' => '1' },
+                                     ],
+                                     'teams' => ['dabest', 'daworst'],
+                                   },
+                                   {
+                                     'name' => 'deployment-2',
+                                     'releases' => [
+                                       { 'name' => 'release-1', 'version' => '1' },
+                                       { 'name' => 'release-2', 'version' => '1' },
+                                     ],
+                                     'stemcells' => [
+                                       { 'name' => 'stemcell-1', 'version' => '1' },
+                                       { 'name' => 'stemcell-1', 'version' => '2' },
+                                     ],
+                                     'teams' => ['dabest'],
+                                   },
+                                   {
+                                     'name' => 'deployment-3',
+                                     'releases' => [],
+                                     'stemcells' => [],
+                                     'teams' => ['daworst'],
+                                   },
+                                 ])
             end
 
-            get '/', {}, {}
-            expect(last_response.status).to eq(200)
-
-            body = JSON.parse(last_response.body)
-            expect(body).to eq([
-                  {
-                    'name' => 'deployment-1',
-                    'releases' => [
-                      {'name' => 'release-1', 'version' => '1'},
-                      {'name' => 'release-1', 'version' => '2'}
-                    ],
-                    'stemcells' => [
-                      {'name' => 'stemcell-1', 'version' => '1'},
-                      {'name' => 'stemcell-2', 'version' => '1'},
-                    ],
-                    'cloud_config' => 'outdated',
-                    'teams' => ['dabest', 'daworst'],
-                  },
-                  {
-                    'name' => 'deployment-2',
-                    'releases' => [
-                      {'name' => 'release-1', 'version' => '1'},
-                      {'name' => 'release-2', 'version' => '1'}
-                    ],
-                    'stemcells' => [
-                      {'name' => 'stemcell-1', 'version' => '1'},
-                      {'name' => 'stemcell-1', 'version' => '2'},
-                    ],
-                    'cloud_config' => 'latest',
-                    'teams' => ['dabest'],
-                  },
-                  {
-                    'name' => 'deployment-3',
-                    'releases' => [],
-                    'stemcells' => [],
-                    'cloud_config' => 'none',
-                    'teams' => ['daworst'],
-                  }
-                ])
           end
 
           it 'orders the associations' do
