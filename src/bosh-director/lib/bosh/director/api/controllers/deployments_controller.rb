@@ -221,20 +221,27 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
+      def used_cloud_config_state(deployment)
+        latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
+        if deployment.cloud_configs.empty?
+          'none'
+        elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
+          'latest'
+        else
+          'outdated'
+        end
+      end
+
       get '/', authorization: :list_deployments do
-        all_deployments = @deployment_manager.all_by_name_asc
+        all_deployments = if params[:exclude_configs] == 'true'
+                            @deployment_manager.all_by_name_without_configs_asc
+                          else
+                            @deployment_manager.all_by_name_asc
+                          end
         my_deployments = all_deployments.select do |deployment|
           @permission_authorizer.is_granted?(deployment, :read, token_scopes)
         end
         deployments = my_deployments.map do |deployment|
-          latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
-          cloud_config = if deployment.cloud_configs.empty?
-                           'none'
-                         elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
-                           'latest'
-                         else
-                           'outdated'
-                         end
           sorted_releases = deployment.release_versions.sort do |a, b|
             [a.release.name, a.version] <=> [b.release.name, b.version]
           end
@@ -253,9 +260,8 @@ module Bosh::Director
                 'version' => sc.version,
               }
             end,
-            'cloud_config' => cloud_config,
             'teams' => deployment.teams.map(&:name),
-          }
+          }.merge(params[:exclude_configs] == 'true' ? {} : { 'cloud_config' => used_cloud_config_state(deployment) })
         end
 
         json_encode(deployments)
