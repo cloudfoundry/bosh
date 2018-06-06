@@ -32,7 +32,10 @@ var _ = Describe("postgres-9.4", func() {
 		migrationIncapableManifestPath = assetPath("postgres-94-manifest.yml")
 		migrationCapableManifestPath = assetPath("migratable-postgres-94-manifest.yml")
 
-		session = outerBosh("-d", "postgres", "deploy", "-n", legacyManifestPath)
+		session = outerBosh("deploy", "-n", legacyManifestPath,
+			"-d", "postgres",
+			"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+		)
 		Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 	})
 
