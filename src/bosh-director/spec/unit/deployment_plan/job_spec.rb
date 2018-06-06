@@ -172,27 +172,19 @@ module Bosh
           before do
             expect(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
             expect(App).to receive(:instance).and_return(instance)
-            expect(blobstore).to receive(:get).with('blobstore-id-1', anything) do |_, file|
-              File.open(file.path, 'w') { |f| f.write(file_content) }
-            end
 
             subject.bind_models
           end
 
           it 'downloads blob from blobstore' do
+            expect(blobstore).to receive(:get).with('blobstore-id-1', anything, sha1: file_content_sha1) do |_, file|
+              File.open(file.path, 'w') { |f| f.write(file_content) }
+            end
+
             path = subject.download_blob
             expect(path).to_not be_nil
 
             expect(Digest::SHA1.file(path).to_s).to eq(file_content_sha1)
-          end
-
-          context 'when checksum does NOT match' do
-            let(:file_content) { 'malicious-job-template' }
-            let(:file_content_sha1) { '73479f3f31e8be5361f98259d7044a23a3c14a0b' }
-
-            it 'raises error' do
-              expect { subject.download_blob }.to raise_error(/doesn't match file sha1/)
-            end
           end
         end
       end
