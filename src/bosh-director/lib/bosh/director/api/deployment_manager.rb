@@ -31,11 +31,13 @@ module Bosh::Director
         description = 'create deployment'
         description += ' (dry run)' if options['dry_run']
 
-        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description, [manifest_text, cloud_config_ids, runtime_config_ids, options], deployment, context_id)
+        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, description,
+                             [manifest_text, cloud_config_ids, runtime_config_ids, options], deployment, context_id)
       end
 
-      def delete_deployment(username, deployment, options = {}, context_id = '')
-        JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options], deployment, context_id)
+      def delete_deployment(username, deployment, _options = {}, context_id = '')
+        JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}",
+                             %w[deployment.name options], deployment, context_id)
       end
 
       private

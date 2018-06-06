@@ -24,11 +24,9 @@ module Bosh::Director
             rescue DeploymentNotFound
               permission = :create_deployment
             end
-          else
-            if params.key?('deployment')
-              @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
-              subject = @deployment
-            end
+          elsif params.key?('deployment')
+            @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
+            subject = @deployment
           end
 
           @permission_authorizer.granted_or_raise(subject, permission, token_scopes)
@@ -77,12 +75,12 @@ module Bosh::Director
         }
 
         options['skip_drain'] = params[:job] if params['skip_drain'] == 'true'
-        options['canaries'] = params[:canaries] if !!params['canaries']
-        options['max_in_flight'] = params[:max_in_flight] if !!params['max_in_flight']
+        options['canaries'] = params[:canaries] if params['canaries']
+        options['max_in_flight'] = params[:max_in_flight] if params['max_in_flight']
         options['fix'] = true if params['fix'] == 'true'
         options['dry_run'] = true if params['dry_run'] == 'true'
 
-        if (request.content_length.nil? || request.content_length.to_i == 0) && params['state']
+        if request.content_length&.to_i&.zero? && params['state']
           manifest = deployment.manifest
           latest_cloud_configs = deployment.cloud_configs
           latest_runtime_configs = deployment.runtime_configs
@@ -126,7 +124,7 @@ module Bosh::Director
         options['fix'] = true if params['fix'] == 'true'
         options['dry_run'] = true if params['dry_run'] == 'true'
 
-        if request.content_length.nil? || request.content_length.to_i == 0
+        if request.content_length&.to_i&.zero?
           manifest = deployment.manifest
           latest_cloud_configs = deployment.cloud_configs
           latest_runtime_configs = deployment.runtime_configs
@@ -400,11 +398,11 @@ module Bosh::Director
 
         # since authorizer does not look at manifest payload for deployment name
         @deployment = Models::Deployment[name: deployment_name]
-        if @deployment
-          teams = @deployment.teams
-        else
-          teams = Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(token_scopes)
-        end
+        teams = if @deployment
+                  @deployment.teams
+                else
+                  Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(token_scopes)
+                end
 
         if params['context']
           @logger.debug("Deploying with context #{params['context']}")

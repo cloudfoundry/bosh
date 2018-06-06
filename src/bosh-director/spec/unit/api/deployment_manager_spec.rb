@@ -27,7 +27,7 @@ module Bosh::Director
         expect(create_task.context_id).to eq('')
       end
 
-      it 'passes empty cloud config id array and an empty runtime config id array if there are no cloud configs or runtime configs' do
+      it 'passes empty cloud and runtime config id arrays if there are no cloud configs or runtime configs' do
         expect(JobQueue).to receive_message_chain(:new, :enqueue) do |_, job_class, _, params, _|
           expect(job_class).to eq(Jobs::UpdateDeployment)
           expect(params).to eq(['manifest', [], [], options])
@@ -39,7 +39,8 @@ module Bosh::Director
       it 'passes context id' do
         cloud_configs = [Models::Config.make(:cloud)]
         context_id = 'example-context-id'
-        create_task = subject.create_deployment(username, 'manifest', cloud_configs, runtime_configs, deployment, options, context_id)
+        create_task = subject.create_deployment(username, 'manifest', cloud_configs, runtime_configs, deployment, options,
+                                                context_id)
 
         expect(create_task.context_id).to eq context_id
       end
@@ -92,7 +93,7 @@ module Bosh::Director
           Models::Deployment.make(name: 'c')
           Models::Deployment.make(name: 'a')
 
-          expect(subject.all_by_name_asc.map(&:name)).to eq(['a', 'b', 'c'])
+          expect(subject.all_by_name_asc.map(&:name)).to eq(%w[a b c])
         end
       end
 
@@ -113,10 +114,9 @@ module Bosh::Director
           Models::Deployment.make(name: 'c')
           Models::Deployment.make(name: 'a')
 
-          expect(subject.all_by_name_without_configs_asc.map(&:name)).to eq(['a', 'b', 'c'])
+          expect(subject.all_by_name_without_configs_asc.map(&:name)).to eq(%w[a b c])
         end
       end
     end
-
   end
 end
