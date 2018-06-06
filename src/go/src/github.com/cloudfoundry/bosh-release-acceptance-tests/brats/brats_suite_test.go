@@ -115,19 +115,6 @@ func assetPath(filename string) string {
 	return path
 }
 
-func releaseTarball(releasePath string) string {
-	releaseTarballFile := fmt.Sprintf("%s.tgz", releasePath)
-
-	session := bosh(
-		"create-release", releasePath,
-		fmt.Sprintf("--tarball=%s", releaseTarballFile),
-		"--force",
-		)
-	Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
-
-	return releaseTarballFile
-}
-
 func boshDeploymentAssetPath(assetPath string) string {
 	return filepath.Join(os.Getenv("BOSH_DEPLOYMENT_PATH"), assetPath)
 }
