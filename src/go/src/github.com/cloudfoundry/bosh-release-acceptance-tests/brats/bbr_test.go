@@ -15,10 +15,13 @@ import (
 )
 
 var _ = Describe("Bosh Backup and Restore BBR", func() {
-	var backupDir []string
+	var (
+		backupDir []string
+		bbrSdkOps string
+	)
 
 	BeforeEach(func() {
-		bbrSdkOps := fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml"))
+		bbrSdkOps = fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml"))
 		startInnerBosh(bbrSdkOps)
 	})
 
@@ -67,8 +70,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 			By("wipe system, recreate inner director", func() {
 				stopInnerBosh()
-
-				startInnerBosh()
+				startInnerBosh(bbrSdkOps)
 			})
 
 			By("expect deploy to fail because the release/stemcell won't be there", func() {
