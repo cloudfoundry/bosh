@@ -11,11 +11,10 @@ import (
 
 var _ = Describe("Health Monitor", func() {
 	BeforeEach(func() {
-		releaseTarballPath := releaseTarball(assetPath("hm-json-plugin-release"))
 		startInnerBosh(
 			"-o", assetPath("ops-hm-json-plugin-logger-job.yml"),
-			"-v", fmt.Sprintf("hm-json-plugin-release-tarball=%s", releaseTarballPath),
-			)
+			"-v", fmt.Sprintf("hm-json-plugin-release-path=%s", assetPath("hm-json-plugin-release")),
+		)
 	})
 
 	AfterEach(func() {
