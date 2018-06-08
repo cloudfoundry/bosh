@@ -685,11 +685,11 @@ jobs:
       - put: bosh-master
         params:
           repository: bosh-master-with-final
-          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
-          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
+          tag: bosh-src-with-bumped-version-tag/tag-name
+          annotate: bosh-src-with-bumped-version-tag/annotate-msg
 
 resources:
   - name: bosh-src
@@ -703,7 +703,7 @@ resources:
     type: semver
     source:
       bucket: ((candidate_release_bucket))
-      key: version
+      key: 266.x/version
       initial_version: 266.0.0
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
