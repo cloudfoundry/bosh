@@ -347,7 +347,7 @@ module Bosh::Director::Links
           return unless is_explicit_link && !consumer_intent.blocked
         end
 
-        validate_found_providers(found_provider_intents, consumer, consumer_intent, is_explicit_link, current_deployment_name, link_network)
+        validate_found_providers(found_provider_intents, consumer_intent, link_network)
 
         unless dry_run
           provider_intent = found_provider_intents.first
@@ -513,26 +513,8 @@ module Bosh::Director::Links
       provider_intent_content_copy
     end
 
-    def validate_found_providers(found_provider_intents, consumer, consumer_intent, is_explicit_link, current_deployment_name, link_network)
-      if found_provider_intents.empty?
-        raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' with type '#{consumer_intent.type}' for job '#{consumer.name}'#{" in instance group '#{consumer.instance_group}'" unless consumer.instance_group.empty?} in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
-      end
-
-      if found_provider_intents.size > 1
-        if is_explicit_link
-          all_link_paths = ''
-          found_provider_intents.each do |provider_intent|
-            all_link_paths += "\n   #{provider_intent.original_name}#{" aliased as '#{provider_intent.name}'" unless provider_intent.name.nil?} (job: #{provider_intent.link_provider.name}, instance group: #{provider_intent.link_provider.instance_group})"
-          end
-          raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of name/alias '#{consumer_intent.name}' found for job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
-        else
-          all_link_paths = ''
-          found_provider_intents.each do |provider_intent|
-            all_link_paths += "\n   Deployment: #{provider_intent.link_provider.deployment.name}, instance group: #{provider_intent.link_provider.instance_group}, job: #{provider_intent.link_provider.name}, link name/alias: #{provider_intent.name}"
-          end
-          raise Bosh::Director::DeploymentInvalidLink, "Multiple providers of type '#{consumer_intent.type}' found for consumer link '#{consumer_intent.original_name}' in job '#{consumer_intent.link_consumer.name}' in instance group '#{consumer_intent.link_consumer.instance_group}'. All of these match:#{all_link_paths}"
-        end
-      end
+    def validate_found_providers(found_provider_intents, consumer_intent, link_network)
+      raise Bosh::Director::DeploymentInvalidLink, Bosh::Director::Links::LinksErrorBuilder.build_link_error(consumer_intent, found_provider_intents, link_network) if found_provider_intents.size != 1
     end
 
     def log_warning_if_applicable(address, dns_required, instance_name, instance_id)
@@ -574,6 +556,5 @@ module Bosh::Director::Links
     def link_types_to_skip_removal
       %w(variable external)
     end
-
   end
 end

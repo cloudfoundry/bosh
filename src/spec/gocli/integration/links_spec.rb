@@ -629,13 +629,13 @@ describe 'Links', type: :integration do
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'db' with type 'bad_link' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Failed to resolve link 'db' with type 'bad_link' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'.
       OUTPUT
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'backup_db' with type 'bad_link_2' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Failed to resolve link 'backup_db' with type 'bad_link_2' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'.
       OUTPUT
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'some_link_name' with type 'bad_link_3' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Failed to resolve link 'some_link_name' with type 'bad_link_3' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'.
       OUTPUT
     end
   end

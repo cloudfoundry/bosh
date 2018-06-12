@@ -718,7 +718,7 @@ describe Bosh::Director::Links::LinksManager do
               subject.resolve_deployment_links(deployment_model, options)
             }.to raise_error do |e|
               expect(e.message).to include("Failed to resolve links from deployment 'test_deployment'. See errors below:")
-              expect(e.message).to include("Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              expect(e.message).to include("No link providers found")
             end
           end
 
@@ -738,9 +738,13 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect(consumer.find_intent_by_name('ci1').optional).to eq(true)
 
-              expect {
+              expect do
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              end.to raise_error do |error|
+                expect(error.message).to include("Failed to resolve links from deployment 'test_deployment'. See errors below:")
+                expect(error.message).to include("- Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+                expect(error.message).to include("- No link providers found")
+              end
 
               expect(Bosh::Director::Models::Links::Link.count).to eq(0)
             end
@@ -779,7 +783,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
 
             expect(Bosh::Director::Models::Links::Link.count).to eq(0)
           end
@@ -821,9 +825,12 @@ describe Bosh::Director::Links::LinksManager do
             expect {
               expect(deployment_model.link_consumers.count).to be > 0
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
-   pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
-   pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
+            }.to raise_error do |error|
+              message = error.message
+              expect(message).to include("Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+              expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+              expect(message).to include("- Link provider 'pi2' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+            end
           end
 
           context 'when the providers are from different networks' do
@@ -847,9 +854,13 @@ describe Bosh::Director::Links::LinksManager do
                 expect {
                   expect(deployment_model.link_consumers.count).to be > 0
                   subject.resolve_deployment_links(deployment_model, options)
-                }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
-   pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
-   pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
+                }.to raise_error do |error|
+                  message = error.message
+                  expect(message).to include("Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+                  expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+                  expect(message).to include("- Link provider 'pi2' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+
+                end
               end
             end
           end
@@ -871,7 +882,15 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
+              }.to raise_error do |error|
+                message = error.message
+                expect(message).to include("Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+                expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+                expect(message).to include("- Link provider 'pi2' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+              end
+
+                ("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
+end
    pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
    pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
 
@@ -938,7 +957,7 @@ describe Bosh::Director::Links::LinksManager do
             expect {
               expect(deployment_model.link_consumers.count).to be > 0
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
           end
 
           context 'when link consumer intent is optional' do
@@ -998,9 +1017,13 @@ describe Bosh::Director::Links::LinksManager do
             expect {
               expect(deployment_model.link_consumers.count).to be > 0
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for consumer link 'ci1' in job 'c1' in instance group 'ig1'. All of these match:
-   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
-   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
+            }.to raise_error do |error|
+              message = error.message
+              expect(message).to include("Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+              expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+              expect(message).to include("- Link provider 'pi2' with alias 'provider_alias2' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+
+            end
           end
 
           context 'when one of the providers is not consumable' do
@@ -1031,10 +1054,12 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for consumer link 'ci1' in job 'c1' in instance group 'ig1'. All of these match:
-   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
-   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
-
+              }.to raise_error do |error|
+                message = error.message
+                expect(message).to include("Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+                expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+                expect(message).to include("- Link provider 'pi2' with alias 'provider_alias2' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+              end
               expect(Bosh::Director::Models::Links::Link.count).to eq(0)
             end
           end
@@ -1166,7 +1191,7 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
             end
           end
         end
@@ -1177,7 +1202,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
           end
         end
 
@@ -1213,7 +1238,14 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
+            }.to raise_error do |error|
+              message = error.message
+              expect(message).to include("Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+              expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+              expect(message).to include("- Link provider 'pi2' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+            end
+
+            ("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of name/alias 'provider_alias' found for job 'c1' in instance group 'ig1'. All of these match:
    pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)
    pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
           end
@@ -1299,7 +1331,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
             end
           end
 
@@ -1309,7 +1341,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
             end
           end
 
@@ -1862,7 +1894,7 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
             end
           end
         end
@@ -1873,7 +1905,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Details below:\n    - No link providers found")
           end
         end
 
@@ -1909,9 +1941,12 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Multiple providers of type 'foo' found for consumer link 'ci1' in job 'c1' in instance group 'ig1'. All of these match:
-   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
-   Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
+            }.to raise_error do |error|
+              message = error.message
+              expect(message).to include("Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Details below:")
+              expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+              expect(message).to include("- Link provider 'pi2' with alias 'provider_alias2' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
+            end
           end
         end
       end
@@ -1939,9 +1974,13 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         it 'should not include empty instance group in error messages' do
-          expect {
+          expect do
             subject.resolve_deployment_links(deployment_model, options)
-          }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in deployment 'test_deployment'")
+          end.to raise_error do |error|
+            expect(error.message).to include("Failed to resolve links from deployment 'test_deployment'. See errors below:")
+            expect(error.message).to include("- Failed to resolve link 'ci1' with type 'foo' from job 'c1'. Details below:")
+            expect(error.message).to include("- No link providers found")
+          end
         end
       end
 
