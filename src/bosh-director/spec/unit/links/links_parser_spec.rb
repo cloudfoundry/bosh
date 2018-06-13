@@ -53,6 +53,14 @@ describe Bosh::Director::Links::LinksParser do
   let(:release_consumers) {nil}
   let(:release_properties) {nil}
 
+  let(:logger) do
+    double(Logging::Logger)
+  end
+
+  before do
+    allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+  end
+
   describe '#parse_migrated_from_providers_from_job' do
     let(:provider) {instance_double(Bosh::Director::Models::Links::LinkProvider)}
     let(:provider_intent) {instance_double(Bosh::Director::Models::Links::LinkProviderIntent)}
@@ -352,21 +360,6 @@ describe Bosh::Director::Links::LinksParser do
     let(:job_properties) {{}}
 
     context 'when the job does NOT define any provider in its release spec' do
-      context 'when the manifest specifies provided links for that job' do
-        let(:job_spec) do
-          {
-            'name' => 'job_1',
-            'provides' => {'foo' => {}}
-          }
-        end
-
-        it 'raise an error' do
-          expect {
-            subject.parse_providers_from_job(job_spec, deployment_plan.model, template, {}, "instance-group-name")
-          }.to raise_error "Job 'job_1' in instance group 'instance-group-name' specifies providers in the manifest but the job does not define any providers in the release spec"
-        end
-      end
-
       context 'when the manifest does not specify any providers' do
         let(:job_spec) do
           {
@@ -696,7 +689,7 @@ describe Bosh::Director::Links::LinksParser do
       end
 
       context 'when a manifest job defines a provider which is not specified in the release' do
-        it 'should fail because it does not match the release' do
+        it 'should log a warning' do
           job_spec = {
             'name' => 'job-name1',
             'release' => 'release1',
@@ -716,9 +709,17 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:metadata=).with({'mapped_properties' => {}}.to_json)
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
-          expect {
-            subject.parse_providers_from_job(job_spec, deployment_plan.model, template, job_properties, 'instance-group-name')
-          }.to raise_error(RuntimeError, "Manifest defines unknown providers:\n  - Job 'job-name1' does not provide link 'new_link_name' in the release spec")
+          expect(logger).to receive(:warn).with("Manifest defines unknown providers:\n"\
+                                                "  - Job 'job-name1' does not define link provider 'new_link_name'"\
+                                                ' in the release spec')
+
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties,
+            'instance-group-name',
+          )
         end
       end
     end
@@ -729,20 +730,6 @@ describe Bosh::Director::Links::LinksParser do
     let(:consumer_intent) {instance_double(Bosh::Director::Models::Links::LinkConsumerIntent)}
 
     context 'when the job does NOT define any consumer in its release spec' do
-      it 'should raise an error when the manifest has consumer specified' do
-        job_spec = {
-          'name' => 'job-name1',
-          'release' => 'release1',
-          'consumes' => {
-            'undefined_link_consumer' => {}
-          }
-        }
-
-        expect {
-          subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
-        }.to raise_error("Job 'job-name1' in instance group 'instance-group-name' specifies consumers in the manifest but the job does not define any consumers in the release spec")
-      end
-
       context 'when the manifest does not specify any providers' do
         let(:job_spec) do
           {
@@ -1179,16 +1166,20 @@ describe Bosh::Director::Links::LinksParser do
               manifest_link_consumers['second_undefined'] = {}
             end
 
-            it 'should raise an error for each undefined consumer' do
+            it 'should log a warning for each undefined consumer' do
               expected_error = [
                 'Manifest defines unknown consumers:',
-                " - Job 'job-name1' does not define consumer 'first_undefined' in the release spec",
-                " - Job 'job-name1' does not define consumer 'second_undefined' in the release spec"
+                "  - Job 'job-name1' does not define link consumer 'first_undefined' in the release spec",
+                "  - Job 'job-name1' does not define link consumer 'second_undefined' in the release spec",
               ].join("\n")
+              expect(logger).to receive(:warn).with(expected_error)
 
-              expect {
-                subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
-              }.to raise_error(expected_error)
+              subject.parse_consumers_from_job(
+                job_spec,
+                deployment_plan.model,
+                template,
+                'instance-group-name',
+              )
             end
           end
 
