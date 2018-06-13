@@ -7,6 +7,7 @@ module Bosh::Director::Links
     class LinkProvidersParser
       include Bosh::Director::ValidationHelper
       def initialize
+        @logger = Bosh::Director::Config.logger
         @link_helper = LinkHelpers.new
       end
 
@@ -70,10 +71,11 @@ module Bosh::Director::Links
                                                 instance_group_name, job_properties))
 
         unless manifest_provides_links.empty?
-          errors.push('Manifest defines unknown providers:')
+          warning = 'Manifest defines unknown providers:'
           manifest_provides_links.each_key do |link_name|
-            errors.push("  - Job '#{job_name}' does not provide link '#{link_name}' in the release spec")
+            warning << "\n  - Job '#{job_name}' does not define link provider '#{link_name}' in the release spec"
           end
+          @logger.warn(warning)
         end
 
         raise errors.join("\n") unless errors.empty?
@@ -226,11 +228,6 @@ module Bosh::Director::Links
       )
         job_name = current_release_template_model.name
 
-        if current_release_template_model.provides.empty? && !manifest_provides_links.empty?
-          raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies providers in the manifest but the"\
-              ' job does not define any providers in the release spec'
-        end
-
         return [] if current_release_template_model.provides.empty?
 
         process_providers(
@@ -249,6 +246,7 @@ module Bosh::Director::Links
     class LinkConsumersParser
       include Bosh::Director::ValidationHelper
       def initialize
+        @logger = Bosh::Director::Config.logger
         @link_helper = LinkHelpers.new
       end
 
@@ -289,26 +287,25 @@ module Bosh::Director::Links
                                                                    class: Hash, optional: true, default: {}))
         job_name = safe_property(manifest_job_spec, 'name', class: String)
 
-        if current_release_template_model.consumes.empty? && !consumes_links.empty?
-          raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies consumers in the manifest"\
-              ' but the job does not define any consumers in the release spec'
+        errors = []
+        unless current_release_template_model.consumes.empty?
+          errors.concat(
+            process_release_template_consumes(
+              consumes_links,
+              current_release_template_model,
+              deployment_model,
+              instance_group_name,
+              job_name,
+            ),
+          )
         end
 
-        return if current_release_template_model.consumes.empty?
-
-        errors = process_release_template_consumes(
-          consumes_links,
-          current_release_template_model,
-          deployment_model,
-          instance_group_name,
-          job_name,
-        )
-
         unless consumes_links.empty?
-          errors.push('Manifest defines unknown consumers:')
+          warning = 'Manifest defines unknown consumers:'
           consumes_links.each_key do |link_name|
-            errors.push(" - Job '#{job_name}' does not define consumer '#{link_name}' in the release spec")
+            warning << "\n  - Job '#{job_name}' does not define link consumer '#{link_name}' in the release spec"
           end
+          @logger.warn(warning)
         end
 
         raise errors.join("\n") unless errors.empty?
@@ -655,9 +652,6 @@ module Bosh::Director::Links
         (value && [true, false].include?(value)) || false
       end
     end
-    # private_constant :LinkProvidersParser
-    # private_constant :LinkConsumersParser
-    #
 
     def initialize
       @link_providers_parser = LinkProvidersParser.new
