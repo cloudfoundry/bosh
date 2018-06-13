@@ -1,6 +1,7 @@
 package brats_test
 
 import (
+	"io/ioutil"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -150,5 +151,33 @@ func uploadStemcell(stemcellUrl string) {
 
 func uploadRelease(releaseUrl string) {
 	session := bosh("-n", "upload-release", releaseUrl)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func cleanupMysqlDB(host, user, password, dbName, caFilePath string) {
+	out, err := exec.Command(outerBoshBinaryPath, "int", assetPath(caFilePath), "--path", "/db_ca").Output()
+	Expect(err).ToNot(HaveOccurred())
+
+	tmpFile, err := ioutil.TempFile("", "db_ca")
+	Expect(err).ToNot(HaveOccurred())
+
+	defer os.Remove(tmpFile.Name())
+
+	_, err = tmpFile.Write(out)
+	Expect(err).ToNot(HaveOccurred())
+	err = tmpFile.Close()
+	Expect(err).ToNot(HaveOccurred())
+
+	session := execCommand(
+		"mysql",
+		"-h",
+		host,
+		fmt.Sprintf("--user=%s", user),
+		fmt.Sprintf("--password=%s", password),
+		fmt.Sprintf("--ssl-ca=%s", tmpFile.Name()),
+		"--ssl-mode=VERIFY_IDENTITY",
+		"-e",
+		fmt.Sprintf("drop database %s; create database %s;", dbName, dbName),
+	)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }

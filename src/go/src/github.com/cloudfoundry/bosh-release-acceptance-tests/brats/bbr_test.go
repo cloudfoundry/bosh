@@ -22,7 +22,8 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	)
 
 	BeforeEach(func() {
-		startInnerBoshOptions = append(startInnerBoshOptions, fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml")))
+		startInnerBoshOptions = []string{fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml"))}
+
 	})
 
 	JustBeforeEach(func() {
@@ -218,6 +219,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				connectionOptions := "external_db/rds_mysql_connection_options.yml"
 				connectionVarFile := "external_db/rds_mysql.yml"
+				cleanupMysqlDB(external_db_host, external_db_user, external_db_password, external_db_name, connectionVarFile)
 
 				startInnerBoshOptions = append(startInnerBoshOptions,
 					"-o", boshDeploymentAssetPath("misc/external-db.yml"),
@@ -257,6 +259,9 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				By("deleting the deployment (whoops)", func() {
 					session := bosh("-n", "delete-deployment", "-d", "syslog-deployment", "--force")
+					Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+
+					session = bosh("-n", "clean-up", "--all")
 					Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
 				})
 

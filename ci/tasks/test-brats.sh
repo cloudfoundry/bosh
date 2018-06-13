@@ -46,5 +46,8 @@ export DOCKER_CERTS
 DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 export DOCKER_HOST
 
+apt-get update
+apt-get install -y mysql-client
+
 cd bosh-src
 scripts/test-brats
