@@ -143,5 +143,6 @@
   "20180405233153_remove_instance_from_orphaned_vms": "e06508c28f2619548f6dcfe5e5c46787d17c18b6",
   "20180410180821_migrate_legacy_update_strategy": "9f224e6079b779638a3a52e01dc9fefbc3a2bfd8",
   "20180411165035_migrate_update_strategy_to_vm_strategy": "116a03febc41f331316bb0d14385093ed941bc68",
-  "20180427184448_add_historical_metadata_to_orphaned_vms": "405597203ab69f062481a9896a667617bc3207f7"
+  "20180427184448_add_historical_metadata_to_orphaned_vms": "405597203ab69f062481a9896a667617bc3207f7",
+  "20180613190204_links_api_longtext_support": "555ab4f70cc81a7a5889429f8ddadb08dcd432f0"
 }
