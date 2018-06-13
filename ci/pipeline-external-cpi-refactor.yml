@@ -5,6 +5,7 @@ groups:
       - unit-2.4
       - integration-postgres-gocli-sha2
       - upgrade-tests
+      - candidate-release-v2
 
 shared:
   - &install-dependencies
@@ -134,7 +135,43 @@ jobs:
           params:
             DB: mysql
 
+  - name: candidate-release-v2
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed:
+      - unit-2.4
+      - integration-postgres-gocli-sha2
+      - upgrade-tests
+    - get: bosh-cli
+    - get: candidate-version
+      resource: candidate-version-v2
+      params:
+        bump: major
+    - task: make
+      file: bosh-src/ci/tasks/make-candidate.yml
+    - put: bosh-candidate-release-tarballs
+      params:
+        file: "release/bosh-dev-release.tgz"
 resources:
+  - name: bosh-candidate-release-tarballs
+    type: s3
+    source:
+      bucket: bosh-toronto-director-v2
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
+      versioned_file: "bosh-dev-release.tgz"
+      region_name: us-west-1
+
+  - name: candidate-version-v2
+    type: semver
+    source:
+      bucket: bosh-toronto-director-v2
+      key: version
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
+      region_name: us-west-1
+
   - name: bosh-src
     type: git
     source:
