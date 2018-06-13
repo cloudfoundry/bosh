@@ -21,6 +21,7 @@ templates:
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   bbr_backup: bin/bbr/backup
   bbr_restore: bin/bbr/restore
+  bbr_config.json.erb: config/bbr.json
   nats_server_ca.pem.erb: config/nats_server_ca.pem
   nats_client_certificate.pem.erb: config/nats_client_certificate.pem
   nats_client_private_key.erb: config/nats_client_private_key

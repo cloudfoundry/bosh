@@ -15,32 +15,32 @@ module Bosh::Director
     end
 
     describe 'POST', '/diff' do
-      let(:runtime_config) {
+      let(:runtime_config) do
         {
-            'release' => {
-                'name' => 'some-release',
-                'version' => '0.0.1'
+          'release' => {
+            'name' => 'some-release',
+            'version' => '0.0.1',
+          },
+          'addons' => {
+            'name' => 'some-addon',
+            'jobs' => {
+              'name' => 'some-job',
+              'release' => 'some-release',
+              'properties' => {
+                'some-key' => 'some-value',
+              },
             },
-            'addons' => {
-                'name' => 'some-addon',
-                'jobs' => {
-                    'name' => 'some-job',
-                    'release' => 'some-release',
-                    'properties' => {
-                        'some-key' => 'some-value'
-                    }
-                }
-            }
+          },
         }
-      }
+      end
 
-      let(:dns_runtime_config) {
+      let(:dns_runtime_config) do
         {
           'dns' => {
-            'version' => '0.0.1'
-          }
+            'version' => '0.0.1',
+          },
         }
-      }
+      end
 
       describe 'when user has admin access' do
 

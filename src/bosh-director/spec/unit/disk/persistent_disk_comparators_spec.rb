@@ -77,7 +77,9 @@ module Bosh::Director::Disk
         let(:disk_1) { Bosh::Director::DeploymentPlan::PersistentDiskCollection::PersistentDisk.new('smurf', cloud_properties, 10) }
         let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
         let(:persistent_disk_variableset_pair_1) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_1, variable_set) }
-        let(:cloud_properties) { {'a' => {'b' => 'c'}} }
+        let(:cloud_properties) do
+          { 'a' => { 'b' => 'c' } }
+        end
 
         before do
           allow(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(cloud_properties)
@@ -110,7 +112,9 @@ module Bosh::Director::Disk
         let(:disk_1) { Bosh::Director::DeploymentPlan::PersistentDiskCollection::PersistentDisk.new('smurf', cloud_properties, size) }
         let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
         let(:persistent_disk_variableset_pair_1) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_1, variable_set) }
-        let(:cloud_properties) { {'a' => {'b' => 'c'}} }
+        let(:cloud_properties) do
+          { 'a' => { 'b' => 'c' } }
+        end
         let(:size) { 10 }
 
         before do
@@ -143,7 +147,9 @@ module Bosh::Director::Disk
 
     describe '#size_diff_only?' do
       let(:disk_1) { Bosh::Director::DeploymentPlan::PersistentDiskCollection::PersistentDisk.new('smurf', cloud_properties, 10) }
-      let(:cloud_properties) { {'a' => {'b' => 'c'}} }
+      let(:cloud_properties) do
+        { 'a' => { 'b' => 'c' } }
+      end
       let(:variable_set_1) { instance_double(Bosh::Director::Models::VariableSet) }
       let(:variable_set_2) { instance_double(Bosh::Director::Models::VariableSet) }
 
@@ -174,7 +180,9 @@ module Bosh::Director::Disk
       end
 
       context 'when cloud_properties are different' do
-        let(:other_cloud_properties) { {'k' => {'l' => 'm'}} }
+        let(:other_cloud_properties) do
+          { 'k' => { 'l' => 'm' } }
+        end
         let(:disk_2) { Bosh::Director::DeploymentPlan::PersistentDiskCollection::PersistentDisk.new('smurf', other_cloud_properties, 10) }
         let(:persistent_disk_variableset_pair_2) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_2, variable_set_2) }
 

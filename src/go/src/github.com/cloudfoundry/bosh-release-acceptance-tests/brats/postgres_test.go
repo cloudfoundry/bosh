@@ -32,7 +32,10 @@ var _ = Describe("postgres-9.4", func() {
 		migrationIncapableManifestPath = assetPath("postgres-94-manifest.yml")
 		migrationCapableManifestPath = assetPath("migratable-postgres-94-manifest.yml")
 
-		session = outerBosh("-d", "postgres", "deploy", "-n", legacyManifestPath)
+		session = outerBosh("deploy", "-n", legacyManifestPath,
+			"-d", "postgres",
+			"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+		)
 		Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 	})
 
@@ -48,7 +51,10 @@ var _ = Describe("postgres-9.4", func() {
 		It("should fail to start with a helpful error message", func() {
 			uploadLocalBoshRelease()
 
-			session := outerBosh("-d", "postgres", "deploy", "-n", migrationIncapableManifestPath)
+			session := outerBosh("deploy", "-n", migrationIncapableManifestPath,
+				"-d", "postgres",
+				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(1))
 
 			Expect(string(session.Out.Contents())).To(ContainSubstring("pre-start scripts failed. Failed Jobs: postgres-9.4."))
@@ -57,12 +63,17 @@ var _ = Describe("postgres-9.4", func() {
 
 	Context("When upgrading from a postgres-9.0 job that was migrated", func() {
 		It("should deploy without issues", func() {
-			session := outerBosh("-d", "postgres", "deploy", "-n", migrationCapableManifestPath)
+			session := outerBosh("deploy", "-n", migrationCapableManifestPath,
+				"-d", "postgres",
+				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 
 			uploadLocalBoshRelease()
-
-			session = outerBosh("-d", "postgres", "deploy", "-n", migrationIncapableManifestPath)
+			session = outerBosh("deploy", "-n", migrationIncapableManifestPath,
+				"-d", "postgres",
+				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 	})

@@ -2,15 +2,19 @@ require 'spec_helper'
 
 describe Bosh::Monitor do
   describe 'config=' do
-    let(:http_config) { {} }
-    let(:valid_config) { {
-      'logfile' => Tempfile.new('logfile').path,
-      'director' => {},
-      'http' => http_config,
-      'loglevel' => 'debug',
-      'em_threadpool_size' => 20,
-      'plugins' => %w(plugin1 plugin2)
-    } }
+    let(:http_config) do
+      {}
+    end
+    let(:valid_config) do
+      {
+        'logfile' => Tempfile.new('logfile').path,
+        'director' => {},
+        'http' => http_config,
+        'loglevel' => 'debug',
+        'em_threadpool_size' => 20,
+        'plugins' => %w[plugin1 plugin2],
+      }
+    end
 
     before do
       [:logger, :director, :intervals, :mbus, :event_mbus, :instance_manager, :event_processor,
@@ -66,9 +70,9 @@ describe Bosh::Monitor do
       end
 
       context 'with http config' do
-        let(:http_config) { {
-            'port' => '1234',
-        } }
+        let(:http_config) do
+          { 'port' => '1234' }
+        end
 
         it 'should set http_port' do
           expect(Bosh::Monitor.http_port).to eq('1234')

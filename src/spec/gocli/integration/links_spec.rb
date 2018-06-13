@@ -149,34 +149,6 @@ describe 'Links', type: :integration do
       end
     end
 
-    context 'when provider in provides section is not defined' do
-      let(:consume_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
-          name: 'provider_instance_group',
-          jobs: [
-            { 'name' => 'provider', 'provides' => { 'not_defined_in_release' => {} } },
-          ],
-          instances: 1,
-        )
-        spec['azs'] = ['z1']
-        spec
-      end
-
-      let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['instance_groups'] = [consume_instance_group]
-        manifest
-      end
-
-      it 'should raise an error' do
-        expect do
-          deploy_simple_manifest(manifest_hash: manifest)
-        end.to raise_error(
-          /Job 'provider' does not provide link 'not_defined_in_release' in the release spec/,
-        )
-      end
-    end
-
     context 'when link is provided' do
       let(:links) do
         {
@@ -657,14 +629,168 @@ describe 'Links', type: :integration do
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'db' with type 'bad_link' for job  'api_server_with_bad_link_types' in instance_group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Can't resolve link 'db' with type 'bad_link' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
       OUTPUT
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'backup_db' with type 'bad_link_2' for job  'api_server_with_bad_link_types' in instance_group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Can't resolve link 'backup_db' with type 'bad_link_2' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
       OUTPUT
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'some_link_name' with type 'bad_link_3' for job  'api_server_with_bad_link_types' in instance_group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Can't resolve link 'some_link_name' with type 'bad_link_3' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
       OUTPUT
+    end
+  end
+
+  context 'when consumer is specified in the manifest but not in the release' do
+    let(:instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_instance_group',
+        jobs: [
+          {
+            'name' => 'api_server_with_optional_db_link',
+            'consumes' => {
+              'link_that_does_not_exist' => {},
+            },
+          },
+        ],
+        instances: 1,
+        static_ips: ['192.168.1.10'],
+      )
+      spec['azs'] = ['z1']
+      spec['networks'] << {
+        'name' => 'dynamic-network',
+        'default' => %w[dns gateway],
+      }
+      spec
+    end
+
+    it 'should warn the about the rogue consumer' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['instance_groups'] = [instance_group]
+
+      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
+      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
+
+      expect(task_debug_logs).to include("Manifest defines unknown consumers:\n"\
+                                         "  - Job 'api_server_with_optional_db_link'"\
+                                         " does not define link consumer 'link_that_does_not_exist'"\
+                                         ' in the release spec')
+    end
+  end
+
+  context 'when consumer is specified in the manifest but release does not define any consumers' do
+    let(:instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_instance_group',
+        jobs: [
+          {
+            'name' => 'provider',
+            'consumes' => {
+              'link_that_does_not_exist' => {},
+            },
+          },
+        ],
+        instances: 1,
+        static_ips: ['192.168.1.10'],
+      )
+      spec['azs'] = ['z1']
+      spec['networks'] << {
+        'name' => 'dynamic-network',
+        'default' => %w[dns gateway],
+      }
+      spec
+    end
+
+    it 'should warn the about the rogue consumer' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['instance_groups'] = [instance_group]
+
+      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
+      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
+
+      expect(task_debug_logs).to include("Manifest defines unknown consumers:\n"\
+                                         "  - Job 'provider' does not define link consumer 'link_that_does_not_exist'"\
+                                         ' in the release spec')
+    end
+  end
+
+  context 'when provider is specified in the manifest but not in the release' do
+    let(:instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_instance_group',
+        jobs: [
+          {
+            'name' => 'provider',
+            'provides' => {
+              'link_that_does_not_exist' => {},
+            },
+          },
+        ],
+        instances: 1,
+        static_ips: ['192.168.1.10'],
+      )
+      spec['azs'] = ['z1']
+      spec['networks'] << {
+        'name' => 'dynamic-network',
+        'default' => %w[dns gateway],
+      }
+      spec
+    end
+
+    it 'should warn the about the rogue provider' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['instance_groups'] = [instance_group]
+
+      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
+      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
+
+      expect(task_debug_logs).to include("Manifest defines unknown providers:\n"\
+                                         "  - Job 'provider' does not define link provider 'link_that_does_not_exist'"\
+                                         ' in the release spec')
+    end
+  end
+
+  context 'when provider is specified in the manifest but release does not define any providers' do
+    let(:instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_instance_group',
+        jobs: [
+          {
+            'name' => 'api_server_with_optional_db_link',
+            'provides' => {
+              'link_that_does_not_exist' => {},
+            },
+          },
+        ],
+        instances: 1,
+        static_ips: ['192.168.1.10'],
+      )
+      spec['azs'] = ['z1']
+      spec['networks'] << {
+        'name' => 'dynamic-network',
+        'default' => %w[dns gateway],
+      }
+      spec
+    end
+
+    it 'should warn the about the rogue provider' do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['releases'][0]['version'] = '0+dev.1'
+      manifest['instance_groups'] = [instance_group]
+
+      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
+      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
+
+      expect(task_debug_logs).to include("Manifest defines unknown providers:\n"\
+                                         "  - Job 'api_server_with_optional_db_link'"\
+                                         " does not define link provider 'link_that_does_not_exist'"\
+                                         ' in the release spec')
     end
   end
 end

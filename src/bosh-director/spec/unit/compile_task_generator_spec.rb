@@ -21,7 +21,9 @@ module Bosh::Director
       let(:stemcell) { make_stemcell({operating_system: 'chrome-os', version: 'latest'}) }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
-      let(:compile_tasks) { {} }
+      let(:compile_tasks) do
+        {}
+      end
 
       before do
         release_version_model.packages << package_a

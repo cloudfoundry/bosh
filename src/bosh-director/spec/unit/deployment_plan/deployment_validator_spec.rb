@@ -39,7 +39,9 @@ module Bosh::Director
         end
 
         context 'when resource pool is not defined' do
-          let(:resource_pools) { {} }
+          let(:resource_pools) do
+            {}
+          end
 
           it 'does not raise an error' do
               expect{deployment_validator.validate(deployment)}.not_to raise_error
@@ -61,10 +63,14 @@ module Bosh::Director
       end
 
       context 'when not using stemcells ' do
-        let(:stemcells) { {} }
+        let(:stemcells) do
+          {}
+        end
 
         context 'when resource pool is not defined' do
-          let(:resource_pools) { {} }
+          let(:resource_pools) do
+            {}
+          end
 
           it 'raises an error' do
             expect{deployment_validator.validate(deployment)}.to raise_error(DeploymentInvalidResourceSpecification,
@@ -85,7 +91,9 @@ module Bosh::Director
       end
 
       context 'when the deployment_planner is not doing a deploy' do
-        let(:stemcells) { {} }
+        let(:stemcells) do
+          {}
+        end
         let(:resource_pools) do
           {'name' => 'resource_pool1'}
         end
@@ -98,7 +106,9 @@ module Bosh::Director
       end
 
       context 'when link validation fails' do
-        let(:stemcells) { {} }
+        let(:stemcells) do
+          {}
+        end
         let(:resource_pools) do
           {'name' => 'resource_pool1'}
         end

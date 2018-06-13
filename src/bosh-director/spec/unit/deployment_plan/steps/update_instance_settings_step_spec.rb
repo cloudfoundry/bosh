@@ -7,7 +7,9 @@ module Bosh::Director
         subject(:step) { UpdateInstanceSettingsStep.new(instance) }
 
         let(:instance_model) { Models::Instance.make(cloud_properties: '{}') }
-        let(:cloud_props) { { 'prop1' => 'value1' } }
+        let(:cloud_props) do
+          { 'prop1' => 'value1' }
+        end
         let(:agent_client) { instance_double(AgentClient, update_settings: nil) }
         let(:instance) { instance_double(Instance, model: instance_model, cloud_properties: cloud_props) }
         let(:trusted_certs) { 'fake-cert' }

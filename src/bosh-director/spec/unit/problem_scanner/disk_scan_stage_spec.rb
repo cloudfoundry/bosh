@@ -12,7 +12,9 @@ module Bosh::Director
       )
     end
 
-    let(:disk_owners) { {} }
+    let(:disk_owners) do
+      {}
+    end
     let(:problem_register) { instance_double('Bosh::Director::ProblemScanner::ProblemRegister') }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
@@ -45,7 +47,9 @@ module Bosh::Director
       end
       let!(:vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id) }
       let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }
-      let(:disk_owners) { {'fake-disk-cid' => ['fake-vm-cid']} }
+      let(:disk_owners) do
+        { 'fake-disk-cid' => ['fake-vm-cid'] }
+      end
       before do
         allow(cloud).to receive(:has_disk).and_return(true)
         instance.active_vm = vm
@@ -110,7 +114,9 @@ module Bosh::Director
       end
 
       context 'when disk is attached to different VM' do
-        let(:disk_owners) { { disk.disk_cid => owner_vms } }
+        let(:disk_owners) do
+          { disk.disk_cid => owner_vms }
+        end
         let(:owner_vms) { ['different-vm-cid'] }
 
         it 'registers disk mount problem' do

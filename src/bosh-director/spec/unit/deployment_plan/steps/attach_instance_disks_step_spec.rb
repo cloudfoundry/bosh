@@ -10,7 +10,9 @@ module Bosh::Director
         let!(:vm) { Models::Vm.make(instance: instance, active: true, cpi: 'vm-cpi') }
         let!(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
         let!(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }
-        let(:tags) { { 'mytag' => 'myvalue' } }
+        let(:tags) do
+          { 'mytag' => 'myvalue' }
+        end
         let(:report) { Stages::Report.new }
         let(:attach_disk_1) { instance_double(AttachDiskStep) }
         let(:attach_disk_2) { instance_double(AttachDiskStep) }

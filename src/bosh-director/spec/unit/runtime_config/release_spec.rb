@@ -27,7 +27,9 @@ module Bosh::Director
         end
 
         context 'when release hash has no name' do
-          let(:release_hash) { {'version' => '42'} }
+          let(:release_hash) do
+            { 'version' => '42' }
+          end
 
           it 'errors' do
             expect { release }.to raise_error ValidationMissingField, "Required property 'name' was not specified in object ({\"version\"=>\"42\"})"
@@ -35,7 +37,9 @@ module Bosh::Director
         end
 
         context 'when release hash has no version' do
-          let(:release_hash) { {'name' => 'blarg'} }
+          let(:release_hash) do
+            { 'name' => 'blarg' }
+          end
 
           it 'errors' do
             expect { release }.to raise_error ValidationMissingField, "Required property 'version' was not specified in object ({\"name\"=>\"blarg\"})"

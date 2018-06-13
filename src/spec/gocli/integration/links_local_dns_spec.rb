@@ -206,7 +206,9 @@ describe 'Links with local_dns enabled', type: :integration do
           end
 
           let(:dns_address) { nil }
-          let(:features_hash) {{ 'use_dns_addresses' => true, 'use_short_dns_addresses' => true }}
+          let(:features_hash) do
+            { 'use_dns_addresses' => true, 'use_short_dns_addresses' => true }
+          end
 
           shared_examples 'matching DNS names' do
             it 'expects DNS address to match' do

@@ -5,7 +5,9 @@ module Bosh::Director
     let(:deployment) { Models::Deployment.make(name: 'DEPLOYMENT_NAME') }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
-    let(:options) { {foo: 'bar'} }
+    let(:options) do
+      { foo: 'bar' }
+    end
 
     before do
       Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')

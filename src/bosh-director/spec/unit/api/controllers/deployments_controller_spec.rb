@@ -711,13 +711,17 @@ module Bosh::Director
 
             context 'with an instance_group' do
               let(:path) {'/foo/jobs/dea?state=recreate'}
-              let(:options) { {'job_states' => {'dea' => {'state' => 'recreate'}}} }
+              let(:options) do
+                { 'job_states' => { 'dea' => { 'state' => 'recreate' } } }
+              end
               it_behaves_like 'recreates with configs'
             end
 
             context 'with an index or ID' do
               let(:path) {'/foo/jobs/dea/2?state=recreate'}
-              let(:options) { {'job_states' => {'dea' => {'instance_states' => {2 => 'recreate'}}}} }
+              let(:options) do
+                { 'job_states' => { 'dea' => { 'instance_states' => { 2 => 'recreate' } } } }
+              end
               it_behaves_like 'recreates with configs'
             end
           end
@@ -1222,19 +1226,19 @@ module Bosh::Director
           let(:default_manifest) { Bosh::Spec::Deployments.remote_stemcell_manifest('stemcell_url', 'stemcell_sha1') }
 
           context 'multiple instances' do
-            let(:manifest) {
+            let(:manifest) do
               jobs = []
               15.times do |i|
                 jobs << {
-                    'name' => "job-#{i}",
-                    'spec' => {'templates' => [{'name' => 'job_using_pkg_1'}]},
-                    'instances' => 1,
-                    'resource_pool' => 'a',
-                    'networks' => [{ 'name' => 'a' }]
+                  'name' => "job-#{i}",
+                  'spec' => { 'templates' => [{ 'name' => 'job_using_pkg_1' }] },
+                  'instances' => 1,
+                  'resource_pool' => 'a',
+                  'networks' => [{ 'name' => 'a' }],
                 }
               end
-              YAML.dump(default_manifest.merge({'jobs' => jobs}))
-            }
+              YAML.dump(default_manifest.merge('jobs' => jobs))
+            end
 
             it 'returns all' do
               15.times do |i|
@@ -1885,7 +1889,9 @@ module Bosh::Director
           context 'authenticated access' do
             before { authorize 'admin', 'admin' }
 
-            let(:manifest_hash) { {'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]}}
+            let(:manifest_hash) do
+              { 'instance_groups' => [], 'releases' => [{ 'name' => 'simple', 'version' => 5 }] }
+            end
 
             let(:dev_team) { Models::Team.make(name: 'dev') }
             let(:other_team) { Models::Team.make(name: 'other') }
@@ -1937,7 +1943,13 @@ module Bosh::Director
             end
 
             context 'when cloud config exists' do
-              let(:manifest_hash) { {'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}], 'networks' => [{'name'=> 'non-cloudy-network'}]}}
+              let(:manifest_hash) do
+                {
+                  'instance_groups' => [],
+                  'releases' => [{ 'name' => 'simple', 'version' => 5 }],
+                  'networks' => [{ 'name' => 'non-cloudy-network' }],
+                }
+              end
 
               it 'ignores cloud config if network section exists' do
                 Models::Deployment.create(

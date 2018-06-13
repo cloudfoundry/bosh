@@ -7,18 +7,18 @@ describe Bosh::Director::ConfigServer::RetryableHTTPClient do
   let(:connection_error) { Errno::ECONNREFUSED.new('') }
   let(:successful_response) { Net::HTTPSuccess.new(nil, "200", nil) }
 
-  let(:handled_connection_exceptions) {
+  let(:handled_connection_exceptions) do
     [
-        SocketError,
-        Errno::ECONNREFUSED,
-        Errno::ETIMEDOUT,
-        Errno::ECONNRESET,
-        Timeout::Error,
-        HTTPClient::TimeoutError,
-        HTTPClient::KeepAliveDisconnected,
-        OpenSSL::SSL::SSLError
+      SocketError,
+      Errno::ECONNREFUSED,
+      Errno::ETIMEDOUT,
+      Errno::ECONNRESET,
+      Timeout::Error,
+      HTTPClient::TimeoutError,
+      HTTPClient::KeepAliveDisconnected,
+      OpenSSL::SSL::SSLError,
     ]
-  }
+  end
 
   describe '#get' do
     it 'should call `get` on the passed in http_client with same arguments' do

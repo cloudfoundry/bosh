@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'logging'
 
 describe Bosh::Director::Links::LinksParser do
   let(:subject) do
@@ -53,11 +54,21 @@ describe Bosh::Director::Links::LinksParser do
   let(:release_consumers) { nil }
   let(:release_properties) { nil }
 
+  let(:logger) do
+    double(Logging::Logger)
+  end
+
+  before do
+    allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+  end
+
   describe '#parse_migrated_from_providers_from_job' do
     let(:provider) { instance_double(Bosh::Director::Models::Links::LinkProvider) }
     let(:provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent) }
 
-    let(:job_properties) { {} }
+    let(:job_properties) do
+      {}
+    end
 
     let(:release_providers) do
       [{ name: 'link_1_name', type: 'link_1_type' }]
@@ -234,7 +245,9 @@ describe Bosh::Director::Links::LinksParser do
     let(:consumer) { instance_double(Bosh::Director::Models::Links::LinkConsumer) }
     let(:consumer_intent) { instance_double(Bosh::Director::Models::Links::LinkConsumerIntent) }
 
-    let(:job_properties) { {} }
+    let(:job_properties) do
+      {}
+    end
 
     let(:release_consumers) do
       [{ name: 'link_1_name', type: 'link_1_type' }]
@@ -404,31 +417,11 @@ describe Bosh::Director::Links::LinksParser do
     let(:provider) { instance_double(Bosh::Director::Models::Links::LinkProvider) }
     let(:provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent) }
 
-    let(:job_properties) { {} }
+    let(:job_properties) do
+      {}
+    end
 
     context 'when the job does NOT define any provider in its release spec' do
-      context 'when the manifest specifies provided links for that job' do
-        let(:job_spec) do
-          {
-            'name' => 'release1_job_name_1',
-            'provides' => { 'foo' => {} },
-          }
-        end
-
-        it 'raise an error' do
-          expect do
-            subject.parse_providers_from_job(
-              job_spec,
-              deployment_plan.model,
-              template,
-              job_properties: {},
-              instance_group_name: 'instance-group-name',
-            )
-          end.to raise_error "Job 'release1_job_name_1' in instance group 'instance-group-name' specifies providers"\
-                             ' in the manifest but the job does not define any providers in the release spec'
-        end
-      end
-
       context 'when the manifest does not specify any providers' do
         let(:job_spec) do
           {
@@ -643,7 +636,9 @@ describe Bosh::Director::Links::LinksParser do
           }
         end
 
-        let(:job_properties) { {} }
+        let(:job_properties) do
+          {}
+        end
 
         it 'should add correct link providers and link providers intent to the DB' do
           original_job_spec = Bosh::Common::DeepCopy.copy(job_spec)
@@ -853,16 +848,17 @@ describe Bosh::Director::Links::LinksParser do
           expect(provider_intent).to receive(:metadata=).with({ mapped_properties: {}, custom: false }.to_json)
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
-          expect do
-            subject.parse_providers_from_job(
-              job_spec,
-              deployment_plan.model,
-              template,
-              job_properties: job_properties,
-              instance_group_name: 'instance-group-name',
-            )
-          end.to raise_error(RuntimeError, "Manifest defines unknown providers:\n  - Job 'release1_job_name_1'"\
-                                           " does not provide link 'new_link_name' in the release spec")
+          expect(logger).to receive(:warn).with("Manifest defines unknown providers:\n"\
+                                                "  - Job 'release1_job_name_1' does not define link provider 'new_link_name'"\
+                                                ' in the release spec')
+
+          subject.parse_providers_from_job(
+            job_spec,
+            deployment_plan.model,
+            template,
+            job_properties: job_properties,
+            instance_group_name: 'instance-group-name',
+          )
         end
       end
     end
@@ -1157,26 +1153,6 @@ describe Bosh::Director::Links::LinksParser do
     let(:consumer_intent) { instance_double(Bosh::Director::Models::Links::LinkConsumerIntent) }
 
     context 'when the job does NOT define any consumer in its release spec' do
-      it 'should raise an error when the manifest has consumer specified' do
-        job_spec = {
-          'name' => 'release1_job_name_1',
-          'release' => 'release1',
-          'consumes' => {
-            'undefined_link_consumer' => {},
-          },
-        }
-
-        expect do
-          subject.parse_consumers_from_job(
-            job_spec,
-            deployment_plan.model,
-            template,
-            instance_group_name: 'instance-group-name',
-          )
-        end.to raise_error("Job 'release1_job_name_1' in instance group 'instance-group-name' specifies consumers"\
-                           ' in the manifest but the job does not define any consumers in the release spec')
-      end
-
       context 'when the manifest does not specify any providers' do
         let(:job_spec) do
           {
@@ -1280,8 +1256,12 @@ describe Bosh::Director::Links::LinksParser do
         let(:release_consumers) do
           [{ name: 'link_1_name', type: 'link_1_type' }]
         end
-        let(:consumer_options) { { 'from' => 'snoopy' } }
-        let(:manifest_link_consumers) { { 'link_1_name' => consumer_options } }
+        let(:consumer_options) do
+          { 'from' => 'snoopy' }
+        end
+        let(:manifest_link_consumers) do
+          { 'link_1_name' => consumer_options }
+        end
         let(:job_spec) do
           {
             'name' => 'release1_job_name_1',
@@ -1336,7 +1316,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer alias is separated by "."' do
-          let(:consumer_options) { { 'from' => 'foo.bar.baz' } }
+          let(:consumer_options) do
+            { 'from' => 'foo.bar.baz' }
+          end
 
           before do
             allow(consumer_intent).to receive(:blocked=)
@@ -1379,7 +1361,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer does not have a from key' do
-          let(:consumer_options) { {} }
+          let(:consumer_options) do
+            {}
+          end
 
           before do
             allow(consumer_intent).to receive(:blocked=)
@@ -1401,7 +1385,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies a specific network' do
-          let(:consumer_options) { { 'network' => 'charlie' } }
+          let(:consumer_options) do
+            { 'network' => 'charlie' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1422,7 +1408,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies to use ip addresses only' do
-          let(:consumer_options) { { 'ip_addresses' => true } }
+          let(:consumer_options) do
+            { 'ip_addresses' => true }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1443,7 +1431,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies to use a deployment' do
-          let(:consumer_options) { { 'deployment' => 'some-other-deployment' } }
+          let(:consumer_options) do
+            { 'deployment' => 'some-other-deployment' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1485,7 +1475,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies the name key in the consumes section of the manifest' do
-          let(:consumer_options) { { 'name' => 'i should not be here' } }
+          let(:consumer_options) do
+            { 'name' => 'i should not be here' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1509,7 +1501,9 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         context 'when the consumer specifies the type key in the consumes section of the manifest' do
-          let(:consumer_options) { { 'type' => 'i should not be here' } }
+          let(:consumer_options) do
+            { 'type' => 'i should not be here' }
+          end
 
           before do
             allow(consumer_intent).to receive(:name=)
@@ -1665,7 +1659,9 @@ describe Bosh::Director::Links::LinksParser do
         context 'consumer validation' do
           # rubocop:disable Style/MultilineBlockChain
           context "when 'instances' and 'from' keywords are specified at the same time" do
-            let(:consumer_options) { { 'from' => 'snoopy', 'instances' => ['1.2.3.4'] } }
+            let(:consumer_options) do
+              { 'from' => 'snoopy', 'instances' => ['1.2.3.4'] }
+            end
 
             it 'should raise an error' do
               expect do
@@ -1683,7 +1679,9 @@ describe Bosh::Director::Links::LinksParser do
           end
 
           context "when 'properties' and 'from' keywords are specified at the same time" do
-            let(:consumer_options) { { 'from' => 'snoopy', 'properties' => { 'meow' => 'cat' } } }
+            let(:consumer_options) do
+              { 'from' => 'snoopy', 'properties' => { 'meow' => 'cat' } }
+            end
 
             it 'should raise an error' do
               expect do
@@ -1701,7 +1699,9 @@ describe Bosh::Director::Links::LinksParser do
           end
 
           context "when 'properties' is defined but 'instances' is not" do
-            let(:consumer_options) { { 'properties' => 'snoopy' } }
+            let(:consumer_options) do
+              { 'properties' => 'snoopy' }
+            end
 
             it 'should raise an error' do
               expect do
@@ -1719,7 +1719,9 @@ describe Bosh::Director::Links::LinksParser do
           end
 
           context "when 'ip_addresses' value is not a boolean" do
-            let(:consumer_options) { { 'ip_addresses' => 'not a boolean' } }
+            let(:consumer_options) do
+              { 'ip_addresses' => 'not a boolean' }
+            end
 
             it 'should raise an error' do
               expect do
@@ -1752,18 +1754,17 @@ describe Bosh::Director::Links::LinksParser do
             it 'should raise an error for each undefined consumer' do
               expected_error = [
                 'Manifest defines unknown consumers:',
-                " - Job 'release1_job_name_1' does not define consumer 'first_undefined' in the release spec",
-                " - Job 'release1_job_name_1' does not define consumer 'second_undefined' in the release spec",
+                "  - Job 'release1_job_name_1' does not define link consumer 'first_undefined' in the release spec",
+                "  - Job 'release1_job_name_1' does not define link consumer 'second_undefined' in the release spec",
               ].join("\n")
+              expect(logger).to receive(:warn).with(expected_error)
 
-              expect do
-                subject.parse_consumers_from_job(
-                  job_spec,
-                  deployment_plan.model,
-                  template,
-                  instance_group_name: 'instance-group-name',
-                )
-              end.to raise_error(expected_error)
+              subject.parse_consumers_from_job(
+                job_spec,
+                deployment_plan.model,
+                template,
+                instance_group_name: 'instance-group-name',
+              )
             end
           end
 
@@ -1849,6 +1850,138 @@ describe Bosh::Director::Links::LinksParser do
         #  expect not to raise an error
         disk_spec = { 'name' => 'my-disk', 'type' => 'disk-type-small' }
         subject.parse_provider_from_disk(disk_spec, deployment_plan.model, 'instance-group-name')
+      end
+    end
+  end
+
+  describe '#parse_consumers_from_variable' do
+    let(:consumer) { instance_double(Bosh::Director::Models::Links::LinkConsumer) }
+    let(:consumer_intent) { instance_double(Bosh::Director::Models::Links::LinkConsumerIntent) }
+
+    context 'when the variable defines "alternative_name" consumer' do
+      it 'makes consumer and consumer intent' do
+        expected_consumer_params = {
+          deployment_model: deployment_plan.model,
+          instance_group_name: '',
+          name: 'bbs',
+          type: 'variable',
+        }
+        expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+        expected_consumer_intent_params = {
+          link_consumer: consumer,
+          link_original_name: 'alternative_name',
+          link_type: 'address',
+          new_intent_metadata: { explicit_link: true },
+        }
+        expect(links_manager).to receive(:find_or_create_consumer_intent)
+                                   .with(expected_consumer_intent_params)
+                                   .and_return(consumer_intent)
+        expect(consumer_intent).to receive(:name=).with('foo')
+        expect(consumer_intent).to receive(:save)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'consumes' => {
+            'alternative_name' => { 'from' => 'foo' },
+          },
+        }
+        subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+      end
+
+      context 'and the `from` is not specified' do
+        it 'makes consumer and consumer intent' do
+          expected_consumer_params = {
+            deployment_model: deployment_plan.model,
+            instance_group_name: '',
+            name: 'bbs',
+            type: 'variable',
+          }
+          expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+          expected_consumer_intent_params = {
+            link_consumer: consumer,
+            link_original_name: 'alternative_name',
+            link_type: 'address',
+            new_intent_metadata: { explicit_link: true },
+          }
+          expect(links_manager).to receive(:find_or_create_consumer_intent)
+                                     .with(expected_consumer_intent_params)
+                                     .and_return(consumer_intent)
+          expect(consumer_intent).to receive(:name=).with('alternative_name')
+          expect(consumer_intent).to receive(:save)
+
+          variable_spec = {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'alternative_name' => {},
+            },
+          }
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end
+      end
+    end
+
+    context 'when the variable does not define a consumes block' do
+      it 'should not create any implicit consumers or intents' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+        }
+        subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+      end
+    end
+
+    context 'when the variable does not define any consumers in the consumes block' do
+      it 'should not create any implicit consumers or intents' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'consumes' => {},
+        }
+        subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+      end
+    end
+
+    context 'when the variable is not of type certificate' do
+      it 'should raise an error if it defines consumers' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'foobar',
+          'consumes' => {
+            'alternative_name' => { 'from' => 'foo' },
+          },
+        }
+        expect do
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end.to raise_error "Variable 'bbs' can not define 'consumes' key for type 'foobar'"
+      end
+    end
+
+    context 'when the variable define non-acceptable consumers' do
+      it 'should raise an error' do
+        expect(links_manager).to_not receive(:find_or_create_consumer)
+        expect(links_manager).to_not receive(:find_or_create_consumer_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'consumes' => {
+            'foobar' => { 'from' => 'foo' },
+          },
+        }
+        expect do
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end.to raise_error "Consumer name 'foobar' is not a valid consumer for variable 'bbs'. Acceptable consumer types are: alternative_name"
       end
     end
   end

@@ -8,7 +8,9 @@ module Bosh::Director
     before { allow(JobQueue).to receive(:new).and_return(job_queue) }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 
-    let(:options) {{fake_option: true}}
+    let(:options) do
+      { fake_option: true }
+    end
 
     describe '#create_stemcell_from_url' do
       let(:stemcell_url) { 'http://fake-domain.com/stemcell.tgz' }
@@ -25,9 +27,9 @@ module Bosh::Director
       end
 
       context 'when a sha1 is provided for the stemcell' do
-        let(:options) {
-          {sha1: 'shawone'}
-        }
+        let(:options) do
+          { sha1: 'shawone' }
+        end
 
         it 'enqueues a task to upload a remote stemcell' do
           expect(job_queue).to receive(:enqueue).with(
@@ -60,9 +62,9 @@ module Bosh::Director
         end
 
         context 'when a sha1 is provided for the stemcell' do
-          let(:options) {
-            {sha1: 'shawone'}
-          }
+          let(:options) do
+            { sha1: 'shawone' }
+          end
 
           before { allow(File).to receive(:exists?).with(stemcell_path).and_return(true) }
 
@@ -129,7 +131,9 @@ module Bosh::Director
     end
 
     describe '#find_by_name_and_version_and_cpi' do
-      let(:cpi_config) { { 'cpis' => [{ 'name' => 'cpi1', 'type' => 'cpi' }] } }
+      let(:cpi_config) do
+        { 'cpis' => [{ 'name' => 'cpi1', 'type' => 'cpi' }] }
+      end
       before do
         Models::Config.make(:cpi, content: cpi_config.to_yaml)
         Bosh::Director::Models::Stemcell.create(
@@ -153,7 +157,9 @@ module Bosh::Director
       end
 
       context 'when a cpi has another alias with the stemcell' do
-        let(:migrated_from) { { 'cpis' => [{ 'name' => 'cpi2', 'type' => 'cpi', 'migrated_from' => ['name' => 'cpi1'] }] } }
+        let(:migrated_from) do
+          { 'cpis' => [{ 'name' => 'cpi2', 'type' => 'cpi', 'migrated_from' => ['name' => 'cpi1'] }] }
+        end
 
         before do
           Models::Config.make(:cpi, content: migrated_from.to_yaml)

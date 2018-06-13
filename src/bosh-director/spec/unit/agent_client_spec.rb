@@ -20,7 +20,9 @@ module Bosh::Director
       end
     end
 
-    let(:options) { {'logging' => true} }
+    let(:options) do
+      { 'logging' => true }
+    end
     def self.it_acts_as_asynchronous_message(message_name)
       describe "##{message_name}" do
         let(:task) do

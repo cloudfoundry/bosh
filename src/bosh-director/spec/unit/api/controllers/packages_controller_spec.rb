@@ -19,7 +19,9 @@ module Bosh::Director
           post '/matches_compiled', YAML.dump(params_compiled), { 'CONTENT_TYPE' => 'text/yaml' }
         end
 
-        let(:params) { {'packages' => []} }
+        let(:params) do
+          { 'packages' => [] }
+        end
 
         context 'authenticated access' do
           before { authorize 'admin', 'admin' }

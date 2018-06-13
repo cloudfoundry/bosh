@@ -2,7 +2,9 @@ require "spec_helper"
 require "common/exec"
 
 describe Bosh::Exec do
-  let(:opts) { {} }
+  let(:opts) do
+    {}
+  end
 
   context "existing command" do
 

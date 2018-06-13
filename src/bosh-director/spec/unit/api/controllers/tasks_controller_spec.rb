@@ -131,7 +131,7 @@ module Bosh::Director
             end
 
             context 'verbose' do
-              let(:concise_task_types) {
+              let(:concise_task_types) do
                 %w[
                   attach_disk
                   create_snapshot
@@ -145,7 +145,7 @@ module Bosh::Director
                   update_release
                   update_stemcell
                 ]
-              }
+              end
 
               let!(:all_tasks) do # one task of every type
                 (

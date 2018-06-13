@@ -29,24 +29,24 @@ module Bosh::Director
       let (:deployment_assembler) { DeploymentPlan::Assembler.create(deployment_plan) }
 
       let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: '1') }
-      let!(:cloud_config) {
+      let!(:cloud_config) do
         if prior_az_name.nil?
           Models::Config.make(:cloud_with_manifest_v2)
         else
-          raw_manifest = Bosh::Spec::NewDeployments.simple_cloud_config.merge({
+          raw_manifest = Bosh::Spec::NewDeployments.simple_cloud_config.merge(
             'azs' => [
               {
                 'name' => prior_az_name,
                 'cpi' => 'cpi-new',
               },
             ],
-          })
+          )
           raw_manifest['networks'][0]['subnets'][0]['azs'] = [prior_az_name]
           raw_manifest['compilation']['az'] = prior_az_name
 
           Models::Config.make(:cloud, content: YAML.dump(raw_manifest))
         end
-      }
+      end
       let(:prior_az_name) { 'z2' }
       let!(:cpi_config) { Models::Config.make(:cpi_with_manifest) }
       let(:deployment_manifest) do
@@ -94,9 +94,15 @@ module Bosh::Director
 
       describe '#perform' do
         context 'with instances in the deployment' do
-          let(:existing_instance) {
-            Models::Instance.make(deployment: deployment_model, job: 'fake-instance-group', index: 0, availability_zone: prior_az_name, variable_set: variable_set)
-          }
+          let(:existing_instance) do
+            Models::Instance.make(
+              deployment: deployment_model,
+              job: 'fake-instance-group',
+              index: 0,
+              availability_zone: prior_az_name,
+              variable_set: variable_set,
+            )
+          end
 
           context 'with no AZ name (legacy-style manifest)' do
             let(:prior_az_name) { '' }

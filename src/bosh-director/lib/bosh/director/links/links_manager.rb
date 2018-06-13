@@ -164,18 +164,6 @@ module Bosh::Director::Links
       found_link
     end
 
-    def find_link(
-      name:,
-      provider_intent:,
-      consumer_intent:
-    )
-      Bosh::Director::Models::Links::Link.find(
-        link_provider_intent_id: provider_intent && provider_intent[:id],
-        link_consumer_intent_id: consumer_intent && consumer_intent[:id],
-        name: name,
-      )
-    end
-
     def resolve_deployment_links(deployment_model, options)
       dry_run = options.fetch(:dry_run, false)
       global_use_dns_entry = options.fetch(:global_use_dns_entry)
@@ -229,11 +217,11 @@ module Bosh::Director::Links
       consumers.each do |consumer|
         links[consumer.name] = {}
         consumer.intents.each do |consumer_intent|
-          next if consumer_intent.serial_id != deployment_model.links_serial_id
-          consumer_intent.links.each do |link|
-            content = JSON.parse(link.link_content)
-            links[consumer.name][consumer_intent.original_name] = content
-          end
+          next if consumer.serial_id != consumer_intent.serial_id
+          link = Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).order(Sequel.desc(:created_at)).first
+          next if link.nil?
+          content = JSON.parse(link.link_content)
+          links[consumer.name][link.name] = content
         end
       end
 
@@ -241,8 +229,9 @@ module Bosh::Director::Links
     end
 
     def get_links_for_instance(instance)
-      links = get_links_for_instance_group(instance.deployment_model,instance.instance_group_name)
-      return links unless links.empty?
+      return get_links_for_instance_group(instance.deployment_model, instance.instance_group_name) if instance.is_deploy_action?
+
+      links = {}
 
       newest_instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id).order(Sequel.desc(:serial_id)).first
       instance_links = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id)
@@ -314,7 +303,7 @@ module Bosh::Director::Links
       end
 
       deployment_model.link_consumers.each do |consumer|
-        next if consumer.type == 'external'
+        next if link_types_to_skip_removal.include?(consumer.type)
         consumer.intents.each do |consumer_intent|
           if consumer_intent.serial_id == serial_id
             Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).each do |link|
@@ -369,7 +358,7 @@ module Bosh::Director::Links
             provider_intent_networks = JSON.parse(content)['networks']
 
             if link_network && !provider_intent_networks.include?(link_network)
-              raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' in instance group '#{consumer.instance_group}' on job '#{consumer.name}' in deployment '#{current_deployment_name}' with network '#{link_network}'"
+              raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}'#{" in instance group '#{consumer.instance_group}'" unless consumer.instance_group.empty?} on job '#{consumer.name}' in deployment '#{current_deployment_name}' with network '#{link_network}'"
             end
           end
 
@@ -526,11 +515,7 @@ module Bosh::Director::Links
 
     def validate_found_providers(found_provider_intents, consumer, consumer_intent, is_explicit_link, current_deployment_name, link_network)
       if found_provider_intents.empty?
-        if is_explicit_link
-          raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' for job '#{consumer.name}' in instance group '#{consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
-        else
-          raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.original_name}' with type '#{consumer_intent.type}' for job  '#{consumer.name}' in instance_group '#{consumer_intent.link_consumer.instance_group}' in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
-        end
+        raise Bosh::Director::DeploymentInvalidLink, "Can't resolve link '#{consumer_intent.name}' with type '#{consumer_intent.type}' for job '#{consumer.name}'#{" in instance group '#{consumer.instance_group}'" unless consumer.instance_group.empty?} in deployment '#{current_deployment_name}'#{" with network '#{link_network}'" unless link_network.to_s.empty?}"
       end
 
       if found_provider_intents.size > 1
@@ -585,5 +570,10 @@ module Bosh::Director::Links
 
       true
     end
+
+    def link_types_to_skip_removal
+      %w(variable external)
+    end
+
   end
 end

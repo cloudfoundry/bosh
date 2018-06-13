@@ -34,14 +34,16 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     end
 
     context 'when cloud_properties are configured' do
-      let (:cloud_properties) { {'instance_type' => 'super-large'} }
-      let (:compilation_config) {
+      let(:cloud_properties) do
+        { 'instance_type' => 'super-large' }
+      end
+      let(:compilation_config) do
         {
           'workers' => 2,
           'network' => 'foo',
-          'cloud_properties' => cloud_properties
+          'cloud_properties' => cloud_properties,
         }
-      }
+      end
 
       it 'should parse the property' do
         config = BD::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])
@@ -353,6 +355,35 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             }, {})
         }.to raise_error(Bosh::Director::ValidationInvalidType)
 
+      end
+    end
+
+    describe 'orphan_workers' do
+      it 'allows orphan_workers to be set' do
+        config = BD::DeploymentPlan::CompilationConfig.new({
+          'workers' => 1,
+          'network' => 'foo',
+          'orphan_workers' => true,
+        }, {})
+        expect(config.orphan_workers).to eq(true)
+      end
+
+      it 'defaults to false' do
+        config = BD::DeploymentPlan::CompilationConfig.new({
+          'workers' => 1,
+          'network' => 'foo',
+        }, {})
+        expect(config.orphan_workers).to eq(false)
+      end
+
+      it 'should throw an error when a boolean property isnt boolean' do
+        expect do
+          BD::DeploymentPlan::CompilationConfig.new({
+            'workers' => 1,
+            'network' => 'foo',
+            'orphan_workers' => 1,
+          }, {})
+        end.to raise_error(Bosh::Director::ValidationInvalidType)
       end
     end
   end

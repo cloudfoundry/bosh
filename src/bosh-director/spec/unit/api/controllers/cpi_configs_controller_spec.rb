@@ -226,19 +226,19 @@ module Bosh::Director
     end
 
     describe 'POST', '/diff' do
-      let(:new_cpi_config) {
+      let(:new_cpi_config) do
         {
           'cpis' => [
             {
               'name' => 'cpi-name',
               'type' => 'cpi-type',
               'properties' => {
-                'somekey' => 'someotherval'
-              }
-            }
-          ]
+                'somekey' => 'someotherval',
+              },
+            },
+          ],
         }
-      }
+      end
 
       context 'when user has admin access' do
         before { authorize('admin', 'admin') }
@@ -278,20 +278,19 @@ module Bosh::Director
           end
 
           context 'when cpi_config exists' do
-
-            let(:old_cpi_config) {
+            let(:old_cpi_config) do
               {
                 'cpis' => [
                   {
                     'name' => 'cpi-name',
                     'type' => 'cpi-type',
                     'properties' => {
-                      'somekey' => 'someval'
-                    }
-                  }
-                ]
+                      'somekey' => 'someval',
+                    },
+                  },
+                ],
               }
-            }
+            end
 
             it 'returns the delta' do
               Bosh::Director::Models::Config.make(:cpi,

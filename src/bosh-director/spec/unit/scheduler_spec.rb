@@ -4,15 +4,15 @@ require 'bosh/director/scheduler'
 module Bosh::Director
   describe Scheduler do
     let(:scheduler) { described_class.new(scheduled_jobs, opts) }
-    let(:scheduled_jobs) {
+    let(:scheduled_jobs) do
       [
         {
           'command' => job_name,
           'schedule' => '0 1 * * *',
-          'params' => params
-        }
+          'params' => params,
+        },
       ]
-    }
+    end
     let(:opts) do
       {
         scheduler: fake_scheduler,
@@ -26,13 +26,13 @@ module Bosh::Director
     let(:queue) { double('JobQueue') }
     let(:director_name) { 'Test Director' }
     let(:fake_scheduler) { instance_double('Rufus::Scheduler::PlainScheduler') }
-    let(:params) {
+    let(:params) do
       [
         'foo',
         'bar',
-        {'named' => 'named_value'}
+        { 'named' => 'named_value' },
       ]
-    }
+    end
 
     before do
       allow(fake_scheduler).to receive(:start)
@@ -98,7 +98,9 @@ module Bosh::Director
       end
 
       describe 'when scheduled jobs is not an Array' do
-        let(:scheduled_jobs) { {} }
+        let(:scheduled_jobs) do
+          {}
+        end
         it 'raises' do
           expect { scheduler }.to raise_error('scheduled_jobs must be an array')
         end

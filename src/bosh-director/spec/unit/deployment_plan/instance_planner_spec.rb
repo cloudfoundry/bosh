@@ -8,7 +8,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(deployment, logger) }
   let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository, options) }
   let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
-  let(:options) { {} }
+  let(:options) do
+    {}
+  end
   let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
   let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
@@ -230,7 +232,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when deployment is being recreated' do
-      let(:options) { { 'recreate' => true } }
+      let(:options) do
+        { 'recreate' => true }
+      end
 
       it 'should return instance plans with "recreate" option set on them' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)

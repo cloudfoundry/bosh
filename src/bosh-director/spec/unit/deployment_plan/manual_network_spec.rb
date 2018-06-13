@@ -41,7 +41,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:mock_client_factory) do
     double(Bosh::Director::ConfigServer::ClientFactory)
   end
-  let(:interpolated_tags) { {} }
+  let(:interpolated_tags) do
+    {}
+  end
 
   before do
     allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create)

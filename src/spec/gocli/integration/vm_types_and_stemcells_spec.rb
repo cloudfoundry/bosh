@@ -322,30 +322,40 @@ describe 'vm_types and stemcells', type: :integration do
 
   context 'cloud config has vm_extensions and compilation consuming some vm extensions' do
 
-    let(:vm_extension_1) do {
-          'name' => 'vm-extension-1-name',
-          'cloud_properties' => {'prop1' => 'val1', 'prop2' => 'val2'}
-    } end
+    let(:vm_extension_1) do
+      {
+        'name' => 'vm-extension-1-name',
+        'cloud_properties' => { 'prop1' => 'val1', 'prop2' => 'val2' },
+      }
+    end
 
-    let(:vm_extension_2) do {
+    let(:vm_extension_2) do
+      {
         'name' => 'vm-extension-2-name',
-        'cloud_properties' => {'prop3' => 'val3', 'prop2' => 'val4'}
-    } end
+        'cloud_properties' => { 'prop3' => 'val3', 'prop2' => 'val4' },
+      }
+    end
 
-    let(:vm_extension_3) do {
+    let(:vm_extension_3) do
+      {
         'name' => 'vm-extension-3-name',
-        'cloud_properties' => {'prop1' => 'val8', 'prop3' => 'val3'}
-    } end
+        'cloud_properties' => { 'prop1' => 'val8', 'prop3' => 'val3' },
+      }
+    end
 
-    let(:vm_type_1) do {
+    let(:vm_type_1) do
+      {
         'name' => 'vm-type-1-name',
-        'cloud_properties' => {'prop1' => 'val5', 'prop4' => 'val6'}
-    } end
+        'cloud_properties' => { 'prop1' => 'val5', 'prop4' => 'val6' },
+      }
+    end
 
-    let(:az_1) do {
+    let(:az_1) do
+      {
         'name' => 'a',
-        'cloud_properties' => {'prop5' => 'val7', 'prop1' => 'val1_overwritten', 'prop4' => 'val2_overwritten'}
-    } end
+        'cloud_properties' => { 'prop5' => 'val7', 'prop1' => 'val1_overwritten', 'prop4' => 'val2_overwritten' },
+      }
+    end
 
     let(:cloud_config_hash) do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config

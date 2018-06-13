@@ -8,24 +8,24 @@ describe 'CPI calls', type: :integration do
   end
 
   describe 'deploy' do
-    let(:expected_groups) {
+    let(:expected_groups) do
       ['testdirector', 'simple', 'first-job', 'testdirector-simple', 'simple-first-job', 'testdirector-simple-first-job']
-    }
+    end
     let(:expected_group) { 'testdirector-simple-first-job' }
 
-    let(:ca_cert) {
+    let(:ca_cert) do
       File.read(current_sandbox.nats_certificate_paths['ca_path'])
-    }
+    end
 
-    let(:expected_mbus) {
+    let(:expected_mbus) do
       {
         'cert' => {
           'ca' => ca_cert,
           'certificate' =>  String,
-          'private_key' => String
-        }
+          'private_key' => String,
+        },
       }
-    }
+    end
 
     it 'sends correct CPI requests' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)

@@ -25,7 +25,9 @@ module Bosh::Director
     let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil) }
     let(:local_dns_repo) { instance_double(LocalDnsRepo, delete_for_instance: nil) }
 
-    let(:options) { {} }
+    let(:options) do
+      {}
+    end
     let(:deleter) { InstanceDeleter.new(ip_provider, powerdns_manager, disk_manager, options) }
     let(:disk_manager) { DiskManager.new(logger) }
 
@@ -228,7 +230,9 @@ module Bosh::Director
 
         context 'when force option is passed in' do
           let(:vm_deleter) { VmDeleter.new(logger, true, false) }
-          let(:options) { { force: true } }
+          let(:options) do
+            { force: true }
+          end
 
           context 'when stopping fails' do
             before do
@@ -329,7 +333,9 @@ module Bosh::Director
 
         context 'when virtual_delete_vm option is passed in' do
           let(:vm_deleter) { VmDeleter.new(logger, false, true) }
-          let(:options) { { virtual_delete_vm: true } }
+          let(:options) do
+            { virtual_delete_vm: true }
+          end
 
           it 'deletes snapshots, persistent disk, releases old reservations, vm should not be deleted from cloud' do
             expect(VmDeleter).to receive(:new).with(anything, anything, true)

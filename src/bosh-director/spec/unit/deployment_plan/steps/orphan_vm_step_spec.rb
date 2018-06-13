@@ -82,7 +82,6 @@ module Bosh::Director
 
         it 'sends a shutdown to the agent' do
           expect(agent).to receive(:shutdown)
-
           step.perform(report)
         end
 
@@ -97,6 +96,7 @@ module Bosh::Director
             instance: 'fake-job-1/fake-uuid-1',
           }
         end
+
         it 'stores events' do
           expect(event_manager).to receive(:create_event).with(base_orphan_vm_event.merge(
             parent_id: nil,
@@ -114,9 +114,11 @@ module Bosh::Director
         context 'errors during orphaning' do
           let(:error) { RuntimeError.new('a fake error') }
 
-          it 'stores events with errors if they occur' do
-            expect(vm).to receive(:destroy).and_raise error
+          before do
+            allow(vm).to receive(:destroy).and_raise error
+          end
 
+          it 'stores events with errors if they occur' do
             expect(event_manager).to receive(:create_event).with(base_orphan_vm_event.merge(
               parent_id: nil,
               error: nil,

@@ -181,7 +181,9 @@ describe 'local DNS', type: :integration do
     end
 
     context 'when flag at deployment level is true' do
-      let(:features_hash) {{ 'use_dns_addresses' => true, 'use_short_dns_addresses' => use_short_dns_addresses }}
+      let(:features_hash) do
+        { 'use_dns_addresses' => true, 'use_short_dns_addresses' => use_short_dns_addresses }
+      end
       let(:use_short_dns_addresses) { false }
 
       before do

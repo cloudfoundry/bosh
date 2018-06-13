@@ -10,7 +10,7 @@ module Bosh::Director
             make_instance_provider(logger, deployment_plan),
             logger,
             make_instance_deleter(logger, deployment_plan),
-            deployment_plan.compilation.workers,
+            deployment_plan.compilation,
           )
         end
 
@@ -38,11 +38,11 @@ module Bosh::Director
         end
       end
 
-      def initialize(instance_reuser, instance_provider, logger, instance_deleter, max_instance_count)
+      def initialize(instance_reuser, instance_provider, logger, instance_deleter, config)
         @instance_reuser = instance_reuser
         @logger = logger
         @instance_deleter = instance_deleter
-        @max_instance_count = max_instance_count
+        @config = config
         @instance_provider = instance_provider
         @mutex = Mutex.new
       end
@@ -107,7 +107,7 @@ module Bosh::Director
         @mutex.synchronize do
           instance_memo = @instance_reuser.get_instance(stemcell)
           if instance_memo.nil?
-            if @instance_reuser.total_instance_count >= @max_instance_count
+            if @instance_reuser.total_instance_count >= @config.workers
               instance_memo = @instance_reuser.remove_idle_instance_not_matching_stemcell(stemcell)
               destroy_instance(instance_memo.instance_plan)
             end
@@ -122,7 +122,11 @@ module Bosh::Director
       end
 
       def destroy_instance(instance_plan)
-        @instance_deleter.delete_instance_plan(instance_plan, EventLog::NullStage.new)
+        if @config.orphan_workers
+          Steps::OrphanVmStep.new(instance_plan.instance_model.active_vm).perform(nil)
+        else
+          @instance_deleter.delete_instance_plan(instance_plan, EventLog::NullStage.new)
+        end
       end
     end
 

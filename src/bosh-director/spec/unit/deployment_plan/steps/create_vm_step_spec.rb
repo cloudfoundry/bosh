@@ -40,8 +40,12 @@ module Bosh
           let(:availability_zone) do
             BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
           end
-          let(:cloud_properties) { {'ram' => '2gb'} }
-          let(:network_cloud_properties) { {'bandwidth' => '5mbps'} }
+          let(:cloud_properties) do
+            { 'ram' => '2gb' }
+          end
+          let(:network_cloud_properties) do
+            { 'bandwidth' => '5mbps' }
+          end
           let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
           let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
           let(:stemcell) do
@@ -108,16 +112,16 @@ module Bosh
             }
           end
 
-          let(:expected_groups) {
+          let(:expected_groups) do
             [
               'fake-director-name',
               'deployment-name',
               'fake-job',
               'fake-director-name-deployment-name',
               'deployment-name-fake-job',
-              'fake-director-name-deployment-name-fake-job'
+              'fake-director-name-deployment-name-fake-job',
             ]
-          }
+          end
           let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
           let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
           let(:extra_ip) do

@@ -41,7 +41,13 @@ module Bosh::Director
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil) }
     let(:instance_provider) { DeploymentPlan::InstanceProvider.new(plan, vm_creator, logger) }
     let(:compilation_instance_pool) do
-      DeploymentPlan::CompilationInstancePool.new(instance_reuser, instance_provider, logger, instance_deleter, 4)
+      DeploymentPlan::CompilationInstancePool.new(
+        instance_reuser,
+        instance_provider,
+        logger,
+        instance_deleter,
+        compilation_config,
+      )
     end
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -51,33 +57,35 @@ module Bosh::Director
       thread_pool
     end
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
-    let(:net) { {'default' => {'network_name' =>{'property' => 'settings'}}} }
+    let(:net) do
+      { 'default' => { 'network_name' => { 'property' => 'settings' } } }
+    end
     let(:event_manager) {Api::EventManager.new(true)}
     let(:job_task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, job_task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: job_task.id, event_manager: event_manager)}
-    let(:expected_groups) {
+    let(:expected_groups) do
       [
         'fake-director-name',
         'mycloud',
         'compilation-deadbeef',
         'fake-director-name-mycloud',
         'mycloud-compilation-deadbeef',
-        'fake-director-name-mycloud-compilation-deadbeef'
+        'fake-director-name-mycloud-compilation-deadbeef',
       ]
-    }
-    let(:initial_state) {
+    end
+    let(:initial_state) do
       {
         'deployment' => 'mycloud',
         'job' => {
-          'name' => 'compilation-deadbeef'
+          'name' => 'compilation-deadbeef',
         },
         'index' => 0,
         'id' => 'deadbeef',
-        'networks' => net
+        'networks' => net,
       }
-    }
+    end
 
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment)
@@ -755,6 +763,7 @@ module Bosh::Director
         let(:reuse_compilation_vms) { true }
         let(:network) { instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'default', network_settings: nil) }
         let(:instance_reuser) { instance_double('Bosh::Director::InstanceReuser') }
+        let(:number_of_workers) { 4 }
 
         before do
           allow(plan).to receive(:network).with('default').and_return(network)

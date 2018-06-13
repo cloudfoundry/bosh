@@ -1,7 +1,9 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::DataDog do
-  let(:options) { {'api_key' => 'api_key', 'application_key' => 'application_key'} }
+  let(:options) do
+    { 'api_key' => 'api_key', 'application_key' => 'application_key' }
+  end
   subject { described_class.new(options) }
 
   let(:dog_client) { double('DataDog Client') }
@@ -18,7 +20,9 @@ describe Bhm::Plugins::DataDog do
     end
 
     context 'when we omit the application key ' do
-      let(:options) { {'api_key' => 'api_key'} }
+      let(:options) do
+        { 'api_key' => 'api_key' }
+      end
 
       it 'is not valid' do
         expect(subject.validate_options).to eq(false)
@@ -26,7 +30,9 @@ describe Bhm::Plugins::DataDog do
     end
 
     context 'when we omit the api key ' do
-      let(:options) { {'application_key' => 'application_key'} }
+      let(:options) do
+        { 'application_key' => 'application_key' }
+      end
 
       it 'is not valid' do
         expect(subject.validate_options).to eq(false)
@@ -43,7 +49,9 @@ describe Bhm::Plugins::DataDog do
     let(:client) { datadog_plugin.dog_client }
 
     context 'when we specify the pager duty service name' do
-      let(:options) { {'api_key' => 'api_key', 'application_key' => 'application_key', 'pagerduty_service_name' => 'pdsn'} }
+      let(:options) do
+        { 'api_key' => 'api_key', 'application_key' => 'application_key', 'pagerduty_service_name' => 'pdsn' }
+      end
 
       it 'creates a paging client' do
         expect(client).to be_a PagingDatadogClient

@@ -578,5 +578,35 @@ module Bosh::Spec
         'disk_size' => 123,
       }
     end
+
+    def self.resurrection_config_enabled
+      {
+        'rules' => [
+          {
+            'enabled' => true,
+            'include' => {
+              'deployments' => ['simple_enabled'],
+              'instance_groups' => ['foobar'],
+            },
+          },
+        ],
+      }
+    end
+
+    def self.resurrection_config_disabled
+      {
+        'rules' => [
+          {
+            'enabled' => false,
+            'include' => {
+              'deployments' => ['simple_disabled'],
+            },
+            'exclude' => {
+              'instance_groups' => ['foobar_without_packages'],
+            },
+          },
+        ],
+      }
+    end
   end
 end

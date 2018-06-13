@@ -43,9 +43,13 @@ module Bosh::Registry
 
     def connect_db(db_config)
       connection_config = db_config.dup
-      custom_connection_options = connection_config.delete('connection_options') { {} }
+      custom_connection_options = connection_config.delete('connection_options') do
+        {}
+      end
 
-      tls_options = connection_config.delete('tls') { {} }
+      tls_options = connection_config.delete('tls') do
+        {}
+      end
 
       if tls_options.fetch('enabled', false)
         certificate_paths = tls_options.fetch('cert')

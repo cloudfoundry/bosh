@@ -99,6 +99,14 @@ module Bosh::Director
         @compilation
       end
 
+      def is_deploy_action?
+        @is_deploy_action
+      end
+
+      def is_deploy_action=(is_deploy_action)
+        @is_deploy_action = is_deploy_action
+      end
+
       def to_s
         if @uuid.nil?
           "#{@instance_group_name}/#{@index}"

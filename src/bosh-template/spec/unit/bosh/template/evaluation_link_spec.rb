@@ -20,7 +20,9 @@ module Bosh
           )
         end
         let(:instances) { [] }
-        let(:properties) { {} }
+        let(:properties) do
+          {}
+        end
         let(:instance_group) { 'potato_group' }
         let(:default_network) { 'potato_net' }
         let(:deployment) { 'fake_deployment' }

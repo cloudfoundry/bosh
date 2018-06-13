@@ -17,7 +17,9 @@ module Bosh
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge('name' => 'with_keys') }
         let(:manifest) { Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, runtime_config_hash) }
-        let(:plan_options) { {} }
+        let(:plan_options) do
+          {}
+        end
         let(:event_log_io) { StringIO.new('') }
         let(:logger_io) { StringIO.new('') }
         let(:event_log) { Bosh::Director::EventLog::Log.new(event_log_io) }
@@ -72,7 +74,9 @@ module Bosh
           end
 
           context 'plan_options' do
-            let(:plan_options) { { 'canaries' => '10%', 'max_in_flight' => '3' } }
+            let(:plan_options) do
+              { 'canaries' => '10%', 'max_in_flight' => '3' }
+            end
             it 'uses plan options' do
               deployment = planner
               expect(deployment.update.canaries_before_calculation).to eq('10%')
@@ -80,7 +84,9 @@ module Bosh
             end
 
             context 'when option value is incorrect' do
-              let(:plan_options) { { 'canaries' => 'wrong' } }
+              let(:plan_options) do
+                { 'canaries' => 'wrong' }
+              end
               it 'raises an error' do
                 expect { planner }.to raise_error 'canaries value should be integer or percent'
               end
@@ -115,7 +121,9 @@ LOGMESSAGE
 
           context 'Planner.new' do
             let(:deployment_model) { Models::Deployment.make(name: 'simple') }
-            let(:expected_attrs) { { name: 'simple', properties: {} } }
+            let(:expected_attrs) do
+              { name: 'simple', properties: {} }
+            end
             let(:expected_plan_options) do
               {
                 'is_deploy_action' => false,

@@ -74,7 +74,9 @@ module Bosh::Director
         }
       end
 
-      let(:job_options) { {'remote' => false} }
+      let(:job_options) do
+        { 'remote' => false }
+      end
 
       before do
         allow(Dir).to receive(:mktmpdir).and_return(release_dir)
@@ -96,7 +98,9 @@ module Bosh::Director
 
     describe '#perform' do
       subject(:job) { Jobs::UpdateRelease.new(release_path, job_options) }
-      let(:job_options) { {} }
+      let(:job_options) do
+        {}
+      end
 
       let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
       before { allow(Dir).to receive(:mktmpdir).and_return(release_dir) }
@@ -125,7 +129,9 @@ module Bosh::Director
       end
 
       context 'when release is local' do
-        let(:job_options) { {} }
+        let(:job_options) do
+          {}
+        end
 
         it 'with a local release' do
           expect(job).not_to receive(:download_remote_release)
@@ -137,7 +143,9 @@ module Bosh::Director
       end
 
       context 'when release is remote' do
-        let(:job_options) { {'remote' => true, 'location' => 'release_location'} }
+        let(:job_options) do
+          { 'remote' => true, 'location' => 'release_location' }
+        end
 
         it 'with a remote release' do
           expect(job).to receive(:download_remote_release)
@@ -150,7 +158,13 @@ module Bosh::Director
 
         context 'with multiple digests' do
           context 'when the digest matches' do
-            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => "sha1:#{::Digest::SHA1.file(release_path).hexdigest}"} }
+            let(:job_options) do
+              {
+                'remote' => true,
+                'location' => 'release_location',
+                'sha1' => "sha1:#{::Digest::SHA1.file(release_path).hexdigest}",
+              }
+            end
 
             it 'verifies that the digest matches the release' do
               allow(job).to receive(:release_path).and_return(release_path)
@@ -164,7 +178,9 @@ module Bosh::Director
 
           context 'when the digest does not match' do
             let(:status) { instance_double(Process::Status, exitstatus: 1)}
-            let(:job_options) { {'remote' => true, 'location' => 'release_location', 'sha1' => "sha1:potato"} }
+            let(:job_options) do
+              { 'remote' => true, 'location' => 'release_location', 'sha1' => 'sha1:potato' }
+            end
 
             it 'raises an error' do
               allow(job).to receive(:release_path).and_return(release_path)
@@ -266,7 +282,9 @@ module Bosh::Director
         before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
 
         context 'when rebase is passed' do
-          let(:job_options) { { 'rebase' => true } }
+          let(:job_options) do
+            { 'rebase' => true }
+          end
 
           context 'when there are package changes' do
             let(:manifest_packages) do
@@ -304,7 +322,9 @@ module Bosh::Director
         end
 
         context 'when skip_if_exists is passed' do
-          let(:job_options) { { 'skip_if_exists' => true } }
+          let(:job_options) do
+            { 'skip_if_exists' => true }
+          end
 
           it 'does not create a release' do
             expect(job).not_to receive(:create_package)
@@ -796,14 +816,14 @@ module Bosh::Director
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let!(:release) { Models::Release.make(name: 'appcloud') }
 
-      let!(:release_version_model) {
+      let!(:release_version_model) do
         Models::ReleaseVersion.make(
           release: release,
           version: '42+dev.1',
           commit_hash: '12345678',
-          uncommitted_changes: true
+          uncommitted_changes: true,
         )
-      }
+      end
       before do
         allow(Dir).to receive(:mktmpdir).and_return(release_dir)
         allow(job).to receive(:with_release_lock).and_yield
@@ -820,7 +840,7 @@ module Bosh::Director
             'packages' => manifest_packages,
           }
         end
-        let(:manifest_jobs) {
+        let(:manifest_jobs) do
           [
             {
               'sha1' => 'fakesha2',
@@ -833,7 +853,7 @@ module Bosh::Director
               'templates' => {},
             },
           ]
-        }
+        end
         let(:manifest_packages) do
           [
             {
@@ -938,14 +958,16 @@ module Bosh::Director
             release_version_model.add_package(package)
             package
           end
-          let!(:compiled_package) { Models::CompiledPackage.make(
-            package: package,
-            sha1: 'fakecompiledsha1',
-            blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
-            dependency_key: 'fake-dep-key-1',
-            stemcell_os: 'windows me',
-            stemcell_version: '4.5'
-          )}
+          let!(:compiled_package) do
+            Models::CompiledPackage.make(
+              package: package,
+              sha1: 'fakecompiledsha1',
+              blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
+              dependency_key: 'fake-dep-key-1',
+              stemcell_os: 'windows me',
+              stemcell_version: '4.5',
+            )
+          end
 
           it 'eliminates package when broken or missing' do
             expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')

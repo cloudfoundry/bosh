@@ -4,12 +4,12 @@ module Bosh
   module Director
     module DeploymentPlan
       describe Job do
+        let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
         let(:deployment_name) { 'deployment_name' }
 
         subject { Job.new(release_version, 'foo', deployment_name) }
 
         describe '#bind_properties' do
-          let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
           let(:template_model) { instance_double('Bosh::Director::Models::Template') }
 
           let(:release_job_spec_prop) do
@@ -52,7 +52,9 @@ module Bosh
 
           let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
           let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
-          let(:options) { {} }
+          let(:options) do
+            {}
+          end
 
           before do
             allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
@@ -111,7 +113,9 @@ module Bosh
           end
 
           context 'when user specifies invalid property type for job' do
-            let(:user_defined_prop) { { 'deep_property' => false } }
+            let(:user_defined_prop) do
+              { 'deep_property' => false }
+            end
 
             it 'raises an exception explaining which property is the wrong type' do
               expect do
@@ -125,7 +129,6 @@ module Bosh
         end
 
         describe '#runs_as_errand' do
-          let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
           let(:template_model) { instance_double('Bosh::Director::Models::Template') }
 
           before do
@@ -151,6 +154,37 @@ module Bosh
 
               expect(subject.runs_as_errand?).to eq false
             end
+          end
+        end
+
+        describe '#download_blob' do
+          let(:template_model) do
+            Bosh::Director::Models::Template.make(name: 'foo', blobstore_id: 'blobstore-id-1', sha1: file_content_sha1)
+          end
+          let(:instance) { instance_double(Bosh::Director::App, blobstores: blobstores) }
+          let(:blobstore) { instance_double(Bosh::Blobstore::RetryableBlobstoreClient) }
+          let(:blobstores) do
+            instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
+          end
+          let(:file_content) { 'job-template' }
+          let(:file_content_sha1) { Digest::SHA1.hexdigest(file_content) }
+
+          before do
+            expect(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
+            expect(App).to receive(:instance).and_return(instance)
+
+            subject.bind_models
+          end
+
+          it 'downloads blob from blobstore' do
+            expect(blobstore).to receive(:get).with('blobstore-id-1', anything, sha1: file_content_sha1) do |_, file|
+              File.open(file.path, 'w') { |f| f.write(file_content) }
+            end
+
+            path = subject.download_blob
+            expect(path).to_not be_nil
+
+            expect(Digest::SHA1.file(path).to_s).to eq(file_content_sha1)
           end
         end
       end

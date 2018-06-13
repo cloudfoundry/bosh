@@ -2,11 +2,9 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::DbBackup do
   describe 'create' do
-    let(:db_config) {
-      {
-          'adapter' => adapter,
-      }
-    }
+    let(:db_config) do
+      { 'adapter' => adapter }
+    end
 
     context 'mysql2' do
       let(:adapter) { 'mysql2' }

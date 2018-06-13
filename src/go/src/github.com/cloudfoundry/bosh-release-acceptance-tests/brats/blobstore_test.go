@@ -27,7 +27,10 @@ var _ = Describe("Blobstore", func() {
 			uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 			uploadStemcell(candidateWardenLinuxStemcellPath)
 
-			session := bosh("-n", "deploy", "-d", "syslog-deployment", assetPath("syslog-manifest.yml"))
+			session := bosh("-n", "deploy", assetPath("syslog-manifest.yml"),
+				"-d", "syslog-deployment",
+				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+			)
 			Eventually(session, 3*time.Minute).Should(gexec.Exit(errorCode))
 		}
 

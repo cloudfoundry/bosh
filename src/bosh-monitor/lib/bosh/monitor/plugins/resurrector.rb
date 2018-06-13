@@ -11,10 +11,11 @@ module Bosh::Monitor
         director = @options['director']
         raise ArgumentError 'director options not set' unless director
 
-        @uri              = URI(director['endpoint'])
-        @director_options = director
-        @processor        = Bhm.event_processor
-        @alert_tracker    = ResurrectorHelper::AlertTracker.new(@options)
+        @uri                  = URI(director['endpoint'])
+        @director_options     = director
+        @processor            = Bhm.event_processor
+        @resurrection_manager = Bhm.resurrection_manager
+        @alert_tracker        = ResurrectorHelper::AlertTracker.new(@options)
       end
 
       def run
@@ -52,33 +53,48 @@ module Bosh::Monitor
               body: JSON.dump(payload)
           }
 
-          url = @uri.dup
-          url.path = "/deployments/#{deployment}/scan_and_fix"
           state = @alert_tracker.state_for(deployment)
 
           if state.meltdown?
             summary = "Skipping resurrection for instance: '#{job}/#{id}'; #{state.summary}"
-            @processor.process(:alert,
-                               severity: 1,
-                               title: "We are in meltdown",
-                               summary: summary,
-                               source: "HM plugin resurrector",
-                               deployment: deployment,
-                               created_at: Time.now.to_i)
-
+            @processor.process(
+              :alert,
+              severity: 1,
+              title: 'We are in meltdown',
+              summary: summary,
+              source: 'HM plugin resurrector',
+              deployment: deployment,
+              created_at: Time.now.to_i,
+            )
           elsif state.managed?
-            summary = "Notifying Director to recreate instance: '#{job}/#{id}'; #{state.summary}"
-            @processor.process(:alert,
-                               severity: 4,
-                               title: "Recreating unresponsive VM",
-                               summary: summary,
-                               source: "HM plugin resurrector",
-                               deployment: deployment,
-                               created_at: Time.now.to_i)
-            send_http_put_request(url.to_s, request)
-
+            if @resurrection_manager.resurrection_enabled?(deployment, job)
+              url = @uri.dup
+              url.path = "/deployments/#{deployment}/scan_and_fix"
+              summary = "Notifying Director to recreate instance: '#{job}/#{id}'; #{state.summary}"
+              @processor.process(
+                :alert,
+                severity: 4,
+                title: 'Recreating unresponsive VM',
+                summary: summary,
+                source: 'HM plugin resurrector',
+                deployment: deployment,
+                created_at: Time.now.to_i,
+              )
+              send_http_put_request(url.to_s, request)
+            else
+              summary = "Skipping resurrection for instance: '#{job}/#{id}'; #{state.summary} because of resurrection config"
+              @processor.process(
+                :alert,
+                severity: 1,
+                title: 'Resurrection is disabled by resurrection config',
+                summary: summary,
+                source: 'HM plugin resurrector',
+                deployment: deployment,
+                created_at: Time.now.to_i,
+              )
+            end
           else
-            logger.info("(Resurrector) state is normal")
+            logger.info('(Resurrector) state is normal')
           end
         else
           logger.warn("(Resurrector) event did not have deployment, job and id: #{alert}")

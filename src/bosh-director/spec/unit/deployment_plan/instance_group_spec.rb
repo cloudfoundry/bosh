@@ -2,7 +2,9 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceGroup do
   subject(:instance_group) { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
-  let(:parse_options) { {} }
+  let(:parse_options) do
+    {}
+  end
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
@@ -131,8 +133,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     context 'when parse_options contain canaries' do
-      let(:parse_options) { { 'canaries' => 42 } }
-      let(:update) { { 'canaries' => 22 } }
+      let(:parse_options) do
+        { 'canaries' => 42 }
+      end
+      let(:update) do
+        { 'canaries' => 22 }
+      end
 
       it 'overrides canaries value with one from parse_options' do
         expect(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
@@ -142,8 +148,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     context 'when parse_options contain max_in_flight' do
-      let(:parse_options) { { 'max_in_flight' => 42 } }
-      let(:update) { { 'max_in_flight' => 22 } }
+      let(:parse_options) do
+        { 'max_in_flight' => 42 }
+      end
+      let(:update) do
+        { 'max_in_flight' => 22 }
+      end
 
       it 'overrides max_in_flight value with one from parse_options' do
         expect(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)

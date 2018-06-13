@@ -12,7 +12,9 @@ module Bosh::Director
     let(:username) { 'FAKE_USER' }
     let(:instance_lookup) { Api::InstanceLookup.new }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
-    let(:options) { { foo: 'bar' } }
+    let(:options) do
+      { foo: 'bar' }
+    end
     let(:deployment_name) { 'FAKE_DEPLOYMENT_NAME' }
     let(:job) { 'FAKE_JOB' }
 

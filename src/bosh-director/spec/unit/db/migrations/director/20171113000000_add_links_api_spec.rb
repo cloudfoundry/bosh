@@ -186,7 +186,9 @@ module Bosh::Director
             }
           }
         end
-        let(:expected_owner_object_info) {{instance_group_name: "provider_instance_group_1"}}
+        let(:expected_owner_object_info) do
+          { instance_group_name: 'provider_instance_group_1' }
+        end
 
         before do
           db[:deployments] << {name: 'fake-deployment', id: 42, link_spec_json: "{}"}

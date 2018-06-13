@@ -6,7 +6,9 @@ module Bosh::Director::DeploymentPlan
     describe '#parse' do
       subject(:availability_zone) { AvailabilityZone.parse(availability_zone_spec) }
 
-      let(:availability_zone_spec) { {'name' => 'z1', 'cloud_properties' => {'availability_zone' => 'us-east-1a'}} }
+      let(:availability_zone_spec) do
+        { 'name' => 'z1', 'cloud_properties' => { 'availability_zone' => 'us-east-1a' } }
+      end
 
       describe 'creating' do
         it 'has the name and cloud properties' do
@@ -24,7 +26,9 @@ module Bosh::Director::DeploymentPlan
 
       describe 'name' do
         context 'is not present' do
-          let(:availability_zone_spec) { {'cloud_properties' => {}} }
+          let(:availability_zone_spec) do
+            { 'cloud_properties' => {} }
+          end
 
           it 'raises error' do
             expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationMissingField)
@@ -32,7 +36,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'is not a string' do
-          let(:availability_zone_spec) { {'name' => {}, 'cloud_properties' => {}} }
+          let(:availability_zone_spec) do
+            { 'name' => {}, 'cloud_properties' => {} }
+          end
 
           it 'raises error' do
             expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
@@ -61,7 +67,9 @@ module Bosh::Director::DeploymentPlan
       describe 'cloud_properties' do
 
         context 'is not present' do
-          let(:availability_zone_spec) { {'name' => 'z1'} }
+          let(:availability_zone_spec) do
+            { 'name' => 'z1' }
+          end
 
           it 'defaults to empty hash' do
             expect(availability_zone.cloud_properties).to eq({})
@@ -69,7 +77,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'is not a hash' do
-          let(:availability_zone_spec) { {'name' => {}, 'cloud_properties' => 'myproperty'} }
+          let(:availability_zone_spec) do
+            { 'name' => {}, 'cloud_properties' => 'myproperty' }
+          end
 
           it 'raises error' do
             expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
@@ -79,7 +89,9 @@ module Bosh::Director::DeploymentPlan
 
       describe 'cpi' do
         context 'is not a string' do
-          let(:availability_zone_spec) { {'name' => 'z1', 'cpi' => [1,2]} }
+          let(:availability_zone_spec) do
+            { 'name' => 'z1', 'cpi' => [1, 2] }
+          end
 
           it 'raises error' do
             expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)

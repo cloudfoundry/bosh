@@ -27,7 +27,9 @@ describe Bhm::Plugins::Logger do
   end
 
   describe 'with json output option' do
-    let(:options) { { 'format' => 'json' } }
+    let(:options) do
+      { 'format' => 'json' }
+    end
 
     it 'validates' do
       expect(plugin.validate_options).to be(true)
@@ -43,14 +45,18 @@ describe Bhm::Plugins::Logger do
 
   describe 'with garbage option' do
     describe 'with unknown option key' do
-      let(:options) { { 'foofoo' => {} } }
+      let(:options) do
+        { 'foofoo' => {} }
+      end
       it 'does not validate' do
         expect(plugin.validate_options).to be(false)
       end
     end
 
     describe 'with unknown format' do
-      let(:options) { { 'format' => 'blargh' } }
+      let(:options) do
+        { 'format' => 'blargh' }
+      end
       it 'does not validate' do
         expect(plugin.validate_options).to be(false)
       end

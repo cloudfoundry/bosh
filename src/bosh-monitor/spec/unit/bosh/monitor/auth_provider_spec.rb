@@ -50,7 +50,9 @@ describe Bosh::Monitor::AuthProvider do
   let(:logger) { double(:logger) }
 
   context 'when director is in UAA mode' do
-    let(:auth_info) { {'user_authentication' => { 'type' => 'uaa', 'options' => {'url' => 'uaa-url'}} } }
+    let(:auth_info) do
+      { 'user_authentication' => { 'type' => 'uaa', 'options' => { 'url' => 'uaa-url' } } }
+    end
     let(:token_issuer) { instance_double(CF::UAA::TokenIssuer) }
 
     let(:first_token) { uaa_token_info('first-token', expiration_time) }
@@ -90,7 +92,9 @@ describe Bosh::Monitor::AuthProvider do
   end
 
   context 'when director is in non-UAA mode' do
-    let(:auth_info) { {} }
+    let(:auth_info) do
+      {}
+    end
 
     it 'returns username and password' do
       expect(auth_provider.auth_header).to eq(['fake-user', 'secret-password'])

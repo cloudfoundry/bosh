@@ -390,82 +390,6 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
-  describe '#find_link' do
-    let(:provider) do
-      Bosh::Director::Models::Links::LinkProvider.create(
-        deployment: deployment_model,
-        name: 'test_provider',
-        type: 'job',
-        instance_group: 'test_instance_group',
-        serial_id: serial_id
-      )
-    end
-
-    let(:provider_intent) do
-      Bosh::Director::Models::Links::LinkProviderIntent.create(
-        link_provider: provider,
-        original_name: 'test_original_link_name',
-        type: 'test_link_type',
-        name: 'test_link_alias',
-        content: '{}',
-        shared: false,
-        consumable: true,
-        serial_id: serial_id
-      )
-    end
-
-    let(:consumer) do
-      Bosh::Director::Models::Links::LinkConsumer.create(
-        deployment: deployment_model,
-        name: 'test_consumer',
-        type: 'job',
-        instance_group: 'test_instance_group',
-        serial_id: serial_id
-      )
-    end
-
-    let(:consumer_intent) do
-      Bosh::Director::Models::Links::LinkConsumerIntent.create(
-        link_consumer: consumer,
-        original_name: 'test_original_link_name',
-        type: 'test_link_type',
-        optional: false,
-        blocked: false,
-        serial_id: serial_id
-      )
-    end
-
-    context 'link exists' do
-      it 'returns the existing link' do
-        expected_link = Bosh::Director::Models::Links::Link.create(
-          link_provider_intent: provider_intent,
-          link_consumer_intent: consumer_intent,
-          name: 'test_original_link_name',
-          link_content: '{}'
-        )
-
-        actual_link = subject.find_link(
-          name: 'test_original_link_name',
-          provider_intent: provider_intent,
-          consumer_intent: consumer_intent
-        )
-
-        expect(actual_link).to eq(expected_link)
-      end
-    end
-
-    context 'link does not exist' do
-      it 'does not return a link' do
-        actual_link = subject.find_link(
-          name: 'test_original_link_name',
-          provider_intent: provider_intent,
-          consumer_intent: consumer_intent
-        )
-        expect(actual_link).to be_nil
-      end
-    end
-  end
-
   describe '#find_or_create_link' do
     let(:link_provider) do
       Bosh::Director::Models::Links::LinkProvider.create(
@@ -792,7 +716,10 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error do |e|
+              expect(e.message).to include("Failed to resolve links from deployment 'test_deployment'. See errors below:")
+              expect(e.message).to include("Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            end
           end
 
 
@@ -813,7 +740,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
 
               expect(Bosh::Director::Models::Links::Link.count).to eq(0)
             end
@@ -852,7 +779,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
 
             expect(Bosh::Director::Models::Links::Link.count).to eq(0)
           end
@@ -973,6 +900,7 @@ describe Bosh::Director::Links::LinksManager do
           Bosh::Director::Models::Links::LinkConsumerIntent.create(
             link_consumer: consumer,
             original_name: 'ci1',
+            name: 'ci1',
             type: 'foo',
             metadata: metadata.to_json,
             serial_id: serial_id
@@ -1010,7 +938,7 @@ describe Bosh::Director::Links::LinksManager do
             expect {
               expect(deployment_model.link_consumers.count).to be > 0
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job  'c1' in instance_group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
           end
 
           context 'when link consumer intent is optional' do
@@ -1238,7 +1166,7 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
             end
           end
         end
@@ -1249,7 +1177,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
           end
         end
 
@@ -1371,7 +1299,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
             end
           end
 
@@ -1381,7 +1309,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
             end
           end
 
@@ -1880,6 +1808,7 @@ describe Bosh::Director::Links::LinksManager do
           Bosh::Director::Models::Links::LinkConsumerIntent.create(
             link_consumer: consumer,
             original_name: 'ci1',
+            name: 'ci1',
             type: 'foo',
             metadata: {explicit_link: false}.to_json,
             serial_id: serial_id
@@ -1933,7 +1862,7 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect {
                 subject.resolve_deployment_links(deployment_model, options)
-              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job  'c1' in instance_group 'ig1' in deployment 'test_deployment'")
+              }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
             end
           end
         end
@@ -1944,7 +1873,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expect {
               subject.resolve_deployment_links(deployment_model, options)
-            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job  'c1' in instance_group 'ig1' in deployment 'test_deployment'")
+            }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in instance group 'ig1' in deployment 'test_deployment'")
           end
         end
 
@@ -1984,6 +1913,35 @@ describe Bosh::Director::Links::LinksManager do
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias
    Deployment: test_deployment, instance group: ig1, job: p1, link name/alias: provider_alias2")
           end
+        end
+      end
+
+      context 'when the consumer does not include an instance group' do
+        let(:consumer) do
+          Bosh::Director::Models::Links::LinkConsumer.create(
+            deployment: deployment_model,
+            name: 'c1',
+            type: 'job',
+            instance_group: '',
+            serial_id: serial_id
+          )
+        end
+
+        before do
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'ci1',
+            name: 'ci1',
+            type: 'foo',
+            metadata: {explicit_link: false}.to_json,
+            serial_id: serial_id
+          )
+        end
+
+        it 'should not include empty instance group in error messages' do
+          expect {
+            subject.resolve_deployment_links(deployment_model, options)
+          }.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'ci1' with type 'foo' for job 'c1' in deployment 'test_deployment'")
         end
       end
 
@@ -2192,108 +2150,124 @@ describe Bosh::Director::Links::LinksManager do
       end
     end
 
-    context 'when an instance uses links' do
-      before do
-        # Create consumer
-        control_consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+    context 'when there is a consumer' do
+      let(:control_consumer) do
+        Bosh::Director::Models::Links::LinkConsumer.create(
           deployment: deployment_model,
           instance_group: 'control-instance-group-name',
           name: 'control-job-1',
           type: 'job',
           serial_id: serial_id
         )
-
-        control_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          link_consumer: control_consumer,
-          original_name: 'control-foo',
-          type: 'control-bar',
-          name: 'control-foo-alias',
-          serial_id: serial_id
-        )
-
-        Bosh::Director::Models::Links::Link.create(
-          link_consumer_intent: control_consumer_intent,
-          name: 'control-foo',
-          link_content: '{}',
-        )
-
-        consumer = Bosh::Director::Models::Links::LinkConsumer.create(
-          deployment: deployment_model,
-          instance_group: 'instance-group-name',
-          name: 'job-1',
-          type: 'job',
-          serial_id: serial_id
-        )
-
-        consumer_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          link_consumer: consumer,
-          original_name: 'foo',
-          type: 'bar',
-          name: 'foo-alias',
-          serial_id: serial_id
-        )
-
-        Bosh::Director::Models::Links::Link.create(
-          link_consumer_intent: consumer_intent_1,
-          name: 'foo',
-          link_content: '{"properties": {"fizz": "buzz"}}'
-        )
-
-        consumer_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          link_consumer: consumer,
-          original_name: 'meow',
-          type: 'bar',
-          name: 'meow-alias',
-          serial_id: serial_id
-        )
-
-        Bosh::Director::Models::Links::Link.create(
-          link_consumer_intent: consumer_intent_2,
-          name: 'meow',
-          link_content: '{"properties": {"snoopy": "dog"}}'
-        )
       end
 
-      it 'should return the links associated with the instance groups namespaced by job name' do
-        links = subject.get_links_for_instance_group(deployment_model, instance_group_name)
-        expect(links.size).to eq(1)
-        expect(links['job-1'].size).to eq(2)
-
-        expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
-        expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
-      end
-
-      context 'when consumer_intent serial_id do NOT match with consumer serial_id' do
-        before do
-          consumer = Bosh::Director::Models::Links::LinkConsumer.find(
-            deployment: deployment_model,
-            instance_group: 'instance-group-name',
-            name: 'job-1',
-            type: 'job',
-          )
-
-          consumer_intent_2a = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-            link_consumer: consumer,
-            original_name: 'foo2',
-            type: 'bar2',
-            name: 'foo-alias2',
-            serial_id: serial_id - 1 #different serial id than consumer
-          )
-
-          Bosh::Director::Models::Links::Link.create(
-            link_consumer_intent: consumer_intent_2a,
-            name: 'tweet',
-            link_content: '{"properties": {"puddy": "tat"}}'
+      context 'when the consumer has an intent' do
+        let(:control_consumer_intent) do
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: control_consumer,
+            original_name: 'control-foo',
+            type: 'control-bar',
+            name: 'control-foo-alias',
+            serial_id: serial_id
           )
         end
 
-        it 'should return the links associated with the instance groups namespaced by job name' do
-          links = subject.get_links_for_instance_group(deployment_model, instance_group_name)
-          expect(links.size).to eq(1)
-          expect(links['job-1'].size).to eq(2)
+        context 'when the consumer has a link' do
+          let!(:control_link) do
+            Bosh::Director::Models::Links::Link.create(
+              link_consumer_intent: control_consumer_intent,
+              name: 'control-foo',
+              link_content: '{}',
+            )
+          end
 
-          expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
-          expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
+          let(:consumer) do
+            Bosh::Director::Models::Links::LinkConsumer.create(
+              deployment: deployment_model,
+              instance_group: 'instance-group-name',
+              name: 'job-1',
+              type: 'job',
+              serial_id: serial_id
+            )
+          end
+
+          let(:consumer_intent) do
+            Bosh::Director::Models::Links::LinkConsumerIntent.create(
+              link_consumer: consumer,
+              original_name: 'foo',
+              type: 'bar',
+              name: 'foo-alias',
+              serial_id: serial_id
+            )
+          end
+
+          let!(:link) do
+            Bosh::Director::Models::Links::Link.create(
+              link_consumer_intent: consumer_intent,
+              name: 'foo',
+              link_content: '{"properties": {"fizz": "buzz"}}'
+            )
+          end
+
+          before do
+            new_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+              link_consumer: consumer,
+              original_name: 'meow',
+              type: 'bar',
+              name: 'meow-alias',
+              serial_id: serial_id
+            )
+
+            Bosh::Director::Models::Links::Link.create(
+              link_consumer_intent: new_consumer_intent,
+              name: 'meow',
+              link_content: '{"properties": {"snoopy": "dog"}}'
+            )
+          end
+
+          it 'returns the links associated with the instance groups namespaced by job name' do
+            links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
+            expect(links.size).to eq(1)
+            expect(links['job-1'].size).to eq(2)
+
+            expect(links['job-1']['foo']).to eq({'properties' => {'fizz' => 'buzz'}})
+            expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
+          end
+
+          context 'when the consumer intent serial id does not match the consumer serial id' do
+            before do
+              consumer_intent.serial_id = serial_id + 1
+              consumer_intent.save
+            end
+
+            it 'should not return the link whose consumer intent serial id did not match' do
+              links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
+              expect(links.size).to eq(1)
+              expect(links['job-1'].size).to eq(1)
+              expect(links['job-1']['meow']).to eq({'properties' => {'snoopy' => 'dog'}})
+            end
+          end
+
+          context 'when there are multiple links with the same name associated with the consumer_intent' do
+            before do
+              first_link = Bosh::Director::Models::Links::Link.find(name: 'foo')
+
+              Bosh::Director::Models::Links::Link.create(
+                link_consumer_intent: consumer_intent,
+                name: 'foo',
+                link_content: '{"different":"content"}',
+              )
+
+              first_link.created_at = Time.now
+              first_link.save
+            end
+
+            it 'should return the latest created link' do
+              links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
+              expect(links.size).to eq(1)
+              expect(links['job-1']['foo']).to eq(JSON.parse('{"properties": {"fizz": "buzz"}}'))
+            end
+          end
         end
       end
     end
@@ -2304,11 +2278,16 @@ describe Bosh::Director::Links::LinksManager do
       Bosh::Director::Models::Instance.make(deployment: deployment_model)
     end
 
+    let(:is_deploying) do
+      true
+    end
+
     let(:instance) do
       instance_double(Bosh::Director::DeploymentPlan::Instance).tap do |mock|
         allow(mock).to receive(:instance_group_name).and_return('instance-group-name')
         allow(mock).to receive(:deployment_model).and_return(deployment_model)
         allow(mock).to receive(:model).and_return(instance_model)
+        allow(mock).to receive(:is_deploy_action?).and_return(is_deploying)
       end
     end
 
@@ -2342,11 +2321,11 @@ describe Bosh::Director::Links::LinksManager do
       it 'returns the current links' do
         links = subject.get_links_for_instance(instance)
         expect(links.length).to eq(1)
-        expect(links['consumer']['foo2']).to_not be_nil
+        expect(links['consumer']['tweet']).to_not be_nil
       end
     end
 
-    context 'when there are no links for the current serial id' do
+    context 'when there are no links for the specified serial id' do
       let(:serial_id) { 2 }
 
       before do
@@ -2355,7 +2334,7 @@ describe Bosh::Director::Links::LinksManager do
           instance_group: 'instance-group-name',
           name: 'consumer',
           type: 'control_owner_object_type',
-          serial_id: serial_id-1
+          serial_id: serial_id - 1,
         )
 
         consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
@@ -2363,7 +2342,50 @@ describe Bosh::Director::Links::LinksManager do
           original_name: 'foo2',
           type: 'bar2',
           name: 'foo-alias2',
-          serial_id: serial_id-1
+          serial_id: serial_id - 1,
+        )
+
+        link = Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: consumer_intent,
+          name: 'tweet',
+          link_content: '{"properties": {"puddy": "tat"}}',
+        )
+
+        Bosh::Director::Models::Links::InstancesLink.create(
+          instance_id: instance.model.id,
+          link_id: link.id,
+          serial_id: serial_id - 1,
+        )
+      end
+
+      it 'should return an empty hash' do
+        links = subject.get_links_for_instance(instance)
+        expect(links.length).to eq(0)
+      end
+    end
+
+    context 'when the instance is not deploying (recreate, etc)' do
+      let(:serial_id) { 1 }
+
+      let(:is_deploying) do
+        false
+      end
+
+      before do
+        consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+          deployment: deployment_model,
+          instance_group: 'instance-group-name',
+          name: 'consumer',
+          type: 'control_owner_object_type',
+          serial_id: serial_id
+        )
+
+        consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          link_consumer: consumer,
+          original_name: 'foo2',
+          type: 'bar2',
+          name: 'foo-alias2',
+          serial_id: serial_id,
         )
 
         link = Bosh::Director::Models::Links::Link.create(
@@ -2375,16 +2397,22 @@ describe Bosh::Director::Links::LinksManager do
         Bosh::Director::Models::Links::InstancesLink.create(
           instance_id: instance.model.id,
           link_id: link.id,
-          serial_id: serial_id-1
+          serial_id: serial_id,
+        )
+
+        Bosh::Director::Models::Links::Link.create(
+          link_consumer_intent: consumer_intent,
+          name: 'tweet',
+          link_content: '{"properties": {"Rubber": "Band"}}'
         )
       end
 
-      it 'uses the last successfully deployed links' do
+      it 'should use the links associated to the instance from instance<->link table' do
         links = subject.get_links_for_instance(instance)
         expect(links.length).to eq(1)
+        expect(links['consumer']['foo2']).to eq({'properties' => { 'puddy' => 'tat' } })
       end
     end
-
   end
 
   describe '#get_links_from_deployment' do
@@ -2924,100 +2952,167 @@ describe Bosh::Director::Links::LinksManager do
     end
 
     context 'cleanup links' do
-      before do
-        consumer_1 = Bosh::Director::Models::Links::LinkConsumer.create(
-          deployment: deployment_model,
-          instance_group: 'ig1',
-          name: 'c1',
-          type: 'job',
-          serial_id: serial_id
-        )
 
-        consumer_1_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          link_consumer: consumer_1,
-          original_name: 'ci1-1',
-          type: 'foo',
-          metadata: {explicit_link: true}.to_json,
-          serial_id: serial_id
-        )
-        consumer_1_intent_2 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
-          link_consumer: consumer_1,
-          original_name: 'ci1-2',
-          type: 'foo',
-          metadata: {explicit_link: true}.to_json,
-          serial_id: serial_id
-        )
+      context 'when there are old links' do
+        before do
+          consumer_1 = Bosh::Director::Models::Links::LinkConsumer.create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'job',
+            serial_id: serial_id
+          )
 
-        provider = Bosh::Director::Models::Links::LinkProvider.create(
-          deployment: deployment_model,
-          instance_group: 'ig1',
-          name: 'c1',
-          type: 'manual',
-          serial_id: serial_id - 1
-        )
+          consumer_1_intent_1 = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer_1,
+            original_name: 'ci1-1',
+            type: 'foo',
+            metadata: {explicit_link: true}.to_json,
+            serial_id: serial_id
+          )
 
-        provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
-          link_provider: provider,
-          original_name: 'ci1',
-          type: 'foo',
-          content: '{}',
-          serial_id: serial_id - 1
-        )
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer_1,
+            original_name: 'ci1-2',
+            type: 'foo',
+            metadata: {explicit_link: true}.to_json,
+            serial_id: serial_id
+          )
 
-        link_1 = Bosh::Director::Models::Links::Link.create(
-          link_provider_intent: provider_intent,
-          link_consumer_intent: consumer_1_intent_1,
-          name: consumer_1_intent_1.original_name,
-          link_content: '{}'
-        )
+          provider = Bosh::Director::Models::Links::LinkProvider.create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'manual',
+            serial_id: serial_id - 1
+          )
 
-        instance_model.add_link(link_1)
-        instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_1.id).first
-        instance_link.serial_id = serial_id - 1
-        instance_link.save
+          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+            link_provider: provider,
+            original_name: 'ci1',
+            type: 'foo',
+            content: '{}',
+            serial_id: serial_id - 1
+          )
 
-        provider_2 = Bosh::Director::Models::Links::LinkProvider.find_or_create(
-          deployment: deployment_model,
-          instance_group: 'ig1',
-          name: 'c1',
-          type: 'manual',
-        )
-        provider_2.serial_id = serial_id
-        provider_2.save
+          link_1 = Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: provider_intent,
+            link_consumer_intent: consumer_1_intent_1,
+            name: consumer_1_intent_1.original_name,
+            link_content: '{}'
+          )
 
-        provider_2_intent_1 = Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
-          link_provider: provider_2,
-          original_name: 'ci1',
-          type: 'foo',
-        )
-        provider_2_intent_1.content = '{"foo": "bar"}'
-        provider_2_intent_1.serial_id = serial_id
-        provider_2_intent_1.save
+          instance_model.add_link(link_1)
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_1.id).first
+          instance_link.serial_id = serial_id - 1
+          instance_link.save
 
-        link_2 = Bosh::Director::Models::Links::Link.create(
-          link_provider_intent: provider_intent,
-          link_consumer_intent: consumer_1_intent_1,
-          name: consumer_1_intent_1.original_name,
-          link_content: '{"foo": "bar"}'
-        )
+          provider_2 = Bosh::Director::Models::Links::LinkProvider.find_or_create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'manual',
+            )
+          provider_2.serial_id = serial_id
+          provider_2.save
 
-        instance_model.add_link(link_2)
-        instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_2.id).first
-        instance_link.serial_id = serial_id
-        instance_link.save
+          provider_2_intent_1 = Bosh::Director::Models::Links::LinkProviderIntent.find_or_create(
+            link_provider: provider_2,
+            original_name: 'ci1',
+            type: 'foo',
+            )
+          provider_2_intent_1.content = '{"foo": "bar"}'
+          provider_2_intent_1.serial_id = serial_id
+          provider_2_intent_1.save
+
+          link_2 = Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: provider_intent,
+            link_consumer_intent: consumer_1_intent_1,
+            name: consumer_1_intent_1.original_name,
+            link_content: '{"foo": "bar"}'
+          )
+
+          instance_model.add_link(link_2)
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(link_id: link_2.id).first
+          instance_link.serial_id = serial_id
+          instance_link.save
+        end
+
+        it 'removes links with instances_link with old serial_ids' do
+          subject.remove_unused_links(deployment_model)
+          links = Bosh::Director::Models::Links::Link.all
+          expect(links.first.link_content).to eq('{"foo": "bar"}')
+        end
+
+        it 'removes instances_links with old serial_ids' do
+          subject.remove_unused_links(deployment_model)
+          expect(Bosh::Director::Models::Links::InstancesLink.count).to eq(1)
+        end
       end
 
-      it 'removes links with instances_link with old serial_ids' do
-        subject.remove_unused_links(deployment_model)
-        links = Bosh::Director::Models::Links::Link.all
-        expect(links.first.link_content).to eq('{"foo": "bar"}')
-      end
+      context 'when the link type external or variable' do
 
-      it 'removes instances_links with old serial_ids' do
-        subject.remove_unused_links(deployment_model)
-        expect(Bosh::Director::Models::Links::InstancesLink.count).to eq(1)
-      end
+        before do
+          consumer = Bosh::Director::Models::Links::LinkConsumer.create(
+            deployment: deployment_model,
+            instance_group: '',
+            name: 'c1',
+            type: consumer_type,
+            serial_id: serial_id
+          )
 
+          consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'consumer_intent',
+            type: 'address',
+            metadata: {explicit_link: true}.to_json,
+            serial_id: serial_id
+          )
+
+          provider = Bosh::Director::Models::Links::LinkProvider.create(
+            deployment: deployment_model,
+            instance_group: 'ig1',
+            name: 'c1',
+            type: 'job',
+            serial_id: serial_id
+          )
+
+          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+            link_provider: provider,
+            original_name: 'ci2',
+            type: 'address',
+            content: '{}',
+            serial_id: serial_id
+          )
+
+          Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: provider_intent,
+            link_consumer_intent: consumer_intent,
+            name: 'link',
+            link_content: '{}'
+          )
+        end
+
+        context 'when the consumer is a variable' do
+          let(:consumer_type) { 'variable' }
+
+          it 'should not delete the link' do
+            subject.remove_unused_links(deployment_model)
+            link = Bosh::Director::Models::Links::Link.where(name: 'link')
+            expect(link.count).to eq(1)
+          end
+        end
+
+        context 'when the consumer is external' do
+          let(:consumer_type) { 'external' }
+
+          it 'should not delete the link' do
+            subject.remove_unused_links(deployment_model)
+            link = Bosh::Director::Models::Links::Link.where(name: 'link')
+            expect(link.count).to eq(1)
+          end
+        end
+      end
     end
   end
 end

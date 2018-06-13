@@ -16,4 +16,6 @@ module Bosh::Monitor
   class InvalidEvent < Error; code(302); end
 
   class PluginError < Error; code(401); end
+
+  class ConfigProcessingError < Error; code(501); end
 end

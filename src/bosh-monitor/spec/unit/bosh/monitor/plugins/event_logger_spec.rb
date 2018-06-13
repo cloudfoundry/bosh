@@ -4,7 +4,7 @@ require 'timecop'
 describe 'Bhm::Plugins::Resurrector' do
   include Support::UaaHelpers
 
-  let(:options) {
+  let(:options) do
     {
       'director' => {
         'endpoint'      => 'http://foo.bar.com:25555',
@@ -12,10 +12,10 @@ describe 'Bhm::Plugins::Resurrector' do
         'password'      => 'password',
         'client_id'     => 'client-id',
         'client_secret' => 'client-secret',
-        'ca_cert'       => 'ca-cert'
-      }
+        'ca_cert'       => 'ca-cert',
+      },
     }
-  }
+  end
   let(:plugin) { Bhm::Plugins::EventLogger.new(options) }
   let(:uri) { 'http://foo.bar.com:25555' }
   let(:status_uri) { "#{uri}/info" }
@@ -26,7 +26,9 @@ describe 'Bhm::Plugins::Resurrector' do
   end
   let(:time) { time = Time.new }
   let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i')) }
-  let(:user_authentication) { {} }
+  let(:user_authentication) do
+    {}
+  end
 
   it 'should construct a usable url' do
     expect(plugin.url.to_s).to eq(uri)

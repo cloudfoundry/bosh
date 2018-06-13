@@ -4,7 +4,8 @@ module Bosh::Director
   describe 'add vm_id to ip_addresses' do
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20180119233828_add_vm_id_to_ip_addresses.rb' }
-    let(:instance1) do {
+    let(:instance1) do
+      {
         id: 123,
         availability_zone: 'z1',
         deployment_id: 1,
@@ -12,7 +13,7 @@ module Bosh::Director
         index: 23,
         state: 'started',
         variable_set_id: 57,
-    }
+      }
     end
 
     before do

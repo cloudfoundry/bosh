@@ -93,11 +93,11 @@ module Bosh::Director::DeploymentPlan
 
       context 'with randomize_az_placement turned on, and a fake random tie strategy' do
         let(:randomize_az_placement) { true }
-        let(:test_random_tie_strategy) {
+        let(:test_random_tie_strategy) do
           ts = double(:random_tie_strategy)
           allow(ts).to receive(:new).and_return fake_tie_strategy
           ts
-        }
+        end
 
         let(:fake_tie_strategy) { double(:random_tie_strategy_instance) }
 

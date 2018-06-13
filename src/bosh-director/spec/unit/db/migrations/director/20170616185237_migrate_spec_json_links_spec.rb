@@ -26,56 +26,56 @@ module Bosh::Director
     end
 
     context 'when links exist for an instance' do
-      let(:pre_migrated_spec_json){
+      let(:pre_migrated_spec_json) do
         {
-            "deployment": "simple-deployment",
-            "job": {
-                "name": "provider_instance_group",
-                "templates": [
-                    { "name": "simple_job_1" },
-                    { "name": "simple_job_2" }
-                ]
+          'deployment': 'simple-deployment',
+          'job': {
+            'name': 'provider_instance_group',
+            'templates': [
+              { 'name': 'simple_job_1' },
+              { 'name': 'simple_job_2' },
+            ],
+          },
+          'links': {
+            'simple_link_name_1': {
+              'name': 'simple_1',
             },
-            "links": {
-                "simple_link_name_1": {
-                    "name": "simple_1"
-                },
-                "simple_link_name_2": {
-                    "name": "simple_2"
-                }
-            }
+            'simple_link_name_2': {
+              'name': 'simple_2',
+            },
+          },
         }.to_json
-      }
-      let(:post_migrated_spec_json){
+      end
+      let(:post_migrated_spec_json) do
         {
-          "deployment": "simple-deployment",
-          "job": {
-            "name": "provider_instance_group",
-            "templates": [
-              { "name": "simple_job_1" },
-              { "name": "simple_job_2" }
-            ]
+          'deployment': 'simple-deployment',
+          'job': {
+            'name': 'provider_instance_group',
+            'templates': [
+              { 'name': 'simple_job_1' },
+              { 'name': 'simple_job_2' },
+            ],
           },
-          "links": {
-            "simple_job_1": {
-              "simple_link_name_1": {
-                "name": "simple_1"
+          'links': {
+            'simple_job_1': {
+              'simple_link_name_1': {
+                'name': 'simple_1',
               },
-              "simple_link_name_2": {
-                "name": "simple_2"
-              }
+              'simple_link_name_2': {
+                'name': 'simple_2',
+              },
+            },
+            'simple_job_2': {
+              'simple_link_name_1': {
+                'name': 'simple_1',
+              },
+              'simple_link_name_2': {
+                'name': 'simple_2',
+              },
+            },
           },
-          "simple_job_2": {
-              "simple_link_name_1": {
-                "name": "simple_1"
-              },
-              "simple_link_name_2": {
-                "name": "simple_2"
-              }
-          }
-          }
         }.to_json
-      }
+      end
 
       it 'should move links under each own job section' do
         expect(db[:instances].count).to eq(1)
@@ -84,35 +84,35 @@ module Bosh::Director
     end
 
     context 'when links are empty for an instance' do
-      let(:pre_migrated_spec_json){
+      let(:pre_migrated_spec_json) do
         {
-            "deployment": "simple-deployment",
-            "job": {
-                "name": "provider_instance_group",
-                "templates": [
-                    { "name": "simple_job_1" },
-                    { "name": "simple_job_2" }
-                ]
-            },
-            "links": {}
+          'deployment': 'simple-deployment',
+          'job': {
+            'name': 'provider_instance_group',
+            'templates': [
+              { 'name': 'simple_job_1' },
+              { 'name': 'simple_job_2' },
+            ],
+          },
+          'links': {},
         }.to_json
-      }
-      let(:post_migrated_spec_json){
+      end
+      let(:post_migrated_spec_json) do
         {
-            "deployment": "simple-deployment",
-            "job": {
-                "name": "provider_instance_group",
-                "templates": [
-                    { "name": "simple_job_1" },
-                    { "name": "simple_job_2" }
-                ]
-            },
-            "links": {
-                "simple_job_1": {},
-                "simple_job_2": {}
-            }
+          'deployment': 'simple-deployment',
+          'job': {
+            'name': 'provider_instance_group',
+            'templates': [
+              { 'name': 'simple_job_1' },
+              { 'name': 'simple_job_2' },
+            ],
+          },
+          'links': {
+            'simple_job_1': {},
+            'simple_job_2': {},
+          },
         }.to_json
-      }
+      end
       it 'should move links under each own job section' do
         expect(db[:instances].count).to eq(1)
         expect(db[:instances].all[0][:spec_json]).to eq(post_migrated_spec_json)
@@ -120,18 +120,18 @@ module Bosh::Director
     end
 
     context 'when links key is NOT defined in spec_json' do
-      let(:pre_migrated_spec_json){
+      let(:pre_migrated_spec_json) do
         {
-            "deployment": "simple-deployment",
-            "job": {
-                "name": "provider_instance_group",
-                "templates": [
-                    { "name": "simple_job_1" },
-                    { "name": "simple_job_2" }
-                ]
-            }
+          'deployment': 'simple-deployment',
+          'job': {
+            'name': 'provider_instance_group',
+            'templates': [
+              { 'name': 'simple_job_1' },
+              { 'name': 'simple_job_2' },
+            ],
+          },
         }.to_json
-      }
+      end
       it 'should NOT modify spec_json' do
         expect(db[:instances].count).to eq(1)
         expect(db[:instances].all[0][:spec_json]).to eq(pre_migrated_spec_json)
@@ -148,23 +148,23 @@ module Bosh::Director
     end
 
     context 'when jobs/templates are empty for an instance' do
-      let(:pre_migrated_spec_json){
+      let(:pre_migrated_spec_json) do
         {
-            "deployment": "simple-deployment",
-            "job": {
-                "name": "provider_instance_group",
-                "templates": [],
+          'deployment': 'simple-deployment',
+          'job': {
+            'name': 'provider_instance_group',
+            'templates': [],
+          },
+          'links': {
+            'simple_link_name_1': {
+              'name': 'simple_1',
             },
-            "links": {
-                "simple_link_name_1": {
-                    "name": "simple_1"
-                },
-                "simple_link_name_2": {
-                    "name": "simple_2"
-                }
-            }
+            'simple_link_name_2': {
+              'name': 'simple_2',
+            },
+          },
         }.to_json
-      }
+      end
 
       it 'should NOT modify spec_json' do
         expect(db[:instances].count).to eq(1)
@@ -173,22 +173,22 @@ module Bosh::Director
     end
 
     context 'when jobs/templates key is NOT defined for an instance' do
-      let(:pre_migrated_spec_json){
+      let(:pre_migrated_spec_json) do
         {
-            "deployment": "simple-deployment",
-            "job": {
-                "name": "provider_instance_group"
+          'deployment': 'simple-deployment',
+          'job': {
+            'name': 'provider_instance_group',
+          },
+          'links': {
+            'simple_link_name_1': {
+              'name': 'simple_1',
             },
-            "links": {
-                "simple_link_name_1": {
-                    "name": "simple_1"
-                },
-                "simple_link_name_2": {
-                    "name": "simple_2"
-                }
-            }
+            'simple_link_name_2': {
+              'name': 'simple_2',
+            },
+          },
         }.to_json
-      }
+      end
 
       it 'should NOT modify spec_json' do
         expect(db[:instances].count).to eq(1)

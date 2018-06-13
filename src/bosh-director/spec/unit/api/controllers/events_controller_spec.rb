@@ -479,8 +479,10 @@ module Bosh::Director
 
       describe 'post' do
         let(:action) { 'create' }
-        let(:context) { {'information' => 'blah blah'} }
-        let(:payload) {
+        let(:context) do
+          { 'information' => 'blah blah' }
+        end
+        let(:payload) do
           {
             action: action,
             object_type: 'deployment',
@@ -488,9 +490,9 @@ module Bosh::Director
             deployment: 'new_deployment',
             instance: 'new_instance',
             error: 'some error',
-            context: context
+            context: context,
           }
-        }
+        end
 
         def perform
           post '/',
@@ -520,7 +522,7 @@ module Bosh::Director
 
           context 'when timestamp is specified' do
             let(:timestamp) { '1479673560' }
-            let(:payload) {
+            let(:payload) do
               {
                 action: action,
                 timestamp: timestamp,
@@ -529,9 +531,9 @@ module Bosh::Director
                 deployment: 'new_deployment',
                 instance: 'new_instance',
                 error: 'some error',
-                context: context
+                context: context,
               }
-            }
+            end
             it 'stores given timestamp' do
               perform
               expect(Models::Event.first.timestamp.to_i).to eq(timestamp.to_i)

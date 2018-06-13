@@ -15,7 +15,9 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
     instance_group
   end
 
-  let(:emoji_errand_job) { {'release' => 'bosh-release', 'name' => 'emoji-errand'} }
+  let(:emoji_errand_job) do
+    { 'release' => 'bosh-release', 'name' => 'emoji-errand' }
+  end
 
   shared_examples_for 'a config that works with the --when-changed flag' do
     let(:manifest_hash) do

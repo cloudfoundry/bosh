@@ -57,10 +57,16 @@ module Bosh::Director
           allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
           allow(PersistentDiskCollection).to receive(:new).and_return(disk_collection)
         end
-        let(:parse_options) { {'is_deploy_action' => true} }
+        let(:parse_options) do
+          { 'is_deploy_action' => true }
+        end
         let(:parsed_instance_group) { parser.parse(instance_group_spec, parse_options) }
-        let(:resource_pool_env) { { 'key' => 'value' } }
-        let(:uninterpolated_resource_pool_env) { { 'key' => '((value_placeholder))' } }
+        let(:resource_pool_env) do
+          { 'key' => 'value' }
+        end
+        let(:uninterpolated_resource_pool_env) do
+          { 'key' => '((value_placeholder))' }
+        end
         let(:resource_pool) do
           instance_double(ResourcePool, env: resource_pool_env)
         end
@@ -873,7 +879,9 @@ module Bosh::Director
               end
 
               context 'when it is not a deploy action' do
-                let(:parse_options) { {'is_deploy_action' => false} }
+                let(:parse_options) do
+                  { 'is_deploy_action' => false }
+                end
 
                 it 'should skip parsing providers with LinksParser' do
                   expect(links_parser).to_not receive(:parse_providers_from_job)
@@ -1185,7 +1193,9 @@ module Bosh::Director
           end
 
           context 'when the job declares env, and the resource pool does not' do
-            let(:resource_pool_env) { {} }
+            let(:resource_pool_env) do
+              {}
+            end
             before do
               instance_group_spec['env'] = { 'job' => 'env' }
               expect(deployment_plan).to receive(:resource_pool)
@@ -1330,8 +1340,12 @@ module Bosh::Director
           end
 
           context 'when more than one vm config is given' do
-            let(:resource_pool_config) { { 'resource_pool' => 'fake-resource-pool' } }
-            let(:vm_type) { { 'vm_type' => 'fake-vm-type' } }
+            let(:resource_pool_config) do
+              { 'resource_pool' => 'fake-resource-pool' }
+            end
+            let(:vm_type) do
+              { 'vm_type' => 'fake-vm-type' }
+            end
 
             before do
               allow(deployment_plan).to receive(:vm_type).with('fake-vm-type').and_return(
@@ -1719,7 +1733,9 @@ module Bosh::Director
         end
 
         describe 'remove_dev_tools' do
-          let(:resource_pool_env) { {} }
+          let(:resource_pool_env) do
+            {}
+          end
           before { allow(Config).to receive(:remove_dev_tools).and_return(false) }
 
           it 'does not add remove_dev_tools by default' do
@@ -1756,7 +1772,9 @@ module Bosh::Director
         end
 
         describe 'update' do
-          let(:update) { {} }
+          let(:update) do
+            {}
+          end
 
           before do
             instance_group_spec['update'] = update
@@ -1775,7 +1793,9 @@ module Bosh::Director
           end
 
           context 'when provided an instance_group_spec with a vm_strategy' do
-            let(:update) { { 'vm_strategy' => 'create-swap-delete' } }
+            let(:update) do
+              { 'vm_strategy' => 'create-swap-delete' }
+            end
 
             it 'should set the instance_group strategy as create-swap-delete' do
               expect(parsed_instance_group.update.vm_strategy).to eq('create-swap-delete')

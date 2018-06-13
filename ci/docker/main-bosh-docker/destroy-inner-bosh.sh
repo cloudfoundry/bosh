@@ -2,16 +2,13 @@
 
 set -eu
 
-cd /usr/local/bosh-deployment
+cd ${BOSH_DEPLOYMENT_PATH}
 
-local_bosh_dir="/tmp/local-bosh/director"
 inner_bosh_dir="/tmp/inner-bosh/director"
 
 if [ ! -e "${inner_bosh_dir}/bosh" ]; then
   exit
 fi
-
-source "${local_bosh_dir}/env"
 
 "${inner_bosh_dir}/bosh" deployments --column=name \
   | awk '{ print $1 }' \

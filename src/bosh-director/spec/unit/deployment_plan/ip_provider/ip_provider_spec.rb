@@ -5,8 +5,10 @@ module Bosh::Director::DeploymentPlan
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment', using_global_networking?: using_global_networking) }
     let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_ranges: Set.new) }
-    let(:networks) { {'my-manual-network' => manual_network} }
-    let(:manual_network_spec) {
+    let(:networks) do
+      { 'my-manual-network' => manual_network }
+    end
+    let(:manual_network_spec) do
       {
         'name' => 'my-manual-network',
         'subnets' => [
@@ -36,11 +38,10 @@ module Bosh::Director::DeploymentPlan
             'reserved' => [],
             'cloud_properties' => {},
             'azs' => ['az-2'],
-          }
-
-        ]
+          },
+        ],
       }
-    }
+    end
     let(:manual_network) do
       ManualNetwork.parse(
         manual_network_spec,
@@ -68,12 +69,12 @@ module Bosh::Director::DeploymentPlan
         logger
       )
     end
-    let(:vip_network_spec) {
+    let(:vip_network_spec) do
       {
         'name' => 'my-vip-network',
-        'type' => 'vip'
+        'type' => 'vip',
       }
-    }
+    end
     let(:vip_network) { VipNetwork.new(vip_network_spec, logger) }
     let(:ip_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network) }
 
@@ -531,7 +532,9 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'when reservation network was deleted' do
-            let(:networks) { {'my-another-network' => another_manual_network} }
+            let(:networks) do
+              { 'my-another-network' => another_manual_network }
+            end
 
             it 'finds the network that has subnet that includes reservation IP' do
               ip_provider.reserve_existing_ips(existing_network_reservation)

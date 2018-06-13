@@ -7,6 +7,7 @@ module Bosh::Director::Links
     class LinkProvidersParser
       include Bosh::Director::ValidationHelper
       def initialize
+        @logger = Bosh::Director::Config.logger
         @link_helper = LinkHelpers.new
       end
 
@@ -70,10 +71,11 @@ module Bosh::Director::Links
                                                 instance_group_name, job_properties))
 
         unless manifest_provides_links.empty?
-          errors.push('Manifest defines unknown providers:')
+          warning = 'Manifest defines unknown providers:'
           manifest_provides_links.each_key do |link_name|
-            errors.push("  - Job '#{job_name}' does not provide link '#{link_name}' in the release spec")
+            warning << "\n  - Job '#{job_name}' does not define link provider '#{link_name}' in the release spec"
           end
+          @logger.warn(warning)
         end
 
         raise errors.join("\n") unless errors.empty?
@@ -226,11 +228,6 @@ module Bosh::Director::Links
       )
         job_name = current_release_template_model.name
 
-        if current_release_template_model.provides.empty? && !manifest_provides_links.empty?
-          raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies providers in the manifest but the"\
-              ' job does not define any providers in the release spec'
-        end
-
         return [] if current_release_template_model.provides.empty?
 
         process_providers(
@@ -249,6 +246,7 @@ module Bosh::Director::Links
     class LinkConsumersParser
       include Bosh::Director::ValidationHelper
       def initialize
+        @logger = Bosh::Director::Config.logger
         @link_helper = LinkHelpers.new
       end
 
@@ -289,26 +287,25 @@ module Bosh::Director::Links
                                                                    class: Hash, optional: true, default: {}))
         job_name = safe_property(manifest_job_spec, 'name', class: String)
 
-        if current_release_template_model.consumes.empty? && !consumes_links.empty?
-          raise "Job '#{job_name}' in instance group '#{instance_group_name}' specifies consumers in the manifest"\
-              ' but the job does not define any consumers in the release spec'
+        errors = []
+        unless current_release_template_model.consumes.empty?
+          errors.concat(
+            process_release_template_consumes(
+              consumes_links,
+              current_release_template_model,
+              deployment_model,
+              instance_group_name,
+              job_name,
+            ),
+          )
         end
 
-        return if current_release_template_model.consumes.empty?
-
-        errors = process_release_template_consumes(
-          consumes_links,
-          current_release_template_model,
-          deployment_model,
-          instance_group_name,
-          job_name,
-        )
-
         unless consumes_links.empty?
-          errors.push('Manifest defines unknown consumers:')
+          warning = 'Manifest defines unknown consumers:'
           consumes_links.each_key do |link_name|
-            errors.push(" - Job '#{job_name}' does not define consumer '#{link_name}' in the release spec")
+            warning << "\n  - Job '#{job_name}' does not define link consumer '#{link_name}' in the release spec"
           end
+          @logger.warn(warning)
         end
 
         raise errors.join("\n") unless errors.empty?
@@ -597,10 +594,6 @@ module Bosh::Director::Links
       end
 
       def extract_provider_definition_properties(manifest_details)
-        # job_properties = manifest_details.fetch(:job_properties, {})
-        # instance_group_name = manifest_details.fetch(:instance_group_name, nil)
-        # migrated_from = manifest_details.fetch(:migrated_from, [])
-
         are_custom_definitions = manifest_details.fetch(:are_custom_definitions, nil)
         instance_group_name = manifest_details.fetch(:instance_group_name, nil)
         job_name = manifest_details.fetch(:job_name, nil)
@@ -659,9 +652,6 @@ module Bosh::Director::Links
         (value && [true, false].include?(value)) || false
       end
     end
-    # private_constant :LinkProvidersParser
-    # private_constant :LinkConsumersParser
-    #
 
     def initialize
       @link_providers_parser = LinkProvidersParser.new
@@ -700,6 +690,68 @@ module Bosh::Director::Links
       @link_consumers_parser.parse_consumers_from_job(
         manifest_job_spec, deployment_model, current_release_template_model, instance_group_details
       )
+    end
+
+    def parse_consumers_from_variable(variable_spec, deployment_model)
+      return unless variable_spec.key? 'consumes'
+
+      @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
+
+      variable_name = variable_spec['name']
+      variable_type = variable_spec['type']
+
+      errors = []
+
+      variable_spec['consumes'].each do |key, value|
+        original_name = key
+
+        local_error = validate_variable(variable_name, variable_type, original_name)
+
+        unless local_error.nil?
+          errors << local_error
+          next
+        end
+
+        from_name = value['from'] || original_name
+
+        consumer = @links_manager.find_or_create_consumer(
+          deployment_model: deployment_model,
+          instance_group_name: '',
+          name: variable_name,
+          type: 'variable',
+        )
+
+        metadata = { explicit_link: true }
+
+        consumer_intent = @links_manager.find_or_create_consumer_intent(
+          link_consumer: consumer,
+          link_original_name: original_name,
+          link_type: 'address',
+          new_intent_metadata: metadata,
+        )
+        consumer_intent.name = from_name
+        consumer_intent.save
+      end
+
+      raise errors.join("\n") unless errors.empty?
+    end
+
+    private
+
+    def validate_variable(variable_name, variable_type, original_name)
+      acceptable_combinations = { 'certificate' => ['alternative_name'] }
+
+      unless acceptable_combinations.key?(variable_type)
+        return "Variable '#{variable_name}' can not define 'consumes' key for type '#{variable_type}'"
+      end
+
+      unless acceptable_combinations[variable_type].include?(original_name)
+        acceptable_combination_string = acceptable_combinations[variable_type].join(', ')
+        return "Consumer name '#{original_name}' is not a valid consumer for variable '#{variable_name}'."\
+                    " Acceptable consumer types are: #{acceptable_combination_string}"
+      end
+
+      nil
     end
   end
 end

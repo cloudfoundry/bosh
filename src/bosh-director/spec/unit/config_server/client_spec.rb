@@ -5,12 +5,14 @@ module Bosh::Director::ConfigServer
     subject(:client) { ConfigServerClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }
-    let(:deployment_attrs) { { id: 1, name: deployment_name } }
+    let(:deployment_attrs) do
+      { id: 1, name: deployment_name }
+    end
     let(:logger) { double('Logging::Logger') }
     let(:variables_set_id) { 2000 }
-    let(:success_post_response) {
+    let(:success_post_response) do
       generate_success_response({ :id => 'some_id1'}.to_json)
-    }
+    end
     let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
     let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
@@ -23,12 +25,13 @@ module Bosh::Director::ConfigServer
       result
     end
 
+    let(:deployment_model) { Bosh::Director::Models::Deployment.make(deployment_attrs) }
+
     def prepend_namespace(name)
       "/#{director_name}/#{deployment_name}/#{name}"
     end
 
     before do
-      deployment_model = Bosh::Director::Models::Deployment.make(deployment_attrs)
       Bosh::Director::Models::VariableSet.make(id: variables_set_id, deployment: deployment_model, writable: true)
 
       allow(logger).to receive(:info)
@@ -37,7 +40,6 @@ module Bosh::Director::ConfigServer
 
     describe '#interpolate' do
       let(:deployment_name) { 'my_deployment_name' }
-      let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
       let(:raw_hash) do
         {
           'properties' => {
@@ -136,19 +138,27 @@ module Bosh::Director::ConfigServer
           end
 
           context 'when all placeholders syntax is correct' do
-            let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
-            let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '2'}]} }
-            let(:empty_placeholder) { {'data' => [{'name' => "#{prepend_namespace('empty_placeholder')}", 'value' => '', 'id' => '3'}]} }
-            let(:string_placeholder) { {'data' => [{'name' => "#{prepend_namespace('string_placeholder')}", 'value' => 'i am a string', 'id' => '4'}]} }
+            let(:integer_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('integer_placeholder').to_s, 'value' => 123, 'id' => '1' }] }
+            end
+            let(:nil_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('nil_placeholder').to_s, 'value' => nil, 'id' => '2' }] }
+            end
+            let(:empty_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('empty_placeholder').to_s, 'value' => '', 'id' => '3' }] }
+            end
+            let(:string_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('string_placeholder').to_s, 'value' => 'i am a string', 'id' => '4' }] }
+            end
             let(:hash_placeholder) do
               {
                 'data' => [
                   {
-                    'name' => "#{prepend_namespace('hash_placeholder')}",
+                    'name' => prepend_namespace('hash_placeholder').to_s,
                     'value' => hash_placeholder_value,
-                    'id' => '5'
-                  }
-                ]
+                    'id' => '5',
+                  },
+                ],
               }
             end
 
@@ -166,8 +176,12 @@ module Bosh::Director::ConfigServer
             let(:variable_id) { 'cfg-svr-id' }
             let(:variable_value) { 'var_val' }
 
-            let(:response_body_id) { {'name' => variable_name, 'value' => variable_value, 'id' => variable_id} }
-            let(:response_body_name) { {'data' => [response_body_id]} }
+            let(:response_body_id) do
+              { 'name' => variable_name, 'value' => variable_value, 'id' => variable_id }
+            end
+            let(:response_body_name) do
+              { 'data' => [response_body_id] }
+            end
             let(:mock_response) { generate_success_response(response_body_name.to_json) }
 
             before do
@@ -194,7 +208,9 @@ module Bosh::Director::ConfigServer
             end
 
             context 'when a variable has sub-keys' do
-              let(:variable_value) { {'cert' => 'my cert', 'key' => 'my key', 'ca' => 'my ca'} }
+              let(:variable_value) do
+                { 'cert' => 'my cert', 'key' => 'my key', 'ca' => 'my ca' }
+              end
 
               it 'should get the sub-value as needed' do
                 result = client.interpolate({'key' => '((/boo.ca))'})
@@ -390,7 +406,6 @@ module Bosh::Director::ConfigServer
 
     describe '#interpolate_with_versioning' do
       let(:deployment_name) { 'my_deployment_name' }
-      let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
       let(:variable_set_model) { instance_double(Bosh::Director::Models::VariableSet) }
       let(:raw_hash) do
         {
@@ -571,19 +586,27 @@ module Bosh::Director::ConfigServer
 
           context 'when all placeholders syntax is correct' do
 
-            let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
-            let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_namespace('nil_placeholder')}", 'value' => nil, 'id' => '2'}]} }
-            let(:empty_placeholder) { {'data' => [{'name' => "#{prepend_namespace('empty_placeholder')}", 'value' => '', 'id' => '3'}]} }
-            let(:string_placeholder) { {'data' => [{'name' => "#{prepend_namespace('string_placeholder')}", 'value' => 'i am a string', 'id' => '4'}]} }
+            let(:integer_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('integer_placeholder').to_s, 'value' => 123, 'id' => '1' }] }
+            end
+            let(:nil_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('nil_placeholder').to_s, 'value' => nil, 'id' => '2' }] }
+            end
+            let(:empty_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('empty_placeholder').to_s, 'value' => '', 'id' => '3' }] }
+            end
+            let(:string_placeholder) do
+              { 'data' => [{ 'name' => prepend_namespace('string_placeholder').to_s, 'value' => 'i am a string', 'id' => '4' }] }
+            end
             let(:hash_placeholder) do
               {
                 'data' => [
                   {
-                    'name' => "#{prepend_namespace('hash_placeholder')}",
+                    'name' => prepend_namespace('hash_placeholder').to_s,
                     'value' => hash_placeholder_value,
-                    'id' => '5'
-                  }
-                ]
+                    'id' => '5',
+                  },
+                ],
               }
             end
 
@@ -602,8 +625,12 @@ module Bosh::Director::ConfigServer
               let(:variable_id) { 'cfg-svr-id' }
               let(:variable_value) { 'var_val' }
 
-              let(:response_body_id) { {'name' => variable_name, 'value' => variable_value, 'id' => variable_id} }
-              let(:response_body_name) { {'data' => [response_body_id]} }
+              let(:response_body_id) do
+                { 'name' => variable_name, 'value' => variable_value, 'id' => variable_id }
+              end
+              let(:response_body_name) do
+                { 'data' => [response_body_id] }
+              end
               let(:mock_response) { generate_success_response(response_body_name.to_json) }
 
               before do
@@ -1008,13 +1035,45 @@ module Bosh::Director::ConfigServer
         "/#{director_name}/#{provider_deployment_name}/#{name}"
       end
 
-      let(:integer_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('integer_placeholder')}", 'value' => 123, 'id' => '1'}]} }
-      let(:cert_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('cert_placeholder')}", 'value' => {'ca' => 'ca_value', 'private_key' => 'abc123'}, 'id' => '2'}]} }
-      let(:nil_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('nil_placeholder')}", 'value' => nil, 'id' => '3'}]} }
-      let(:empty_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('empty_placeholder')}", 'value' => '', 'id' => '4'}]} }
-      let(:string_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('instance_placeholder')}", 'value' => 'test1', 'id' => '5'}]} }
-      let(:absolute_placeholder) { {'data' => [{'name' => '/absolute_placeholder', 'value' => 'I am absolute', 'id' => '6'}]} }
-      let(:hash_placeholder) { {'data' => [{'name' => "#{prepend_provider_namespace('cert_placeholder')}", 'value' => {'cat' => 'meow', 'dog' => 'woof'}, 'id' => '7'}]} }
+      let(:integer_placeholder) do
+        { 'data' => [{ 'name' => prepend_provider_namespace('integer_placeholder').to_s, 'value' => 123, 'id' => '1' }] }
+      end
+      let(:cert_placeholder) do
+        {
+          'data' => [{
+            'name' => prepend_provider_namespace('cert_placeholder').to_s,
+            'value' => { 'ca' => 'ca_value', 'private_key' => 'abc123' },
+            'id' => '2',
+          }],
+        }
+      end
+      let(:nil_placeholder) do
+        {
+          'data' => [{
+            'name' => prepend_provider_namespace('nil_placeholder').to_s,
+            'value' => nil,
+            'id' => '3',
+          }],
+        }
+      end
+      let(:empty_placeholder) do
+        { 'data' => [{ 'name' => prepend_provider_namespace('empty_placeholder').to_s, 'value' => '', 'id' => '4' }] }
+      end
+      let(:string_placeholder) do
+        { 'data' => [{ 'name' => prepend_provider_namespace('instance_placeholder').to_s, 'value' => 'test1', 'id' => '5' }] }
+      end
+      let(:absolute_placeholder) do
+        { 'data' => [{ 'name' => '/absolute_placeholder', 'value' => 'I am absolute', 'id' => '6' }] }
+      end
+      let(:hash_placeholder) do
+        {
+          'data' => [{
+            'name' => prepend_provider_namespace('cert_placeholder').to_s,
+            'value' => { 'cat' => 'meow', 'dog' => 'woof' },
+            'id' => '7',
+          }],
+        }
+      end
 
       let(:mock_config_store) do
         {
@@ -1446,6 +1505,86 @@ module Bosh::Director::ConfigServer
           end
 
           context 'when variable options contains a CA key' do
+            context 'when variable type is certificate' do
+              context 'and it consumes `alternative_names` link' do
+                let(:variables_spec) do
+                  [
+                    {
+                      'name' => 'placeholder_b',
+                      'type' => 'certificate',
+                      'consumes' => {
+                        'alternative_name' => { 'from' => 'foo' },
+                      },
+                      'options' => {
+                        'ca' => 'my_ca',
+                        'common_name' => 'bosh.io',
+                        'alternative_names' => ['a.bosh.io', 'b.bosh.io'],
+                      },
+                    },
+                  ]
+                end
+
+                let(:deployment_attrs) do
+                  { id: 1, name: deployment_name, links_serial_id: link_serial_id }
+                end
+
+                let(:link_serial_id) { 8080 }
+
+                let(:consumer) do
+                  Bosh::Director::Models::Links::LinkConsumer.create(
+                    deployment: deployment_model,
+                    instance_group: '',
+                    type: 'variable',
+                    name: 'placeholder_b',
+                    serial_id: link_serial_id,
+                  )
+                end
+
+                let(:consumer_intent) do
+                  Bosh::Director::Models::Links::LinkConsumerIntent.create(
+                    link_consumer: consumer,
+                    original_name: 'alternative_name',
+                    type: 'address',
+                    name: 'foo',
+                    optional: false,
+                    blocked: false,
+                    serial_id: link_serial_id,
+                  )
+                end
+
+                before do
+                  Bosh::Director::Models::Links::Link.create(
+                    name: 'foo',
+                    link_provider_intent_id: nil,
+                    link_consumer_intent_id: consumer_intent.id,
+                    link_content: {
+                      deployment_name: deployment_name,
+                      use_short_dns_addresses: false,
+                      instance_group: 'ig1',
+                      default_network: 'net-a',
+                      domain: 'bosh',
+                    }.to_json,
+                    created_at: Time.now,
+                  )
+                end
+
+                it 'should generate the certificate with the SAN appended' do
+                  expect(http_client).to receive(:post).with(
+                    {
+                      'name' => prepend_namespace('placeholder_b'),
+                      'type' => 'certificate',
+                      'parameters' => { 'ca' => prepend_namespace('my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io q-s0.ig1.net-a.deployment-name.bosh) },
+                    }
+                  ).ordered.and_return(
+                    generate_success_response(
+                      {
+                        "id": "some_id2",
+                      }.to_json))
+
+                  client.generate_values(variables_obj, deployment_name)
+                end
+              end
+            end
 
             context 'when variable type is certificate & ca is relative' do
               let(:variables_spec) do
@@ -1532,8 +1671,6 @@ module Bosh::Director::ConfigServer
                 client.generate_values(variables_obj, deployment_name)
               end
             end
-
-
           end
 
           context 'when config server throws an error while generating' do
@@ -1593,7 +1730,6 @@ module Bosh::Director::ConfigServer
 
           context 'but variable set is not writable' do
             let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
-            let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
             let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
             before do

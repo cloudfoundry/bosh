@@ -262,7 +262,7 @@ describe 'consuming and providing', type: :integration do
         output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
         expect(output).to include(
           "Error: Failed to resolve links from deployment 'minimal'. See errors below:\n" \
-          "  - Can't resolve link 'provider_login' for job 'consumer_job' " \
+          "  - Can't resolve link 'provider_login' with type 'usernamepassword' for job 'consumer_job' " \
           "in instance group 'consumer_ig' in deployment 'minimal'",
         )
       end
@@ -310,7 +310,7 @@ describe 'consuming and providing', type: :integration do
         it 'should fail to create the link' do
           output = deploy_simple_manifest(manifest_hash: consumer_manifest, failure_expected: true)
           expect(output).to include(<<~OUTPUT.strip)
-            Can't resolve link 'provider_login' for job 'consumer_job' in instance group 'consumer_ig' in deployment 'consumer_deployment'
+            Can't resolve link 'provider_login' with type 'usernamepassword' for job 'consumer_job' in instance group 'consumer_ig' in deployment 'consumer_deployment'
           OUTPUT
         end
       end
@@ -319,7 +319,9 @@ describe 'consuming and providing', type: :integration do
 
   context 'when the consumer implicitly consumes a link' do
     context 'when there are multiple providers providing a link and one of the providers is set to nil' do
-      let(:db_provider) {{ 'as' => 'link_db_alias' }}
+      let(:db_provider) do
+        { 'as' => 'link_db_alias' }
+      end
       let(:provider_instance_group_1) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group_1',

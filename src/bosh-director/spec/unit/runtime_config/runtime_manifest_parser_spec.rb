@@ -2,8 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe RuntimeConfig::RuntimeManifestParser do
-    subject(:parser) { described_class.new(logger) }
-    let(:planner_options) { {} }
+    subject(:parser) do
+      variables_spec_parser = Bosh::Director::DeploymentPlan::VariablesSpecParser.new(@logger, Bosh::Director::Models::Deployment.make)
+      described_class.new(logger, variables_spec_parser)
+    end
+    let(:planner_options) do
+      {}
+    end
     let(:event_log) { Config.event_log }
 
     describe '#parse' do

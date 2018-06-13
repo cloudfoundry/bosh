@@ -8,12 +8,12 @@ module Bosh::Director
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
     let(:cpi_api_version) { 1 }
-    let(:cpi_info) {
+    let(:cpi_info) do
       {
         'stemcell_formats' => 'some-stemcell-support-format',
-        'api_version' => cpi_api_version
+        'api_version' => cpi_api_version,
       }
-    }
+    end
     let(:stemcell_api_version) { nil }
 
     before do
@@ -47,7 +47,9 @@ module Bosh::Director
       end
 
       context 'old CPIs do not return the version from info' do
-        let(:cpi_info) { {} }
+        let(:cpi_info) do
+          {}
+        end
 
         it 'creates cloud with CPI API version of 1' do
           expect(cloud).to receive(:request_cpi_api_version=).with(1)

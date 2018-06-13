@@ -10,21 +10,23 @@ module Bosh::Director::DeploymentPlan
 
     let(:cloud_config) {Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis}
 
-    let(:vm_resources) {{
+    let(:vm_resources) do
+      {
         'cpu' => 4,
-        'ram' => 16384,
-        'ephemeral_disk_size' => 100
-    }}
+        'ram' => 16_384,
+        'ephemeral_disk_size' => 100,
+      }
+    end
 
     let(:cpi_config) { Bosh::Director::Models::Config.make(:cpi_with_manifest) }
 
-    let(:vm_cloud_properties1) {
-      {vm_cloud_properties: 1}
-    }
+    let(:vm_cloud_properties1) do
+      { vm_cloud_properties: 1 }
+    end
 
-    let(:vm_cloud_properties2) {
-      {vm_cloud_properties: 2}
-    }
+    let(:vm_cloud_properties2) do
+      { vm_cloud_properties: 2 }
+    end
 
     before do
       Bosh::Director::Models::Config.make(type: 'cloud', name: 'default', content: YAML.dump(cloud_config))
@@ -70,11 +72,13 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'when the vm_resources are NOT the same' do
-      let(:vm_resources2) {{
-        'cpu' => 2,
-        'ram' => 2048,
-        'ephemeral_disk_size' => 100
-      }}
+      let(:vm_resources2) do
+        {
+          'cpu' => 2,
+          'ram' => 2048,
+          'ephemeral_disk_size' => 100,
+        }
+      end
 
       it 'multiple calls to the same az call the cpi' do
         allow(fake_cpi1).to receive(:calculate_vm_cloud_properties).with(vm_resources2).and_return(vm_cloud_properties2)

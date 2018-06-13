@@ -20,27 +20,53 @@ describe 'Bhm::Director' do
   end
 
   let(:deployments) { [{ 'name' => 'a'}, { 'name' => 'b'}] }
+  let(:resurrection_config) { [{ 'content' => '--- {}', 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name' }] }
 
   context 'when director is running in non-UAA mode' do
     before do
-      stub_request(:get, 'http://localhost:8080/director/info').
-        to_return(:body => json_dump({}), :status => 200)
+      stub_request(:get, 'http://localhost:8080/director/info')
+        .to_return(body: json_dump({}), status: 200)
     end
 
     it 'can fetch deployments from BOSH director' do
-      stub_request(:get, 'http://localhost:8080/director/deployments').
-        with(:headers => {'Authorization' => ['admin', 'admin']}).
-        to_return(:body => json_dump(deployments), :status => 200)
+      stub_request(:get, 'http://localhost:8080/director/deployments')
+        .with(headers: { 'Authorization' => %w[admin admin] })
+        .to_return(body: json_dump(deployments), status: 200)
 
       with_fiber do
         expect(director.get_deployments).to eq(deployments)
       end
     end
 
+    it 'can fetch resurrection config from BOSH director' do
+      stub_request(:get, 'http://localhost:8080/director/configs?latest=true&type=resurrection')
+        .with(headers: { 'Authorization' => %w[admin admin] })
+        .to_return(body: json_dump(resurrection_config), status: 200)
+
+      with_fiber do
+        expect(director.resurrection_config).to eq(resurrection_config)
+      end
+    end
+
+    it 'raises an error if resurrection config cannot be fetched' do
+      stub_request(:get, 'http://localhost:8080/director/configs?latest=true&type=resurrection')
+        .with(headers: { 'Authorization' => %w[admin admin] })
+        .to_return(body: 'foo', status: 500)
+
+      with_fiber do
+        expect { director.resurrection_config }
+          .to raise_error(
+            Bhm::DirectorError,
+            'Cannot get resurrection config from director at'\
+            ' http://localhost:8080/director/configs?type=resurrection&latest=true: 500 foo',
+          )
+      end
+    end
+
     it 'raises an error if deployments cannot be fetched' do
-      stub_request(:get, 'http://localhost:8080/director/deployments').
-        with(:headers => {'Authorization' => ['admin', 'admin']}).
-        to_return(:body => 'foo', :status => 500)
+      stub_request(:get, 'http://localhost:8080/director/deployments')
+        .with(headers: { 'Authorization' => %w[admin admin] })
+        .to_return(body: 'foo', status: 500)
 
       with_fiber do
         expect {
@@ -50,9 +76,9 @@ describe 'Bhm::Director' do
     end
 
     it 'can fetch instances by deployment name from BOSH director' do
-      stub_request(:get, 'http://localhost:8080/director/deployments/foo/instances').
-        with(:headers => {'Authorization' => ['admin', 'admin']}).
-        to_return(:body => json_dump(deployments), :status => 200)
+      stub_request(:get, 'http://localhost:8080/director/deployments/foo/instances')
+        .with(headers: { 'Authorization' => %w[admin admin] })
+        .to_return(body: json_dump(deployments), status: 200)
 
       with_fiber do
         expect(director.get_deployment_instances('foo')).to eq(deployments)

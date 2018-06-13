@@ -4,16 +4,20 @@ module Bosh::Director
   module Addon
     describe Parser do
       subject(:parser) { described_class.new(releases, manifest) }
-      let(:manifest) {
+      let(:manifest) do
         {
           'addons' => [
             {
               'name' => 'addon1',
-              'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}, {'name' => 'dummy_with_package', 'release' => 'dummy2'}],
-              'properties' => {'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}}
-            }]
+              'jobs' => [
+                { 'name' => 'dummy_with_properties', 'release' => 'dummy2' },
+                { 'name' => 'dummy_with_package', 'release' => 'dummy2' },
+              ],
+              'properties' => { 'dummy_with_properties' => { 'echo_value' => 'addon_prop_value' } },
+            },
+          ],
         }
-      }
+      end
       let(:releases) { [RuntimeConfig::Release.parse(release_hash)] }
       let(:release_hash) do
         {

@@ -14,7 +14,9 @@ module Bosh::Director
         end
 
         context 'when cpi hash has no name' do
-          let(:cpi_hash) { { 'type' => 'cpi-type' } }
+          let(:cpi_hash) do
+            { 'type' => 'cpi-type' }
+          end
 
           it 'errors' do
             expect { cpi }.to raise_error ValidationMissingField, "Required property 'name' was not specified in object ({\"type\"=>\"cpi-type\"})"
@@ -22,7 +24,9 @@ module Bosh::Director
         end
 
         context 'when cpi hash has no type' do
-          let(:cpi_hash) { { 'name' => 'cpi-name' } }
+          let(:cpi_hash) do
+            { 'name' => 'cpi-name' }
+          end
 
           it 'errors' do
             expect { cpi }.to raise_error ValidationMissingField, "Required property 'type' was not specified in object ({\"name\"=>\"cpi-name\"})"
@@ -30,7 +34,9 @@ module Bosh::Director
         end
 
         context 'when cpi hash has no properties' do
-          let(:cpi_hash) { { 'name' => 'cpi-name', 'type' => 'cpi-type' } }
+          let(:cpi_hash) do
+            { 'name' => 'cpi-name', 'type' => 'cpi-type' }
+          end
 
           it 'parses' do
             expect(cpi.properties).to eq({})
@@ -38,7 +44,9 @@ module Bosh::Director
         end
 
         context 'when cpi hash has no exec_path' do
-          let(:cpi_hash) { { 'name' => 'cpi-name', 'type' => 'cpi-type' } }
+          let(:cpi_hash) do
+            { 'name' => 'cpi-name', 'type' => 'cpi-type' }
+          end
 
           it 'falls back to a inferred path from type' do
             expect(cpi.exec_path).to eq('/var/vcap/jobs/cpi-type_cpi/bin/cpi')

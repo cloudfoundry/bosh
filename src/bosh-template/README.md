@@ -21,15 +21,17 @@ When you create your own release, you can likewise create a tests folder in your
 ```ruby
 let(:job) {release.job('JOB-NAME')}  # e.g. 'web-server;
 let(:template) {job.template('PATH-TO-TEMPLATE')}  # e.g. 'config/config-with-nested'
-let(:manifest) {
-  'cert' => '----- BEGIN ... -----',
-  'port' => 42,
-}
+let(:manifest) do
+  {
+    'cert' => '----- BEGIN ... -----',
+    'port' => 42,
+  }
+end
 let(:instance) { InstanceSpec.new(name:'instance-name', az: 'az1', bootstrap: true) }
 let(:link_instance) { InstanceSpec.new(name:'link-instance-name', az: 'az2') }
-let(:link_properties){
-   'link-key' => 'link-value',
-}
+let(:link_properties) do
+  { 'link-key' => 'link-value' }
+end
 let(:link) { Link.new(name:'link-name', instances:[link_instance], properties: link_properties)}
 
 

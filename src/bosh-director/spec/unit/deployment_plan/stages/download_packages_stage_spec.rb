@@ -22,7 +22,9 @@ module Bosh::Director
         end
 
         let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
-        let(:tags) { { 'some' => 'tags' } }
+        let(:tags) do
+          { 'some' => 'tags' }
+        end
 
         let(:deployment_plan) do
           instance_double(DeploymentPlan::Planner,

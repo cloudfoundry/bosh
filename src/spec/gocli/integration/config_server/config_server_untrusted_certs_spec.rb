@@ -26,7 +26,9 @@ describe 'using director with config server and the certs are not trusted', type
   end
 
   let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
+  let(:client_env) do
+    { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
+  end
 
   it 'throws certificate validator error' do
     output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,

@@ -13,8 +13,12 @@ module Bosh::Director
       it_behaves_like 'a DJ job'
     end
 
-    let(:resolutions) { {1 => 'delete_disk', 2 => 'ignore'} }
-    let(:normalized_resolutions) { {'1' => 'delete_disk', '2' => 'ignore'} }
+    let(:resolutions) do
+      { 1 => 'delete_disk', 2 => 'ignore' }
+    end
+    let(:normalized_resolutions) do
+      { '1' => 'delete_disk', '2' => 'ignore' }
+    end
     let(:job) { described_class.new('deployment', resolutions) }
     let(:resolver) { instance_double('Bosh::Director::ProblemResolver') }
     let(:deployment) { Models::Deployment[1] }

@@ -105,12 +105,17 @@ module Bosh::Director
       end
 
       context 'when configured to use UAA for user management' do
-        let(:test_config) { base_config.merge(
-          'user_management' => {'provider' => 'uaa', 'uaa' => {
-            'urls' => ['http://localhost:8080/uaa'],
-            'key' => 'super secret!',
-          }}
-        ) }
+        let(:test_config) do
+          base_config.merge(
+            'user_management' => {
+              'provider' => 'uaa',
+              'uaa' => {
+                'urls' => ['http://localhost:8080/uaa'],
+                'key' => 'super secret!',
+              },
+            },
+          )
+        end
 
         it 'reports that uaa is the authentication method and excludes the secret key' do
           get '/'
@@ -125,12 +130,17 @@ module Bosh::Director
         end
 
         context 'if multiple urls are provided' do
-          let(:test_config) { base_config.merge(
-            'user_management' => {'provider' => 'uaa', 'uaa' => {
-              'urls' => ['http://localhost:8080/uaa','http://localhost:8081/uaa'],
-              'key' => 'super secret!',
-            }}
-          )}
+          let(:test_config) do
+            base_config.merge(
+              'user_management' => {
+                'provider' => 'uaa',
+                'uaa' => {
+                  'urls' => %w[http://localhost:8080/uaa http://localhost:8081/uaa],
+                  'key' => 'super secret!',
+                },
+              },
+            )
+          end
 
           it 'returns both and url is equals to the first element of urls' do
             get '/'

@@ -8,7 +8,9 @@ module Bosh::Director
       is.active_vm = vm
       is
     end
-    let(:options) { {} }
+    let(:options) do
+      {}
+    end
     let(:instance_manager) { instance_double('Bosh::Director::Api::InstanceManager') }
     let(:cids) { %w[snap0 snap1] }
 

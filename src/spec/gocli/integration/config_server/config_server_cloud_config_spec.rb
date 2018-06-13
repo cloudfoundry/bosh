@@ -35,10 +35,14 @@ describe 'using director with config server', type: :integration do
     }
   end
 
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
+  let(:client_env) do
+    { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
+  end
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
 
-  let(:log_options) { { include_credentials: false, env: client_env } }
+  let(:log_options) do
+    { include_credentials: false, env: client_env }
+  end
 
   def bosh_run_cck_with_resolution(num_errors, option=1, env={})
     output = ''
@@ -294,49 +298,78 @@ describe 'using director with config server', type: :integration do
   end
 
   context '#146889417 Expected variable to be already versioned in deployment' do
-    let(:manifest_hash) {
-      {"name"=>"foo-deployment",
-       "director_uuid"=>nil,
-       "releases"=>[{"name"=>"bosh-release", "version"=>"latest"}],
-       "jobs"=>
-        [{"azs"=>["z1"],
-          "instances"=>1,
-          "name"=>"hjMOn",
-          "networks"=>[{"name"=>"j6XUS1M", "static_ips"=>["192.168.3.246"]}],
-          "vm_type"=>"dMF8vIexnI",
-          "templates"=>[{"name"=>"foobar", "release"=>"bosh-release"}],
-          'stemcell'=>'default'}],
-       "update"=>
-        {"canaries"=>1,
-         "canary_watch_time"=>4000,
-         "max_in_flight"=>100,
-         "update_watch_time"=>20},
-      'stemcells'=> [{"os"=>"toronto-os", "version"=>1, 'alias'=>'default'}]
+    let(:manifest_hash) do
+      {
+        'name' => 'foo-deployment',
+        'director_uuid' => nil,
+        'releases' => [{ 'name' => 'bosh-release', 'version' => 'latest' }],
+        'jobs' => [
+          {
+            'azs' => ['z1'],
+            'instances' => 1,
+            'name' => 'hjMOn',
+            'networks' => [{ 'name' => 'j6XUS1M', 'static_ips' => ['192.168.3.246'] }],
+            'vm_type' => 'dMF8vIexnI',
+            'templates' => [{
+              'name' => 'foobar',
+              'release' => 'bosh-release',
+            }],
+            'stemcell' => 'default',
+          },
+        ],
+        'update' => {
+          'canaries' => 1,
+          'canary_watch_time' => 4000,
+          'max_in_flight' => 100,
+          'update_watch_time' => 20,
+        },
+        'stemcells' => [{ 'os' => 'toronto-os', 'version' => 1, 'alias' => 'default' }],
       }
-    }
+    end
 
-    let(:cloud_config_hash) {
-      {"azs"=>[{"cloud_properties"=>{"hz4RwVr"=>"((/moVsfGUa))"}, "name"=>"z1"}],
-       "compilation"=>{"network"=>"cAknaSb", "workers"=>1},
-       "networks"=>
-           [{"name"=>"j6XUS1M",
-             "subnets"=>
-                 [{"azs"=>["z1"],
-                   "cloud_properties"=>{},
-                   "dns"=>["8.8.8.8"],
-                   "gateway"=>"192.168.3.1",
-                   "range"=>"192.168.3.0/24",
-                   "reserved"=>
-                       ["192.168.3.13",
-                        "192.168.3.104-192.168.3.137",
-                        "192.168.3.139-192.168.3.198"],
-                   "static"=>["192.168.3.200-192.168.3.253"]}],
-             "type"=>"manual"},
-            {"name"=>"cAknaSb",
-             "subnets"=>[{"cloud_properties"=>{}, "dns"=>["8.8.8.8"]}],
-             "type"=>"dynamic"}],
-       "vm_types"=>[{"cloud_properties"=>{}, "name"=>"dMF8vIexnI"}]}
-    }
+    let(:cloud_config_hash) do
+      {
+        'azs' => [
+          {
+            'cloud_properties' => { 'hz4RwVr' => '((/moVsfGUa))' },
+            'name' => 'z1',
+          },
+        ],
+        'compilation' => { 'network' => 'cAknaSb', 'workers' => 1 },
+        'networks' => [
+          {
+            'name' => 'j6XUS1M',
+            'subnets' => [
+              {
+                'azs' => ['z1'],
+                'cloud_properties' => {},
+                'dns' => ['8.8.8.8'],
+                'gateway' => '192.168.3.1',
+                'range' => '192.168.3.0/24',
+                'reserved' => [
+                  '192.168.3.13',
+                  '192.168.3.104-192.168.3.137',
+                  '192.168.3.139-192.168.3.198',
+                ],
+                'static' => ['192.168.3.200-192.168.3.253'],
+              },
+            ],
+            'type' => 'manual',
+          },
+          {
+            'name' => 'cAknaSb',
+            'subnets' => [
+              {
+                'cloud_properties' => {},
+                'dns' => ['8.8.8.8'],
+              },
+            ],
+            'type' => 'dynamic',
+          },
+        ],
+        'vm_types' => [{ 'cloud_properties' => {}, 'name' => 'dMF8vIexnI' }],
+      }
+    end
 
     before do
       config_server_helper.put_value('/moVsfGUa',"c8jNLgq")
@@ -355,7 +388,7 @@ describe 'using director with config server', type: :integration do
   end
 
   context 'when persistent disks have variables in their cloud_properties' do
-    let(:manifest) {
+    let(:manifest) do
       {
         'name' => 'foo-deployment',
         'instance_groups' => [
@@ -367,61 +400,61 @@ describe 'using director with config server', type: :integration do
             'networks' => [
               {
                 'name' => 'default',
-              }
+              },
             ],
             'persistent_disk_type' => 'default',
             'stemcell' => 'default',
             'jobs' => [
               {
                 'name' => 'foobar',
-                'release' => 'bosh-release'
-              }
-            ]
-          }
+                'release' => 'bosh-release',
+              },
+            ],
+          },
         ],
         'releases' => [
           {
             'name' => 'bosh-release',
-            'version' => '0+dev.1'
-          }
+            'version' => '0+dev.1',
+          },
         ],
         'stemcells' => [{
-                          'alias' => 'default',
-                          'os' => 'toronto-os',
-                          'version' => 'latest'
-                        }],
+          'alias' => 'default',
+          'os' => 'toronto-os',
+          'version' => 'latest',
+        }],
         'update' => {
           'canaries' => 5,
           'canary_watch_time' => 4000,
           'max_in_flight' => 2,
-          'update_watch_time' => 20
-        }
+          'update_watch_time' => 20,
+        },
       }
-    }
+    end
 
-    let(:cloud_config) {
+    let(:cloud_config) do
       {
         'azs' => [
           {
-            'name' => 'z1'
-          }
+            'name' => 'z1',
+          },
         ],
         'compilation' => {
           'az' => 'z1',
           'network' => 'default',
-          'workers' => 1
+          'workers' => 1,
         },
         'vm_types' => [
-          'name' => 'default'
+          'name' => 'default',
         ],
         'disk_types' => [
           {
             'cloud_properties' => {
-              'prop_1' => '((/smurf_1))'
+              'prop_1' => '((/smurf_1))',
             },
             'disk_size' => 100,
-            'name' => 'default'
-          }
+            'name' => 'default',
+          },
         ],
         'networks' => [
           {
@@ -432,13 +465,13 @@ describe 'using director with config server', type: :integration do
                 'dns' => ['8.8.8.8'],
                 'gateway' => '192.168.4.1',
                 'range' => '192.168.4.0/24',
-              }
+              },
             ],
-            'type' => 'manual'
-          }
-        ]
+            'type' => 'manual',
+          },
+        ],
       }
-    }
+    end
 
     context 'when there are changes to variable value on config-server' do
       before do

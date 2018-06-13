@@ -22,7 +22,7 @@ instance_groups:
 
 stemcells:
 - alias: default
-  os: ubuntu-trusty
+  os: ((stemcell-os))
   version: latest
 
 releases:

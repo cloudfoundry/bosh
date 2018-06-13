@@ -15,12 +15,16 @@ module Bosh::Director
         )
       end
 
-      let(:options) { {} }
+      let(:options) do
+        {}
+      end
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
       let(:cloud_configs) { [] }
       let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
       let(:manifest_text) { generate_manifest_text }
-      let(:planner_attributes) { { name: 'mycloud', properties: {} } }
+      let(:planner_attributes) do
+        { name: 'mycloud', properties: {} }
+      end
       let(:deployment_model) { Models::Deployment.make }
 
       def generate_manifest_text
@@ -241,7 +245,9 @@ module Bosh::Director
           end
 
           context 'when fix and tag values are not present' do
-            let(:options) { {} }
+            let(:options) do
+              {}
+            end
 
             it 'returns fix: false and empty tags hash' do
               expect(subject.deployment_wide_options).to eq(

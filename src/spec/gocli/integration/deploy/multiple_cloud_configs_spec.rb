@@ -45,10 +45,18 @@ describe 'multiple cloud configs', type: :integration do
   context 'when teams are used' do
     with_reset_sandbox_before_each(user_authentication: 'uaa')
 
-    let(:production_env) { { 'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret' } }
-    let(:admin_env) { { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' } }
-    let(:team_read_env) { { 'BOSH_CLIENT' => 'team-client-read-access', 'BOSH_CLIENT_SECRET' => 'team-secret' } }
-    let(:team_admin_env) { { 'BOSH_CLIENT' => 'team-client', 'BOSH_CLIENT_SECRET' => 'team-secret' } }
+    let(:production_env) do
+      { 'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret' }
+    end
+    let(:admin_env) do
+      { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' }
+    end
+    let(:team_read_env) do
+      { 'BOSH_CLIENT' => 'team-client-read-access', 'BOSH_CLIENT_SECRET' => 'team-secret' }
+    end
+    let(:team_admin_env) do
+      { 'BOSH_CLIENT' => 'team-client', 'BOSH_CLIENT_SECRET' => 'team-secret' }
+    end
 
     before do
       create_and_upload_test_release(client: admin_env['BOSH_CLIENT'], client_secret: admin_env['BOSH_CLIENT_SECRET'])

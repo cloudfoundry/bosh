@@ -11,22 +11,28 @@ module Bosh::Director
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
     let(:skip_drain) { false }
-    let(:job) { instance_double(DeploymentPlan::InstanceGroup,
-      name: 'fake-job-name',
-      default_network: {}
-    ) }
-    let(:instance) { instance_double(DeploymentPlan::Instance,
-      instance_group_name: job.name,
-      model: instance_model,
-      availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
-      index: 0,
-      uuid: SecureRandom.uuid,
-      rendered_templates_archive: nil,
-      configuration_hash: {'fake-spec' => true},
-      template_hashes: [],
-      current_job_state: current_job_state,
-      deployment_model: deployment_model
-    ) }
+    let(:job) do
+      instance_double(
+        DeploymentPlan::InstanceGroup,
+        name: 'fake-job-name',
+        default_network: {},
+      )
+    end
+    let(:instance) do
+      instance_double(
+        DeploymentPlan::Instance,
+        instance_group_name: job.name,
+        model: instance_model,
+        availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
+        index: 0,
+        uuid: SecureRandom.uuid,
+        rendered_templates_archive: nil,
+        configuration_hash: { 'fake-spec' => true },
+        template_hashes: [],
+        current_job_state: current_job_state,
+        deployment_model: deployment_model,
+      )
+    end
     let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment, name: 'fake-deployment') }
     let(:current_job_state) {'running'}
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }

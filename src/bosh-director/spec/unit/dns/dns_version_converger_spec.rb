@@ -4,7 +4,9 @@ module Bosh::Director
   describe DnsVersionConverger do
     subject(:dns_version_converger) { DnsVersionConverger.new(agent_broadcaster, logger, 32) }
     let(:agent_client) { double(AgentClient) }
-    let(:credentials) { {'creds' => 'hash'} }
+    let(:credentials) do
+      { 'creds' => 'hash' }
+    end
     let(:credentials_json) { JSON.generate(credentials) }
     let(:blob_sha1) { ::Digest::SHA1.hexdigest('dns-records') }
     let(:logger) { double(Logger)}

@@ -9,7 +9,9 @@ module Bosh::Director
     end
 
     subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }
-    let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey} }
+    let(:provider_options) do
+      { 'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey }
+    end
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
     let(:test_config) { SpecHelper.spec_get_director_config }
@@ -21,7 +23,9 @@ module Bosh::Director
     let(:app) { Support::TestController.new(config) }
     let(:requested_access) { :read }
     let(:uaa_user) { identity_provider.get_user(request_env, options) }
-    let(:options) { {} }
+    let(:options) do
+      {}
+    end
 
     describe 'client info' do
       it 'contains type and options, but not secret key' do
@@ -37,7 +41,9 @@ module Bosh::Director
 
     describe 'initialize' do
       context 'if options contains url and urls' do
-        let(:provider_options) { { 'url' => 'http://one', 'urls' => ['http://one', 'http://two'] } }
+        let(:provider_options) do
+          { 'url' => 'http://one', 'urls' => ['http://one', 'http://two'] }
+        end
 
         it 'throws exception' do
           expect { identity_provider }.to raise_error(ValidationExtraField)
@@ -45,7 +51,9 @@ module Bosh::Director
       end
 
       context 'if options contain url' do
-        let(:provider_options) { { 'url' => 'http://one' } }
+        let(:provider_options) do
+          { 'url' => 'http://one' }
+        end
 
         it 'sets url and urls in client_info' do
           expect(identity_provider.client_info['options']['url']).to eq('http://one')
@@ -54,7 +62,9 @@ module Bosh::Director
       end
 
       context 'if options contain urls' do
-        let(:provider_options) { { 'urls' => ['http://one', 'http://two'] } }
+        let(:provider_options) do
+          { 'urls' => ['http://one', 'http://two'] }
+        end
 
         it 'sets url and urls in client_info' do
           expect(identity_provider.client_info['options']['url']).to eq('http://one')
@@ -64,7 +74,9 @@ module Bosh::Director
     end
 
     context 'given an OAuth token' do
-      let(:request_env) { {'HTTP_AUTHORIZATION' => "bearer #{encoded_token}"} }
+      let(:request_env) do
+        { 'HTTP_AUTHORIZATION' => "bearer #{encoded_token}" }
+      end
       let(:token) do
         {
           'jti' => 'd64209e4-d150-45c9-9569-a352f42149b1',
@@ -168,7 +180,9 @@ module Bosh::Director
 
     context 'when no Uaa token is given' do
       context 'given valid HTTP basic authentication credentials' do
-        let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
+        let(:request_env) do
+          { 'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4=' }
+        end
 
         it 'raises' do
           expect { uaa_user }.to raise_error(AuthenticationError)
@@ -176,7 +190,9 @@ module Bosh::Director
       end
 
       context 'given missing HTTP authentication credentials' do
-        let(:request_env) { { } }
+        let(:request_env) do
+          {}
+        end
 
         it 'raises' do
           expect { uaa_user }.to raise_error(AuthenticationError)

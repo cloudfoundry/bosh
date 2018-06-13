@@ -6,7 +6,9 @@ module Bosh::Director
     let(:default_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
     let(:cpis) { [] }
-    let(:azs) { { 'some-az' => az } }
+    let(:azs) do
+      { 'some-az' => az }
+    end
     let(:az) { instance_double(DeploymentPlan::AvailabilityZone, name: 'some-az') }
 
     before do

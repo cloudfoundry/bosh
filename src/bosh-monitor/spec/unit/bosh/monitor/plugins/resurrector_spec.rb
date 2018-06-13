@@ -4,7 +4,7 @@ module Bosh::Monitor::Plugins
   describe Resurrector do
     include Support::UaaHelpers
 
-    let(:options) {
+    let(:options) do
       {
         'director' => {
           'endpoint' => 'http://foo.bar.com:25555',
@@ -12,10 +12,10 @@ module Bosh::Monitor::Plugins
           'password' => 'password',
           'client_id' => 'client-id',
           'client_secret' => 'client-secret',
-          'ca_cert' => 'ca-cert'
-        }
+          'ca_cert' => 'ca-cert',
+        },
       }
-    }
+    end
     let(:plugin) { Bhm::Plugins::Resurrector.new(options) }
     let(:uri) { 'http://foo.bar.com:25555' }
     let(:status_uri) { "#{uri}/info" }
@@ -27,7 +27,9 @@ module Bosh::Monitor::Plugins
 
     let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i', severity: 1)) }
 
-    let(:user_authentication) { {} }
+    let(:user_authentication) do
+      {}
+    end
 
     context 'when the event machine reactor is not running' do
       it 'should not start' do
@@ -129,6 +131,33 @@ module Bosh::Monitor::Plugins
                 :source => "HM plugin resurrector",
                 :deployment => "d",
                 :created_at => expected_time.to_i
+            }
+            expect(event_processor).to receive(:process).with(:alert, alert_option)
+            plugin.run
+            plugin.process(alert)
+          end
+        end
+
+        context 'when resurrection is disabled' do
+          let(:resurrection_manager) { double(Bosh::Monitor::ResurrectionManager, resurrection_enabled?: false) }
+          before { allow(Bhm).to receive(:resurrection_manager).and_return(resurrection_manager) }
+
+          it 'does not send requests to scan and fix' do
+            plugin.run
+            expect(plugin).not_to receive(:send_http_put_request)
+            plugin.process(alert)
+          end
+
+          it 'sends alerts to the EventProcessor' do
+            expected_time = Time.new
+            allow(Time).to receive(:now).and_return(expected_time)
+            alert_option = {
+              severity: 1,
+              title: 'Resurrection is disabled by resurrection config',
+              summary: "Skipping resurrection for instance: 'j/i'; summary because of resurrection config",
+              source: 'HM plugin resurrector',
+              deployment: 'd',
+              created_at: expected_time.to_i,
             }
             expect(event_processor).to receive(:process).with(:alert, alert_option)
             plugin.run

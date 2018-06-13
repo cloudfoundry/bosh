@@ -8,7 +8,9 @@ module Bosh::Director
       let(:release_dir) { Dir.mktmpdir }
       after { FileUtils.rm_rf(release_dir) }
       let(:release_model) { Models::Release.make }
-      let(:job_meta) { {'name' => 'foo', 'version' => '1', 'sha1' => 'deadbeef', 'fingerprint' => 'bar'} }
+      let(:job_meta) do
+        { 'name' => 'foo', 'version' => '1', 'sha1' => 'deadbeef', 'fingerprint' => 'bar' }
+      end
 
       before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
       let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }

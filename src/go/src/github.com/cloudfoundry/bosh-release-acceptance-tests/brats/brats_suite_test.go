@@ -38,6 +38,7 @@ var (
 	deploymentName,
 	boshDirectorReleasePath,
 	candidateWardenLinuxStemcellPath,
+	stemcellOS,
 	dnsReleasePath string
 )
 
@@ -56,8 +57,10 @@ var _ = BeforeSuite(func() {
 	dnsReleasePath = assertEnvExists("DNS_RELEASE_PATH")
 	boshDirectorReleasePath = assertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
 	candidateWardenLinuxStemcellPath = assertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
+	stemcellOS = assertEnvExists("STEMCELL_OS")
 
 	assertEnvExists("BOSH_ENVIRONMENT")
+	assertEnvExists("BOSH_DEPLOYMENT_PATH")
 })
 
 var _ = AfterSuite(func() {
@@ -79,7 +82,12 @@ func startInnerBosh(args ...string) {
 }
 
 func startInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch string, args ...string) {
-	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), args...)
+	effectiveArgs := args
+	if stemcellOS == "ubuntu-xenial" {
+		effectiveArgs = append(args, "-o", assetPath("inner-bosh-xenial-ops.yml"))
+	}
+
+	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), effectiveArgs...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
 
@@ -108,7 +116,7 @@ func assetPath(filename string) string {
 }
 
 func boshDeploymentAssetPath(assetPath string) string {
-	return filepath.Join("/usr/local/bosh-deployment/", assetPath)
+	return filepath.Join(os.Getenv("BOSH_DEPLOYMENT_PATH"), assetPath)
 }
 
 func execCommand(binaryPath string, args ...string) *gexec.Session {

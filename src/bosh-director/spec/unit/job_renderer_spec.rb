@@ -39,7 +39,9 @@ module Bosh::Director
       before do
         release_version = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'fake-release', 'version' => '123'})
         job_1 = DeploymentPlan::Job.new(release_version, 'dummy', deployment_model.name)
-        job_1.bind_existing_model(Models::Template.make(blobstore_id: 'my-blobstore-id'))
+        job_1.bind_existing_model(
+          Models::Template.make(blobstore_id: 'my-blobstore-id', sha1: '16baf0c24e2dac2a21ccdcd4655be403a602f573'),
+        )
 
         job_2 = DeploymentPlan::Job.new(release_version, 'dummy', deployment_model.name)
         job_2.bind_existing_model(Models::Template.make(blobstore_id: 'my-blobstore-id'))

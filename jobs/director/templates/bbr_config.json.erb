@@ -1,0 +1,12 @@
+<%=
+database_config = {
+  'adapter' => p('director.db.adapter'),
+  'username' => p('director.db.user'),
+  'password' => p('director.db.password'),
+  'host' => p('director.db.host'),
+  'port' => p('director.db.port'),
+  'database' => p('director.db.database'),
+}
+
+JSON.dump(database_config)
+%>

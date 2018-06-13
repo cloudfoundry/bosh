@@ -87,6 +87,7 @@ var _ = Describe("BoshDns", func() {
 				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
+				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 				"--vars-store", "creds.yml",
 			)
@@ -151,6 +152,7 @@ var _ = Describe("BoshDns", func() {
 			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
+				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 				"--vars-store", "creds.yml",
 			)
@@ -211,11 +213,13 @@ var _ = Describe("BoshDns", func() {
 				}
 			}
 
-			session := execCommand("ssh",
-				fmt.Sprintf("%s@%s", innerDirectorUser, innerDirectorIP),
-				"-i", innerBoshJumpboxPrivateKeyPath,
-				"-oStrictHostKeyChecking=no",
-				"sudo /var/vcap/jobs/director/bin/trigger-one-time-sync-dns")
+			session := outerBosh(
+				"-d",
+				"bosh",
+				"ssh",
+				"-c",
+				"sudo /var/vcap/jobs/director/bin/trigger-one-time-sync-dns",
+			)
 			Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 
 			newVersionPerInstance := mustGetLatestDnsVersions()

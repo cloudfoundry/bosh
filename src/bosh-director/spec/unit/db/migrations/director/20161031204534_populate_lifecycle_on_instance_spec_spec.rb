@@ -18,21 +18,27 @@ module Bosh::Director
     end
 
     context 'when the group does not declare a lifecycle' do
-      let(:instance_group_hash) { {'name' => 'normal_job'} }
+      let(:instance_group_hash) do
+        { 'name' => 'normal_job' }
+      end
       it 'defaults the spec_json lifecycle to service' do
         expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq('lifecycle' => 'service')
       end
     end
 
     context 'when the group declares a errand lifecycle' do
-      let(:instance_group_hash) { {'name' => 'normal_job', 'lifecycle' => 'errand'} }
+      let(:instance_group_hash) do
+        { 'name' => 'normal_job', 'lifecycle' => 'errand' }
+      end
       it 'sets the spec_json lifecyle to errand' do
         expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq('lifecycle' => 'errand')
       end
     end
 
     context 'when the group declares a service lifecycle' do
-      let(:instance_group_hash) { {'name' => 'normal_job', 'lifecycle' => 'service'} }
+      let(:instance_group_hash) do
+        { 'name' => 'normal_job', 'lifecycle' => 'service' }
+      end
       it 'sets the spec_json lifecycle to service' do
         expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq('lifecycle' => 'service')
       end
@@ -67,7 +73,9 @@ module Bosh::Director
     end
 
     context 'when the spec already has unrelated content' do
-      let(:instance_group_hash) { {'name' => 'normal_job'} }
+      let(:instance_group_hash) do
+        { 'name' => 'normal_job' }
+      end
       let(:spec_json) { JSON.dump({'derek' => 'tyler'}) }
       it 'does not update the spec_json' do
         expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq({'derek' => 'tyler', 'lifecycle' => 'service'})
@@ -75,7 +83,9 @@ module Bosh::Director
     end
 
     context 'when the instance has nil spec_json' do
-      let(:instance_group_hash) { {'name' => 'normal_job'} }
+      let(:instance_group_hash) do
+        { 'name' => 'normal_job' }
+      end
       let(:spec_json) { nil }
       it 'does not update the spec_json' do
         expect(db[:instances].where(id: 1).first[:spec_json]).to eq(nil)
@@ -83,7 +93,9 @@ module Bosh::Director
     end
 
     context 'when the instance has "" spec_json' do
-      let(:instance_group_hash) { {'name' => 'normal_job'} }
+      let(:instance_group_hash) do
+        { 'name' => 'normal_job' }
+      end
       let(:spec_json) { "" }
       it 'does not update the spec_json' do
         expect(db[:instances].where(id: 1).first[:spec_json]).to eq("")
@@ -91,7 +103,9 @@ module Bosh::Director
     end
 
     context 'when the manifest does not contain the instance group name' do
-      let(:instance_group_hash) { {'name' => 'job_that_does_not_exist', 'lifecycle' => 'service'} }
+      let(:instance_group_hash) do
+        { 'name' => 'job_that_does_not_exist', 'lifecycle' => 'service' }
+      end
       it 'does not update the spec json' do
         expect(JSON.parse(db[:instances].where(id: 1).first[:spec_json])).to eq({})
       end

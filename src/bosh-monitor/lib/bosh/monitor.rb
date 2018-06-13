@@ -44,6 +44,7 @@ require 'bosh/monitor/version'
 
 # Processing
 require 'bosh/monitor/instance_manager'
+require 'bosh/monitor/resurrection_manager'
 require 'bosh/monitor/event_processor'
 
 # HTTP endpoints

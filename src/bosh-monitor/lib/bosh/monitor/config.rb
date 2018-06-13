@@ -9,6 +9,7 @@ module Bosh::Monitor
     attr_accessor :em_threadpool_size
     attr_accessor :event_mbus
     attr_accessor :instance_manager
+    attr_reader :resurrection_manager
     attr_accessor :event_processor
 
     attr_accessor :http_port
@@ -28,6 +29,7 @@ module Bosh::Monitor
 
       @event_processor = EventProcessor.new
       @instance_manager = InstanceManager.new(event_processor)
+      @resurrection_manager = ResurrectionManager.new
 
       # Interval defaults
       @intervals.prune_events ||= 30
@@ -38,6 +40,7 @@ module Bosh::Monitor
       @intervals.analyze_instances ||= 60
       @intervals.agent_timeout ||= 60
       @intervals.rogue_agent_alert ||= 120
+      @intervals.resurrection_config ||= 60
 
       if config['http'].is_a?(Hash)
         @http_port = config['http']['port']

@@ -18,7 +18,9 @@ module Bosh::Director::ConfigServer
   describe ConfigServerEnabledHTTPClient do
     subject { Bosh::Director::ConfigServer::ConfigServerEnabledHTTPClient.new(http_client) }
     let(:http_client) { instance_double('Net::HTTP') }
-    let(:config_server_hash) { {'url' => 'http://127.0.0.1:8080'} }
+    let(:config_server_hash) do
+      { 'url' => 'http://127.0.0.1:8080' }
+    end
 
     before do
       allow(Bosh::Director::Config).to receive(:config_server).and_return(config_server_hash)
@@ -39,7 +41,9 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#post' do
-      let(:request_body) { {'stuff' => 'hello'} }
+      let(:request_body) do
+        { 'stuff' => 'hello' }
+      end
 
       it 'makes a POST call to config server @ /v1/data/{key} with body and returns response' do
         expect(http_client).to receive(:post).with(anything, JSON.dump(request_body), {'Content-Type' => 'application/json'})

@@ -56,7 +56,9 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
 
 
   describe '#send_http_post_sync_request' do
-    let(:request) { {body: 'some-request-body', proxy: nil} }
+    let(:request) do
+      { body: 'some-request-body', proxy: nil }
+    end
 
     it 'sends a sync post request' do
       ssl_config = instance_double(HTTPClient::SSLConfig)

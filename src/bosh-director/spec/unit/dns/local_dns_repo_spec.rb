@@ -24,7 +24,9 @@ module Bosh::Director
         active: true
       )
     end
-    let(:spec_json) { {'networks' => {'net-name' => {'ip' => '1234'}}} }
+    let(:spec_json) do
+      { 'networks' => { 'net-name' => { 'ip' => '1234' } } }
+    end
 
     let(:record_0_ip) { '1234' }
     let!(:local_dns_record_0) do
@@ -170,7 +172,9 @@ module Bosh::Director
       end
 
       context 'when an instance removes an ip' do
-        let(:spec_json) { {'networks' => {'net-name-2' => {'ip' => '9876'}}} }
+        let(:spec_json) do
+          { 'networks' => { 'net-name-2' => { 'ip' => '9876' } } }
+        end
 
         let!(:local_dns_record_1) do
           Models::LocalDnsRecord.create(
@@ -204,7 +208,9 @@ module Bosh::Director
       end
 
       context 'when an instance removes multiple ips' do
-        let(:spec_json) { {'networks' => []} }
+        let(:spec_json) do
+          { 'networks' => [] }
+        end
 
         let!(:local_dns_record_1) do
           Models::LocalDnsRecord.create(
@@ -284,7 +290,9 @@ module Bosh::Director
       end
 
       context 'when the network name changes' do
-        let(:spec_json) { {'networks' => {'net-name-2' => {'ip' => '1234'}}} }
+        let(:spec_json) do
+          { 'networks' => { 'net-name-2' => { 'ip' => '1234' } } }
+        end
 
         it 'causes the max id to increase' do
           expect {
@@ -377,7 +385,9 @@ module Bosh::Director
       end
 
       context 'when the spec does not contain a networks block' do
-        let(:spec_json) { {'networks' => nil} }
+        let(:spec_json) do
+          { 'networks' => nil }
+        end
 
         it 'deletes all the records' do
           local_dns_repo.update_for_instance(instance_model)

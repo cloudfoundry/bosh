@@ -33,14 +33,14 @@ describe PagingDatadogClient do
 
     describe 'modified calls' do
       let(:priority) { 'normal' }
-      let(:alert) {
+      let(:alert) do
         Dogapi::Event.new(
-            'message',
-            :date_happened => Time.now.to_i - 300,
-            :priority => priority,
-            :tags => ['some', 'tags']
+          'message',
+          date_happened: Time.now.to_i - 300,
+          priority: priority,
+          tags: %w[some tags],
         )
-      }
+      end
 
       context 'with a normal priority alert' do
         let(:priority) { 'normal' }
