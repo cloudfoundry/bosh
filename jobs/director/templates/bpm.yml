@@ -5,9 +5,6 @@ director_config = {
   "executable" => "/var/vcap/jobs/director/bin/director",
   "ephemeral_disk" => true,
   "persistent_disk" => true,
-  "hooks" => {
-    "pre_start" => "/var/vcap/jobs/director/bin/bpm-pre-start",
-  },
 }
 
 nginx_config = {
@@ -15,9 +12,6 @@ nginx_config = {
   "executable" => "/var/vcap/packages/nginx/sbin/nginx",
   "args" => ["-c", "/var/vcap/jobs/director/config/nginx.conf"],
   "ephemeral_disk" => true,
-  "hooks" => {
-    "pre_start" => "/var/vcap/jobs/director/bin/bpm-pre-start",
-  },
 }
 
 scheduler_config = {
