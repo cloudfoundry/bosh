@@ -3,6 +3,33 @@ require 'spec_helper'
 describe Bosh::Director::Links::LinksErrorBuilder do
   let(:subject) { Bosh::Director::Links::LinksErrorBuilder }
 
+  def self.it_considers_number_of_link_providers
+    context 'when the number of providers is > 1' do
+      it 'should return an error message about the number of provider (ambiguous providers)' do
+        link_provider = Bosh::Director::Models::Links::LinkProvider.create(
+          deployment: deployment,
+          instance_group: 'ig_name',
+          name: 'ig_name',
+          type: 'disk',
+        )
+
+        Bosh::Director::Models::Links::LinkProviderIntent.create(
+          link_provider: link_provider,
+          original_name: 'my_custom_disk_orig',
+          name: 'my_custom_disk', # We set it differently to test that it's using the original.
+          type: 'disk',
+        )
+
+        Bosh::Director::Models::Links::LinkProviderIntent.create(
+          link_provider: link_provider,
+          original_name: 'my_custom_disk_orig2',
+          name: 'my_custom_disk2', # We set it differently to test that it's using the original.
+          type: 'disk2',
+        )
+      end
+    end
+  end
+
   # rubocop:disable Metrics/MethodLength
   def self.it_populates_the_error_details_correctly
     context 'when there are no providers' do

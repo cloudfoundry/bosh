@@ -144,16 +144,16 @@ describe 'broken links', type: :integration do
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
       expect(exit_code).not_to eq(0)
       expect(director.instances).to eq([])
-      expect(output).to include(<<~OUTPUT.strip)
-        Multiple providers of name/alias 'alias1' found for job 'consumer' in instance group 'first_consumer'. All of these match:
-           provider aliased as 'alias1' (job: provider, instance group: first_provider)
-           provider aliased as 'alias1' (job: provider, instance group: second_provider)
-      OUTPUT
-      expect(output).to include(<<~OUTPUT.strip)
-        Multiple providers of type 'provider' found for consumer link 'provider' in job 'consumer' in instance group 'second_consumer'. All of these match:
-           Deployment: simple, instance group: first_provider, job: provider, link name/alias: alias1
-           Deployment: simple, instance group: second_provider, job: provider, link name/alias: alias1
-      OUTPUT
+      expect(output).to include(<<OUTPUT.strip)
+  - Failed to resolve link 'provider' with alias 'alias1' and type 'provider' from job 'consumer' in instance group 'first_consumer'. Multiple link providers found:
+    - Link provider 'provider' with alias 'alias1' from job 'provider' in instance group 'first_provider' in deployment 'simple'
+    - Link provider 'provider' with alias 'alias1' from job 'provider' in instance group 'second_provider' in deployment 'simple'
+OUTPUT
+      expect(output).to include(<<OUTPUT.strip)
+  - Failed to resolve link 'provider' with type 'provider' from job 'consumer' in instance group 'second_consumer'. Multiple link providers found:
+    - Link provider 'provider' with alias 'alias1' from job 'provider' in instance group 'first_provider' in deployment 'simple'
+    - Link provider 'provider' with alias 'alias1' from job 'provider' in instance group 'second_provider' in deployment 'simple'
+OUTPUT
     end
   end
 
