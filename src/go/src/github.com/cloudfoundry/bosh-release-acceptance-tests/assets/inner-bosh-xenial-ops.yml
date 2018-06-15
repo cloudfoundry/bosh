@@ -4,12 +4,3 @@
   - alias: default
     os: ubuntu-xenial
     version: latest
-
-# We need to use an uncompiled release for BPM
-- type: replace
-  path: /releases/name=bpm?
-  value:
-    name: bpm
-    version: "0.6.0"
-    url: "https://bosh.io/d/github.com/cloudfoundry-incubator/bpm-release?v=0.6.0"
-    sha1: "4f0f239abdc801d71de9063625aa56e3c42634b5"

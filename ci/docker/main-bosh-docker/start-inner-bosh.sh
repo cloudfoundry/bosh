@@ -40,6 +40,7 @@ bosh int bosh.yml \
   -v docker_host="${DOCKER_HOST}" \
   -v network=director_network \
   -v docker_tls="${DOCKER_CERTS}" \
+  -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
   -o "${BOSH_DEPLOYMENT_PATH}/local-bosh-release-tarball.yml" \
   -v local_bosh_release="${bosh_release_path}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
