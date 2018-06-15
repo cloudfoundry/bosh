@@ -172,6 +172,17 @@ module Bosh
                 expect { subject.perform(report) }.to(change { Models::Event.count }.from(0).to(2))
               end
             end
+
+            context 'when trying to delete VM mutiple times' do
+              it 'deletes the instances vm and stores an event' do
+                expect(logger).to receive(:info).with('Deleting VM').twice
+                expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
+                expect(cloud).to receive(:delete_vm).with('vm-cid').twice
+
+                subject.perform(report)
+                expect { subject.perform(report) }.to_not raise_error
+              end
+            end
           end
         end
       end
