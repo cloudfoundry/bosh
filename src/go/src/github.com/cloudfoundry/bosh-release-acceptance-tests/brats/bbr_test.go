@@ -1,6 +1,8 @@
 package brats_test
 
 import (
+	"io/ioutil"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -23,7 +25,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 	BeforeEach(func() {
 		startInnerBoshOptions = []string{fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml"))}
-
 	})
 
 	JustBeforeEach(func() {
@@ -210,62 +211,124 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 		})
 
-		Context("tls configuration", func() {
-			BeforeEach(func() {
-				external_db_host := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_HOST")
-				external_db_user := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_USER")
-				external_db_password := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_PASSWORD")
-				external_db_name := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_NAME")
-
-				connectionOptions := "external_db/rds_mysql_connection_options.yml"
-				connectionVarFile := "external_db/rds_mysql.yml"
-				cleanupMysqlDB(external_db_host, external_db_user, external_db_password, external_db_name, connectionVarFile)
-
-				startInnerBoshOptions = append(startInnerBoshOptions,
-					"-o", boshDeploymentAssetPath("misc/external-db.yml"),
-					"-o", boshDeploymentAssetPath("experimental/db-enable-tls.yml"),
-					"-o", assetPath(connectionOptions),
-					"--vars-file", assetPath(connectionVarFile),
-					"-v", fmt.Sprintf("external_db_host=%s", external_db_host),
-					"-v", fmt.Sprintf("external_db_user=%s", external_db_user),
-					"-v", fmt.Sprintf("external_db_password=%s", external_db_password),
-					"-v", fmt.Sprintf("external_db_name=%s", external_db_name),
-				)
-			})
-
-			It("works with tls to mysql on RDS", func() {
-				syslogManifestPath := assetPath("syslog-manifest.yml")
-				uploadStemcell(candidateWardenLinuxStemcellPath)
-
-				By("create syslog deployment", func() {
+		FContext("TLS configuration", func() {
+			backUpAndRestores := func() {
+				It("backs up and restores", func() {
+					syslogManifestPath := assetPath("syslog-manifest.yml")
 					uploadStemcell(candidateWardenLinuxStemcellPath)
-					uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 
-					session := bosh("-n", "deploy", syslogManifestPath,
-						"-d", "syslog-deployment",
-						"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+					By("create syslog deployment", func() {
+						uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+
+						session := bosh("-n", "deploy", syslogManifestPath,
+							"-d", "syslog-deployment",
+							"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+						)
+						Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+					})
+
+					By("creating a backup", func() {
+						session := bbr("director",
+							"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+							"--username", innerDirectorUser,
+							"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+							"backup")
+						Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+					})
+
+					By("deleting the deployment (whoops)", func() {
+						session := bosh("-n", "delete-deployment", "-d", "syslog-deployment", "--force")
+						Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+					})
+
+					By("restore inner director from backup", func() {
+						var err error
+						backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(backupDir).To(HaveLen(1))
+
+						session := bbr("director",
+							"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+							"--username", innerDirectorUser,
+							"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+							"restore",
+							"--artifact-path", backupDir[0])
+						Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+						waitForBoshDirectorUp(boshBinaryPath)
+					})
+
+					By("verifying that the deployment still exists", func() {
+						session := bosh("-n", "deployments")
+						Eventually(session, time.Minute).Should(gexec.Exit(0))
+						Eventually(session).Should(gbytes.Say("syslog-deployment"))
+					})
+				})
+			}
+
+			Context("RDS", func() {
+				var tmpCertDir string
+				var err error
+
+				BeforeEach(func() {
+					tmpCertDir, err = ioutil.TempDir("", "db_tls")
+					Expect(err).ToNot(HaveOccurred())
+
+					dbConfig := loadExternalDBConfig("rds_mysql", false, tmpCertDir)
+					cleanupMysqlDB(dbConfig)
+
+					startInnerBoshOptions = append(
+						startInnerBoshOptions,
+						innerBoshWithExternalDBOptions(dbConfig)...,
 					)
-					Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
 				})
 
-				By("creating a backup", func() {
+				AfterEach(func() {
+					os.RemoveAll(tmpCertDir)
+				})
+
+				backUpAndRestores()
+			})
+
+			FContext("Google Cloud SQL", func() {
+				var tmpCertDir string
+				var err error
+
+				BeforeEach(func() {
+					tmpCertDir, err = ioutil.TempDir("", "db_tls")
+					Expect(err).ToNot(HaveOccurred())
+
+					dbConfig := loadExternalDBConfig("gcp_mysql", true, tmpCertDir)
+					cleanupMysqlDB(dbConfig)
+
+					startInnerBoshOptions = append(
+						startInnerBoshOptions,
+						innerBoshWithExternalDBOptions(dbConfig)...,
+					)
+				})
+
+				AfterEach(func() {
+					os.RemoveAll(tmpCertDir)
+				})
+
+				backUpAndRestores()
+			})
+		})
+
+		Context("blobstore files", func() {
+			var directoriesBefore, filesBefore []string
+
+			It("backs up an empty blobstore", func() {
+				By("Backup deployment", func() {
 					session := bbr("director",
 						"--host", fmt.Sprintf("%s:22", innerDirectorIP),
 						"--username", innerDirectorUser,
 						"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 						"backup")
-					Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+					Eventually(session, time.Minute).Should(gexec.Exit(0))
 				})
 
-				By("deleting the deployment (whoops)", func() {
-					session := bosh("-n", "delete-deployment", "-d", "syslog-deployment", "--force")
-					Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
-
-					session = bosh("-n", "clean-up", "--all")
-					Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
-				})
-
-				By("restore inner director from backup", func() {
+				By("Restore deployment", func() {
 					var err error
 					backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
 					Expect(err).NotTo(HaveOccurred())
@@ -277,101 +340,63 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 						"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 						"restore",
 						"--artifact-path", backupDir[0])
-					Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+					Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+					waitForBoshDirectorUp(boshBinaryPath)
+				})
+			})
+
+			It("restores the blobstore files with the correct permissions/ownership", func() {
+				By("Upload a release", func() {
+					uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+				})
+
+				By("Store directory/file structure before we do backup", func() {
+					directoriesBefore, filesBefore = findBlobstoreFiles(outerBoshBinaryPath)
+				})
+
+				By("Backup deployment", func() {
+					session := bbr("director",
+						"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+						"--username", innerDirectorUser,
+						"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+						"backup")
+					Eventually(session, time.Minute).Should(gexec.Exit(0))
+				})
+
+				By("Check directories are still there after backup", func() {
+					directoriesAfter, filesAfter := findBlobstoreFiles(outerBoshBinaryPath)
+					Expect(directoriesAfter).To(Equal(directoriesBefore))
+					Expect(filesAfter).To(Equal(filesBefore))
+				})
+
+				By("\"wipe\" system", func() {
+					session := outerBosh("-d", "bosh", "ssh", "bosh", "-c", "sudo rm -rf /var/vcap/store/blobstore/*")
+					Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+				})
+
+				By("Restore deployment", func() {
+					var err error
+					backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(backupDir).To(HaveLen(1))
+
+					session := bbr("director",
+						"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+						"--username", innerDirectorUser,
+						"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+						"restore",
+						"--artifact-path", backupDir[0])
+					Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 					waitForBoshDirectorUp(boshBinaryPath)
 				})
 
-				By("verifying that the deployment still exists", func() {
-					session := bosh("-n", "deployments")
-					Eventually(session, time.Minute).Should(gexec.Exit(0))
-					Eventually(session).Should(gbytes.Say("syslog-deployment"))
+				By("Check directories have correct permissions after restore", func() {
+					directoriesAfter, filesAfter := findBlobstoreFiles(outerBoshBinaryPath)
+					Expect(directoriesAfter).To(Equal(directoriesBefore))
+					Expect(filesAfter).To(Equal(filesBefore))
 				})
-			})
-		})
-	})
-
-	Context("blobstore files", func() {
-		var directoriesBefore, filesBefore []string
-
-		It("backs up an empty blobstore", func() {
-			By("Backup deployment", func() {
-				session := bbr("director",
-					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
-					"--username", innerDirectorUser,
-					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"backup")
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
-			})
-
-			By("Restore deployment", func() {
-				var err error
-				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(backupDir).To(HaveLen(1))
-
-				session := bbr("director",
-					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
-					"--username", innerDirectorUser,
-					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore",
-					"--artifact-path", backupDir[0])
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
-
-				waitForBoshDirectorUp(boshBinaryPath)
-			})
-		})
-
-		It("restores the blobstore files with the correct permissions/ownership", func() {
-			By("Upload a release", func() {
-				uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
-			})
-
-			By("Store directory/file structure before we do backup", func() {
-				directoriesBefore, filesBefore = findBlobstoreFiles(outerBoshBinaryPath)
-			})
-
-			By("Backup deployment", func() {
-				session := bbr("director",
-					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
-					"--username", innerDirectorUser,
-					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"backup")
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
-			})
-
-			By("Check directories are still there after backup", func() {
-				directoriesAfter, filesAfter := findBlobstoreFiles(outerBoshBinaryPath)
-				Expect(directoriesAfter).To(Equal(directoriesBefore))
-				Expect(filesAfter).To(Equal(filesBefore))
-			})
-
-			By("\"wipe\" system", func() {
-				session := outerBosh("-d", "bosh", "ssh", "bosh", "-c", "sudo rm -rf /var/vcap/store/blobstore/*")
-				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
-			})
-
-			By("Restore deployment", func() {
-				var err error
-				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(backupDir).To(HaveLen(1))
-
-				session := bbr("director",
-					"--host", fmt.Sprintf("%s:22", innerDirectorIP),
-					"--username", innerDirectorUser,
-					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
-					"restore",
-					"--artifact-path", backupDir[0])
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
-
-				waitForBoshDirectorUp(boshBinaryPath)
-			})
-
-			By("Check directories have correct permissions after restore", func() {
-				directoriesAfter, filesAfter := findBlobstoreFiles(outerBoshBinaryPath)
-				Expect(directoriesAfter).To(Equal(directoriesBefore))
-				Expect(filesAfter).To(Equal(filesBefore))
 			})
 		})
 	})

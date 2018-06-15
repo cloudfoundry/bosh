@@ -271,6 +271,9 @@ properties:
     description: Client certificate for mutual TLS connections to DB
   director.db.tls.cert.private_key:
     description: Client private key for mutual TLS connections to DB
+  director.db.tls.skip_host_verify:
+    description: Skip host verification for Server CA certificate. Must be true if database is hosted on GCP.
+    default: false
 
   # DNS
   dns.address:

@@ -16,7 +16,8 @@ if p('director.db.tls.enabled')
       'ca' => p('director.db.tls.cert.ca'),
       'certificate' => p('director.db.tls.cert.certificate', ""),
       'private_key' => p('director.db.tls.cert.private_key', "")
-    }
+    },
+    'skip_host_verify' => p('director.db.tls.skip_host_verify')
   }
 end
 
