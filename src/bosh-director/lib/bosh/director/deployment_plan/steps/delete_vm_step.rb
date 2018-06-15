@@ -32,7 +32,7 @@ module Bosh::Director
 
             vm.destroy
           rescue Exception => e
-            raise e
+            raise e unless e.include?("Attempt to delete object did not result in a single row modification")
           ensure
             add_event(instance_model.deployment.name, instance_name, vm_cid, parent_id, e) if store_event
           end
