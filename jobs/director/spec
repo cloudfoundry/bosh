@@ -3,7 +3,7 @@ name: director
 
 templates:
   pre-start.erb: bin/pre-start
-  bpm-pre-start: bin/bpm-pre-start
+  post-start.erb: bin/post-start
   director.yml.erb: config/director.yml
   worker_ctl.erb: bin/worker_ctl
   ps_utils.sh: bin/ps_utils.sh

@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+echo "Checking if director is ready..."
+
+timeout 5m bash -c '
+  while ! curl --insecure --fail https://127.0.0.1:<%= p('director.port') %>/info; do
+    sleep 1
+  done
+'
+
+echo
+echo "Director is ready."
