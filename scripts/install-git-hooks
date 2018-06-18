@@ -1,31 +1,3 @@
 #!/bin/bash
 
-ROOT_DIR=$(cd $(dirname $0)/.. && pwd)
-PRE_COMMIT=${ROOT_DIR}/.git/hooks/pre-commit
-PRE_PUSH=${ROOT_DIR}/.git/hooks/pre-push
-
-if [ ! -f ${PRE_COMMIT} ]; then
-  echo "#!/bin/bash" > ${PRE_COMMIT}
-  chmod +x ${PRE_COMMIT}
-fi
-
-if [ ! -f ${PRE_PUSH} ]; then
-  echo "#!/bin/bash" > ${PRE_PUSH}
-  chmod +x ${PRE_PUSH}
-fi
-
-if grep -q 'git-hooks/pre-commit' ${PRE_COMMIT}; then
-  echo "pre-commit already installed."
-else
-  echo >> ${PRE_COMMIT}
-  echo './git-hooks/pre-commit' >> ${PRE_COMMIT}
-  echo "pre-commit installed."
-fi
-
-if grep -q 'git-hooks/pre-push' ${PRE_PUSH}; then
-  echo "pre-push already installed."
-else
-  echo >> ${PRE_PUSH}
-  echo './git-hooks/pre-push' >> ${PRE_PUSH}
-  echo "pre-push installed."
-fi
+git config core.hooksPath git-hooks
