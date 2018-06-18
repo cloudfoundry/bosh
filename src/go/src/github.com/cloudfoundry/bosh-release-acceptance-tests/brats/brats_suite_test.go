@@ -255,6 +255,7 @@ func innerBoshWithExternalDBOptions(dbConfig ExternalDBConfig) []string {
 	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
 		options = append(options,
 			fmt.Sprintf("-o %s", boshDeploymentAssetPath("experimental/db-enable-mutual-tls.yml")),
+			fmt.Sprintf("-o %s", assetPath("tls-skip-host-verify.yml")),
 			fmt.Sprintf("--var-file=db_client_certificate=%s", dbConfig.ClientCertPath),
 			fmt.Sprintf("--var-file=db_client_private_key=%s", dbConfig.ClientKeyPath),
 		)

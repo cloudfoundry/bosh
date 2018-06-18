@@ -211,7 +211,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 		})
 
-		FContext("TLS configuration", func() {
+		Context("TLS configuration", func() {
 			backUpAndRestores := func() {
 				It("backs up and restores", func() {
 					syslogManifestPath := assetPath("syslog-manifest.yml")
@@ -290,7 +290,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				backUpAndRestores()
 			})
 
-			FContext("Google Cloud SQL", func() {
+			Context("Google Cloud SQL", func() {
 				var tmpCertDir string
 				var err error
 
