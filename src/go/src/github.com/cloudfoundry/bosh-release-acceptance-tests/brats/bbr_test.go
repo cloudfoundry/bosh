@@ -11,18 +11,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Bosh Backup and Restore BBR", func() {
 	var (
-		backupDir []string
-		bbrSdkOps string
+		backupDir             []string
+		startInnerBoshOptions []string
 	)
 
 	BeforeEach(func() {
-		bbrSdkOps = fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml"))
-		startInnerBosh(bbrSdkOps)
+		startInnerBoshOptions = append(startInnerBoshOptions, fmt.Sprintf("-o %s", boshDeploymentAssetPath("bbr.yml")))
+	})
+
+	JustBeforeEach(func() {
+		startInnerBosh(startInnerBoshOptions...)
 	})
 
 	AfterEach(func() {
@@ -70,7 +74,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 			By("wipe system, recreate inner director", func() {
 				stopInnerBosh()
-				startInnerBosh(bbrSdkOps)
+				startInnerBosh(startInnerBoshOptions...)
 			})
 
 			By("expect deploy to fail because the release/stemcell won't be there", func() {
@@ -137,7 +141,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					)
 
 					Eventually(session, time.Minute).Should(gexec.Exit(0))
-
 					Expect(string(session.Out.Contents())).To(MatchRegexp("[0-9a-f]{8}-[0-9a-f-]{27}"))
 				})
 			})
@@ -203,6 +206,82 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				Expect(session.Out.Contents()).To(MatchRegexp("syslog_storer/[a-z0-9-]+[ \t]+running"))
 				Expect(session.Out.Contents()).To(MatchRegexp("syslog_forwarder/[a-z0-9-]+[ \t]+running"))
+			})
+		})
+
+		Context("tls configuration", func() {
+			BeforeEach(func() {
+				external_db_host := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_HOST")
+				external_db_user := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_USER")
+				external_db_password := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_PASSWORD")
+				external_db_name := assertEnvExists("RDS_MYSQL_EXTERNAL_DB_NAME")
+
+				connectionOptions := "external_db/rds_mysql_connection_options.yml"
+				connectionVarFile := "external_db/rds_mysql.yml"
+
+				startInnerBoshOptions = append(startInnerBoshOptions,
+					"-o", boshDeploymentAssetPath("misc/external-db.yml"),
+					"-o", boshDeploymentAssetPath("experimental/db-enable-tls.yml"),
+					"-o", assetPath(connectionOptions),
+					"--vars-file", assetPath(connectionVarFile),
+					"-v", fmt.Sprintf("external_db_host=%s", external_db_host),
+					"-v", fmt.Sprintf("external_db_user=%s", external_db_user),
+					"-v", fmt.Sprintf("external_db_password=%s", external_db_password),
+					"-v", fmt.Sprintf("external_db_name=%s", external_db_name),
+				)
+			})
+
+			It("works with tls to mysql on RDS", func() {
+				syslogManifestPath := assetPath("syslog-manifest.yml")
+				uploadStemcell(candidateWardenLinuxStemcellPath)
+
+				By("create syslog deployment", func() {
+					uploadStemcell(candidateWardenLinuxStemcellPath)
+					uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+
+					session := bosh("-n", "deploy", syslogManifestPath,
+						"-d", "syslog-deployment",
+						"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+					)
+					Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				})
+
+				By("creating a backup", func() {
+					session := bbr("director",
+						"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+						"--username", innerDirectorUser,
+						"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+						"backup")
+					Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+				})
+
+				By("deleting the deployment (whoops)", func() {
+					session := bosh("-n", "delete-deployment", "-d", "syslog-deployment", "--force")
+					Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				})
+
+				By("restore inner director from backup", func() {
+					var err error
+					backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", innerDirectorIP))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(backupDir).To(HaveLen(1))
+
+					session := bbr("director",
+						"--host", fmt.Sprintf("%s:22", innerDirectorIP),
+						"--username", innerDirectorUser,
+						"--private-key-path", innerBoshJumpboxPrivateKeyPath,
+						"restore",
+						"--artifact-path", backupDir[0])
+					Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+					waitForBoshDirectorUp(boshBinaryPath)
+				})
+
+				By("verifying that the deployment still exists", func() {
+					session := bosh("-n", "deployments")
+					Eventually(session, time.Minute).Should(gexec.Exit(0))
+					Eventually(session).Should(gbytes.Say("syslog-deployment"))
+				})
 			})
 		})
 	})

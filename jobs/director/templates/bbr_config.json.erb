@@ -1,12 +1,24 @@
 <%=
+adapter = p('director.db.adapter') == 'mysql2' ? 'mysql' : p('director.db.adapter')
+
 database_config = {
-  'adapter' => p('director.db.adapter'),
+  'adapter' => adapter,
   'username' => p('director.db.user'),
   'password' => p('director.db.password'),
   'host' => p('director.db.host'),
   'port' => p('director.db.port'),
   'database' => p('director.db.database'),
 }
+
+if p('director.db.tls.enabled')
+  database_config['tls'] = {
+    'cert' => {
+      'ca' => p('director.db.tls.cert.ca'),
+      'certificate' => p('director.db.tls.cert.certificate', ""),
+      'private_key' => p('director.db.tls.cert.private_key', "")
+    }
+  }
+end
 
 JSON.dump(database_config)
 %>
