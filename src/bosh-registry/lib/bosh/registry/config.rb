@@ -41,13 +41,7 @@ module Bosh::Registry
       db_config.delete_if { |_, v| v.to_s.empty? }
       db_config = db_config.merge(connection_options)
 
-      db = Sequel.connect(db_config)
-      if logger
-        db.logger = @logger
-        db.sql_log_level = :debug
-      end
-
-      db
+      Sequel.connect(db_config)
     end
 
     def validate_config(config)
