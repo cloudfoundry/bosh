@@ -1,7 +1,5 @@
 #!/bin/bash
 
-"$(dirname $0)/install-git-hooks"
-
 pushd "$(dirname $0)/../src"
   bundle install
   bundle exec rake spec:unit
