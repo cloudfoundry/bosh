@@ -273,21 +273,33 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				BeforeEach(func() {
 					tmpCertDir, err = ioutil.TempDir("", "db_tls")
 					Expect(err).ToNot(HaveOccurred())
-
-					dbConfig := loadExternalDBConfig("rds_mysql", false, tmpCertDir)
-					cleanupMysqlDB(dbConfig)
-
-					startInnerBoshOptions = append(
-						startInnerBoshOptions,
-						innerBoshWithExternalDBOptions(dbConfig)...,
-					)
 				})
 
 				AfterEach(func() {
 					os.RemoveAll(tmpCertDir)
 				})
 
-				backUpAndRestores()
+				Context("Mysql", func() {
+					BeforeEach(func() {
+						dbConfig := loadExternalDBConfig("rds_mysql", false, tmpCertDir)
+						cleanupDB(dbConfig)
+
+						startInnerBoshOptions = append(startInnerBoshOptions, innerBoshWithExternalDBOptions(dbConfig)...)
+					})
+
+					backUpAndRestores()
+				})
+
+				Context("Postgres", func() {
+					BeforeEach(func() {
+						dbConfig := loadExternalDBConfig("rds_postgres", false, tmpCertDir)
+						cleanupDB(dbConfig)
+
+						startInnerBoshOptions = append(startInnerBoshOptions, innerBoshWithExternalDBOptions(dbConfig)...)
+					})
+
+					backUpAndRestores()
+				})
 			})
 
 			Context("Google Cloud SQL", func() {
@@ -298,20 +310,33 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					tmpCertDir, err = ioutil.TempDir("", "db_tls")
 					Expect(err).ToNot(HaveOccurred())
 
-					dbConfig := loadExternalDBConfig("gcp_mysql", true, tmpCertDir)
-					cleanupMysqlDB(dbConfig)
-
-					startInnerBoshOptions = append(
-						startInnerBoshOptions,
-						innerBoshWithExternalDBOptions(dbConfig)...,
-					)
 				})
 
 				AfterEach(func() {
 					os.RemoveAll(tmpCertDir)
 				})
 
-				backUpAndRestores()
+				Context("Mysql", func() {
+					BeforeEach(func() {
+						dbConfig := loadExternalDBConfig("gcp_mysql", true, tmpCertDir)
+						cleanupDB(dbConfig)
+
+						startInnerBoshOptions = append(startInnerBoshOptions, innerBoshWithExternalDBOptions(dbConfig)...)
+					})
+
+					backUpAndRestores()
+				})
+
+				Context("Postgres", func() {
+					BeforeEach(func() {
+						dbConfig := loadExternalDBConfig("gcp_postgres", true, tmpCertDir)
+						cleanupDB(dbConfig)
+
+						startInnerBoshOptions = append(startInnerBoshOptions, innerBoshWithExternalDBOptions(dbConfig)...)
+					})
+
+					backUpAndRestores()
+				})
 			})
 		})
 

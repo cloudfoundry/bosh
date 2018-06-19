@@ -156,6 +156,7 @@ func uploadRelease(releaseUrl string) {
 }
 
 type ExternalDBConfig struct {
+	Type     string
 	Host     string
 	User     string
 	Password string
@@ -169,14 +170,22 @@ type ExternalDBConfig struct {
 	ConnectionOptionsFile string
 }
 
-func loadExternalDBConfig(databaseType string, mutualTLSEnabled bool, tmpCertDir string) ExternalDBConfig {
+func loadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string) ExternalDBConfig {
+	var databaseType string
+	if strings.HasSuffix(DBaaS, "mysql") {
+		databaseType = "mysql"
+	} else {
+		databaseType = "postgres"
+	}
+
 	config := ExternalDBConfig{
-		Host:                  assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(databaseType))),
-		User:                  assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(databaseType))),
-		Password:              assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(databaseType))),
-		DBName:                assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_NAME", strings.ToUpper(databaseType))),
-		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", databaseType),
-		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", databaseType),
+		Type:                  databaseType,
+		Host:                  assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(DBaaS))),
+		User:                  assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(DBaaS))),
+		Password:              assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(DBaaS))),
+		DBName:                assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_NAME", strings.ToUpper(DBaaS))),
+		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", DBaaS),
+		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", DBaaS),
 	}
 
 	caContents, err := exec.Command(outerBoshBinaryPath, "int", assetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
@@ -191,8 +200,8 @@ func loadExternalDBConfig(databaseType string, mutualTLSEnabled bool, tmpCertDir
 	config.CACertPath = caFile.Name()
 
 	if mutualTLSEnabled {
-		clientCertContents := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(databaseType)))
-		clientKeyContents := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(databaseType)))
+		clientCertContents := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(DBaaS)))
+		clientKeyContents := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(DBaaS)))
 
 		clientCertFile, err := ioutil.TempFile(tmpCertDir, "client_cert")
 		Expect(err).ToNot(HaveOccurred())
@@ -215,7 +224,15 @@ func loadExternalDBConfig(databaseType string, mutualTLSEnabled bool, tmpCertDir
 	return config
 }
 
-func cleanupMysqlDB(dbConfig ExternalDBConfig) {
+func cleanupDB(dbConfig ExternalDBConfig) {
+	if dbConfig.Type == "mysql" {
+		cleanupMySQL(dbConfig)
+	}
+
+	cleanupPostgres(dbConfig)
+}
+
+func cleanupMySQL(dbConfig ExternalDBConfig) {
 	args := []string{
 		"-h",
 		dbConfig.Host,
@@ -237,6 +254,42 @@ func cleanupMysqlDB(dbConfig ExternalDBConfig) {
 	}
 
 	session := execCommand("mysql", args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func cleanupPostgres(dbConfig ExternalDBConfig) {
+	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
+		dbConfig.Host,
+		dbConfig.User,
+		dbConfig.Password,
+		dbConfig.CACertPath,
+	)
+
+	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
+		connstring += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
+			dbConfig.ClientCertPath,
+			dbConfig.ClientKeyPath,
+		)
+	} else {
+		connstring += "sslmode=verify-full "
+	}
+
+	args := []string{
+		connstring,
+		"-c",
+		fmt.Sprintf("drop database %s;", dbConfig.DBName),
+	}
+
+	session := execCommand("psql", args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+	args = []string{
+		connstring,
+		"-c",
+		fmt.Sprintf("create database %s;", dbConfig.DBName),
+	}
+
+	session = execCommand("psql", args...)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 

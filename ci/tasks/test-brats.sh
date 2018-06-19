@@ -48,6 +48,7 @@ export DOCKER_HOST
 
 apt-get update
 apt-get install -y mysql-client
+apt-get install -y postgresql-client
 
 cd bosh-src
 scripts/test-brats
