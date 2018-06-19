@@ -280,6 +280,7 @@ module Bosh::Director::Links
         instance_group = deployment_plan.instance_group(provider.instance_group)
         provider.intents.each do |provider_intent|
           next if provider_intent.serial_id != deployment_plan.model.links_serial_id
+          next unless consumer?(provider_intent, deployment_plan)
           metadata = {}
           metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
 
@@ -403,6 +404,37 @@ module Bosh::Director::Links
     end
 
     private
+
+    # A consumer which is within the same deployment
+    def consumer?(provider_intent, deployment_plan)
+      return true if provider_intent.shared
+
+      link_consumers = deployment_plan.model.link_consumers
+      link_consumers.each do |consumer|
+        next if consumer.serial_id != @serial_id
+        consumer.intents.each do |consumer_intent|
+          next if consumer_intent.blocked
+          next if consumer_intent.serial_id != @serial_id
+          next if provider_intent.type != consumer_intent.type
+
+          consumer_intent_metadata = {}
+          consumer_intent_metadata = JSON.parse(consumer_intent.metadata) unless consumer_intent.metadata.nil?
+
+          deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
+          is_cross_deployment = (consumer.deployment.name != deployment_name)
+          next if is_cross_deployment
+
+          is_explicit_link = !!consumer_intent_metadata['explicit_link']
+          if is_explicit_link
+            next if provider_intent.name != consumer_intent.name
+          end
+
+          return true
+        end
+      end
+
+      false
+    end
 
     def extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
       link_use_ip_address = consumer_intent_metadata['ip_addresses']
