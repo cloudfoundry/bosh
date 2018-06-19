@@ -2458,7 +2458,7 @@ describe Bosh::Director::Links::LinksManager do
           :original_name => 'link_original_name_1',
           :name => 'link_name_1',
           :type => 'link_type_1',
-          :shared => true,
+          :shared => false,
           :consumable => true,
           :content => '{}',
           :metadata => {'mapped_properties' => {'a' => '1'}}.to_json,
@@ -2472,7 +2472,7 @@ describe Bosh::Director::Links::LinksManager do
           :original_name => 'link_original_name_2',
           :name => 'link_name_2',
           :type => 'link_type_2',
-          :shared => true,
+          :shared => false,
           :consumable => true,
           :content => '{}',
           :metadata => {'mapped_properties' => {'b' => '2'}}.to_json,
@@ -2496,7 +2496,7 @@ describe Bosh::Director::Links::LinksManager do
           :original_name => 'link_original_name_3',
           :name => 'link_name_3',
           :type => 'link_type_3',
-          :shared => true,
+          :shared => false,
           :consumable => true,
           :content => '{}',
           :metadata => {'mapped_properties' => {'c' => '1'}}.to_json,
@@ -2510,7 +2510,7 @@ describe Bosh::Director::Links::LinksManager do
           :original_name => 'link_original_name_4',
           :name => 'link_name_4',
           :type => 'link_type_4',
-          :shared => true,
+          :shared => false,
           :consumable => true,
           :content => '{}',
           :metadata => {'mapped_properties' => {'d' => '2'}}.to_json,
@@ -2524,7 +2524,7 @@ describe Bosh::Director::Links::LinksManager do
           :original_name => 'link_original_name_5',
           :name => 'link_name_5',
           :type => 'link_type_5',
-          :shared => true,
+          :shared => false,
           :consumable => true,
           :content => '{}',
           :metadata => {'mapped_properties' => {'e' => '5'}}.to_json,
@@ -2651,19 +2651,16 @@ describe Bosh::Director::Links::LinksManager do
         it 'updates the contents field of the provider intents' do
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, use_dns_addresses, use_short_dns_addresses).and_return(link_1)
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, use_dns_addresses, use_short_dns_addresses).and_return(link_2)
-          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, use_dns_addresses, use_short_dns_addresses).and_return(link_3)
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, use_dns_addresses, use_short_dns_addresses).and_return(link_4)
 
           expect(provider_1_intent_1).to receive(:save)
           expect(provider_1_intent_2).to receive(:save)
-          expect(provider_2_intent_1).to receive(:save)
           expect(provider_2_intent_2).to receive(:save)
 
           subject.update_provider_intents_contents(link_providers, deployment_plan)
 
           expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
           expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
-          expect(provider_2_intent_1.content).to eq("{'foo_3':'bar_3'}")
           expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
         end
       end
