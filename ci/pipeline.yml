@@ -27,6 +27,7 @@ groups:
       - upgrade-tests
       - blobstore-performance
       - delivery
+      - unclaim-brats-mutex
 
   - name: mysql
     jobs:
@@ -875,6 +876,13 @@ jobs:
   #     - put: bosh-src
   #       params:
   #         repository: bosh-src-with-bumped-version
+
+  - name: unclaim-brats-mutex
+    serial: true
+    plan:
+      - get: brats-mutex
+      - put: brats-mutex
+        params: {release: brats-mutex}
 
 resources:
   - name: bosh-src

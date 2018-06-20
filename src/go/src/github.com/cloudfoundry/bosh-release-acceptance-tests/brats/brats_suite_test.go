@@ -227,9 +227,9 @@ func loadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 func cleanupDB(dbConfig ExternalDBConfig) {
 	if dbConfig.Type == "mysql" {
 		cleanupMySQL(dbConfig)
+	} else if dbConfig.Type == "postgres" {
+		cleanupPostgres(dbConfig)
 	}
-
-	cleanupPostgres(dbConfig)
 }
 
 func cleanupMySQL(dbConfig ExternalDBConfig) {

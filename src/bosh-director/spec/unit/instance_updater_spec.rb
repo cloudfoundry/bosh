@@ -288,7 +288,7 @@ module Bosh::Director
 
           expect(state_applier).to receive(:apply)
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan).twice
-          expect(links_manager).to receive(:bind_links_to_instance).with(instance).twice
+          expect(links_manager).to receive(:bind_links_to_instance).with(instance)
 
           subnet_spec = {
             'range' => '10.10.10.0/24',
