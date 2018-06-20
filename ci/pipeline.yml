@@ -880,6 +880,7 @@ jobs:
   - name: unclaim-brats-mutex
     serial: true
     plan:
+      - get: brats-mutex
       - put: brats-mutex
         params: {release: brats-mutex}
 
