@@ -2,6 +2,10 @@ module Bosh::Director::Links
   class LinksErrorBuilder
     def self.build_link_error(consumer_intent, provider_intents, expected_network = nil)
       error_header = build_link_error_header(consumer_intent)
+
+      error_header << ' Multiple link providers found:' if provider_intents.size > 1
+      error_header << ' Details below:' if provider_intents.size <= 1
+
       error_details = build_error_details(provider_intents, expected_network).map do |detail|
         "    - #{detail}"
       end
@@ -30,7 +34,6 @@ module Bosh::Director::Links
           error_heading << " in instance group '#{consumer.instance_group}'."
         end
       end
-      error_heading << ' Details below:'
       error_heading
     end
 
