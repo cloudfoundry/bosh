@@ -26,9 +26,9 @@ bosh int bosh.yml \
   -v docker_host="${DOCKER_HOST}" \
   -v network=director_network \
   -v docker_tls="${DOCKER_CERTS}" \
+  -o "/usr/local/bosh-deployment/misc/source-releases/bosh.yml" \
   -o /usr/local/bosh-deployment/local-bosh-release.yml \
   -v local_bosh_release="${src_dir}" \
-  -o "/usr/local/bosh-deployment/misc/source-releases/bosh.yml" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
 bosh upload-stemcell \
