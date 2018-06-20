@@ -60,6 +60,8 @@ module Bosh::Director
           return
         end
 
+        links_bound_to_instance = false
+
         unless instance_plan.already_detached?
           # Rendered templates are persisted here, in the case where a vm is already soft stopped
           # It will update the rendered templates on the VM
@@ -67,6 +69,7 @@ module Bosh::Director
             @rendered_templates_persistor.persist(instance_plan)
             @links_manager.bind_links_to_instance(instance)
             instance.update_variable_set
+            links_bound_to_instance = true
           end
 
           unless instance_plan.needs_shutting_down? || instance.state == 'detached'
@@ -166,7 +169,7 @@ module Bosh::Director
 
         @rendered_templates_persistor.persist(instance_plan)
         instance.update_variable_set
-        @links_manager.bind_links_to_instance(instance) unless recreated
+        @links_manager.bind_links_to_instance(instance) unless links_bound_to_instance
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,
