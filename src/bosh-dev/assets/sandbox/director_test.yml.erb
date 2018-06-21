@@ -180,6 +180,7 @@ nats:
   client_ca_private_key_path: <%= nats_client_ca_private_key_path %>
 
 agent:
+  agent_wait_timeout: <%= agent_wait_timeout %>
   env:
     bosh:
       dummy_agent_key_merged: "This key must be sent to agent"

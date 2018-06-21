@@ -35,6 +35,7 @@ module Bosh::Director
 
           begin
             report.vm = vm
+            @logger.info("Updating metadata for #{vm.cid}")
             update_metadata(@instance_plan, vm, cpi_factory)
           rescue Exception => e
             @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")

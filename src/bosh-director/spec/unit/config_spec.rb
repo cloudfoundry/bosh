@@ -459,6 +459,14 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#agent_wait_timeout' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the version specified in the config' do
+      expect(config.agent_wait_timeout).to eq(1234)
+    end
+  end
+
   describe '#nats_rpc' do
     let(:some_client) { instance_double(Bosh::Director::NatsRpc)}
 
