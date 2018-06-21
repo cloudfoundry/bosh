@@ -1,0 +1,74 @@
+- type: replace
+  path: /jobs/name=candidate-release/plan/get=candidate-version/params/bump
+  value: minor
+
+- type: replace
+  path: /resources/name=bosh-src/source/branch
+  value: ((branchname))
+
+- type: replace
+  path: /resources/name=candidate-version/source/initial_version?
+  value: ((branchver)).0.0
+
+- type: replace
+  path: /resources/name=bosh-candidate-release-tarballs/source/versioned_file
+  value: ((branchname))/bosh-dev-release.tgz
+
+- type: replace
+  path: /groups/name=bosh/jobs/-
+  value: finalize-bosh-release
+
+- type: replace
+  path: /groups/name=finalize?/jobs
+  value:
+  - finalize-bosh-release
+
+- type: replace
+  path: /jobs/-
+  value:
+    name: finalize-bosh-release
+    serial: true
+    plan:
+      - aggregate:
+        - get: bosh-src
+          passed:
+            - bats-centos
+            - bats-ubuntu-trusty
+            - bats-ubuntu-xenial
+        - get: bosh-master
+        - get: bosh-dev-release
+          resource: bosh-candidate-release-tarballs
+          passed:
+            - bats-centos
+            - bats-ubuntu-trusty
+            - bats-ubuntu-xenial
+        - get: bosh-cli
+        - get: candidate-version
+          params:
+            bump: minor
+      - task: promote-release
+        file: bosh-src/ci/tasks/finalize-bosh-release.yml
+        params:
+          BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
+          BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
+      - put: candidate-version
+        params:
+          file: bumped-candidate-version/version
+      - put: bosh-master
+        params:
+          repository: bosh-master-with-final
+          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
+          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
+      - put: bosh-src
+        params:
+          repository: bosh-src-with-bumped-version
+
+- type: replace
+  path: /resources/-
+  value:
+    name: bosh-master
+    type: git
+    source:
+      uri: ((bosh_src_url))
+      branch: master
+      private_key: ((github_deployment_key))
