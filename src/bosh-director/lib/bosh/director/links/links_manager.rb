@@ -303,12 +303,22 @@ module Bosh::Director::Links
       end
 
       deployment_model.link_consumers.each do |consumer|
-        next if link_types_to_skip_removal.include?(consumer.type)
+        next if consumer.type == 'external'
         consumer.intents.each do |consumer_intent|
           if consumer_intent.serial_id == serial_id
             Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).each do |link|
-              instances_links = Bosh::Director::Models::Links::InstancesLink.where(link_id: link.id, serial_id: consumer_intent.serial_id)
-              link.delete if instances_links.count == 0
+              if consumer.type == 'job'
+                instances_links = Bosh::Director::Models::Links::InstancesLink.where(
+                  link_id: link.id,
+                  serial_id: consumer_intent.serial_id,
+                )
+                link.delete if instances_links.count.zero?
+              elsif consumer.type == 'variable'
+                newest_link = Bosh::Director::Models::Links::Link.where(
+                  link_consumer_intent_id: consumer_intent.id,
+                ).order(Sequel.desc(:id)).first
+                link.delete if link.id != newest_link.id
+              end
             end
           else
             consumer_intent.destroy
@@ -556,10 +566,6 @@ module Bosh::Director::Links
       end
 
       true
-    end
-
-    def link_types_to_skip_removal
-      %w(variable external)
     end
   end
 end

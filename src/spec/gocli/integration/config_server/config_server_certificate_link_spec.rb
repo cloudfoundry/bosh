@@ -112,6 +112,7 @@ describe 'using director with config server and deployments having links', type:
         {
           'name' => 'my_endpoint',
           'type' => 'address',
+          'properties' => %w[b nested],
         },
       ],
       'properties' => { 'b' => 'bar', 'nested' => { 'three' => 'foo' } },
@@ -181,6 +182,75 @@ describe 'using director with config server and deployments having links', type:
       expect(links.count).to eq(1)
       expect(links[0]['link_consumer_id']).to eq(consumers[0]['id'])
 
+    end
+
+    context 'when provider is updated and we have new link for variable consumer' do
+      before do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+      end
+
+      it 'should remove old links' do
+        deployment_manifest['instance_groups'][0]['jobs'][0]['properties']['b'] = 'barbar'
+
+        old_links = get('/links', "deployment=#{deployment_name}")
+        expect(old_links.count).to eq(1)
+
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        new_links = get('/links', "deployment=#{deployment_name}")
+        expect(new_links.count).to eq(1)
+        expect(new_links[0]['id']).to_not eq(old_links[0]['id'])
+      end
+    end
+
+    context 'when variable consumer is removed' do
+      before do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+      end
+      it 'should remove old links' do
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(1)
+        expect(links[0]['id']).to eq('1')
+
+        runtime_config['variables'] = []
+        upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false, env: client_env)
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        consumers = get('/link_consumers', "deployment=#{deployment_name}")
+        expect(consumers.count).to eq(0)
+
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(0)
+      end
+    end
+
+    context 'when a variable link is in a bad deploy' do
+      before do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+      end
+      it 'can recreate the instances' do
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(1)
+
+        deployment_manifest['instance_groups'][0]['jobs'][0]['properties']['b'] = 'barbar'
+        runtime_config['variables'] <<
+          {
+            'name' => 'mine',
+            'type' => 'spaghetti',
+          }
+        upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false, env: client_env)
+
+        deploy_simple_manifest(
+          manifest_hash: deployment_manifest,
+          include_credentials: false,
+          env: client_env,
+          failure_expected: true,
+        )
+
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(2)
+        bosh_runner.run('recreate', deployment_name: deployment_name, include_credentials: false, env: client_env)
+      end
     end
   end
 end

@@ -3089,7 +3089,7 @@ describe Bosh::Director::Links::LinksManager do
             serial_id: serial_id,
           )
 
-          consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
+          @consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
             link_consumer: consumer,
             original_name: 'consumer_intent',
             type: 'address',
@@ -3105,7 +3105,7 @@ describe Bosh::Director::Links::LinksManager do
             serial_id: serial_id,
           )
 
-          provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
+          @provider_intent = Bosh::Director::Models::Links::LinkProviderIntent.create(
             link_provider: provider,
             original_name: 'ci2',
             type: 'address',
@@ -3114,8 +3114,8 @@ describe Bosh::Director::Links::LinksManager do
           )
 
           Bosh::Director::Models::Links::Link.create(
-            link_provider_intent: provider_intent,
-            link_consumer_intent: consumer_intent,
+            link_provider_intent: @provider_intent,
+            link_consumer_intent: @consumer_intent,
             name: 'link',
             link_content: '{}',
           )
@@ -3124,9 +3124,31 @@ describe Bosh::Director::Links::LinksManager do
         context 'when the consumer is a variable' do
           let(:consumer_type) { 'variable' }
 
-          it 'should not delete the link' do
+          before do
+            Bosh::Director::Models::Links::Link.create(
+              link_provider_intent: @provider_intent,
+              link_consumer_intent: @consumer_intent,
+              name: 'link3',
+              link_content: '{"b": "4"}',
+            )
+
+            Bosh::Director::Models::Links::Link.create(
+              link_provider_intent: @provider_intent,
+              link_consumer_intent: @consumer_intent,
+              name: 'link2',
+              link_content: '{"a": "2"}',
+            )
+          end
+
+          it 'should delete the old link' do
+            link = Bosh::Director::Models::Links::Link.where(link_consumer_intent_id: @consumer_intent.id)
+            expect(link.count).to eq(3)
             subject.remove_unused_links(deployment_model)
             link = Bosh::Director::Models::Links::Link.where(name: 'link')
+            expect(link.count).to eq(0)
+            link = Bosh::Director::Models::Links::Link.where(link_consumer_intent_id: @consumer_intent.id)
+            expect(link.count).to eq(1)
+            link = Bosh::Director::Models::Links::Link.where(name: 'link2')
             expect(link.count).to eq(1)
           end
         end
