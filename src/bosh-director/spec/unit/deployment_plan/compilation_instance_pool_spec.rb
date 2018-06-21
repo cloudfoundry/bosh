@@ -179,7 +179,7 @@ module Bosh::Director
 
           compilation_instance_pool.delete_instances(max_instance_count)
 
-          expect(instance_deleter).to have_received(:delete_instance_plan).exactly(0).times
+          expect(instance_deleter).to have_received(:delete_instance_plan).exactly(1).times
         end
       end
 
