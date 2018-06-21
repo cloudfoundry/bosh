@@ -95,10 +95,10 @@ module Bosh::Director
       def create_tarball(release_version_model, stemcell)
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
-        compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell)
-        templates = release_version_model.templates.select{|template| is_template_to_be_exported?(template)}
-
+        templates = release_version_model.templates.select { |template| is_template_to_be_exported?(template) }
+        compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell, templates)
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
+
         download_dir = compiled_release_downloader.download
 
         manifest = CompiledReleaseManifest.new(compiled_packages_group, templates, stemcell)

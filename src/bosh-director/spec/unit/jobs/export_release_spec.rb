@@ -239,7 +239,12 @@ module Bosh::Director
         let(:release_version) {release.add_version(:version => '0.1-dev')}
 
         before do
-          release_version.add_package(Bosh::Director::Models::Package.make(name: 'foo'))
+          release_version.add_package(
+            Bosh::Director::Models::Package.make(
+              name: 'foo',
+              dependency_set_json: JSON.generate(['postgres']),
+            ),
+          )
           release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
 
           release_version.add_template(
@@ -296,7 +301,7 @@ module Bosh::Director
               release_id: release.id,
               blobstore_id: 'postgres_package_blobstore_id',
               sha1: 'postgres_package_sha1',
-              dependency_set_json: JSON.generate(["ruby"]),
+              dependency_set_json: ['ruby'].to_json,
           )
           package_postgres.add_compiled_package(
               sha1: 'postgrescompiledpackagesha1',

@@ -112,6 +112,44 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
   end
 
+  context 'when updating a package used by a job in a release' do
+    let(:deployment_manifest) { Bosh::Spec::NewDeployments.test_deployment_manifest }
+
+    before do
+      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      deployment_manifest['stemcells'].first['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
+      deployment_manifest['stemcells'].first['version'] = '3001'
+      deployment_manifest['stemcells'].first.delete('os')
+      deployment_manifest['releases'][0]['name'] = 'fixture'
+
+      bosh_runner.run(
+        'upload-release ' +
+        spec_asset('compiled_releases/test_release/releases/release-with-packages-being-updated/release-a-1-with-p-package.tgz'),
+      )
+      bosh_runner.run(
+        'upload-release ' +
+        spec_asset('compiled_releases/test_release/releases/release-with-packages-being-updated/release-a-2-with-q-package.tgz'),
+      )
+    end
+
+    it 'only copies packages that are used by a job' do
+      deployment_manifest['releases'][0]['version'] = '0+dev.2'
+      deploy_simple_manifest(manifest_hash: deployment_manifest)
+      out = bosh_runner.run('export-release fixture/0+dev.2 centos-7/3001', deployment_name: 'test_deployment')
+      expect(out).to include('copying packages: p/100bedf6f31da1a4693c446f1ea93348ea7a7a9d')
+      expect(out).not_to include('copying packages: q/100bedf6f31da1a4693c446f1ea93348ea7a7a9d')
+
+      deployment_manifest['releases'][0]['version'] = '0+dev.3'
+      deploy_simple_manifest(manifest_hash: deployment_manifest)
+      out = bosh_runner.run('export-release fixture/0+dev.3 centos-7/3001', deployment_name: 'test_deployment')
+      expect(out).not_to include('copying packages: p/100bedf6f31da1a4693c446f1ea93348ea7a7a9d')
+      expect(out).to include('copying packages: q/100bedf6f31da1a4693c446f1ea93348ea7a7a9d')
+    end
+  end
+
   context 'with a cloud config manifest' do
     let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
     let(:manifest_hash) { Bosh::Spec::NewDeployments.multiple_release_manifest }
