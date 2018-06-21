@@ -319,7 +319,7 @@ module Bosh::Director::Links
       end
     end
 
-    def resolve_consumer_intent_and_generate_link(consumer_intent, global_use_dns_entry, dry_run)
+    def resolve_consumer_intent_and_generate_link(consumer_intent, global_use_dns_entry, dry_run, external_provider_intent = nil)
       consumer_intent_metadata = {}
       consumer_intent_metadata = JSON.parse(consumer_intent.metadata) unless consumer_intent.metadata.nil?
       is_manual_link = !!consumer_intent_metadata['manual_link']
@@ -337,7 +337,12 @@ module Bosh::Director::Links
           )
         end
       else
-        found_provider_intents = provider_intents_for_consumer_intent(consumer_intent, consumer_intent_metadata)
+        if external_provider_intent.nil?
+          found_provider_intents = provider_intents_for_consumer_intent(consumer_intent, consumer_intent_metadata)
+        else
+          found_provider_intents = [external_provider_intent]
+        end
+
         consumer = consumer_intent.link_consumer
         current_deployment_name = consumer.deployment.name
 
