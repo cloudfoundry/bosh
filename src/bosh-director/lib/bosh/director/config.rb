@@ -51,7 +51,6 @@ module Bosh::Director
       )
 
       attr_reader(
-        :agent_wait_timeout,
         :config_server,
         :config_server_enabled,
         :db_config,
@@ -277,6 +276,10 @@ module Bosh::Director
             'git show-ref --head --hash=8 2> /dev/null || ' +
             'echo 00000000) | head -n1'
         `#{revision_command}`.strip
+      end
+
+      def agent_wait_timeout
+        @agent_wait_timeout ||= 600
       end
 
       def configure_db(db_config)

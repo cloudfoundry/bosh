@@ -460,10 +460,10 @@ describe Bosh::Director::Config do
   end
 
   describe '#agent_wait_timeout' do
-    subject(:config) { Bosh::Director::Config.new(test_config) }
+    before { Bosh::Director::Config.configure(test_config) }
 
     it 'returns the version specified in the config' do
-      expect(config.agent_wait_timeout).to eq(1234)
+      expect(Bosh::Director::Config.agent_wait_timeout).to eq(1234)
     end
   end
 
