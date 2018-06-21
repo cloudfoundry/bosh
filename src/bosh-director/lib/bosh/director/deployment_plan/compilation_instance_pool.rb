@@ -122,8 +122,11 @@ module Bosh::Director
       end
 
       def destroy_instance(instance_plan)
-        Steps::OrphanVmStep.new(instance_plan.instance_model.active_vm).perform(nil) if @config.orphan_workers
-        @instance_deleter.delete_instance_plan(instance_plan, EventLog::NullStage.new)
+        if @config.orphan_workers
+          Steps::OrphanVmStep.new(instance_plan.instance_model.active_vm).perform(nil)
+        else
+          @instance_deleter.delete_instance_plan(instance_plan, EventLog::NullStage.new)
+        end
       end
     end
 
