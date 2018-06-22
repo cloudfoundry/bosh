@@ -895,41 +895,43 @@ module Bosh::Director
               expect(last_response.status).to eq(200)
 
               body = JSON.parse(last_response.body)
-              expect(body).to eq([
-                                   {
-                                     'name' => 'deployment-1',
-                                     'releases' => [
-                                       { 'name' => 'release-1', 'version' => '1' },
-                                       { 'name' => 'release-1', 'version' => '2' },
-                                     ],
-                                     'stemcells' => [
-                                       { 'name' => 'stemcell-1', 'version' => '1' },
-                                       { 'name' => 'stemcell-2', 'version' => '1' },
-                                     ],
-                                     'cloud_config' => 'outdated',
-                                     'teams' => ['dabest', 'daworst'],
-                                   },
-                                   {
-                                     'name' => 'deployment-2',
-                                     'releases' => [
-                                       { 'name' => 'release-1', 'version' => '1' },
-                                       { 'name' => 'release-2', 'version' => '1' },
-                                     ],
-                                     'stemcells' => [
-                                       { 'name' => 'stemcell-1', 'version' => '1' },
-                                       { 'name' => 'stemcell-1', 'version' => '2' },
-                                     ],
-                                     'cloud_config' => 'latest',
-                                     'teams' => ['dabest'],
-                                   },
-                                   {
-                                     'name' => 'deployment-3',
-                                     'releases' => [],
-                                     'stemcells' => [],
-                                     'cloud_config' => 'none',
-                                     'teams' => ['daworst'],
-                                   },
-                                ])
+              expect(body).to eq(
+                [
+                  {
+                    'name' => 'deployment-1',
+                    'releases' => [
+                      { 'name' => 'release-1', 'version' => '1' },
+                      { 'name' => 'release-1', 'version' => '2' },
+                    ],
+                    'stemcells' => [
+                      { 'name' => 'stemcell-1', 'version' => '1' },
+                      { 'name' => 'stemcell-2', 'version' => '1' },
+                    ],
+                    'cloud_config' => 'outdated',
+                    'teams' => %w[dabest daworst],
+                  },
+                  {
+                    'name' => 'deployment-2',
+                    'releases' => [
+                      { 'name' => 'release-1', 'version' => '1' },
+                      { 'name' => 'release-2', 'version' => '1' },
+                    ],
+                    'stemcells' => [
+                      { 'name' => 'stemcell-1', 'version' => '1' },
+                      { 'name' => 'stemcell-1', 'version' => '2' },
+                    ],
+                    'cloud_config' => 'latest',
+                    'teams' => ['dabest'],
+                  },
+                  {
+                    'name' => 'deployment-3',
+                    'releases' => [],
+                    'stemcells' => [],
+                    'cloud_config' => 'none',
+                    'teams' => ['daworst'],
+                  },
+                ],
+              )
             end
 
             it 'lists without configs if specified' do
@@ -937,40 +939,64 @@ module Bosh::Director
               expect(last_response.status).to eq(200)
 
               body = JSON.parse(last_response.body)
-              expect(body).to eq([
-                                   {
-                                     'name' => 'deployment-1',
-                                     'releases' => [
-                                       { 'name' => 'release-1', 'version' => '1' },
-                                       { 'name' => 'release-1', 'version' => '2' },
-                                     ],
-                                     'stemcells' => [
-                                       { 'name' => 'stemcell-1', 'version' => '1' },
-                                       { 'name' => 'stemcell-2', 'version' => '1' },
-                                     ],
-                                     'teams' => ['dabest', 'daworst'],
-                                   },
-                                   {
-                                     'name' => 'deployment-2',
-                                     'releases' => [
-                                       { 'name' => 'release-1', 'version' => '1' },
-                                       { 'name' => 'release-2', 'version' => '1' },
-                                     ],
-                                     'stemcells' => [
-                                       { 'name' => 'stemcell-1', 'version' => '1' },
-                                       { 'name' => 'stemcell-1', 'version' => '2' },
-                                     ],
-                                     'teams' => ['dabest'],
-                                   },
-                                   {
-                                     'name' => 'deployment-3',
-                                     'releases' => [],
-                                     'stemcells' => [],
-                                     'teams' => ['daworst'],
-                                   },
-                                 ])
+              expect(body).to eq(
+                [
+                  {
+                    'name' => 'deployment-1',
+                    'releases' => [
+                      { 'name' => 'release-1', 'version' => '1' },
+                      { 'name' => 'release-1', 'version' => '2' },
+                    ],
+                    'stemcells' => [
+                      { 'name' => 'stemcell-1', 'version' => '1' },
+                      { 'name' => 'stemcell-2', 'version' => '1' },
+                    ],
+                    'teams' => %w[dabest daworst],
+                  },
+                  {
+                    'name' => 'deployment-2',
+                    'releases' => [
+                      { 'name' => 'release-1', 'version' => '1' },
+                      { 'name' => 'release-2', 'version' => '1' },
+                    ],
+                    'stemcells' => [
+                      { 'name' => 'stemcell-1', 'version' => '1' },
+                      { 'name' => 'stemcell-1', 'version' => '2' },
+                    ],
+                    'teams' => ['dabest'],
+                  },
+                  {
+                    'name' => 'deployment-3',
+                    'releases' => [],
+                    'stemcells' => [],
+                    'teams' => ['daworst'],
+                  },
+                ],
+              )
             end
 
+            it 'lists without configs,stemcells and releases if specified' do
+              get '/?exclude_configs=true&exclude_stemcells=true&exclude_releases=true', {}, {}
+              expect(last_response.status).to eq(200)
+
+              body = JSON.parse(last_response.body)
+              expect(body).to eq(
+                [
+                  {
+                    'name' => 'deployment-1',
+                    'teams' => %w[dabest daworst],
+                  },
+                  {
+                    'name' => 'deployment-2',
+                    'teams' => ['dabest'],
+                  },
+                  {
+                    'name' => 'deployment-3',
+                    'teams' => ['daworst'],
+                  },
+                ],
+              )
+            end
           end
 
           it 'orders the associations' do

@@ -11,17 +11,13 @@ module Bosh::Director
         @deployment_lookup.by_name(name)
       end
 
-      def all_by_name_asc
-        all_by_name_eagerly_asc([:stemcells,
-                                 release_versions: :release,
-                                 teams: proc { |ds| ds.select(:id, :name) },
-                                 cloud_configs: proc { |ds| ds.select(:id, :type) }])
-      end
-
-      def all_by_name_without_configs_asc
-        all_by_name_eagerly_asc([:stemcells,
-                                 release_versions: :release,
-                                 teams: proc { |ds| ds.select(:id, :name) }])
+      def all_by_name_asc_without(excludes)
+        relations = []
+        relations << :stemcells unless excludes[:exclude_stemcells]
+        relations << { release_versions: :release } unless excludes[:exclude_releases]
+        relations << { teams: proc { |ds| ds.select(:id, :name) } }
+        relations << { cloud_configs: proc { |ds| ds.select(:id, :type) } } unless excludes[:exclude_configs]
+        all_by_name_eagerly_asc(relations)
       end
 
       def create_deployment(username, manifest_text, cloud_configs, runtime_configs, deployment, options = {}, context_id = '')
