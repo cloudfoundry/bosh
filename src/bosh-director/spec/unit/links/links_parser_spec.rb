@@ -1920,6 +1920,41 @@ describe Bosh::Director::Links::LinksParser do
           subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
         end
       end
+
+      context 'and the `wildcard` is true' do
+        it 'makes consumer and consumer intent' do
+          expected_consumer_params = {
+            deployment_model: deployment_plan.model,
+            instance_group_name: '',
+            name: 'bbs',
+            type: 'variable',
+          }
+          expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+          expected_consumer_intent_params = {
+            link_consumer: consumer,
+            link_original_name: 'alternative_name',
+            link_type: 'address',
+            new_intent_metadata: { explicit_link: true, wildcard: true },
+          }
+          expect(links_manager).to receive(:find_or_create_consumer_intent)
+            .with(expected_consumer_intent_params)
+            .and_return(consumer_intent)
+          expect(consumer_intent).to receive(:name=).with('foo')
+          expect(consumer_intent).to receive(:save)
+
+          variable_spec = {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'alternative_name' => {
+                'from' => 'foo',
+                'properties' => { 'wildcard' => true },
+              },
+            },
+          }
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end
+      end
     end
 
     context 'when the variable does not define a consumes block' do

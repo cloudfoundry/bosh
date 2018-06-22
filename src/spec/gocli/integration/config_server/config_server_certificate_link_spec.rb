@@ -207,6 +207,7 @@ describe 'using director with config server and deployments having links', type:
       before do
         deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
       end
+
       it 'should remove old links' do
         links = get('/links', "deployment=#{deployment_name}")
         expect(links.count).to eq(1)
@@ -250,6 +251,64 @@ describe 'using director with config server and deployments having links', type:
         links = get('/links', "deployment=#{deployment_name}")
         expect(links.count).to eq(2)
         bosh_runner.run('recreate', deployment_name: deployment_name, include_credentials: false, env: client_env)
+      end
+    end
+
+    context 'when wildcard flag is specied in variable' do
+      let(:variables) do
+        [
+          {
+            'name' => 'bbs_ca',
+            'type' => 'certificate',
+            'options' => { 'is_ca' => true },
+          },
+          {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'alternative_name' => {
+                'from' => 'http_endpoint',
+                'properties' => { 'wildcard' => true },
+              },
+            },
+            'options' => { 'ca' => 'bbs_ca', 'alternative_names' => ['127.0.0.1'] },
+          },
+        ]
+      end
+      before do
+        runtime_config['variables'] = variables
+        upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false, env: client_env)
+      end
+
+      shared_examples 'generates the certificate' do
+        it 'with the dns record as an alternative name' do
+          deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+          cert = config_server_helper.get_value(prepend_namespace('bbs'))
+          cert = OpenSSL::X509::Certificate.new(cert['certificate'])
+          subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
+
+          alternative_names = subject_alt_name.value.split(', ').map do |names|
+            names.split(':', 2)[1]
+          end
+
+          expect(alternative_names).to match_array(['127.0.0.1', expected_dns])
+        end
+      end
+
+      context 'when short DNS is not specified in deployment' do
+        let(:expected_dns) { '*.my-instance-group.a.simple.bosh' }
+
+        it_behaves_like 'generates the certificate'
+      end
+
+      context 'when deployment has short DNS feature enabled' do
+        let(:expected_dns) { '*.q-g1.bosh' }
+        before do
+          deployment_manifest['features'] = { 'use_short_dns_addresses' => true }
+        end
+
+        it_behaves_like 'generates the certificate'
       end
     end
   end

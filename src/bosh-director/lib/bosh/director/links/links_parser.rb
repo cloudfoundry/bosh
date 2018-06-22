@@ -722,6 +722,8 @@ module Bosh::Director::Links
         )
 
         metadata = { explicit_link: true }
+        wildcard_needed = !value['properties'].nil? && value['properties']['wildcard'] == true
+        metadata = metadata.merge(wildcard: value['properties']['wildcard']) if wildcard_needed
 
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,

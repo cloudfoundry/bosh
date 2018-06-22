@@ -116,6 +116,12 @@ module Bosh::Director::ConfigServer
 
     private
 
+    def generate_wildcard(link_url)
+      exploded = link_url.split('.', 2)
+      exploded[0] = '*'
+      exploded.join('.')
+    end
+
     def find_variable_link(deployment_model, variable_name)
       links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
@@ -145,7 +151,14 @@ module Bosh::Director::ConfigServer
         default_network: link_content['default_network'],
         root_domain: link_content['domain'],
       }
-      dns_encoder.encode_query(query_criteria)
+      url = dns_encoder.encode_query(query_criteria)
+      url = generate_wildcard(url) if link_wants_wildcard(link)
+      url
+    end
+
+    def link_wants_wildcard(link)
+      metadata = JSON.parse(link.link_consumer_intent.metadata || '{}')
+      metadata['wildcard'] || false
     end
 
     def fetch_values_with_deployment(variables, variable_set, must_be_absolute_name)

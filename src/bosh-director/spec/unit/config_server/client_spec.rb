@@ -1583,6 +1583,48 @@ module Bosh::Director::ConfigServer
 
                   client.generate_values(variables_obj, deployment_name)
                 end
+
+                context 'when wildcard flag is specified in properties' do
+                  let(:variables_spec) do
+                    [
+                      {
+                        'name' => 'placeholder_b',
+                        'type' => 'certificate',
+                        'consumes' => {
+                          'alternative_name' => { 'from' => 'foo', 'properties' => { 'wildcard' => true } },
+                        },
+                        'options' => {
+                          'ca' => 'my_ca',
+                          'common_name' => 'bosh.io',
+                          'alternative_names' => ['a.bosh.io', 'b.bosh.io'],
+                        },
+                      },
+                    ]
+                  end
+
+                  it 'should generate the certificate with the SAN appended' do
+                    consumer_intent.metadata = '{"wildcard": true}'
+                    consumer_intent.save
+
+                    expect(http_client).to receive(:post).with(
+                      'name' => prepend_namespace('placeholder_b'),
+                      'type' => 'certificate',
+                      'parameters' => {
+                        'ca' => prepend_namespace('my_ca'),
+                        'common_name' => 'bosh.io',
+                        'alternative_names' => %w[a.bosh.io b.bosh.io *.ig1.net-a.deployment-name.bosh],
+                      },
+                    ).ordered.and_return(
+                      generate_success_response(
+                        {
+                          'id': 'some_id2',
+                        }.to_json,
+                      ),
+                    )
+
+                    client.generate_values(variables_obj, deployment_name)
+                  end
+                end
               end
             end
 
