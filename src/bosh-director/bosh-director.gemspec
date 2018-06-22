@@ -51,7 +51,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rake',             '~> 10.0'
   spec.add_dependency 'rufus-scheduler',  '~>2.0.18'
   spec.add_dependency 'sequel',           '~>4.49.0'
-  spec.add_dependency 'sinatra',          '~>2.0.3'
+  spec.add_dependency 'sinatra',          '~>1.4.2'
   spec.add_dependency 'sys-filesystem',   '~>1.1.0'
   spec.add_dependency 'puma',             '~>3.10'
   spec.add_dependency 'membrane',         '~>1.1.0'
