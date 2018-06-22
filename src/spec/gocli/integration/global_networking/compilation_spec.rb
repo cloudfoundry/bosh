@@ -107,7 +107,7 @@ describe 'global networking', type: :integration do
 
   context 'when creating vm for compilation fails' do
     before do
-      current_sandbox.cpi.commands.make_set_vm_metadata_always_fail
+      current_sandbox.cpi.commands.make_create_vm_always_fail
     end
 
     it 'releases its IP for next deploy' do
@@ -121,10 +121,9 @@ describe 'global networking', type: :integration do
 
       expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
 
-      current_sandbox.cpi.commands.allow_set_vm_metadata_to_succeed
+      current_sandbox.cpi.commands.allow_create_vm_to_succeed
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
       deploy_simple_manifest(manifest_hash: manifest_hash)
-
       expect(director.instances.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3')
     end
   end

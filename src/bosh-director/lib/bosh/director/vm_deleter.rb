@@ -30,7 +30,6 @@ module Bosh::Director
     private
 
     def delete_vms(instance_model, store_event)
-      instance_model.refresh
       instance_model.vms.each do |vm|
         DeploymentPlan::Steps::DeleteVmStep.new(
           store_event,

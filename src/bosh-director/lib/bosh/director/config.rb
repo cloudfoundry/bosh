@@ -16,52 +16,52 @@ module Bosh::Director
       attr_accessor(
         :base_dir,
         :cloud_options,
-        :current_job,
         :db,
-        :default_ssh_options,
-        :default_update_vm_strategy,
         :dns,
         :dns_db,
-        :enable_cpi_resize_disk,
-        :enable_post_deploy,
-        :enable_snapshots,
-        :enable_virtual_delete_vms,
         :event_log,
-        :fix_stateful_nodes,
-        :flush_arp,
-        :generate_vm_passwords,
-        :keep_unreachable_vms,
-        :local_dns,
         :logger,
         :max_tasks,
         :max_threads,
-        :max_vm_create_tries,
         :name,
-        :nats_server_ca,
-        :nats_uri,
         :process_uuid,
-        :remove_dev_tools,
         :result,
         :revision,
         :task_checkpoint_interval,
         :trusted_certs,
         :uuid,
+        :current_job,
+        :fix_stateful_nodes,
+        :enable_snapshots,
+        :max_vm_create_tries,
+        :flush_arp,
+        :nats_uri,
+        :nats_server_ca,
+        :default_ssh_options,
+        :keep_unreachable_vms,
+        :enable_post_deploy,
+        :generate_vm_passwords,
+        :remove_dev_tools,
+        :enable_virtual_delete_vms,
+        :local_dns,
         :verify_multidigest_path,
         :version,
+        :enable_cpi_resize_disk,
+        :default_update_vm_strategy,
       )
 
       attr_reader(
-        :config_server,
-        :config_server_enabled,
         :db_config,
-        :director_ips,
-        :enable_nats_delivered_templates,
         :ignore_missing_gateway,
-        :nats_client_ca_certificate_path,
-        :nats_client_ca_private_key_path,
-        :nats_client_certificate_path,
-        :nats_client_private_key_path,
         :record_events,
+        :director_ips,
+        :config_server_enabled,
+        :config_server,
+        :enable_nats_delivered_templates,
+        :nats_client_private_key_path,
+        :nats_client_certificate_path,
+        :nats_client_ca_private_key_path,
+        :nats_client_ca_certificate_path,
         :runtime,
       )
 
@@ -142,10 +142,7 @@ module Bosh::Director
         @default_ssh_options = config['default_ssh_options']
 
         @cloud_options = config['cloud']
-        agent_config = config.fetch('agent', {})
-        @agent_env = agent_config.fetch('env', {}).fetch('bosh', {})
-
-        @agent_wait_timeout = agent_config.fetch('agent_wait_timeout', 600)
+        @agent_env = config.fetch('agent',{}).fetch('env', {}).fetch('bosh', {})
 
         @compiled_package_cache_options = config['compiled_package_cache']
         @name = config['name'] || ''
@@ -276,10 +273,6 @@ module Bosh::Director
             'git show-ref --head --hash=8 2> /dev/null || ' +
             'echo 00000000) | head -n1'
         `#{revision_command}`.strip
-      end
-
-      def agent_wait_timeout
-        @agent_wait_timeout ||= 600
       end
 
       def configure_db(db_config)

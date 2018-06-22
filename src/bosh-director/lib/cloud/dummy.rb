@@ -250,7 +250,6 @@ module Bosh
 
       SET_VM_METADATA_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, metadata: Hash} }
       def set_vm_metadata(vm_cid, metadata)
-        raise 'Set VM metadata failed!!!' if commands.set_vm_metadata_should_fail?
         validate_and_record_inputs(SET_VM_METADATA_SCHEMA, __method__, vm_cid, metadata)
       end
 
@@ -619,22 +618,6 @@ module Bosh
           CreateVmCommand.new(ip_address, azs_to_ip, failed)
         end
 
-        def make_set_vm_metadata_always_fail
-          @logger.debug('Making set_vm_metadata method always fail')
-          FileUtils.mkdir_p(File.dirname(set_vm_metadata_path_fail_path))
-          File.write(set_vm_metadata_path_fail_path, '')
-        end
-
-        def allow_set_vm_metadata_to_succeed
-          @logger.debug('Allowing set_vm_metadata method to succeed (removing any mandatory failures)')
-          FileUtils.rm(set_vm_metadata_path_fail_path)
-        end
-
-        def set_vm_metadata_should_fail?
-          @logger.info('Reading set_vm_metadata configuration')
-          File.exist?(set_vm_metadata_path_fail_path)
-        end
-
         def make_delete_vm_to_raise_vmnotfound
           @logger.info('Making delete_vm method to raise VMNotFound exception')
           FileUtils.mkdir_p(File.dirname(raise_vmnotfound_path))
@@ -685,10 +668,6 @@ module Bosh
 
         def failed_path
           File.join(@cpi_commands, 'create_vm', 'fail')
-        end
-
-        def set_vm_metadata_path_fail_path
-          File.join(@cpi_commands, 'update_vm_metadata', 'fail')
         end
 
         def raise_vmnotfound_path

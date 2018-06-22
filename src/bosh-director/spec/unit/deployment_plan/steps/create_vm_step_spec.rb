@@ -356,7 +356,7 @@ module Bosh
           it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
             expect(agent_client).to receive(:wait_until_ready).and_raise(metadata_err)
             Config.keep_unreachable_vms = false
-            allow(cloud).to receive(:create_vm).and_raise(Bosh::Clouds::VMCreationFailed.new('foo'))
+            expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
             expect(delete_vm_step).to receive(:perform).with(report)
 
             expect { subject.perform(report) }.to raise_error(metadata_err)

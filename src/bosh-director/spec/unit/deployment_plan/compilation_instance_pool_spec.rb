@@ -290,6 +290,11 @@ module Bosh::Director
         end
 
         context 'when keep_unreachable_vms is not set' do
+          it 'deletes the instance' do
+            expect { action_that_raises }.to raise_error(create_instance_error)
+            expect(instance_deleter).to have_received(:delete_instance_plan)
+          end
+
           it 'should record creation event with error' do
             expect {
               action_that_raises

@@ -54,7 +54,6 @@ record_events: true
 version: '0.0.2'
 mbus: 'nats://some-user:some-pass@some-nats-uri:1234'
 agent:
-  agent_wait_timeout: 1234
   env:
     bosh:
       blobstores:
