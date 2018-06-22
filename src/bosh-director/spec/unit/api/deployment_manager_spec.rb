@@ -76,45 +76,92 @@ module Bosh::Director
         deployment.add_release_version(release_version)
       end
 
-      describe '#all_by_name_asc' do
-        it 'eagerly loads :stemcells, :release_versions, :teams, :cloud_configs' do
-          allow(Bosh::Director::Config.db).to receive(:execute).and_call_original
+      describe '#all_by_name_asc_without' do
+        context 'when not excluding anything' do
+          let(:deployment_relations) do
+            {}
+          end
 
-          deployments = subject.all_by_name_asc
+          it 'eagerly loads :stemcells, :release_versions, :teams, :cloud_configs' do
+            allow(Bosh::Director::Config.db).to receive(:execute).and_call_original
 
-          deployments.first.stemcells
-          deployments.first.release_versions.map(&:release)
-          deployments.first.teams
+            deployments = subject.all_by_name_asc_without(deployment_relations)
 
-          expect(Bosh::Director::Config.db).to have_received(:execute).exactly(6).times
+            deployments.first.stemcells
+            deployments.first.release_versions.map(&:release)
+            deployments.first.teams
+
+            expect(Bosh::Director::Config.db).to have_received(:execute).exactly(6).times
+          end
+
+          it 'lists all deployments in alphabetic order' do
+            Models::Deployment.make(name: 'c')
+            Models::Deployment.make(name: 'a')
+
+            expect(subject.all_by_name_asc_without(deployment_relations).map(&:name)).to eq(%w[a b c])
+          end
         end
 
-        it 'lists all deployments in alphabetic order' do
-          Models::Deployment.make(name: 'c')
-          Models::Deployment.make(name: 'a')
+        context 'does not eagerly load any excluded relation' do
+          let(:exclude_configs) { true }
+          let(:exclude_releases) { true }
+          let(:exclude_stemcells) { true }
+          let(:deployment_relations) do
+            {
+              exclude_configs: exclude_configs,
+              exclude_releases: exclude_releases,
+              exclude_stemcells: exclude_stemcells,
+            }
+          end
 
-          expect(subject.all_by_name_asc.map(&:name)).to eq(%w[a b c])
-        end
-      end
+          before do
+            allow(Bosh::Director::Config.db).to receive(:execute).and_call_original
+            subject.all_by_name_asc_without(deployment_relations)
+          end
 
-      describe '#all_by_name_without_configs_asc' do
-        it 'eagerly loads :stemcells, :release_versions, :teams' do
-          allow(Bosh::Director::Config.db).to receive(:execute).and_call_original
+          it 'when excluding all' do
+            expect(Bosh::Director::Config.db).to have_received(:execute).exactly(2).times
+          end
 
-          deployments = subject.all_by_name_without_configs_asc
+          context 'when including releases' do
+            let(:exclude_releases) { false }
 
-          deployments.first.stemcells
-          deployments.first.release_versions.map(&:release)
-          deployments.first.teams
+            it 'eagerly loads :releases, :teams' do
+              expect(Bosh::Director::Config.db).to have_received(:execute).exactly(4).times
+            end
+          end
 
-          expect(Bosh::Director::Config.db).to have_received(:execute).exactly(5).times
-        end
+          context 'when including stemcells' do
+            let(:exclude_stemcells) { false }
 
-        it 'lists all deployments in alphabetic order' do
-          Models::Deployment.make(name: 'c')
-          Models::Deployment.make(name: 'a')
+            it 'eagerly loads :stemcells, :teams' do
+              expect(Bosh::Director::Config.db).to have_received(:execute).exactly(3).times
+            end
+          end
 
-          expect(subject.all_by_name_without_configs_asc.map(&:name)).to eq(%w[a b c])
+          context 'when including configs' do
+            let(:exclude_configs) { false }
+
+            it 'eagerly loads :configs, :teams' do
+              expect(Bosh::Director::Config.db).to have_received(:execute).exactly(3).times
+            end
+          end
+
+          context 'when including configs and stemcells' do
+            let(:exclude_configs) { false }
+            let(:exclude_stemcells) { false }
+
+            it 'eagerly loads :configs, :teams' do
+              expect(Bosh::Director::Config.db).to have_received(:execute).exactly(4).times
+            end
+          end
+
+          it 'lists all deployments in alphabetic order' do
+            Models::Deployment.make(name: 'c')
+            Models::Deployment.make(name: 'a')
+
+            expect(subject.all_by_name_asc_without(deployment_relations).map(&:name)).to eq(%w[a b c])
+          end
         end
       end
     end

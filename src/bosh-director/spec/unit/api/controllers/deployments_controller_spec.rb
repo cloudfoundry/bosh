@@ -1001,6 +1001,27 @@ module Bosh::Director
                                    },
                                  ])
             end
+
+            it 'lists without configs,stemcells and releases if specified' do
+              get '/?exclude_configs=true&exclude_stemcells=true&exclude_releases=true', {}, {}
+              expect(last_response.status).to eq(200)
+
+              body = JSON.parse(last_response.body)
+              expect(body).to eq([
+                                   {
+                                     'name' => 'deployment-1',
+                                     'teams' => %w[dabest daworst],
+                                   },
+                                   {
+                                     'name' => 'deployment-2',
+                                     'teams' => ['dabest'],
+                                   },
+                                   {
+                                     'name' => 'deployment-3',
+                                     'teams' => ['daworst'],
+                                   },
+                                 ])
+            end
           end
 
           it 'orders the associations' do
