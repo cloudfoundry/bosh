@@ -30,7 +30,11 @@ Metrics/BlockLength:
   Max: 25
   ExcludedMethods: [describe, context, let, it]
 
-Style/TrailingCommaInLiteral:
+Style/TrailingCommaInArrayLiteral:
+  Enabled: true
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
   Enabled: true
   EnforcedStyleForMultiline: comma
 
