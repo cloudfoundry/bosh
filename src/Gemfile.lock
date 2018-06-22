@@ -203,8 +203,8 @@ GEM
       slop (~> 3.0)
     public_suffix (3.0.0)
     puma (3.11.0)
-    rack (1.6.8)
-    rack-protection (1.5.3)
+    rack (1.6.10)
+    rack-protection (1.5.5)
       rack
     rack-test (0.6.3)
       rack (>= 1.0)
@@ -334,4 +334,4 @@ DEPENDENCIES
   webmock (~> 1.0)
 
 BUNDLED WITH
-   1.16.1
+   1.16.2
