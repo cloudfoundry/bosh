@@ -1552,6 +1552,18 @@ module Bosh::Director::ConfigServer
                   )
                 end
 
+                let(:consumer_intent2) do
+                  Bosh::Director::Models::Links::LinkConsumerIntent.create(
+                    link_consumer: consumer,
+                    original_name: 'common_name',
+                    type: 'address',
+                    name: 'foo',
+                    optional: false,
+                    blocked: false,
+                    serial_id: link_serial_id,
+                  )
+                end
+
                 before do
                   Bosh::Director::Models::Links::Link.create(
                     name: 'foo',
@@ -1625,6 +1637,162 @@ module Bosh::Director::ConfigServer
                     client.generate_values(variables_obj, deployment_name)
                   end
                 end
+
+                context 'when common name and SAN is specified' do
+                  let(:variables_spec) do
+                    [
+                      {
+                        'name' => 'placeholder_b',
+                        'type' => 'certificate',
+                        'consumes' => {
+                          'alternative_name' => { 'from' => 'foo', 'properties' => { 'wildcard' => true } },
+                          'common_name' => { 'from' => 'foo' },
+                        },
+                        'options' => {
+                          'ca' => 'my_ca',
+                        },
+                      },
+                    ]
+                  end
+
+                  before do
+                    Bosh::Director::Models::Links::Link.create(
+                      name: 'foo',
+                      link_provider_intent_id: nil,
+                      link_consumer_intent_id: consumer_intent2.id,
+                      link_content: {
+                        deployment_name: deployment_name,
+                        use_short_dns_addresses: false,
+                        instance_group: 'ig1',
+                        default_network: 'net-a',
+                        domain: 'bosh',
+                      }.to_json,
+                      created_at: Time.now,
+                    )
+                  end
+
+                  it 'should generate the certificate with the common name and SAN' do
+                    consumer_intent.metadata = '{"wildcard": true}'
+                    consumer_intent.save
+
+                    expect(http_client).to receive(:post).with(
+                      'name' => prepend_namespace('placeholder_b'),
+                      'type' => 'certificate',
+                      'parameters' => {
+                        'ca' => prepend_namespace('my_ca'),
+                        'common_name' => 'q-s0.ig1.net-a.deployment-name.bosh',
+                        'alternative_names' => %w[*.ig1.net-a.deployment-name.bosh],
+                      },
+                    ).ordered.and_return(
+                      generate_success_response(
+                        {
+                          'id': 'some_id2',
+                        }.to_json,
+                      ),
+                    )
+                    client.generate_values(variables_obj, deployment_name)
+                  end
+
+                  context 'when wildcard flag is specified in properties' do
+                    let(:variables_spec) do
+                      [
+                        {
+                          'name' => 'placeholder_b',
+                          'type' => 'certificate',
+                          'consumes' => {
+                            'common_name' => { 'from' => 'foo', 'properties' => { 'wildcard' => true } },
+                            'alternative_name' => { 'from' => 'foo' },
+                          },
+                          'options' => {
+                            'ca' => 'my_ca',
+                            'alternative_names' => ['a.bosh.io', 'b.bosh.io'],
+                          },
+                        },
+                      ]
+                    end
+
+                    it 'should generate the certificate with the SAN appended' do
+                      consumer_intent2.metadata = '{"wildcard": true}'
+                      consumer_intent2.save
+
+                      expect(http_client).to receive(:post).with(
+                        'name' => prepend_namespace('placeholder_b'),
+                        'type' => 'certificate',
+                        'parameters' => {
+                          'ca' => prepend_namespace('my_ca'),
+                          'common_name' => '*.ig1.net-a.deployment-name.bosh',
+                          'alternative_names' => %w[a.bosh.io b.bosh.io q-s0.ig1.net-a.deployment-name.bosh],
+                        },
+                      ).ordered.and_return(
+                        generate_success_response(
+                          {
+                            'id': 'some_id2',
+                          }.to_json,
+                        ),
+                      )
+
+                      client.generate_values(variables_obj, deployment_name)
+                    end
+                  end
+
+                  context 'when common name is also specified in options' do
+                    let(:variables_spec) do
+                      [
+                        {
+                          'name' => 'placeholder_b',
+                          'type' => 'certificate',
+                          'consumes' => {
+                            'alternative_name' => { 'from' => 'foo', 'properties' => { 'wildcard' => true } },
+                            'common_name' => { 'from' => 'foo' },
+                          },
+                          'options' => {
+                            'ca' => 'my_ca',
+                            'common_name' => 'bosh.io',
+                          },
+                        },
+                      ]
+                    end
+
+                    before do
+                      Bosh::Director::Models::Links::Link.create(
+                        name: 'foo',
+                        link_provider_intent_id: nil,
+                        link_consumer_intent_id: consumer_intent2.id,
+                        link_content: {
+                          deployment_name: deployment_name,
+                          use_short_dns_addresses: false,
+                          instance_group: 'ig1',
+                          default_network: 'net-a',
+                          domain: 'bosh',
+                        }.to_json,
+                        created_at: Time.now,
+                      )
+                    end
+
+                    it 'should generate the certificate with options version of the common name' do
+                      consumer_intent.metadata = '{"wildcard": true}'
+                      consumer_intent.save
+
+                      expect(http_client).to receive(:post).with(
+                        'name' => prepend_namespace('placeholder_b'),
+                        'type' => 'certificate',
+                        'parameters' => {
+                          'ca' => prepend_namespace('my_ca'),
+                          'common_name' => 'bosh.io',
+                          'alternative_names' => %w[*.ig1.net-a.deployment-name.bosh],
+                        },
+                      ).ordered.and_return(
+                        generate_success_response(
+                          {
+                            'id': 'some_id2',
+                          }.to_json,
+                        ),
+                      )
+
+                      client.generate_values(variables_obj, deployment_name)
+                    end
+                  end
+                end
               end
             end
 
@@ -1644,13 +1812,19 @@ module Bosh::Director::ConfigServer
                     {
                         'name' => prepend_namespace('placeholder_b'),
                         'type' => 'certificate',
-                        'parameters' => {'ca' => prepend_namespace('my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
+                        'parameters' => {
+                          'ca' => prepend_namespace('my_ca'),
+                          'common_name' => 'bosh.io',
+                          'alternative_names' => %w[a.bosh.io b.bosh.io],
+                        },
                     }
                 ).ordered.and_return(
-                    generate_success_response(
-                        {
-                            "id": "some_id2",
-                        }.to_json))
+                  generate_success_response(
+                    {
+                      'id': 'some_id2',
+                    }.to_json,
+                  ),
+                )
 
                 client.generate_values(variables_obj, deployment_name)
               end

@@ -136,7 +136,7 @@ describe 'using director with config server and deployments having links', type:
 
     cert = config_server_helper.get_value(prepend_namespace('bbs'))
     cert = OpenSSL::X509::Certificate.new(cert['certificate'])
-    subject_alt_name = cert.extensions.find { |e| e.oid == "subjectAltName" }
+    subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
 
     alternative_names = subject_alt_name.value.split(', ').map do |names|
       names.split(':', 2)[1]
@@ -162,13 +162,96 @@ describe 'using director with config server and deployments having links', type:
 
       cert = config_server_helper.get_value(prepend_namespace('bbs'))
       cert = OpenSSL::X509::Certificate.new(cert['certificate'])
-      subject_alt_name = cert.extensions.find { |e| e.oid == "subjectAltName" }
+      subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
 
       alternative_names = subject_alt_name.value.split(', ').map do |names|
         names.split(':', 2)[1]
       end
 
       expect(alternative_names).to match_array(['127.0.0.1', 'q-s0.my-instance-group.a.simple.bosh'])
+    end
+
+    context 'when there is a common name specified' do
+      let(:variables) do
+        [
+          {
+            'name' => 'bbs_ca',
+            'type' => 'certificate',
+            'options' => { 'is_ca' => true },
+          },
+          {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => { 'common_name' => { 'from' => 'http_endpoint' } },
+            'options' => { 'ca' => 'bbs_ca', 'alternative_names' => ['127.0.0.1'] },
+          },
+        ]
+      end
+
+      it 'generates a certificate with a common name' do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        cert = config_server_helper.get_value(prepend_namespace('bbs'))
+        cert = OpenSSL::X509::Certificate.new(cert['certificate'])
+        subject = cert.subject.to_a
+        puts cert.inspect
+        puts subject.inspect
+        common_name = subject.select { |name, _, _| name == 'CN' }.first[1]
+        expect(common_name).to eq('q-s0.my-instance-group.a.simple.bosh')
+
+        subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
+
+        alternative_names = subject_alt_name.value.split(', ').map do |names|
+          names.split(':', 2)[1]
+        end
+        expect(alternative_names).to match_array(['127.0.0.1'])
+      end
+    end
+
+    context 'when wildcard is specified in both common name and alternative_name' do
+      let(:variables) do
+        [
+          {
+            'name' => 'bbs_ca',
+            'type' => 'certificate',
+            'options' => { 'is_ca' => true },
+          },
+          {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'common_name' => {
+                'from' => 'http_endpoint',
+                'properties' => { 'wildcard' => true },
+              },
+              'alternative_name' => {
+                'from' => 'http_endpoint',
+                'properties' => { 'wildcard' => true },
+              },
+            },
+            'options' => { 'ca' => 'bbs_ca', 'alternative_names' => ['127.0.0.1'] },
+          },
+        ]
+      end
+
+      it 'generates a certificate with a common name' do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        cert = config_server_helper.get_value(prepend_namespace('bbs'))
+        cert = OpenSSL::X509::Certificate.new(cert['certificate'])
+        subject = cert.subject.to_a
+        puts cert.inspect
+        puts subject.inspect
+        common_name = subject.select { |name, _, _| name == 'CN' }.first[1]
+        expect(common_name).to eq('*.my-instance-group.a.simple.bosh')
+
+        subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
+
+        alternative_names = subject_alt_name.value.split(', ').map do |names|
+          names.split(':', 2)[1]
+        end
+        expect(alternative_names).to match_array(['127.0.0.1', '*.my-instance-group.a.simple.bosh'])
+      end
     end
 
     it 'create respective consumer and link object' do

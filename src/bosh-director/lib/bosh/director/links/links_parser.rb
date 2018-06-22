@@ -741,7 +741,7 @@ module Bosh::Director::Links
     private
 
     def validate_variable(variable_name, variable_type, original_name)
-      acceptable_combinations = { 'certificate' => ['alternative_name'] }
+      acceptable_combinations = { 'certificate' => %w[alternative_name common_name] }
 
       unless acceptable_combinations.key?(variable_type)
         return "Variable '#{variable_name}' can not define 'consumes' key for type '#{variable_type}'"

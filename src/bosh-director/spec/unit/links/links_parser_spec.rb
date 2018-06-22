@@ -2016,7 +2016,8 @@ describe Bosh::Director::Links::LinksParser do
         }
         expect do
           subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
-        end.to raise_error "Consumer name 'foobar' is not a valid consumer for variable 'bbs'. Acceptable consumer types are: alternative_name"
+        end.to raise_error "Consumer name 'foobar' is not a valid consumer for variable 'bbs'. Acceptable consumer types are:"\
+          ' alternative_name, common_name'
       end
     end
   end
