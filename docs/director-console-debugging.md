@@ -1,9 +1,16 @@
 ## Director Console debugging
 
+SSH to the Director VM
+For director version <= 265.x
 ```
-$ bosh -d dep1 ssh name/id
 $ sudo su
-# /var/vcap/jobs/director/bin/director_ctl console
+# /var/vcap/jobs/director/bin/director_ctl console 
+```
+
+For director version >= 266.x
+```
+$ sudo su
+# /var/vcap/jobs/director/bin/console
 ```
 
 Potentially useful snippets:
