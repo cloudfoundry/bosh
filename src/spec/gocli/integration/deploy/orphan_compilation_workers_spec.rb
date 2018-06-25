@@ -33,6 +33,11 @@ describe 'compilation.orphan_workers', type: :integration do
 
       expect(orphaned_vms[0]['instance']).to match(/compilation-.+/)
       expect(orphaned_vms[1]['instance']).to match(/compilation-.+/)
+
+      instances = table(bosh_runner.run('instances', json: true))
+      expect(instances.length).to eq(1)
+
+      expect(instances[0]['instance']).to_not match(/compilation-.+/)
     end
 
     context 'with reuse_compilation_vms' do
@@ -42,6 +47,11 @@ describe 'compilation.orphan_workers', type: :integration do
         orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
         expect(orphaned_vms.length).to eq(1)
         expect(orphaned_vms[0]['instance']).to match(/compilation-.+/)
+
+        instances = table(bosh_runner.run('instances', json: true))
+        expect(instances.length).to eq(1)
+
+        expect(instances[0]['instance']).to_not match(/compilation-.+/)
       end
     end
   end
@@ -53,6 +63,11 @@ describe 'compilation.orphan_workers', type: :integration do
       orphaned_vms = table(bosh_runner.run('orphaned-vms', json: true))
       expect(orphaned_vms.length).to eq(0)
       expect(current_sandbox.cpi.invocations_for_method('delete_vm').count).to eq(2)
+
+      instances = table(bosh_runner.run('instances', json: true))
+      expect(instances.length).to eq(1)
+
+      expect(instances[0]['instance']).to_not match(/compilation-.+/)
     end
   end
 end
