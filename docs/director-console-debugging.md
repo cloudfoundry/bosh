@@ -1,6 +1,7 @@
 ## Director Console debugging
 
 SSH to the Director VM
+
 For director version <= 265.x
 ```
 $ sudo su
