@@ -23,3 +23,11 @@ resource "google_sql_user" "postgres" {
   name     = "${var.gcp_postgres_username}"
   password = "${var.gcp_postgres_password}"
 }
+
+output "gcp_postgres_endpoint" {
+  value = "${google_sql_database_instance.postgres-master.first_ip_address}"
+}
+
+output "gcp_postgres_instance_name" {
+  value = "${google_sql_database_instance.postgres-master.name}"
+}

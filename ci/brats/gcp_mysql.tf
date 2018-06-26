@@ -23,3 +23,11 @@ resource "google_sql_user" "mysql" {
   name     = "${var.gcp_mysql_username}"
   password = "${var.gcp_mysql_password}"
 }
+
+output "gcp_mysql_endpoint" {
+  value = "${google_sql_database_instance.mysql-master.first_ip_address}"
+}
+
+output "gcp_mysql_instance_name" {
+  value = "${google_sql_database_instance.mysql-master.name}"
+}
