@@ -10,6 +10,18 @@ resource "google_sql_database_instance" "postgres-master" {
     # Second-generation instance tiers are based on the machine
     # type. See argument reference below.
     tier = "db-f1-micro"
+    ip_configuration {
+      authorized_networks = [
+        {
+          name = "concourse"
+          value = "104.196.254.104"
+        },
+        {
+          name = "pivotal"
+          value = "209.234.137.222/32"
+        }
+      ]
+    }
   }
 }
 
