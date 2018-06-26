@@ -14,6 +14,7 @@ resource "aws_db_instance" "postgres" {
   password             = "${var.rds_postgres_password}"
   db_subnet_group_name = "${aws_db_subnet_group.default.id}"
   parameter_group_name = "default.postgres9.6"
+  publicly_accessible    = true
 }
 
 output "aws_postgres_endpoint" {
