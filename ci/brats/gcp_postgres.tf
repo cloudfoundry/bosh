@@ -3,7 +3,6 @@ variable "gcp_postgres_password" {}
 variable "gcp_postgres_databasename" {}
 
 resource "google_sql_database_instance" "postgres-master" {
-  name             = "master-postgres"
   database_version = "POSTGRES_9_6"
   region           = "us-central1"
 

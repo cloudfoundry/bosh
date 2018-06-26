@@ -3,7 +3,6 @@ variable "gcp_mysql_password" {}
 variable "gcp_mysql_databasename" {}
 
 resource "google_sql_database_instance" "mysql-master" {
-  name             = "master-mysql"
   database_version = "MYSQL_5_7"
   region           = "us-central1"
 
