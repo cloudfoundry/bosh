@@ -1067,7 +1067,7 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         let(:metadata) do
-          { 'manual_link' => true, 'explicit_link' => false }
+          { 'explicit_link' => false }
         end
 
         before do
@@ -1938,41 +1938,6 @@ describe Bosh::Director::Links::LinksManager do
               expect(message).to include("Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Multiple link providers found:")
               expect(message).to include("- Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
               expect(message).to include("- Link provider 'pi2' with alias 'provider_alias2' from job 'p1' in instance group 'ig1' in deployment 'test_deployment'")
-            end
-          end
-        end
-
-        context 'when manual provider with same type exists' do
-          let(:manual_provider) do
-            Bosh::Director::Models::Links::LinkProvider.create(
-              deployment: deployment_model,
-              instance_group: 'ig',
-              name: 'some-provider',
-              type: 'manual',
-            )
-          end
-
-          before do
-            Bosh::Director::Models::Links::LinkProviderIntent.create(
-              link_provider: manual_provider,
-              original_name: 'pi1',
-              name: 'provider_alias',
-              type: 'foo',
-              content: {
-                use_dns_addresses: use_dns_addresses,
-                default_network: 'netb',
-                instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
-              }.to_json,
-              serial_id: serial_id,
-            )
-          end
-
-          it 'raises an error' do
-            expect(deployment_model.link_consumers.count).to be.positive?
-
-            expect { subject.resolve_deployment_links(deployment_model, options) }.to raise_error do |error|
-              message = error.message
-              expect(message).to include("Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'")
             end
           end
         end
