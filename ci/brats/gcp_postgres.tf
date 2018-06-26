@@ -2,8 +2,8 @@ variable "gcp_postgres_username" {}
 variable "gcp_postgres_password" {}
 variable "gcp_postgres_databasename" {}
 
-resource "google_sql_database_instance" "master" {
-  name             = "master-instance"
+resource "google_sql_database_instance" "postgres-master" {
+  name             = "master-postgres"
   database_version = "POSTGRES_9_6"
   region           = "us-central1"
 
@@ -15,14 +15,14 @@ resource "google_sql_database_instance" "master" {
 }
 
 resource "google_sql_database" "postgres" {
-  instance  = "${google_sql_database_instance.master.name}"
+  instance  = "${google_sql_database_instance.postgres-master.name}"
   name      = "${var.gcp_postgres_databasename}"
   charset   = "latin1"
   collation = "latin1_swedish_ci"
 }
 
-resource "google_sql_user" "users" {
-  instance = "${google_sql_database_instance.master.name}"
+resource "google_sql_user" "postgres" {
+  instance = "${google_sql_database_instance.postgres-master.name}"
   name     = "${var.gcp_postgres_username}"
   password = "${var.gcp_postgres_password}"
 }
