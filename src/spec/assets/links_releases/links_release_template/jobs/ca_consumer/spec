@@ -1,0 +1,13 @@
+---
+name: ca_consumer
+templates:
+    config.yml.erb: config.yml
+
+consumes:
+  - name: ralph
+    type: ca
+
+properties:
+  ca:
+    description: "Certificate authority certificate"
+

@@ -6,7 +6,7 @@ module Bosh::Director::Models::Links
     def validate
       validates_presence [
         :deployment_id,
-        :instance_group,
+        #:instance_group,
         :name,
         :type
       ]

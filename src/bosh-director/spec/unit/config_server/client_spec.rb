@@ -1794,6 +1794,57 @@ module Bosh::Director::ConfigServer
                   end
                 end
               end
+
+              context 'and provides ca as variable' do
+                let(:variables_spec) do
+                  [
+                    {
+                      'name' => 'placeholder_b',
+                      'type' => 'certificate',
+                      'provides' => {
+                        'ca' => { 'as' => 'foo_ca' },
+                      },
+                    },
+                  ]
+                end
+                let(:links_manager) {instance_double(Bosh::Director::Links::LinksManager)}
+                let(:provider) { instance_double(Bosh::Director::Models::Links::LinkProvider)}
+                let(:provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent)}
+                # let(:consumer) { instance_double(Bosh::Director::Models::Links::LinkConsumer)}
+                # let(:consumer_intent) { instance_double(Bosh::Director::Models::Links::LinkConsumerIntent)}
+
+                let(:deployment_attrs) do
+                  { id: 1, name: deployment_name, links_serial_id: link_serial_id }
+                end
+
+                let(:link_serial_id) { 8080 }
+
+                before do
+                  allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
+                  allow(links_manager).to receive(:find_consumer).and_return(nil)
+                end
+
+                it 'should generate absolute path for the provider content' do
+                  expect(http_client).to receive(:post).with(
+                    {
+                      'name' => prepend_namespace('placeholder_b'),
+                      'type' => 'certificate',
+                      'parameters' => {},
+                    }
+                  ).ordered.and_return(
+                    generate_success_response(
+                      {
+                        "id": "some_id2",
+                      }.to_json))
+
+                  expect(links_manager).to receive(:find_provider).and_return(provider)
+                  expect(provider).to receive(:intents).and_return([provider_intent])
+                  expect(provider_intent).to receive(:original_name).and_return('ca')
+                  expect(provider_intent).to receive(:content=).with('((/smurf_director_name/deployment_name/placeholder_b.ca))')
+                  expect(provider_intent).to receive(:save)
+                  client.generate_values(variables_obj, deployment_name)
+                end
+              end
             end
 
             context 'when variable type is certificate & ca is relative' do

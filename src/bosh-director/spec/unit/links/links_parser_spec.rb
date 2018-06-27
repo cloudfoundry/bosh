@@ -2021,4 +2021,189 @@ describe Bosh::Director::Links::LinksParser do
       end
     end
   end
+
+  describe '#parse_providers_from_variable' do
+    let(:provider) { instance_double(Bosh::Director::Models::Links::LinkProvider) }
+    let(:provider_intent) { instance_double(Bosh::Director::Models::Links::LinkProviderIntent) }
+
+    context 'when the variable defines "alternative_name" consumer' do
+      it 'makes provider and provider intent' do
+        expected_provider_params = {
+          deployment_model: deployment_plan.model,
+          instance_group_name: '',
+          name: 'bbs',
+          type: 'variable',
+        }
+
+        # mapped_properties = {
+        #   'ca' => '---blah',
+        # }
+
+        expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+        expected_provider_intent_params = {
+          link_provider: provider,
+          link_original_name: 'ca',
+          link_type: 'ca',
+        }
+        expect(links_manager).to receive(:find_or_create_provider_intent)
+                                   .with(expected_provider_intent_params)
+                                   .and_return(provider_intent)
+        expect(provider_intent).to receive(:name=).with('foo_ca')
+        expect(provider_intent).to receive(:metadata=).with({ }.to_json)
+        expect(provider_intent).to receive(:consumable=).with(true)
+        expect(provider_intent).to receive(:shared=).with(false)
+        expect(provider_intent).to receive(:save)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'provides' => {
+            'ca' => { 'as' => 'foo_ca' },
+          },
+        }
+        subject.parse_providers_from_variable(variable_spec, deployment_plan.model)
+      end
+
+      context 'and the `as` is not specified' do
+        it 'makes consumer and consumer intent' do
+          expected_provider_params = {
+            deployment_model: deployment_plan.model,
+            instance_group_name: '',
+            name: 'bbs',
+            type: 'variable',
+          }
+
+          # mapped_properties = {
+          #   'ca' => '---blah',
+          # }
+
+          expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+          expected_provider_intent_params = {
+            link_provider: provider,
+            link_original_name: 'ca',
+            link_type: 'ca',
+          }
+          expect(links_manager).to receive(:find_or_create_provider_intent)
+                                     .with(expected_provider_intent_params)
+                                     .and_return(provider_intent)
+          expect(provider_intent).to receive(:name=).with('ca')
+          expect(provider_intent).to receive(:metadata=).with({ }.to_json)
+          expect(provider_intent).to receive(:consumable=).with(true)
+          expect(provider_intent).to receive(:shared=).with(false)
+          expect(provider_intent).to receive(:save)
+
+          variable_spec = {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'provides' => {
+              'ca' => { },
+            },
+          }
+          subject.parse_providers_from_variable(variable_spec, deployment_plan.model)
+        end
+      end
+
+      context 'and `shared` is true' do
+        it 'makes provider and provider intent' do
+          expected_provider_params = {
+            deployment_model: deployment_plan.model,
+            instance_group_name: '',
+            name: 'bbs',
+            type: 'variable',
+          }
+
+          # mapped_properties = {
+          #   'ca' => '---blah',
+          # }
+
+          expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+          expected_provider_intent_params = {
+            link_provider: provider,
+            link_original_name: 'ca',
+            link_type: 'ca',
+          }
+          expect(links_manager).to receive(:find_or_create_provider_intent)
+                                     .with(expected_provider_intent_params)
+                                     .and_return(provider_intent)
+          expect(provider_intent).to receive(:name=).with('ca')
+          expect(provider_intent).to receive(:metadata=).with({ }.to_json)
+          expect(provider_intent).to receive(:consumable=).with(true)
+          expect(provider_intent).to receive(:shared=).with(true)
+          expect(provider_intent).to receive(:save)
+
+          variable_spec = {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'provides' => {
+              'ca' => { 'shared' => true },
+            },
+          }
+          subject.parse_providers_from_variable(variable_spec, deployment_plan.model)
+        end
+      end
+    end
+
+    context 'when the variable does not define a provides block' do
+      it 'should not create any implicit providers or intents' do
+        expect(links_manager).to_not receive(:find_or_create_provider)
+        expect(links_manager).to_not receive(:find_or_create_provider_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+        }
+        subject.parse_providers_from_variable(variable_spec, deployment_plan.model)
+      end
+    end
+
+    context 'when the variable does not define any providers in the provides block' do
+      it 'should not create any implicit providers or intents' do
+        expect(links_manager).to_not receive(:find_or_create_provider)
+        expect(links_manager).to_not receive(:find_or_create_provider_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'provides' => {},
+        }
+        subject.parse_providers_from_variable(variable_spec, deployment_plan.model)
+      end
+    end
+
+    context 'when the variable is not of type certificate' do
+      it 'should raise an error if it defines providers' do
+        expect(links_manager).to_not receive(:find_or_create_provider)
+        expect(links_manager).to_not receive(:find_or_create_provider_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'foobar',
+          'provides' => {
+            'ca' => { 'as' => 'foo' },
+          },
+        }
+        expect do
+          subject.parse_providers_from_variable(variable_spec, deployment_plan.model)
+        end.to raise_error "Variable 'bbs' can not define 'provides' key for type 'foobar'"
+      end
+    end
+
+    context 'when the variable define non-acceptable providers' do
+      it 'should raise an error' do
+        expect(links_manager).to_not receive(:find_or_create_provider)
+        expect(links_manager).to_not receive(:find_or_create_provider_intent)
+
+        variable_spec = {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'provides' => {
+            'foobar' => { 'from' => 'foo' },
+          },
+        }
+        expect do
+          subject.parse_providers_from_variable(variable_spec, deployment_plan.model)
+        end.to raise_error "Provider name 'foobar' is not a valid provider for variable 'bbs'. Acceptable provider types are: ca"
+      end
+    end
+  end
 end

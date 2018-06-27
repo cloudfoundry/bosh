@@ -1,0 +1,10 @@
+---
+ca: |
+  <%= link("ralph").p("ca") %>
+<% link('ralph').if_p('certificate') do |cert| %>
+certificate: <%= cert %>
+<% end %>
+<% link('ralph').if_p('private_key') do |pk| %>
+private_key: <%= pk %>
+<% end %>
+

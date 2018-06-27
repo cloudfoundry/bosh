@@ -23,6 +23,7 @@ module Bosh::Director::DeploymentPlan
       parser = Bosh::Director::Links::LinksParser.new
       spec.each do |variable|
         parser.parse_consumers_from_variable(variable, @deployment_model)
+        parser.parse_providers_from_variable(variable, @deployment_model)
       end
     end
 
@@ -35,6 +36,7 @@ module Bosh::Director::DeploymentPlan
       validate_elements_are_hashes(spec)
       validate_mandatory_fields(spec)
       validate_consumes_field(spec)
+      validate_provides_field(spec)
       validate_duplicate_names(spec)
       validate_options(spec)
     end
@@ -86,6 +88,15 @@ module Bosh::Director::DeploymentPlan
         if !variable['consumes'].nil? && !variable['consumes'].is_a?(Hash)
           raise Bosh::Director::VariablesInvalidFormat,
                 "Consumes for variable '#{variable['name']}' must be a Hash or nil"
+        end
+      end
+    end
+
+    def validate_provides_field(spec)
+      spec.each do |variable|
+        if !variable['provides'].nil? && !variable['provides'].is_a?(Hash)
+          raise Bosh::Director::VariablesInvalidFormat,
+                "Provides for variable '#{variable['name']}' must be a Hash or nil"
         end
       end
     end

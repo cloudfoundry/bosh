@@ -705,7 +705,7 @@ module Bosh::Director::Links
       variable_spec['consumes'].each do |key, value|
         original_name = key
 
-        local_error = validate_variable(variable_name, variable_type, original_name)
+        local_error = validate_consumer_variable(variable_name, variable_type, original_name)
 
         unless local_error.nil?
           errors << local_error
@@ -738,9 +738,86 @@ module Bosh::Director::Links
       raise errors.join("\n") unless errors.empty?
     end
 
-    private
+    def parse_providers_from_variable(variable_spec, deployment_model)
+      return unless variable_spec.key? 'provides'
 
-    def validate_variable(variable_name, variable_type, original_name)
+      @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
+
+      variable_name = variable_spec['name']
+      variable_type = variable_spec['type']
+
+      errors = []
+
+      variable_spec['provides'].each do |key, value|
+        original_name = key
+
+        local_error = validate_provider_variable(variable_name, variable_type, original_name)
+
+        unless local_error.nil?
+          errors << local_error
+          next
+        end
+
+        metadata = {}
+
+        provider = @links_manager.find_or_create_provider(
+          deployment_model: deployment_model,
+          instance_group_name: '',
+          name: variable_name,
+          type: 'variable',
+        )
+
+        # TODO: discuss about LINK type ca/certificate_authority
+        provider_intent = @links_manager.find_or_create_provider_intent(
+          link_provider: provider,
+          link_original_name: original_name,
+          link_type: 'ca',
+        )
+
+        # director_name = Bosh::Director::Config.name
+        # constructed_name = Bosh::Director::ConfigServer::ConfigServerHelper.add_prefix_if_not_absolute(
+        #   variable_name,
+        #   director_name,
+        #   deployment_model.name,
+        # )
+        # puts "==================constructed_name is == #{constructed_name}"
+        update_variable_provider_intent(original_name, deployment_model, metadata, provider_intent, value, variable_name)
+      end
+
+      raise errors.join("\n") unless errors.empty?
+    end
+
+
+    private
+    def update_variable_provider_intent(as_name, deployment_model, metadata, provider_intent, value, variable_name)
+      as_name = value['as'] || original_name
+      provider_intent.metadata = metadata.to_json
+      provider_intent.content = generate_variable_provider_intent_content(deployment_model, variable_name)
+      provider_intent.consumable = true
+      provider_intent.shared = value['shared'] || false
+      provider_intent.name = as_name
+      provider_intent.save
+    end
+
+    def generate_variable_provider_intent_content(deployment_model, variable_name)
+      director_name = Bosh::Director::Config.name
+      constructed_name = Bosh::Director::ConfigServer::ConfigServerHelper.add_prefix_if_not_absolute(
+        variable_name,
+        director_name,
+        deployment_model.name,
+        )
+      {
+        deployment_name: deployment_model.name,
+        instance_group: '',
+        networks: [],
+        instances: [],
+        properties: {
+          'ca': "((#{constructed_name}.ca))",
+        }
+      }.to_json
+    end
+
+    def validate_consumer_variable(variable_name, variable_type, original_name)
       acceptable_combinations = { 'certificate' => %w[alternative_name common_name] }
 
       unless acceptable_combinations.key?(variable_type)
@@ -751,6 +828,22 @@ module Bosh::Director::Links
         acceptable_combination_string = acceptable_combinations[variable_type].join(', ')
         return "Consumer name '#{original_name}' is not a valid consumer for variable '#{variable_name}'."\
                     " Acceptable consumer types are: #{acceptable_combination_string}"
+      end
+
+      nil
+    end
+
+    def validate_provider_variable(variable_name, variable_type, original_name)
+      acceptable_combinations = { 'certificate' => %w[ca] }
+
+      unless acceptable_combinations.key?(variable_type)
+        return "Variable '#{variable_name}' can not define 'provides' key for type '#{variable_type}'"
+      end
+
+      unless acceptable_combinations[variable_type].include?(original_name)
+        acceptable_combination_string = acceptable_combinations[variable_type].join(', ')
+        return "Provider name '#{original_name}' is not a valid provider for variable '#{variable_name}'."\
+                    " Acceptable provider types are: #{acceptable_combination_string}"
       end
 
       nil

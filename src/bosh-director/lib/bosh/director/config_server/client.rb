@@ -93,6 +93,7 @@ module Bosh::Director::ConfigServer
         end
 
         if variable['type'] == 'certificate'
+          # ------------------ consumers
           links = find_variable_link(deployment_model, variable_name)
 
           unless links.empty?
@@ -118,6 +119,32 @@ module Bosh::Director::ConfigServer
           variable['options'],
           converge_variables,
         )
+
+        # if variable['type'] == 'certificate'
+        #   links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
+        #
+        #   provider = links_manager.find_provider(
+        #     deployment_model: deployment_model,
+        #     instance_group_name: '',
+        #     name: variable_name,
+        #     type: 'variable',
+        #   )
+        #   unless provider.nil?
+        #     provider.intents.each do |provider_intent|
+        #       if provider_intent.original_name == 'ca'
+        #         # fill in CA field.
+        #         name = ConfigServerHelper.add_prefix_if_not_absolute(
+        #           ConfigServerHelper.extract_variable_name(variable_name),
+        #           @director_name,
+        #           deployment_name
+        #         )
+        #
+        #         provider_intent.content = "((#{name}.ca))"
+        #         provider_intent.save
+        #       end
+        #     end
+        #   end
+        # end
       end
     end
 

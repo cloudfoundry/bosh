@@ -395,4 +395,70 @@ describe 'using director with config server and deployments having links', type:
       end
     end
   end
+
+  context 'when the runtime config has variable which provides' do
+    let(:variables) do
+      [
+        {
+          'name' => 'bbs_ca',
+          'type' => 'certificate',
+          'options' => { 'is_ca' => true },
+        },
+        {
+          'name' => 'bbs',
+          'type' => 'certificate',
+          'provides' => { 'ca' => { 'as' => 'foo_ca' } },
+          'options' => { 'ca' => 'bbs_ca', 'alternative_names' => ['127.0.0.1'] },
+        }
+      ]
+    end
+    let(:runtime_config) do
+      Bosh::Spec::Deployments.runtime_config_latest_release.tap do |config|
+        config['variables'] = variables
+        config['releases'] = []
+      end
+    end
+
+    let(:variable_consumer_job) do
+      {
+        'name' => 'ca_consumer',
+        'consumes' => {
+          'ralph' => { 'from' => 'foo_ca' }
+        },
+      }
+    end
+
+    let(:instance_groups) do
+      [
+        Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'my_instance_group',
+          jobs: [provider_job, variable_consumer_job],
+          instances: 1,
+        ).tap do |ig|
+          ig['azs'] = ['z1']
+        end
+      ]
+    end
+
+    before do
+      upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
+    end
+
+    it 'generates the certificate with the dns record as an alternative name' do
+      deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+      cert = config_server_helper.get_value(prepend_namespace('bbs'))
+
+      instances = director.instances(deployment_name: deployment_name, include_credentials: false, env: client_env)
+
+      link_instance = director.find_instance(instances, 'my_instance_group', '0')
+      pp link_instance.read_job_template('ca_consumer', 'config.yml').pretty_inspect
+      template = YAML.safe_load(link_instance.read_job_template('ca_consumer', 'config.yml'))
+
+      expect(template['ca']).to eq(cert['ca'])
+      expect(template['certificate']).to eq(nil)
+      expect(template['private_key']).to eq(nil)
+    end
+
+  end
 end
