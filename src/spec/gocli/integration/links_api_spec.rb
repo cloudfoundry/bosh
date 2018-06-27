@@ -1096,7 +1096,6 @@ describe 'links api', type: :integration do
               jobs: jobs,
             )
             manifest_hash['instance_groups'] << new_instance_group
-            puts "Manifest: #{manifest_hash.pretty_inspect}"
             deploy_simple_manifest(manifest_hash: manifest_hash)
           end
 
