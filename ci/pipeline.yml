@@ -850,7 +850,7 @@ jobs:
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
         input_mapping:
-          brats-terraform: terraform-output
+          terraform-output: brats-terraform
       - task: test-brats
         file: bosh-src/ci/tasks/test-brats.yml
         input_mapping:
