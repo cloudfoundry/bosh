@@ -469,6 +469,7 @@ module Bosh::Director::Links
         is_explicit_link = !!consumer_intent_metadata['explicit_link']
 
         providers.each do |provider|
+          next if provider.type == 'manual'
           provider.intents.each do |provider_intent|
             next if provider_intent.type != consumer_intent.type
 

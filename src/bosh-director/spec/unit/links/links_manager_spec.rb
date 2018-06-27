@@ -875,6 +875,45 @@ describe Bosh::Director::Links::LinksManager do
               expect(Bosh::Director::Models::Links::Link.count).to eq(0)
             end
           end
+
+          context 'when manual provider with same type exists' do
+            let(:manual_provider) do
+              Bosh::Director::Models::Links::LinkProvider.create(
+                deployment: deployment_model,
+                instance_group: 'ig',
+                name: 'some-provider',
+                type: 'manual',
+              )
+            end
+
+            before do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: manual_provider,
+                original_name: 'pi1',
+                name: 'provider_alias',
+                type: 'foo',
+                content: {
+                  use_dns_addresses: use_dns_addresses,
+                  default_network: 'netb',
+                  instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                }.to_json,
+                serial_id: serial_id,
+              )
+            end
+
+            it 'raises an error' do
+              expect(deployment_model.link_consumers.count).to eq(1)
+
+              expect { subject.resolve_deployment_links(deployment_model, options) }.to raise_error do |error|
+                message = error.message
+                expect(message).to include("Failed to resolve links from deployment 'test_deployment'. See errors below:")
+                expect(message).to include("- Multiple providers of name/alias 'provider_alias' found for job 'c1' "\
+                  "in instance group 'ig1'. All of these match:")
+                expect(message).to include("pi1 aliased as 'provider_alias' (job: p1, instance group: ig1)")
+                expect(message).to include("pi2 aliased as 'provider_alias' (job: p1, instance group: ig1)")
+              end
+            end
+          end
         end
       end
 
@@ -1049,7 +1088,10 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         let(:metadata) do
-          {'explicit_link' => false}
+          {
+            'explicit_link' => false,
+            'manual_link' => true,
+          }
         end
 
         before do
@@ -2287,7 +2329,6 @@ describe Bosh::Director::Links::LinksManager do
       it 'returns the current links' do
         links = subject.get_links_for_instance(instance)
         expect(links.length).to eq(1)
-        puts links
         expect(links['consumer']['tweet']).to_not be_nil
       end
     end
