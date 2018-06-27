@@ -188,12 +188,17 @@ func loadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", DBaaS),
 	}
 
-	caContents := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(DBaaS)))
+	caContents := []byte(os.Getenv(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(DBaaS))))
+	if len(caContents) == 0 {
+		var err error
+		caContents, err = exec.Command(outerBoshBinaryPath, "int", assetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
+		Expect(err).ToNot(HaveOccurred())
+	}
 	caFile, err := ioutil.TempFile(tmpCertDir, "db_ca")
 	Expect(err).ToNot(HaveOccurred())
 
 	defer caFile.Close()
-	_, err = caFile.Write([]byte(caContents))
+	_, err = caFile.Write(caContents)
 	Expect(err).ToNot(HaveOccurred())
 
 	config.CACertPath = caFile.Name()
