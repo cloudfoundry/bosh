@@ -1,0 +1,8 @@
+---
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/db/connection_options?
+  value:
+    pool_timeout: 120
+    statement_timeout: 120
+    connect_timeout: 120

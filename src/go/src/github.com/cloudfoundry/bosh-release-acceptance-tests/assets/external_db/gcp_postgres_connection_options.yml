@@ -1,0 +1,11 @@
+---
+# We need to override the sslmode to verify-ca (instead of verify-full) because
+# the GCP POSTGRES server does not contain the server FQDN in its certificate CN
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/db/connection_options?
+  value:
+    sslmode: verify-ca
+    pool_timeout: 120
+    statement_timeout: 120
+    connect_timeout: 120
