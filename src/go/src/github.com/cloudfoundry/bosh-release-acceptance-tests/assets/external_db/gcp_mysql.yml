@@ -1,0 +1,4 @@
+external_db_port: 3306
+external_db_adapter: mysql2
+
+
