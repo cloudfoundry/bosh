@@ -58,6 +58,5 @@ resource "aws_security_group" "allow-db-access" {
 }
 
 resource "aws_db_subnet_group" "default" {
-  name       = "main"
   subnet_ids = ["${aws_subnet.zonea.id}","${aws_subnet.zoneb.id}"]
 }
