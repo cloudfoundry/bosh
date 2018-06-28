@@ -827,7 +827,7 @@ jobs:
       - put: brats-terraform
         attempts: 2
         params:
-          env_name: brats-ubuntu-trusty
+          env_name: brats-ubuntu-xenial
           terraform_source: bosh-src/ci/brats
           vars:
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -849,6 +849,8 @@ jobs:
       - task: create-ssl-certificates
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
+        params:
+          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
@@ -878,7 +880,7 @@ jobs:
       ensure:
         put: brats-terraform
         params:
-          env_name: brats-ubuntu-trusty
+          env_name: brats-ubuntu-xenial
           terraform_source: bosh-src/ci/brats
           action: destroy
           vars:
