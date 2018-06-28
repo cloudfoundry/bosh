@@ -17,6 +17,8 @@ module Bosh::Director
 
     def delete_instance_plan(instance_plan, event_log_stage)
       instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
+      instance_model.reload
+
       deployment_name = instance_model.deployment.name
       instance_name = instance_model.name
       parent_id = add_event(deployment_name, instance_name)
