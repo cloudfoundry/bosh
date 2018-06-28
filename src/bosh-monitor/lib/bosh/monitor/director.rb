@@ -7,7 +7,7 @@ module Bosh::Monitor
     end
 
     def get_deployments
-      http = perform_request(:get, '/deployments')
+      http = perform_request(:get, '/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
 
       body   = http.response
       status = http.response_header.http_status

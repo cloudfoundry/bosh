@@ -29,7 +29,7 @@ describe 'Bhm::Director' do
     end
 
     it 'can fetch deployments from BOSH director' do
-      stub_request(:get, 'http://localhost:8080/director/deployments')
+      stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
         .with(headers: { 'Authorization' => %w[admin admin] })
         .to_return(body: json_dump(deployments), status: 200)
 
@@ -64,14 +64,14 @@ describe 'Bhm::Director' do
     end
 
     it 'raises an error if deployments cannot be fetched' do
-      stub_request(:get, 'http://localhost:8080/director/deployments')
+      stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
         .with(headers: { 'Authorization' => %w[admin admin] })
         .to_return(body: 'foo', status: 500)
 
       with_fiber do
         expect {
           director.get_deployments
-        }.to raise_error(Bhm::DirectorError, 'Cannot get deployments from director at http://localhost:8080/director/deployments: 500 foo')
+        }.to raise_error(Bhm::DirectorError, 'Cannot get deployments from director at http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: 500 foo')
       end
     end
 
@@ -114,7 +114,7 @@ describe 'Bhm::Director' do
       stub_request(:get, 'http://localhost:8080/director/info').
         to_return(:body => json_dump(uaa_status), :status => 200)
 
-      stub_request(:get, 'http://localhost:8080/director/deployments').
+      stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true').
         with(:headers => {'Authorization' => token.auth_header}).
         to_return(:body => json_dump(deployments), :status => 200)
     end
