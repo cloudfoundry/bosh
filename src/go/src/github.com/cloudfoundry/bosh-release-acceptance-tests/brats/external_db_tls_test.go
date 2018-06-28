@@ -20,7 +20,7 @@ var _ = Describe("Director external database TLS connections", func() {
 		config := loadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
 
 		if useIncorrectCA {
-			config.CACertPath = "external_db/invalid_ca_cert.pem"
+			config.CACertPath = assetPath("external_db/invalid_ca_cert.pem")
 		}
 
 		startInnerBoshArgs := innerBoshWithExternalDBOptions(config)
