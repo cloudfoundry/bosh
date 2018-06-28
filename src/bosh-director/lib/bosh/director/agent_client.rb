@@ -203,7 +203,7 @@ module Bosh::Director
       task['value']
     end
 
-    def wait_until_ready(deadline = 600)
+    def wait_until_ready(deadline = Config.agent_wait_timeout)
       old_timeout = @timeout
       @timeout = 1.0
       @deadline = Time.now.to_i + deadline

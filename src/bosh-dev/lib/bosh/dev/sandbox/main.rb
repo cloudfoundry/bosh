@@ -198,30 +198,31 @@ module Bosh::Dev::Sandbox
 
     def director_config
       attributes = {
-        sandbox_root: sandbox_root,
-        database: @database,
+        agent_wait_timeout: @agent_wait_timeout,
         blobstore_storage_dir: blobstore_storage_dir,
-        verify_multidigest_path: verify_multidigest_path,
-        director_fix_stateful_nodes: @director_fix_stateful_nodes,
-        dns_enabled: @dns_enabled,
-        local_dns: @local_dns,
-        external_cpi_config: external_cpi_config,
         cloud_storage_dir: cloud_storage_dir,
         config_server_enabled: @config_server_enabled,
-        user_authentication: @user_authentication,
-        trusted_certs: @trusted_certs,
-        users_in_manifest: @users_in_manifest,
-        enable_post_deploy: @enable_post_deploy,
-        enable_cpi_resize_disk: @enable_cpi_resize_disk,
+        database: @database,
         default_update_vm_strategy: @default_update_vm_strategy,
-        enable_nats_delivered_templates: @enable_nats_delivered_templates,
-        generate_vm_passwords: @generate_vm_passwords,
-        remove_dev_tools: @remove_dev_tools,
+        director_fix_stateful_nodes: @director_fix_stateful_nodes,
         director_ips: @director_ips,
-        nats_server_ca_path: get_nats_server_ca_path,
-        nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
+        dns_enabled: @dns_enabled,
+        enable_cpi_resize_disk: @enable_cpi_resize_disk,
+        enable_nats_delivered_templates: @enable_nats_delivered_templates,
+        enable_post_deploy: @enable_post_deploy,
+        external_cpi_config: external_cpi_config,
+        generate_vm_passwords: @generate_vm_passwords,
+        local_dns: @local_dns,
         nats_client_ca_certificate_path: get_nats_client_ca_certificate_path,
+        nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
         nats_director_tls: nats_certificate_paths['clients']['director'],
+        nats_server_ca_path: get_nats_server_ca_path,
+        remove_dev_tools: @remove_dev_tools,
+        sandbox_root: sandbox_root,
+        trusted_certs: @trusted_certs,
+        user_authentication: @user_authentication,
+        users_in_manifest: @users_in_manifest,
+        verify_multidigest_path: verify_multidigest_path,
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -335,6 +336,7 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
+      @agent_wait_timeout = options.fetch(:agent_wait_timeout, 600)
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
       old_tls_enabled_value = @db_config[:tls_enabled]
       @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS']=='true')
