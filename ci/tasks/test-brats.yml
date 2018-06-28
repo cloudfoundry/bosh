@@ -11,30 +11,24 @@ inputs:
   - name: bosh-dns-release
   - name: stemcell
   - name: bosh-release
+  - name: database-metadata
+  - name: gcp-ssl-config
 
 run:
   path: bosh-src/ci/tasks/test-brats.sh
 
 params:
   FOCUS_SPEC: ""
-  RDS_MYSQL_EXTERNAL_DB_HOST: replace-me
   RDS_MYSQL_EXTERNAL_DB_USER: replace-me
   RDS_MYSQL_EXTERNAL_DB_PASSWORD: replace-me
   RDS_MYSQL_EXTERNAL_DB_NAME: replace-me
-  RDS_POSTGRES_EXTERNAL_DB_HOST: replace-me
   RDS_POSTGRES_EXTERNAL_DB_USER: replace-me
   RDS_POSTGRES_EXTERNAL_DB_PASSWORD: replace-me
   RDS_POSTGRES_EXTERNAL_DB_NAME: replace-me
-  GCP_MYSQL_EXTERNAL_DB_HOST: replace-me
   GCP_MYSQL_EXTERNAL_DB_USER: replace-me
   GCP_MYSQL_EXTERNAL_DB_PASSWORD: replace-me
   GCP_MYSQL_EXTERNAL_DB_NAME: replace-me
-  GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE: replace-me
-  GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY: replace-me
-  GCP_POSTGRES_EXTERNAL_DB_HOST: replace-me
   GCP_POSTGRES_EXTERNAL_DB_USER: replace-me
   GCP_POSTGRES_EXTERNAL_DB_PASSWORD: replace-me
   GCP_POSTGRES_EXTERNAL_DB_NAME: replace-me
-  GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE: replace-me
-  GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY: replace-me
   STEMCELL_OS: ""

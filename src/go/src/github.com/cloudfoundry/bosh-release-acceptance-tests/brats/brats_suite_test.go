@@ -198,8 +198,12 @@ func loadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", DBaaS),
 	}
 
-	caContents, err := exec.Command(outerBoshBinaryPath, "int", assetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
-	Expect(err).ToNot(HaveOccurred())
+	caContents := []byte(os.Getenv(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(DBaaS))))
+	if len(caContents) == 0 {
+		var err error
+		caContents, err = exec.Command(outerBoshBinaryPath, "int", assetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
+		Expect(err).ToNot(HaveOccurred())
+	}
 	caFile, err := ioutil.TempFile(tmpCertDir, "db_ca")
 	Expect(err).ToNot(HaveOccurred())
 
@@ -240,6 +244,7 @@ func innerBoshWithExternalDBOptions(dbConfig ExternalDBConfig) []string {
 		"-o", boshDeploymentAssetPath("experimental/db-enable-tls.yml"),
 		"-o", assetPath(dbConfig.ConnectionOptionsFile),
 		"--vars-file", assetPath(dbConfig.ConnectionVarFile),
+		fmt.Sprintf("--var-file=db_ca=%s", dbConfig.CACertPath),
 		"-v", fmt.Sprintf("external_db_host=%s", dbConfig.Host),
 		"-v", fmt.Sprintf("external_db_user=%s", dbConfig.User),
 		"-v", fmt.Sprintf("external_db_password=%s", dbConfig.Password),
