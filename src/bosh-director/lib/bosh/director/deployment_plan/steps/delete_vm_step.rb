@@ -30,6 +30,7 @@ module Bosh::Director
               end
             end
 
+            instance_model.vms.delete(vm)
             vm.destroy
           rescue Exception => e
             raise e
