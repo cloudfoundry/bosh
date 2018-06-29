@@ -54,14 +54,18 @@ module Bosh::Director
             instance.update_state
             return
           end
-        end
 
-        if instance.state == 'detached'
           handle_detached_instance
-          return
         end
 
-        finish_up
+        converge_vm if instance.state != 'detached'
+        update_instance
+        update_dns
+
+        return if instance.state == 'detached'
+
+        @rendered_templates_persistor.persist(instance_plan)
+        apply_state
       end
 
       private
@@ -70,24 +74,7 @@ module Bosh::Director
         @needs_recreate
       end
 
-      def finish_up
-        recreated = false
-        if needs_recreate? || (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
-          recreated = handle_recreate
-        end
-
-        instance_plan.release_obsolete_network_plans(@ip_provider)
-        instance_report.vm = instance_plan.instance.model.active_vm
-
-        update_dns
-        @disk_manager.update_persistent_disk(instance_plan)
-
-        instance.update_instance_settings unless recreated
-
-        @rendered_templates_persistor.persist(instance_plan)
-        instance.update_variable_set
-        @links_manager.bind_links_to_instance(instance) unless links_already_bound_to_instance
-
+      def apply_state
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,
           agent,
@@ -123,24 +110,31 @@ module Bosh::Director
       end
 
       def handle_detached_instance
+        return if instance.state != 'detached'
+
         # Command issued: `bosh stop --hard`
         @logger.info("Detaching instance #{instance}")
-        unless instance_plan.already_detached?
-          instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
-          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
-          DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms)
-                                             .perform(instance_report)
-        end
-        instance_plan.release_obsolete_network_plans(@ip_provider)
-        @links_manager.bind_links_to_instance(instance)
-        instance.update_state
-        instance.update_variable_set
-        update_dns
+        instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
+        DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
+        DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms).perform(instance_report)
       end
 
-      def handle_recreate
-        RecreateHandler.new(@logger, @vm_creator, @ip_provider, instance_plan, instance_report).perform
-        true
+      def update_instance
+        instance_plan.release_obsolete_network_plans(@ip_provider)
+        @links_manager.bind_links_to_instance(instance) unless links_already_bound_to_instance
+        instance.update_state
+        instance.update_variable_set
+      end
+
+      def converge_vm
+        recreate = needs_recreate? || (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
+
+        RecreateHandler.new(@logger, @vm_creator, @ip_provider, instance_plan, instance_report).perform if recreate
+
+        instance_report.vm = instance_plan.instance.model.active_vm
+        @disk_manager.update_persistent_disk(instance_plan)
+
+        instance.update_instance_settings unless recreate
       end
 
       def dns_change_only?
