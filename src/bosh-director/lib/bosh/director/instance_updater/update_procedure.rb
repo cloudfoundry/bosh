@@ -46,7 +46,7 @@ module Bosh::Director
         end
 
         unless instance_plan.already_detached?
-          handle_already_detached_instance_plan
+          handle_not_detached_instance_plan
 
           # desired state
           if instance.state == 'stopped'
@@ -85,7 +85,7 @@ module Bosh::Director
         state_applier.apply(instance_plan.desired_instance.instance_group.update)
       end
 
-      def handle_already_detached_instance_plan
+      def handle_not_detached_instance_plan
         @links_already_bound_to_instance = false
         # Rendered templates are persisted here, in the case where a vm is already soft stopped
         # It will update the rendered templates on the VM
