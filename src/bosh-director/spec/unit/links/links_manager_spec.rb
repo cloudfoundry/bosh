@@ -1815,6 +1815,45 @@ describe Bosh::Director::Links::LinksManager do
             end
           end
         end
+
+        context 'when manual provider with same name exists' do
+          let(:manual_provider) do
+            Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment_model,
+              instance_group: 'ig',
+              name: 'some-provider',
+              type: 'manual',
+            )
+          end
+
+          before do
+            Bosh::Director::Models::Links::LinkProviderIntent.create(
+              link_provider: manual_provider,
+              original_name: 'pi1',
+              name: 'provider_alias',
+              type: 'foo',
+              content: {
+                use_dns_addresses: use_dns_addresses,
+                default_network: 'netb',
+                instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+              }.to_json,
+              serial_id: serial_id,
+            )
+          end
+
+          it 'does not find find the manual provider' do
+            expect(deployment_model.link_consumers.count).to eq(1)
+
+            expect { subject.resolve_deployment_links(deployment_model, options) }.to raise_error do |error|
+              message = error.message
+              expect(message).to include(<<~MESSAGE.strip)
+                Failed to resolve links from deployment 'test_deployment'. See errors below:
+                  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                    - No link providers found
+              MESSAGE
+            end
+          end
+        end
       end
 
       context 'when it is an implicit consumer' do
@@ -1967,12 +2006,16 @@ describe Bosh::Director::Links::LinksManager do
             )
           end
 
-          it 'raises an error' do
+          it 'does not find the manual provider' do
             expect(deployment_model.link_consumers.count).to eq(1)
 
             expect { subject.resolve_deployment_links(deployment_model, options) }.to raise_error do |error|
               message = error.message
-              expect(message).to include("Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'")
+              expect(message).to include(<<~MESSAGE.strip)
+                Failed to resolve links from deployment 'test_deployment'. See errors below:
+                  - Failed to resolve link 'ci1' with type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                    - No link providers found
+              MESSAGE
             end
           end
         end
