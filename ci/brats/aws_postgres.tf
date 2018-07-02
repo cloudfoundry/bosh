@@ -12,6 +12,7 @@ resource "aws_db_instance" "postgres" {
   name                 = "${var.rds_postgres_databasename}"
   username             = "${var.rds_postgres_username}"
   password             = "${var.rds_postgres_password}"
+  vpc_security_group_ids = ["${aws_security_group.allow-db-access.id}"]
   db_subnet_group_name = "${aws_db_subnet_group.default.id}"
   parameter_group_name = "default.postgres9.6"
   publicly_accessible    = true
