@@ -103,7 +103,7 @@ module Bosh::Clouds
       save_cpi_log(stderr)
 
       if parsed_response['error']
-        handle_error(parsed_response['error'], method_name)
+        handle_error(parsed_response['error'], method_name, request_id)
       end
 
       parsed_response['result']
@@ -183,15 +183,16 @@ module Bosh::Clouds
       JSON.dump(request_hash)
     end
 
-    def handle_error(error_response, method_name)
+    def handle_error(error_response, method_name, request_id)
       error_type = error_response['type']
       error_message = error_response['message']
 
       # backwards compatibility for CPIs returning different errors than 'NotImplemented' for not implemented methods
-      handle_method_not_implemented(error_message, error_type, method_name)
+      handle_method_not_implemented(error_message, error_type, method_name, request_id)
 
       unless KNOWN_RPC_ERRORS.include?(error_type)
-        raise UnknownError, "Unknown CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+        raise UnknownError, "Unknown CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method" \
+                            " (CPI request ID: '#{request_id}')"
       end
 
       error_class = constantize(error_type)
@@ -202,11 +203,13 @@ module Bosh::Clouds
         error = error_class.new(error_message)
       end
 
-      raise error, "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+      raise error, "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method" \
+                   " (CPI request ID: '#{request_id}')"
     end
 
-    def handle_method_not_implemented(error_message, error_type, method_name)
-      message = "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method"
+    def handle_method_not_implemented(error_message, error_type, method_name, request_id)
+      message = "CPI error '#{error_type}' with message '#{error_message}' in '#{method_name}' CPI method" \
+                " (CPI request ID: '#{request_id}')"
 
       raise Bosh::Clouds::NotImplemented, message if error_type == "InvalidCall" && error_message.start_with?('Method is not known, got')
       raise Bosh::Clouds::NotImplemented, message if error_type == 'Bosh::Clouds::CloudError' && error_message.start_with?('Invalid Method:')
