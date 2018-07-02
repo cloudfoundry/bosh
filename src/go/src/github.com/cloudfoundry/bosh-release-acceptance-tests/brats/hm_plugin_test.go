@@ -3,10 +3,11 @@ package brats_test
 import (
 	"time"
 
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"fmt"
 )
 
 var _ = Describe("Health Monitor", func() {
@@ -15,10 +16,6 @@ var _ = Describe("Health Monitor", func() {
 			"-o", assetPath("ops-hm-json-plugin-logger-job.yml"),
 			"-v", fmt.Sprintf("hm-json-plugin-release-path=%s", assetPath("hm-json-plugin-release")),
 		)
-	})
-
-	AfterEach(func() {
-		stopInnerBosh()
 	})
 
 	It("runs JSON plugins", func() {

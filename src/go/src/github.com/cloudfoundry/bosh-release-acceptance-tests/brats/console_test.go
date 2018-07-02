@@ -17,10 +17,6 @@ var _ = Describe("director console", func() {
 		startInnerBosh()
 	})
 
-	AfterEach(func() {
-		stopInnerBosh()
-	})
-
 	It("allows a user to launch the director console", func() {
 		ptyF, ttyF, err := pty.Open()
 		Expect(err).ShouldNot(HaveOccurred())

@@ -1,4 +1,4 @@
-package brats_test
+package bbr_test
 
 import (
 	"io/ioutil"
@@ -22,9 +22,9 @@ import (
 
 const BLOBSTORE_ACCESS_LOG = "/var/vcap/sys/log/blobstore/blobstore_access.log"
 
-func TestBrats(t *testing.T) {
+func TestBBR(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Brats Suite")
+	RunSpecs(t, "BBR Suite")
 }
 
 var (
@@ -32,29 +32,23 @@ var (
 	boshBinaryPath,
 	innerBoshPath,
 	innerBoshJumpboxPrivateKeyPath,
+	bbrBinaryPath,
 	innerDirectorIP,
-	boshRelease,
-	directorBackupName,
 	innerDirectorUser,
-	deploymentName,
 	boshDirectorReleasePath,
 	candidateWardenLinuxStemcellPath,
-	stemcellOS,
-	dnsReleasePath string
+	stemcellOS string
 )
 
 var _ = BeforeSuite(func() {
 	outerBoshBinaryPath = assertEnvExists("BOSH_BINARY_PATH")
 
-	deploymentName = "dns-with-templates"
-	directorBackupName = "director-backup"
 	innerDirectorUser = "jumpbox"
 	innerBoshPath = "/tmp/inner-bosh/director/"
 	boshBinaryPath = filepath.Join(innerBoshPath, "bosh")
 	innerBoshJumpboxPrivateKeyPath = filepath.Join(innerBoshPath, "jumpbox_private_key.pem")
-	boshRelease = assertEnvExists("BOSH_RELEASE")
+	bbrBinaryPath = assertEnvExists("BBR_BINARY_PATH")
 	innerDirectorIP = "10.245.0.34"
-	dnsReleasePath = assertEnvExists("DNS_RELEASE_PATH")
 	boshDirectorReleasePath = assertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
 	candidateWardenLinuxStemcellPath = assertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 	stemcellOS = assertEnvExists("STEMCELL_OS")
@@ -67,22 +61,6 @@ var _ = AfterSuite(func() {
 	session, err := gexec.Start(exec.Command(outerBoshBinaryPath, "-n", "clean-up", "--all"), GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(session, time.Minute).Should(gexec.Exit(0))
-})
-
-var _ = AfterEach(func() {
-	By("cleanin up deployments")
-	session := bosh("deployments", "--column=name")
-	Eventually(session, 1*time.Minute).Should(gexec.Exit())
-	deployments := strings.Fields(string(session.Out.Contents()))
-
-	for _, deploymentName := range deployments {
-		By(fmt.Sprintf("deleting deployment %v", deploymentName))
-		if deploymentName == "" {
-			continue
-		}
-		session := bosh("delete-deployment", "-n", "-d", deploymentName)
-		Eventually(session, 5*time.Minute).Should(gexec.Exit())
-	}
 })
 
 func assertEnvExists(envName string) string {
@@ -145,6 +123,10 @@ func execCommand(binaryPath string, args ...string) *gexec.Session {
 	Expect(err).ToNot(HaveOccurred())
 
 	return session
+}
+
+func bbr(args ...string) *gexec.Session {
+	return execCommand(bbrBinaryPath, args...)
 }
 
 func outerBosh(args ...string) *gexec.Session {
@@ -232,6 +214,75 @@ func loadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 	}
 
 	return config
+}
+
+func cleanupDB(dbConfig ExternalDBConfig) {
+	if dbConfig.Type == "mysql" {
+		cleanupMySQL(dbConfig)
+	} else if dbConfig.Type == "postgres" {
+		cleanupPostgres(dbConfig)
+	}
+}
+
+func cleanupMySQL(dbConfig ExternalDBConfig) {
+	args := []string{
+		"-h",
+		dbConfig.Host,
+		fmt.Sprintf("--user=%s", dbConfig.User),
+		fmt.Sprintf("--password=%s", dbConfig.Password),
+		"-e",
+		fmt.Sprintf("drop database %s; create database %s;", dbConfig.DBName, dbConfig.DBName),
+		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
+	}
+
+	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
+		args = append(args,
+			fmt.Sprintf("--ssl-cert=%s", dbConfig.ClientCertPath),
+			fmt.Sprintf("--ssl-key=%s", dbConfig.ClientKeyPath),
+			"--ssl-mode=VERIFY_CA",
+		)
+	} else {
+		args = append(args, "--ssl-mode=VERIFY_IDENTITY")
+	}
+
+	session := execCommand("mysql", args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func cleanupPostgres(dbConfig ExternalDBConfig) {
+	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
+		dbConfig.Host,
+		dbConfig.User,
+		dbConfig.Password,
+		dbConfig.CACertPath,
+	)
+
+	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
+		connstring += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
+			dbConfig.ClientCertPath,
+			dbConfig.ClientKeyPath,
+		)
+	} else {
+		connstring += "sslmode=verify-full "
+	}
+
+	args := []string{
+		connstring,
+		"-c",
+		fmt.Sprintf("drop database %s;", dbConfig.DBName),
+	}
+
+	session := execCommand("psql", args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+	args = []string{
+		connstring,
+		"-c",
+		fmt.Sprintf("create database %s;", dbConfig.DBName),
+	}
+
+	session = execCommand("psql", args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
 func innerBoshWithExternalDBOptions(dbConfig ExternalDBConfig) []string {

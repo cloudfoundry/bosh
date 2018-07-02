@@ -14,4 +14,4 @@ export PATH="${GOPATH}/bin":$PATH
 
 cd src/github.com/cloudfoundry/bosh-release-acceptance-tests
 go install ./vendor/github.com/onsi/ginkgo/ginkgo
-ginkgo -v -race -randomizeSuites -randomizeAllSpecs -focus="${FOCUS_SPEC}" brats
+ginkgo -v -race -randomizeSuites -randomizeAllSpecs -focus="${FOCUS_SPEC}" bbr

@@ -12,10 +12,6 @@ import (
 )
 
 var _ = Describe("Director external database TLS connections", func() {
-	AfterEach(func() {
-		stopInnerBosh()
-	})
-
 	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useIncorrectCA bool) {
 		tmpCertDir, err := ioutil.TempDir("", "db_tls")
 		Expect(err).ToNot(HaveOccurred())
