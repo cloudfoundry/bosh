@@ -807,7 +807,7 @@ jobs:
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
           action: destroy
-          get_params: {}
+          get_params: { action: destroy }
 
   - name: bbr-ubuntu-trusty
     serial: true
@@ -897,7 +897,7 @@ jobs:
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
           action: destroy
-          get_params: {}
+          get_params: { action: destroy }
 
   - name: brats-ubuntu-xenial
     serial: true
@@ -992,7 +992,7 @@ jobs:
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
           action: destroy
-          get_params: {}
+          get_params: { action: destroy }
 
   - name: bbr-ubuntu-xenial
     serial: true
@@ -1082,7 +1082,7 @@ jobs:
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
           action: destroy
-          get_params: {}
+          get_params: { action: destroy }
 
   - name: delivery
     plan:
@@ -1096,6 +1096,8 @@ jobs:
           - bats-centos
           - brats-ubuntu-trusty
           - brats-ubuntu-xenial
+          - bbr-ubuntu-trusty
+          - bbr-ubuntu-xenial
       - put: tracker-output
         params:
           repos:
