@@ -1,7 +1,9 @@
 package brats_test
 
 import (
+	"io/ioutil"
 	"os"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,7 +32,6 @@ var (
 	boshBinaryPath,
 	innerBoshPath,
 	innerBoshJumpboxPrivateKeyPath,
-	bbrBinaryPath,
 	innerDirectorIP,
 	boshRelease,
 	directorBackupName,
@@ -51,7 +52,6 @@ var _ = BeforeSuite(func() {
 	innerBoshPath = "/tmp/inner-bosh/director/"
 	boshBinaryPath = filepath.Join(innerBoshPath, "bosh")
 	innerBoshJumpboxPrivateKeyPath = filepath.Join(innerBoshPath, "jumpbox_private_key.pem")
-	bbrBinaryPath = assertEnvExists("BBR_BINARY_PATH")
 	boshRelease = assertEnvExists("BOSH_RELEASE")
 	innerDirectorIP = "10.245.0.34"
 	dnsReleasePath = assertEnvExists("DNS_RELEASE_PATH")
@@ -67,6 +67,22 @@ var _ = AfterSuite(func() {
 	session, err := gexec.Start(exec.Command(outerBoshBinaryPath, "-n", "clean-up", "--all"), GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(session, time.Minute).Should(gexec.Exit(0))
+})
+
+var _ = AfterEach(func() {
+	By("cleanin up deployments")
+	session := bosh("deployments", "--column=name")
+	Eventually(session, 1*time.Minute).Should(gexec.Exit())
+	deployments := strings.Fields(string(session.Out.Contents()))
+
+	for _, deploymentName := range deployments {
+		By(fmt.Sprintf("deleting deployment %v", deploymentName))
+		if deploymentName == "" {
+			continue
+		}
+		session := bosh("delete-deployment", "-n", "-d", deploymentName)
+		Eventually(session, 5*time.Minute).Should(gexec.Exit())
+	}
 })
 
 func assertEnvExists(envName string) string {
@@ -131,10 +147,6 @@ func execCommand(binaryPath string, args ...string) *gexec.Session {
 	return session
 }
 
-func bbr(args ...string) *gexec.Session {
-	return execCommand(bbrBinaryPath, args...)
-}
-
 func outerBosh(args ...string) *gexec.Session {
 	return execCommand(outerBoshBinaryPath, args...)
 }
@@ -151,4 +163,102 @@ func uploadStemcell(stemcellUrl string) {
 func uploadRelease(releaseUrl string) {
 	session := bosh("-n", "upload-release", releaseUrl)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+type ExternalDBConfig struct {
+	Type     string
+	Host     string
+	User     string
+	Password string
+	DBName   string
+
+	CACertPath     string
+	ClientCertPath string
+	ClientKeyPath  string
+
+	ConnectionVarFile     string
+	ConnectionOptionsFile string
+}
+
+func loadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string) ExternalDBConfig {
+	var databaseType string
+	if strings.HasSuffix(DBaaS, "mysql") {
+		databaseType = "mysql"
+	} else {
+		databaseType = "postgres"
+	}
+
+	config := ExternalDBConfig{
+		Type:                  databaseType,
+		Host:                  assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(DBaaS))),
+		User:                  assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(DBaaS))),
+		Password:              assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(DBaaS))),
+		DBName:                assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_NAME", strings.ToUpper(DBaaS))),
+		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", DBaaS),
+		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", DBaaS),
+	}
+
+	caContents := []byte(os.Getenv(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(DBaaS))))
+	if len(caContents) == 0 {
+		var err error
+		caContents, err = exec.Command(outerBoshBinaryPath, "int", assetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
+		Expect(err).ToNot(HaveOccurred())
+	}
+	caFile, err := ioutil.TempFile(tmpCertDir, "db_ca")
+	Expect(err).ToNot(HaveOccurred())
+
+	defer caFile.Close()
+	_, err = caFile.Write(caContents)
+	Expect(err).ToNot(HaveOccurred())
+
+	config.CACertPath = caFile.Name()
+
+	if mutualTLSEnabled {
+		clientCertContents := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(DBaaS)))
+		clientKeyContents := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(DBaaS)))
+
+		clientCertFile, err := ioutil.TempFile(tmpCertDir, "client_cert")
+		Expect(err).ToNot(HaveOccurred())
+
+		defer clientCertFile.Close()
+		_, err = clientCertFile.Write([]byte(clientCertContents))
+		Expect(err).ToNot(HaveOccurred())
+
+		clientKeyFile, err := ioutil.TempFile(tmpCertDir, "client_key")
+		Expect(err).ToNot(HaveOccurred())
+
+		defer clientKeyFile.Close()
+		_, err = clientKeyFile.Write([]byte(clientKeyContents))
+		Expect(err).ToNot(HaveOccurred())
+
+		config.ClientCertPath = clientCertFile.Name()
+		config.ClientKeyPath = clientKeyFile.Name()
+	}
+
+	return config
+}
+
+func innerBoshWithExternalDBOptions(dbConfig ExternalDBConfig) []string {
+	options := []string{
+		"-o", boshDeploymentAssetPath("misc/external-db.yml"),
+		"-o", boshDeploymentAssetPath("experimental/db-enable-tls.yml"),
+		"-o", assetPath(dbConfig.ConnectionOptionsFile),
+		"--vars-file", assetPath(dbConfig.ConnectionVarFile),
+		fmt.Sprintf("--var-file=db_ca=%s", dbConfig.CACertPath),
+		"-v", fmt.Sprintf("external_db_host=%s", dbConfig.Host),
+		"-v", fmt.Sprintf("external_db_user=%s", dbConfig.User),
+		"-v", fmt.Sprintf("external_db_password=%s", dbConfig.Password),
+		"-v", fmt.Sprintf("external_db_name=%s", dbConfig.DBName),
+	}
+
+	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
+		options = append(options,
+			fmt.Sprintf("-o %s", boshDeploymentAssetPath("experimental/db-enable-mutual-tls.yml")),
+			fmt.Sprintf("-o %s", assetPath("tls-skip-host-verify.yml")),
+			fmt.Sprintf("--var-file=db_client_certificate=%s", dbConfig.ClientCertPath),
+			fmt.Sprintf("--var-file=db_client_private_key=%s", dbConfig.ClientKeyPath),
+		)
+	}
+
+	return options
 }

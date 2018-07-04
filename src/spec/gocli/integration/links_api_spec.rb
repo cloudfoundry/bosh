@@ -1088,6 +1088,28 @@ describe 'links api', type: :integration do
             expect(@link1).to eq(link2)
           end
         end
+
+        context 'when multiple provider with same name and type exists' do
+          before do
+            new_instance_group = Bosh::Spec::NewDeployments.simple_instance_group(
+              name: 'new-foobar',
+              jobs: jobs,
+            )
+            manifest_hash['instance_groups'] << new_instance_group
+            deploy_simple_manifest(manifest_hash: manifest_hash)
+          end
+
+          it 'should create link with correct provider' do
+            all_providers = get_link_providers
+            expect(all_providers.count).to eq(2)
+
+            response = send_director_post_request('/links', '', JSON.generate(payload_json))
+            link = JSON.parse(response.read_body)
+
+            expect(link['name']).to eq(jobs[0]['name'])
+            expect(link['link_provider_id']).to eq(provider_id)
+          end
+        end
       end
 
       context 'when link_provider_id do not exists' do

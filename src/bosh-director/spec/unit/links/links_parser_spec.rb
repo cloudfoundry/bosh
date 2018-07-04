@@ -1871,7 +1871,7 @@ describe Bosh::Director::Links::LinksParser do
           link_consumer: consumer,
           link_original_name: 'alternative_name',
           link_type: 'address',
-          new_intent_metadata: { explicit_link: true },
+          new_intent_metadata: { 'explicit_link' => true, 'wildcard' => false },
         }
         expect(links_manager).to receive(:find_or_create_consumer_intent)
                                    .with(expected_consumer_intent_params)
@@ -1902,7 +1902,7 @@ describe Bosh::Director::Links::LinksParser do
             link_consumer: consumer,
             link_original_name: 'alternative_name',
             link_type: 'address',
-            new_intent_metadata: { explicit_link: true },
+            new_intent_metadata: { 'explicit_link' => true, 'wildcard' => false },
           }
           expect(links_manager).to receive(:find_or_create_consumer_intent)
                                      .with(expected_consumer_intent_params)
@@ -1915,6 +1915,41 @@ describe Bosh::Director::Links::LinksParser do
             'type' => 'certificate',
             'consumes' => {
               'alternative_name' => {},
+            },
+          }
+          subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
+        end
+      end
+
+      context 'and the `wildcard` is true' do
+        it 'makes consumer and consumer intent' do
+          expected_consumer_params = {
+            deployment_model: deployment_plan.model,
+            instance_group_name: '',
+            name: 'bbs',
+            type: 'variable',
+          }
+          expect(links_manager).to receive(:find_or_create_consumer).with(expected_consumer_params).and_return(consumer)
+          expected_consumer_intent_params = {
+            link_consumer: consumer,
+            link_original_name: 'alternative_name',
+            link_type: 'address',
+            new_intent_metadata: { 'explicit_link' => true, 'wildcard' => true },
+          }
+          expect(links_manager).to receive(:find_or_create_consumer_intent)
+            .with(expected_consumer_intent_params)
+            .and_return(consumer_intent)
+          expect(consumer_intent).to receive(:name=).with('foo')
+          expect(consumer_intent).to receive(:save)
+
+          variable_spec = {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'alternative_name' => {
+                'from' => 'foo',
+                'properties' => { 'wildcard' => true },
+              },
             },
           }
           subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
@@ -1981,7 +2016,8 @@ describe Bosh::Director::Links::LinksParser do
         }
         expect do
           subject.parse_consumers_from_variable(variable_spec, deployment_plan.model)
-        end.to raise_error "Consumer name 'foobar' is not a valid consumer for variable 'bbs'. Acceptable consumer types are: alternative_name"
+        end.to raise_error "Consumer name 'foobar' is not a valid consumer for variable 'bbs'. Acceptable consumer types are:"\
+          ' alternative_name, common_name'
       end
     end
   end

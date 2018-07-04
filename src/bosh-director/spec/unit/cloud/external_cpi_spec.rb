@@ -34,7 +34,8 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{api_version}})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":) +
+                         %({"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{api_version}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -47,7 +48,8 @@ describe Bosh::Clouds::ExternalCpi do
 
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
-        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
+        expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":) +
+                         %({"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -251,6 +253,7 @@ describe Bosh::Clouds::ExternalCpi do
 
     describe 'error response' do
       def self.it_raises_an_error(error_class, error_type = error_class.name, message = 'fake-error-message')
+        let(:request_id) { 'cpi-fake-request-id' }
         let(:cpi_response) do
           JSON.dump(
             result: nil,
@@ -264,7 +267,10 @@ describe Bosh::Clouds::ExternalCpi do
         end
 
         it 'raises an error constructed from error response' do
-          expect { call_cpi_method }.to raise_error(error_class, /CPI error '#{error_type}' with message '#{message}' in '#{method}' CPI method/)
+          expect { call_cpi_method }.to raise_error(
+            error_class,
+            /CPI error '#{error_type}' with message '#{message}' in '#{method}' CPI method \(CPI request ID: '#{request_id}'\)/,
+          )
         end
 
         it 'saves log and stderr' do
@@ -296,7 +302,8 @@ describe Bosh::Clouds::ExternalCpi do
             call_cpi_method
           }.to raise_error do |error|
             expect(error.class).to eq(error_class)
-            expect(error.message).to eq("CPI error '#{error_class}' with message 'fake-error-message' in '#{method}' CPI method")
+            expect(error.message).to eq("CPI error '#{error_class}' with message 'fake-error-message' in '#{method}'" \
+            " CPI method \(CPI request ID: 'cpi-fake-request-id'\)")
             expect(error.ok_to_retry).to eq(true)
           end
         end

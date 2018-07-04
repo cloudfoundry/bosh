@@ -27,24 +27,35 @@ export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/experimental/dns-ad
 
 export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
 
-
-mkdir -p bbr-binary
-export BBR_VERSION=1.2.2
-curl -L -o bbr-binary/bbr https://s3.amazonaws.com/bosh-dependencies/bbr-$BBR_VERSION
-
-export BBR_SHA256=829160a61a44629a2626b578668777074c7badd75a9b5dab536defdbdd84b17a
-export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr"
-
-echo "${BBR_SHA256} ${BBR_BINARY_PATH}" | sha256sum -c -
-
-chmod +x "${BBR_BINARY_PATH}"
-
-cp "${BBR_BINARY_PATH}" /usr/local/bin/bbr
-
 DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
 export DOCKER_CERTS
 DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 export DOCKER_HOST
+
+apt-get update
+apt-get install -y jq
+
+RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
+RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
+GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
+GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
+GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .mysql_ca_cert gcp-ssl-config/gcp_mysql.yml)"
+GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .mysql_client_cert gcp-ssl-config/gcp_mysql.yml)"
+GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .mysql_client_key gcp-ssl-config/gcp_mysql.yml)"
+GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .postgres_ca_cert gcp-ssl-config/gcp_postgres.yml)"
+GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .postgres_client_cert gcp-ssl-config/gcp_postgres.yml)"
+GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .postgres_client_key gcp-ssl-config/gcp_postgres.yml)"
+
+export RDS_MYSQL_EXTERNAL_DB_HOST
+export RDS_POSTGRES_EXTERNAL_DB_HOST
+export GCP_MYSQL_EXTERNAL_DB_HOST
+export GCP_POSTGRES_EXTERNAL_DB_HOST
+export GCP_MYSQL_EXTERNAL_DB_CA
+export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE
+export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+export GCP_POSTGRES_EXTERNAL_DB_CA
+export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE
+export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
 
 cd bosh-src
 scripts/test-brats

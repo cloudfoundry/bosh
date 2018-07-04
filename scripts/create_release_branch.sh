@@ -7,23 +7,21 @@ start_point=${2:-'HEAD'}
 release_patch_file=$scripts_path/create_release_branch.patch
 finalize_job_patch_file=$scripts_path/add_finalize_release_job.patch
 
-git checkout -b $1 $start_point
+BRANCH_NAME=${1}
 
-sed -i '' -e "s/BRANCHNAME/$1/g" $release_patch_file
+git checkout -b ${BRANCH_NAME} $start_point
 
-BRANCH_VERSION=${OVERRIDE_VERSION:-$(echo $1 | cut -d '.' -f1)}
-sed -i '' -e "s/BRANCHVER/$BRANCH_VERSION/g" $release_patch_file
+sed  -e "s/-p bosh/-p bosh:${BRANCH_NAME}/" <(git show origin/master:ci/configure.sh) > ci/configure.sh
 
-git apply $release_patch_file
-git checkout $release_patch_file
+BRANCH_VERSION=${OVERRIDE_VERSION:-$(echo ${BRANCH_NAME} | cut -d '.' -f1)}
 
-git apply $finalize_job_patch_file
+bosh int -o scripts/create-release-branch-ops.yml <(git show origin/master:ci/pipeline.yml) -v branchver=${BRANCH_VERSION} -v branchname=${BRANCH_NAME} > ci/pipeline.yml
 
 git add -A .
-git ci -m "Create release branch $BRANCHNAME"
+git ci -m "Create release branch $BRANCH_NAME"
 
-echo "Branch created successfully. Run 'git push -u origin $BRANCHNAME' to push branch to Github."
+echo "Branch created successfully. Run 'git push -u origin $BRANCH_NAME' to push branch to Github."
 
-echo "\n---------------------------\n"
+echo -e "\n---------------------------\n"
 
 echo "Run './ci/configure.sh' when ready to push pipeline to Concourse."

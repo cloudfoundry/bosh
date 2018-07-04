@@ -17,10 +17,6 @@ var _ = Describe("Legacy Stemcells", func() {
 		startInnerBosh()
 	})
 
-	AfterEach(func() {
-		stopInnerBosh()
-	})
-
 	testStemcellDeploy := func(stemcellVersion string) {
 		stemcellUrl := fmt.Sprintf(
 			"https://s3.amazonaws.com/bosh-core-stemcells/warden/bosh-stemcell-%s-warden-boshlite-ubuntu-trusty-go_agent.tgz",

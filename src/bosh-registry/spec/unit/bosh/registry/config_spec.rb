@@ -513,29 +513,5 @@ describe Bosh::Registry do
         end
       end
     end
-
-    context 'when logger is available' do
-      before do
-        allow(described_class).to receive(:logger).and_return(double('Fake Logger'))
-      end
-
-      it 'sets the database logger' do
-        expect(database_connection).to receive(:logger=)
-        expect(database_connection).to receive(:sql_log_level=)
-        described_class.connect_db(database_options)
-      end
-    end
-
-    context 'when logger is unavailable' do
-      before do
-        allow(described_class).to receive(:logger).and_return(nil)
-      end
-
-      it 'does not sets the database logger' do
-        expect(database_connection).not_to receive(:logger=)
-        expect(database_connection).not_to receive(:sql_log_level=)
-        described_class.connect_db(database_options)
-      end
-    end
   end
 end

@@ -1,40 +1,41 @@
 module Bosh::Dev::Sandbox
   class DirectorConfig
     attr_reader :director_name,
-      :director_ruby_port,
-      :nats_port,
-      :sandbox_root,
-      :blobstore_storage_dir,
-      :verify_multidigest_path,
-      :external_cpi_config,
-      :database,
-      :director_fix_stateful_nodes,
-      :dns_enabled,
-      :local_dns,
-      :cloud_storage_dir,
-      :config_server_enabled,
-      :config_server_url,
-      :config_server_cert_path,
-      :config_server_uaa_url,
-      :config_server_uaa_client_id,
-      :config_server_uaa_client_secret,
-      :config_server_uaa_ca_cert_path,
-      :user_authentication,
-      :uaa_url,
-      :trusted_certs,
-      :users_in_manifest,
-      :enable_post_deploy,
-      :enable_nats_delivered_templates,
-      :enable_cpi_resize_disk,
-      :default_update_vm_strategy,
-      :generate_vm_passwords,
-      :remove_dev_tools,
-      :director_ips,
-      :nats_server_ca_path,
-      :nats_client_ca_private_key_path,
-      :nats_client_ca_certificate_path,
-      :nats_director_tls,
-      :cpi_api_test_max_version
+                :agent_wait_timeout,
+                :blobstore_storage_dir,
+                :cloud_storage_dir,
+                :config_server_cert_path,
+                :config_server_enabled,
+                :config_server_uaa_ca_cert_path,
+                :config_server_uaa_client_id,
+                :config_server_uaa_client_secret,
+                :config_server_uaa_url,
+                :config_server_url,
+                :database,
+                :default_update_vm_strategy,
+                :director_fix_stateful_nodes,
+                :director_ips,
+                :director_ruby_port,
+                :dns_enabled,
+                :enable_cpi_resize_disk,
+                :enable_nats_delivered_templates,
+                :enable_post_deploy,
+                :external_cpi_config,
+                :generate_vm_passwords,
+                :local_dns,
+                :nats_client_ca_certificate_path,
+                :nats_client_ca_private_key_path,
+                :nats_director_tls,
+                :nats_port,
+                :nats_server_ca_path,
+                :remove_dev_tools,
+                :sandbox_root,
+                :trusted_certs,
+                :uaa_url,
+                :user_authentication,
+                :users_in_manifest,
+                :verify_multidigest_path,
+                :cpi_api_test_max_version,
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -51,7 +52,10 @@ module Bosh::Dev::Sandbox
       @director_fix_stateful_nodes = attrs.fetch(:director_fix_stateful_nodes, false)
 
       @dns_enabled = attrs.fetch(:dns_enabled, true)
-      @local_dns = attrs.fetch(:local_dns, {'enabled' => false, 'include_index' => false, 'use_dns_addresses' => false})
+      @local_dns = attrs.fetch(:local_dns,
+                               'enabled' => false,
+                               'include_index' => false,
+                               'use_dns_addresses' => false)
 
       @external_cpi_config = attrs.fetch(:external_cpi_config)
 
@@ -82,6 +86,7 @@ module Bosh::Dev::Sandbox
       @nats_client_ca_private_key_path = attrs.fetch(:nats_client_ca_private_key_path)
       @nats_client_ca_certificate_path = attrs.fetch(:nats_client_ca_certificate_path)
       @nats_director_tls = attrs.fetch(:nats_director_tls)
+      @agent_wait_timeout = attrs.fetch(:agent_wait_timeout, 600)
       @cpi_api_test_max_version = attrs.fetch(:cpi_api_test_max_version)
     end
 

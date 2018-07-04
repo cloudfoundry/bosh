@@ -38,7 +38,7 @@ module Bosh::Director
         consumer_intent.name = provider_intent.name
         consumer_intent.save
 
-        filter_content_and_create_link(consumer_intent)
+        filter_content_and_create_link(consumer_intent, provider_intent)
       end
 
       def delete_link(username, link_id)
@@ -126,10 +126,10 @@ module Bosh::Director
         raise Bosh::Director::LinkNotExternalError, 'Error deleting link: not a external link' if consumer.type != @external_type
       end
 
-      def filter_content_and_create_link(consumer_intent)
+      def filter_content_and_create_link(consumer_intent, provider_intent)
         # global_use_dns should be the director default for external link
         global_use_dns = Bosh::Director::Config.local_dns_use_dns_addresses?
-        @links_manager.resolve_consumer_intent_and_generate_link(consumer_intent, global_use_dns, false)
+        @links_manager.resolve_consumer_intent_and_generate_link(consumer_intent, global_use_dns, false, provider_intent)
       end
 
       def find_provider_intent(provider_intent_id)

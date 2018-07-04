@@ -17,7 +17,7 @@ import (
 var _ = Describe("Blobstore", func() {
 	Context("SSL", func() {
 		testDeployment := func(allowHttp bool, schema string, errorCode int) {
-			By("specifying blobstore.allow_http and agent.env.bosh.blobstores")
+			By(fmt.Sprintf("specifying blobstore.allow_http (%v) and agent.env.bosh.blobstores (%v)", allowHttp, schema))
 			startInnerBosh(
 				fmt.Sprintf("-o %s", assetPath("op-blobstore-https.yml")),
 				fmt.Sprintf("-v allow_http=%t", allowHttp),
@@ -33,10 +33,6 @@ var _ = Describe("Blobstore", func() {
 			)
 			Eventually(session, 3*time.Minute).Should(gexec.Exit(errorCode))
 		}
-
-		AfterEach(func() {
-			stopInnerBosh()
-		})
 
 		DescribeTable("with allow_http true", testDeployment,
 			Entry("allows http connections", true, "http", 0),
@@ -63,10 +59,6 @@ var _ = Describe("Blobstore", func() {
 
 			session := outerBosh("-d", "bosh", "scp", fmt.Sprintf("bosh:%s", BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
 			Eventually(session, time.Minute).Should(gexec.Exit(0))
-		})
-
-		AfterEach(func() {
-			stopInnerBosh()
 		})
 
 		It("Should log in correct format", func() {

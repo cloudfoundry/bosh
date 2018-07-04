@@ -221,41 +221,48 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
+      def used_cloud_config_state(deployment)
+        latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
+        if deployment.cloud_configs.empty?
+          'none'
+        elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
+          'latest'
+        else
+          'outdated'
+        end
+      end
+
+      def stemcells_state(deployment)
+        deployment.stemcells.map { |sc| { 'name' => sc.name, 'version' => sc.version } }
+      end
+
+      def releases_state(deployment)
+        sorted_releases = deployment.release_versions.sort do |a, b|
+          [a.release.name, a.version] <=> [b.release.name, b.version]
+        end
+        sorted_releases.map { |rv| { 'name' => rv.release.name, 'version' => rv.version.to_s } }
+      end
+
       get '/', authorization: :list_deployments do
-        all_deployments = @deployment_manager.all_by_name_asc
+        excludes = {
+          exclude_configs: params[:exclude_configs] == 'true',
+          exclude_releases: params[:exclude_releases] == 'true',
+          exclude_stemcells: params[:exclude_stemcells] == 'true',
+        }
+        all_deployments = @deployment_manager.all_by_name_asc_without(excludes)
+
         my_deployments = all_deployments.select do |deployment|
           @permission_authorizer.is_granted?(deployment, :read, token_scopes)
         end
         deployments = my_deployments.map do |deployment|
-          latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
-          cloud_config = if deployment.cloud_configs.empty?
-                           'none'
-                         elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
-                           'latest'
-                         else
-                           'outdated'
-                         end
-          sorted_releases = deployment.release_versions.sort do |a, b|
-            [a.release.name, a.version] <=> [b.release.name, b.version]
-          end
-
-          {
+          response = {
             'name' => deployment.name,
-            'releases' => sorted_releases.map do |rv|
-              {
-                'name' => rv.release.name,
-                'version' => rv.version.to_s,
-              }
-            end,
-            'stemcells' => deployment.stemcells.map do |sc|
-              {
-                'name' => sc.name,
-                'version' => sc.version,
-              }
-            end,
-            'cloud_config' => cloud_config,
             'teams' => deployment.teams.map(&:name),
           }
+          response['cloud_config'] = used_cloud_config_state(deployment) unless excludes[:exclude_configs]
+          response['stemcells'] = stemcells_state(deployment) unless excludes[:exclude_stemcells]
+          response['releases'] = releases_state(deployment) unless excludes[:exclude_releases]
+          response
         end
 
         json_encode(deployments)

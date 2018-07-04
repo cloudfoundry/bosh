@@ -260,11 +260,8 @@ describe 'consuming and providing', type: :integration do
       it 'should fail to create the link' do
         bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
         output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
-        expect(output).to include(
-          "Error: Failed to resolve links from deployment 'minimal'. See errors below:\n" \
-          "  - Can't resolve link 'provider_login' with type 'usernamepassword' for job 'consumer_job' " \
-          "in instance group 'consumer_ig' in deployment 'minimal'",
-        )
+        expect(output).to include("Failed to resolve link 'login' with alias 'provider_login' and type 'usernamepassword' from job 'consumer_job' in instance group 'consumer_ig'. Details below:")
+        expect(output).to include('No link providers found')
       end
 
       context 'and the link is shared from another deployment' do
@@ -309,9 +306,8 @@ describe 'consuming and providing', type: :integration do
 
         it 'should fail to create the link' do
           output = deploy_simple_manifest(manifest_hash: consumer_manifest, failure_expected: true)
-          expect(output).to include(<<~OUTPUT.strip)
-            Can't resolve link 'provider_login' with type 'usernamepassword' for job 'consumer_job' in instance group 'consumer_ig' in deployment 'consumer_deployment'
-          OUTPUT
+          expect(output).to include("Failed to resolve link 'login' with alias 'provider_login' and type 'usernamepassword' from job 'consumer_job' in instance group 'consumer_ig'. Details below:")
+          expect(output).to include('No link providers found')
         end
       end
     end

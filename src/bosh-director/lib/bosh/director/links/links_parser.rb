@@ -721,7 +721,9 @@ module Bosh::Director::Links
           type: 'variable',
         )
 
-        metadata = { explicit_link: true }
+        metadata = { 'explicit_link' => true }
+        wildcard_needed = !value['properties'].nil? && value['properties']['wildcard'] == true
+        metadata = metadata.merge('wildcard' => wildcard_needed)
 
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,
@@ -739,7 +741,7 @@ module Bosh::Director::Links
     private
 
     def validate_variable(variable_name, variable_type, original_name)
-      acceptable_combinations = { 'certificate' => ['alternative_name'] }
+      acceptable_combinations = { 'certificate' => %w[alternative_name common_name] }
 
       unless acceptable_combinations.key?(variable_type)
         return "Variable '#{variable_name}' can not define 'consumes' key for type '#{variable_type}'"

@@ -104,10 +104,9 @@ describe 'optional links', type: :integration do
     it 'throws an error if the optional link was not found' do
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
       expect(exit_code).not_to eq(0)
-      expect(out).to include(<<~OUTPUT.strip)
-        Error: Failed to resolve links from deployment 'simple'. See errors below:
-          - Can't resolve link 'backup_db' with type 'optional_link_type' for job 'api_server_with_optional_links_1' in instance group 'my_api' in deployment 'simple'
-      OUTPUT
+      expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
+      expect(out).to include("Failed to resolve link 'optional_link_name' with alias 'backup_db' and type 'optional_link_type' from job 'api_server_with_optional_links_1' in instance group 'my_api'. Details below:")
+      expect(out).to include('No link providers found')
     end
   end
 
@@ -196,10 +195,9 @@ describe 'optional links', type: :integration do
       it 'should throw an error' do
         out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).not_to eq(0)
-        expect(out).to include(
-          "- Can't resolve link 'db' with type 'db' for job 'api_server_with_optional_links_1' " \
-          "in instance group 'my_api' in deployment 'simple'",
-        )
+        expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
+        expect(out).to include("- Failed to resolve link 'db' with type 'db' from job 'api_server_with_optional_links_1' in instance group 'my_api'. Details below:")
+        expect(out).to include('- No link providers found')
       end
     end
   end
@@ -286,11 +284,9 @@ describe 'optional links', type: :integration do
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(output).to include <<~OUTPUT
-        Error: Failed to resolve links from deployment 'simple'. See errors below:\n  - Multiple providers of type 'db' found for consumer link 'db' in job 'api_server_with_optional_db_link' in instance group 'optional_db'. All of these match:
-           Deployment: simple, instance group: mysql, job: database, link name/alias: db
-           Deployment: simple, instance group: postgres, job: backup_database, link name/alias: backup_db
-      OUTPUT
+      expect(output).to include("Failed to resolve link 'db' with type 'db' from job 'api_server_with_optional_db_link' in instance group 'optional_db'. Multiple link providers found:")
+      expect(output).to include("Link provider 'db' from job 'database' in instance group 'mysql' in deployment 'simple'")
+      expect(output).to include("Link provider 'backup_db' from job 'backup_database' in instance group 'postgres' in deployment 'simple'")
     end
   end
 end

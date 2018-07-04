@@ -75,10 +75,6 @@ var _ = Describe("BoshDns", func() {
 		linkedTemplateReleasePath = assetPath("linked-templates-release")
 	})
 
-	AfterEach(func() {
-		stopInnerBosh()
-	})
-
 	Context("having enabled short dns addresses", func() {
 		BeforeEach(func() {
 			opFilePath := assetPath("op-enable-short-dns-addresses.yml")
@@ -143,7 +139,7 @@ var _ = Describe("BoshDns", func() {
 
 			ip1 := knownProviders["z1"][0]
 			ip2 := knownProviders["z1"][1]
-			Expect(output).To(MatchRegexp(`q-m\d+n\d+s\d\.q-g\d\.bosh\.\s+\d+\s+IN\s+A\s+(%s|%s)`, ip1, ip2))
+			Expect(output).To(MatchRegexp(`q-m\d+n\d+s\d\.q-g\d+\.bosh\.\s+\d+\s+IN\s+A\s+(%s|%s)`, ip1, ip2))
 		})
 	})
 

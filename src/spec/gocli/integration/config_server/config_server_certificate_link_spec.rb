@@ -112,6 +112,7 @@ describe 'using director with config server and deployments having links', type:
         {
           'name' => 'my_endpoint',
           'type' => 'address',
+          'properties' => %w[b nested],
         },
       ],
       'properties' => { 'b' => 'bar', 'nested' => { 'three' => 'foo' } },
@@ -135,7 +136,7 @@ describe 'using director with config server and deployments having links', type:
 
     cert = config_server_helper.get_value(prepend_namespace('bbs'))
     cert = OpenSSL::X509::Certificate.new(cert['certificate'])
-    subject_alt_name = cert.extensions.find { |e| e.oid == "subjectAltName" }
+    subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
 
     alternative_names = subject_alt_name.value.split(', ').map do |names|
       names.split(':', 2)[1]
@@ -161,13 +162,96 @@ describe 'using director with config server and deployments having links', type:
 
       cert = config_server_helper.get_value(prepend_namespace('bbs'))
       cert = OpenSSL::X509::Certificate.new(cert['certificate'])
-      subject_alt_name = cert.extensions.find { |e| e.oid == "subjectAltName" }
+      subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
 
       alternative_names = subject_alt_name.value.split(', ').map do |names|
         names.split(':', 2)[1]
       end
 
       expect(alternative_names).to match_array(['127.0.0.1', 'q-s0.my-instance-group.a.simple.bosh'])
+    end
+
+    context 'when there is a common name specified' do
+      let(:variables) do
+        [
+          {
+            'name' => 'bbs_ca',
+            'type' => 'certificate',
+            'options' => { 'is_ca' => true },
+          },
+          {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => { 'common_name' => { 'from' => 'http_endpoint' } },
+            'options' => { 'ca' => 'bbs_ca', 'alternative_names' => ['127.0.0.1'] },
+          },
+        ]
+      end
+
+      it 'generates a certificate with a common name' do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        cert = config_server_helper.get_value(prepend_namespace('bbs'))
+        cert = OpenSSL::X509::Certificate.new(cert['certificate'])
+        subject = cert.subject.to_a
+        puts cert.inspect
+        puts subject.inspect
+        common_name = subject.select { |name, _, _| name == 'CN' }.first[1]
+        expect(common_name).to eq('q-s0.my-instance-group.a.simple.bosh')
+
+        subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
+
+        alternative_names = subject_alt_name.value.split(', ').map do |names|
+          names.split(':', 2)[1]
+        end
+        expect(alternative_names).to match_array(['127.0.0.1'])
+      end
+    end
+
+    context 'when wildcard is specified in both common name and alternative_name' do
+      let(:variables) do
+        [
+          {
+            'name' => 'bbs_ca',
+            'type' => 'certificate',
+            'options' => { 'is_ca' => true },
+          },
+          {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'common_name' => {
+                'from' => 'http_endpoint',
+                'properties' => { 'wildcard' => true },
+              },
+              'alternative_name' => {
+                'from' => 'http_endpoint',
+                'properties' => { 'wildcard' => true },
+              },
+            },
+            'options' => { 'ca' => 'bbs_ca', 'alternative_names' => ['127.0.0.1'] },
+          },
+        ]
+      end
+
+      it 'generates a certificate with a common name' do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        cert = config_server_helper.get_value(prepend_namespace('bbs'))
+        cert = OpenSSL::X509::Certificate.new(cert['certificate'])
+        subject = cert.subject.to_a
+        puts cert.inspect
+        puts subject.inspect
+        common_name = subject.select { |name, _, _| name == 'CN' }.first[1]
+        expect(common_name).to eq('*.my-instance-group.a.simple.bosh')
+
+        subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
+
+        alternative_names = subject_alt_name.value.split(', ').map do |names|
+          names.split(':', 2)[1]
+        end
+        expect(alternative_names).to match_array(['127.0.0.1', '*.my-instance-group.a.simple.bosh'])
+      end
     end
 
     it 'create respective consumer and link object' do
@@ -181,6 +265,134 @@ describe 'using director with config server and deployments having links', type:
       expect(links.count).to eq(1)
       expect(links[0]['link_consumer_id']).to eq(consumers[0]['id'])
 
+    end
+
+    context 'when provider is updated and we have new link for variable consumer' do
+      before do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+      end
+
+      it 'should remove old links' do
+        deployment_manifest['instance_groups'][0]['jobs'][0]['properties']['b'] = 'barbar'
+
+        old_links = get('/links', "deployment=#{deployment_name}")
+        expect(old_links.count).to eq(1)
+
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        new_links = get('/links', "deployment=#{deployment_name}")
+        expect(new_links.count).to eq(1)
+        expect(new_links[0]['id']).to_not eq(old_links[0]['id'])
+      end
+    end
+
+    context 'when variable consumer is removed' do
+      before do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+      end
+
+      it 'should remove old links' do
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(1)
+        expect(links[0]['id']).to eq('1')
+
+        runtime_config['variables'] = []
+        upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false, env: client_env)
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+        consumers = get('/link_consumers', "deployment=#{deployment_name}")
+        expect(consumers.count).to eq(0)
+
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(0)
+      end
+    end
+
+    context 'when a variable link is in a bad deploy' do
+      before do
+        deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+      end
+      it 'can recreate the instances' do
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(1)
+
+        deployment_manifest['instance_groups'][0]['jobs'][0]['properties']['b'] = 'barbar'
+        runtime_config['variables'] <<
+          {
+            'name' => 'mine',
+            'type' => 'spaghetti',
+          }
+        upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false, env: client_env)
+
+        deploy_simple_manifest(
+          manifest_hash: deployment_manifest,
+          include_credentials: false,
+          env: client_env,
+          failure_expected: true,
+        )
+
+        links = get('/links', "deployment=#{deployment_name}")
+        expect(links.count).to eq(2)
+        bosh_runner.run('recreate', deployment_name: deployment_name, include_credentials: false, env: client_env)
+      end
+    end
+
+    context 'when wildcard flag is specied in variable' do
+      let(:variables) do
+        [
+          {
+            'name' => 'bbs_ca',
+            'type' => 'certificate',
+            'options' => { 'is_ca' => true },
+          },
+          {
+            'name' => 'bbs',
+            'type' => 'certificate',
+            'consumes' => {
+              'alternative_name' => {
+                'from' => 'http_endpoint',
+                'properties' => { 'wildcard' => true },
+              },
+            },
+            'options' => { 'ca' => 'bbs_ca', 'alternative_names' => ['127.0.0.1'] },
+          },
+        ]
+      end
+      before do
+        runtime_config['variables'] = variables
+        upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false, env: client_env)
+      end
+
+      shared_examples 'generates the certificate' do
+        it 'with the dns record as an alternative name' do
+          deploy_simple_manifest(manifest_hash: deployment_manifest, include_credentials: false, env: client_env)
+
+          cert = config_server_helper.get_value(prepend_namespace('bbs'))
+          cert = OpenSSL::X509::Certificate.new(cert['certificate'])
+          subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
+
+          alternative_names = subject_alt_name.value.split(', ').map do |names|
+            names.split(':', 2)[1]
+          end
+
+          expect(alternative_names).to match_array(['127.0.0.1', expected_dns])
+        end
+      end
+
+      context 'when short DNS is not specified in deployment' do
+        let(:expected_dns) { '*.my-instance-group.a.simple.bosh' }
+
+        it_behaves_like 'generates the certificate'
+      end
+
+      context 'when deployment has short DNS feature enabled' do
+        let(:expected_dns) { '*.q-g1.bosh' }
+        before do
+          deployment_manifest['features'] = { 'use_short_dns_addresses' => true }
+        end
+
+        it_behaves_like 'generates the certificate'
+      end
     end
   end
 end

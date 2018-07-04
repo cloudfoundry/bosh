@@ -93,13 +93,20 @@ module Bosh::Director::ConfigServer
         end
 
         if variable['type'] == 'certificate'
-          link = find_variable_link(deployment_model, variable_name)
+          links = find_variable_link(deployment_model, variable_name)
 
-          unless link.nil?
-            link_url = generate_dns_address_from_link(link)
+          unless links.empty?
             variable['options'] ||= {}
-            variable['options']['alternative_names'] ||= []
-            variable['options']['alternative_names'] << link_url
+            links.each do |type, link|
+              link_url = generate_dns_address_from_link(link)
+
+              if type == 'alternative_name'
+                variable['options']['alternative_names'] ||= []
+                variable['options']['alternative_names'] << link_url
+              elsif type == 'common_name'
+                variable['options'][type] = variable['options'][type] || link_url
+              end
+            end
           end
         end
 
@@ -116,6 +123,12 @@ module Bosh::Director::ConfigServer
 
     private
 
+    def generate_wildcard(link_url)
+      exploded = link_url.split('.', 2)
+      exploded[0] = '*'
+      exploded.join('.')
+    end
+
     def find_variable_link(deployment_model, variable_name)
       links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
@@ -126,10 +139,13 @@ module Bosh::Director::ConfigServer
         type: 'variable',
       )
 
-      return nil if consumer.nil?
+      return {} if consumer.nil?
 
-      consumer_intent = consumer.intents.first
-      consumer_intent.links.first
+      result = {}
+      consumer.intents.each do |consumer_intent|
+        result[consumer_intent.original_name] = consumer_intent.links.first
+      end
+      result
     end
 
     def generate_dns_address_from_link(link)
@@ -145,7 +161,14 @@ module Bosh::Director::ConfigServer
         default_network: link_content['default_network'],
         root_domain: link_content['domain'],
       }
-      dns_encoder.encode_query(query_criteria)
+      url = dns_encoder.encode_query(query_criteria)
+      url = generate_wildcard(url) if link_wants_wildcard(link)
+      url
+    end
+
+    def link_wants_wildcard(link)
+      metadata = JSON.parse(link.link_consumer_intent.metadata || '{}')
+      metadata['wildcard'] || false
     end
 
     def fetch_values_with_deployment(variables, variable_set, must_be_absolute_name)

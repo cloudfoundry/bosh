@@ -435,6 +435,163 @@ describe 'Links', type: :integration do
           expect(director.instances).to be_empty
         end
       end
+
+      context 'when one link is manual' do
+        let(:manual_api_server) do
+          {
+            'name' => 'api_server_with_optional_db_link',
+            'consumes' => {
+              'db' => {
+                'address' => '192.168.1.254',
+                'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
+                'properties' => {},
+              },
+              'backup_db' => 'nil',
+            },
+          }
+        end
+
+        let(:manual_api_instance_group_spec) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'my_manual_api',
+            jobs: [manual_api_server],
+            instances: 1,
+          )
+          spec['azs'] = ['z1']
+          spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['instance_groups'] = [
+            manual_api_instance_group_spec, implied_instance_group_spec, postgres_instance_group_spec
+          ]
+          manifest
+        end
+
+        it 'deploy without any error' do
+          deploy_simple_manifest(manifest_hash: manifest)
+        end
+
+        context 'and it has the same name as the explicit link' do
+          let(:manifest) do
+            manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+            manifest['instance_groups'] = [
+              manual_api_instance_group_spec, api_instance_group_spec, postgres_instance_group_spec, mysql_instance_group_spec
+            ]
+            manifest
+          end
+
+          let(:links) do
+            {
+              'db' => { 'from' => 'db' },
+              'backup_db' => { 'from' => 'backup_db' },
+            }
+          end
+
+          it 'deploy without any error' do
+            deploy_simple_manifest(manifest_hash: manifest)
+          end
+        end
+      end
+
+      context 'when two links are manual' do
+        let(:manual_api_server) do
+          {
+            'name' => 'api_server',
+            'consumes' => {
+              'db' => {
+                'address' => '192.168.1.254',
+                'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
+                'properties' => { 'foo' => 4 },
+              },
+              'backup_db' => {
+                'address' => '192.168.1.253',
+                'instances' => [{ 'address' => 'jkhfasfdkj.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
+                'properties' => { 'foo' => 5 },
+              },
+            },
+          }
+        end
+
+        let(:manual_api_instance_group_spec) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'my_manual_api',
+            jobs: [manual_api_server, { 'name' => 'api_server_with_optional_db_link' }],
+            instances: 1,
+          )
+          spec['azs'] = ['z1']
+          spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['instance_groups'] = [manual_api_instance_group_spec]
+          manifest
+        end
+
+        it 'deploy without any error' do
+          deploy_simple_manifest(manifest_hash: manifest)
+        end
+      end
+
+      context 'when two idential links are manual in different instance groups' do
+        let(:manual_api_server) do
+          {
+            'name' => 'api_server_with_optional_db_link',
+            'consumes' => {
+              'db' => {
+                'address' => '192.168.1.254',
+                'instances' => [{ 'address' => 'jkhfasfdkj.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
+                'properties' => {},
+              },
+            },
+          }
+        end
+
+        let(:manual_api_instance_group_spec) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'my_manual_api',
+            jobs: [manual_api_server],
+            instances: 1,
+          )
+          spec['azs'] = ['z1']
+          spec
+        end
+
+        let(:manual_api_server2) do
+          {
+            'name' => 'api_server_with_optional_db_link',
+            'consumes' => {
+              'db' => {
+                'address' => '192.168.1.253',
+                'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
+                'properties' => {},
+              },
+            },
+          }
+        end
+
+        let(:manual_api_instance_group_spec2) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'your_manual_api',
+            jobs: [manual_api_server2],
+            instances: 1,
+          )
+          spec['azs'] = ['z1']
+          spec
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['instance_groups'] = [manual_api_instance_group_spec, manual_api_instance_group_spec2]
+          manifest
+        end
+
+        it 'deploy without any error' do
+          deploy_simple_manifest(manifest_hash: manifest)
+        end
+      end
     end
 
     context 'when link provider specifies properties from job spec' do
@@ -629,168 +786,14 @@ describe 'Links', type: :integration do
       expect(exit_code).not_to eq(0)
       expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'db' with type 'bad_link' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Failed to resolve link 'db' with type 'bad_link' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'.
       OUTPUT
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'backup_db' with type 'bad_link_2' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Failed to resolve link 'backup_db' with type 'bad_link_2' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'.
       OUTPUT
       expect(out).to include(<<~OUTPUT.strip)
-        - Can't resolve link 'some_link_name' with type 'bad_link_3' for job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types' in deployment 'simple'
+        - Failed to resolve link 'some_link_name' with type 'bad_link_3' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'.
       OUTPUT
-    end
-  end
-
-  context 'when consumer is specified in the manifest but not in the release' do
-    let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
-        name: 'my_instance_group',
-        jobs: [
-          {
-            'name' => 'api_server_with_optional_db_link',
-            'consumes' => {
-              'link_that_does_not_exist' => {},
-            },
-          },
-        ],
-        instances: 1,
-        static_ips: ['192.168.1.10'],
-      )
-      spec['azs'] = ['z1']
-      spec['networks'] << {
-        'name' => 'dynamic-network',
-        'default' => %w[dns gateway],
-      }
-      spec
-    end
-
-    it 'should warn the about the rogue consumer' do
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['instance_groups'] = [instance_group]
-
-      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
-      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
-
-      expect(task_debug_logs).to include("Manifest defines unknown consumers:\n"\
-                                         "  - Job 'api_server_with_optional_db_link'"\
-                                         " does not define link consumer 'link_that_does_not_exist'"\
-                                         ' in the release spec')
-    end
-  end
-
-  context 'when consumer is specified in the manifest but release does not define any consumers' do
-    let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
-        name: 'my_instance_group',
-        jobs: [
-          {
-            'name' => 'provider',
-            'consumes' => {
-              'link_that_does_not_exist' => {},
-            },
-          },
-        ],
-        instances: 1,
-        static_ips: ['192.168.1.10'],
-      )
-      spec['azs'] = ['z1']
-      spec['networks'] << {
-        'name' => 'dynamic-network',
-        'default' => %w[dns gateway],
-      }
-      spec
-    end
-
-    it 'should warn the about the rogue consumer' do
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['instance_groups'] = [instance_group]
-
-      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
-      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
-
-      expect(task_debug_logs).to include("Manifest defines unknown consumers:\n"\
-                                         "  - Job 'provider' does not define link consumer 'link_that_does_not_exist'"\
-                                         ' in the release spec')
-    end
-  end
-
-  context 'when provider is specified in the manifest but not in the release' do
-    let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
-        name: 'my_instance_group',
-        jobs: [
-          {
-            'name' => 'provider',
-            'provides' => {
-              'link_that_does_not_exist' => {},
-            },
-          },
-        ],
-        instances: 1,
-        static_ips: ['192.168.1.10'],
-      )
-      spec['azs'] = ['z1']
-      spec['networks'] << {
-        'name' => 'dynamic-network',
-        'default' => %w[dns gateway],
-      }
-      spec
-    end
-
-    it 'should warn the about the rogue provider' do
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['instance_groups'] = [instance_group]
-
-      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
-      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
-
-      expect(task_debug_logs).to include("Manifest defines unknown providers:\n"\
-                                         "  - Job 'provider' does not define link provider 'link_that_does_not_exist'"\
-                                         ' in the release spec')
-    end
-  end
-
-  context 'when provider is specified in the manifest but release does not define any providers' do
-    let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
-        name: 'my_instance_group',
-        jobs: [
-          {
-            'name' => 'api_server_with_optional_db_link',
-            'provides' => {
-              'link_that_does_not_exist' => {},
-            },
-          },
-        ],
-        instances: 1,
-        static_ips: ['192.168.1.10'],
-      )
-      spec['azs'] = ['z1']
-      spec['networks'] << {
-        'name' => 'dynamic-network',
-        'default' => %w[dns gateway],
-      }
-      spec
-    end
-
-    it 'should warn the about the rogue provider' do
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['releases'][0]['version'] = '0+dev.1'
-      manifest['instance_groups'] = [instance_group]
-
-      deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
-      task_debug_logs = bosh_runner.run("task --debug #{task_id}")
-
-      expect(task_debug_logs).to include("Manifest defines unknown providers:\n"\
-                                         "  - Job 'api_server_with_optional_db_link'"\
-                                         " does not define link provider 'link_that_does_not_exist'"\
-                                         ' in the release spec')
     end
   end
 end

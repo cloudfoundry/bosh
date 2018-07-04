@@ -1,9 +1,17 @@
 ## Director Console debugging
 
+SSH to the Director VM
+
+For director version <= 265.x
 ```
-$ bosh -d dep1 ssh name/id
 $ sudo su
-# /var/vcap/jobs/director/bin/director_ctl console
+# /var/vcap/jobs/director/bin/director_ctl console 
+```
+
+For director version >= 266.x
+```
+$ sudo su
+# /var/vcap/jobs/director/bin/console
 ```
 
 Potentially useful snippets:
@@ -30,4 +38,7 @@ Bosh::Director::Models::Instance.first.update(boostrap: false)
 # verify and delete disk reference
 Bosh::Director::Models::PersistentDisk.where(disk_cid: "...").all
 Bosh::Director::Models::PersistentDisk.where(disk_cid: "...").delete
+
+# download specific blob from blobstore with an ID
+File.open("/tmp/my-temp-blob-file", 'wb') { |file| Bosh::Director::App.instance.blobstores.blobstore.get("some-blobstore-id", file) }
 ```
