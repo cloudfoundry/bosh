@@ -1871,7 +1871,7 @@ describe Bosh::Director::Links::LinksParser do
           link_consumer: consumer,
           link_original_name: 'alternative_name',
           link_type: 'address',
-          new_intent_metadata: { explicit_link: true },
+          new_intent_metadata: { 'explicit_link' => true, 'wildcard' => false },
         }
         expect(links_manager).to receive(:find_or_create_consumer_intent)
                                    .with(expected_consumer_intent_params)
@@ -1902,7 +1902,7 @@ describe Bosh::Director::Links::LinksParser do
             link_consumer: consumer,
             link_original_name: 'alternative_name',
             link_type: 'address',
-            new_intent_metadata: { explicit_link: true },
+            new_intent_metadata: { 'explicit_link' => true, 'wildcard' => false },
           }
           expect(links_manager).to receive(:find_or_create_consumer_intent)
                                      .with(expected_consumer_intent_params)
@@ -1934,7 +1934,7 @@ describe Bosh::Director::Links::LinksParser do
             link_consumer: consumer,
             link_original_name: 'alternative_name',
             link_type: 'address',
-            new_intent_metadata: { explicit_link: true, wildcard: true },
+            new_intent_metadata: { 'explicit_link' => true, 'wildcard' => true },
           }
           expect(links_manager).to receive(:find_or_create_consumer_intent)
             .with(expected_consumer_intent_params)
