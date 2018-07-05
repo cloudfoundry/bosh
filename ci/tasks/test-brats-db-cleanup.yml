@@ -8,6 +8,8 @@ image_resource:
 
 inputs:
 - name: bosh-src
+- name: database-metadata
+- name: gcp-ssl-config
 
 run:
   path: bosh-src/ci/tasks/test-brats-db-cleanup.sh

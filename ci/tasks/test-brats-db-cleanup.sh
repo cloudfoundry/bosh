@@ -29,6 +29,31 @@ function cleanup_postgres() {
   psql -h ${hostname} -p 5432 -U ${username} -c '\l' | grep ${database_name}
 }
 
+apt-get update
+apt-get install -y jq
+
+RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
+RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
+GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
+GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
+GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .mysql_ca_cert gcp-ssl-config/gcp_mysql.yml)"
+GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .mysql_client_cert gcp-ssl-config/gcp_mysql.yml)"
+GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .mysql_client_key gcp-ssl-config/gcp_mysql.yml)"
+GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .postgres_ca_cert gcp-ssl-config/gcp_postgres.yml)"
+GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .postgres_client_cert gcp-ssl-config/gcp_postgres.yml)"
+GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .postgres_client_key gcp-ssl-config/gcp_postgres.yml)"
+
+export RDS_MYSQL_EXTERNAL_DB_HOST
+export RDS_POSTGRES_EXTERNAL_DB_HOST
+export GCP_MYSQL_EXTERNAL_DB_HOST
+export GCP_POSTGRES_EXTERNAL_DB_HOST
+export GCP_MYSQL_EXTERNAL_DB_CA
+export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE
+export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+export GCP_POSTGRES_EXTERNAL_DB_CA
+export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE
+export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+
 echo 'Cleanup RDS ============================'
 cleanup_mysql $RDS_MYSQL_EXTERNAL_DB_HOST $RDS_MYSQL_EXTERNAL_DB_USER $RDS_MYSQL_EXTERNAL_DB_PASSWORD $RDS_MYSQL_EXTERNAL_DB_NAME
 cleanup_postgres $RDS_POSTGRES_EXTERNAL_DB_HOST $RDS_POSTGRES_EXTERNAL_DB_USER $RDS_POSTGRES_EXTERNAL_DB_PASSWORD $RDS_POSTGRES_EXTERNAL_DB_NAME
