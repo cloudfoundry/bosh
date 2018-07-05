@@ -293,7 +293,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
             call_cpi_method
           }.to raise_error do |error|
             expect(error.class).to eq(error_class)
-            expect(error.message).to eq("CPI error '#{error_class}' with message 'fake-error-message' in '#{method}' CPI method")
+            expect(error.message).to eq("CPI error '#{error_class}' with message 'fake-error-message' in '#{method}'"\
+              " CPI method (CPI request ID: 'cpi-fake-request-id')")
             expect(error.ok_to_retry).to eq(true)
           end
         end
