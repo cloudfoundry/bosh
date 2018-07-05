@@ -129,7 +129,7 @@ In `src/bosh-dev/lib/bosh/dev/tasks/fly.rake` append the input folder as follows
      sh("#{env} fly #{concourse_target} sync")
      sh(
 -      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../",
-+      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../ -i bosh-cli=~/go/src/github.com/cloudfoundry/bosh-cli/out/",
++      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../ -i bosh-cli=#{ENV['HOME']}/go/src/github.com/cloudfoundry/bosh-cli/out/",
      )
    end
 ```
