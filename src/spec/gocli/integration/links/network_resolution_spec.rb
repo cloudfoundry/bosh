@@ -139,8 +139,10 @@ describe 'network resolution', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest)
       end.to raise_error(
         RuntimeError,
-        Regexp.new("Can't resolve link 'db' in instance group 'my_api' on job " \
-        "'api_server' in deployment 'simple' with network 'invalid_network'"),
+        Regexp.new(
+          "Consumer 'db' from job 'api_server' in instance group 'my_api' "\
+          "in deployment 'simple' does not belong to network 'invalid_network'",
+        ),
       )
     end
 
@@ -162,8 +164,8 @@ describe 'network resolution', type: :integration do
       end.to raise_error(
         RuntimeError,
         Regexp.new(
-          "Can't resolve link 'db' in instance group 'my_api' on job " \
-          "'api_server' in deployment 'simple' with network 'global_network'",
+          "Consumer 'db' from job 'api_server' in instance group 'my_api' in deployment 'simple' "\
+          "does not belong to network 'global_network'",
         ),
       )
     end

@@ -325,9 +325,8 @@ describe 'cross deployment links', type: :integration do
           RuntimeError,
           Regexp.new(
             "Failed to resolve links from deployment 'second'. See errors below:\n" \
-            "  - Can't resolve link 'node1' in instance group "\
-            "'second_deployment_node' on job 'node' in deployment 'second' with "\
-            "network 'invalid-network'",
+            "  - Consumer 'node1' from job 'node' in instance group 'second_deployment_node' "\
+            "in deployment 'second' does not belong to network 'invalid-network'",
           ),
         )
       end
@@ -353,9 +352,8 @@ describe 'cross deployment links', type: :integration do
             RuntimeError,
             Regexp.new(
               "Failed to resolve links from deployment 'second'. See errors below:\n" \
-              "  - Can't resolve link 'node1' in instance group "\
-              "'second_deployment_node' on job 'node' in deployment 'second' with "\
-              "network 'invalid-network'",
+              "  - Consumer 'node1' from job 'node' in instance group 'second_deployment_node' "\
+              "in deployment 'second' does not belong to network 'invalid-network'",
             ),
           )
         end
