@@ -113,7 +113,7 @@ module Bosh::Director
         let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: '') }
 
         it 'calls the default cloud' do
-          cloud = instance_double(Bosh::Cloud)
+          cloud = instance_double(Bosh::Clouds::ExternalCpi)
           expect(cloud_factory).to receive(:get).with('').and_return(cloud)
           expect(cloud).to receive(:delete_stemcell)
           stemcell_deleter.delete(stemcell)
@@ -124,7 +124,7 @@ module Bosh::Director
         let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: 'cpi1') }
 
         it 'calls the cloud that cloud factory returns' do
-          cloud = instance_double(Bosh::Cloud)
+          cloud = instance_double(Bosh::Clouds::ExternalCpi)
           expect(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
           expect(cloud).to receive(:delete_stemcell)
           stemcell_deleter.delete(stemcell)

@@ -30,6 +30,7 @@ PATH
       bosh-registry (~> 0.0.0)
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
+      bosh_cpi
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.2.0)
       httpclient (~> 2.8.3)
@@ -68,6 +69,7 @@ PATH
   specs:
     bosh-registry (0.0.0)
       aws-sdk
+      bosh_cpi
       builder (~> 3.1.4)
       excon (~> 0.49.0)
       fog-core (~> 1.40.1)
@@ -88,6 +90,13 @@ PATH
     bosh_common (0.0.0)
       logging (~> 2.2.2)
       semi_semantic (~> 1.2.0)
+
+PATH
+  remote: bosh_cpi
+  specs:
+    bosh_cpi (2.4.2)
+      httpclient (~> 2.8.3)
+      membrane (~> 1.1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -137,7 +146,7 @@ GEM
     eventmachine (1.2.5)
     excon (0.49.0)
     fakefs (0.11.1)
-    ffi (1.9.18)
+    ffi (1.9.25)
     fog-core (1.40.1)
       builder
       excon (~> 0.49)
@@ -198,7 +207,7 @@ GEM
       pry (~> 0.9)
       slop (~> 3.0)
     public_suffix (3.0.0)
-    puma (3.11.0)
+    puma (3.11.4)
     rack (1.6.10)
     rack-protection (1.5.5)
       rack
@@ -260,7 +269,7 @@ GEM
       tilt (>= 1.3, < 3)
     slop (3.6.0)
     sqlite3 (1.3.13)
-    sys-filesystem (1.1.8)
+    sys-filesystem (1.1.9)
       ffi
     talentbox-delayed_job_sequel (4.3.0)
       delayed_job (~> 4.1.0)
@@ -299,6 +308,7 @@ DEPENDENCIES
   bosh-registry!
   bosh-template!
   bosh_common!
+  bosh_cpi!
   bundler (~> 1.16.0)
   eventmachine (~> 1.2)
   fakefs

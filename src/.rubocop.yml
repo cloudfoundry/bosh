@@ -1,9 +1,10 @@
 AllCops:
-  TargetRubyVersion: 2.4
+  TargetRubyVersion: 2.4.4
   Include:
   - Rakefile
   Exclude:
   - tmp/**/*
+  - src/bosh_cpi/**/*.rb
 
 Style/FrozenStringLiteralComment:
   Enabled: false
