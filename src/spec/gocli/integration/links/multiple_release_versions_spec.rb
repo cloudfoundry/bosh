@@ -165,7 +165,6 @@ describe 'multiple versions of a release are uploaded', type: :integration do
                                                  'release_s' => 'release_with_minimal_links/0+dev.2',
                                                  'stemcell_s' => 'ubuntu-stemcell/1',
                                                  'team_s' => '',
-                                                 'cloud_config' => 'latest',
                                                },
                                              ])
 

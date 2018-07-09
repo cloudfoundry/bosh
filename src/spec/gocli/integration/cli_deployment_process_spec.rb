@@ -67,7 +67,17 @@ describe 'cli: deployment process', type: :integration do
         deployment_manifest = yaml_file('minimal2', minimal_manifest)
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: minimal_manifest['name'])
-        expect_table('deployments', [{'name' => 'minimal', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}, {'name' => 'minimal2', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
+        expect_table('deployments', [{
+          'name' => 'minimal',
+          'release_s' => 'test_release/1',
+          'stemcell_s' => 'ubuntu-stemcell/1',
+          'team_s' => '',
+        }, {
+          'name' => 'minimal2',
+          'release_s' => 'test_release/1',
+          'stemcell_s' => 'ubuntu-stemcell/1',
+          'team_s' => '',
+        }])
       end
 
       context 'properties from first deployment are modified in second deployment' do
@@ -326,47 +336,11 @@ lines'}
       out = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
       expect(out).to include("Using deployment 'minimal'")
 
-      expect_table('deployments', [{'name' => 'minimal', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
+      expect_table('deployments', [{ 'name' => 'minimal',
+                                     'release_s' => 'test_release/1',
+                                     'stemcell_s' => 'ubuntu-stemcell/1',
+                                     'team_s' => '' }])
     end
-
-    context 'when cloud config is updated and deploying has failed' do
-      it 'shows cloud config as still outdated' do
-        deployment_manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-        deployment_manifest = yaml_file('simple', deployment_manifest_hash)
-        cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config_hash)
-
-        bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-
-        create_and_upload_test_release
-        upload_stemcell
-
-        bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
-
-        deployment_manifest_hash['instance_groups'].first['jobs'].first['name'] = 'fails_with_too_much_output'
-        deployment_manifest = yaml_file('simple', deployment_manifest_hash)
-
-        cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.20']
-        cloud_config_manifest = yaml_file('cloud_manifest', cloud_config_hash)
-        bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-
-        bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
-
-        expect_table(
-          'deployments',
-          [
-            {
-              'name' => 'simple',
-              'release_s' => 'bosh-release/0+dev.1',
-              'stemcell_s' => 'ubuntu-stemcell/1',
-              'team_s' => '',
-              'cloud_config' => 'outdated',
-            },
-          ],
-        )
-      end
-    end
-
   end
 
   describe 'bosh delete deployment' do

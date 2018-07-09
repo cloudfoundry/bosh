@@ -28,7 +28,6 @@ describe 'legacy deployment', type: :integration do
                        'release_s' => 'bosh-release/0+dev.1',
                        'stemcell_s' => 'ubuntu-stemcell/1',
                        'team_s' => '',
-                       'cloud_config' => 'none',
                      },
                    ])
     end
@@ -66,7 +65,6 @@ describe 'legacy deployment', type: :integration do
                        'release_s' => 'bosh-release/0+dev.1',
                        'stemcell_s' => 'ubuntu-stemcell/1',
                        'team_s' => '',
-                       'cloud_config' => 'none',
                      },
                    ])
     end
