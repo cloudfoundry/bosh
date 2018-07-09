@@ -784,30 +784,36 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
           STEMCELL_OS: ubuntu-trusty
       ensure:
-        put: brats-terraform
-        params:
-          env_name: brats-ubuntu-trusty
-          terraform_source: bosh-src/ci/brats
-          action: destroy
-          vars:
-            rds_mysql_username: ((brats-rds-mysql-external-db-user))
-            rds_mysql_password: ((brats-rds-mysql-external-db-password))
-            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-            rds_postgres_username: ((brats-rds-postgres-external-db-user))
-            rds_postgres_password: ((brats-rds-postgres-external-db-password))
-            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
-            aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
-            gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
-            gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
-            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-            gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
-            gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
-            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-          env:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-          action: destroy
+        do:
+        - task: cleanup-external-dbs
+          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          input_mapping:
+            database-metadata: brats-terraform
+          params: *brats-dbs-params
+        - put: brats-terraform
           get_params: { action: destroy }
+          params:
+            env_name: brats-ubuntu-trusty
+            terraform_source: bosh-src/ci/brats
+            action: destroy
+            vars:
+              rds_mysql_username: ((brats-rds-mysql-external-db-user))
+              rds_mysql_password: ((brats-rds-mysql-external-db-password))
+              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+              rds_postgres_username: ((brats-rds-postgres-external-db-user))
+              rds_postgres_password: ((brats-rds-postgres-external-db-password))
+              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+              aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+              aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+              gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
+              gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
+              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+              gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
+              gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
+              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            env:
+              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            action: destroy
 
   - name: bbr-ubuntu-trusty
     serial: true
@@ -874,30 +880,36 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
           STEMCELL_OS: ubuntu-trusty
       ensure:
-        put: brats-terraform
-        params:
-          env_name: bbr-ubuntu-trusty
-          terraform_source: bosh-src/ci/brats
-          action: destroy
-          vars:
-            rds_mysql_username: ((brats-rds-mysql-external-db-user))
-            rds_mysql_password: ((brats-rds-mysql-external-db-password))
-            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-            rds_postgres_username: ((brats-rds-postgres-external-db-user))
-            rds_postgres_password: ((brats-rds-postgres-external-db-password))
-            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
-            aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
-            gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
-            gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
-            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-            gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
-            gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
-            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-          env:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-          action: destroy
+        do:
+        - task: cleanup-external-dbs
+          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          input_mapping:
+            database-metadata: brats-terraform
+          params: *brats-dbs-params
+        - put: brats-terraform
           get_params: { action: destroy }
+          params:
+            env_name: bbr-ubuntu-trusty
+            terraform_source: bosh-src/ci/brats
+            action: destroy
+            vars:
+              rds_mysql_username: ((brats-rds-mysql-external-db-user))
+              rds_mysql_password: ((brats-rds-mysql-external-db-password))
+              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+              rds_postgres_username: ((brats-rds-postgres-external-db-user))
+              rds_postgres_password: ((brats-rds-postgres-external-db-password))
+              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+              aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+              aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+              gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
+              gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
+              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+              gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
+              gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
+              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            env:
+              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            action: destroy
 
   - name: brats-ubuntu-xenial
     serial: true
@@ -969,30 +981,36 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-postgres-external-db-client-private-key))
           STEMCELL_OS: ubuntu-xenial
       ensure:
-        put: brats-terraform
-        params:
-          env_name: brats-ubuntu-xenial
-          terraform_source: bosh-src/ci/brats
-          action: destroy
-          vars:
-            rds_mysql_username: ((brats-rds-mysql-external-db-user))
-            rds_mysql_password: ((brats-rds-mysql-external-db-password))
-            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-            rds_postgres_username: ((brats-rds-postgres-external-db-user))
-            rds_postgres_password: ((brats-rds-postgres-external-db-password))
-            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
-            aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
-            gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
-            gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
-            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-            gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
-            gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
-            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-          env:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-          action: destroy
+        do:
+        - task: cleanup-external-dbs
+          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          input_mapping:
+            database-metadata: brats-terraform
+          params: *brats-dbs-params
+        - put: brats-terraform
           get_params: { action: destroy }
+          params:
+            env_name: brats-ubuntu-xenial
+            terraform_source: bosh-src/ci/brats
+            action: destroy
+            vars:
+              rds_mysql_username: ((brats-rds-mysql-external-db-user))
+              rds_mysql_password: ((brats-rds-mysql-external-db-password))
+              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+              rds_postgres_username: ((brats-rds-postgres-external-db-user))
+              rds_postgres_password: ((brats-rds-postgres-external-db-password))
+              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+              aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+              aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+              gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
+              gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
+              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+              gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
+              gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
+              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            env:
+              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            action: destroy
 
   - name: bbr-ubuntu-xenial
     serial: true
@@ -1059,30 +1077,36 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
           STEMCELL_OS: ubuntu-xenial
       ensure:
-        put: brats-terraform
-        params:
-          env_name: bbr-ubuntu-xenial
-          terraform_source: bosh-src/ci/brats
-          action: destroy
-          vars:
-            rds_mysql_username: ((brats-rds-mysql-external-db-user))
-            rds_mysql_password: ((brats-rds-mysql-external-db-password))
-            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-            rds_postgres_username: ((brats-rds-postgres-external-db-user))
-            rds_postgres_password: ((brats-rds-postgres-external-db-password))
-            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
-            aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
-            gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
-            gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
-            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-            gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
-            gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
-            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-          env:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-          action: destroy
+        do:
+        - task: cleanup-external-dbs
+          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          input_mapping:
+            database-metadata: brats-terraform
+          params: *brats-dbs-params
+        - put: brats-terraform
           get_params: { action: destroy }
+          params:
+            env_name: bbr-ubuntu-xenial
+            terraform_source: bosh-src/ci/brats
+            action: destroy
+            vars:
+              rds_mysql_username: ((brats-rds-mysql-external-db-user))
+              rds_mysql_password: ((brats-rds-mysql-external-db-password))
+              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+              rds_postgres_username: ((brats-rds-postgres-external-db-user))
+              rds_postgres_password: ((brats-rds-postgres-external-db-password))
+              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+              aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+              aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+              gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
+              gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
+              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+              gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
+              gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
+              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            env:
+              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            action: destroy
 
   - name: delivery
     plan:

@@ -9,10 +9,7 @@ function cleanup_mysql() {
   export MYSQL_PWD=$3
   database_name=$4
 
-  mysql -h ${hostname} -P 3306 --user=${username} -e "drop database ${database_name};"
-  mysql -h ${hostname} -P 3306 --user=${username} -e "show databases;"
-  mysql -h ${hostname} -P 3306 --user=${username} -e "create database ${database_name};"
-  mysql -h ${hostname} -P 3306 --user=${username} -e "show databases;"
+  mysql -h ${hostname} -P 3306 --user=${username} -e "drop database ${database_name};" || true
 }
 
 function cleanup_postgres() {
@@ -25,8 +22,6 @@ function cleanup_postgres() {
   # Assumption: we are deleting inner-bosh in AfterEach so all connection will be terminated,
   #             so we dont need to revoke connection
   dropdb -U ${username} -p 5432 -h ${hostname} ${database_name} || true
-  createdb -U ${username} -p 5432 -h ${hostname} ${database_name}
-  psql -h ${hostname} -p 5432 -U ${username} -c '\l' | grep ${database_name}
 }
 
 apt-get update
