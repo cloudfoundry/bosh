@@ -21,7 +21,10 @@ module Bosh::Director
       allow(@cloud).to receive(:info)
       allow(@cloud).to receive(:request_cpi_api_version).and_return(1)
       allow(@cloud).to receive(:request_cpi_api_version=)
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(@cloud)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                             'woof-uuid',
+                                                             instance_of(Logging::Logger),
+                                                             stemcell_api_version: nil).and_return(@cloud)
 
       @agent = double(Bosh::Director::AgentClient)
 

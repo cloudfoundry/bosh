@@ -94,7 +94,10 @@ module Bosh::Director
         allow(fake_cloud).to receive(:set_vm_metadata)
         allow(fake_cloud).to receive(:request_cpi_api_version=)
         allow(fake_cloud).to receive(:request_cpi_api_version)
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(fake_cloud)
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                               'woof-uuid',
+                                                               instance_of(Logging::Logger),
+                                                               stemcell_api_version: nil).and_return(fake_cloud)
 
         allow(fake_new_agent).to receive(:sync_dns) do |_, _, _, &blk|
           blk.call('value' => 'synced')

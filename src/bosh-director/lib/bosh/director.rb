@@ -72,7 +72,6 @@ require 'bosh/director/blob_util'
 require 'bosh/director/digest/bosh_digest'
 
 require 'bosh/director/agent_client'
-require 'cloud'
 require 'cloud/external_cpi'
 require 'cloud/external_cpi_response_wrapper'
 require 'cloud/errors'

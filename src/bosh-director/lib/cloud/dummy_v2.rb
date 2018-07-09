@@ -4,12 +4,10 @@ require 'securerandom'
 require 'membrane'
 require 'netaddr'
 require_relative '../cloud/errors'
-require 'cloud_v2'
 
 module Bosh
   module Clouds
     class DummyV2 < Bosh::Clouds::Dummy
-      include Bosh::CloudV2
 
       def initialize(options, context)
         super(options, context, 2)

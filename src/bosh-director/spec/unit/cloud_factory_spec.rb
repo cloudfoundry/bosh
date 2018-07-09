@@ -19,7 +19,10 @@ module Bosh::Director
     before do
       allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: stemcell_api_version).and_return(cloud)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                             'snoopy-uuid',
+                                                             instance_of(Logging::Logger),
+                                                             stemcell_api_version: stemcell_api_version).and_return(cloud)
       allow(cloud).to receive(:info).and_return(cpi_info)
       allow(cloud).to receive(:request_cpi_api_version=)
     end
@@ -102,19 +105,29 @@ module Bosh::Director
       end
 
       it 'returns director default if asking for cpi with empty name' do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: stemcell_api_version).and_return(cloud)
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                                'snoopy-uuid',
+                                                                instance_of(Logging::Logger),
+                                                                stemcell_api_version: stemcell_api_version).and_return(cloud)
         expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).and_return(cloud_wrapper)
         expect(cloud_factory.get('')).to eq(cloud_wrapper)
       end
 
       it 'returns default cloud if asking for a nil cpi' do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: stemcell_api_version).and_return(cloud)
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                                'snoopy-uuid',
+                                                                instance_of(Logging::Logger),
+                                                                stemcell_api_version: stemcell_api_version).and_return(cloud)
         expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).and_return(cloud_wrapper)
         expect(cloud_factory.get(nil)).to eq(cloud_wrapper)
       end
 
       it "returns a new instance of the director's default cloud for each call" do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: stemcell_api_version).twice.and_return(cloud)
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                                'snoopy-uuid',
+                                                                instance_of(Logging::Logger),
+                                                                stemcell_api_version: stemcell_api_version).twice
+                                                          .and_return(cloud)
 
         cloud_factory.get(nil)
         cloud_factory.get(nil)
@@ -124,7 +137,10 @@ module Bosh::Director
         let(:stemcell_api_version) { 25 }
 
         it 'creates the default external CPI instance with correct stemcell API version' do
-          expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: stemcell_api_version).and_return(cloud)
+          expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                                  'snoopy-uuid',
+                                                                  instance_of(Logging::Logger),
+                                                                  stemcell_api_version: stemcell_api_version).and_return(cloud)
           cloud_factory.get(nil, stemcell_api_version)
         end
       end
@@ -174,9 +190,18 @@ module Bosh::Director
 
       before do
         expect(cloud_factory.uses_cpi_config?).to be_truthy
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, properties_from_cpi_config: cpis[0].properties, stemcell_api_version: nil).and_return(clouds[0])
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, properties_from_cpi_config: cpis[1].properties, stemcell_api_version: nil).and_return(clouds[1])
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid, properties_from_cpi_config: cpis[2].properties, stemcell_api_version: nil).and_return(clouds[2])
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid,
+                                                               instance_of(Logging::Logger),
+                                                               properties_from_cpi_config: cpis[0].properties,
+                                                               stemcell_api_version: nil).and_return(clouds[0])
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid,
+                                                               instance_of(Logging::Logger),
+                                                               properties_from_cpi_config: cpis[1].properties,
+                                                               stemcell_api_version: nil).and_return(clouds[1])
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[2].exec_path, Config.uuid,
+                                                               instance_of(Logging::Logger),
+                                                               properties_from_cpi_config: cpis[2].properties,
+                                                               stemcell_api_version: nil).and_return(clouds[2])
 
         clouds.each do |cloud|
           allow(cloud).to receive(:info)
@@ -185,17 +210,25 @@ module Bosh::Director
       end
 
       it 'returns the cpi if asking for a given existing cpi' do
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, properties_from_cpi_config: cpis[1].properties, stemcell_api_version: nil).and_return(clouds[1])
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid,
+                                                                instance_of(Logging::Logger),
+                                                                properties_from_cpi_config: cpis[1].properties,
+                                                                stemcell_api_version: nil).and_return(clouds[1])
         allow(clouds[1]).to receive(:info).and_return({})
-        expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[1], kind_of(Integer)).and_return(cloud_wrapper)
+        expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[1],
+                                                                               kind_of(Integer)).and_return(cloud_wrapper)
         cloud = cloud_factory.get('name2')
         expect(cloud).to eq(cloud_wrapper)
       end
 
       context 'when stemcell API version is passed' do
         it 'returns the cpi with correct stemcell API version if asking for a given existing cpi' do
-          expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid, properties_from_cpi_config: cpis[1].properties, stemcell_api_version: 34).and_return(clouds[1])
-          expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[1], kind_of(Integer)).and_return(cloud_wrapper)
+          expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[1].exec_path, Config.uuid,
+                                                                  instance_of(Logging::Logger),
+                                                                  properties_from_cpi_config: cpis[1].properties,
+                                                                  stemcell_api_version: 34).and_return(clouds[1])
+          expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[1],
+                                                                                 kind_of(Integer)).and_return(cloud_wrapper)
           cloud = cloud_factory.get('name2', 34)
           expect(cloud).to eq(cloud_wrapper)
         end

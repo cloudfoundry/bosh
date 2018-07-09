@@ -54,6 +54,7 @@ module Bosh::Director
         cloud = Bosh::Clouds::ExternalCpi.new(
           cpi_config.exec_path,
           @director_uuid,
+          @logger,
           properties_from_cpi_config: cpi_config.properties,
           stemcell_api_version: stemcell_api_version
         )
@@ -76,6 +77,7 @@ module Bosh::Director
       Bosh::Clouds::ExternalCpi.new(
         Config.cloud_options['provider']['path'],
         @director_uuid,
+        @logger,
         stemcell_api_version: stemcell_api_version
       )
     end

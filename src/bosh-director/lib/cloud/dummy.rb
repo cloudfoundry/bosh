@@ -8,7 +8,6 @@ require_relative '../cloud/errors'
 module Bosh
   module Clouds
     class Dummy
-      include Bosh::CloudV1
       class NotImplemented < StandardError; end
 
       attr_reader :commands

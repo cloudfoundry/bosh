@@ -39,7 +39,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-core',          "~>#{version}"
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
-  spec.add_dependency 'bosh_cpi'
 
   spec.add_dependency 'bcrypt-ruby',      '~>3.0.1'
   spec.add_dependency 'eventmachine',     '~>1.2.0'

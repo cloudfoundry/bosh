@@ -41,10 +41,10 @@ module Bosh::Clouds
 
     attr_accessor :request_cpi_api_version
 
-    def initialize(cpi_path, director_uuid, options = {})
+    def initialize(cpi_path, director_uuid, logger, options = {})
       @cpi_path = cpi_path
       @director_uuid = director_uuid
-      @logger = Bosh::Director::TaggedLogger.new(Config.logger, "external-cpi")
+      @logger = Bosh::Director::TaggedLogger.new(logger, 'external-cpi')
       @properties_from_cpi_config = options.fetch(:properties_from_cpi_config, nil)
       @stemcell_api_version = options.fetch(:stemcell_api_version, nil)
     end
@@ -218,7 +218,7 @@ module Bosh::Clouds
     def save_cpi_log(output)
       # cpi log path is set up at the beginning of every task in Config
       # see JobRunner#setup_task_logging
-      File.open(Config.cpi_task_log, 'a') do |f|
+      File.open(Bosh::Director::Config.cpi_task_log, 'a') do |f|
         f.write(output)
       end
     end

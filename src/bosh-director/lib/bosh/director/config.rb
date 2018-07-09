@@ -214,8 +214,6 @@ module Bosh::Director
           end
         end
 
-        Bosh::Clouds::Config.configure(self)
-
         @lock = Monitor.new
 
         if config['verify_multidigest_path'].nil?
@@ -224,6 +222,7 @@ module Bosh::Director
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
+        @cpi_api_test_max_version = config.fetch('cpi_api_test_max_version')
       end
 
       def agent_env

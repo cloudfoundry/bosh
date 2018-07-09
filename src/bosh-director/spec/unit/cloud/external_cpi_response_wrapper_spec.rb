@@ -4,11 +4,18 @@ require 'fakefs/spec_helpers'
 describe Bosh::Clouds::ExternalCpiResponseWrapper do
   include FakeFS::SpecHelpers
 
-  let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
   let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
   let(:additional_expected_args) { nil }
   let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
   let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+
+  let(:logger) { double(:logger, debug: nil) }
+  let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path, cpi_api_test_max_version: 2) }
+  let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid', logger) }
+
+  before(:each) do
+    stub_const('Bosh::Director::Config', config)
+  end
 
   subject { described_class.new(cloud, cpi_api_version) }
 
@@ -17,7 +24,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
     before do
       allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
-      stub_const('Bosh::Clouds::Config', config)
       FileUtils.mkdir_p('/var/vcap/task/5')
       allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status])
       allow(Random).to receive(:rand).and_return('fake-request-id')
@@ -33,11 +39,9 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     define_method(:call_cpi_method) { subject.public_send(method, *arguments) }
 
     let(:method) { method }
-    let(:config) { double('Bosh::Clouds::Config', logger: double(:logger, debug: nil), cpi_task_log: cpi_log_path) }
 
     before do
       allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
-      stub_const('Bosh::Clouds::Config', config)
       FileUtils.mkdir_p('/var/vcap/task/5')
       allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status])
       allow(Random).to receive(:rand).and_return('fake-request-id')
@@ -64,13 +68,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
           properties_from_cpi_config: cpi_config_properties
         }
       end
-      let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
-      let(:logger) { double }
-      before do
-        allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
-        allow(logger).to receive(:info)
-        allow(logger).to receive(:debug)
-      end
+      let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', director_uuid, logger, options) }
 
       it 'passes the properties in context to the cpi' do
         stub_const('ENV', 'TMPDIR' => '/some/tmp')
@@ -143,11 +141,11 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         }
       end
 
-      let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
+      let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', director_uuid, logger, options) }
       let(:logger) { double }
 
       before do
-        allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
+        allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
         allow(logger).to receive(:info)
         allow(logger).to receive(:debug)
       end

@@ -14,7 +14,10 @@ module Bosh::Director
     before do
       allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'snoopy-uuid', stemcell_api_version: nil).and_return(default_cloud)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                             'snoopy-uuid',
+                                                             instance_of(Logging::Logger),
+                                                             stemcell_api_version: nil).and_return(default_cloud)
       allow(default_cloud).to receive(:info)
       allow(default_cloud).to receive(:request_cpi_api_version=)
     end
@@ -167,8 +170,13 @@ module Bosh::Director
       it 'returns the cloud from cpi config when asking for a AZ with this cpi' do
         cloud_wrapper = instance_double(Bosh::Clouds::ExternalCpiResponseWrapper)
 
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path, Config.uuid, properties_from_cpi_config: cpis[0].properties, stemcell_api_version: nil).and_return(clouds[0])
-        expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[0], anything).and_return(cloud_wrapper)
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path,
+                                                                Config.uuid,
+                                                                instance_of(Logging::Logger),
+                                                                properties_from_cpi_config: cpis[0].properties,
+                                                                stemcell_api_version: nil).and_return(clouds[0])
+        expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[0], anything)
+                                                                         .and_return(cloud_wrapper)
 
         cloud = az_cloud_factory.get_for_az('some-az')
         expect(cloud).to eq(cloud_wrapper)

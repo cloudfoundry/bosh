@@ -26,5 +26,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'fog-core',   '~>1.40.1'
   spec.add_dependency 'builder',    '~>3.1.4'
   spec.add_dependency 'excon',      '~>0.49.0'
-  spec.add_dependency 'bosh_cpi'
 end
