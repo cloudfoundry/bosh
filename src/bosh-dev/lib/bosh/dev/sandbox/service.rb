@@ -23,7 +23,7 @@ module Bosh::Dev::Sandbox
       env = ENV.to_hash.merge(@cmd_options.fetch(:env, {}))
       @logger.info("Starting #{@description} with command: #{@cmd_array.inspect}, and options: #{@cmd_options.inspect}")
 
-      if running?(@pid)
+      if running?
         @logger.info("Already started #{@description} with PID #{@pid}")
       else
         Dir.chdir(@cmd_options.fetch(:working_dir, Dir.pwd)) do
@@ -47,7 +47,7 @@ module Bosh::Dev::Sandbox
       @pid = nil
       @logger.info("Stopping #{@description} with PID=#{pid_to_stop}")
 
-      if running?(pid_to_stop)
+      if pid_running?(pid_to_stop)
         kill_process(signal, pid_to_stop)
 
         # Block until process exits to avoid race conditions in the caller
@@ -64,9 +64,7 @@ module Bosh::Dev::Sandbox
     end
 
     def kill_pid(pid_to_stop, signal = 'TERM')
-      if running?(pid_to_stop)
-        kill_process(signal, pid_to_stop)
-      end
+      kill_process(signal, pid_to_stop) if pid_running?(pid_to_stop)
     end
 
     def stdout_contents
@@ -75,6 +73,10 @@ module Bosh::Dev::Sandbox
 
     def stderr_contents
       safe_file_read(stderr)
+    end
+
+    def running?
+      pid_running?(@pid)
     end
 
     private
@@ -88,7 +90,7 @@ module Bosh::Dev::Sandbox
       end
     end
 
-    def running?(pid)
+    def pid_running?(pid)
       pid && Process.kill(0, pid)
     rescue Errno::ESRCH # No such process
       false
