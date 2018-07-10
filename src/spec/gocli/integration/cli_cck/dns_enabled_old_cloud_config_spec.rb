@@ -68,7 +68,6 @@ describe 'cli: cloudcheck', type: :integration do
         expect_table(
           'deployments',
           [{
-            'cloud_config' => 'outdated',
             'name' => 'simple',
             'release_s' => 'bosh-release/0+dev.1',
             'stemcell_s' => 'ubuntu-stemcell/1',

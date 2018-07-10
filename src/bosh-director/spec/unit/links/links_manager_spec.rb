@@ -1484,7 +1484,11 @@ describe Bosh::Director::Links::LinksManager do
               it 'raises an error' do
                 expect do
                   subject.resolve_deployment_links(deployment_model, options)
-                end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment' with network 'neta'")
+                end.to raise_error(
+                  "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
+                  "- Consumer 'provider_alias' from job 'c1' in instance group 'ig1' in deployment 'test_deployment' "\
+                  "does not belong to network 'neta'",
+                )
               end
             end
           end
@@ -1532,7 +1536,13 @@ describe Bosh::Director::Links::LinksManager do
 
             links = Bosh::Director::Models::Links::Link.all
             expect(links.size).to eq(1)
-            expect(JSON.parse(links.first.link_content)).to eq('use_dns_addresses' => use_dns_addresses, 'default_network' => 'netb', 'networks' => %w[neta netb], 'instances' => [{ 'address' => 'dns2' }])
+            expected_link_content = {
+              'use_dns_addresses' => use_dns_addresses,
+              'default_network' => 'netb',
+              'networks' => %w[neta netb],
+              'instances' => [{ 'address' => 'dns2' }],
+            }
+            expect(JSON.parse(links.first.link_content)).to eq(expected_link_content)
           end
 
           context 'and "default_network" is not defined in the provider content' do
@@ -1546,7 +1556,10 @@ describe Bosh::Director::Links::LinksManager do
             it 'should raise an error' do
               expect do
                 subject.resolve_deployment_links(deployment_model, options)
-              end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Unable to retrieve default network from provider. Please redeploy provider deployment")
+              end.to raise_error(
+                "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
+                '- Unable to retrieve default network from provider. Please redeploy provider deployment',
+              )
             end
           end
 
@@ -1613,7 +1626,11 @@ describe Bosh::Director::Links::LinksManager do
               it 'raises an error' do
                 expect do
                   subject.resolve_deployment_links(deployment_model, options)
-                end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment' with network 'neta'")
+                end.to raise_error(
+                  "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
+                  "- Consumer 'provider_alias' from job 'c1' in instance group 'ig1' in deployment 'test_deployment' "\
+                  "does not belong to network 'neta'",
+                )
               end
             end
           end
@@ -1665,7 +1682,12 @@ describe Bosh::Director::Links::LinksManager do
               subject.resolve_deployment_links(deployment_model, options)
               links = Bosh::Director::Models::Links::Link.all
               expect(links.size).to eq(1)
-              expect(JSON.parse(links.first.link_content)).to eq('use_dns_addresses' => use_dns_addresses, 'default_network' => 'netb', 'instances' => [{ 'address' => 'dns2' }])
+              expected_link_content = {
+                'use_dns_addresses' => use_dns_addresses,
+                'default_network' => 'netb',
+                'instances' => [{ 'address' => 'dns2' }],
+              }
+              expect(JSON.parse(links.first.link_content)).to eq(expected_link_content)
             end
           end
 
@@ -1784,7 +1806,10 @@ describe Bosh::Director::Links::LinksManager do
               it 'should raise an error' do
                 expect do
                   subject.resolve_deployment_links(deployment_model, options)
-                end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Provider link does not have network: 'neta'")
+                end.to raise_error(
+                  "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
+                  "- Provider link does not have network: 'neta'",
+                )
               end
             end
           end
@@ -1811,7 +1836,11 @@ describe Bosh::Director::Links::LinksManager do
             it 'raises an error' do
               expect do
                 subject.resolve_deployment_links(deployment_model, options)
-              end.to raise_error("Failed to resolve links from deployment 'test_deployment'. See errors below:\n  - Can't resolve link 'provider_alias' in instance group 'ig1' on job 'c1' in deployment 'test_deployment' with network 'neta'")
+              end.to raise_error(
+                "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
+                "- Consumer 'provider_alias' from job 'c1' in instance group 'ig1' in deployment 'test_deployment' "\
+                "does not belong to network 'neta'",
+              )
             end
           end
         end
