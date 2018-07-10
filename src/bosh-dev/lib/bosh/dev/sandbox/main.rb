@@ -404,6 +404,10 @@ module Bosh::Dev::Sandbox
       }
     end
 
+    def stop_nats
+      @nats_process.stop
+    end
+
     private
 
     def load_db_and_populate_blobstore(test_initial_state)
@@ -458,7 +462,7 @@ module Bosh::Dev::Sandbox
       end
 
       # TODO: Move into its own service.
-      if @nats_needs_restart
+      if @nats_needs_restart || !@nats_process.running?
         @nats_process.stop
         nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
         write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
