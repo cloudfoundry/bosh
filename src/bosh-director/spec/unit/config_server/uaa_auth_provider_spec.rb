@@ -31,6 +31,8 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
       uaa_url, 'fake-client', 'fake-client-secret', { :ssl_ca_file => 'fake-ca-cert-path' }
     ).and_return(token_issuer)
     allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
+    allow(token_issuer).to receive(:set_request_handler)
+    allow(token_issuer).to receive(:logger=)
   end
 
   context '#get_token' do
@@ -157,6 +159,58 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
 
       allow(logger).to receive(:error)
       token.auth_header
+    end
+  end
+end
+
+describe "Bosh::Director::ConfigServer::UAAAuthProvider usage with IPv6" do
+  subject do
+    logger = double(:logger, debug: nil, error: nil)
+    Bosh::Director::ConfigServer::UAAAuthProvider.new(config, logger)
+  end
+
+  let(:config) do
+    {
+      'client_id' => 'fake-client',
+      'client_secret' => 'fake-client-secret',
+      'url' => 'https://[2001:4860:4860:0000:0000:0000:0000:0088]:8080',
+      'ca_cert_path' => 'fake-ca-cert-path'
+    }
+  end
+
+  context '#get_token' do
+    it 'adds a Host header if address is IPv6' do
+      http_client = instance_double('HTTPClient', reset_all: nil)
+      allow(http_client).to receive(:ssl_config).and_return(HTTPClient::SSLConfig.new(http_client))
+      expect(HTTPClient).to receive(:new).and_return(http_client)
+
+      post_host_headers = nil
+
+      expect(http_client).to receive(:post) do |uri, body, headers|
+        post_host_headers = headers
+        HTTP::Message.new_response('{}')
+      end
+
+      expect { subject.get_token.auth_header }.to raise_error(/CF::UAA::BadResponse/)
+      expect(post_host_headers['Host']).to eq('[2001:4860:4860:0000:0000:0000:0000:0088]')
+    end
+
+    it 'does not add a Host header if address is not IPv6' do
+      config['url'] = 'https://127.0.0.1:8080'
+
+      http_client = instance_double('HTTPClient', reset_all: nil)
+      allow(http_client).to receive(:ssl_config).and_return(HTTPClient::SSLConfig.new(http_client))
+      expect(HTTPClient).to receive(:new).and_return(http_client)
+
+      post_host_headers = nil
+
+      expect(http_client).to receive(:post) do |uri, body, headers|
+        post_host_headers = headers
+        HTTP::Message.new_response('{}')
+      end
+
+      expect { subject.get_token.auth_header }.to raise_error(/CF::UAA::BadResponse/)
+      expect(post_host_headers['Host']).to be_nil
     end
   end
 end

@@ -500,6 +500,18 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
       )
       expect(@subnet.overlaps?(other)).to eq(true)
     end
+
+    it 'should return false when IPv4 and IPv6 ranges are compared' do
+      other = make_subnet(
+        {
+          'range' => 'f1ee:0000:0000:0000:0000:0000:0000:0000/64',
+          'gateway' => 'f1ee:0000:0000:0000:0000:0000:0000:0001',
+          'cloud_properties' => {'foo' => 'bar'},
+        },
+        []
+      )
+      expect(@subnet.overlaps?(other)).to eq(false)
+    end
   end
 
   describe :is_reservable? do
@@ -534,6 +546,12 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
     context 'when subnet range does not include IP' do
       it 'returns false' do
         expect(subnet.is_reservable?(NetAddr::CIDR.create('192.168.10.55'))).to be_falsey
+      end
+    end
+
+    context 'when subnet range is not the same IP version' do
+      it 'returns false' do
+        expect(subnet.is_reservable?(NetAddr::CIDR.create('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
       end
     end
   end
