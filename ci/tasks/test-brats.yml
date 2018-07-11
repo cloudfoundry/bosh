@@ -12,7 +12,9 @@ inputs:
   - name: stemcell
   - name: bosh-release
   - name: database-metadata
+    optional: true
   - name: gcp-ssl-config
+    optional: true
 
 run:
   path: bosh-src/ci/tasks/test-brats.sh
