@@ -737,7 +737,7 @@ jobs:
       - put: brats-terraform
         attempts: 2
         params:
-          env_name: brats-ubuntu-trusty
+          env_name: brats-ubuntu-trusty-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars:
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -793,7 +793,7 @@ jobs:
         - put: brats-terraform
           get_params: { action: destroy }
           params:
-            env_name: brats-ubuntu-trusty
+            env_name: brats-ubuntu-trusty-((branch_name))
             terraform_source: bosh-src/ci/brats
             action: destroy
             vars:
@@ -833,7 +833,7 @@ jobs:
       - put: brats-terraform
         attempts: 2
         params:
-          env_name: bbr-ubuntu-trusty
+          env_name: bbr-ubuntu-trusty-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars:
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -889,7 +889,7 @@ jobs:
         - put: brats-terraform
           get_params: { action: destroy }
           params:
-            env_name: bbr-ubuntu-trusty
+            env_name: bbr-ubuntu-trusty-((branch_name))
             terraform_source: bosh-src/ci/brats
             action: destroy
             vars:
@@ -930,7 +930,7 @@ jobs:
       - put: brats-terraform
         attempts: 2
         params:
-          env_name: brats-ubuntu-xenial
+          env_name: brats-ubuntu-xenial-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars:
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -990,7 +990,7 @@ jobs:
         - put: brats-terraform
           get_params: { action: destroy }
           params:
-            env_name: brats-ubuntu-xenial
+            env_name: brats-ubuntu-xenial-((branch_name))
             terraform_source: bosh-src/ci/brats
             action: destroy
             vars:
@@ -1030,7 +1030,7 @@ jobs:
       - put: brats-terraform
         attempts: 2
         params:
-          env_name: bbr-ubuntu-xenial
+          env_name: bbr-ubuntu-xenial-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars:
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -1086,7 +1086,7 @@ jobs:
         - put: brats-terraform
           get_params: { action: destroy }
           params:
-            env_name: bbr-ubuntu-xenial
+            env_name: bbr-ubuntu-xenial-((branch_name))
             terraform_source: bosh-src/ci/brats
             action: destroy
             vars:
@@ -1173,7 +1173,7 @@ resources:
     type: git
     source:
       uri: ((bosh_src_url))
-      branch: master
+      branch: ((branch_name))
       private_key: ((github_deployment_key))
 
   - name: candidate-version
