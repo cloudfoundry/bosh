@@ -49,7 +49,6 @@ describe 'vm_types and stemcells', type: :integration do
         'release_s' => 'bosh-release/0+dev.1',
         'stemcell_s' => 'ubuntu-stemcell/1',
         'team_s' => '',
-        'cloud_config' => 'latest'
       }
     ])
   end
