@@ -1562,7 +1562,7 @@ Error: Unable to process links for deployment. Errors are:
 
         current_deployments = bosh_runner.run('deployments', json: true)
         #THERE IS WHITESPACE AT THE END OF THE TABLE. DO NOT REMOVE IT
-        expect(table(current_deployments)).to eq([{'name' => 'simple', 'release_s' => 'release_with_minimal_links/0+dev.2', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
+        expect(table(current_deployments)).to eq([{'name' => 'simple', 'release_s' => 'release_with_minimal_links/0+dev.2', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => ''}])
 
 
         # ####################################################################
