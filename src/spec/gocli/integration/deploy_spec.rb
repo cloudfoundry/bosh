@@ -159,7 +159,6 @@ Error: Unable to render instance groups for deployment. Errors are:
               'release_s' => 'bosh-release/0+dev.1',
               'stemcell_s' => 'ubuntu-stemcell/1',
               'team_s' => '',
-              'cloud_config' => 'none',
             }
           ])
         end
@@ -197,7 +196,6 @@ Error: Unable to render instance groups for deployment. Errors are:
               'release_s' => 'bosh-release/0+dev.1',
               'stemcell_s' => 'ubuntu-stemcell/1',
               'team_s' => '',
-              'cloud_config' => 'none',
             }
           ])
         end

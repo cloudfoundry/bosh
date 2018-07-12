@@ -49,7 +49,7 @@ describe 'cli: deployment process', type: :integration do
         deployment_manifest = yaml_file('minimal2', minimal_manifest)
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: minimal_manifest['name'])
-        expect_table('deployments', [{'name' => 'minimal', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}, {'name' => 'minimal2', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
+        expect_table('deployments', [{'name' => 'minimal', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => ''}, {'name' => 'minimal2', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => ''}])
       end
 
       context 'properties from first deployment are modified in second deployment' do
@@ -332,7 +332,7 @@ lines'}
       out = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
       expect(out).to include("Using deployment 'minimal'")
 
-      expect_table('deployments', [{'name' => 'minimal', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => '', 'cloud_config' => 'latest'}])
+      expect_table('deployments', [{'name' => 'minimal', 'release_s' => 'test_release/1', 'stemcell_s' => 'ubuntu-stemcell/1', 'team_s' => ''}])
     end
 
     context 'when cloud config is updated and deploying has failed' do
@@ -360,13 +360,13 @@ lines'}
 
         expect_table('deployments', [
             {
-                'name' => 'simple',
-                'release_s' => 'bosh-release/0+dev.1',
-                'stemcell_s' => 'ubuntu-stemcell/1',
-                'team_s' => '',
-                'cloud_config' => 'outdated'
-            }
-        ])
+              'name' => 'simple',
+              'release_s' => 'bosh-release/0+dev.1',
+              'stemcell_s' => 'ubuntu-stemcell/1',
+              'team_s' => '',
+            },
+          ],
+        )
       end
     end
 

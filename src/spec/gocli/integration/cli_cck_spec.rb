@@ -138,7 +138,7 @@ describe 'cli: cloudcheck', type: :integration do
 
         bosh_runner.run('cloud-check --auto', deployment_name: 'simple')
 
-        expect_table('deployments', [{"cloud_config"=>"outdated", "name"=>"simple", "release_s"=>"bosh-release/0+dev.1", "stemcell_s"=>"ubuntu-stemcell/1", "team_s"=>""}])
+        expect_table('deployments', [{"name"=>"simple", "release_s"=>"bosh-release/0+dev.1", "stemcell_s"=>"ubuntu-stemcell/1", "team_s"=>""}])
         expect(current_sandbox.cpi.invocations_for_method('create_vm').last.inputs['cloud_properties']['stage']).to eq('before')
       end
     end
