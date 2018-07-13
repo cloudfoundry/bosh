@@ -323,23 +323,53 @@ lines'}
     end
   end
 
-  describe 'bosh deployments' do
-    it 'lists deployment details' do
+  describe 'bosh deployment(s) table' do
+    before do
       release_filename = spec_asset('test_release.tgz')
-      deployment_manifest = yaml_file('minimal', Bosh::Spec::NewDeployments.minimal_manifest)
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      manifest_hash = Bosh::Spec::NewDeployments.minimal_manifest
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      deployment_manifest = yaml_file('minimal', manifest_hash)
+      cloud_config_manifest = yaml_file('cloud_manifest', cloud_config_hash)
 
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("upload-stemcell #{stemcell_filename}")
       bosh_runner.run("upload-release #{release_filename}")
+      @out = bosh_runner.run("deploy #{deployment_manifest.path}",
+                             deployment_name: 'minimal')
+    end
 
-      out = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-      expect(out).to include("Using deployment 'minimal'")
+    describe 'bosh deployments' do
+      it 'lists deployment details' do
+        expect(@out).to include("Using deployment 'minimal'")
+        expect_table('deployments', [{ 'name' => 'minimal',
+                                       'release_s' => 'test_release/1',
+                                       'stemcell_s' => 'ubuntu-stemcell/1',
+                                       'team_s' => '' }])
+      end
+    end
 
-      expect_table('deployments', [{ 'name' => 'minimal',
-                                     'release_s' => 'test_release/1',
-                                     'stemcell_s' => 'ubuntu-stemcell/1',
-                                     'team_s' => '' }])
+    describe 'bosh deployment' do
+      it 'shows configs in deployment table' do
+        expect(@out).to include("Using deployment 'minimal'")
+        expect_table('deployment -d minimal', [{ 'name' => 'minimal',
+                                                 'release_s' => 'test_release/1',
+                                                 'stemcell_s' => 'ubuntu-stemcell/1',
+                                                 'config_s' => '1 cloud/default',
+                                                 'team_s' => '' }])
+      end
+
+      context 'when cloud-config has been deleted' do
+        it 'still shows configs in deployment table' do
+          output = bosh_runner.run('delete-config --type=cloud --name=default', deployment_name: 'minimal')
+          expect(output).to include('Succeeded')
+          expect_table('deployment -d minimal', [{ 'name' => 'minimal',
+                                                   'release_s' => 'test_release/1',
+                                                   'stemcell_s' => 'ubuntu-stemcell/1',
+                                                   'config_s' => '1 cloud/default',
+                                                   'team_s' => '' }])
+        end
+      end
     end
   end
 
