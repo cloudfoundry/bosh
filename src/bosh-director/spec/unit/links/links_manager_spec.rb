@@ -2221,6 +2221,9 @@ describe Bosh::Director::Links::LinksManager do
           name: 'foo',
           link_content: '{}',
         )
+
+        consumer_intent.target_link_id = @link.id
+        consumer_intent.save
       end
 
       it 'should create an association between the instance and the links' do
@@ -2348,6 +2351,9 @@ describe Bosh::Director::Links::LinksManager do
           end
 
           before do
+            consumer_intent.target_link_id = link.id
+            consumer_intent.save
+
             new_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.create(
               link_consumer: consumer,
               original_name: 'meow',
@@ -2356,11 +2362,14 @@ describe Bosh::Director::Links::LinksManager do
               serial_id: serial_id,
             )
 
-            Bosh::Director::Models::Links::Link.create(
+            new_link = Bosh::Director::Models::Links::Link.create(
               link_consumer_intent: new_consumer_intent,
               name: 'meow',
               link_content: '{"properties": {"snoopy": "dog"}}',
             )
+
+            new_consumer_intent.target_link_id = new_link.id
+            new_consumer_intent.save
           end
 
           it 'returns the links associated with the instance groups namespaced by job name' do
@@ -2406,6 +2415,33 @@ describe Bosh::Director::Links::LinksManager do
               expect(links['job-1']['foo']).to eq(JSON.parse('{"properties": {"fizz": "buzz"}}'))
             end
           end
+
+          context 'when there are multiple links associated with the consumer_intent' do
+            let!(:link_2) do
+              Bosh::Director::Models::Links::Link.create(
+                link_consumer_intent: consumer_intent,
+                name: 'foo',
+                link_content: '{"properties": {"buzz": "fizz"}}',
+              )
+            end
+            before do
+              consumer_intent.target_link_id = link.id
+              consumer_intent.save
+            end
+
+            it 'should choose the link the consumer_intent recorded' do
+              links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
+              expect(links.size).to eq(1)
+              expect(links['job-1']['foo']).to eq(JSON.parse('{"properties": {"fizz": "buzz"}}'))
+
+              consumer_intent.target_link_id = link_2.id
+              consumer_intent.save
+
+              links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
+              expect(links.size).to eq(1)
+              expect(links['job-1']['foo']).to eq(JSON.parse('{"properties": {"buzz": "fizz"}}'))
+            end
+          end
         end
       end
     end
@@ -2449,11 +2485,14 @@ describe Bosh::Director::Links::LinksManager do
           serial_id: serial_id,
         )
 
-        Bosh::Director::Models::Links::Link.create(
+        link = Bosh::Director::Models::Links::Link.create(
           link_consumer_intent: consumer_intent,
           name: 'tweet',
           link_content: '{"properties": {"puddy": "tat"}}',
         )
+
+        consumer_intent.target_link_id = link.id
+        consumer_intent.save
       end
 
       it 'returns the current links' do
