@@ -196,12 +196,11 @@ module Bosh::Director::Links
             link_consumer: consumer,
             link_original_name: consumer_intent_params[:original_name],
             link_type: consumer_intent_params[:type],
-            new_intent_metadata: nil,
+            new_intent_metadata: metadata,
           )
           consumer_intent.name = consumer_intent_params[:alias].split(".")[-1]
           consumer_intent.blocked = consumer_intent_params[:blocked]
           consumer_intent.optional = consumes['optional'] || false
-          consumer_intent.metadata = metadata.to_json
           consumer_intent.save
         end
       end

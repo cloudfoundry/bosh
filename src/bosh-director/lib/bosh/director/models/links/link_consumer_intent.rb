@@ -6,5 +6,19 @@ module Bosh::Director::Models::Links
     def validate
       validates_presence [:link_consumer_id, :original_name, :type]
     end
+
+    def target_link_id=(link_id)
+      meta = metadata || '{}'
+      meta = JSON.parse(meta)
+      meta['target_link_id'] = link_id
+
+      self.metadata = meta.to_json
+    end
+
+    def target_link_id
+      return nil if metadata.nil?
+      meta = JSON.parse(metadata)
+      meta['target_link_id']
+    end
   end
 end

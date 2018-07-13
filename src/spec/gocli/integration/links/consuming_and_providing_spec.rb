@@ -124,6 +124,41 @@ describe 'consuming and providing', type: :integration do
         expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
       end
     end
+
+    context 'when the job tests for number of instances' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [instance_group]
+        manifest
+      end
+      let(:instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'instance_group',
+          jobs: [
+            { 'name' => 'api_server_2_instances' },
+            { 'name' => 'database' },
+          ],
+          instances: 2,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'should deploy successfully with correct link selection' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        manifest['instance_groups'][0]['instances'] = 3
+
+        out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code).to eq(1)
+        expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
+        expect(out).to include("- Error filling in template 'config.yml.erb' " \
+          '(line 2: Expected exactly two instances of db in current deployment)')
+
+        manifest['instance_groups'][0]['instances'] = 2
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+    end
   end
 
   context 'when the job consumes multiple links of the same type' do

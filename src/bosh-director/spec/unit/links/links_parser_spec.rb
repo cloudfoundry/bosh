@@ -310,9 +310,24 @@ describe Bosh::Director::Links::LinksParser do
           name: 'foobar',
           type: 'job'
         ).and_return(nil)
-        expect(links_manager).to receive(:find_or_create_consumer).with(deployment_model: deployment_model, instance_group_name: "old_ig1",name: "foobar",type: "job").and_return(consumer)
-        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'chocolate', link_type: 'flavour', new_intent_metadata: nil).and_return(consumer_intent)
-        subject.parse_migrated_from_consumers_from_job(job_spec, deployment_model, template, "new-ig", migrated_from)
+
+        expect(links_manager).to receive(:find_or_create_consumer)
+          .with(deployment_model: deployment_model, instance_group_name: 'old_ig1', name: 'foobar', type: 'job')
+          .and_return(consumer)
+        expect(links_manager).to receive(:find_or_create_consumer_intent)
+          .with(link_consumer: consumer,
+                link_original_name: 'chocolate',
+                link_type: 'flavour',
+                new_intent_metadata: { explicit_link: true })
+          .and_return(consumer_intent)
+
+        subject.parse_migrated_from_consumers_from_job(
+          job_spec,
+          deployment_model,
+          template,
+          'new-ig',
+          migrated_from,
+        )
       end
     end
 
@@ -345,10 +360,27 @@ describe Bosh::Director::Links::LinksParser do
           name: 'jobby1',
           type: 'job'
         ).and_return(nil)
-        expect(links_manager).to receive(:find_or_create_consumer).with(deployment_model: deployment_model, instance_group_name: "instance-group-name",name: "jobby1",type: "job").and_return(consumer)
-        expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: consumer, link_original_name: 'link_1_name', link_type: 'link_1_type',  new_intent_metadata: nil).and_return(consumer_intent)
 
-        subject.parse_migrated_from_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name", migrated_from)
+        expect(links_manager).to receive(:find_or_create_consumer).with(
+          deployment_model: deployment_model,
+          instance_group_name: 'instance-group-name',
+          name: 'jobby1',
+          type: 'job',
+        ).and_return(consumer)
+        expect(links_manager).to receive(:find_or_create_consumer_intent).with(
+          link_consumer: consumer,
+          link_original_name: 'link_1_name',
+          link_type: 'link_1_type',
+          new_intent_metadata: { explicit_link: true },
+        ).and_return(consumer_intent)
+
+        subject.parse_migrated_from_consumers_from_job(
+          job_spec,
+          deployment_plan.model,
+          template,
+          'instance-group-name',
+          migrated_from,
+        )
       end
     end
   end
@@ -775,7 +807,7 @@ describe Bosh::Director::Links::LinksParser do
             link_consumer: consumer,
             link_original_name: 'link_1_name',
             link_type: 'link_1_type',
-            new_intent_metadata: nil
+            new_intent_metadata: { explicit_link: false },
           }
 
           expect(links_manager).to receive(:find_or_create_consumer_intent).with(expected_consumer_intent_params).and_return(consumer_intent)
@@ -783,7 +815,6 @@ describe Bosh::Director::Links::LinksParser do
           expect(consumer_intent).to receive(:name=).with('link_1_name')
           expect(consumer_intent).to receive(:blocked=).with(false)
           expect(consumer_intent).to receive(:optional=).with(false)
-          expect(consumer_intent).to receive(:metadata=).with({:explicit_link => false}.to_json)
           expect(consumer_intent).to receive(:save)
 
           subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
@@ -800,7 +831,6 @@ describe Bosh::Director::Links::LinksParser do
             expect(links_manager).to receive(:find_or_create_consumer).and_return(consumer)
             expect(links_manager).to receive(:find_or_create_consumer_intent).and_return(consumer_intent)
 
-            expect(consumer_intent).to receive(:metadata=).with({:explicit_link => false}.to_json)
             expect(consumer_intent).to receive(:name=).with('link_1_name')
             expect(consumer_intent).to receive(:blocked=).with(false)
             expect(consumer_intent).to receive(:optional=).with(true)
@@ -846,14 +876,13 @@ describe Bosh::Director::Links::LinksParser do
             link_consumer: consumer,
             link_original_name: 'link_1_name',
             link_type: 'link_1_type',
-            new_intent_metadata: nil
+            new_intent_metadata: { explicit_link: true },
           }
 
           expect(links_manager).to receive(:find_or_create_consumer_intent).with(expected_consumer_intent_params).and_return(consumer_intent)
 
           expect(consumer_intent).to receive(:name=).with('snoopy')
           expect(consumer_intent).to receive(:blocked=).with(false)
-          expect(consumer_intent).to receive(:metadata=).with({:explicit_link => true}.to_json)
           expect(consumer_intent).to receive(:optional=).with(false)
           expect(consumer_intent).to receive(:save)
 
@@ -1020,7 +1049,6 @@ describe Bosh::Director::Links::LinksParser do
             allow(consumer_intent).to receive(:name=)
             allow(consumer_intent).to receive(:blocked=)
             allow(consumer_intent).to receive(:optional=)
-            allow(consumer_intent).to receive(:metadata=)
             allow(consumer_intent).to receive(:save)
 
             allow(consumer_intent).to receive(:original_name).and_return('link_1_name')
@@ -1039,7 +1067,13 @@ describe Bosh::Director::Links::LinksParser do
             allow(links_manager).to receive(:find_or_create_provider).and_return(manual_provider)
             allow(links_manager).to receive(:find_or_create_provider_intent).and_return(manual_provider_intent)
 
-            expect(consumer_intent).to receive(:metadata=).with({explicit_link: true, manual_link: true}.to_json)
+            expect(links_manager).to receive(:find_or_create_consumer_intent).with(link_consumer: anything,
+                                                                                   link_original_name: anything,
+                                                                                   link_type: anything,
+                                                                                   new_intent_metadata: {
+                                                                                     explicit_link: true,
+                                                                                     manual_link: true,
+                                                                                   })
 
             subject.parse_consumers_from_job(job_spec, deployment_plan.model, template, "instance-group-name")
           end
