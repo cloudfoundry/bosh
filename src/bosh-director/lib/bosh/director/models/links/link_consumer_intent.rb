@@ -15,8 +15,13 @@ module Bosh::Director::Models::Links
       self.metadata = meta.to_json
     end
 
+    def fallback_link_id
+      return nil if links.count.zero?
+      links.max_by(&:id).id
+    end
+
     def target_link_id
-      return nil if metadata.nil?
+      return fallback_link_id if metadata.nil?
       meta = JSON.parse(metadata)
       meta['target_link_id']
     end

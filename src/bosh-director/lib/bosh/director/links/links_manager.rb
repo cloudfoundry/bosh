@@ -121,7 +121,7 @@ module Bosh::Director::Links
         )
       else
         if !new_intent_metadata.nil? && !new_intent_metadata.keys.empty?
-          existing_metadata = JSON.parse(intent.metadata) || {}
+          existing_metadata = JSON.parse(intent.metadata || '{}') || {}
           intent.metadata = existing_metadata.merge(new_intent_metadata).to_json
         end
         intent.type = link_type
