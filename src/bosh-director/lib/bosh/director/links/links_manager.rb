@@ -121,7 +121,7 @@ module Bosh::Director::Links
         )
       else
         if !new_intent_metadata.nil? && !new_intent_metadata.keys.empty?
-          existing_metadata = JSON.parse(intent.metadata) || {}
+          existing_metadata = JSON.parse(intent.metadata || '{}') || {}
           intent.metadata = existing_metadata.merge(new_intent_metadata).to_json
         end
         intent.type = link_type
@@ -218,7 +218,8 @@ module Bosh::Director::Links
         links[consumer.name] = {}
         consumer.intents.each do |consumer_intent|
           next if consumer.serial_id != consumer_intent.serial_id
-          link = Bosh::Director::Models::Links::Link.where(link_consumer_intent: consumer_intent).order(Sequel.desc(:created_at)).first
+
+          link = Bosh::Director::Models::Links::Link.where(id: consumer_intent.target_link_id).first
           next if link.nil?
           content = JSON.parse(link.link_content)
           links[consumer.name][link.name] = content
@@ -261,11 +262,13 @@ module Bosh::Director::Links
           next if consumer_intent.serial_id != instance.deployment_model.links_serial_id
           next if consumer_intent.links.empty?
 
-          newest_link = Bosh::Director::Models::Links::Link.where(link_consumer_intent_id: consumer_intent.id).order(Sequel.desc(:id)).first
-          instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: newest_link.id).first
+          target_link = Bosh::Director::Models::Links::Link.where(id: consumer_intent.target_link_id).first
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id,
+                                                                             link_id: target_link.id).first
           if instance_link.nil?
-            instance_model.add_link(newest_link)
-            instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: newest_link.id).first
+            instance_model.add_link(target_link)
+            instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id,
+                                                                               link_id: target_link.id).first
           end
           if instance_link.serial_id != @serial_id
             instance_link.serial_id = @serial_id
@@ -338,12 +341,15 @@ module Bosh::Director::Links
         link_content = provider_intent.content || '{}'
 
         unless dry_run
-          find_or_create_link(
+          link = find_or_create_link(
             name: consumer_intent.original_name,
             provider_intent: provider_intent,
             consumer_intent: consumer_intent,
             link_content: link_content,
           )
+          consumer_intent.target_link_id = link.id
+          consumer_intent.save
+          link
         end
       else
         if external_provider_intent.nil?
@@ -382,12 +388,15 @@ module Bosh::Director::Links
 
           link_content = extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
 
-          find_or_create_link(
+          link = find_or_create_link(
             name: consumer_intent.original_name,
             provider_intent: provider_intent,
             consumer_intent: consumer_intent,
             link_content: link_content,
           )
+          consumer_intent.target_link_id = link.id
+          consumer_intent.save
+          link
         end
       end
     end
