@@ -57,6 +57,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)
         allow(deployment_plan).to receive(:use_short_dns_addresses?).and_return(false)
         allow(deployment_plan).to receive(:randomize_az_placement?).and_return(false)
+        allow(deployment_plan).to receive(:recreate_persistent_disks?).and_return(false)
       end
 
       it 'should bind releases and their templates' do
@@ -114,9 +115,23 @@ module Bosh::Director
         end
 
         it 'passes tags to instance plan factory' do
-          expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}, 'use_dns_addresses' => false, 'use_short_dns_addresses' => false,'randomize_az_placement' => false}
-          expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
-          assembler.bind_models({tags: {'key1' => 'value1'}})
+          expected_options = {
+            'recreate' => false,
+            'recreate_persistent_disks' => false,
+            'tags' => { 'key1' => 'value1' },
+            'use_dns_addresses' => false,
+            'use_short_dns_addresses' => false,
+            'randomize_az_placement' => false,
+          }
+          expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+            anything,
+            anything,
+            anything,
+            anything,
+            anything,
+            expected_options,
+          ).and_call_original
+          assembler.bind_models(tags: { 'key1' => 'value1' })
         end
       end
 
@@ -128,8 +143,22 @@ module Bosh::Director
           end
 
           it 'passes use_dns_addresses, use_short_dns_addresses and randomize_az_placement feature flags to instance plan factory' do
-            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true, 'randomize_az_placement' => true, 'use_short_dns_addresses' => false}
-            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+            expected_options = {
+              'recreate' => false,
+              'recreate_persistent_disks' => false,
+              'tags' => {},
+              'use_dns_addresses' => true,
+              'randomize_az_placement' => true,
+              'use_short_dns_addresses' => false,
+            }
+            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+              anything,
+              anything,
+              anything,
+              anything,
+              anything,
+              expected_options,
+            ).and_call_original
             assembler.bind_models
           end
 
@@ -139,8 +168,22 @@ module Bosh::Director
             end
 
             it 'passes use_short_dns_addresses to instance plan factory' do
-              expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true, 'randomize_az_placement' => true, 'use_short_dns_addresses' => true}
-              expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+              expected_options = {
+                'recreate' => false,
+                'recreate_persistent_disks' => false,
+                'tags' => {},
+                'use_dns_addresses' => true,
+                'randomize_az_placement' => true,
+                'use_short_dns_addresses' => true,
+              }
+              expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+                anything,
+                anything,
+                anything,
+                anything,
+                anything,
+                expected_options,
+              ).and_call_original
               assembler.bind_models
             end
           end
@@ -153,8 +196,22 @@ module Bosh::Director
           end
 
           it 'passes use_dns_addresses, use_short_dns_addresses and randomize_az_placement to instance plan factory' do
-            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => false, 'randomize_az_placement' => false, 'use_short_dns_addresses' => false}
-            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+            expected_options = {
+              'recreate' => false,
+              'recreate_persistent_disks' => false,
+              'tags' => {},
+              'use_dns_addresses' => false,
+              'randomize_az_placement' => false,
+              'use_short_dns_addresses' => false,
+            }
+            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+              anything,
+              anything,
+              anything,
+              anything,
+              anything,
+              expected_options,
+            ).and_call_original
             assembler.bind_models
           end
         end

@@ -232,12 +232,32 @@ module Bosh::Director
             instance: anything,
             skip_drain: anything,
             recreate_deployment: anything,
+            recreate_persistent_disks: anything,
             use_dns_addresses: anything,
             use_short_dns_addresses: anything,
             tags: tags,
           )
 
           instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
+        end
+
+        context 'recreate_persistent_disks' do
+          let(:options) { { 'recreate_persistent_disks' => true } }
+
+          it 'provides the instance_plan with the correct recreate_persistent_disks' do
+            expect(InstancePlan).to receive(:new).with(
+              desired_instance: anything,
+              existing_instance: anything,
+              instance: anything,
+              skip_drain: anything,
+              recreate_deployment: anything,
+              recreate_persistent_disks: true,
+              tags: anything,
+              use_dns_addresses: anything,
+              use_short_dns_addresses: anything,
+            )
+            instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
+          end
         end
 
         context 'use_dns_addresses' do
@@ -264,6 +284,7 @@ module Bosh::Director
                 instance: anything,
                 skip_drain: anything,
                 recreate_deployment: anything,
+                recreate_persistent_disks: anything,
                 tags: anything,
                 use_dns_addresses: true,
                 use_short_dns_addresses: false,
@@ -299,6 +320,7 @@ module Bosh::Director
                 instance: anything,
                 skip_drain: anything,
                 recreate_deployment: anything,
+                recreate_persistent_disks: anything,
                 tags: anything,
                 use_short_dns_addresses: false,
                 use_dns_addresses: false,

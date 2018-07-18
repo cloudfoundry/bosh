@@ -128,6 +128,7 @@ LOGMESSAGE
               {
                 'is_deploy_action' => false,
                 'recreate' => false,
+                'recreate_persistent_disks' => false,
                 'fix' => false,
                 'skip_drain' => nil,
                 'job_states' => {},

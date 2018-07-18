@@ -352,6 +352,24 @@ module Bosh::Director
             end
           end
 
+          context 'with the "recreate_persistent_disks" param' do
+            it 'passes the parameter' do
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(
+                  anything,
+                  anything,
+                  anything,
+                  anything,
+                  anything,
+                  hash_including('recreate_persistent_disks' => true),
+                  anything,
+                ).and_return(OpenStruct.new(id: 1))
+              post '/?recreate_persistent_disks=true', spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              expect(last_response).to be_redirect
+            end
+          end
+
           context 'updates using a manifest with deployment name' do
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)

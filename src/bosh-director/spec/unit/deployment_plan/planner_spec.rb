@@ -139,6 +139,23 @@ module Bosh::Director
           expect(plan.recreate).to be_truthy
         end
 
+        it 'should parse recreate' do
+          expect(planner.recreate_persistent_disks).to be_falsey
+          expect(planner.recreate_persistent_disks?).to be_falsey
+
+          plan = described_class.new(
+            planner_attributes,
+            manifest_text,
+            YAML.dump(manifest_text),
+            cloud_configs,
+            runtime_config_consolidator,
+            deployment_model,
+            'recreate_persistent_disks' => true,
+          )
+          expect(plan.recreate_persistent_disks).to be_truthy
+          expect(plan.recreate_persistent_disks?).to be_truthy
+        end
+
         it 'should parse deploy' do
           expect(planner.is_deploy?).to be_falsey
 

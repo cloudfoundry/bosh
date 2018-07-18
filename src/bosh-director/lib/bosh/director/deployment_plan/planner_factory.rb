@@ -71,6 +71,7 @@ module Bosh
           plan_options = {
             'is_deploy_action' => !!options['deploy'],
             'recreate' => !!options['recreate'],
+            'recreate_persistent_disks' => options['recreate_persistent_disks'] == true,
             'fix' => !!options['fix'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},

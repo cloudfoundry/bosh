@@ -104,6 +104,7 @@ module IntegrationExampleGroup
     cmd += ' deploy'
     cmd += options.fetch(:no_redact, false) ? ' --no-redact' : ''
     cmd += options.fetch(:recreate, false) ? ' --recreate' : ''
+    cmd += options.fetch(:recreate_persistent_disks, false) ? ' --recreate-persistent-disks' : ''
     cmd += options.fetch(:dry_run, false) ? ' --dry-run' : ''
     cmd += options.fetch(:fix, false) ? ' --fix' : ''
     cmd += options.fetch(:json, false) ? ' --json' : ''
@@ -127,6 +128,10 @@ module IntegrationExampleGroup
 
   def stop_job(vm_name)
     bosh_runner.run("stop -d #{Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME} #{vm_name}", {})
+  end
+
+  def orphaned_disks
+    table(bosh_runner.run('disks -o', json: true))
   end
 
   def deploy_from_scratch(options={})
