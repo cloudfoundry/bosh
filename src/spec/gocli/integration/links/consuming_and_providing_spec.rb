@@ -219,6 +219,42 @@ describe 'consuming and providing', type: :integration do
         expect(out).to include(/db 192.168.1.2/)
       end
     end
+
+    context 'when provider jobs is removed, with an optional link' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [instance_group]
+        manifest
+      end
+      let(:instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'instance_group',
+          jobs: [
+            { 'name' => 'database' },
+            { 'name' => 'errand_with_optional_links' },
+            { 'name' => 'provider' },
+          ],
+          instances: 1,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'should deploy and run errand' do
+        deploy_simple_manifest(manifest_hash: manifest)
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/provider 192.168.1.2/)
+
+        manifest['instance_groups'][0]['jobs'].delete_at(2)
+        deploy_simple_manifest(manifest_hash: manifest)
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/db 192.168.1.2/)
+
+        bosh_runner.run('recreate instance_group/0', deployment_name: 'simple')
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/db 192.168.1.2/)
+      end
+    end
   end
 
   context 'when the job consumes multiple links of the same type' do

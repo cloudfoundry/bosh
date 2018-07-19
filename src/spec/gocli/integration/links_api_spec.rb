@@ -841,6 +841,47 @@ describe 'links api', type: :integration do
         expect(final_links).to include(@expected_links[1])
       end
     end
+
+    context 'when a provider job is removed, so the implicit link should be cleared out' do
+      let(:cloud_config_hash) do
+        Bosh::Spec::NewDeployments.simple_cloud_config.tap do |cloud_config|
+          cloud_config['networks'][0]['subnets'][0]['az'] = 'z1'
+          cloud_config['compilation']['az'] = 'z1'
+          cloud_config['azs'] = ['name' => 'z1']
+        end
+      end
+
+      let(:instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'instance_group',
+          jobs: [
+            { 'name' => 'errand_with_optional_links' },
+            { 'name' => 'database' },
+            { 'name' => 'provider' },
+          ],
+          instances: 2,
+        )
+        spec['networks'] = [{ 'name' => 'a' }]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'should show the only the first links after redeploy' do
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/provider 192.168.1.2/)
+        expect(@expected_links.count).to eq(2)
+
+        manifest_hash['instance_groups'][0]['jobs'].delete_at(2)
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/db 192.168.1.2/)
+        final_links = get_links
+        expect(final_links.count).to eq(1)
+        persistent_link_index = @expected_links.index { |link| link['name'] == 'db' }
+
+        expect(final_links).to include(@expected_links[persistent_link_index])
+      end
+    end
   end
 
   context 'when doing POST request to create link' do
