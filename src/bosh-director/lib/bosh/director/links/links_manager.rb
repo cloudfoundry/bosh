@@ -221,6 +221,10 @@ module Bosh::Director::Links
 
           link = Bosh::Director::Models::Links::Link.where(id: consumer_intent.target_link_id).first
           next if link.nil?
+          next if !link.link_provider_intent.nil? &&
+                  link.link_provider_intent.link_provider.deployment_id == deployment_model.id &&
+                  link.link_provider_intent.serial_id != consumer_intent.serial_id
+
           content = JSON.parse(link.link_content)
           links[consumer.name][link.name] = content
         end
@@ -263,6 +267,11 @@ module Bosh::Director::Links
           next if consumer_intent.links.empty?
 
           target_link = Bosh::Director::Models::Links::Link.where(id: consumer_intent.target_link_id).first
+
+          next if !target_link.link_provider_intent.nil? &&
+                  target_link.link_provider_intent.link_provider.deployment_id == instance.deployment_model.id &&
+                  target_link.link_provider_intent.serial_id != consumer_intent.serial_id
+
           instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id,
                                                                              link_id: target_link.id).first
           if instance_link.nil?
