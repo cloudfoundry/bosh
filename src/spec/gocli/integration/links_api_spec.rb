@@ -16,7 +16,9 @@ describe 'links api', type: :integration do
     )
   end
 
-  let(:features) {{}}
+  let(:features) do
+    {}
+  end
 
   let(:instance_group) do
     {
@@ -721,6 +723,90 @@ describe 'links api', type: :integration do
         links = get_links
         expect(links.count).to eq(1)
         expect(links.first['id']).to eq('2')
+      end
+    end
+
+    context 'when the second deploy fails, so the deploy is rolled back' do
+      let(:cloud_config_hash) do
+        Bosh::Spec::NewDeployments.simple_cloud_config.tap do |cloud_config|
+          cloud_config['networks'][0]['subnets'][0]['az'] = 'z1'
+          cloud_config['compilation']['az'] = 'z1'
+          cloud_config['azs'] = ['name' => 'z1']
+        end
+      end
+
+      let(:instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'instance_group',
+          jobs: [
+            { 'name' => 'api_server_2_instances' },
+            { 'name' => 'database' },
+          ],
+          instances: 2,
+        )
+        spec['networks'] = [{ 'name' => 'a' }]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'should show the only the first links after redeploy' do
+        manifest_hash['instance_groups'][0]['instances'] = 3
+
+        out, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+        expect(exit_code).to eq(1)
+        expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
+        expect(out).to include("- Error filling in template 'config.yml.erb' " \
+          '(line 2: Expected exactly two instances of db in current deployment)')
+        failed_links = get_links
+        expect(failed_links.count).to eq(4)
+
+        manifest_hash['instance_groups'][0]['instances'] = 2
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        final_links = get_links
+        expect(final_links.count).to eq(2)
+        expect(final_links).to include(@expected_links[0])
+        expect(final_links).to include(@expected_links[1])
+      end
+    end
+
+    context 'when a provider job is removed, so the implicit link should be cleared out' do
+      let(:cloud_config_hash) do
+        Bosh::Spec::NewDeployments.simple_cloud_config.tap do |cloud_config|
+          cloud_config['networks'][0]['subnets'][0]['az'] = 'z1'
+          cloud_config['compilation']['az'] = 'z1'
+          cloud_config['azs'] = ['name' => 'z1']
+        end
+      end
+
+      let(:instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'instance_group',
+          jobs: [
+            { 'name' => 'errand_with_optional_links' },
+            { 'name' => 'database' },
+            { 'name' => 'provider' },
+          ],
+          instances: 2,
+        )
+        spec['networks'] = [{ 'name' => 'a' }]
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'should show the only the first links after redeploy' do
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/provider 192.168.1.2/)
+        expect(@expected_links.count).to eq(2)
+
+        manifest_hash['instance_groups'][0]['jobs'].delete_at(2)
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/db 192.168.1.2/)
+        final_links = get_links
+        expect(final_links.count).to eq(1)
+        persistent_link_index = @expected_links.index { |link| link['name'] == 'db' }
+
+        expect(final_links).to include(@expected_links[persistent_link_index])
       end
     end
   end
