@@ -159,6 +159,66 @@ describe 'consuming and providing', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest)
       end
     end
+
+    context 'when jobs scale down removing a link' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [instance_group, db_instance_group]
+        manifest
+      end
+      let(:instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'instance_group',
+          jobs: [
+            { 'name' => 'database' },
+            { 'name' => 'errand_with_optional_links' },
+          ],
+          instances: 1,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:db_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'provider_instance_group',
+          jobs: [
+            { 'name' => 'provider' },
+          ],
+          instances: 1,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:db_instance_group2) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'provider_instance_group2',
+          jobs: [
+            { 'name' => 'provider' },
+          ],
+          instances: 1,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      it 'should deploy and run errand' do
+        manifest['instance_groups'][1]['instances'] = 1
+        deploy_simple_manifest(manifest_hash: manifest)
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/provider 192.168.1.3/)
+
+        manifest['instance_groups'] = [instance_group]
+        deploy_simple_manifest(manifest_hash: manifest)
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/db 192.168.1.2/)
+
+        bosh_runner.run('recreate instance_group/0', deployment_name: 'simple')
+        out = run_errand('errand_with_optional_links', deployment_name: 'simple')
+        expect(out).to include(/db 192.168.1.2/)
+      end
+    end
   end
 
   context 'when the job consumes multiple links of the same type' do

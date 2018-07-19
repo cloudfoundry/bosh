@@ -1,0 +1,13 @@
+#!/bin/sh
+
+echo <%=
+  result = 'unknown'
+if_link('provider') do |link|
+  result = "provider #{link.instances.first.address}"
+end.else_if_link('db') do |link|
+  result = "db #{link.instances.first.address}"
+end.else do
+  result = 'no links'
+end
+result
+%>

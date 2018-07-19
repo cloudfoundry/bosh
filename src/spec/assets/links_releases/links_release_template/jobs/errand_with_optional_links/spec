@@ -1,0 +1,11 @@
+---
+name: errand_with_optional_links
+templates:
+    config.yml.erb: config.yml
+    run.erb: bin/run
+
+consumes:
+    - { name: provider, type: provider, optional: true }
+    - { name: db, type: db, optional: true }
+
+properties: {}
