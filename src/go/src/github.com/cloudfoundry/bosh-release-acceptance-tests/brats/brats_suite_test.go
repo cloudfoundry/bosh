@@ -129,7 +129,6 @@ func startInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 		effectiveArgs...,
 	)
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
 
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
@@ -143,15 +142,15 @@ func startInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 }
 
 func createAndUploadBOSHRelease() {
-	session, err := gexec.Start(
-		exec.Command(
-			"../../../../../../../ci/docker/main-bosh-docker/create-and-upload-release.sh",
-		),
-		GinkgoWriter,
-		GinkgoWriter,
+	cmd := exec.Command(
+		fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/create-and-upload-release.sh"),
 	)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
+
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+	Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 }
 
 func stopInnerBosh() {
