@@ -9,7 +9,6 @@ image_resource:
 
 inputs:
   - name: bosh-src
-  - name: bbl-state
   - name: stemcell
   - name: zookeeper-release
 

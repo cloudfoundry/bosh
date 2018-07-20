@@ -28,6 +28,7 @@ groups:
       - bbr-ubuntu-xenial
       - upgrade-tests
       - blobstore-performance
+      - deploy-acceptance-env
       - delivery
 
   - name: mysql
@@ -1108,6 +1109,34 @@ jobs:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
 
+  - name: deploy-acceptance-env
+    plan:
+      - aggregate:
+        - get: zookeeper-release
+        - get: stemcell
+          resource: google-kvm-ubuntu-xenial
+        - get: bosh-src
+          version: every
+          trigger: true
+          # passed:
+          # - bats-ubuntu-trusty
+          # - bats-ubuntu-xenial
+          # - bats-centos
+          # - brats-ubuntu-trusty
+          # - brats-ubuntu-xenial
+          # - bbr-ubuntu-trusty
+          # - bbr-ubuntu-xenial
+      - task: deploy-env
+        file: bosh-src/ci/tasks/setup-env.yml
+        params:
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((acceptance_gcp_service_account_key))
+          BBL_GCP_REGION: us-west2
+          BBL_IAAS: gcp
+        ensure:
+          put: acceptance-env-state
+          params:
+            file: updated-bbl-state/bbl-state.json
+
   - name: delivery
     plan:
       - aggregate:
@@ -1168,6 +1197,11 @@ resource_types:
   source:
     repository: ljfranklin/terraform-resource
 
+- name: gcs-resource
+  type: docker-image
+  source:
+    repository: frodenas/gcs-resource
+
 resources:
   - name: bosh-src
     type: git
@@ -1209,6 +1243,19 @@ resources:
         region_name: us-west-1
         access_key_id: ((bosh-ci-database-terraform-aws-access-key-id))
         secret_access_key: ((bosh-ci-database-terraform-aws-secret-access-key))
+
+  - name: acceptance-env-state
+    type: gcs-resource
+    source:
+      bucket: bosh-acceptance-env-state
+      json_key: ((bosh_acceptance_gcs_secret_key))
+      regexp: bbl-state\.json
+
+  - name: zookeeper-release
+    type: git
+    source:
+      uri: https://github.com/cppforlife/zookeeper-release
+      branch: master
 
   - name: davcli
     type: s3
@@ -1291,6 +1338,11 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
+
+  - name: ggoogle-kvm-ubuntu-xenial
+    type: bosh-io-stemcell
+    source:
+      name: bosh-google-kvm-ubuntu-xenial-go_agent
 
   - name: warden-ubuntu-trusty
     type: bosh-io-stemcell
