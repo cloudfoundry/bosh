@@ -211,7 +211,7 @@ var _ = Describe("BoshDns", func() {
 
 			session := outerBosh(
 				"-d",
-				"bosh",
+				innerBoshDirectorName(),
 				"ssh",
 				"-c",
 				"sudo /var/vcap/jobs/director/bin/trigger-one-time-sync-dns",

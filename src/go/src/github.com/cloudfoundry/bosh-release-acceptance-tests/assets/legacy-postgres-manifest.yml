@@ -1,5 +1,5 @@
 ---
-name: postgres
+name: ((deployment-name))
 instance_groups:
 - name: postgres
   azs: [z1]

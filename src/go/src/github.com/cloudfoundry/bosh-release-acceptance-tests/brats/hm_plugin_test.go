@@ -19,7 +19,7 @@ var _ = Describe("Health Monitor", func() {
 	})
 
 	It("runs JSON plugins", func() {
-		session := outerBosh("-d", "bosh", "ssh", "bosh", "-c", "sudo cat /tmp/log-file")
+		session := outerBosh("-d", innerBoshDirectorName(), "ssh", "bosh", "-c", "sudo cat /tmp/log-file")
 		Eventually(session, time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("this only logs if health monitor plugins run"))
 	})

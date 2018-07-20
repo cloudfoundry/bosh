@@ -57,7 +57,7 @@ var _ = Describe("Blobstore", func() {
 
 			uploadRelease(boshRelease)
 
-			session := outerBosh("-d", "bosh", "scp", fmt.Sprintf("bosh:%s", BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
+			session := outerBosh("-d", innerBoshDirectorName(), "scp", fmt.Sprintf("bosh:%s", BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
 			Eventually(session, time.Minute).Should(gexec.Exit(0))
 		})
 

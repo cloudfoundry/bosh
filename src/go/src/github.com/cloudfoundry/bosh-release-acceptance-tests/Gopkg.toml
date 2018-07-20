@@ -16,3 +16,7 @@ required = ["github.com/onsi/ginkgo/ginkgo"]
   non-go = true
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/lib/pq"

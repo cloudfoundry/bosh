@@ -22,7 +22,7 @@ var _ = Describe("director console", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 		defer ptyF.Close()
 
-		consoleCmd := exec.Command(outerBoshBinaryPath, "-d", "bosh", "ssh", "bosh")
+		consoleCmd := exec.Command(outerBoshBinaryPath, "-d", innerBoshDirectorName(), "ssh", "bosh")
 		consoleCmd.Stdin = ttyF
 		consoleCmd.Stdout = ttyF
 		consoleCmd.Stderr = ttyF

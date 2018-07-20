@@ -35,7 +35,7 @@ var _ = Describe("logging", func() {
 		session := bosh("-n", "update-config", "--type", "cpi", "--name", cpiConfigName, configPath)
 		Eventually(session, 15*time.Second).Should(gexec.Exit(0))
 
-		session = outerBosh("-d", "bosh", "ssh", "bosh", "-c", "sudo cat /var/vcap/sys/log/director/*")
+		session = outerBosh("-d", innerBoshDirectorName(), "ssh", "bosh", "-c", "sudo cat /var/vcap/sys/log/director/*")
 		Eventually(session, time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("INSERT INTO \"configs\" <redacted>"))
 		Expect(string(session.Out.Contents())).NotTo(ContainSubstring(redactable))
