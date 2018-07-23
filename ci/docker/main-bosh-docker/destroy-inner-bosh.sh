@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -e
 
 pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
   node_number=$1
