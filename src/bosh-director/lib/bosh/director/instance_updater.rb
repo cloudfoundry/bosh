@@ -9,7 +9,7 @@ module Bosh::Director
       disk_manager = DiskManager.new(logger)
       agent_broadcaster = AgentBroadcaster.new
       vm_deleter = VmDeleter.new(false, Config.enable_virtual_delete_vms)
-      dns_state_updater = DirectorDnsStateUpdater.new(dns_encoder)
+      dns_state_updater = DirectorDnsStateUpdater.new
       vm_creator = VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster)
       blobstore_client = App.instance.blobstores.blobstore
       rendered_templates_persistor = RenderedTemplatesPersister.new(blobstore_client, logger)
