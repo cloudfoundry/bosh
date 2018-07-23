@@ -12,9 +12,9 @@ main() {
 
   trap "commit_bbl_state_dir ${bbl_state_env_repo_dir} ${BBL_STATE_DIR} ${output_dir} 'Update bosh-acceptance-env environment'" EXIT
 
-  mkdir -p bbl-state
+  mkdir -p "bbl-state/${BBL_STATE_DIR}"
 
-  pushd bbl-state
+  pushd "bbl-state/${BBL_STATE_DIR}"
     bbl version
     bbl plan > bbl_plan.txt
 
