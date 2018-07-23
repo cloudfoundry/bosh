@@ -4,19 +4,29 @@ module Bosh::Director
   describe BlobstoreDnsPublisher do
     include IpUtil
 
+    subject(:dns) { BlobstoreDnsPublisher.new(-> { blobstore }, domain_name, agent_broadcaster, logger) }
+
     let(:dns_encoder) do
       DnsEncoder.new(
-        { {instance_group: 'instance1', deployment: 'test-deployment'} => '1',
-          {instance_group: 'instance4', deployment: 'test-deployment'} => '4',
-          {instance_group: 'instance2', deployment: 'test-deployment'} => '2'},
-        { 'az1' => '1', 'az2' => '2'},
-        { 'net-name1' => 1, 'net-name2' => 2, 'net-name3' => 3}
+        {
+          { instance_group: 'instance1', deployment: 'test-deployment' } => '1',
+          { instance_group: 'instance4', deployment: 'test-deployment' } => '4',
+          { instance_group: 'instance2', deployment: 'test-deployment' } => '2',
+        },
+        {
+          'az1' => '1',
+          'az2' => '2',
+        },
+        {
+          'net-name1' => 1,
+          'net-name2' => 2,
+          'net-name3' => 3,
+        }
       )
     end
-    let(:blobstore) {  instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
+    let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
-    subject(:dns) { BlobstoreDnsPublisher.new(lambda { blobstore }, domain_name, agent_broadcaster, dns_encoder, logger) }
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
 
@@ -28,6 +38,7 @@ module Bosh::Director
       allow(Config).to receive(:local_dns_include_index?).and_return(false)
       allow(agent_broadcaster).to receive(:sync_dns)
       allow(agent_broadcaster).to receive(:filter_instances)
+      allow(Bosh::Director::LocalDnsEncoderManager).to receive(:create_dns_encoder).and_return(dns_encoder)
     end
 
     describe 'publish and broadcast' do
