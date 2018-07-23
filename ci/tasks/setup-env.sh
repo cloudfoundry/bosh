@@ -1,16 +1,16 @@
 #!/bin/bash -exu
 
-save_state() {
-  local output_dir=$1
-  cp bbl-state.json "${output_dir}"
-}
-
 main() {
+  source bosh-src/ci/tasks/utils.sh
+
   local build_dir="${PWD}"
+  local bbl_state_env_repo_dir=$PWD/bbl-state
   local output_dir="$PWD/updated-bbl-state/"
   local env_assets="$PWD/bosh-src/ci/acceptance"
+  BBL_STATE_DIR=bosh-acceptance-env
+  export BBL_STATE_DIR
 
-  trap "save_state ${output_dir}" EXIT
+  trap "commit_bbl_state_dir ${bbl_state_env_repo_dir} ${BBL_STATE_DIR} ${output_dir} 'Update bosh-acceptance-env environment'" EXIT
 
   mkdir -p bbl-state
 
@@ -32,4 +32,3 @@ main() {
 }
 
 main "$@"
-
