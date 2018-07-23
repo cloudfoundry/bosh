@@ -23,7 +23,9 @@ main() {
 
     bbl --debug up
 
+    set +x
     eval "$(bbl print-env)"
+    set -x
     bosh upload-stemcell ${build_dir}/stemcell/*.tgz -n
     bosh -d zookeeper deploy --recreate ${build_dir}/zookeeper-release/manifests/zookeeper.yml -n
   popd
