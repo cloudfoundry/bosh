@@ -1,21 +1,22 @@
 #!/bin/bash -exu
 
 main() {
-  local output_dir="$PWD/updated-bbl-state/"
-
   local build_dir="${PWD}"
-  export ENV_ASSETS=$PWD/bosh-src/ci/acceptance
+  local output_dir="$PWD/updated-bbl-state/"
+  local env_assets="$PWD/bosh-src/ci/acceptance"
+
+  mkdir -p bbl-state
 
   pushd bbl-state
     bbl version
     bbl plan > bbl_plan.txt
 
     # Customize environment
-    cp $ENV_ASSETS/*.sh .
+    cp $env_assets/*.sh .
 
     bbl --debug up
 
-    cp bbl-state.json ${output_dir}
+    cp bbl-state.json "${output_dir}"
 
     eval "$(bbl print-env)"
     bosh upload-stemcell ${build_dir}/stemcell/*.tgz -n

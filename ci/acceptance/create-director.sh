@@ -13,6 +13,6 @@ bosh create-env \
   -o  ${BBL_STATE_DIR}/bosh-deployment/experimental/blobstore-https.yml \
   -o  ${BBL_STATE_DIR}/bbl-ops-files/gcp/bosh-director-ephemeral-ip-ops.yml \
   --var-file  gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}" \
-  -v  project_id="${BBL_GCP_PROJECT_ID}" \
-  -v  zone="${BBL_GCP_ZONE}" \
-  -v local_bosh_release="${BBL_STATE_DIR}/../bosh-src"
+  -v project_id="${BBL_GCP_PROJECT_ID}" \
+  -v zone="${BBL_GCP_ZONE}" \
+  -v local_bosh_release="${BBL_STATE_DIR}/../candidate-release/*.tgz"
