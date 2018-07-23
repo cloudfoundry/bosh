@@ -75,7 +75,7 @@ module Bosh::Director
         )
 
         powerdns_manager = PowerDnsManagerProvider.create
-        local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger, dns_encoder)
+        local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
         dns_names_to_ip = {}
 
         root_domain = Config.root_domain
