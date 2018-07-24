@@ -55,7 +55,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"-d", "syslog-deployment",
 					"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				)
-				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("create os-conf deployment", func() {
@@ -65,7 +65,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"-d", "os-conf-deployment",
 					"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				)
-				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("bbr creates a backup", func() {
@@ -74,7 +74,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--username", bratsutils.InnerDirectorUser(),
 					"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 					"backup")
-				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("wipe system, recreate inner director", func() {
