@@ -5,6 +5,8 @@ import (
 
 	"io/ioutil"
 
+	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -17,21 +19,21 @@ var _ = Describe("Director external database TLS connections", func() {
 
 		defer os.RemoveAll(tmpCertDir)
 
-		dbConfig := loadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
+		dbConfig := bratsutils.LoadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
 
-		cleanupDB(dbConfig)
+		bratsutils.CleanupDB(dbConfig)
 
 		if useIncorrectCA {
-			dbConfig.CACertPath = assetPath("external_db/invalid_ca_cert.pem")
+			dbConfig.CACertPath = bratsutils.AssetPath("external_db/invalid_ca_cert.pem")
 		}
 
-		startInnerBoshArgs := innerBoshWithExternalDBOptions(dbConfig)
+		startInnerBoshArgs := bratsutils.InnerBoshWithExternalDBOptions(dbConfig)
 
 		if useIncorrectCA {
-			startInnerBoshWithExpectation(true, "Error: 'bosh/[0-9a-f]{8}-[0-9a-f-]{27} \\(0\\)' is not running after update", startInnerBoshArgs...)
+			bratsutils.StartInnerBoshWithExpectation(true, "Error: 'bosh/[0-9a-f]{8}-[0-9a-f-]{27} \\(0\\)' is not running after update", startInnerBoshArgs...)
 		} else {
-			startInnerBosh(startInnerBoshArgs...)
-			uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			bratsutils.StartInnerBosh(startInnerBoshArgs...)
+			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 		}
 	}
 

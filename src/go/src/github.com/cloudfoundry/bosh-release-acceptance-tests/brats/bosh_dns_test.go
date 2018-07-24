@@ -8,11 +8,14 @@ import (
 	"strings"
 	"time"
 
+	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
+
+const deploymentName = "dns-with-templates"
 
 func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string {
 	out := map[string][]string{
@@ -30,7 +33,7 @@ func extractAzIpsMap(regex *regexp.Regexp, contents string) map[string][]string 
 }
 
 func mustGetLatestDnsVersions() []int {
-	session := bosh("-n", "-d", deploymentName, "ssh",
+	session := bratsutils.Bosh("-n", "-d", deploymentName, "ssh",
 		"-c", "sudo cat /var/vcap/instance/dns/records.json",
 	)
 	Eventually(session, time.Minute).Should(gexec.Exit(0))
@@ -67,23 +70,23 @@ var _ = Describe("BoshDns", func() {
 	)
 
 	BeforeEach(func() {
-		startInnerBosh()
+		bratsutils.StartInnerBosh()
 
-		uploadStemcell(candidateWardenLinuxStemcellPath)
+		bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
-		manifestPath = assetPath("dns-with-templates-manifest.yml")
-		linkedTemplateReleasePath = assetPath("linked-templates-release")
+		manifestPath = bratsutils.AssetPath("dns-with-templates-manifest.yml")
+		linkedTemplateReleasePath = bratsutils.AssetPath("linked-templates-release")
 	})
 
 	Context("having enabled short dns addresses", func() {
 		BeforeEach(func() {
-			opFilePath := assetPath("op-enable-short-dns-addresses.yml")
+			opFilePath := bratsutils.AssetPath("op-enable-short-dns-addresses.yml")
 
-			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+			session := bratsutils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
-				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 				"--vars-store", "creds.yml",
 			)
@@ -91,7 +94,7 @@ var _ = Describe("BoshDns", func() {
 		})
 
 		It("can find instances using the address helper with short names", func() {
-			session := bosh("-n", "-d", deploymentName, "instances",
+			session := bratsutils.Bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
@@ -103,7 +106,7 @@ var _ = Describe("BoshDns", func() {
 			matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
 			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-			session = bosh("-d", deploymentName, "run-errand", "query-all")
+			session = bratsutils.Bosh("-d", deploymentName, "run-errand", "query-all")
 			Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 			Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
@@ -118,7 +121,7 @@ var _ = Describe("BoshDns", func() {
 		})
 
 		It("can find instances using the address helper with short names by network and instance ID", func() {
-			session := bosh("-n", "-d", deploymentName, "instances",
+			session := bratsutils.Bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
@@ -130,7 +133,7 @@ var _ = Describe("BoshDns", func() {
 			matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
 			knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-			session = bosh("-d", deploymentName, "run-errand", "query-individual-instance")
+			session = bratsutils.Bosh("-d", deploymentName, "run-errand", "query-individual-instance")
 			Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 			Expect(session.Out).To(gbytes.Say("ANSWER: 1"))
@@ -145,10 +148,10 @@ var _ = Describe("BoshDns", func() {
 
 	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
-			session := bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+			session := bratsutils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
-				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 				"--vars-store", "creds.yml",
 			)
@@ -156,7 +159,7 @@ var _ = Describe("BoshDns", func() {
 		})
 
 		It("can find instances using the address helper", func() {
-			session := bosh("-n", "-d", deploymentName, "instances",
+			session := bratsutils.Bosh("-n", "-d", deploymentName, "instances",
 				"--column", "instance",
 				"--column", "az",
 				"--column", "ips",
@@ -169,7 +172,7 @@ var _ = Describe("BoshDns", func() {
 				matchExpression := regexp.MustCompile(`provider\S+\s+(z1|z2)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-				session = bosh("-d", deploymentName, "run-errand", "query-all")
+				session = bratsutils.Bosh("-d", deploymentName, "run-errand", "query-all")
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 3"))
@@ -186,7 +189,7 @@ var _ = Describe("BoshDns", func() {
 				matchExpression := regexp.MustCompile(`provider\S+\s+(z1)\s+(\S+)`)
 				knownProviders := extractAzIpsMap(matchExpression, string(instanceList))
 
-				session = bosh("-d", deploymentName, "run-errand", "query-with-az-filter")
+				session = bratsutils.Bosh("-d", deploymentName, "run-errand", "query-with-az-filter")
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
 				Expect(session.Out).To(gbytes.Say("ANSWER: 2"))
@@ -209,9 +212,9 @@ var _ = Describe("BoshDns", func() {
 				}
 			}
 
-			session := outerBosh(
+			session := bratsutils.OuterBosh(
 				"-d",
-				innerBoshDirectorName(),
+				bratsutils.InnerBoshDirectorName(),
 				"ssh",
 				"-c",
 				"sudo /var/vcap/jobs/director/bin/trigger-one-time-sync-dns",

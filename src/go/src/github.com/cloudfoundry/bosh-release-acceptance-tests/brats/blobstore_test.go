@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -18,18 +19,18 @@ var _ = Describe("Blobstore", func() {
 	Context("SSL", func() {
 		testDeployment := func(allowHttp bool, schema string, errorCode int) {
 			By(fmt.Sprintf("specifying blobstore.allow_http (%v) and agent.env.bosh.blobstores (%v)", allowHttp, schema))
-			startInnerBosh(
-				fmt.Sprintf("-o %s", assetPath("op-blobstore-https.yml")),
+			bratsutils.StartInnerBosh(
+				fmt.Sprintf("-o %s", bratsutils.AssetPath("op-blobstore-https.yml")),
 				fmt.Sprintf("-v allow_http=%t", allowHttp),
-				fmt.Sprintf("-v agent_blobstore_endpoint=%s://%s:25250", schema, innerDirectorIP),
+				fmt.Sprintf("-v agent_blobstore_endpoint=%s://%s:25250", schema, bratsutils.InnerDirectorIP()),
 			)
 
-			uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
-			uploadStemcell(candidateWardenLinuxStemcellPath)
+			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
-			session := bosh("-n", "deploy", assetPath("syslog-manifest.yml"),
+			session := bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
 				"-d", "syslog-deployment",
-				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 			)
 			Eventually(session, 3*time.Minute).Should(gexec.Exit(errorCode))
 		}
@@ -49,15 +50,15 @@ var _ = Describe("Blobstore", func() {
 		var tempBlobstoreDir string
 
 		BeforeEach(func() {
-			startInnerBosh()
+			bratsutils.StartInnerBosh()
 
 			var err error
 			tempBlobstoreDir, err = ioutil.TempDir(os.TempDir(), "blobstore_access")
 			Expect(err).ToNot(HaveOccurred())
 
-			uploadRelease(boshRelease)
+			bratsutils.UploadRelease(boshRelease)
 
-			session := outerBosh("-d", innerBoshDirectorName(), "scp", fmt.Sprintf("bosh:%s", BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
+			session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "scp", fmt.Sprintf("bosh:%s", BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
 			Eventually(session, time.Minute).Should(gexec.Exit(0))
 		})
 

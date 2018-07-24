@@ -3,6 +3,7 @@ package brats_test
 import (
 	"fmt"
 
+	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -14,7 +15,7 @@ import (
 
 var _ = Describe("Legacy Stemcells", func() {
 	BeforeEach(func() {
-		startInnerBosh()
+		bratsutils.StartInnerBosh()
 	})
 
 	testStemcellDeploy := func(stemcellVersion string) {
@@ -23,11 +24,11 @@ var _ = Describe("Legacy Stemcells", func() {
 			stemcellVersion,
 		)
 
-		uploadStemcell(stemcellUrl)
-		uploadRelease("https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=12")
+		bratsutils.UploadStemcell(stemcellUrl)
+		bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=12")
 
 		By("Deploying successfully")
-		session := bosh("-n", "deploy", assetPath("os-conf-manifest.yml"),
+		session := bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("os-conf-manifest.yml"),
 			"-d", "os-conf-deployment",
 			"-v", "stemcell-os=ubuntu-trusty",
 		)

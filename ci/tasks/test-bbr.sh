@@ -42,32 +42,41 @@ export DOCKER_CERTS
 DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 export DOCKER_HOST
 
+
+bosh -n update-cloud-config \
+  "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
+  -o "${src_dir}/bosh-src/ci/docker/main-bosh-docker/outer-cloud-config-ops.yml" \
+  -v network=director_network
+
+bosh -n upload-stemcell $CANDIDATE_STEMCELL_TARBALL_PATH
+
 apt-get update
 apt-get install -y mysql-client
 apt-get install -y postgresql-client
-apt-get install -y jq
 
-RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
-RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
-GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
-GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
-GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .mysql_ca_cert gcp-ssl-config/gcp_mysql.yml)"
-GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .mysql_client_cert gcp-ssl-config/gcp_mysql.yml)"
-GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .mysql_client_key gcp-ssl-config/gcp_mysql.yml)"
-GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .postgres_ca_cert gcp-ssl-config/gcp_postgres.yml)"
-GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .postgres_client_cert gcp-ssl-config/gcp_postgres.yml)"
-GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .postgres_client_key gcp-ssl-config/gcp_postgres.yml)"
+if [ -d database-metadata ]; then
+  RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
+  RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
+  GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
+  GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
+  GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .mysql_ca_cert gcp-ssl-config/gcp_mysql.yml)"
+  GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .mysql_client_cert gcp-ssl-config/gcp_mysql.yml)"
+  GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .mysql_client_key gcp-ssl-config/gcp_mysql.yml)"
+  GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .postgres_ca_cert gcp-ssl-config/gcp_postgres.yml)"
+  GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .postgres_client_cert gcp-ssl-config/gcp_postgres.yml)"
+  GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .postgres_client_key gcp-ssl-config/gcp_postgres.yml)"
 
-export RDS_MYSQL_EXTERNAL_DB_HOST
-export RDS_POSTGRES_EXTERNAL_DB_HOST
-export GCP_MYSQL_EXTERNAL_DB_HOST
-export GCP_POSTGRES_EXTERNAL_DB_HOST
-export GCP_MYSQL_EXTERNAL_DB_CA
-export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE
-export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY
-export GCP_POSTGRES_EXTERNAL_DB_CA
-export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE
-export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+  export RDS_MYSQL_EXTERNAL_DB_HOST
+  export RDS_POSTGRES_EXTERNAL_DB_HOST
+  export GCP_MYSQL_EXTERNAL_DB_HOST
+  export GCP_POSTGRES_EXTERNAL_DB_HOST
+  export GCP_MYSQL_EXTERNAL_DB_CA
+  export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE
+  export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+  export GCP_POSTGRES_EXTERNAL_DB_CA
+  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE
+  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+fi
 
 cd bosh-src
 scripts/test-bbr
