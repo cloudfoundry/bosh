@@ -1119,7 +1119,6 @@ jobs:
         - get: stemcell
           resource: google-kvm-ubuntu-trusty
         - get: bosh-src
-          version: every
           passed:
           - bats-ubuntu-trusty
           - bats-ubuntu-xenial
@@ -1148,7 +1147,8 @@ jobs:
         ensure:
           put: acceptance-env-state
           params:
-            file: updated-bbl-state/bbl-state.json
+            repository: updated-bbl-state
+            rebase: true
 
   - name: delivery
     plan:
@@ -1258,11 +1258,11 @@ resources:
         secret_access_key: ((bosh-ci-database-terraform-aws-secret-access-key))
 
   - name: acceptance-env-state
-    type: gcs-resource
+    type: git
     source:
-      bucket: bosh-acceptance-env-state
-      json_key: ((bosh_acceptance_gcs_secret_key))
-      versioned_file: bbl-state.json
+      branch: master
+      uri: git@github.com:cloudfoundry/bosh-bbl-ci-envs.git
+      private_key: ((bosh-bbl-ci-envs-private-key))
 
   - name: zookeeper-release
     type: git
