@@ -28,8 +28,8 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
 
   export BOSH_DIRECTOR_IP="10.245.0.$((10+$node_number))"
 
-  bosh upload-release "$(bosh int bosh.yml --path /releases/name=bpm/url)" \
-    --sha1 "$(bosh int bosh.yml --path /releases/name=bpm/sha1)"
+  bosh upload-release "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/url)" \
+    --sha1 "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/sha1)"
   bosh upload-release "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/url)" \
     --sha1 "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/sha1)"
   bosh upload-release "$(bosh int bosh.yml -o bbr.yml --path /releases/name=backup-and-restore-sdk/url)" \
