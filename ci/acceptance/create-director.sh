@@ -15,4 +15,4 @@ bosh create-env \
   --var-file  gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}" \
   -v project_id="${BBL_GCP_PROJECT_ID}" \
   -v zone="${BBL_GCP_ZONE}" \
-  -v local_bosh_release="$(echo ${BBL_STATE_DIR}/../candidate-release/*.tgz)"
+  -v local_bosh_release="$(echo ${BBL_STATE_DIR}/../../candidate-release/*.tgz)"
