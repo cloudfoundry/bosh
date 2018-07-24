@@ -132,7 +132,7 @@ func cleanupMySQL(dbConfig ExternalDBConfig) {
 		fmt.Sprintf("--user=%s", dbConfig.User),
 		fmt.Sprintf("--password=%s", dbConfig.Password),
 		"-e",
-		fmt.Sprintf("drop database %s; create database %s;", dbConfig.DBName, dbConfig.DBName),
+		fmt.Sprintf("drop database if exists %s; create database %s;", dbConfig.DBName, dbConfig.DBName),
 		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
 	}
 
@@ -170,7 +170,7 @@ func cleanupPostgres(dbConfig ExternalDBConfig) {
 	args := []string{
 		connstring,
 		"-c",
-		fmt.Sprintf("drop database %s;", dbConfig.DBName),
+		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
 	}
 
 	session := ExecCommand("psql", args...)
