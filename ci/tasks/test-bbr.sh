@@ -51,8 +51,7 @@ bosh -n update-cloud-config \
 bosh -n upload-stemcell $CANDIDATE_STEMCELL_TARBALL_PATH
 
 apt-get update
-apt-get install -y mysql-client
-apt-get install -y postgresql-client
+apt-get install -y mysql-client postgresql-client
 
 if [ -d database-metadata ]; then
   RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
