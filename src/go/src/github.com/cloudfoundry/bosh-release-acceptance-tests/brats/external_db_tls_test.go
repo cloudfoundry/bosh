@@ -13,7 +13,7 @@ import (
 )
 
 var _ = Describe("Director external database TLS connections", func() {
-	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useIncorrectCA bool) {
+	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool) {
 		tmpCertDir, err := ioutil.TempDir("", "db_tls")
 		Expect(err).ToNot(HaveOccurred())
 		dbConfig := bratsutils.LoadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
