@@ -16,13 +16,10 @@ var _ = Describe("Director external database TLS connections", func() {
 	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useIncorrectCA bool) {
 		tmpCertDir, err := ioutil.TempDir("", "db_tls")
 		Expect(err).ToNot(HaveOccurred())
-
-		defer os.RemoveAll(tmpCertDir)
-
 		dbConfig := bratsutils.LoadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
-
 		bratsutils.CreateDB(dbConfig)
 		defer bratsutils.DeleteDB(dbConfig)
+		defer os.RemoveAll(tmpCertDir)
 
 		if useIncorrectCA {
 			dbConfig.CACertPath = bratsutils.AssetPath("external_db/invalid_ca_cert.pem")

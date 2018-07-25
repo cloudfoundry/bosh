@@ -32,7 +32,7 @@ var _ = Describe("Blobstore", func() {
 				"-d", "syslog-deployment",
 				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 			)
-			Eventually(session, 3*time.Minute).Should(gexec.Exit(errorCode))
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(errorCode))
 		}
 
 		DescribeTable("with allow_http true", testDeployment,

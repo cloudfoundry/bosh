@@ -28,8 +28,6 @@ stemcells:
 releases:
 - name: bosh
   version: "261.5"
-  url: https://bosh.io/d/github.com/cloudfoundry/bosh?v=261.5
-  sha1: 14cc92601a746e41e9b1fc1e27f94099b51426ce
 
 update:
   canaries: 1

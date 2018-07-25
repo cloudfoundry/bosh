@@ -23,9 +23,14 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 		backupDir             []string
 		startInnerBoshOptions []string
 		dbConfig              bratsutils.ExternalDBConfig
+		tmpCertDir            string
 	)
 
 	BeforeEach(func() {
+		var err error
+		tmpCertDir, err = ioutil.TempDir("", "db_tls")
+		Expect(err).ToNot(HaveOccurred())
+
 		startInnerBoshOptions = []string{
 			fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("bbr.yml")),
 			fmt.Sprintf("-o %s", bratsutils.AssetPath("latest-bbr-release.yml")),
@@ -37,11 +42,12 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	})
 
 	AfterEach(func() {
+		bratsutils.DeleteDB(dbConfig)
+		os.RemoveAll(tmpCertDir)
 		for _, dir := range backupDir {
 			err := os.RemoveAll(dir)
 			Expect(err).ToNot(HaveOccurred())
 		}
-		bratsutils.DeleteDB(dbConfig)
 	})
 
 	Context("database backup", func() {
@@ -126,7 +132,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"-d", "os-conf-deployment",
 					"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				)
-				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("validate deployments", func() {
@@ -164,7 +170,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				)
 
-				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("bbr creates a backup", func() {
@@ -200,7 +206,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				session = bratsutils.Bosh("-n", "-d", "syslog-deployment", "cck", "--report")
-				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("validate deployment. instance actually ran the jobs", func() {
@@ -243,7 +249,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 					By("deleting the deployment (whoops)", func() {
 						session := bratsutils.Bosh("-n", "delete-deployment", "-d", "syslog-deployment", "--force")
-						Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+						Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 					})
 
 					By("restore inner director from backup", func() {
@@ -272,20 +278,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			}
 
 			Context("RDS", func() {
-				var (
-					tmpCertDir string
-					err        error
-				)
-
-				BeforeEach(func() {
-					tmpCertDir, err = ioutil.TempDir("", "db_tls")
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(tmpCertDir)
-				})
-
 				Context("Mysql", func() {
 					BeforeEach(func() {
 						dbConfig = bratsutils.LoadExternalDBConfig("rds_mysql", false, tmpCertDir)
@@ -310,21 +302,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			Context("Google Cloud SQL", func() {
-				var (
-					tmpCertDir string
-					err        error
-				)
-
-				BeforeEach(func() {
-					tmpCertDir, err = ioutil.TempDir("", "db_tls")
-					Expect(err).ToNot(HaveOccurred())
-
-				})
-
-				AfterEach(func() {
-					os.RemoveAll(tmpCertDir)
-				})
-
 				Context("Mysql", func() {
 					BeforeEach(func() {
 						dbConfig = bratsutils.LoadExternalDBConfig("gcp_mysql", true, tmpCertDir)

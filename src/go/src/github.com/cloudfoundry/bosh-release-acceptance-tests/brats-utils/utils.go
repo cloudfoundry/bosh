@@ -137,7 +137,7 @@ func deleteMySQL(dbConfig ExternalDBConfig) {
 		fmt.Sprintf("--user=%s", dbConfig.User),
 		fmt.Sprintf("--password=%s", dbConfig.Password),
 		"-e",
-		fmt.Sprintf("drop database if exists %s", dbConfig.DBName),
+		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
 		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
 	}
 

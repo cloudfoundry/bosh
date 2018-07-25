@@ -30,9 +30,7 @@ releases:
 - name: bosh
   version: latest
 - name: bpm
-  url: https://bosh.io/d/github.com/cloudfoundry-incubator/bpm-release?v=0.2.0
-  sha1: f2bd126b17b3591160f501d88d79ccf0aba1ae54
-  version: "0.2.0"
+  version: latest
 
 update:
   canaries: 1

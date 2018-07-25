@@ -32,7 +32,7 @@ var _ = Describe("Legacy Stemcells", func() {
 			"-d", "os-conf-deployment",
 			"-v", "stemcell-os=ubuntu-trusty",
 		)
-		Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
+		Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 	}
 
 	DescribeTable("Stemcells without NATS TLS support", testStemcellDeploy,
