@@ -17,6 +17,13 @@ popd > /dev/null
 
 bosh upload-release ${bosh_release_path} --name=bosh
 
+
+pushd "${src_dir}/src/go/src/github.com/cloudfoundry/bosh-release-acceptance-tests/assets/linked-templates-release" > /dev/null
+  if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
+    bosh create-release --tarball release.tgz
+  fi
+popd > /dev/null
+
 pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
   inner_bosh_dir="/tmp/inner-bosh/director/$node_number"
   node_number=$1

@@ -3,6 +3,7 @@ package brats_test
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -75,7 +76,7 @@ var _ = Describe("BoshDns", func() {
 		bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
 		manifestPath = bratsutils.AssetPath("dns-with-templates-manifest.yml")
-		linkedTemplateReleasePath = bratsutils.AssetPath("linked-templates-release")
+		linkedTemplateReleasePath = filepath.Join(bratsutils.AssetPath("linked-templates-release"), "release.tgz")
 	})
 
 	Context("having enabled short dns addresses", func() {

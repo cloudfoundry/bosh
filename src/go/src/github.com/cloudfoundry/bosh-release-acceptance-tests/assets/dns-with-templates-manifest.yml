@@ -39,7 +39,7 @@ releases:
   version: latest
   url: file://((dns-release-path))
 - name: linked-template-release
-  version: create
+  version: latest
   url: file://((linked-template-release-path))
 
 stemcells:
