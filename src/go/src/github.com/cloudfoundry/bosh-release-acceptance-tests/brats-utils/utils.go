@@ -18,6 +18,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	mysqlDBType    = "mysql"
+	postgresDBType = "postgres"
+)
+
 type ExternalDBConfig struct {
 	Host     string
 	Type     string
@@ -61,10 +66,10 @@ func Bootstrap() {
 
 func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string) ExternalDBConfig {
 	var databaseType string
-	if strings.HasSuffix(DBaaS, "mysql") {
-		databaseType = "mysql"
+	if strings.HasSuffix(DBaaS, mysqlDBType) {
+		databaseType = mysqlDBType
 	} else {
-		databaseType = "postgres"
+		databaseType = postgresDBType
 	}
 
 	config := ExternalDBConfig{
@@ -117,15 +122,75 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 	return config
 }
 
-func CleanupDB(dbConfig ExternalDBConfig) {
-	if dbConfig.Type == "mysql" {
-		cleanupMySQL(dbConfig)
-	} else if dbConfig.Type == "postgres" {
-		cleanupPostgres(dbConfig)
+func DeleteDB(dbConfig ExternalDBConfig) {
+	if dbConfig.Type == mysqlDBType {
+		deleteMySQL(dbConfig)
+	} else if dbConfig.Type == postgresDBType {
+		deletePostgres(dbConfig)
 	}
 }
 
-func cleanupMySQL(dbConfig ExternalDBConfig) {
+func deleteMySQL(dbConfig ExternalDBConfig) {
+	args := []string{
+		"-h",
+		dbConfig.Host,
+		fmt.Sprintf("--user=%s", dbConfig.User),
+		fmt.Sprintf("--password=%s", dbConfig.Password),
+		"-e",
+		fmt.Sprintf("drop database if exists %s", dbConfig.DBName),
+		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
+	}
+
+	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
+		args = append(args,
+			fmt.Sprintf("--ssl-cert=%s", dbConfig.ClientCertPath),
+			fmt.Sprintf("--ssl-key=%s", dbConfig.ClientKeyPath),
+			"--ssl-mode=VERIFY_CA",
+		)
+	} else {
+		args = append(args, "--ssl-mode=VERIFY_IDENTITY")
+	}
+
+	session := ExecCommand(mysqlDBType, args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func deletePostgres(dbConfig ExternalDBConfig) {
+	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
+		dbConfig.Host,
+		dbConfig.User,
+		dbConfig.Password,
+		dbConfig.CACertPath,
+	)
+
+	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
+		connstring += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
+			dbConfig.ClientCertPath,
+			dbConfig.ClientKeyPath,
+		)
+	} else {
+		connstring += "sslmode=verify-full "
+	}
+
+	args := []string{
+		connstring,
+		"-c",
+		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
+	}
+
+	session := ExecCommand("psql", args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func CreateDB(dbConfig ExternalDBConfig) {
+	if dbConfig.Type == mysqlDBType {
+		createMySQL(dbConfig)
+	} else if dbConfig.Type == postgresDBType {
+		createPostgres(dbConfig)
+	}
+}
+
+func createMySQL(dbConfig ExternalDBConfig) {
 	args := []string{
 		"-h",
 		dbConfig.Host,
@@ -146,11 +211,11 @@ func cleanupMySQL(dbConfig ExternalDBConfig) {
 		args = append(args, "--ssl-mode=VERIFY_IDENTITY")
 	}
 
-	session := ExecCommand("mysql", args...)
+	session := ExecCommand(mysqlDBType, args...)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
-func cleanupPostgres(dbConfig ExternalDBConfig) {
+func createPostgres(dbConfig ExternalDBConfig) {
 	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
 		dbConfig.Host,
 		dbConfig.User,

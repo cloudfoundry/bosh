@@ -22,6 +22,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	var (
 		backupDir             []string
 		startInnerBoshOptions []string
+		dbConfig              bratsutils.ExternalDBConfig
 	)
 
 	BeforeEach(func() {
@@ -40,6 +41,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			err := os.RemoveAll(dir)
 			Expect(err).ToNot(HaveOccurred())
 		}
+		bratsutils.DeleteDB(dbConfig)
 	})
 
 	Context("database backup", func() {
@@ -270,8 +272,10 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			}
 
 			Context("RDS", func() {
-				var tmpCertDir string
-				var err error
+				var (
+					tmpCertDir string
+					err        error
+				)
 
 				BeforeEach(func() {
 					tmpCertDir, err = ioutil.TempDir("", "db_tls")
@@ -284,8 +288,8 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				Context("Mysql", func() {
 					BeforeEach(func() {
-						dbConfig := bratsutils.LoadExternalDBConfig("rds_mysql", false, tmpCertDir)
-						bratsutils.CleanupDB(dbConfig)
+						dbConfig = bratsutils.LoadExternalDBConfig("rds_mysql", false, tmpCertDir)
+						bratsutils.CreateDB(dbConfig)
 
 						startInnerBoshOptions = append(startInnerBoshOptions, bratsutils.InnerBoshWithExternalDBOptions(dbConfig)...)
 					})
@@ -295,8 +299,8 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				Context("Postgres", func() {
 					BeforeEach(func() {
-						dbConfig := bratsutils.LoadExternalDBConfig("rds_postgres", false, tmpCertDir)
-						bratsutils.CleanupDB(dbConfig)
+						dbConfig = bratsutils.LoadExternalDBConfig("rds_postgres", false, tmpCertDir)
+						bratsutils.CreateDB(dbConfig)
 
 						startInnerBoshOptions = append(startInnerBoshOptions, bratsutils.InnerBoshWithExternalDBOptions(dbConfig)...)
 					})
@@ -306,8 +310,10 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			Context("Google Cloud SQL", func() {
-				var tmpCertDir string
-				var err error
+				var (
+					tmpCertDir string
+					err        error
+				)
 
 				BeforeEach(func() {
 					tmpCertDir, err = ioutil.TempDir("", "db_tls")
@@ -321,10 +327,13 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				Context("Mysql", func() {
 					BeforeEach(func() {
-						dbConfig := bratsutils.LoadExternalDBConfig("gcp_mysql", true, tmpCertDir)
-						bratsutils.CleanupDB(dbConfig)
+						dbConfig = bratsutils.LoadExternalDBConfig("gcp_mysql", true, tmpCertDir)
+						bratsutils.CreateDB(dbConfig)
 
 						startInnerBoshOptions = append(startInnerBoshOptions, bratsutils.InnerBoshWithExternalDBOptions(dbConfig)...)
+					})
+
+					AfterEach(func() {
 					})
 
 					backUpAndRestores()
@@ -332,8 +341,8 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 				Context("Postgres", func() {
 					BeforeEach(func() {
-						dbConfig := bratsutils.LoadExternalDBConfig("gcp_postgres", true, tmpCertDir)
-						bratsutils.CleanupDB(dbConfig)
+						dbConfig = bratsutils.LoadExternalDBConfig("gcp_postgres", true, tmpCertDir)
+						bratsutils.CreateDB(dbConfig)
 
 						startInnerBoshOptions = append(startInnerBoshOptions, bratsutils.InnerBoshWithExternalDBOptions(dbConfig)...)
 					})
