@@ -6,9 +6,9 @@ module Bosh::Dev::Sandbox
 
     S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/config-server-releases'
 
-    CONFIG_SERVER_VERSION = "0.0.134"
-    DARWIN_CONFIG_SERVER_SHA256 = '1b8e57100176ce830d83cd2ad040816ccf9406624431f6fd18abb705d5d0cd96'
-    LINUX_CONFIG_SERVER_SHA256 = 'd899a9ef1e046eed197efd2732e6ed681c2d4180937b8196c51d0a035b3c7b55'
+    CONFIG_SERVER_VERSION = '0.1.1'.freeze
+    DARWIN_CONFIG_SERVER_SHA256 = '422f4d709ff98da2c9bd1df014a29eafdde8e1ddf9bf22a1d8dd92fc3f8668a2'.freeze
+    LINUX_CONFIG_SERVER_SHA256 = '2ab9aeb71fe5284c7641a41b015318df99f5c7d056f3bc88ba2a39252f75e161'.freeze
 
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
