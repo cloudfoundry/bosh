@@ -388,7 +388,7 @@ module Bosh::Director::Links
             provider_intent_networks = JSON.parse(content)['networks']
 
             if link_network && !provider_intent_networks.include?(link_network)
-              error_msg_string = "Consumer '#{consumer_intent.name}' from job '#{consumer.name}' "\
+              error_msg_string = "Provider '#{consumer_intent.name}' from job '#{consumer.name}' "\
                 "#{"in instance group '#{consumer.instance_group}'" unless consumer.instance_group.empty?} "\
                 "in deployment '#{current_deployment_name}' does not belong to network '#{link_network}'"
               raise Bosh::Director::DeploymentInvalidLink, error_msg_string
