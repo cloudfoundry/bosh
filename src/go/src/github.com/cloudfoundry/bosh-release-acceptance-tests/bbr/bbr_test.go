@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
@@ -101,9 +100,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("restore inner director from backup", func() {
-				var err error
-				backupDir, err = filepath.Glob(fmt.Sprintf("%d_%s_*", config.GinkgoConfig.ParallelNode, bratsutils.InnerDirectorIP()))
-				Expect(err).NotTo(HaveOccurred())
+				backupDir = getBackupDir()
 				Expect(backupDir).To(HaveLen(1))
 
 				session := bbr("director",
@@ -188,9 +185,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"ssh", "bosh", "sudo rm -rf /var/vcap/store/blobstore/*")
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
-				var err error
-				backupDir, err = filepath.Glob(fmt.Sprintf("%d_%s_*", config.GinkgoConfig.ParallelNode, bratsutils.InnerDirectorIP()))
-				Expect(err).NotTo(HaveOccurred())
+				backupDir = getBackupDir()
 				Expect(backupDir).To(HaveLen(1))
 
 				session = bbr("director",
@@ -254,9 +249,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					})
 
 					By("restore inner director from backup", func() {
-						var err error
-						backupDir, err = filepath.Glob(fmt.Sprintf("%d_%s_*", config.GinkgoConfig.ParallelNode, bratsutils.InnerDirectorIP()))
-						Expect(err).NotTo(HaveOccurred())
+						backupDir = getBackupDir()
 						Expect(backupDir).To(HaveLen(1))
 
 						session := bbr("director",
@@ -344,9 +337,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				})
 
 				By("Restore deployment", func() {
-					var err error
-					backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", bratsutils.InnerDirectorIP()))
-					Expect(err).NotTo(HaveOccurred())
+					backupDir = getBackupDir()
 					Expect(backupDir).To(HaveLen(1))
 
 					session := bbr("director",
@@ -391,9 +382,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				})
 
 				By("Restore deployment", func() {
-					var err error
-					backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", bratsutils.InnerDirectorIP()))
-					Expect(err).NotTo(HaveOccurred())
+					backupDir = getBackupDir()
 					Expect(backupDir).To(HaveLen(1))
 
 					session := bbr("director",
@@ -417,10 +406,16 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	})
 })
 
+func getBackupDir() []string {
+	backupDir, err := filepath.Glob(fmt.Sprintf("%s_*", bratsutils.InnerDirectorIP()))
+	Expect(err).NotTo(HaveOccurred())
+	return backupDir
+}
+
 func waitForBoshDirectorUp(boshBinaryPath string) {
 	Eventually(func() *gexec.Session {
 		session := bratsutils.Bosh("env")
-		session.Wait()
+		session.Wait(time.Minute)
 		return session
 	}, 5*time.Minute, 2*time.Second).Should(gexec.Exit(0))
 }

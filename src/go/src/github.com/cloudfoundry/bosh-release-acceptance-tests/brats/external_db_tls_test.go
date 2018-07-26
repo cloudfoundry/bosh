@@ -38,17 +38,6 @@ var _ = Describe("Director external database TLS connections", func() {
 	})
 
 	Context("GCP", func() {
-		Context("Regular TLS", func() {
-			Context("With valid CA", func() {
-				var mutualTLSEnabled = false
-
-				DescribeTable("DB Connections", testDBConnectionOverTLS,
-					Entry("allows TLS connections to MYSQL", "gcp_mysql", mutualTLSEnabled),
-					Entry("allows TLS connections to POSTGRES", "gcp_postgres", mutualTLSEnabled),
-				)
-			})
-		})
-
 		Context("Mutual TLS", func() {
 			var mutualTLSEnabled = true
 
