@@ -22,7 +22,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	var (
 		backupDir             []string
 		startInnerBoshOptions []string
-		dbConfig              bratsutils.ExternalDBConfig
+		dbConfig              *bratsutils.ExternalDBConfig
 		tmpCertDir            string
 	)
 
@@ -30,6 +30,8 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 		var err error
 		tmpCertDir, err = ioutil.TempDir("", "db_tls")
 		Expect(err).ToNot(HaveOccurred())
+
+		dbConfig = nil
 
 		startInnerBoshOptions = []string{
 			fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("bbr.yml")),
@@ -48,7 +50,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 		}
 		bratsutils.StopInnerBosh()
 		bratsutils.DeleteDB(dbConfig)
-		os.RemoveAll(tmpCertDir)
 	})
 
 	Context("database backup", func() {
@@ -303,9 +304,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 						bratsutils.CreateDB(dbConfig)
 
 						startInnerBoshOptions = append(startInnerBoshOptions, bratsutils.InnerBoshWithExternalDBOptions(dbConfig)...)
-					})
-
-					AfterEach(func() {
 					})
 
 					backUpAndRestores()

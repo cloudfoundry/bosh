@@ -64,7 +64,7 @@ func Bootstrap() {
 	AssertEnvExists("BOSH_DEPLOYMENT_PATH")
 }
 
-func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string) ExternalDBConfig {
+func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string) *ExternalDBConfig {
 	var databaseType string
 	if strings.HasSuffix(DBaaS, mysqlDBType) {
 		databaseType = mysqlDBType
@@ -119,10 +119,14 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 		config.ClientKeyPath = clientKeyFile.Name()
 	}
 
-	return config
+	return &config
 }
 
-func DeleteDB(dbConfig ExternalDBConfig) {
+func DeleteDB(dbConfig *ExternalDBConfig) {
+	if dbConfig == nil {
+		return
+	}
+
 	if dbConfig.Type == mysqlDBType {
 		deleteMySQL(dbConfig)
 	} else if dbConfig.Type == postgresDBType {
@@ -130,7 +134,7 @@ func DeleteDB(dbConfig ExternalDBConfig) {
 	}
 }
 
-func deleteMySQL(dbConfig ExternalDBConfig) {
+func deleteMySQL(dbConfig *ExternalDBConfig) {
 	args := []string{
 		"-h",
 		dbConfig.Host,
@@ -155,7 +159,7 @@ func deleteMySQL(dbConfig ExternalDBConfig) {
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
-func deletePostgres(dbConfig ExternalDBConfig) {
+func deletePostgres(dbConfig *ExternalDBConfig) {
 	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
 		dbConfig.Host,
 		dbConfig.User,
@@ -182,7 +186,11 @@ func deletePostgres(dbConfig ExternalDBConfig) {
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
-func CreateDB(dbConfig ExternalDBConfig) {
+func CreateDB(dbConfig *ExternalDBConfig) {
+	if dbConfig == nil {
+		return
+	}
+
 	if dbConfig.Type == mysqlDBType {
 		createMySQL(dbConfig)
 	} else if dbConfig.Type == postgresDBType {
@@ -190,7 +198,7 @@ func CreateDB(dbConfig ExternalDBConfig) {
 	}
 }
 
-func createMySQL(dbConfig ExternalDBConfig) {
+func createMySQL(dbConfig *ExternalDBConfig) {
 	args := []string{
 		"-h",
 		dbConfig.Host,
@@ -215,7 +223,7 @@ func createMySQL(dbConfig ExternalDBConfig) {
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
-func createPostgres(dbConfig ExternalDBConfig) {
+func createPostgres(dbConfig *ExternalDBConfig) {
 	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
 		dbConfig.Host,
 		dbConfig.User,
@@ -359,7 +367,7 @@ func InnerBoshDirectorName() string {
 	return fmt.Sprintf("bosh-%d", config.GinkgoConfig.ParallelNode)
 }
 
-func InnerBoshWithExternalDBOptions(dbConfig ExternalDBConfig) []string {
+func InnerBoshWithExternalDBOptions(dbConfig *ExternalDBConfig) []string {
 	options := []string{
 		"-o", BoshDeploymentAssetPath("misc/external-db.yml"),
 		"-o", BoshDeploymentAssetPath("experimental/db-enable-tls.yml"),
