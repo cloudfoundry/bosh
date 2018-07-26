@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )

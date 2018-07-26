@@ -13,11 +13,11 @@ instance_groups:
   azs: [z1]
   jobs:
   - name: query-with-az-filter
-    release: linked-template-release
+    release: linked-templates
   - name: query-all
-    release: linked-template-release
+    release: linked-templates
   - name: query-individual-instance
-    release: linked-template-release
+    release: linked-templates
   vm_type: default
   stemcell: default
   networks:
@@ -26,7 +26,7 @@ instance_groups:
 - name: provider
   jobs:
   - name: link-provider
-    release: linked-template-release
+    release: linked-templates
   instances: 3
   azs: [z1,z2]
   vm_type: default
