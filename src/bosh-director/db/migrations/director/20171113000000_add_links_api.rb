@@ -20,8 +20,8 @@ Sequel.migration do
       String :type, :null => false
       String :name # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
       String :content # rely on networks, make optional because of delayed content resolution
-      Boolean :shared, :null => false, :default => false
-      Boolean :consumable, :null => false, :default => true
+      TrueClass :shared, null: false, default: false
+      TrueClass :consumable, null: false, default: true
       String :metadata #mapped properties
       Integer :serial_id
     end
@@ -49,8 +49,8 @@ Sequel.migration do
       String :original_name, :null => false
       String :type, :null => false
       String :name # This should never be null, but... because when we find/create we don't use it as a constraint and it can be updated at any moment.. We can't enforce it to start off as non-null.
-      Boolean :optional, :null => false, :default => false
-      Boolean :blocked, :null => false, :default => false # intentionally blocking the consumption of the link, consume: nil
+      TrueClass :optional, null: false, default: false
+      TrueClass :blocked, null: false, default: false # intentionally blocking the consumption of the link, consume: nil
       String :metadata # put extra json object that has some flags, ip addresses true or false, network, from_deployment or any other potential thing
       Integer :serial_id
     end
