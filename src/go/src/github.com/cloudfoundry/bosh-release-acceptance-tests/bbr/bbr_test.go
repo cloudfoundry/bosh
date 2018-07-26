@@ -101,7 +101,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 			By("restore inner director from backup", func() {
 				var err error
-				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", bratsutils.InnerDirectorIP()))
+				backupDir, err = filepath.Glob(fmt.Sprintf("%d_%s_*", config.GinkgoConfig.ParallelNode, bratsutils.InnerDirectorIP()))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(backupDir).To(HaveLen(1))
 
@@ -188,7 +188,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				var err error
-				backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", bratsutils.InnerDirectorIP()))
+				backupDir, err = filepath.Glob(fmt.Sprintf("%d_%s_*", config.GinkgoConfig.ParallelNode, bratsutils.InnerDirectorIP()))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(backupDir).To(HaveLen(1))
 
@@ -254,7 +254,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 
 					By("restore inner director from backup", func() {
 						var err error
-						backupDir, err = filepath.Glob(fmt.Sprintf("%s_*", bratsutils.InnerDirectorIP()))
+						backupDir, err = filepath.Glob(fmt.Sprintf("%d_%s_*", config.GinkgoConfig.ParallelNode, bratsutils.InnerDirectorIP()))
 						Expect(err).NotTo(HaveOccurred())
 						Expect(backupDir).To(HaveLen(1))
 

@@ -38,7 +38,7 @@ releases:
 - name: bosh-dns
   version: latest
   url: file://((dns-release-path))
-- name: linked-template-release
+- name: linked-templates
   version: latest
   url: file://((linked-template-release-path))
 
