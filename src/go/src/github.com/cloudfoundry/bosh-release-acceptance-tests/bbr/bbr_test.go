@@ -42,12 +42,13 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 	})
 
 	AfterEach(func() {
-		bratsutils.DeleteDB(dbConfig)
-		os.RemoveAll(tmpCertDir)
 		for _, dir := range backupDir {
 			err := os.RemoveAll(dir)
 			Expect(err).ToNot(HaveOccurred())
 		}
+		bratsutils.StopInnerBosh()
+		bratsutils.DeleteDB(dbConfig)
+		os.RemoveAll(tmpCertDir)
 	})
 
 	Context("database backup", func() {

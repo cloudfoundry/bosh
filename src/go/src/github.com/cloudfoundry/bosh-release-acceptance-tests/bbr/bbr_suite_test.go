@@ -38,10 +38,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	candidateWardenLinuxStemcellPath = bratsutils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 })
 
-var _ = AfterEach(func() {
-	bratsutils.StopInnerBosh()
-})
-
 func bbr(args ...string) *gexec.Session {
 	return bratsutils.ExecCommand(bbrBinaryPath, args...)
 }
