@@ -22,12 +22,14 @@ groups:
       - bats-centos
       - bats-ubuntu-trusty
       - bats-ubuntu-xenial
+      - bats-ubuntu-trusty-aws
       - brats-ubuntu-trusty
       - brats-ubuntu-xenial
       - bbr-ubuntu-trusty
       - bbr-ubuntu-xenial
       - upgrade-tests
       - blobstore-performance
+      - deploy-acceptance-env
       - delivery
 
   - name: mysql
@@ -41,6 +43,27 @@ groups:
       - unit-2.4-postgres
       - unit-2.4-db-migrations-rds
       - integration-db-tls-postgres-hotswap
+
+  - name: bats
+    jobs:
+      - bats-centos
+      - bats-ubuntu-trusty
+      - bats-ubuntu-xenial
+      - bats-ubuntu-trusty-aws
+
+  - name: brats/bbr
+    jobs:
+      - brats-ubuntu-trusty
+      - brats-ubuntu-xenial
+      - bbr-ubuntu-trusty
+      - bbr-ubuntu-xenial
+
+  - name: load
+    jobs:
+      - load-tests-postgres
+      - load-tests-mysql
+      - legacy-load-tests-postgres
+      - legacy-load-tests-mysql
 
   # - name: finalize
   #   jobs:
@@ -339,7 +362,6 @@ jobs:
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
-
 
   - name: integration-db-tls-postgres
     public: true
@@ -717,6 +739,73 @@ jobs:
       ensure:
         do:
         - {put: environment, params: {release: environment}}
+
+  - name: bats-ubuntu-trusty-aws
+    serial: true
+    plan:
+    - do:
+      - aggregate:
+        - get: stemcell
+          resource: aws-xen-hvm-ubuntu-trusty
+          trigger: true
+        - get: bosh-release
+          resource: bosh-candidate-release-tarballs
+          trigger: true
+          passed:
+            - candidate-release
+        - get: bats
+        - get: bosh-cli
+        - get: bosh-src
+          passed:
+            - candidate-release
+        - get: bosh-deployment
+      - put: terraform
+        params:
+          terraform_source: bosh-src/ci/bats/iaas/aws/terraform
+          delete_on_failure: true
+          env_name: bats-ubuntu-trusty-aws
+      - do:
+        - task: deploy-director
+          file: bosh-src/ci/bats/tasks/deploy-director.yml
+          input_mapping:
+            environment: terraform
+          params:
+            BAT_INFRASTRUCTURE: aws
+            AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
+            AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
+            AWS_DEFAULT_REGION:    ((aws_region__primary))
+            AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
+            DEPLOY_ARGS: |
+              -o bosh-deployment/external-ip-with-registry-not-recommended.yml
+        - task: prepare-bats-config
+          file: bosh-src/ci/bats/iaas/aws/prepare-bats-config.yml
+          input_mapping:
+            environment: terraform
+          params:
+            STEMCELL_NAME: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+        - task: run-bats
+          file: bats/ci/tasks/run-bats.yml
+        ensure:
+          do:
+          - task: teardown
+            file: bosh-src/ci/bats/tasks/destroy-director.yml
+          ensure:
+            do:
+            - task: ensure-terminated
+              file: bosh-src/ci/bats/iaas/aws/ensure-terminated.yml
+              input_mapping:
+                environment: terraform
+              params:
+                AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
+                AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
+                AWS_DEFAULT_REGION:    ((aws_region__primary))
+            - put: terraform
+              params:
+                terraform_source: bosh-src/ci/bats/iaas/aws/terraform
+                env_name: bats-ubuntu-trusty-aws
+                action: destroy
+              get_params:
+                action: destroy
 
   - name: brats-ubuntu-trusty
     serial: true
@@ -1108,6 +1197,47 @@ jobs:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
 
+  - name: deploy-acceptance-env
+    serial: true
+    plan:
+      - aggregate:
+        - get: bbl-state
+          resource: acceptance-env-state
+        - get: zookeeper-release
+        - get: stemcell
+          resource: google-kvm-ubuntu-trusty
+        - get: bosh-src
+          passed:
+          - bats-ubuntu-trusty
+          - bats-ubuntu-xenial
+          - bats-centos
+          - brats-ubuntu-trusty
+          - brats-ubuntu-xenial
+          - bbr-ubuntu-trusty
+          - bbr-ubuntu-xenial
+        - get: candidate-release
+          resource: bosh-candidate-release-tarballs
+          trigger: true
+          passed:
+          - bats-ubuntu-trusty
+          - bats-ubuntu-xenial
+          - bats-centos
+          - brats-ubuntu-trusty
+          - brats-ubuntu-xenial
+          - bbr-ubuntu-trusty
+          - bbr-ubuntu-xenial
+      - task: deploy-env
+        file: bosh-src/ci/tasks/setup-env.yml
+        params:
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((acceptance_gcp_service_account_key))
+          BBL_GCP_REGION: us-west2
+          BBL_IAAS: gcp
+        ensure:
+          put: acceptance-env-state
+          params:
+            repository: updated-bbl-state
+            rebase: true
+
   - name: delivery
     plan:
       - aggregate:
@@ -1168,6 +1298,11 @@ resource_types:
   source:
     repository: ljfranklin/terraform-resource
 
+- name: gcs-resource
+  type: docker-image
+  source:
+    repository: frodenas/gcs-resource
+
 resources:
   - name: bosh-src
     type: git
@@ -1209,6 +1344,19 @@ resources:
         region_name: us-west-1
         access_key_id: ((bosh-ci-database-terraform-aws-access-key-id))
         secret_access_key: ((bosh-ci-database-terraform-aws-secret-access-key))
+
+  - name: acceptance-env-state
+    type: git
+    source:
+      branch: master
+      uri: git@github.com:cloudfoundry/bosh-bbl-ci-envs.git
+      private_key: ((bosh-bbl-ci-envs-private-key))
+
+  - name: zookeeper-release
+    type: git
+    source:
+      uri: https://github.com/cppforlife/zookeeper-release
+      branch: master
 
   - name: davcli
     type: s3
@@ -1292,6 +1440,16 @@ resources:
     source:
       name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
 
+  - name: google-kvm-ubuntu-trusty
+    type: bosh-io-stemcell
+    source:
+      name: bosh-google-kvm-ubuntu-trusty-go_agent
+
+  - name: aws-xen-hvm-ubuntu-trusty
+    type: bosh-io-stemcell
+    source:
+      name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+
   - name: warden-ubuntu-trusty
     type: bosh-io-stemcell
     source:
@@ -1367,3 +1525,17 @@ resources:
       branch: master
       pool: unit-24-db-migrations-rds
       private_key: ((bosh_ci_pools_deploy_key))
+
+  - name: terraform
+    type: terraform
+    source:
+      storage:
+        access_key_id:     ((aws_access_key__primary))
+        secret_access_key: ((aws_secret_key__primary))
+        bucket:            ((terraform_bucket))
+        bucket_path:       terraform-state
+      vars:
+        access_key: ((aws_access_key__primary))
+        secret_key: ((aws_secret_key__primary))
+        region:     ((aws_region__primary))
+        ssh_public_key: ((aws_ssh_public_key))

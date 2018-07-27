@@ -6,6 +6,7 @@ module Bosh
           @instance_repo = instance_repo
           @skip_drain_decider = skip_drain_decider
           @recreate_deployment = options.fetch('recreate', false)
+          @recreate_persistent_disks = options.fetch('recreate_persistent_disks', false)
           @states_by_existing_instance = states_by_existing_instance
           @index_assigner = index_assigner
           @network_reservation_repository = network_reservation_repository
@@ -41,6 +42,7 @@ module Bosh
             instance: instance,
             skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
+            recreate_persistent_disks: @recreate_persistent_disks,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             tags: @tags,

@@ -1486,7 +1486,7 @@ describe Bosh::Director::Links::LinksManager do
                   subject.resolve_deployment_links(deployment_model, options)
                 end.to raise_error(
                   "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                  "- Consumer 'provider_alias' from job 'c1' in instance group 'ig1' in deployment 'test_deployment' "\
+                  "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
                   "does not belong to network 'neta'",
                 )
               end
@@ -1628,7 +1628,7 @@ describe Bosh::Director::Links::LinksManager do
                   subject.resolve_deployment_links(deployment_model, options)
                 end.to raise_error(
                   "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                  "- Consumer 'provider_alias' from job 'c1' in instance group 'ig1' in deployment 'test_deployment' "\
+                  "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
                   "does not belong to network 'neta'",
                 )
               end
@@ -1838,7 +1838,7 @@ describe Bosh::Director::Links::LinksManager do
                 subject.resolve_deployment_links(deployment_model, options)
               end.to raise_error(
                 "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                "- Consumer 'provider_alias' from job 'c1' in instance group 'ig1' in deployment 'test_deployment' "\
+                "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
                 "does not belong to network 'neta'",
               )
             end

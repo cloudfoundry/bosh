@@ -1,5 +1,5 @@
 ---
-name: postgres
+name: ((deployment-name))
 instance_groups:
 - name: bosh
   azs: [z1]
@@ -28,8 +28,6 @@ stemcells:
 releases:
 - name: bosh
   version: "264.7.0"
-  url: https://bosh.io/d/github.com/cloudfoundry/bosh?v=264.7.0
-  sha1: 11433d7530eea34d9ae2385ce2a7cb13912928bf
 
 update:
   canaries: 1

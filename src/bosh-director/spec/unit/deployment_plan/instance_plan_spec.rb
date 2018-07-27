@@ -1149,6 +1149,33 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#recreate_persistent_disks_requested?' do
+      describe 'when persistent disks in deployment are being recreated' do
+        let(:instance_plan) do
+          InstancePlan.new(
+            existing_instance: existing_instance,
+            desired_instance: desired_instance,
+            instance: instance,
+            network_plans: network_plans,
+            recreate_persistent_disks: true,
+          )
+        end
+
+        it 'should return changed' do
+          expect(instance_plan.recreate_persistent_disks_requested?).to be_truthy
+        end
+
+        it 'should log the change reason' do
+          allow(logger).to receive(:debug) do |log_line|
+            expect(log_line).to eq(
+              'recreate_persistent_disks_requested? job deployment is configured with "recreate_persistent_disks" state',
+            )
+          end
+
+          instance_plan.recreate_persistent_disks_requested?
+        end
+      end
+    end
     describe '#unresponsive_agent?' do
       context 'when instance has unresponsive agent' do
         let(:job_state) { 'unresponsive' }
@@ -1182,19 +1209,34 @@ module Bosh::Director::DeploymentPlan
           'name' => 'disk_a',
           'disk_size' => 24,
           'cloud_properties' => {
-            'new' => 'properties'
-          }
+            'new' => 'properties',
+          },
         }]
         cloud_config
       end
 
-      let(:instance_group_spec) do
-        instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
-        instance_group_spec['persistent_disk_pool'] = 'disk_a'
-        instance_group_spec
+      context 'when recreate_persistent_disks_requested' do
+        let(:instance_plan) do
+          InstancePlan.new(
+            existing_instance: existing_instance,
+            desired_instance: desired_instance,
+            instance: instance,
+            network_plans: network_plans,
+            recreate_persistent_disks: true,
+          )
+        end
+
+        it 'should return true' do
+          expect(instance_plan.persistent_disk_changed?).to be(true)
+        end
       end
 
       context 'when there is a change' do
+        let(:instance_group_spec) do
+          instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
+          instance_group_spec['persistent_disk_pool'] = 'disk_a'
+          instance_group_spec
+        end
         before do
           persistent_disk = BD::Models::PersistentDisk.make(size: 42, cloud_properties: {'new' => 'properties'})
           instance_plan.instance.model.add_persistent_disk(persistent_disk)

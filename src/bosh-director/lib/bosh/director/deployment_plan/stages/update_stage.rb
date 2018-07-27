@@ -43,7 +43,6 @@ module Bosh::Director
             lambda { App.instance.blobstores.blobstore },
             Config.root_domain,
             AgentBroadcaster.new,
-            @dns_encoder,
             @logger
           )
           SetupStage.new(@base_job, @deployment_plan, vm_creator, local_dns_repo, dns_publisher)

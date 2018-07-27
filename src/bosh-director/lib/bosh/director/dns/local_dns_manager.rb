@@ -1,13 +1,12 @@
 module Bosh::Director
   class LocalDnsManager
-    def self.create(root_domain, logger, encoder)
+    def self.create(root_domain, logger)
       local_dns_repo = LocalDnsRepo.new(logger, root_domain)
 
       dns_publisher = BlobstoreDnsPublisher.new(
         lambda { App.instance.blobstores.blobstore },
         root_domain,
         AgentBroadcaster.new,
-        encoder,
         logger)
 
       new(root_domain, local_dns_repo, dns_publisher, logger)

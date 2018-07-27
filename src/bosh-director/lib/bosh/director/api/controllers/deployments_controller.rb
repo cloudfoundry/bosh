@@ -395,6 +395,7 @@ module Bosh::Director
         options = {}
         options['dry_run'] = true if params['dry_run'] == 'true'
         options['recreate'] = true if params['recreate'] == 'true'
+        options['recreate_persistent_disks'] = true if params['recreate_persistent_disks'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
         options['fix'] = true if params['fix'] == 'true'
         options['scopes'] = token_scopes

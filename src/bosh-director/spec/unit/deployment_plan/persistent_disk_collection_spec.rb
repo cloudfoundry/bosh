@@ -282,6 +282,22 @@ module Bosh::Director
             end
           end
         end
+
+        context 'recreate_persistent_disks' do
+          it 'returns all of the disks' do
+            desired_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 6, {}))
+            desired_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 12, {}))
+            desired_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {}))
+
+            existing_disks.add_by_disk_name_and_type('persistent1', DiskType.new('disk1', 3, {}))
+            existing_disks.add_by_disk_name_and_type('persistent2', DiskType.new('disk1', 3, {}))
+            existing_disks.add_by_disk_name_and_type('persistent3', DiskType.new('disk1', 3, {}))
+
+            pairs = PersistentDiskCollection.changed_disk_pairs(existing_disks, variable_set, desired_disks, variable_set, true)
+
+            expect(pairs.length).to eq(3)
+          end
+        end
       end
     end
 

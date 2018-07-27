@@ -2,19 +2,17 @@ package brats_test
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
 
+	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
 
-func uploadLocalBoshRelease() {
-	tgz, err := filepath.Glob(fmt.Sprintf("%s/*.tgz", boshDirectorReleasePath))
-	Expect(err).NotTo(HaveOccurred())
-	session := outerBosh("upload-release", tgz[0])
-	Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+func postgresDeploymentName() string {
+	return fmt.Sprintf("postgres-%d", config.GinkgoConfig.ParallelNode)
 }
 
 var _ = Describe("postgres-9.4", func() {
@@ -25,35 +23,29 @@ var _ = Describe("postgres-9.4", func() {
 	)
 
 	BeforeEach(func() {
-		session := outerBosh("upload-stemcell", candidateWardenLinuxStemcellPath)
-		Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+		legacyManifestPath = bratsutils.AssetPath("legacy-postgres-manifest.yml")
+		migrationIncapableManifestPath = bratsutils.AssetPath("postgres-94-manifest.yml")
+		migrationCapableManifestPath = bratsutils.AssetPath("migratable-postgres-94-manifest.yml")
 
-		legacyManifestPath = assetPath("legacy-postgres-manifest.yml")
-		migrationIncapableManifestPath = assetPath("postgres-94-manifest.yml")
-		migrationCapableManifestPath = assetPath("migratable-postgres-94-manifest.yml")
-
-		session = outerBosh("deploy", "-n", legacyManifestPath,
-			"-d", "postgres",
-			"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+		session := bratsutils.OuterBosh("deploy", "-n", legacyManifestPath,
+			"-d", postgresDeploymentName(),
+			"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+			"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName()),
 		)
 		Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 	})
 
 	AfterEach(func() {
-		session := outerBosh("-d", "postgres", "-n", "delete-deployment")
-		Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
-
-		session = outerBosh("clean-up", "--all", "-n")
+		session := bratsutils.OuterBosh("-d", postgresDeploymentName(), "-n", "delete-deployment")
 		Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 	})
 
 	Context("when upgrading a postgres-9.0 job that was never migrated", func() {
 		It("should fail to start with a helpful error message", func() {
-			uploadLocalBoshRelease()
-
-			session := outerBosh("deploy", "-n", migrationIncapableManifestPath,
-				"-d", "postgres",
-				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+			session := bratsutils.OuterBosh("deploy", "-n", migrationIncapableManifestPath,
+				"-d", postgresDeploymentName(),
+				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+				"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName()),
 			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(1))
 
@@ -61,18 +53,19 @@ var _ = Describe("postgres-9.4", func() {
 		})
 	})
 
-	Context("When upgrading from a postgres-9.0 job that was migrated", func() {
+	Context("when upgrading from a postgres-9.0 job that was migrated", func() {
 		It("should deploy without issues", func() {
-			session := outerBosh("deploy", "-n", migrationCapableManifestPath,
-				"-d", "postgres",
-				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+			session := bratsutils.OuterBosh("deploy", "-n", migrationCapableManifestPath,
+				"-d", postgresDeploymentName(),
+				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+				"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName()),
 			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 
-			uploadLocalBoshRelease()
-			session = outerBosh("deploy", "-n", migrationIncapableManifestPath,
-				"-d", "postgres",
-				"-v", fmt.Sprintf("stemcell-os=%s", stemcellOS),
+			session = bratsutils.OuterBosh("deploy", "-n", migrationIncapableManifestPath,
+				"-d", postgresDeploymentName(),
+				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+				"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName()),
 			)
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})

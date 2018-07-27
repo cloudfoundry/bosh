@@ -42,6 +42,9 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
+      # @return [Boolean] Indicates whether persistent disks should be recreated
+      attr_reader :recreate_persistent_disks
+
       attr_writer :cloud_planner
 
       # @return [Boolean] Indicates whether VMs should be drained
@@ -97,6 +100,7 @@ module Bosh::Director
 
         @is_deploy_action = !!options['is_deploy_action']
         @recreate = !!options['recreate']
+        @recreate_persistent_disks = options['recreate_persistent_disks'] == true
         @fix = !!options['fix']
 
         @skip_drain = SkipDrain.new(options['skip_drain'])
@@ -292,6 +296,10 @@ module Bosh::Director
 
       def randomize_az_placement?
         @features.randomize_az_placement.nil? ? false : @features.randomize_az_placement
+      end
+
+      def recreate_persistent_disks?
+        @recreate_persistent_disks
       end
 
       def availability_zone_names

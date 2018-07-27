@@ -221,6 +221,10 @@ module Bosh::Director::Links
 
           link = Bosh::Director::Models::Links::Link.where(id: consumer_intent.target_link_id).first
           next if link.nil?
+          next if !link.link_provider_intent.nil? &&
+                  link.link_provider_intent.link_provider.deployment_id == deployment_model.id &&
+                  link.link_provider_intent.serial_id != consumer_intent.serial_id
+
           content = JSON.parse(link.link_content)
           links[consumer.name][link.name] = content
         end
@@ -263,6 +267,11 @@ module Bosh::Director::Links
           next if consumer_intent.links.empty?
 
           target_link = Bosh::Director::Models::Links::Link.where(id: consumer_intent.target_link_id).first
+
+          next if !target_link.link_provider_intent.nil? &&
+                  target_link.link_provider_intent.link_provider.deployment_id == instance.deployment_model.id &&
+                  target_link.link_provider_intent.serial_id != consumer_intent.serial_id
+
           instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id,
                                                                              link_id: target_link.id).first
           if instance_link.nil?
@@ -379,8 +388,9 @@ module Bosh::Director::Links
             provider_intent_networks = JSON.parse(content)['networks']
 
             if link_network && !provider_intent_networks.include?(link_network)
-              error_msg_string = "Consumer '#{consumer_intent.name}' from job '#{consumer.name}' "\
-                "#{"in instance group '#{consumer.instance_group}'" unless consumer.instance_group.empty?} "\
+              provider = provider_intent.link_provider
+              error_msg_string = "Provider '#{provider_intent.name}' from job '#{provider.name}' "\
+                "#{"in instance group '#{provider.instance_group}'" unless provider.instance_group.empty?} "\
                 "in deployment '#{current_deployment_name}' does not belong to network '#{link_network}'"
               raise Bosh::Director::DeploymentInvalidLink, error_msg_string
             end

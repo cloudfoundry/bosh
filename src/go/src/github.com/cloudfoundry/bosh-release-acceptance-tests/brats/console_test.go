@@ -5,6 +5,7 @@ import (
 	"syscall"
 	"time"
 
+	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	"github.com/kr/pty"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,7 +15,7 @@ import (
 
 var _ = Describe("director console", func() {
 	BeforeEach(func() {
-		startInnerBosh()
+		bratsutils.StartInnerBosh()
 	})
 
 	It("allows a user to launch the director console", func() {
@@ -22,7 +23,7 @@ var _ = Describe("director console", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 		defer ptyF.Close()
 
-		consoleCmd := exec.Command(outerBoshBinaryPath, "-d", "bosh", "ssh", "bosh")
+		consoleCmd := exec.Command(bratsutils.OuterBoshBinaryPath(), "-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh")
 		consoleCmd.Stdin = ttyF
 		consoleCmd.Stdout = ttyF
 		consoleCmd.Stderr = ttyF

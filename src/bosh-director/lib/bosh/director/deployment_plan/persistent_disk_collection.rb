@@ -48,7 +48,11 @@ module Bosh::Director
         collection.length > 0
       end
 
-      def self.changed_disk_pairs(old_disk_collection, old_variable_set, new_disk_collection, new_variable_set)
+      def self.changed_disk_pairs(old_disk_collection,
+                                  old_variable_set,
+                                  new_disk_collection,
+                                  new_variable_set,
+                                  recreate_persistent_disks = false)
         paired = []
 
         new_disk_collection.each do |new_disk|
@@ -70,6 +74,8 @@ module Bosh::Director
             }
           end
         end
+
+        return paired if recreate_persistent_disks
 
         disk_comparator = Bosh::Director::Disk::PersistentDiskComparator.new
 

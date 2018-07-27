@@ -140,7 +140,7 @@ describe 'network resolution', type: :integration do
       end.to raise_error(
         RuntimeError,
         Regexp.new(
-          "Consumer 'db' from job 'api_server' in instance group 'my_api' "\
+          "Provider 'db' from job 'database' in instance group 'mysql' "\
           "in deployment 'simple' does not belong to network 'invalid_network'",
         ),
       )
@@ -164,7 +164,7 @@ describe 'network resolution', type: :integration do
       end.to raise_error(
         RuntimeError,
         Regexp.new(
-          "Consumer 'db' from job 'api_server' in instance group 'my_api' in deployment 'simple' "\
+          "Provider 'db' from job 'database' in instance group 'mysql' in deployment 'simple' "\
           "does not belong to network 'global_network'",
         ),
       )

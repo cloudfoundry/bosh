@@ -55,7 +55,6 @@ describe 'variable generation with config server', type: :integration do
             'name' => '/var_b',
             'type' => 'password'
           },
-
         ]
       end
 
@@ -156,10 +155,73 @@ describe 'variable generation with config server', type: :integration do
       end
 
       context 'when a variable already exists in config server' do
+        context 'when the coverge variables feature is enabled' do
+          before do
+            manifest_hash['features'] = {
+              'converge_variables' => true,
+            }
+          end
+
+          context 'when the variable options change' do
+            it 'regenerates variables' do
+              deploy_from_scratch(
+                no_login: true,
+                manifest_hash: manifest_hash,
+                cloud_config_hash: cloud_config,
+                include_credentials: false,
+                env: client_env,
+              )
+
+              var_a1 = config_server_helper.get_value(prepend_namespace('var_a'))
+
+              variables[0]['options'] = { 'gargamel' => 'sleeping' }
+              manifest_hash['variables'] = variables
+              deploy_from_scratch(
+                no_login: true,
+                manifest_hash: manifest_hash,
+                cloud_config_hash: cloud_config,
+                include_credentials: false,
+                env: client_env,
+              )
+
+              var_a2 = config_server_helper.get_value(prepend_namespace('var_a'))
+              expect(var_a2).to_not eq(var_a1)
+            end
+          end
+
+          it 'does NOT re-generate it' do
+            deploy_from_scratch(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config,
+              include_credentials: false,
+              env: client_env,
+            )
+            var_a1 = config_server_helper.get_value(prepend_namespace('var_a'))
+
+            deploy_from_scratch(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config,
+              include_credentials: false,
+              env: client_env,
+            )
+
+            var_a2 = config_server_helper.get_value(prepend_namespace('var_a'))
+            expect(var_a2).to eq(var_a1)
+          end
+        end
+
         it 'does NOT re-generate it' do
           config_server_helper.put_value(prepend_namespace('var_a'), 'password_a')
 
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_from_scratch(
+            no_login: true,
+            manifest_hash: manifest_hash,
+            cloud_config_hash: cloud_config,
+            include_credentials: false,
+            env: client_env,
+          )
 
           var_a = config_server_helper.get_value(prepend_namespace('var_a'))
           expect(var_a).to eq('password_a')

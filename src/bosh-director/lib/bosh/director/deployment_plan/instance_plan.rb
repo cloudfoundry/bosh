@@ -13,6 +13,7 @@ module Bosh
                        network_plans: [],
                        skip_drain: false,
                        recreate_deployment: false,
+                       recreate_persistent_disks: false,
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
                        logger: Config.logger,
@@ -23,6 +24,7 @@ module Bosh
           @network_plans = network_plans
           @skip_drain = skip_drain
           @recreate_deployment = recreate_deployment
+          @recreate_persistent_disks = recreate_persistent_disks
           @use_dns_addresses = use_dns_addresses
           @use_short_dns_addresses = use_short_dns_addresses
           @logger = logger
@@ -63,6 +65,7 @@ module Bosh
           @changes << :dirty if @instance.dirty?
           @changes << :restart if restart_requested?
           @changes << :recreate if recreation_requested?
+          @changes << :recreate_persistent_disks if recreate_persistent_disks_requested?
           @changes << :cloud_properties if instance.cloud_properties_changed?
           @changes << :stemcell if stemcell_changed?
           @changes << :env if env_changed?
@@ -78,8 +81,8 @@ module Bosh
         end
 
         def persistent_disk_changed?
+          return true if recreate_persistent_disks_requested?
           return @existing_instance.active_persistent_disks.any? if @existing_instance && obsolete?
-
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
 
@@ -118,6 +121,13 @@ module Bosh
           else
             @instance.virtual_state == 'recreate'
           end
+        end
+
+        def recreate_persistent_disks_requested?
+          if @recreate_persistent_disks
+            @logger.debug("#{__method__} job deployment is configured with \"recreate_persistent_disks\" state")
+          end
+          @recreate_persistent_disks
         end
 
         def networks_changed?

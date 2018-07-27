@@ -23,6 +23,7 @@ module Bosh::Director
         instance_plan.instance.previous_variable_set,
         new_disks,
         instance_plan.instance.desired_variable_set,
+        instance_plan.recreate_persistent_disks_requested?,
       )
 
       changed_disk_pairs.each do |disk_pair|

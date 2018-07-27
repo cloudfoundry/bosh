@@ -32,10 +32,17 @@ export DOCKER_CERTS
 DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 export DOCKER_HOST
 
-if [ -d database-metadata ] && [ -d gcp-ssl-config ]; then
-  apt-get update
-  apt-get install -y jq
+bosh -n update-cloud-config \
+  "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
+  -o "${src_dir}/bosh-src/ci/docker/main-bosh-docker/outer-cloud-config-ops.yml" \
+  -v network=director_network
 
+bosh -n upload-stemcell $CANDIDATE_STEMCELL_TARBALL_PATH
+
+apt-get update
+apt-get install -y mysql-client postgresql-client
+
+if [ -d database-metadata ]; then
   RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
   RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
   GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
@@ -59,5 +66,6 @@ if [ -d database-metadata ] && [ -d gcp-ssl-config ]; then
   export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
 fi
 
-cd bosh-src
-scripts/test-brats
+pushd bosh-src > /dev/null
+  scripts/test-brats
+popd > /dev/null
