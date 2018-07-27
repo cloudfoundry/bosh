@@ -447,12 +447,7 @@ module Bosh::Dev::Sandbox
 
       @director_service.stop
 
-      if @drop_database
-        @database.drop_db
-        @database.create_db
-      else
-        @database.truncate_db
-      end
+      clean_up_database
 
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
@@ -480,6 +475,19 @@ module Bosh::Dev::Sandbox
       @nginx_service.restart_if_needed
 
       @cpi.reset
+    end
+
+    def clean_up_database
+      @drop_database = true if @previous_dns_enabled != @dns_enabled
+
+      if @drop_database
+        @database.drop_db
+        @database.create_db
+      else
+        @database.truncate_db
+      end
+
+      @previous_dns_enabled = @dns_enabled
     end
 
     def setup_sandbox_root
