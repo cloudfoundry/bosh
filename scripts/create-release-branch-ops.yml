@@ -1,3 +1,6 @@
+- type: remove
+  path: /jobs/name=deploy-acceptance-env
+
 - type: replace
   path: /jobs/name=candidate-release/plan/get=candidate-version/params/bump
   value: minor
