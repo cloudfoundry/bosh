@@ -85,6 +85,9 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 					"backup")
 				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
+				backupDir = getBackupDir()
+				Expect(backupDir).To(HaveLen(1))
 			})
 
 			By("wipe system, recreate inner director", func() {
@@ -102,9 +105,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 			})
 
 			By("restore inner director from backup", func() {
-				backupDir = getBackupDir()
-				Expect(backupDir).To(HaveLen(1))
-
 				session := bbr("director",
 					"--host", fmt.Sprintf("%s:22", bratsutils.InnerDirectorIP()),
 					"--username", bratsutils.InnerDirectorUser(),
@@ -180,15 +180,15 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 					"backup")
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+				backupDir = getBackupDir()
+				Expect(backupDir).To(HaveLen(1))
 			})
 
 			By("wipe system", func() {
 				session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(),
 					"ssh", "bosh", "sudo rm -rf /var/vcap/store/blobstore/*")
 				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
-
-				backupDir = getBackupDir()
-				Expect(backupDir).To(HaveLen(1))
 
 				session = bbr("director",
 					"--host", fmt.Sprintf("%s:22", bratsutils.InnerDirectorIP()),
@@ -243,6 +243,9 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 							"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 							"backup")
 						Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+						backupDir = getBackupDir()
+						Expect(backupDir).To(HaveLen(1))
 					})
 
 					By("deleting the deployment (whoops)", func() {
@@ -251,9 +254,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					})
 
 					By("restore inner director from backup", func() {
-						backupDir = getBackupDir()
-						Expect(backupDir).To(HaveLen(1))
-
 						session := bbr("director",
 							"--host", fmt.Sprintf("%s:22", bratsutils.InnerDirectorIP()),
 							"--username", bratsutils.InnerDirectorUser(),
@@ -367,6 +367,9 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 						"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 						"backup")
 					Eventually(session, time.Minute).Should(gexec.Exit(0))
+
+					backupDir = getBackupDir()
+					Expect(backupDir).To(HaveLen(1))
 				})
 
 				By("Check directories are still there after backup", func() {
@@ -381,9 +384,6 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				})
 
 				By("Restore deployment", func() {
-					backupDir = getBackupDir()
-					Expect(backupDir).To(HaveLen(1))
-
 					session := bbr("director",
 						"--host", fmt.Sprintf("%s:22", bratsutils.InnerDirectorIP()),
 						"--username", bratsutils.InnerDirectorUser(),
