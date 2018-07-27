@@ -12,9 +12,7 @@ main() {
 
   git checkout -b ${BRANCH_NAME} $start_point
 
-  sed  -e "s/-p bosh/-p bosh:${BRANCH_NAME}/" <(git show origin/master:ci/configure.sh) > ci/configure.sh
-
-  BRANCH_VERSION=${OVERRIDE_VERSION:-$(echo ${BRANCH_NAME} | cut -d '.' -f1)}
+  local BRANCH_VERSION=${OVERRIDE_VERSION:-$(echo ${BRANCH_NAME} | cut -d '.' -f1)}
 
   bosh int -o scripts/create-release-branch-ops.yml <(git show origin/master:ci/pipeline.yml) -v branchver=${BRANCH_VERSION} -v branchname=${BRANCH_NAME} > ci/pipeline.yml
 

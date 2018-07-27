@@ -1,6 +1,48 @@
 - type: remove
   path: /jobs/name=deploy-acceptance-env
 
+- type: remove
+  path: /resources/name=acceptance-env-state
+
+- type: remove
+  path: /resources/name=zookeeper-release
+
+- type: remove
+  path: /resources/name=google-kvm-ubuntu-trusty
+
+- type: replace
+  path: /groups/name=bosh?
+  value:
+    name: bosh
+    jobs:
+      - unit-2.4
+      - unit-2.4-mysql
+      - unit-2.4-postgres
+      - unit-2.4-db-migrations-rds
+      - blobstore-client-integration
+      - integration-postgres-gocli-sha2
+      - integration-mysql-gocli-sha1
+      - integration-db-tls-postgres
+      - integration-db-tls-postgres-hotswap
+      - integration-db-tls-mysql
+      - load-tests-postgres
+      - load-tests-mysql
+      - legacy-load-tests-postgres
+      - legacy-load-tests-mysql
+      - fuzz-tests
+      - candidate-release
+      - bats-centos
+      - bats-ubuntu-trusty
+      - bats-ubuntu-xenial
+      - bats-ubuntu-trusty-aws
+      - brats-ubuntu-trusty
+      - brats-ubuntu-xenial
+      - bbr-ubuntu-trusty
+      - bbr-ubuntu-xenial
+      - upgrade-tests
+      - blobstore-performance
+      - delivery
+
 - type: replace
   path: /jobs/name=candidate-release/plan/get=candidate-version/params/bump
   value: minor
