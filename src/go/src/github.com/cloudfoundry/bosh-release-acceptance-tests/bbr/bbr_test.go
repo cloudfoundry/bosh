@@ -233,7 +233,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 							"-d", "syslog-deployment",
 							"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 						)
-						Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+						Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 					})
 
 					By("creating a backup", func() {
