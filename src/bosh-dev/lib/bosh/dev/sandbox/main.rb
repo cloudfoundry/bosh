@@ -478,16 +478,12 @@ module Bosh::Dev::Sandbox
     end
 
     def clean_up_database
-      @drop_database = true if @previous_dns_enabled != @dns_enabled
-
       if @drop_database
         @database.drop_db
         @database.create_db
       else
         @database.truncate_db
       end
-
-      @previous_dns_enabled = @dns_enabled
     end
 
     def setup_sandbox_root

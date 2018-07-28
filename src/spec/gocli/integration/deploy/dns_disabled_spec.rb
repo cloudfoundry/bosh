@@ -3,6 +3,10 @@ require 'spec_helper'
 describe 'dns disabled', type: :integration do
   with_reset_sandbox_before_each(dns_enabled: false)
 
+  after do |example|
+    reset_sandbox(example, drop_database: true)
+  end
+
   it 'allows removing deployed jobs and adding new jobs at the same time' do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
