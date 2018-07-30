@@ -1490,7 +1490,7 @@ resources:
     access_key_id: ((candidate_release_access_key_id))
     bucket: ((candidate_release_bucket))
     initial_version: 267.0.0
-    key: version
+    key: 267.x/version
     secret_access_key: ((candidate_release_secret_access_key))
   type: semver
 - name: bosh-candidate-release-tarballs
