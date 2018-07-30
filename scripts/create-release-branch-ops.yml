@@ -77,6 +77,10 @@
   value: ((branchver)).0.0
 
 - type: replace
+  path: /resources/name=candidate-version/source/key?
+  value: ((branchver)).x/version
+
+- type: replace
   path: /resources/name=bosh-candidate-release-tarballs/source/versioned_file
   value: ((branchname))/bosh-dev-release.tgz
 
