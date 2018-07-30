@@ -10,10 +10,6 @@ groups:
   - integration-db-tls-postgres
   - integration-db-tls-postgres-hotswap
   - integration-db-tls-mysql
-  - load-tests-postgres
-  - load-tests-mysql
-  - legacy-load-tests-postgres
-  - legacy-load-tests-mysql
   - fuzz-tests
   - candidate-release
   - bats-centos
@@ -51,12 +47,6 @@ groups:
   - bbr-ubuntu-trusty
   - bbr-ubuntu-xenial
   name: brats/bbr
-- jobs:
-  - load-tests-postgres
-  - load-tests-mysql
-  - legacy-load-tests-postgres
-  - legacy-load-tests-mysql
-  name: load
 - jobs:
   - finalize-bosh-release
   name: finalize
@@ -560,102 +550,6 @@ jobs:
       tags:
       - bosh-integration-7
       task: upgrade-with-mysql
-  public: true
-  serial: true
-- build_logs_to_retain: 250
-  interruptible: true
-  name: load-tests-postgres
-  plan:
-  - get: load-tests-interval
-    trigger: true
-  - get: bosh-load-tests-workspace
-  - get: warden-ubuntu-trusty
-  - get: bosh-candidate-release-tarballs
-  - get: bosh-src
-  - get: bosh-cli
-  - file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
-    input_mapping:
-      bosh-candidate-release: bosh-candidate-release-tarballs
-      bosh-candidate-stemcell: warden-ubuntu-trusty
-    params:
-      DB: postgresql
-      LEGACY: false
-    privileged: true
-    tags:
-    - bosh-load-tests
-    task: test
-  public: true
-  serial: true
-- build_logs_to_retain: 250
-  interruptible: true
-  name: legacy-load-tests-postgres
-  plan:
-  - get: load-tests-interval
-    trigger: true
-  - get: bosh-load-tests-workspace
-  - get: bosh-cli
-  - get: bosh-candidate-release-tarballs
-  - get: bosh-src
-  - get: warden-ubuntu-trusty
-  - file: bosh-load-tests-workspace/ci/tasks/test.yml
-    input_mapping:
-      bosh-candidate-release: bosh-candidate-release-tarballs
-      bosh-candidate-stemcell: warden-ubuntu-trusty
-    params:
-      DB: postgresql
-      LEGACY: true
-    privileged: true
-    tags:
-    - bosh-load-tests-2
-    task: test
-  public: true
-  serial: true
-- build_logs_to_retain: 250
-  interruptible: true
-  name: load-tests-mysql
-  plan:
-  - get: load-tests-interval
-    trigger: true
-  - get: bosh-load-tests-workspace
-  - get: bosh-cli
-  - get: bosh-candidate-release-tarballs
-  - get: bosh-src
-  - get: warden-ubuntu-trusty
-  - file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
-    input_mapping:
-      bosh-candidate-release: bosh-candidate-release-tarballs
-      bosh-candidate-stemcell: warden-ubuntu-trusty
-    params:
-      DB: mysql
-      LEGACY: false
-    privileged: true
-    tags:
-    - bosh-load-tests-3
-    task: test
-  public: true
-  serial: true
-- build_logs_to_retain: 250
-  interruptible: true
-  name: legacy-load-tests-mysql
-  plan:
-  - get: load-tests-interval
-    trigger: true
-  - get: bosh-load-tests-workspace
-  - get: bosh-cli
-  - get: bosh-candidate-release-tarballs
-  - get: bosh-src
-  - get: warden-ubuntu-trusty
-  - file: bosh-load-tests-workspace/ci/tasks/test.yml
-    input_mapping:
-      bosh-candidate-release: bosh-candidate-release-tarballs
-      bosh-candidate-stemcell: warden-ubuntu-trusty
-    params:
-      DB: mysql
-      LEGACY: true
-    privileged: true
-    tags:
-    - bosh-load-tests-4
-    task: test
   public: true
   serial: true
 - build_logs_to_retain: 2500
@@ -1527,18 +1421,9 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
   type: git
-- name: bosh-load-tests-workspace
-  source:
-    branch: master
-    uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
-  type: git
 - name: fuzz-interval-trigger
   source:
     interval: 15m
-  type: time
-- name: load-tests-interval
-  source:
-    interval: 5h
   type: time
 - name: bosh-cli
   source:
