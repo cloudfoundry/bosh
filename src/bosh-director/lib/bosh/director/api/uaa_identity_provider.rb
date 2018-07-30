@@ -45,9 +45,17 @@ module Bosh
             token = @token_coder.decode(auth_header)
           end
 
+          raise AuthenticationError unless access_token?(token)
+
           UaaUser.new(token)
         rescue CF::UAA::DecodeError, CF::UAA::AuthError => e
           raise AuthenticationError, e.message
+        end
+
+        private
+
+        def access_token?(token)
+          token['jti'] && token['jti'][-2..-1] != '-r'
         end
       end
 
