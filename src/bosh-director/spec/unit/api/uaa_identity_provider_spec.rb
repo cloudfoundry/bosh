@@ -74,12 +74,13 @@ module Bosh::Director
     end
 
     context 'given an OAuth token' do
+      let(:jti) { 'd64209e4-d150-45c9-9569-a352f42149b1' }
       let(:request_env) do
         { 'HTTP_AUTHORIZATION' => "bearer #{encoded_token}" }
       end
       let(:token) do
         {
-          'jti' => 'd64209e4-d150-45c9-9569-a352f42149b1',
+          'jti' => jti,
           'sub' => 'faf835ea-c582-4a28-b500-6e6ac1515690',
           'scope' => scope,
           'client_id' => 'cf',
@@ -114,6 +115,14 @@ module Bosh::Director
 
           it 'raises an error' do
             expect{uaa_user}.to raise_error(AuthenticationError)
+          end
+        end
+
+        context 'when the token is a refresh token' do
+          let(:jti) { 'd64209e4-d150-45c9-9569-a352f42149b1-r' }
+
+          it 'returns an authentication error' do
+            expect { uaa_user }.to raise_error(AuthenticationError)
           end
         end
 
