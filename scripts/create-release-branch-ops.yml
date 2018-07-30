@@ -89,6 +89,15 @@
   value:
   - finalize-bosh-release
 
+- type: remove
+  path: /jobs/name=bump-candidate-major
+
+- type: remove
+  path: /resources/name=lastest-major-version
+
+- type: remove
+  path: /groups/name=version
+
 - type: replace
   path: /jobs/-
   value:

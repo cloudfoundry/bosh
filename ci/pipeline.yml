@@ -65,6 +65,10 @@ groups:
       - legacy-load-tests-postgres
       - legacy-load-tests-mysql
 
+  - name: version
+    jobs:
+      - bump-candidate-major
+
   # - name: finalize
   #   jobs:
   #     - finalize-bosh-release
@@ -1292,6 +1296,30 @@ jobs:
   #       params:
   #         repository: bosh-src-with-bumped-version
 
+  - name: bump-candidate-major
+    serial: true
+    plan:
+    - get: latest-major-version
+      trigger: true
+    - task: semvertify
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: busybox
+        inputs:
+        - name: latest-major-version
+        outputs:
+        - name: latest-major-semver
+        run:
+          path: /bin/sh
+          args:
+          - -c
+          - echo -n $(cat latest-major-version/version).0.0 > latest-major-semver/version
+    - put: candidate-version
+      params: { file: latest-major-semver/version }
+
 resource_types:
 - name: terraform
   type: docker-image
@@ -1316,6 +1344,14 @@ resources:
     source:
       bucket: ((candidate_release_bucket))
       key: version
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
+
+  - name: latest-major-version
+    type: s3
+    source:
+      bucket: ((candidate_release_bucket))
+      regexp: (.*)\.x/version
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
 
