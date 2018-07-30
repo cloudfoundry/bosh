@@ -2,6 +2,27 @@
   path: /jobs/name=deploy-acceptance-env
 
 - type: remove
+  path: /jobs/name=load-tests-postgres
+
+- type: remove
+  path: /jobs/name=load-tests-mysql
+
+- type: remove
+  path: /jobs/name=legacy-load-tests-postgres
+
+- type: remove
+  path: /jobs/name=legacy-load-tests-mysql
+
+- type: remove
+  path: /groups/name=load
+
+- type: remove
+  path: /resources/name=bosh-load-tests-workspace
+
+- type: remove
+  path: /resources/name=load-tests-interval
+
+- type: remove
   path: /resources/name=acceptance-env-state
 
 - type: remove
