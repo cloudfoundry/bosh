@@ -342,11 +342,12 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 })
 
 func waitForBoshDirectorUp(boshBinaryPath string) {
-	Eventually(func() *gexec.Session {
+	Eventually(func() int {
 		session, err := gexec.Start(exec.Command(boshBinaryPath, "env"), GinkgoWriter, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
-		return session
-	}, 5*time.Minute, time.Second*2).Should(gexec.Exit(0))
+		session.Wait(10 * time.Second)
+		return session.ExitCode()
+	}, 5*time.Minute, time.Second*2).Should(Equal(0))
 }
 
 func findBlobstoreFiles(outerBoshBinaryPath string) ([]string, []string) {
