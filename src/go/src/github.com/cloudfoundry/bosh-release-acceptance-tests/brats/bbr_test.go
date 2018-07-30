@@ -338,7 +338,7 @@ func waitForBoshDirectorUp(boshBinaryPath string) {
 	Eventually(func() *gexec.Session {
 		session, err := gexec.Start(exec.Command(boshBinaryPath, "env"), GinkgoWriter, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
-		session.Wait()
+		session.Wait(time.Minute)
 		return session
 	}, 5 * time.Minute, time.Second * 2).Should(gexec.Exit(0))
 }
