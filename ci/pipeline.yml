@@ -630,9 +630,9 @@ jobs:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
     - get: bosh-cli
-    - get: candidate-version
+    - put: candidate-version
       params:
-        bump: major
+        pre: rc
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
     - put: bosh-candidate-release-tarballs
@@ -1318,7 +1318,11 @@ jobs:
           - -c
           - echo -n $(cat latest-major-version/version).0.0 > latest-major-semver/version
     - put: candidate-version
-      params: { file: latest-major-semver/version }
+      params:
+        file: latest-major-semver/version
+    - put: candidate-version
+      params:
+        bump: major
 
 resource_types:
 - name: terraform

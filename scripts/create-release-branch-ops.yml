@@ -125,6 +125,7 @@
         - get: candidate-version
           params:
             bump: minor
+            final: true
       - task: promote-release
         file: bosh-src/ci/tasks/finalize-bosh-release.yml
         params:
