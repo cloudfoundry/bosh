@@ -279,7 +279,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 func waitForBoshDirectorUp(boshBinaryPath string) {
 	Eventually(func() *gexec.Session {
 		session := bosh("env")
-		session.Wait()
+		session.Wait(time.Minute)
 		return session
 	}, 5*time.Minute, 2*time.Second).Should(gexec.Exit(0))
 }
