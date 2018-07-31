@@ -28,8 +28,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   end
 
   let(:existing_instance) do
-    Bosh::Director::Models::Instance.make(
-    spec: instance_spec)
+    Bosh::Director::Models::Instance.make(spec: instance_spec)
   end
 
   describe '#fetch_existing' do
@@ -122,18 +121,24 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       }
     end
 
-    it 'returns an instance with a bound Models::Instance' do
-      instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+    context 'when existing instances has VMs' do
+      before do
+        existing_instance.active_vm = Bosh::Director::Models::Vm.make(agent_id: 'scool', instance_id: existing_instance.id)
+      end
 
-      expect(instance.model).to eq(existing_instance)
-      expect(instance.uuid).to eq(existing_instance.uuid)
-      expect(instance.state).to eq(existing_instance.state)
-      expect(instance.index).to eq(existing_instance.index)
-      expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
-      expect(instance.compilation?).to eq(existing_instance.compilation)
-      expect(instance.instance_group_name).to eq(existing_instance.job)
-      expect(instance.stemcell.models.first).to eq(stemcell)
-      expect(instance.env).to eq(env)
+      it 'returns an instance with a bound Models::Instance' do
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+
+        expect(instance.model).to eq(existing_instance)
+        expect(instance.uuid).to eq(existing_instance.uuid)
+        expect(instance.state).to eq(existing_instance.state)
+        expect(instance.index).to eq(existing_instance.index)
+        expect(instance.availability_zone.name).to eq(existing_instance.availability_zone)
+        expect(instance.compilation?).to eq(existing_instance.compilation)
+        expect(instance.instance_group_name).to eq(existing_instance.job)
+        expect(instance.stemcell.models.first).to eq(stemcell)
+        expect(instance.env).to eq(env)
+      end
     end
 
     it 'returns an instance with correct current state' do
@@ -142,8 +147,18 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.current_job_state).to eq('unresponsive')
     end
 
-    describe 'when existing instance has no spec' do
-      let(:instance_spec) { {} }
+    context 'when existing instance does NOT have a VM' do
+      it 'Models::Instance should not have a stemcell' do
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+
+        expect(instance.stemcell).to be_nil
+      end
+    end
+
+    context 'when existing instance has no spec' do
+      let(:instance_spec) do
+        {}
+      end
       it 'returns an instance with no spec' do
         instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
         expect(instance.model).to eq(existing_instance)
@@ -157,7 +172,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         expect(instance.env).to eq({})
       end
     end
-    describe 'binding existing reservations' do
+    context 'binding existing reservations' do
       context 'when instance has reservations in db' do
         before do
           existing_instance.add_ip_address(BD::Models::IpAddress.make(address_str: "123"))
