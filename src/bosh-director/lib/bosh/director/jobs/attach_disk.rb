@@ -8,16 +8,16 @@ module Bosh::Director
         :attach_disk
       end
 
-      def self.enqueue(username, deployment, job_name, instance_id, disk_cid, copy_previous, job_queue)
-        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment.name, job_name, instance_id, disk_cid, copy_previous], deployment)
+      def self.enqueue(username, deployment, job_name, instance_id, disk_cid, copy, job_queue)
+        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment.name, job_name, instance_id, disk_cid, copy], deployment)
       end
 
-      def initialize(deployment_name, job_name, instance_id, disk_cid, copy_previous)
+      def initialize(deployment_name, job_name, instance_id, disk_cid, copy)
         @deployment_name = deployment_name
         @job_name = job_name
         @instance_id = instance_id
         @disk_cid = disk_cid
-        @copy_previous = copy_previous
+        @copy = copy
         @size = 1
         @cloud_properties = {}
         @transactor = Transactor.new
@@ -61,7 +61,7 @@ module Bosh::Director
       def handle_previous_disk(instance)
         previous_persistent_disk = instance.managed_persistent_disk
         previous_persistent_disk.update(active: false)
-        if @copy_previous == true
+        if @copy == true
           @size = previous_persistent_disk.size
           @cloud_properties = previous_persistent_disk.cloud_properties
         end
