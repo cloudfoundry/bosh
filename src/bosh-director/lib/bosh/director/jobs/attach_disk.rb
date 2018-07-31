@@ -17,6 +17,8 @@ module Bosh::Director
         @job_name = job_name
         @instance_id = instance_id
         @disk_cid = disk_cid
+        @size = 1
+        @cloud_properties = {}
         @transactor = Transactor.new
         @disk_manager = DiskManager.new(logger)
         @orphan_disk_manager = OrphanDiskManager.new(logger)
@@ -58,6 +60,8 @@ module Bosh::Director
       def handle_previous_disk(instance)
         previous_persistent_disk = instance.managed_persistent_disk
         previous_persistent_disk.update(active: false)
+        @size = previous_persistent_disk.size
+        @cloud_properties = previous_persistent_disk.cloud_properties
 
         if instance.state == 'stopped'
           @disk_manager.detach_disk(previous_persistent_disk)
@@ -71,7 +75,7 @@ module Bosh::Director
         if orphan_disk
           disk = @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
         else
-          disk = Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
+          disk = Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: @size, cloud_properties: @cloud_properties)
         end
 
         if instance.state == 'stopped'
