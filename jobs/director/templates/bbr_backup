@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu
+
+if [ -z "$ARTIFACT_DIRECTORY" ]; then
+  echo "\$ARTIFACT_DIRECTORY should not be empty! Refusing to back up." >&2
+  exit 1
+fi
 
 # BBR does not clean out the backup directory
 rm -rf $ARTIFACT_DIRECTORY/*
