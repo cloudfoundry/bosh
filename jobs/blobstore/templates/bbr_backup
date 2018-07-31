@@ -2,6 +2,11 @@
 
 set -eux
 
+if [ -z "$ARTIFACT_DIRECTORY" ]; then
+  echo "\$ARTIFACT_DIRECTORY should not be empty! Refusing to back up." >&2
+  exit 1
+fi
+
 # BBR reuses the backup directory (hard set to /var/vcap/store/backup/blobstore)
 # and it does not clean out this directory
 rm -rf $ARTIFACT_DIRECTORY/*
