@@ -26,8 +26,8 @@ module Bosh::Director::DeploymentPlan
       vm_type_spec = existing_instance_model.spec_p('vm_type')
       vm_type = !vm_type_spec.nil? && !vm_type_spec.empty? ? Bosh::Director::DeploymentPlan::VmType.new(vm_type_spec) : nil
       env = Bosh::Director::DeploymentPlan::Env.new(existing_instance_model.vm_env)
-      stemcell_spec=existing_instance_model.spec_p('stemcell')
-      if !stemcell_spec.nil? && !stemcell_spec.empty?
+      stemcell_spec = existing_instance_model.spec_p('stemcell')
+      if !existing_instance_model.vms.empty? && !stemcell_spec.nil? && !stemcell_spec.empty?
         stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(stemcell_spec)
         stemcell.add_stemcell_models
         stemcell.deployment_model = existing_instance_model.deployment
