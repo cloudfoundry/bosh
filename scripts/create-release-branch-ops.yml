@@ -137,11 +137,11 @@
       - put: bosh-master
         params:
           repository: bosh-master-with-final
-          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
-          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
+          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
+          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
 
 - type: replace
   path: /resources/-
