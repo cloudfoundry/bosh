@@ -13,6 +13,7 @@ rm -rf $ARTIFACT_DIRECTORY/*
 source /var/vcap/packages/ruby-2.4-r4/bosh/runtime.env
 PATH=$PATH:/var/vcap/jobs/director/bin
 
+set +u
 # Postgres
 PATH=/var/vcap/packages/postgres-9.4/bin:$PATH
 LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
@@ -20,6 +21,7 @@ LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
 # MySQL
 PATH=/var/vcap/packages/mysql/bin:$PATH
 LD_LIBRARY_PATH=/var/vcap/packages/mysql/lib/mysql:$LD_LIBRARY_PATH
+set -u
 
 export LD_LIBRARY_PATH
 export PATH
