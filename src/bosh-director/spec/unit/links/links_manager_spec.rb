@@ -2224,6 +2224,7 @@ describe Bosh::Director::Links::LinksManager do
 
         consumer_intent.target_link_id = @link.id
         consumer_intent.save
+        @consumer_intent = consumer_intent
       end
 
       it 'should create an association between the instance and the links' do
@@ -2231,11 +2232,23 @@ describe Bosh::Director::Links::LinksManager do
         expect(instance_model.links.size).to eq(1)
       end
 
-      it 'should updated intance_link with current serial_id' do
+      it 'should updated instance_link with current serial_id' do
         subject.bind_links_to_instance(instance)
         expect(instance_model.links.size).to eq(1)
         instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link.id)
         expect(instance_link.first.serial_id).to eq(serial_id)
+      end
+
+      context 'when consumer_intent do not have associate links' do
+        it 'should skip consumer_intent' do
+          @link.delete
+          @consumer_intent.target_link_id = nil
+          @consumer_intent.save
+
+          expect do
+            subject.bind_links_to_instance(instance)
+          end.to_not raise_error
+        end
       end
 
       context 'when consumer_intent serial_id do NOT match deployment links_serial_id' do
