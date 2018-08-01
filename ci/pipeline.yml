@@ -1355,12 +1355,12 @@ jobs:
       file: bumped-candidate-version/version
     put: candidate-version
   - params:
-      annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
       repository: bosh-master-with-final
-      tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
     put: bosh-master
   - params:
       repository: bosh-src-with-bumped-version
+      annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
+      tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
     put: bosh-src
   serial: true
 resource_types:
