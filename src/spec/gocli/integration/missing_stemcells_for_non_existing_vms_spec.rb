@@ -5,7 +5,7 @@ describe 'missing stemcells for non existing vms', type: :integration do
   let(:deployment_name) { manifest_hash['name'] }
 
   context 'when errand script exits with 0 exit code' do
-    with_reset_sandbox_before_all
+    with_reset_sandbox_before_each
 
     it 'returns 0 as exit code from the cli and indicates that errand ran successfully' do
       manifest = Bosh::Spec::NewDeployments.manifest_with_errand
@@ -38,7 +38,7 @@ describe 'missing stemcells for non existing vms', type: :integration do
 
       bosh_runner.run('clean-up --all')
 
-      manifest['instance_groups'].pop
+      manifest['jobs'].pop
 
       # this should not fail with missing stemcell
       deploy_simple_manifest(
