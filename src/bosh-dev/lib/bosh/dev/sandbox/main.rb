@@ -323,7 +323,6 @@ module Bosh::Dev::Sandbox
     def reconfigure(options={})
       @user_authentication = options.fetch(:user_authentication, 'local')
       @config_server_enabled = options.fetch(:config_server_enabled, false)
-      @drop_database = options.fetch(:drop_database, false)
       @test_initial_state = options.fetch(:test_initial_state, nil)
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
@@ -470,7 +469,7 @@ module Bosh::Dev::Sandbox
       @uaa_service.restart_if_needed if @user_authentication == 'uaa'
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
 
-      @director_service.start(director_config, @drop_database)
+      @director_service.start(director_config)
 
       @nginx_service.restart_if_needed
 
@@ -478,12 +477,8 @@ module Bosh::Dev::Sandbox
     end
 
     def clean_up_database
-      if @drop_database
-        @database.drop_db
-        @database.create_db
-      else
-        @database.truncate_db
-      end
+      @database.drop_db
+      @database.create_db
     end
 
     def setup_sandbox_root
