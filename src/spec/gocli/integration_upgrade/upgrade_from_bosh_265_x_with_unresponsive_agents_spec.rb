@@ -1,7 +1,9 @@
 require_relative '../spec_helper'
 
 describe 'director upgrade from 265 with unresponsive agents', type: :upgrade do
-  with_reset_sandbox_before_each(test_initial_state: 'bosh-v265.x-915942cf3b0d11ec93933f0e8e139442d8c6a270_with_unresponsive_agents', drop_database: true)
+  with_reset_sandbox_before_each(
+    test_initial_state: 'bosh-v265.x-915942cf3b0d11ec93933f0e8e139442d8c6a270_with_unresponsive_agents',
+  )
 
   describe 'bosh cck' do
     it 'recreates unresponsive VMs with waiting for processes to start' do

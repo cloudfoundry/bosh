@@ -48,10 +48,10 @@ module Bosh::Dev::Sandbox
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, @director_config, @logger)
     end
 
-    def start(config, force_migration = false)
+    def start(config)
       write_config(config)
 
-      migrate_database(force_migration)
+      migrate_database
 
       reset
 
@@ -139,11 +139,8 @@ module Bosh::Dev::Sandbox
 
     private
 
-    def migrate_database(force_migration)
-      if !@database_migrated || force_migration
-        @database_migrator.migrate
-        @database_migrated = true
-      end
+    def migrate_database
+      @database_migrator.migrate
     end
 
     def delayed_job_ready?

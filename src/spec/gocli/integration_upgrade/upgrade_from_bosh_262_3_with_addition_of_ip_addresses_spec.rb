@@ -64,7 +64,10 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
   end
 
   context 'upgraded director has local_dns enabled, and use_dns_addresses flag is set to true' do
-    with_reset_sandbox_before_each(test_initial_state: 'bosh-v262.3-2e94c7cdc76928162d346863270690dfec8c70ee', drop_database: true, local_dns: {'enabled' => true, 'use_dns_addresses' => true})
+    with_reset_sandbox_before_each(
+      test_initial_state: 'bosh-v262.3-2e94c7cdc76928162d346863270690dfec8c70ee',
+      local_dns: { 'enabled' => true, 'use_dns_addresses' => true },
+    )
 
     before do
       FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: false)
@@ -188,7 +191,7 @@ describe 'upgraded director after introducing the enforcement of IP addresses', 
   end
 
   context 'upgraded director has local_dns disabled, and use_dns_addresses flag is defaulted to false' do
-    with_reset_sandbox_before_each(test_initial_state: 'bosh-v262.3-2e94c7cdc76928162d346863270690dfec8c70ee', drop_database: true)
+    with_reset_sandbox_before_each(test_initial_state: 'bosh-v262.3-2e94c7cdc76928162d346863270690dfec8c70ee')
 
     before do
       FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: false)
