@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'director upgrade after migrating links schema to include job name', type: :upgrade do
-  with_reset_sandbox_before_each(test_initial_state: 'bosh-v260.6-f419326cad3e642ed4a5e6d893688c0766d7b259_with_links', drop_database: true)
+  with_reset_sandbox_before_each(test_initial_state: 'bosh-v260.6-f419326cad3e642ed4a5e6d893688c0766d7b259_with_links')
 
   it 'can start the hard stopped instance' do
     output = scrub_random_ids(parse_blocks(bosh_runner.run('-d simple start', json: true)))

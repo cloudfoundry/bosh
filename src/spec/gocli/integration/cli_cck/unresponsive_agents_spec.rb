@@ -34,7 +34,7 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   context 'with dns enabled' do
-    with_reset_sandbox_before_each(drop_database: true)
+    with_reset_sandbox_before_each
 
     let(:num_instances) { 3 }
 
