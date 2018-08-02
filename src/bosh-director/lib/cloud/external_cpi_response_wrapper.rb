@@ -52,11 +52,12 @@ module Bosh::Clouds
 
       #TODO registry-refactor: replace switch statement if multiple cases are not specified
       case @cpi_api_version
-        when 2
-          raise Bosh::Clouds::AttachDiskResponseError, "No disk_hint" if cpi_response.nil? || cpi_response.length == 0
+      when 2
+        raise Bosh::Clouds::AttachDiskResponseError, 'No disk_hint' if cpi_response.nil? || cpi_response.empty?
+        cpi_response
+      when 1
+        nil
       end
-
-      cpi_response
     end
 
     private

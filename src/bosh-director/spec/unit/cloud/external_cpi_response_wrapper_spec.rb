@@ -449,6 +449,22 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       end
     end
 
+    describe('#attach_disk') do
+      let(:cpi_response) { JSON.dump(result: '/fake/disk-hint', error: nil, log: 'fake-log') }
+      let(:expected_response) { '/fake/disk-hint' }
+      it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
+
+      context 'when v2 cpi request does NOT return disk_hint' do
+        let(:cpi_response) { JSON.dump(result: nil, error: nil, log: 'fake-log') }
+        it_should_raise_error(
+          :attach_disk,
+          Bosh::Clouds::AttachDiskResponseError,
+          'No disk_hint',
+          'fake-vm-cid', 'fake-disk-cid'
+        )
+      end
+    end
+
     describe 'forwards all other methods without change' do
       let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
       let(:expected_response) { 'fake-result' }
@@ -495,22 +511,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
       context("#delete_disk") do
         it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
-      end
-
-      context("#attach_disk") do
-        let(:cpi_response) { JSON.dump(result: '/fake/disk-hint', error: nil, log: 'fake-log') }
-        let(:expected_response) { '/fake/disk-hint' }
-        it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
-
-        context 'when v2 cpi request does NOT retrun disk_hint' do
-          let(:cpi_response) { JSON.dump(result: nil, error: nil, log: 'fake-log') }
-          it_should_raise_error(
-            :attach_disk,
-            Bosh::Clouds::AttachDiskResponseError,
-            "No disk_hint",
-            'fake-vm-cid', 'fake-disk-cid'
-          )
-        end
       end
 
       context("#detach_disk") do
@@ -611,6 +611,12 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       end
     end
 
+    describe('#attach_disk') do
+      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+      let(:expected_response) { nil }
+      it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
+    end
+
     describe 'forwards all other methods without change' do
       let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
       let(:expected_response) { 'fake-result' }
@@ -657,10 +663,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
       context("#delete_disk") do
         it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
-      end
-
-      context("#attach_disk") do
-        it_calls_cpi_method(:attach_disk, 'fake-vm-cid', 'fake-disk-cid')
       end
 
       context("#detach_disk") do

@@ -15,7 +15,8 @@ module Bosh::Director
 
           agent_client(instance_model).wait_until_ready
           @logger.info("Mounting disk '#{disk_cid}' for instance '#{instance_model}'")
-          agent_client(instance_model).mount_disk(disk_cid, report.disk_hint)
+          args = [disk_cid, report.disk_hint].compact
+          agent_client(instance_model).mount_disk(*args)
         end
 
         private
