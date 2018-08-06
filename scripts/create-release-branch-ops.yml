@@ -191,5 +191,5 @@
       private_key: ((github_deployment_key))
 
 - type: replace
-  path: /resources/name=warden-ubuntu-trusty/source/version_family?
+  path: /resources/name=warden-ubuntu-xenial/source/version_family?
   value: ((stemcell_line)).latest
