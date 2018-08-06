@@ -48,7 +48,7 @@ describe 'director.yml.erb' do
         'generate_vm_passwords' => false,
         'remove_dev_tools' => false,
         'log_level' => 'debug',
-        'log_access_events_to_syslog' => false,
+        'log_access_events' => false,
         'flush_arp' => false,
         'local_dns' => {
           'enabled' => true,
@@ -163,14 +163,6 @@ describe 'director.yml.erb' do
             expect(parsed_yaml['nats']['client_ca_private_key_path']).to eq('/var/vcap/jobs/director/config/nats_client_ca_private_key')
           end
         end
-      end
-
-      it 'should contain the trusted_certs field' do
-        expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
-      end
-
-      it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('0.0.0')
       end
 
       context 'when domain name specified without all other dns properties' do
@@ -511,6 +503,17 @@ describe 'director.yml.erb' do
         end
       end
 
+      it 'should contain the trusted_certs field' do
+        expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
+      end
+
+      it 'should contain the version' do
+        expect(parsed_yaml['version']).to eq('0.0.0')
+      end
+
+      it 'should contain the audit log path' do
+        expect(parsed_yaml['audit_log_path']).to eq('/var/vcap/sys/log/director')
+      end
     end
 
     describe 'ignore_missing_gateway property' do

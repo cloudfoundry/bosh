@@ -233,6 +233,15 @@ describe Bosh::Director::Config do
         expect(log_contents).to include('after')
         expect(log_contents).to include('UPDATE "potatoface" <redacted>')
       end
+
+      it 'throws an error if deprecated "log_access_events_to_syslog" is used' do
+        test_config['log_access_events_to_syslog'] = 'true'
+
+        expect do
+          described_class.configure(test_config)
+        end.to raise_error(ArgumentError,
+                           'Invalid configuration attribute "log_access_events_to_syslog", use "log_access_events" instead')
+      end
     end
 
     context 'when agent env specified' do
@@ -542,7 +551,7 @@ describe Bosh::Director::Config do
       expect(event.object_name).to eq('custom-name')
       expect(event.context).to eq({'custom' => 'context'})
     end
-  end  
+  end
 
   context 'multiple digest' do
     context 'when verify multidigest is provided' do

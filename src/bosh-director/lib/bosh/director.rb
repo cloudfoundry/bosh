@@ -82,6 +82,7 @@ require 'bosh/director/package_dependencies_manager'
 require 'bosh/director/job_renderer'
 require 'bosh/director/rendered_templates_persister'
 
+require 'bosh/director/audit_logger'
 require 'bosh/director/cycle_helper'
 require 'bosh/director/worker'
 require 'bosh/director/password_helper'
@@ -216,7 +217,7 @@ end
 
 require 'bosh/director/thread_pool'
 require 'bosh/director/api/extensions/scoping'
-require 'bosh/director/api/extensions/syslog_request_logger'
+require 'bosh/director/api/extensions/request_logger'
 require 'bosh/director/api/controllers/backups_controller'
 require 'bosh/director/api/controllers/cleanup_controller'
 require 'bosh/director/api/controllers/deployments_controller'

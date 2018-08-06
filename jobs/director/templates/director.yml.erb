@@ -30,13 +30,14 @@ params = {
   'enable_cpi_resize_disk' => p('director.enable_cpi_resize_disk'),
   'generate_vm_passwords' => p('director.generate_vm_passwords'),
   'remove_dev_tools' => p('director.remove_dev_tools'),
-  'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
+  'log_access_events' => p('director.log_access_events'),
   'flush_arp' => p('director.flush_arp'),
   'local_dns' => {
       'enabled' => p('director.local_dns.enabled'),
       'include_index' => p('director.local_dns.include_index'),
       'use_dns_addresses' => p('director.local_dns.use_dns_addresses'),
   },
+  'audit_log_path' => '/var/vcap/sys/log/director',
 }
 
 director_db = {
