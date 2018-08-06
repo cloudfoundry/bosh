@@ -13,7 +13,10 @@ module Bosh::Director
 
   class Config
     class << self
+
       attr_accessor(
+        :audit_filename,
+        :audit_log_path,
         :base_dir,
         :cloud_options,
         :cpi_api_test_max_version,
@@ -83,6 +86,7 @@ module Bosh::Director
       end
 
       def configure(config)
+        validate_config(config)
         @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
         @flush_arp = config.fetch('flush_arp', false)
 
@@ -116,6 +120,8 @@ module Bosh::Director
         @logger = Logging::Logger.new('Director')
         @logger.add_appenders(shared_appender)
         @logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
+
+        @audit_log_path = config['audit_log_path']
 
         # Event logger supposed to be overridden per task,
         # the default one does nothing
@@ -225,6 +231,11 @@ module Bosh::Director
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
         @cpi_api_test_max_version = config.fetch('cpi_api_test_max_version')
+      end
+
+      def validate_config(config)
+        return unless config.key?('log_access_events_to_syslog')
+        raise ArgumentError, 'Invalid configuration attribute "log_access_events_to_syslog", use "log_access_events" instead'
       end
 
       def agent_env
@@ -516,8 +527,8 @@ module Bosh::Director
       hash['backup_destination']
     end
 
-    def log_access_events_to_syslog
-      hash['log_access_events_to_syslog']
+    def log_access_events
+      hash['log_access_events']
     end
 
     def director_pool

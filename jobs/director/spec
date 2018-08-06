@@ -147,8 +147,8 @@ properties:
   director.log_level:
     description: Log level
     default: debug
-  director.log_access_events_to_syslog:
-    description: Access to api is logged to the syslog
+  director.log_access_events:
+    description: Access to api is logged in CEF format
     default: false
   director.flush_arp:
     description: Clear up arp entries when machines are recreated
@@ -312,7 +312,7 @@ properties:
 
   # Events
   director.events.record_events:
-    description: Enable recording of events to the database and syslog
+    description: Enable recording of events to the database and audit logs
     default: false
   director.events.max_events:
     description: Max number of events to keep

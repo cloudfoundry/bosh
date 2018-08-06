@@ -1,5 +1,6 @@
 module Bosh::Dev::Sandbox
   class DirectorConfig
+    attr_accessor :audit_log_path
     attr_reader :director_name,
                 :agent_wait_timeout,
                 :blobstore_storage_dir,

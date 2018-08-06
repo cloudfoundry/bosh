@@ -175,6 +175,8 @@ remove_dev_tools: <%= remove_dev_tools %>
 
 record_events: true
 
+log_access_events: true
+
 director_ips: <%= director_ips %>
 
 nats:
@@ -189,3 +191,5 @@ agent:
   env:
     bosh:
       dummy_agent_key_merged: "This key must be sent to agent"
+
+audit_log_path: <%= audit_log_path %>

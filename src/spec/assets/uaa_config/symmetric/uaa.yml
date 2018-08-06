@@ -101,6 +101,13 @@ oauth:
       scope: openid
       authorities: bosh.teams.dev_team.admin
       secret: "secret"
+    audit_log:
+      id: audit_log
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid
+      authorities: bosh.admin
+      secret: "auditsecret"
 jwt:
   token:
     signing-key: "uaa-secret-key"

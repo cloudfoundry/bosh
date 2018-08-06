@@ -17,6 +17,7 @@ module Bosh::Dev::Sandbox
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
       @base_log_path = options[:base_log_path]
+      @audit_log_path = options[:audit_log_path]
 
       log_location = "#{@base_log_path}.director.out"
       @process = Service.new(
@@ -49,6 +50,7 @@ module Bosh::Dev::Sandbox
     end
 
     def start(config)
+      config.audit_log_path = @audit_log_path
       write_config(config)
 
       migrate_database

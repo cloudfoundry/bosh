@@ -24,6 +24,8 @@ begin
   config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
   config = nil
 
+  Bosh::Director::Config.audit_filename = "audit_worker_#{index}.log"
+
   config = Bosh::Director::Config.load_file(config_file)
   config.db
 

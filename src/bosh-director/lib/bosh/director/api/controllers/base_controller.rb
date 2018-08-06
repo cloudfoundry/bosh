@@ -4,12 +4,12 @@ module Bosh::Director
       class BaseController < Sinatra::Base
         include ApiHelper
         include Http
-        include SyslogHelper
 
         def initialize(config)
           super()
           @config = config
           @logger = Config.logger
+          @audit_logger = AuditLogger.instance
           @identity_provider = config.identity_provider
           @permission_authorizer = PermissionAuthorizer.new(config.get_uuid_provider)
           @backup_manager = BackupManager.new
@@ -22,8 +22,8 @@ module Bosh::Director
           @event_manager = EventManager.new(config.record_events)
         end
 
-        register(Bosh::Director::Api::Extensions::SyslogRequestLogger)
-        log_request_to_syslog
+        register(Bosh::Director::Api::Extensions::RequestLogger)
+        log_request_to_auditlog
 
         register(Bosh::Director::Api::Extensions::Scoping)
 

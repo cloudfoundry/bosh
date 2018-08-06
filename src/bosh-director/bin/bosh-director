@@ -17,6 +17,8 @@ opts.parse!(ARGV.dup)
 config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 config = Bosh::Director::Config.load_file(config_file)
 
+Bosh::Director::Config.audit_filename = 'audit.log'
+
 route_configuration = Bosh::Director::Api::RouteConfiguration.new(config)
 
 rack_app = Puma::Rack::Builder.app do
