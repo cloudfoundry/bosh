@@ -65,10 +65,6 @@
       - delivery
 
 - type: replace
-  path: /jobs/name=candidate-release/plan/get=candidate-version/params/bump
-  value: minor
-
-- type: replace
   path: /resources/name=bosh-src/source/branch
   value: ((branchname))
 
@@ -89,15 +85,24 @@
   value: finalize-bosh-release
 
 - type: replace
+  path: /groups/name=bosh/jobs/-
+  value: export-final-release
+
+- type: replace
+  path: /groups/name=bosh/jobs/-
+  value: bump-candidate-minor
+
+- type: replace
   path: /groups/name=finalize?/jobs
   value:
   - finalize-bosh-release
+  - export-final-release
 
 - type: remove
   path: /jobs/name=bump-candidate-major
 
 - type: remove
-  path: /resources/name=lastest-major-version
+  path: /resources/name=latest-major-version
 
 - type: remove
   path: /groups/name=version
@@ -144,6 +149,38 @@
           annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
 
 - type: replace
+  path: /jobs/-
+  value:
+    name: export-final-release
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-master
+      - get: candidate-version
+        passed: [finalize-bosh-release]
+      - get: warden-ubuntu-trusty
+        passed: [brats-ubuntu]
+    - task: export-final-release
+      file: bosh-master/ci/tasks/export-final-release.yml
+      privileged: true
+      input_mapping:
+        version: candidate-version
+        stemcell: warden-ubuntu-trusty
+        bosh-src: bosh-master
+    - task: push-bosh-compiled-releases
+      file: bosh-master/ci/tasks/push-bosh-compiled-releases.yml
+
+- type: replace
+  path: /jobs/-
+  value:
+    name: bump-candidate-minor
+    serial: true
+    plan:
+    - put: candidate-version
+      params:
+        bump: minor
+
+- type: replace
   path: /resources/-
   value:
     name: bosh-master
@@ -152,3 +189,7 @@
       uri: ((bosh_src_url))
       branch: master
       private_key: ((github_deployment_key))
+
+- type: replace
+  path: /resources/name=warden-ubuntu-trusty/source/version_family?
+  value: ((stemcell_line)).latest
