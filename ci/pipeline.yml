@@ -15,6 +15,7 @@ groups:
       - fuzz-tests
       - candidate-release
       - finalize-bosh-release
+      - export-final-release
       - bats-centos
       - bats-ubuntu
       - brats-ubuntu
@@ -37,6 +38,7 @@ groups:
   - name: finalize
     jobs:
       - finalize-bosh-release
+      - export-final-release
 
 shared:
   - &install-dependencies
@@ -596,7 +598,7 @@ jobs:
           passed:
           - candidate-release
         - get: bosh-dns-release
-        - get: candidate-warden-ubuntu-stemcell
+        - get: warden-ubuntu-trusty-stemcell
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -609,7 +611,8 @@ jobs:
         tags: ["worker-brats"]
         privileged: true
         input_mapping:
-          stemcell: candidate-warden-ubuntu-stemcell
+          stemcell: warden-ubuntu-trusty-stemcell
+          candidate-warden-ubuntu-stemcell: warden-ubuntu-trusty-stemcell
         params: &brats-dbs-params
           RDS_MYSQL_EXTERNAL_DB_HOST: ((brats-rds-mysql-external-db-host))
           RDS_MYSQL_EXTERNAL_DB_USER: ((brats-rds-mysql-external-db-user))
@@ -690,6 +693,25 @@ jobs:
           repository: bosh-src-with-bumped-version
           tag: bosh-src-with-bumped-version-tag/tag-name
           annotate: bosh-src-with-bumped-version-tag/annotate-msg
+
+  - name: export-final-release
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-master
+      - get: candidate-version
+        passed: [finalize-bosh-release]
+      - get: warden-ubuntu-trusty-stemcell
+        passed: [brats-ubuntu]
+    - task: export-final-release
+      file: bosh-master/ci/tasks/export-final-release.yml
+      privileged: true
+      input_mapping:
+        version: candidate-version
+        stemcell: warden-ubuntu-trusty-stemcell
+        bosh-src: bosh-master
+    - task: push-bosh-compiled-releases
+      file: bosh-master/ci/tasks/push-bosh-compiled-releases.yml
 
 resources:
   - name: bosh-src
@@ -789,17 +811,19 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+      version_family: 3586.latest
 
-  - name: candidate-warden-ubuntu-stemcell
-    type: s3
+  - name: warden-ubuntu-trusty-stemcell
+    type: bosh-io-stemcell
     source:
-      bucket: bosh-core-stemcells-candidate
-      regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
+      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+      version_family: 3586.latest
 
   - name: vsphere-esxi-centos-7
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-centos-7-go_agent
+      version_family: 3586.latest
 
   - name: cpi-release
     type: bosh-io-release
@@ -869,3 +893,4 @@ resources:
       branch: master
       pool: brats
       private_key: ((bosh_ci_pools_deploy_key))
+
