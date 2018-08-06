@@ -158,14 +158,16 @@
       - get: bosh-master
       - get: candidate-version
         passed: [finalize-bosh-release]
-      - get: warden-ubuntu-trusty
-        passed: [brats-ubuntu]
+        trigger: true
+      - get: warden-ubuntu-xenial
+        passed: [brats-ubuntu-xenial, bbr-ubuntu-xenial]
+        trigger: true
     - task: export-final-release
       file: bosh-master/ci/tasks/export-final-release.yml
       privileged: true
       input_mapping:
         version: candidate-version
-        stemcell: warden-ubuntu-trusty
+        stemcell: warden-ubuntu-xenial
         bosh-src: bosh-master
     - task: push-bosh-compiled-releases
       file: bosh-master/ci/tasks/push-bosh-compiled-releases.yml
