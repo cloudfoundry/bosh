@@ -458,7 +458,8 @@ describe Bosh::Director::Links::LinksParser do
             'street' => { 'default' => 'Any Street' },
             'scope' => {},
             'division.router' => { 'default' => 'Canada' },
-            'division.priority' => { 'default' => 'NOW!' },
+            'division.priority' => { 'default' => 1 },
+            'division.enabled' => { 'default' => false },
             'division.sequence' => {},
           }
         end
@@ -469,7 +470,7 @@ describe Bosh::Director::Links::LinksParser do
               name: 'link_1_name',
               type: 'link_1_type',
               properties:
-                ['street', 'scope', 'division.priority', 'division.sequence'],
+              ['street', 'scope', 'division.priority', 'division.enabled', 'division.sequence'],
             },
           ]
         end
@@ -482,56 +483,109 @@ describe Bosh::Director::Links::LinksParser do
           }
         end
 
-        let(:job_properties) do
-          {
-            'street' => 'Any Street',
-            'division' => {
-              'priority' => 'LOW',
-              'sequence' => 'FIFO',
-            },
-          }
+        context 'when the job has properties specified' do
+          let(:job_properties) do
+            {
+              'street' => 'Any Street',
+              'division' => {
+                'priority' => 'LOW',
+                'sequence' => 'FIFO',
+                'enabled' => true,
+              },
+            }
+          end
+
+          it 'should update the provider intent metadata with the correct mapped properties' do
+            expected_provider_params = {
+              deployment_model: deployment_plan.model,
+              instance_group_name: 'instance-group-name',
+              name: 'release1_job_name_1',
+              type: 'job',
+            }
+
+            expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+
+            expected_provider_intent_params = {
+              link_provider: provider,
+              link_original_name: 'link_1_name',
+              link_type: 'link_1_type',
+            }
+            expect(links_manager).to receive(:find_or_create_provider_intent)
+              .with(expected_provider_intent_params)
+              .and_return(provider_intent)
+
+            mapped_properties = {
+              'street' => 'Any Street',
+              'scope' => nil,
+              'division' => {
+                'priority' => 'LOW',
+                'enabled' => true,
+                'sequence' => 'FIFO',
+              },
+            }
+
+            expect(provider_intent).to receive(:name=).with('link_1_name')
+            expect(provider_intent).to receive(:metadata=).with({ mapped_properties: mapped_properties, custom: false }.to_json)
+            expect(provider_intent).to receive(:consumable=).with(true)
+            expect(provider_intent).to receive(:shared=).with(false)
+            expect(provider_intent).to receive(:save)
+            subject.parse_providers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              job_properties: job_properties,
+              instance_group_name: 'instance-group-name',
+            )
+          end
         end
 
-        it 'should update the provider intent metadata with the correct mapped properties' do
-          expected_provider_params = {
-            deployment_model: deployment_plan.model,
-            instance_group_name: 'instance-group-name',
-            name: 'release1_job_name_1',
-            type: 'job',
-          }
+        context 'when the job does not specify properties with default values' do
+          let(:job_properties) do
+            {}
+          end
 
-          expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
+          it 'correctly uses the default values for provided links' do
+            expected_provider_params = {
+              deployment_model: deployment_plan.model,
+              instance_group_name: 'instance-group-name',
+              name: 'release1_job_name_1',
+              type: 'job',
+            }
 
-          expected_provider_intent_params = {
-            link_provider: provider,
-            link_original_name: 'link_1_name',
-            link_type: 'link_1_type',
-          }
-          expect(links_manager).to receive(:find_or_create_provider_intent)
-            .with(expected_provider_intent_params)
-            .and_return(provider_intent)
+            expect(links_manager).to receive(:find_or_create_provider).with(expected_provider_params).and_return(provider)
 
-          mapped_properties = {
-            'street' => 'Any Street',
-            'scope' => nil,
-            'division' => {
-              'priority' => 'LOW',
-              'sequence' => 'FIFO',
-            },
-          }
+            expected_provider_intent_params = {
+              link_provider: provider,
+              link_original_name: 'link_1_name',
+              link_type: 'link_1_type',
+            }
+            expect(links_manager).to receive(:find_or_create_provider_intent)
+              .with(expected_provider_intent_params)
+              .and_return(provider_intent)
 
-          expect(provider_intent).to receive(:name=).with('link_1_name')
-          expect(provider_intent).to receive(:metadata=).with({ mapped_properties: mapped_properties, custom: false }.to_json)
-          expect(provider_intent).to receive(:consumable=).with(true)
-          expect(provider_intent).to receive(:shared=).with(false)
-          expect(provider_intent).to receive(:save)
-          subject.parse_providers_from_job(
-            job_spec,
-            deployment_plan.model,
-            template,
-            job_properties: job_properties,
-            instance_group_name: 'instance-group-name',
-          )
+            mapped_properties = {
+              'street' => 'Any Street',
+              'scope' => nil,
+              'division' => {
+                'priority' => 1,
+                'enabled' => false,
+                'sequence' => nil,
+              },
+            }
+
+            expect(provider_intent).to receive(:name=).with('link_1_name')
+            expect(provider_intent).to receive(:metadata=).with({ mapped_properties: mapped_properties, custom: false }.to_json)
+            expect(provider_intent).to receive(:consumable=).with(true)
+            expect(provider_intent).to receive(:shared=).with(false)
+            expect(provider_intent).to receive(:save)
+            subject.parse_providers_from_job(
+              job_spec,
+              deployment_plan.model,
+              template,
+              job_properties: job_properties,
+              instance_group_name: 'instance-group-name',
+            )
+          end
         end
 
         context 'when the exposed property is not defined in the release' do
@@ -540,6 +594,7 @@ describe Bosh::Director::Links::LinksParser do
               'street' => { 'default' => 'Any Street' },
               'division.router' => { 'default' => 'Canada' },
               'division.priority' => { 'default' => 'NOW!' },
+              'division.enabled' => { 'default' => false },
               'division.sequence' => {},
             }
           end
@@ -577,7 +632,10 @@ describe Bosh::Director::Links::LinksParser do
                 job_properties: job_properties,
                 instance_group_name: 'instance-group-name',
               )
-            end.to raise_error(RuntimeError, 'Link property scope in template release1_job_name_1 is not defined in release spec')
+            end.to raise_error(
+              RuntimeError,
+              'Link property scope in template release1_job_name_1 is not defined in release spec',
+            )
           end
         end
       end
