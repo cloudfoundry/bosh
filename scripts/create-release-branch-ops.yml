@@ -170,7 +170,7 @@
         stemcell: warden-ubuntu-xenial
         bosh-src: bosh-master
     - task: push-bosh-compiled-releases
-      file: bosh-master/ci/tasks/push-bosh-compiled-releases.yml
+      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
 
 - type: replace
   path: /jobs/-
