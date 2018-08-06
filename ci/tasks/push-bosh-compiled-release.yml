@@ -12,9 +12,9 @@ inputs:
 - name: compiled-release
 
 params:
-  AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
-  AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
-  git_private_key: ((bosh-compiled-releases-index-deploy-key))
+  AWS_ACCESS_KEY_ID: ~
+  AWS_SECRET_ACCESS_KEY: ~
+  git_private_key: ~
 
 run:
   path: bosh-src/ci/tasks/push-bosh-compiled-release.sh
