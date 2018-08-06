@@ -13,6 +13,7 @@ inputs:
 
 outputs:
 - name: compiled-release
+- name: metalink-path
 
 run:
   path: bosh-src/ci/tasks/export-final-release.sh

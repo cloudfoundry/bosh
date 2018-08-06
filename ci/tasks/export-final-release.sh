@@ -50,5 +50,7 @@ EOF
 bosh -n -d compilation deploy manifest.yml
 bosh -d compilation export-release bosh/$RELEASE_VERSION $STEMCELL_OS/$STEMCELL_VERSION
 
-mv *.tgz compiled-release/$( echo *.tgz | sed "s/\.tgz$/-$( date -u +%Y%m%d%H%M%S ).tgz/" )
+mv *.tgz compiled-release/$(echo *.tgz | sed "s/${STEMCELL_VERSION}-.*\.tgz/${STEMCELL_VERSION}.tgz/")
 sha1sum compiled-release/*.tgz
+mkdir -p metalink-path
+echo -n "github.com/cloudfoundry/bosh/bosh-${RELEASE_VERSION}/${STEMCELL_VERSION}/source.meta4" | tee metalink-path/file-path
