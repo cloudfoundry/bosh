@@ -24,6 +24,7 @@ groups:
   - blobstore-performance
   - delivery
   - finalize-bosh-release
+  - export-final-release
   name: bosh
 - jobs:
   - unit-2.4-mysql
@@ -49,6 +50,7 @@ groups:
   name: brats/bbr
 - jobs:
   - finalize-bosh-release
+  - export-final-release
   name: finalize
 jobs:
 - build_logs_to_retain: 250
@@ -1363,6 +1365,32 @@ jobs:
       tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
     put: bosh-src
   serial: true
+- name: export-final-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: bosh-master
+    - get: candidate-version
+      passed: [finalize-bosh-release]
+      trigger: true
+    - get: warden-ubuntu-xenial
+      passed: [brats-ubuntu-xenial, bbr-ubuntu-xenial]
+      trigger: true
+  - task: export-final-release
+    file: bosh-master/ci/tasks/export-final-release.yml
+    privileged: true
+    input_mapping:
+      version: candidate-version
+      stemcell: warden-ubuntu-xenial
+      bosh-src: bosh-master
+  - task: push-bosh-compiled-releases
+    file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
+    params:
+      AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
+      AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+      git_private_key: ((bosh-compiled-releases-index-deploy-key))
+    input_mapping:
+      bosh-src: bosh-master
 resource_types:
 - name: terraform
   source:
@@ -1459,6 +1487,7 @@ resources:
 - name: vsphere-esxi-ubuntu-xenial
   source:
     name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
+    version_family: 97.latest
   type: bosh-io-stemcell
 - name: aws-xen-hvm-ubuntu-trusty
   source:
@@ -1471,6 +1500,7 @@ resources:
 - name: warden-ubuntu-xenial
   source:
     name: bosh-warden-boshlite-ubuntu-xenial-go_agent
+    version_family: 97.latest
   type: bosh-io-stemcell
 - name: vsphere-esxi-centos-7
   source:
