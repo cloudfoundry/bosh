@@ -139,10 +139,12 @@ describe 'network resolution', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest)
       end.to raise_error(
         RuntimeError,
-        Regexp.new(
-          "Provider 'db' from job 'database' in instance group 'mysql' "\
-          "in deployment 'simple' does not belong to network 'invalid_network'",
-        ),
+        Regexp.new(<<~ERROR
+          Failed to resolve links from deployment 'simple'. See errors below:
+            - Failed to resolve link 'db' with type 'db' from job 'api_server' in instance group 'my_api'. Details below:
+              - Link provider 'db' from job 'database' in instance group 'mysql' in deployment 'simple' does not belong to network 'invalid_network'
+        ERROR
+        .strip),
       )
     end
 
@@ -163,10 +165,12 @@ describe 'network resolution', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest)
       end.to raise_error(
         RuntimeError,
-        Regexp.new(
-          "Provider 'db' from job 'database' in instance group 'mysql' in deployment 'simple' "\
-          "does not belong to network 'global_network'",
-        ),
+        Regexp.new(<<~ERROR
+          Failed to resolve links from deployment 'simple'. See errors below:
+            - Failed to resolve link 'db' with type 'db' from job 'api_server' in instance group 'my_api'. Details below:
+              - Link provider 'db' from job 'database' in instance group 'mysql' in deployment 'simple' does not belong to network 'global_network'
+        ERROR
+        .strip),
       )
     end
 
