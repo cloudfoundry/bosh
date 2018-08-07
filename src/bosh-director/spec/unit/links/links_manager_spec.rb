@@ -1484,11 +1484,12 @@ describe Bosh::Director::Links::LinksManager do
               it 'raises an error' do
                 expect do
                   subject.resolve_deployment_links(deployment_model, options)
-                end.to raise_error(
-                  "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                  "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
-                  "does not belong to network 'neta'",
-                )
+                end.to raise_error(<<~ERROR
+                  Failed to resolve links from deployment 'test_deployment'. See errors below:
+                    - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+                ERROR
+                .strip)
               end
             end
           end
@@ -1626,11 +1627,12 @@ describe Bosh::Director::Links::LinksManager do
               it 'raises an error' do
                 expect do
                   subject.resolve_deployment_links(deployment_model, options)
-                end.to raise_error(
-                  "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                  "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
-                  "does not belong to network 'neta'",
-                )
+                end.to raise_error(<<~ERROR
+                  Failed to resolve links from deployment 'test_deployment'. See errors below:
+                    - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+                ERROR
+                .strip)
               end
             end
           end
@@ -1836,11 +1838,12 @@ describe Bosh::Director::Links::LinksManager do
             it 'raises an error' do
               expect do
                 subject.resolve_deployment_links(deployment_model, options)
-              end.to raise_error(
-                "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
-                "does not belong to network 'neta'",
-              )
+              end.to raise_error(<<~ERROR
+                Failed to resolve links from deployment 'test_deployment'. See errors below:
+                  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                    - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+              ERROR
+              .strip)
             end
           end
         end
