@@ -323,11 +323,12 @@ describe 'cross deployment links', type: :integration do
           deploy_simple_manifest(manifest_hash: second_manifest)
         end.to raise_error(
           RuntimeError,
-          Regexp.new(
-            "Failed to resolve links from deployment 'second'. See errors below:\n" \
-            "  - Provider 'node1' from job 'node' in instance group 'first_deployment_node' "\
-            "in deployment 'second' does not belong to network 'invalid-network'",
-          ),
+          Regexp.new(<<~ERROR
+            Failed to resolve links from deployment 'second'. See errors below:
+              - Failed to resolve link 'node1' with type 'node1' from job 'node' in instance group 'second_deployment_node'. Details below:
+                - Link provider 'node1' from job 'node' in instance group 'first_deployment_node' in deployment 'first' does not belong to network 'invalid-network'
+          ERROR
+          .strip),
         )
       end
 
@@ -350,11 +351,12 @@ describe 'cross deployment links', type: :integration do
             deploy_simple_manifest(manifest_hash: second_manifest)
           end.to raise_error(
             RuntimeError,
-            Regexp.new(
-              "Failed to resolve links from deployment 'second'. See errors below:\n" \
-              "  - Provider 'node1' from job 'node' in instance group 'first_deployment_node' "\
-              "in deployment 'second' does not belong to network 'invalid-network'",
-            ),
+            Regexp.new(<<~ERROR
+              Failed to resolve links from deployment 'second'. See errors below:
+                - Failed to resolve link 'node1' with type 'node1' from job 'node' in instance group 'second_deployment_node'. Details below:
+                  - Link provider 'node1' from job 'node' in instance group 'first_deployment_node' in deployment 'first' does not belong to network 'invalid-network'
+            ERROR
+            .strip),
           )
         end
       end
