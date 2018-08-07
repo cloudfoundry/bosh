@@ -16,6 +16,7 @@ groups:
       - fuzz-tests
       - candidate-release
       - finalize-bosh-release
+      - export-final-release
       - bats-centos
       - bats-ubuntu
       - brats-ubuntu
@@ -36,6 +37,7 @@ groups:
   - name: finalize
     jobs:
       - finalize-bosh-release
+      - export-final-release
 
 shared:
   - &deploy-director
@@ -414,94 +416,6 @@ jobs:
             DB: mysql
             RUBY_VERSION: 2.4.4
 
-  # - name: load-tests-postgres
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: warden-ubuntu-trusty }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: bosh-cli }
-  #
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
-  #     tags: ["bosh-load-tests"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: postgresql
-  #       LEGACY: false
-  #
-  # - name: legacy-load-tests-postgres
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: bosh-cli }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: warden-ubuntu-trusty }
-  #
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
-  #     tags: ["bosh-load-tests-2"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: postgresql
-  #       LEGACY: true
-  #
-  # - name: load-tests-mysql
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: bosh-cli }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: warden-ubuntu-trusty }
-  #
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
-  #     tags: ["bosh-load-tests-3"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: mysql
-  #       LEGACY: false
-  #
-  # - name: legacy-load-tests-mysql
-  #   public: true
-  #   serial: true
-  #   build_logs_to_retain: 250
-  #   plan:
-  #   - { get: load-tests-interval, trigger: true }
-  #   - { get: bosh-load-tests-workspace }
-  #   - { get: bosh-cli }
-  #   - { get: bosh-candidate-release-tarballs }
-  #   - { get: warden-ubuntu-trusty }
-  #
-  #   - task: test
-  #     privileged: true
-  #     file: bosh-load-tests-workspace/ci/tasks/test.yml
-  #     tags: ["bosh-load-tests-4"]
-  #     input_mapping:
-  #       bosh-candidate-stemcell: warden-ubuntu-trusty
-  #       bosh-candidate-release: bosh-candidate-release-tarballs
-  #     params:
-  #       DB: mysql
-  #       LEGACY: true
-
   - name: fuzz-tests
     public: true
     serial: true
@@ -632,7 +546,7 @@ jobs:
           passed:
           - candidate-release
         - get: bosh-dns-release
-        - get: candidate-warden-ubuntu-stemcell
+        - get: warden-ubuntu-trusty
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -645,7 +559,7 @@ jobs:
         tags: ["worker-brats"]
         privileged: true
         input_mapping:
-          stemcell: candidate-warden-ubuntu-stemcell
+          stemcell: warden-ubuntu-trusty
 
   - name: finalize-bosh-release
     serial: true
@@ -681,6 +595,33 @@ jobs:
           repository: bosh-src-with-bumped-version
           tag: bosh-src-with-bumped-version-tag/tag-name
           annotate: bosh-src-with-bumped-version-tag/annotate-msg
+
+  - name: export-final-release
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-master
+      - get: candidate-version
+        passed: [finalize-bosh-release]
+        trigger: true
+      - get: warden-ubuntu-trusty
+        passed: [brats-ubuntu]
+        trigger: true
+    - task: export-final-release
+      file: bosh-master/ci/tasks/export-final-release.yml
+      privileged: true
+      input_mapping:
+        version: candidate-version
+        stemcell: warden-ubuntu-trusty
+        bosh-src: bosh-master
+    - task: push-bosh-compiled-releases
+      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
+      input_mapping:
+        bosh-src: bosh-master
+      params:
+        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+        git_private_key: ((bosh-compiled-releases-index-deploy-key))
 
 resources:
   - name: bosh-src
@@ -725,7 +666,7 @@ resources:
   #   source:
   #     uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
   #     branch: master
-  #
+
   - name: bosh-master
     type: git
     source:
@@ -742,7 +683,7 @@ resources:
   #   type: time
   #   source:
   #     interval: 5h
-  #
+
   - name: every-sunday
     type: time
     source:
@@ -790,22 +731,19 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+      version_family: 3468.latest
 
-  - name: candidate-warden-ubuntu-stemcell
-    type: s3
+  - name: warden-ubuntu-trusty
+    type: bosh-io-stemcell
     source:
-      bucket: bosh-core-stemcells-candidate
-      regexp: warden/bosh-stemcell-(.+)-warden-boshlite-ubuntu-trusty-go_agent.tgz
+      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+      version_family: 3468.latest
 
-  # - name: warden-ubuntu-trusty
-  #   type: bosh-io-stemcell
-  #   source:
-  #     name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-  #
   - name: vsphere-esxi-centos-7
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-centos-7-go_agent
+      version_family: 3468.latest
 
   - name: cpi-release
     type: bosh-io-release
