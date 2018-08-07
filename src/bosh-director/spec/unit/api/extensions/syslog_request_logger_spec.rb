@@ -119,6 +119,7 @@ module Bosh::Director
               end
 
               it 'includes response status' do
+                expect(log_string).to include("cs4=#{expected_status} cs4Label=responseStatus")
               end
 
               context 'when auth is provided' do
