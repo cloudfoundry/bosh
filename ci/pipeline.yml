@@ -595,6 +595,7 @@ jobs:
           repository: bosh-src-with-bumped-version
           tag: bosh-src-with-bumped-version-tag/tag-name
           annotate: bosh-src-with-bumped-version-tag/annotate-msg
+          rebase: true
 
   - name: export-final-release
     serial: true
