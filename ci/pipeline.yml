@@ -590,6 +590,7 @@ jobs:
       - put: bosh-master
         params:
           repository: bosh-master-with-final
+          rebase: true
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
