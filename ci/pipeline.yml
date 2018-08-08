@@ -1358,11 +1358,13 @@ jobs:
     put: candidate-version
   - params:
       repository: bosh-master-with-final
+      rebase: true
     put: bosh-master
   - params:
       repository: bosh-src-with-bumped-version
       annotate: /tmp/build/put/bosh-src-with-bumped-version/annotate-msg
       tag: /tmp/build/put/bosh-src-with-bumped-version/tag-name
+      rebase: true
     put: bosh-src
   serial: true
 - name: export-final-release
