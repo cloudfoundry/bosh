@@ -546,7 +546,7 @@ jobs:
           passed:
           - candidate-release
         - get: bosh-dns-release
-        - get: warden-ubuntu-trusty
+        - get: warden-ubuntu-trusty-stemcell
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -559,7 +559,7 @@ jobs:
         tags: ["worker-brats"]
         privileged: true
         input_mapping:
-          stemcell: warden-ubuntu-trusty
+          stemcell: warden-ubuntu-trusty-stemcell
 
   - name: finalize-bosh-release
     serial: true
@@ -606,15 +606,13 @@ jobs:
       - get: candidate-version
         passed: [finalize-bosh-release]
         trigger: true
-      - get: warden-ubuntu-trusty
-        passed: [brats-ubuntu]
         trigger: true
     - task: export-final-release
       file: bosh-master/ci/tasks/export-final-release.yml
       privileged: true
       input_mapping:
         version: candidate-version
-        stemcell: warden-ubuntu-trusty
+        stemcell: warden-ubuntu-trusty-stemcell
         bosh-src: bosh-master
     - task: push-bosh-compiled-releases
       file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
@@ -735,7 +733,7 @@ resources:
       name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
       version_family: 3468.latest
 
-  - name: warden-ubuntu-trusty
+  - name: warden-ubuntu-trusty-stemcell
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-trusty-go_agent
