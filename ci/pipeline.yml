@@ -688,11 +688,13 @@ jobs:
       - put: bosh-master
         params:
           repository: bosh-master-with-final
+          release: true
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
           tag: bosh-src-with-bumped-version-tag/tag-name
           annotate: bosh-src-with-bumped-version-tag/annotate-msg
+          release: true
 
   - name: export-final-release
     serial: true
