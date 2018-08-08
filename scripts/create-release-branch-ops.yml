@@ -142,11 +142,13 @@
       - put: bosh-master
         params:
           repository: bosh-master-with-final
+          rebase: true
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
           tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
           annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
+          rebase: true
 
 - type: replace
   path: /jobs/-
