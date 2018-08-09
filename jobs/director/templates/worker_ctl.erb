@@ -46,6 +46,9 @@ export NO_PROXY="<%= no_proxy %>"
 export no_proxy="<%= no_proxy %>"
 <% end %>
 
+export RUBY_THREAD_VM_STACK_SIZE=16777216
+export RUBY_THREAD_MACHINE_STACK_SIZE=16777216
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/ps_utils.sh
 
