@@ -8,10 +8,12 @@ set -eu
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # TODO(db, ja): validate required variables have been set
 
-cd src/go
-export GOPATH=$(pwd)
-export PATH="${GOPATH}/bin":$PATH
+pushd src/go > /dev/null
+  export GOPATH=$(pwd)
+  export PATH="${GOPATH}/bin":$PATH
+popd > /dev/null
 
-cd src/github.com/cloudfoundry/bosh-release-acceptance-tests
-go install ./vendor/github.com/onsi/ginkgo/ginkgo
-ginkgo -v -race -randomizeSuites -randomizeAllSpecs -focus="${FOCUS_SPEC}" -nodes 5 bbr
+pushd src/github.com/cloudfoundry/bosh-release-acceptance-tests > /dev/null
+  go install ./vendor/github.com/onsi/ginkgo/ginkgo
+  ginkgo -v -race -randomizeSuites -randomizeAllSpecs -focus="${FOCUS_SPEC}" -nodes 5 bbr
+popd > /dev/null

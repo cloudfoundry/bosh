@@ -2,6 +2,8 @@
 groups:
   - name: bosh
     jobs:
+      - compile-bbr-trusty
+      - compile-bbr-xenial
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
@@ -611,6 +613,40 @@ jobs:
         BOSH_SRC_PATH: bosh-src/src
         RUBY_VERSION: 2.4.4
 
+  - name: compile-bbr-xenial
+    plan:
+    - aggregate:
+      - get: bosh-src
+      - get: release
+        resource: bbr-sdk-release
+        trigger: true
+      - get: stemcell
+        resource: warden-ubuntu-xenial
+        trigger: true
+    - task: export-release
+      file: bosh-src/ci/tasks/export-release.yml
+      privileged: true
+    - put: bbr-compiled-xenial
+      params:
+        file: "release/*.tgz"
+
+  - name: compile-bbr-trusty
+    plan:
+    - aggregate:
+      - get: bosh-src
+      - get: release
+        resource: bbr-sdk-release
+        trigger: true
+      - get: stemcell
+        resource: warden-ubuntu-trusty
+        trigger: true
+    - task: export-release
+      file: bosh-src/ci/tasks/export-release.yml
+      privileged: true
+    - put: bbr-compiled-trusty
+      params:
+        file: "release/*.tgz"
+
   - name: candidate-release
     plan:
     - get: bosh-src
@@ -922,6 +958,8 @@ jobs:
         trigger: true
         passed:
           - candidate-release
+      - get: bbr-compiled-release
+        resource: bbr-compiled-trusty
     - do:
       - put: brats-terraform
         attempts: 2
@@ -1119,6 +1157,8 @@ jobs:
         trigger: true
         passed:
           - candidate-release
+      - get: bbr-compiled-release
+        resource: bbr-compiled-xenial
     - do:
       - put: brats-terraform
         attempts: 2
@@ -1366,6 +1406,27 @@ resources:
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
       versioned_file: "bosh-dev-release.tgz"
+
+  - name: bbr-sdk-release
+    type: bosh-io-release
+    source:
+      repository:  cloudfoundry-incubator/backup-and-restore-sdk-release
+
+  - name: bbr-compiled-trusty
+    type: s3
+    source:
+      bucket: ((bbr_compiled_release_bucket))
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
+      regexp: "trusty/backup-and-restore-sdk-(.*).tgz"
+
+  - name: bbr-compiled-xenial
+    type: s3
+    source:
+      bucket: ((bbr_compiled_release_bucket))
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
+      regexp: "xenial/backup-and-restore-sdk-(.*).tgz"
 
   - name: integration-tests-parallel-runtime
     type: s3

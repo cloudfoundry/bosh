@@ -1,11 +1,6 @@
 ---
 - type: replace
-  path: /releases/name=backup-and-restore-sdk/version
-  value: latest
-
-- type: remove
-  path: /releases/name=backup-and-restore-sdk/url
-
-- type: remove
-  path: /releases/name=backup-and-restore-sdk/sha1
-
+  path: /releases/name=backup-and-restore-sdk?
+  value:
+    url: ((bbr_release_path)) # usually used with compiled release
+    version: latest
