@@ -70,6 +70,7 @@ done
 if [ "$adapter" = 'postgres' ];then
     export PGPASSWORD=$pass
     export PGCLIENTENCODING=UTF8
+    export PATH="$PATH:/var/vcap/packages/postgres-9.4/bin"
 
     psql -U$db_su -h$host $db_name -c"drop schema public cascade; create schema public;"
     psql -U$db_su -h$host $db_name -c"grant all on schema public to $db_su; grant all on schema public to public;"
