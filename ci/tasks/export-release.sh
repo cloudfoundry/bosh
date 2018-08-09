@@ -22,7 +22,8 @@ main() {
     -v release_name="$RELEASE_NAME" \
     -v release_version="$RELEASE_VERSION" \
     -v stemcell_os="$STEMCELL_OS" \
-    -v stemcell_version="$STEMCELL_VERSION" \
+    -v stemcell_version="$STEMCELL_VERSION"
+
   bosh -d compilation export-release $RELEASE_NAME/$RELEASE_VERSION $STEMCELL_OS/$STEMCELL_VERSION
 
   mv *.tgz compiled-release/$(echo *.tgz | sed "s/${STEMCELL_VERSION}-.*\.tgz/${STEMCELL_VERSION}.tgz/")
