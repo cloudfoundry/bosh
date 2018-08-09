@@ -1,6 +1,68 @@
+- type: remove
+  path: /jobs/name=deploy-acceptance-env
+
+- type: remove
+  path: /jobs/name=load-tests-postgres
+
+- type: remove
+  path: /jobs/name=load-tests-mysql
+
+- type: remove
+  path: /jobs/name=legacy-load-tests-postgres
+
+- type: remove
+  path: /jobs/name=legacy-load-tests-mysql
+
+- type: remove
+  path: /groups/name=load
+
+- type: remove
+  path: /resources/name=bosh-load-tests-workspace
+
+- type: remove
+  path: /resources/name=load-tests-interval
+
+- type: remove
+  path: /resources/name=acceptance-env-state
+
+- type: remove
+  path: /resources/name=zookeeper-release
+
+- type: remove
+  path: /resources/name=google-kvm-ubuntu-trusty
+
 - type: replace
-  path: /jobs/name=candidate-release/plan/get=candidate-version/params/bump
-  value: minor
+  path: /groups/name=bosh?
+  value:
+    name: bosh
+    jobs:
+      - unit-2.4
+      - unit-2.4-mysql
+      - unit-2.4-postgres
+      - unit-2.4-db-migrations-rds
+      - blobstore-client-integration
+      - integration-postgres-gocli-sha2
+      - integration-mysql-gocli-sha1
+      - integration-db-tls-postgres
+      - integration-db-tls-postgres-hotswap
+      - integration-db-tls-mysql
+      - load-tests-postgres
+      - load-tests-mysql
+      - legacy-load-tests-postgres
+      - legacy-load-tests-mysql
+      - fuzz-tests
+      - candidate-release
+      - bats-centos
+      - bats-ubuntu-trusty
+      - bats-ubuntu-xenial
+      - bats-ubuntu-trusty-aws
+      - brats-ubuntu-trusty
+      - brats-ubuntu-xenial
+      - bbr-ubuntu-trusty
+      - bbr-ubuntu-xenial
+      - upgrade-tests
+      - blobstore-performance
+      - delivery
 
 - type: replace
   path: /resources/name=bosh-src/source/branch
@@ -11,6 +73,10 @@
   value: ((branchver)).0.0
 
 - type: replace
+  path: /resources/name=candidate-version/source/key?
+  value: ((branchver)).x/version
+
+- type: replace
   path: /resources/name=bosh-candidate-release-tarballs/source/versioned_file
   value: ((branchname))/bosh-dev-release.tgz
 
@@ -19,9 +85,27 @@
   value: finalize-bosh-release
 
 - type: replace
+  path: /groups/name=bosh/jobs/-
+  value: export-final-release
+
+- type: replace
+  path: /groups/name=bosh/jobs/-
+  value: bump-candidate-minor
+
+- type: replace
   path: /groups/name=finalize?/jobs
   value:
   - finalize-bosh-release
+  - export-final-release
+
+- type: remove
+  path: /jobs/name=bump-candidate-major
+
+- type: remove
+  path: /resources/name=latest-major-version
+
+- type: remove
+  path: /groups/name=version
 
 - type: replace
   path: /jobs/-
@@ -46,6 +130,7 @@
         - get: candidate-version
           params:
             bump: minor
+            final: true
       - task: promote-release
         file: bosh-src/ci/tasks/finalize-bosh-release.yml
         params:
@@ -57,11 +142,53 @@
       - put: bosh-master
         params:
           repository: bosh-master-with-final
-          tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
-          annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
+          rebase: true
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
+          tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
+          annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
+          rebase: true
+
+- type: replace
+  path: /jobs/-
+  value:
+    name: export-final-release
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-master
+      - get: candidate-version
+        passed: [finalize-bosh-release]
+        trigger: true
+      - get: warden-ubuntu-xenial
+        passed: [brats-ubuntu-xenial, bbr-ubuntu-xenial]
+        trigger: true
+    - task: export-final-release
+      file: bosh-master/ci/tasks/export-final-release.yml
+      privileged: true
+      input_mapping:
+        version: candidate-version
+        stemcell: warden-ubuntu-xenial
+        bosh-src: bosh-master
+    - task: push-bosh-compiled-releases
+      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
+      input_mapping:
+        bosh-src: bosh-master
+      params:
+        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+        git_private_key: ((bosh-compiled-releases-index-deploy-key))
+
+- type: replace
+  path: /jobs/-
+  value:
+    name: bump-candidate-minor
+    serial: true
+    plan:
+    - put: candidate-version
+      params:
+        bump: minor
 
 - type: replace
   path: /resources/-
@@ -72,3 +199,7 @@
       uri: ((bosh_src_url))
       branch: master
       private_key: ((github_deployment_key))
+
+- type: replace
+  path: /resources/name=warden-ubuntu-xenial/source/version_family?
+  value: ((stemcell_line)).latest

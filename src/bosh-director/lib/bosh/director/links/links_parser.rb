@@ -473,11 +473,7 @@ module Bosh::Director::Links
           result = find_property(property_path, job_properties)
           if !result['found']
             if (property = default_properties['properties'][link_property])
-              mapped_properties = if (default_value = property['default'])
-                                    update_mapped_properties(mapped_properties, property_path, default_value)
-                                  else
-                                    update_mapped_properties(mapped_properties, property_path, nil)
-                                  end
+              mapped_properties = update_mapped_properties(mapped_properties, property_path, property['default'])
             else
               errors.push("Link property #{link_property} in template #{default_properties['template_name']}"\
                         ' is not defined in release spec')

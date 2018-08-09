@@ -65,6 +65,10 @@ groups:
       - legacy-load-tests-postgres
       - legacy-load-tests-mysql
 
+  - name: version
+    jobs:
+      - bump-candidate-major
+
   # - name: finalize
   #   jobs:
   #     - finalize-bosh-release
@@ -626,9 +630,9 @@ jobs:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
     - get: bosh-cli
-    - get: candidate-version
+    - put: candidate-version
       params:
-        bump: major
+        pre: rc
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
     - put: bosh-candidate-release-tarballs
@@ -763,7 +767,7 @@ jobs:
         params:
           terraform_source: bosh-src/ci/bats/iaas/aws/terraform
           delete_on_failure: true
-          env_name: bats-ubuntu-trusty-aws
+          env_name: bats-ubuntu-trusty-aws-((branch_name))
       - do:
         - task: deploy-director
           file: bosh-src/ci/bats/tasks/deploy-director.yml
@@ -802,7 +806,7 @@ jobs:
             - put: terraform
               params:
                 terraform_source: bosh-src/ci/bats/iaas/aws/terraform
-                env_name: bats-ubuntu-trusty-aws
+                env_name: bats-ubuntu-trusty-aws-((branch_name))
                 action: destroy
               get_params:
                 action: destroy
@@ -1286,11 +1290,39 @@ jobs:
   #     - put: bosh-master
   #       params:
   #         repository: bosh-master-with-final
-  #         tag: /tmp/build/put/bosh-master-with-final-tag/tag-name
-  #         annotate: /tmp/build/put/bosh-master-with-final-tag/annotate-msg
+  #         tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
+  #         annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
   #     - put: bosh-src
   #       params:
   #         repository: bosh-src-with-bumped-version
+
+  - name: bump-candidate-major
+    serial: true
+    plan:
+    - get: latest-major-version
+      trigger: true
+    - task: semvertify
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: busybox
+        inputs:
+        - name: latest-major-version
+        outputs:
+        - name: latest-major-semver
+        run:
+          path: /bin/sh
+          args:
+          - -c
+          - echo -n $(cat latest-major-version/version).0.0 > latest-major-semver/version
+    - put: candidate-version
+      params:
+        file: latest-major-semver/version
+    - put: candidate-version
+      params:
+        bump: major
 
 resource_types:
 - name: terraform
@@ -1316,6 +1348,14 @@ resources:
     source:
       bucket: ((candidate_release_bucket))
       key: version
+      access_key_id: ((candidate_release_access_key_id))
+      secret_access_key: ((candidate_release_secret_access_key))
+
+  - name: latest-major-version
+    type: s3
+    source:
+      bucket: ((candidate_release_bucket))
+      regexp: (.*)\.x/version
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
 

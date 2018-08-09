@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'director upgrade after refactoring links into separate database tables', type: :upgrade do
-  with_reset_sandbox_before_each(test_initial_state: 'bosh-v264.8-c2b5bf268ea6420e4a3f1f657dc45b7db3720216', drop_database: true)
+  with_reset_sandbox_before_each(test_initial_state: 'bosh-v264.8-c2b5bf268ea6420e4a3f1f657dc45b7db3720216')
 
   describe '#bosh start' do
     it 'can start the hard stopped implicit link deployment' do

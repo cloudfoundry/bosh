@@ -400,7 +400,7 @@ describe Bosh::Director::Config do
         end
         let(:token) { CF::UAA::TokenCoder.new(skey: 'some-key').encode(payload) }
         let(:payload) do
-          { 'user_name' => 'larry', 'aud' => ['bosh_cli'], 'scope' => ['bosh.admin'] }
+          { 'user_name' => 'larry', 'aud' => ['bosh_cli'], 'scope' => ['bosh.admin'], 'jti' => 'some-jti' }
         end
         before { test_config['user_management']['uaa'] = provider_options }
 

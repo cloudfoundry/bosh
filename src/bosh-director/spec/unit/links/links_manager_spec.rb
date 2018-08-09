@@ -1484,11 +1484,12 @@ describe Bosh::Director::Links::LinksManager do
               it 'raises an error' do
                 expect do
                   subject.resolve_deployment_links(deployment_model, options)
-                end.to raise_error(
-                  "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                  "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
-                  "does not belong to network 'neta'",
-                )
+                end.to raise_error(<<~ERROR
+                  Failed to resolve links from deployment 'test_deployment'. See errors below:
+                    - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+                ERROR
+                .strip)
               end
             end
           end
@@ -1626,11 +1627,12 @@ describe Bosh::Director::Links::LinksManager do
               it 'raises an error' do
                 expect do
                   subject.resolve_deployment_links(deployment_model, options)
-                end.to raise_error(
-                  "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                  "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
-                  "does not belong to network 'neta'",
-                )
+                end.to raise_error(<<~ERROR
+                  Failed to resolve links from deployment 'test_deployment'. See errors below:
+                    - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                      - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+                ERROR
+                .strip)
               end
             end
           end
@@ -1836,11 +1838,12 @@ describe Bosh::Director::Links::LinksManager do
             it 'raises an error' do
               expect do
                 subject.resolve_deployment_links(deployment_model, options)
-              end.to raise_error(
-                "Failed to resolve links from deployment 'test_deployment'. See errors below:\n  "\
-                "- Provider 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' "\
-                "does not belong to network 'neta'",
-              )
+              end.to raise_error(<<~ERROR
+                Failed to resolve links from deployment 'test_deployment'. See errors below:
+                  - Failed to resolve link 'ci1' with alias 'provider_alias' and type 'foo' from job 'c1' in instance group 'ig1'. Details below:
+                    - Link provider 'pi1' with alias 'provider_alias' from job 'p1' in instance group 'ig1' in deployment 'test_deployment' does not belong to network 'neta'
+              ERROR
+              .strip)
             end
           end
         end
@@ -2224,6 +2227,7 @@ describe Bosh::Director::Links::LinksManager do
 
         consumer_intent.target_link_id = @link.id
         consumer_intent.save
+        @consumer_intent = consumer_intent
       end
 
       it 'should create an association between the instance and the links' do
@@ -2231,11 +2235,23 @@ describe Bosh::Director::Links::LinksManager do
         expect(instance_model.links.size).to eq(1)
       end
 
-      it 'should updated intance_link with current serial_id' do
+      it 'should updated instance_link with current serial_id' do
         subject.bind_links_to_instance(instance)
         expect(instance_model.links.size).to eq(1)
         instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link.id)
         expect(instance_link.first.serial_id).to eq(serial_id)
+      end
+
+      context 'when consumer_intent do not have associate links' do
+        it 'should skip consumer_intent' do
+          @link.delete
+          @consumer_intent.target_link_id = nil
+          @consumer_intent.save
+
+          expect do
+            subject.bind_links_to_instance(instance)
+          end.to_not raise_error
+        end
       end
 
       context 'when consumer_intent serial_id do NOT match deployment links_serial_id' do

@@ -2,9 +2,14 @@
 
 set -eu
 
-branch="master"
+branch="$(git rev-parse --abbrev-ref HEAD)"
+pipeline="bosh"
 
-fly -t production set-pipeline -p bosh \
+if [[ "${branch}" != "master" ]]; then
+  pipeline="bosh:${branch}"
+fi
+
+fly -t production set-pipeline -p "${pipeline}" \
     -c ci/pipeline.yml \
     --load-vars-from <(lpass show -G "bosh concourse secrets" --notes) \
     -l <(lpass show --note "bats-concourse-pool:vsphere secrets") \

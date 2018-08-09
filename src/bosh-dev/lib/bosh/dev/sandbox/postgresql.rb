@@ -1,5 +1,6 @@
 require 'bosh/dev'
 require 'bosh/core/shell'
+require 'shellwords'
 
 module Bosh::Dev::Sandbox
   class Postgresql
@@ -27,17 +28,34 @@ module Bosh::Dev::Sandbox
     # login via psql without entering password.
     def create_db
       @logger.info("Creating postgres database #{db_name}")
-      @runner.run(%Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} -c 'create database "#{db_name}";' > /dev/null 2>&1})
+      execute_sql(%(CREATE DATABASE "#{db_name}";))
+    end
+
+    def kill_connections
+      @logger.info("Killing connections to #{db_name}")
+      execute_sql(
+        %(
+          SELECT pg_terminate_backend(pg_stat_activity.pid)
+          FROM pg_stat_activity
+          WHERE pg_stat_activity.datname = '#{db_name}' AND pid <> pg_backend_pid();
+        ),
+      )
     end
 
     def drop_db
+      kill_connections
       @logger.info("Dropping postgres database #{db_name}")
-      @runner.run(%Q{echo 'revoke connect on database "#{db_name}" from public; drop database "#{db_name}";' | PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} > /dev/null 2>&1})
+      execute_sql(
+        %(
+          REVOKE CONNECT ON DATABASE "#{db_name}" FROM public;
+          DROP DATABASE "#{db_name}";
+        ),
+      )
     end
 
     def dump_db
       @logger.info("Dumping postgres database schema for #{db_name}")
-      @runner.run(%Q{PGPASSWORD=#{@password} pg_dump -h #{@host} -p #{@port} -U #{@username} -s "#{db_name}"})
+      @runner.run(%(PGPASSWORD=#{@password} pg_dump -h #{@host} -p #{@port} -U #{@username} -s "#{db_name}"))
     end
 
     def describe_db
@@ -52,31 +70,43 @@ module Bosh::Dev::Sandbox
 
     def load_db(dump_file_path)
       @logger.info("Loading dump #{dump_file_path} into postgres database #{db_name}")
-      @runner.run(%Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} < #{dump_file_path} > /dev/null 2>&1})
+      @runner.run(%(PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} < #{dump_file_path}))
     end
 
     def current_tasks
-      tasks_list_cmd = %Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "select description, output from tasks where state='processing';"}
+      tasks_list_cmd = %(
+      PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
+        SELECT description, output
+        FROM tasks
+        WHERE state='processing';
+      "
+      )
       task_lines = `#{tasks_list_cmd}`.lines.to_a[2...-2] || []
 
       result = []
       task_lines.each do |task_line|
         items = task_line.split('|').map(&:strip)
-        result << {description: items[0], output: items[1] }
+        result << { description: items[0], output: items[1] }
       end
 
       result
     end
 
     def current_locked_jobs
-      jobs_cmd = %Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "select * from delayed_jobs where locked_by is not null;"}
+      jobs_cmd = %(
+      PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
+        SELECT *
+        FROM delayed_jobs
+        WHERE locked_by IS NOT NULL;
+      "
+      )
       `#{jobs_cmd}`.lines.to_a[2...-2] || []
     end
 
     def truncate_db
       @logger.info("Truncating postgres database #{db_name}")
 
-      drop_constraints_cmds_cmd = %Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
+      drop_constraints_cmds_cmd = %{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
         SELECT
           CONCAT('ALTER TABLE ',nspname,'.',relname,' DROP CONSTRAINT ',conname,';')
         FROM pg_constraint
@@ -85,7 +115,7 @@ module Bosh::Dev::Sandbox
         ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname
       "}
 
-      clear_table_cmds_cmd = %Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
+      clear_table_cmds_cmd = %{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
         SELECT
           CONCAT('DELETE FROM \\"', tablename, '\\"')
         FROM pg_tables
@@ -100,7 +130,7 @@ module Bosh::Dev::Sandbox
           relkind = 'S'
       "}
 
-      add_constraints_cmds_cmd = %Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
+      add_constraints_cmds_cmd = %{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c "
         SELECT
           'ALTER TABLE '||nspname||'.'||relname||' ADD CONSTRAINT '||conname||' '|| pg_get_constraintdef(pg_constraint.oid)||';'
         FROM pg_constraint
@@ -115,7 +145,14 @@ module Bosh::Dev::Sandbox
 
       cmds = drop_constraints_cmds + clear_table_cmds + add_constraints_cmds
 
-      @runner.run(%Q{PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c '#{cmds.join(';')}' > /dev/null 2>&1})
+      @runner.run(%(PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c '#{cmds.join(';')}'))
+    end
+
+    def execute_sql(statements)
+      @runner.run(
+        "echo #{Shellwords.escape(statements)} | " \
+        "PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} > /dev/null",
+      )
     end
   end
 end
