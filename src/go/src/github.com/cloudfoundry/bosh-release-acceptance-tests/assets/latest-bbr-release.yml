@@ -2,5 +2,6 @@
 - type: replace
   path: /releases/name=backup-and-restore-sdk?
   value:
+    name: backup-and-restore-sdk
     url: file://((bbr_release_path)) # usually used with compiled release
     version: latest
