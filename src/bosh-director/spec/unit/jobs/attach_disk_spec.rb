@@ -94,6 +94,16 @@ module Bosh::Director
           end
         end
 
+        context 'when disk_properties is set to default' do
+          let(:disk_properties) { 'default' }
+          it 'sets the disk size to 1 so it is migrated to the desired size next deploy' do
+            attach_disk_job.perform
+            active_disks = instance_model.persistent_disks.select { |disk| disk.active }
+            expect(active_disks.first.size).to eq(1)
+            expect(active_disks.first.cloud_properties).to eq({})
+          end
+        end
+
         context 'when the instance with the given instance id cannot be found' do
           let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, 'bogus', disk_cid, disk_properties) }
           it 'raises an error' do
