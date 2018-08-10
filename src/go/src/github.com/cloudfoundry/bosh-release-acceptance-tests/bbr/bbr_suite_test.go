@@ -21,10 +21,11 @@ func TestBBR(t *testing.T) {
 var (
 	candidateWardenLinuxStemcellPath,
 	bbrBinaryPath string
+	bbrReleasePath string
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	bbrReleasePath := bratsutils.AssertEnvExists("BBR_RELEASE_PATH")
+	bbrReleasePath = bratsutils.AssertEnvExists("BBR_RELEASE_PATH")
 
 	bratsutils.Bootstrap()
 	bratsutils.CreateAndUploadBOSHRelease()
