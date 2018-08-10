@@ -42,7 +42,7 @@ export DOCKER_CERTS
 DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 export DOCKER_HOST
 
-export BBR_RELEASE_PATH="${PWD}/bbr-compiled-release/*.tgz"
+export BBR_RELEASE_PATH="$( echo bbr-compiled-release/*.tgz )"
 
 bosh -n update-cloud-config \
   "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
