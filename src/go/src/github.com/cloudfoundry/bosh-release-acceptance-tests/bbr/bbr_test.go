@@ -36,6 +36,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 		startInnerBoshOptions = []string{
 			fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("bbr.yml")),
 			fmt.Sprintf("-o %s", bratsutils.AssetPath("latest-bbr-release.yml")),
+			fmt.Sprintf("-v bbr_release_path=%s", bbrReleasePath),
 		}
 	})
 
