@@ -2,8 +2,6 @@
 groups:
   - name: bosh
     jobs:
-      - compile-bbr-trusty
-      - compile-bbr-xenial
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
@@ -55,6 +53,8 @@ groups:
 
   - name: brats/bbr
     jobs:
+      - compile-bbr-trusty
+      - compile-bbr-xenial
       - brats-ubuntu-trusty
       - brats-ubuntu-xenial
       - bbr-ubuntu-trusty
@@ -628,7 +628,7 @@ jobs:
       privileged: true
     - put: bbr-compiled-xenial
       params:
-        file: "release/*.tgz"
+        file: "compiled-release/*.tgz"
 
   - name: compile-bbr-trusty
     plan:
@@ -645,7 +645,7 @@ jobs:
       privileged: true
     - put: bbr-compiled-trusty
       params:
-        file: "release/*.tgz"
+        file: "compiled-release/*.tgz"
 
   - name: candidate-release
     plan:
@@ -953,6 +953,7 @@ jobs:
         - candidate-release
       - get: stemcell
         resource: warden-ubuntu-trusty
+        passed: [compile-bbr-trusty]
       - get: bosh-release
         resource: bosh-candidate-release-tarballs
         trigger: true
@@ -960,6 +961,7 @@ jobs:
           - candidate-release
       - get: bbr-compiled-release
         resource: bbr-compiled-trusty
+        passed: [compile-bbr-trusty]
     - do:
       - put: brats-terraform
         attempts: 2
@@ -1152,6 +1154,7 @@ jobs:
         - candidate-release
       - get: stemcell
         resource: warden-ubuntu-xenial
+        passed: [compile-bbr-xenial]
       - get: bosh-release
         resource: bosh-candidate-release-tarballs
         trigger: true
@@ -1159,6 +1162,7 @@ jobs:
           - candidate-release
       - get: bbr-compiled-release
         resource: bbr-compiled-xenial
+        passed: [compile-bbr-xenial]
     - do:
       - put: brats-terraform
         attempts: 2
