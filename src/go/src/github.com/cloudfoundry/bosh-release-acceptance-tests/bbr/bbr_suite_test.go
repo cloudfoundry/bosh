@@ -39,6 +39,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(data []byte) {
 	bratsutils.Bootstrap()
 	bbrBinaryPath = bratsutils.AssertEnvExists("BBR_BINARY_PATH")
+	bbrReleasePath = bratsutils.AssertEnvExists("BBR_RELEASE_PATH")
 	candidateWardenLinuxStemcellPath = bratsutils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 })
 
