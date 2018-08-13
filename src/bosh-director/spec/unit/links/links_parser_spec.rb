@@ -348,7 +348,7 @@ describe Bosh::Director::Links::LinksParser do
           .with(link_consumer: consumer,
                 link_original_name: 'chocolate',
                 link_type: 'flavour',
-                new_intent_metadata: { explicit_link: true })
+                new_intent_metadata: { 'explicit_link' => true })
           .and_return(consumer_intent)
 
         subject.parse_migrated_from_consumers_from_job(
@@ -402,7 +402,7 @@ describe Bosh::Director::Links::LinksParser do
           link_consumer: consumer,
           link_original_name: 'link_1_name',
           link_type: 'link_1_type',
-          new_intent_metadata: { explicit_link: true },
+          new_intent_metadata: { 'explicit_link' => true },
         ).and_return(consumer_intent)
 
         subject.parse_migrated_from_consumers_from_job(
@@ -1265,7 +1265,7 @@ describe Bosh::Director::Links::LinksParser do
             link_consumer: consumer,
             link_original_name: 'link_1_name',
             link_type: 'link_1_type',
-            new_intent_metadata: { explicit_link: false },
+            new_intent_metadata: { 'explicit_link' => false },
           }
 
           expect(links_manager).to receive(:find_or_create_consumer_intent)
@@ -1352,7 +1352,7 @@ describe Bosh::Director::Links::LinksParser do
             link_consumer: consumer,
             link_original_name: 'link_1_name',
             link_type: 'link_1_type',
-            new_intent_metadata: { explicit_link: true },
+            new_intent_metadata: { 'explicit_link' => true },
           }
 
           expect(links_manager).to receive(:find_or_create_consumer_intent)
@@ -1623,8 +1623,8 @@ describe Bosh::Director::Links::LinksParser do
                                                                                    link_original_name: anything,
                                                                                    link_type: anything,
                                                                                    new_intent_metadata: {
-                                                                                     explicit_link: true,
-                                                                                     manual_link: true,
+                                                                                     'explicit_link' => true,
+                                                                                     'manual_link' => true,
                                                                                    })
 
             subject.parse_consumers_from_job(
