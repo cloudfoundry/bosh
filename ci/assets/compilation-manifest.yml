@@ -2,11 +2,11 @@
 name: compilation
 releases:
 - name: ((release_name))
-  version: ((release_version))
+  version: "((release_version))"
 stemcells:
 - alias: default
   os: ((stemcell_os))
-  version: ((stemcell_version))
+  version: "((stemcell_version))"
 update:
   canaries: 1
   max_in_flight: 1
