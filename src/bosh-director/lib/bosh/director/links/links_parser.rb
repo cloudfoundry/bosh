@@ -343,7 +343,7 @@ module Bosh::Director::Links
           }
 
           if !consumes_links.key?(consumes['name'])
-            metadata[:explicit_link] = false
+            metadata['explicit_link'] = false
           else
             consumer_intent_params, metadata, err = generate_explicit_link_metadata(
               consumer,
@@ -381,17 +381,17 @@ module Bosh::Director::Links
         errors.concat(new_errors)
         return consumer_intent_params, metadata, errors unless new_errors.empty?
 
-        metadata[:explicit_link] = true
+        metadata['explicit_link'] = true
 
         if manifest_source.eql? 'nil'
           consumer_intent_params[:blocked] = true
         elsif @link_helper.manual_link? manifest_source
-          metadata[:manual_link] = true
+          metadata['manual_link'] = true
           process_manual_link(consumer, consumer_intent_params, manifest_source)
         else
           consumer_intent_params[:alias] = manifest_source.fetch('from', consumer_intent_params[:alias])
-          metadata[:ip_addresses] = manifest_source['ip_addresses'] if manifest_source.key?('ip_addresses')
-          metadata[:network] = manifest_source['network'] if manifest_source.key?('network')
+          metadata['ip_addresses'] = manifest_source['ip_addresses'] if manifest_source.key?('ip_addresses')
+          metadata['network'] = manifest_source['network'] if manifest_source.key?('network')
           validate_consumes_deployment(
             consumer_intent_params,
             errors,
@@ -410,7 +410,7 @@ module Bosh::Director::Links
         job_name = instance_group_details.fetch(:job_name, nil)
 
         from_deployment = Bosh::Director::Models::Deployment.find(name: manifest_source['deployment'])
-        metadata[:from_deployment] = manifest_source['deployment']
+        metadata['from_deployment'] = manifest_source['deployment']
 
         from_deployment_error_message = "Link '#{consumer_intent_params[:alias]}' in job '#{job_name}' from instance group"\
                   " '#{instance_group_name}' consumes from deployment '#{manifest_source['deployment']}',"\
