@@ -160,7 +160,7 @@ jobs:
       - { get: bosh-src, trigger: true }
 
       - task: test
-        timeout: 1h
+        timeout: 2h
         file: bosh-src/ci/tasks/test-unit.yml
         params:
           DB: sqlite

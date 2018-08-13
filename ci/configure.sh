@@ -5,6 +5,11 @@ set -eu
 branch="$(git rev-parse --abbrev-ref HEAD)"
 pipeline="bosh"
 
+if [[ $(lpass status -q; echo $?) != 0 ]]; then
+  echo "Login with lpass first"
+  exit 1
+fi
+
 if [[ "${branch}" != "master" ]]; then
   pipeline="bosh:${branch}"
 fi
