@@ -62,7 +62,7 @@ jobs:
     params:
       DB: sqlite
     task: test
-    timeout: 1h
+    timeout: 2h
   public: true
   serial: true
 - build_logs_to_retain: 250
