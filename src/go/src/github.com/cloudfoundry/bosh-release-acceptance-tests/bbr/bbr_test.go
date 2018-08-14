@@ -112,7 +112,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 					"restore",
 					"--artifact-path", backupDir[0])
-				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(bratsutils.BoshBinaryPath())
 
@@ -180,7 +180,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--username", bratsutils.InnerDirectorUser(),
 					"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 					"backup")
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				backupDir = getBackupDir()
 				Expect(backupDir).To(HaveLen(1))
@@ -197,7 +197,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 					"restore",
 					"--artifact-path", backupDir[0])
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(bratsutils.BoshBinaryPath())
 
@@ -243,7 +243,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 							"--username", bratsutils.InnerDirectorUser(),
 							"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 							"backup")
-						Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+						Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 						backupDir = getBackupDir()
 						Expect(backupDir).To(HaveLen(1))
@@ -261,7 +261,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 							"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 							"restore",
 							"--artifact-path", backupDir[0])
-						Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+						Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 						waitForBoshDirectorUp(bratsutils.BoshBinaryPath())
 					})
@@ -333,7 +333,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 						"--username", bratsutils.InnerDirectorUser(),
 						"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 						"backup")
-					Eventually(session, time.Minute).Should(gexec.Exit(0))
+					Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 				})
 
 				By("Restore deployment", func() {
@@ -346,7 +346,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 						"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 						"restore",
 						"--artifact-path", backupDir[0])
-					Eventually(session, time.Minute).Should(gexec.Exit(0))
+					Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 					waitForBoshDirectorUp(bratsutils.BoshBinaryPath())
 				})
@@ -367,7 +367,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 						"--username", bratsutils.InnerDirectorUser(),
 						"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 						"backup")
-					Eventually(session, time.Minute).Should(gexec.Exit(0))
+					Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 					backupDir = getBackupDir()
 					Expect(backupDir).To(HaveLen(1))
