@@ -391,7 +391,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 						"--private-key-path", bratsutils.InnerBoshJumpboxPrivateKeyPath(),
 						"restore",
 						"--artifact-path", backupDir[0])
-					Eventually(session, time.Minute).Should(gexec.Exit(0))
+					Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 					waitForBoshDirectorUp(bratsutils.BoshBinaryPath())
 				})
