@@ -144,6 +144,27 @@ describe 'network resolution', type: :integration do
       )
     end
 
+    it 'raises an error if network name specified is not one of the networks on the link but redeploy is successful' do
+      manifest['instance_groups'].first['jobs'].first['consumes'] = {
+        'db' => { 'from' => 'db', 'network' => 'invalid_network' },
+        'backup_db' => { 'from' => 'backup_db', 'network' => 'a' },
+      }
+
+      expect do
+        deploy_simple_manifest(manifest_hash: manifest)
+      end.to raise_error(
+        RuntimeError,
+        Regexp.new("Can't resolve link 'db' in instance group 'my_api' on job " \
+        "'api_server' in deployment 'simple' with network 'invalid_network'"),
+      )
+
+      manifest['instance_groups'].first['jobs'].first['consumes'] = {
+        'db' => { 'from' => 'db' },
+        'backup_db' => { 'from' => 'backup_db', 'network' => 'a' },
+      }
+      deploy_simple_manifest(manifest_hash: manifest)
+    end
+
     it 'raises an error if network name specified is not one of the networks on the link and is a global network' do
       cloud_config['networks'] << {
         'name' => 'global_network',
