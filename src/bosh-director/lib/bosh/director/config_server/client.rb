@@ -383,7 +383,7 @@ module Bosh::Director::ConfigServer
         'parameters' => parameters
       }
 
-      request_body['mode'] = 'converge' if converge_variable
+      request_body['mode'] = converge_variable ? 'converge' : 'no-overwrite'
 
       unless variable_set.writable
         raise Bosh::Director::ConfigServerGenerationError, "Variable '#{get_name_root(name)}' cannot be generated. Variable generation allowed only during deploy action"
