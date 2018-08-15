@@ -58,7 +58,7 @@ module Bosh::Director::DeploymentPlan
     private
 
     def try_to_allocate_dynamic_ip(reservation, subnet)
-      addresses_in_use = Set.new(all_ip_addresses)
+      addresses_in_use = Set.new(all_ip_addresses(reservation.network.name))
 
       first_range_address = subnet.range.first(Objectify: true).to_i - 1
       addresses_we_cant_allocate = addresses_in_use
@@ -89,14 +89,14 @@ module Bosh::Director::DeploymentPlan
     end
 
     def all_ip_addresses
-      Bosh::Director::Models::IpAddress.select(:address_str).all.map { |a| a.address_str.to_i }
+      Bosh::Director::Models::IpAddress.where(network_name: network_name).select(:address_str).all.map { |a| a.address_str.to_i
     end
 
     def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
       # try to save IP first before validating its instance to prevent race conditions
       save_ip(ip, reservation, is_static)
     rescue IpFoundInDatabaseAndCanBeRetried
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_i.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_i.to_s, network_name: reservation.network.name)
 
       retry unless ip_address
 
