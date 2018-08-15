@@ -146,8 +146,8 @@
       - put: bosh-src
         params:
           repository: bosh-src-with-bumped-version
-          tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
-          annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
+          tag: bosh-src-with-bumped-version-tag/tag-name
+          annotate: bosh-src-with-bumped-version-tag/annotate-msg
           rebase: true
 
 - type: replace
@@ -202,4 +202,8 @@
 
 - type: replace
   path: /resources/name=warden-ubuntu-xenial/source/version_family?
+  value: ((stemcell_line)).latest
+
+- type: replace
+  path: /resources/name=vsphere-esxi-ubuntu-xenial/source/version_family?
   value: ((stemcell_line)).latest
