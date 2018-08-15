@@ -89,7 +89,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def all_ip_addresses
-      Bosh::Director::Models::IpAddress.where(network_name: network_name).select(:address_str).all.map { |a| a.address_str.to_i
+      Bosh::Director::Models::IpAddress.where(network_name: network_name).select(:address_str).all.map { |a| a.address_str.to_i }
     end
 
     def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
