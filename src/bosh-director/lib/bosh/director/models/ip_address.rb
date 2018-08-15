@@ -11,7 +11,7 @@ module Bosh::Director::Models
       validates_presence :orphaned_vm_id, allow_nil: true
       validates_presence :task_id
       validates_presence :address_str
-      validates_unique :address_str
+      validates_unique [:address_str, :network_name]
       raise 'Invalid type for address_str column' unless address_str.is_a?(String)
     end
 
