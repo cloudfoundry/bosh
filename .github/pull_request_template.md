@@ -8,9 +8,7 @@ _Include any links to other PRs, stories, slack discussions, etc... that will he
 
 ### What tests have you run against this PR?
 
-_Include a comprehensive list of all tests run along with output from those
-test runs if possible._
-
+_Include a comprehensive list of all tests run successfully._
 
 ### How should this change be described in bosh release notes?
 
