@@ -1,0 +1,15 @@
+---
+name: compilation
+releases:
+- name: ((release_name))
+  version: "((release_version))"
+stemcells:
+- alias: default
+  os: ((stemcell_os))
+  version: "((stemcell_version))"
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 1000 - 90000
+  update_watch_time: 1000 - 90000
+instance_groups: []

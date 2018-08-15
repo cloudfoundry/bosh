@@ -21,20 +21,25 @@ func TestBBR(t *testing.T) {
 var (
 	candidateWardenLinuxStemcellPath,
 	bbrBinaryPath string
+	bbrReleasePath string
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
+	bbrReleasePath = bratsutils.AssertEnvExists("BBR_RELEASE_PATH")
+
 	bratsutils.Bootstrap()
 	bratsutils.CreateAndUploadBOSHRelease()
 	bratsutils.StartInnerBosh(
 		fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("bbr.yml")),
 		fmt.Sprintf("-o %s", bratsutils.AssetPath("latest-bbr-release.yml")),
+		fmt.Sprintf("-v bbr_release_path=%s", bbrReleasePath),
 	)
 
 	return nil
 }, func(data []byte) {
 	bratsutils.Bootstrap()
 	bbrBinaryPath = bratsutils.AssertEnvExists("BBR_BINARY_PATH")
+	bbrReleasePath = bratsutils.AssertEnvExists("BBR_RELEASE_PATH")
 	candidateWardenLinuxStemcellPath = bratsutils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 })
 

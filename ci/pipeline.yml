@@ -43,6 +43,8 @@ groups:
   - bats-ubuntu-trusty-aws
   name: bats
 - jobs:
+  - compile-bbr-trusty
+  - compile-bbr-xenial
   - brats-ubuntu-trusty
   - brats-ubuntu-xenial
   - bbr-ubuntu-trusty
@@ -574,6 +576,38 @@ jobs:
     task: test
   public: true
   serial: true
+- name: compile-bbr-xenial
+  plan:
+  - aggregate:
+    - get: bosh-src
+    - get: release
+      resource: bbr-sdk-release
+      trigger: true
+    - get: stemcell
+      resource: warden-ubuntu-xenial
+      trigger: true
+  - file: bosh-src/ci/tasks/export-release.yml
+    privileged: true
+    task: export-release
+  - params:
+      file: compiled-release/*.tgz
+    put: bbr-compiled-xenial
+- name: compile-bbr-trusty
+  plan:
+  - aggregate:
+    - get: bosh-src
+    - get: release
+      resource: bbr-sdk-release
+      trigger: true
+    - get: stemcell
+      resource: warden-ubuntu-trusty
+      trigger: true
+  - file: bosh-src/ci/tasks/export-release.yml
+    privileged: true
+    task: export-release
+  - params:
+      file: compiled-release/*.tgz
+    put: bbr-compiled-trusty
 - name: candidate-release
   plan:
   - get: bosh-src
@@ -982,12 +1016,18 @@ jobs:
       passed:
       - candidate-release
     - get: stemcell
+      passed:
+      - compile-bbr-trusty
       resource: warden-ubuntu-trusty
     - get: bosh-release
       passed:
       - candidate-release
       resource: bosh-candidate-release-tarballs
       trigger: true
+    - get: bbr-compiled-release
+      passed:
+      - compile-bbr-trusty
+      resource: bbr-compiled-trusty
   - do:
     - attempts: 2
       params:
@@ -1209,12 +1249,18 @@ jobs:
       passed:
       - candidate-release
     - get: stemcell
+      passed:
+      - compile-bbr-xenial
       resource: warden-ubuntu-xenial
     - get: bosh-release
       passed:
       - candidate-release
       resource: bosh-candidate-release-tarballs
       trigger: true
+    - get: bbr-compiled-release
+      passed:
+      - compile-bbr-xenial
+      resource: bbr-compiled-xenial
   - do:
     - attempts: 2
       params:
@@ -1423,6 +1469,24 @@ resources:
     bucket: ((candidate_release_bucket))
     secret_access_key: ((candidate_release_secret_access_key))
     versioned_file: 267.x/bosh-dev-release.tgz
+  type: s3
+- name: bbr-sdk-release
+  source:
+    repository: cloudfoundry-incubator/backup-and-restore-sdk-release
+  type: bosh-io-release
+- name: bbr-compiled-trusty
+  source:
+    access_key_id: ((candidate_release_access_key_id))
+    bucket: ((bbr_compiled_release_bucket))
+    regexp: trusty/backup-and-restore-sdk-(.*).tgz
+    secret_access_key: ((candidate_release_secret_access_key))
+  type: s3
+- name: bbr-compiled-xenial
+  source:
+    access_key_id: ((candidate_release_access_key_id))
+    bucket: ((bbr_compiled_release_bucket))
+    regexp: xenial/backup-and-restore-sdk-(.*).tgz
+    secret_access_key: ((candidate_release_secret_access_key))
   type: s3
 - name: integration-tests-parallel-runtime
   source:

@@ -42,6 +42,7 @@ export DOCKER_CERTS
 DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 export DOCKER_HOST
 
+export BBR_RELEASE_PATH="$( echo $PWD/bbr-compiled-release/*.tgz )"
 
 bosh -n update-cloud-config \
   "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
@@ -77,5 +78,6 @@ if [ -d database-metadata ]; then
   export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
 fi
 
-cd bosh-src
-scripts/test-bbr
+pushd bosh-src > /dev/null
+  scripts/test-bbr
+popd > /dev/null
