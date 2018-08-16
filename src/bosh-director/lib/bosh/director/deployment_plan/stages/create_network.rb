@@ -158,7 +158,7 @@ module Bosh::Director
                 # fetch the subnet cloud properties from the database
                 network.subnets.each do |subnet|
                   db_subnet = db_network.subnets.find { |sn| sn.name == subnet.name }
-                  raise('cannot find the subnet in the database') if db_subnet.nil?
+                  raise Bosh::Director::SubnetNotFoundInDB, ("cannot find subnet: #{subnet.name} in the database") if db_subnet.nil?
                   populate_subnet_properties(subnet, db_subnet)
                 end
               end

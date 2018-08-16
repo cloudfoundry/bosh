@@ -7,6 +7,10 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
     BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, reserved_ranges)
   end
 
+  def make_managed_subnet(properties, availability_zones)
+    BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, reserved_ranges, true)
+  end
+
   let(:reserved_ranges) do
     {}
   end
@@ -38,6 +42,48 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('192.168.0.254')
       expect(subnet.dns).to eq(nil)
+    end
+
+    it 'should create valid subnet spec for managed networks' do
+      subnet = make_managed_subnet(
+        {
+          'name' => 'some-subnet',
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'}
+        },
+        [],
+      )
+
+      expect(subnet.range.ip).to eq('192.168.0.0')
+      subnet.range.ip.size == 255
+      expect(subnet.netmask).to eq('255.255.255.0')
+      expect(subnet.gateway).to eq('192.168.0.254')
+      expect(subnet.dns).to eq(nil)
+    end
+
+    it 'should fail when managed subnet has no name' do
+      expect {
+        make_managed_subnet(
+          {
+            'netmask_bits' => 24,
+            'cloud_properties' => {'foo' => 'bar'}
+          },
+          [],
+        )
+        }.to raise_error(BD::ValidationMissingField)
+    end
+
+    it 'should create a valid managed subnet with netmask bits' do
+      subnet = make_managed_subnet(
+          {
+            'name' => 'subnet-name',
+            'netmask_bits' => 24,
+            'cloud_properties' => {'foo' => 'bar'}
+          },
+          [],
+        )
+      expect(subnet.netmask_bits).to eq(24)
     end
 
     it 'should create an IPv6 subnet spec' do

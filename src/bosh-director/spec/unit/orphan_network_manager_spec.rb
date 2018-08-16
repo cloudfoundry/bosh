@@ -102,10 +102,6 @@ module Bosh::Director
     describe 'Deleting orphans' do
       let(:time) { Time.now.utc }
       let(:ten_seconds_ago) { time - 10 }
-      let(:six_seconds_ago) { time - 6 }
-      let(:five_seconds_ago) { time - 5 }
-      let(:four_seconds_ago) { time - 4 }
-
       let(:event_log) { instance_double(EventLog::Log) }
       let(:stage) { instance_double(EventLog::Stage) }
 
@@ -146,11 +142,22 @@ module Bosh::Director
           expect(cloud).to receive(:delete_network).with('12345')
           expect(cloud).to receive(:delete_network).with('67890')
           expect(cloud_factory).to receive(:get).twice.and_return(cloud)
-          subject.delete_network(orphan_network_1)
+          subject.delete_network('network-1')
 
           expect(Models::Network.where(name: 'network-1').all).to be_empty
           expect(Models::Subnet.where(name: 'subnet-1').all).to be_empty
           expect(Models::Subnet.where(name: 'subnet-2').all).to be_empty
+        end
+
+        it 'deletes network only if the network exists in the db' do
+          expect(cloud).not_to receive(:delete_network)
+          expect(cloud).not_to receive(:delete_network)
+          expect(cloud_factory).not_to receive(:get)
+          subject.delete_network('network-2')
+
+          expect(Models::Network.where(name: 'network-1').all).not_to be_empty
+          expect(Models::Subnet.where(name: 'subnet-1').all).not_to be_empty
+          expect(Models::Subnet.where(name: 'subnet-2').all).not_to be_empty
         end
       end
     end
