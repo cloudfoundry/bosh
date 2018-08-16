@@ -349,4 +349,7 @@ module Bosh::Director
   LinkInvalidStatusError = err(810007, BAD_REQUEST)
   LinkInvalidAzsError = err(810008, BAD_REQUEST)
   LinkProviderNotSharedError = err(810009, FORBIDDEN)
+
+  #Managed Networks
+  SubnetNotFoundInDB = err(91000)
 end

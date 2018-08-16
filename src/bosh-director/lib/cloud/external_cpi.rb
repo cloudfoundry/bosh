@@ -19,6 +19,7 @@ module Bosh::Clouds
 
     Bosh::Clouds::CloudError
     Bosh::Clouds::VMNotFound
+    Bosh::Clouds::NetworkNotFound
 
     Bosh::Clouds::NoDiskSpace
     Bosh::Clouds::DiskNotAttached

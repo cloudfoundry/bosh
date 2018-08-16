@@ -85,9 +85,9 @@ module Bosh::Director
         name_server_parser = NetworkParser::NameServersParser.new
         name_servers = name_server_parser.parse(network_name, subnet_spec)
         availability_zone_names = parse_availability_zones(subnet_spec, network_name, availability_zones)
-        nm_bits = safe_property(subnet_spec, 'netmask_bits', class: Integer, optional: true)
+        netmask_bits = safe_property(subnet_spec, 'netmask_bits', class: Integer, optional: true)
         cloud_properties = safe_property(subnet_spec, 'cloud_properties', class: Hash, default: {})
-        new(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, sn_name, nm_bits)
+        new(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, sn_name, netmask_bits)
       end
 
       def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil)

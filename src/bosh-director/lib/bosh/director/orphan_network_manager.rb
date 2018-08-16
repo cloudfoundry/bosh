@@ -46,16 +46,16 @@ module Bosh::Director
       end
     end
 
-    def delete_network(network)
-      @logger.info("Deleting orphan network: #{network.name}")
-      orphan_network = Models::Network.where(name: network.name).first
+    def delete_network(network_name)
+      @logger.info("Deleting orphan network: #{network_name}")
+      orphan_network = Models::Network.where(name: network_name).first
       if orphan_network
         orphan_network.subnets.each do |subnet|
           delete_subnet(subnet)
         end
-        network.destroy
+        orphan_network.destroy
       else
-        @logger.debug("Subnet not found: #{network_cid}")
+        @logger.debug("Network not found: #{network_name}")
       end
     end
 
@@ -66,9 +66,11 @@ module Bosh::Director
       cloud = CloudFactory.create.get(subnet.cpi)
       cloud.delete_network(cid)
       subnet.destroy
-    # TODO: change exception to a specific cloud error
+    rescue Bosh::Clouds::NetworkNotFound => e
+      @logger.debug("network #{subnet.cid} doesnot exist: #{e.inspect}")
+      subnet.destroy
     rescue StandardError => e
-      @logger.debug("Cannot delete subnet in IaaS: #{subnet.cid}")
+      @logger.debug("Cannot delete network #{subnet.cid}: #{e.inspect}")
       subnet.destroy
     ensure
       add_event('delete', cid, 'subnet', parent_id, e)

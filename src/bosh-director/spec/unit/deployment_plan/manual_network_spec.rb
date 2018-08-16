@@ -71,7 +71,28 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       subnet = manual_network.subnets.first
       expect(subnet).to be_an_instance_of BD::DeploymentPlan::ManualNetworkSubnet
       expect(subnet.network_name).to eq(manual_network.name)
+      expect(manual_network.managed?).to eq(false)
       expect(subnet.range).to eq(NetAddr::CIDR.create('192.168.1.0/24'))
+    end
+
+    context 'when network is managed' do
+
+      let(:network_spec) do
+        manifest_hash['networks'].first['managed'] = true
+        manifest_hash['networks'].first
+      end
+
+      it 'should set the managed property for managed networks' do
+        allow(Bosh::Director::Config).to receive(:network_lifecycle_enabled?).and_return(true)
+        network_spec['managed'] = true
+        network_spec['subnets'].first['name'] = 'some-subnet'
+        expect(manual_network).to be_managed
+        expect(manual_network.subnets.size).to eq(1)
+        subnet = manual_network.subnets.first
+        expect(subnet).to be_an_instance_of BD::DeploymentPlan::ManualNetworkSubnet
+        expect(subnet.network_name).to eq(manual_network.name)
+        expect(subnet.range).to eq(NetAddr::CIDR.create('192.168.1.0/24'))
+      end
     end
 
     context 'when there are overlapping subnets' do
