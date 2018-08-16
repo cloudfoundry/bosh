@@ -54,13 +54,6 @@ properties:
     description: EM thread pool size
     default: 20
 
-  hm.nats.certs.private_key:
-    description: Private Key for establishing mutual TLS with NATs
-  hm.nats.certs.certificate:
-    description: |
-      Certificate for establishing mutual TLS with NATs. The Common-Name for the certificate
-      should be "default.hm.bosh-internal"
-
   #
   # NATS options (to get alerts from agents)
   #
@@ -72,9 +65,11 @@ properties:
   nats.tls.ca:
     description: 'CA cert to trust when communicating with NATS server'
   nats.tls.health_monitor.certificate:
-    description: Certificate for NATs mutual TLS
+    description: |
+      Certificate for establishing mutual TLS with NATS server. The Common-Name for the certificate
+      should be "default.hm.bosh-internal"
   nats.tls.health_monitor.private_key:
-    description: Private Key for NATs mutual TLS
+    description: Private Key for establishing mutual TLS with NATS
 
   #
   # Bosh Director options (to get the list of managed VMs)
