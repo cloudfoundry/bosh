@@ -289,6 +289,7 @@ module Bosh::Director::Links
         instance_group = deployment_plan.instance_group(provider.instance_group)
         provider.intents.each do |provider_intent|
           next if provider_intent.serial_id != deployment_plan.model.links_serial_id
+          next unless consumer?(provider_intent, deployment_plan)
           metadata = {}
           metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
 
@@ -435,6 +436,41 @@ module Bosh::Director::Links
     end
 
     private
+
+    # A consumer which is within the same deployment
+    def consumer?(provider_intent, deployment_plan)
+      return true if provider_intent.shared
+
+      link_consumers = deployment_plan.model.link_consumers
+      link_consumers = link_consumers.select do |consumer|
+        consumer.serial_id == @serial_id
+      end
+
+      link_consumers.any? do |consumer|
+        consumer.intents.any? do |consumer_intent|
+          can_be_consumed?(consumer, provider_intent, consumer_intent, @serial_id)
+        end
+      end
+    end
+
+    def can_be_consumed?(consumer, provider_intent, consumer_intent, serial_id)
+      consumer_intent_metadata = JSON.parse(consumer_intent.metadata || '{}')
+
+      !consumer_intent.blocked &&
+        consumer_intent.serial_id == serial_id &&
+        provider_intent.type == consumer_intent.type &&
+        !cross_deployment?(consumer, consumer_intent_metadata) &&
+        explict_link_matching?(consumer_intent_metadata, provider_intent, consumer_intent)
+    end
+
+    def explict_link_matching?(metadata, provider_intent, consumer_intent)
+      !metadata['explicit_link'] || provider_intent.name == consumer_intent.name
+    end
+
+    def cross_deployment?(consumer, consumer_intent_metadata)
+      deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
+      consumer.deployment.name != deployment_name
+    end
 
     def extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
       link_use_ip_address = consumer_intent_metadata['ip_addresses']
