@@ -13,7 +13,7 @@ module Bosh::Director
     end
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
-    let(:disk_properties) { 'default' }
+    let(:disk_properties) { '' }
     let(:job_name) { 'job_name' }
     let(:instance_id) { 'fake_instance_id' }
     let(:event_manager) {Api::EventManager.new(true)}
@@ -94,8 +94,8 @@ module Bosh::Director
           end
         end
 
-        context 'when disk_properties is set to default' do
-          let(:disk_properties) { 'default' }
+        context 'when disk_properties is not sent' do
+          let(:disk_properties) { '' }
           it 'sets the disk size to 1 so it is migrated to the desired size next deploy' do
             attach_disk_job.perform
             active_disks = instance_model.persistent_disks.select { |disk| disk.active }
