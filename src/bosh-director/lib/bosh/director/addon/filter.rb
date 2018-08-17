@@ -37,8 +37,6 @@ module Bosh::Director
         applicable_availability_zones = safe_property(addon_filter_hash, 'azs', class: Array, default: [])
         applicable_lifecycle_type = safe_property(addon_filter_hash, 'lifecycle', class: String, default: '')
 
-        verify_instance_groups_section(applicable_instance_groups, filter_type, addon_level)
-
         # TODO: throw an exception with all wrong jobs
         verify_jobs_section(applicable_jobs, filter_type, addon_level)
 
@@ -100,16 +98,6 @@ module Bosh::Director
 
       private_class_method
 
-      def self.verify_instance_groups_section(applicable_instance_groups, filter_type, addon_level = RUNTIME_LEVEL)
-        applicable_instance_groups.each do |instance_group|
-          name = safe_property(instance_group, 'name', class: String, default: '')
-          if name.empty?
-            raise AddonIncompleteFilterInstanceGroupSection,
-                  "Instance Group #{instance_group} in #{addon_level} config's #{filter_type} section must have a name."
-          end
-        end
-      end
-
       def self.verify_jobs_section(applicable_jobs, filter_type, addon_level = RUNTIME_LEVEL)
         applicable_jobs.each do |job|
           name = safe_property(job, 'name', class: String, default: '')
@@ -143,9 +131,7 @@ module Bosh::Director
       end
 
       def applicable_instance_group?(deployment_instance_group)
-        @applicable_instance_groups.any? do |instance_group|
-          instance_group['name'] == deployment_instance_group.name
-        end
+        @applicable_instance_groups.include?(deployment_instance_group.name)
       end
 
       def applicable_job?(deployment_instance_group)

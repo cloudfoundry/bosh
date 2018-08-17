@@ -25,22 +25,6 @@ module Bosh::Director
           end
         end
 
-        describe 'when the filter has an instance group with an empty name' do
-          let(:filter_hash) do
-            { 'instance_groups' => [{ 'name' => '' }] }
-          end
-
-          it 'raises' do
-            expect do
-              addon_include.applies?('anything', [], instance_group)
-            end.to raise_error(
-              AddonIncompleteFilterInstanceGroupSection,
-              'Instance Group {"name"=>""} in runtime '\
-              "config's #{type} section must have a name.",
-            )
-          end
-        end
-
         describe 'when the filter has a job with a missing release name' do
           let(:filter_hash) do
             { 'jobs' => [{ 'name' => 'job-name', 'release' => '' }] }
@@ -266,9 +250,7 @@ module Bosh::Director
         describe 'when the filter spec has both instance groups section and a jobs section' do
           let(:filter_hash) do
             {
-              'instance_groups' => [
-                { 'name' => 'ig-1' },
-              ],
+              'instance_groups' => ['ig-1'],
               'jobs' => [
                 { 'name' => 'job_name', 'release' => 'release_name' },
               ],
@@ -304,9 +286,7 @@ module Bosh::Director
           let(:filter_hash) do
             {
               'deployments' => %w[deployment_1 deployment_2],
-              'instance_groups' => [
-                { 'name' => 'ig-1' },
-              ],
+              'instance_groups' => ['ig-1'],
               'jobs' => [
                 { 'name' => 'job_name', 'release' => 'release_name' },
               ],
@@ -384,7 +364,7 @@ module Bosh::Director
 
         describe 'when the filter spec has only a instance groups section' do
           let(:filter_hash) do
-            { 'instance_groups' => [{ 'name' => 'instance_group_name' }] }
+            { 'instance_groups' => ['instance_group_name'] }
           end
 
           describe 'when the instance group has a name matching the include spec' do
@@ -406,7 +386,7 @@ module Bosh::Director
           let(:filter_hash) do
             {
               'deployments' => %w[deployment_1 deployment_2],
-              'instance_groups' => [{ 'name' => 'instance_group_name' }],
+              'instance_groups' => ['instance_group_name'],
             }
           end
 

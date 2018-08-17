@@ -118,9 +118,7 @@ describe 'basic functionality', type: :integration do
     it 'allows addons to be added to specific instance groups' do
       runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_includes
       runtime_config['addons'][0]['include'] = {
-        'instance_groups' => [
-          { 'name' => 'ig-1' },
-        ],
+        'instance_groups' => ['ig-1'],
       }
       runtime_config['addons'][0]['exclude'] = {}
 
@@ -157,9 +155,7 @@ describe 'basic functionality', type: :integration do
       runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_excludes
       runtime_config['addons'][0]['include'] = {}
       runtime_config['addons'][0]['exclude'] = {
-        'instance_groups' => [
-          { 'name' => 'ig-2' },
-        ],
+        'instance_groups' => ['ig-2'],
       }
 
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
