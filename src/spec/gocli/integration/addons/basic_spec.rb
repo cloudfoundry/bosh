@@ -4,7 +4,79 @@ describe 'basic functionality', type: :integration do
   with_reset_sandbox_before_each
 
   context 'in runtime configs' do
-    it 'allows addons to be added to specific deployments' do
+    it 'allows addons to be added to specific jobs' do
+      runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_includes
+      runtime_config['addons'][0]['include'] = { 'jobs' => [
+        { 'name' => 'foobar', 'release' => 'bosh-release' },
+      ] }
+      runtime_config['addons'][0]['exclude'] = {}
+
+      runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      upload_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'foobar_without_packages',
+        job_name: 'foobar_without_packages',
+      )
+
+      # deploy Deployment1
+      manifest_hash['name'] = 'dep1'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
+
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+      template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+
+      foobar_instance = director.instance('foobar_without_packages', '0', deployment_name: 'dep1')
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
+    end
+
+    it 'allows addons to be excluded from specific jobs' do
+      runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_excludes
+      runtime_config['addons'][0]['exclude'] = { 'jobs' => [
+        { 'name' => 'foobar_without_packages', 'release' => 'bosh-release' },
+      ] }
+      runtime_config['addons'][0]['include'] = {}
+
+      runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      upload_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'foobar_without_packages',
+        job_name: 'foobar_without_packages',
+      )
+
+      # deploy Deployment1
+      manifest_hash['name'] = 'dep1'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
+
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
+      template = foobar_instance.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+
+      foobar_instance = director.instance('foobar_without_packages', '0', deployment_name: 'dep1')
+      expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
+    end
+
+    it 'allows addons to be added to and excluded from specific deployments' do
       runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_includes
       runtime_config['addons'][0]['include'] = { 'jobs' => [
         { 'name' => 'foobar', 'release' => 'bosh-release' },
@@ -41,6 +113,80 @@ describe 'basic functionality', type: :integration do
       expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
 
       expect(File.exist?(foobar_instance.job_path('foobar'))).to eq(true)
+    end
+
+    it 'allows addons to be added to specific instance groups' do
+      runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_includes
+      runtime_config['addons'][0]['include'] = {
+        'instance_groups' => [
+          { 'name' => 'ig-1' },
+        ],
+      }
+      runtime_config['addons'][0]['exclude'] = {}
+
+      runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      upload_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] = []
+      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-1')
+      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-2')
+
+      # deploy Deployment1
+      manifest_hash['name'] = 'dep1'
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      instance1 = director.instance('ig-1', '0', deployment_name: 'dep1')
+      instance2 = director.instance('ig-2', '0', deployment_name: 'dep1')
+
+      expect(File.exist?(instance1.job_path('dummy_with_properties'))).to eq(true)
+      template = instance1.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+
+      expect(File.exist?(instance2.job_path('dummy_with_properties'))).to eq(false)
+    end
+
+    it 'allows addons to be excluded from specific instance groups' do
+      runtime_config = Bosh::Spec::Deployments.runtime_config_with_addon_excludes
+      runtime_config['addons'][0]['include'] = {}
+      runtime_config['addons'][0]['exclude'] = {
+        'instance_groups' => [
+          { 'name' => 'ig-2' },
+        ],
+      }
+
+      runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
+      expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+
+      upload_stemcell
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-1')
+      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-2')
+
+      # deploy Deployment1
+      manifest_hash['name'] = 'dep1'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      instance1 = director.instance('ig-1', '0', deployment_name: 'dep1')
+      instance2 = director.instance('ig-2', '0', deployment_name: 'dep1')
+
+      expect(File.exist?(instance1.job_path('dummy_with_properties'))).to eq(true)
+      template = instance1.read_job_template('dummy_with_properties', 'bin/dummy_with_properties_ctl')
+      expect(template).to include("echo 'prop_value'")
+
+      expect(File.exist?(instance2.job_path('dummy_with_properties'))).to eq(false)
     end
 
     it 'allows addons to be added for specific stemcell operating systems' do

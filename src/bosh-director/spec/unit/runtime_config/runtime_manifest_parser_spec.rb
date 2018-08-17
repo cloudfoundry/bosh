@@ -34,8 +34,14 @@ module Bosh::Director
         let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
-          expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], '', :include)
-          expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], '', :exclude)
+          expect(Addon::Filter).to receive(:new).with(
+            jobs: [], instance_groups: [], deployment_names: [], stemcells: [],
+            networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :include
+          )
+          expect(Addon::Filter).to receive(:new).with(
+            jobs: [], instance_groups: [], deployment_names: [], stemcells: [],
+            networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :exclude
+          )
 
           result = subject.parse(runtime_manifest)
 
@@ -69,9 +75,14 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], [], [], [], '', :include)
-            expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], '', :exclude)
-
+            expect(Addon::Filter).to receive(:new).with(
+              jobs: [], instance_groups: [], deployment_names: ['dep1'], stemcells: [],
+              networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :include
+            )
+            expect(Addon::Filter).to receive(:new).with(
+              jobs: [], instance_groups: [], deployment_names: [], stemcells: [],
+              networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :exclude
+            )
             subject.parse(runtime_manifest)
           end
         end
@@ -93,8 +104,14 @@ module Bosh::Director
           end
 
           it 'returns deployment associated with addon' do
-            expect(Addon::Filter).to receive(:new).with([], [], [], [], [], [], '', :include)
-            expect(Addon::Filter).to receive(:new).with([], ['dep1'], [], [], [], [], '', :exclude)
+            expect(Addon::Filter).to receive(:new).with(
+              jobs: [], instance_groups: [], deployment_names: [], stemcells: [],
+              networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :include
+            )
+            expect(Addon::Filter).to receive(:new).with(
+              jobs: [], instance_groups: [], deployment_names: ['dep1'], stemcells: [],
+              networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :exclude
+            )
 
             subject.parse(runtime_manifest)
           end
