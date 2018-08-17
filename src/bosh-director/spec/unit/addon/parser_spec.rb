@@ -36,8 +36,12 @@ module Bosh::Director
         end
 
         it 'parses manifest addon section to create addon object' do
-          expect(Bosh::Director::Addon::Filter).to receive(:new).with([], [], [], [], [], [], '', :include)
-          expect(Bosh::Director::Addon::Filter).to receive(:new).with([], [], [], [], [], [], '', :exclude)
+          expect(Bosh::Director::Addon::Filter).to receive(:new)
+            .with(jobs: [], instance_groups: [], deployment_names: [], stemcells: [],
+                  networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :include)
+          expect(Bosh::Director::Addon::Filter).to receive(:new)
+            .with(jobs: [], instance_groups: [], deployment_names: [], stemcells: [],
+                  networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :exclude)
 
           result = parser.parse()
 
