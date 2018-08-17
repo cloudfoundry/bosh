@@ -5,8 +5,43 @@ AllCops:
   Exclude:
   - tmp/**/*
 
-Style/FrozenStringLiteralComment:
+# Layout
+Layout/IndentHash:
+  EnforcedStyle: consistent
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: aligned
+
+
+
+# Metrics
+Metrics/AbcSize:
   Enabled: false
+
+Metrics/BlockLength:
+  Max: 25
+  ExcludedMethods: [describe, context, let, it]
+
+Metrics/ClassLength:
+  Max: 200
+
+Metrics/LineLength:
+  Max: 130
+
+Metrics/MethodLength:
+  Max: 30
+
+Metrics/ModuleLength:
+  Enabled: false
+
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+
+
+# Style
+Style/BracesAroundHashParameters:
+  EnforcedStyle: context_dependent
 
 Style/ClassAndModuleChildren:
   Enabled: false
@@ -14,21 +49,11 @@ Style/ClassAndModuleChildren:
 Style/Documentation:
   Enabled: false
 
-Metrics/LineLength:
-  Max: 130
-
-Metrics/ModuleLength:
+Style/FrozenStringLiteralComment:
   Enabled: false
 
-Metrics/ClassLength:
-  Max: 200
-
-Metrics/MethodLength:
-  Max: 30
-
-Metrics/BlockLength:
-  Max: 25
-  ExcludedMethods: [describe, context, let, it]
+Style/NumericLiterals:
+  Enabled: false
 
 Style/TrailingCommaInArrayLiteral:
   Enabled: true
@@ -41,15 +66,3 @@ Style/TrailingCommaInHashLiteral:
 Style/TrailingCommaInArguments:
   Enabled: true
   EnforcedStyleForMultiline: comma
-
-Layout/MultilineMethodCallIndentation:
-  EnforcedStyle: aligned
-
-Metrics/AbcSize:
-  Enabled: false
-
-Style/BracesAroundHashParameters:
-  EnforcedStyle: context_dependent
-
-Layout/IndentHash:
-  EnforcedStyle: consistent
