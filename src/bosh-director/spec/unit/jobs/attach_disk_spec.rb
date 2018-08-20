@@ -13,6 +13,7 @@ module Bosh::Director
     end
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
+    let(:disk_properties) { '' }
     let(:job_name) { 'job_name' }
     let(:instance_id) { 'fake_instance_id' }
     let(:event_manager) {Api::EventManager.new(true)}
@@ -27,12 +28,12 @@ module Bosh::Director
           'fake-username',
           Jobs::AttachDisk,
           "attach disk 'fake_disk_cid' to 'job_name/fake_instance_id'",
-          [deployment_name, job_name, instance_id, disk_cid], deployment)
-        Jobs::AttachDisk.enqueue('fake-username', deployment, job_name, instance_id, disk_cid, job_queue)
+          [deployment_name, job_name, instance_id, disk_cid, disk_properties], deployment)
+        Jobs::AttachDisk.enqueue('fake-username', deployment, job_name, instance_id, disk_cid, disk_properties, job_queue)
       end
     end
 
-    let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, disk_cid) }
+    let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, disk_cid, disk_properties) }
 
     describe '#perform' do
       let(:vm) { Models::Vm.make(cid: vm_cid, instance_id: instance_model.id) }
@@ -52,7 +53,8 @@ module Bosh::Director
             disk_cid: 'original-disk-cid',
             instance_id: instance_model.id,
             active: true,
-            size: 50)
+            size: 50,
+            cloud_properties: { "encrypted" => true })
         end
 
         it 'attaches the disk' do
@@ -82,8 +84,28 @@ module Bosh::Director
           expect(attach_disk_job.perform).to eq("attached disk 'fake_disk_cid' to 'job_name/fake_instance_id' in deployment 'fake_deployment_name'")
         end
 
+        context 'when disk_properties is set to copy' do
+          let(:disk_properties) { 'copy' }
+          it 'sets the disk size and cloud_properties to that of previous persistent disk' do
+            attach_disk_job.perform
+            active_disks = instance_model.persistent_disks.select { |disk| disk.active }
+            expect(active_disks.first.size).to eq(50)
+            expect(active_disks.first.cloud_properties).to eq({ "encrypted" => true })
+          end
+        end
+
+        context 'when disk_properties is not sent' do
+          let(:disk_properties) { '' }
+          it 'sets the disk size to 1 so it is migrated to the desired size next deploy' do
+            attach_disk_job.perform
+            active_disks = instance_model.persistent_disks.select { |disk| disk.active }
+            expect(active_disks.first.size).to eq(1)
+            expect(active_disks.first.cloud_properties).to eq({})
+          end
+        end
+
         context 'when the instance with the given instance id cannot be found' do
-          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, 'bogus', disk_cid) }
+          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, 'bogus', disk_cid, disk_properties) }
           it 'raises an error' do
             expect { attach_disk_job.perform }.to raise_error(AttachDiskErrorUnknownInstance,
                                                               "Instance 'job_name/bogus' in deployment 'fake_deployment_name' was not found")
@@ -91,7 +113,7 @@ module Bosh::Director
         end
 
         context 'when the instance with the given job name cannot be found' do
-          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, 'bogus', instance_id, disk_cid) }
+          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, 'bogus', instance_id, disk_cid, disk_properties) }
           it 'raises an error' do
             expect { attach_disk_job.perform }.to raise_error(AttachDiskErrorUnknownInstance,
                                                               "Instance 'bogus/fake_instance_id' in deployment 'fake_deployment_name' was not found")
@@ -99,7 +121,7 @@ module Bosh::Director
         end
 
         context 'when the instance with the given deployment name cannot be found' do
-          let(:attach_disk_job) { Jobs::AttachDisk.new('bogus', job_name, instance_id, disk_cid) }
+          let(:attach_disk_job) { Jobs::AttachDisk.new('bogus', job_name, instance_id, disk_cid, disk_properties) }
           it 'raises an error' do
             expect { attach_disk_job.perform }.to raise_error(AttachDiskErrorUnknownInstance,
                                                               "Instance 'job_name/fake_instance_id' in deployment 'bogus' was not found")
@@ -160,7 +182,7 @@ module Bosh::Director
                 snapshot_created_at: Date.today)
           end
 
-          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, orphan_disk.disk_cid) }
+          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, orphan_disk.disk_cid, disk_properties) }
 
           before do
             attach_disk_job.perform
