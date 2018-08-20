@@ -2,7 +2,6 @@ require 'spec_helper'
 require 'rack/test'
 require 'timecop'
 
-
 module Bosh::Director
   module Api
     describe Extensions::RequestLogger do
@@ -27,7 +26,8 @@ module Bosh::Director
             instance_double(Addrinfo, ip_address: '127.0.0.1', ip?: true, ipv4_loopback?: true, ipv6_loopback?: false),
             instance_double(Addrinfo, ip_address: '10.10.0.6', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
             instance_double(Addrinfo, ip_address: '::1', ip?: true, ipv4_loopback?: false, ipv6_loopback?: true),
-            instance_double(Addrinfo, ip_address: 'fe80::10bf:eff:fe2c:7405%eth0', ip?: true, ipv4_loopback?: false, ipv6_loopback?: false),
+            instance_double(Addrinfo, ip_address: 'fe80::10bf:eff:fe2c:7405%eth0', ip?: true, ipv4_loopback?: false,
+                                      ipv6_loopback?: false),
             instance_double(Addrinfo, ip_address: 'no-ip', ip?: false, ipv4_loopback?: false, ipv6_loopback?: false),
           ],
         )
@@ -93,7 +93,6 @@ module Bosh::Director
           end
 
           context 'CEF extension' do
-
             it 'includes request ip' do
               expect(log_string).to include('src=1.2.3.4')
             end
@@ -111,7 +110,8 @@ module Bosh::Director
             end
 
             it 'includes http headers' do
-              expect(log_string).to include('cs2=HOST=fake-host.com&X_REAL_IP=5.6.7.8&X_FORWARDED_FOR=1.2.3.4&X_FORWARDED_PROTO=https&USER_AGENT=Fake Agent cs2Label=httpHeaders')
+              expect(log_string).to include('cs2=HOST=fake-host.com&X_REAL_IP=5.6.7.8&X_FORWARDED_FOR=1.2.3.4&'\
+                                            'X_FORWARDED_PROTO=https&USER_AGENT=Fake Agent cs2Label=httpHeaders')
             end
 
             it 'includes authorization type' do

@@ -66,7 +66,6 @@ module Bosh::Director
           Bosh::Director::Models::Event.filter(Sequel.lit("id < ?", start_id_to_remove)).delete if start_id_to_remove != 0
         end
       end
-
     end
   end
 end

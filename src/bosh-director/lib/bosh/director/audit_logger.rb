@@ -20,6 +20,5 @@ module Bosh::Director
     def info(message)
       @logger.info(message)
     end
-
   end
 end

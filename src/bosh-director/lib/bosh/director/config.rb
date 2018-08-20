@@ -13,7 +13,6 @@ module Bosh::Director
 
   class Config
     class << self
-
       attr_accessor(
         :audit_filename,
         :audit_log_path,
