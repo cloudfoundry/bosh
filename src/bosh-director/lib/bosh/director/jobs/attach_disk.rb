@@ -8,18 +8,15 @@ module Bosh::Director
         :attach_disk
       end
 
-      def self.enqueue(username, deployment, job_name, instance_id, disk_cid, disk_properties, job_queue)
-        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment.name, job_name, instance_id, disk_cid, disk_properties], deployment)
+      def self.enqueue(username, deployment, job_name, instance_id, disk_cid, job_queue)
+        job_queue.enqueue(username, Jobs::AttachDisk, "attach disk '#{disk_cid}' to '#{job_name}/#{instance_id}'", [deployment.name, job_name, instance_id, disk_cid], deployment)
       end
 
-      def initialize(deployment_name, job_name, instance_id, disk_cid, disk_properties)
+      def initialize(deployment_name, job_name, instance_id, disk_cid)
         @deployment_name = deployment_name
         @job_name = job_name
         @instance_id = instance_id
         @disk_cid = disk_cid
-        @disk_properties = disk_properties
-        @size = 1
-        @cloud_properties = {}
         @transactor = Transactor.new
         @disk_manager = DiskManager.new(logger)
         @orphan_disk_manager = OrphanDiskManager.new(logger)
@@ -61,10 +58,6 @@ module Bosh::Director
       def handle_previous_disk(instance)
         previous_persistent_disk = instance.managed_persistent_disk
         previous_persistent_disk.update(active: false)
-        if @disk_properties == "copy"
-          @size = previous_persistent_disk.size
-          @cloud_properties = previous_persistent_disk.cloud_properties
-        end
 
         if instance.state == 'stopped'
           @disk_manager.detach_disk(previous_persistent_disk)
@@ -78,7 +71,7 @@ module Bosh::Director
         if orphan_disk
           disk = @orphan_disk_manager.unorphan_disk(orphan_disk, instance.id)
         else
-          disk = Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: @size, cloud_properties: @cloud_properties)
+          disk = Models::PersistentDisk.create(disk_cid: @disk_cid, instance_id: instance.id, active: true, size: 1, cloud_properties: {})
         end
 
         if instance.state == 'stopped'
