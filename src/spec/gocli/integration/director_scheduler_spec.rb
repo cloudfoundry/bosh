@@ -4,11 +4,13 @@ require 'zlib'
 
 describe 'director_scheduler', type: :integration do
   with_reset_sandbox_before_each
+
   let(:deployment_hash) do
     deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     deployment_hash['instance_groups'][0]['persistent_disk'] = 20_480
     deployment_hash
   end
+
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
   before do
@@ -52,22 +54,6 @@ describe 'director_scheduler', type: :integration do
 
     def backups
       Dir[File.join(current_sandbox.sandbox_root, 'backup_destination', '*')]
-    end
-  end
-
-  describe 'manual backup' do
-    after { FileUtils.rm_f(tmp_dir) }
-    let(:tmp_dir) { Dir.mktmpdir('manual-backup') }
-
-    it 'backs up task logs, database and blobs' do
-      pending('cli2: #125441631: backport backup command')
-
-      runner = bosh_runner_in_work_dir(tmp_dir)
-      expect(runner.run('back-up backup.tgz')).to match(/Backup of BOSH director was put in/i)
-
-      backup_file = Bosh::Spec::TarFileInspector.new("#{tmp_dir}/backup.tgz")
-      expect(backup_file.file_names).to match_array(%w(director_db.sql))
-      expect(backup_file.smallest_file_size).to be > 0
     end
   end
 
