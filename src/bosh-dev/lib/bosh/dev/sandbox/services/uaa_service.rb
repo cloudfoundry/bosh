@@ -101,12 +101,15 @@ module Bosh::Dev::Sandbox
         'uaa.webapps' => @uaa_webapps_path,
       }
 
+      catalina_opts = ' -Xms512M -Xmx512M -Dsecurerandom.source=file:/dev/urandom '
+      catalina_opts += opts.map { |key, value| "-D#{key}=#{value}" }.join(' ')
+
       Service.new(
         [executable_path, 'run', '-config', server_xml],
         {
           output: @log_location,
           env: {
-            'CATALINA_OPTS' => ' -Xms512M -Xmx512M ' + opts.map { |key, value| "-D#{key}=#{value}" }.join(' '),
+            'CATALINA_OPTS' => catalina_opts,
             'UAA_CONFIG_PATH' => @config_path,
           },
         },
