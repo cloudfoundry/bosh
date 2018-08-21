@@ -13,7 +13,7 @@ module Bosh::Director
       put '/:disk_cid/attachments' do
         deployment = Api::DeploymentManager.new.find_by_name(params[:deployment])
         job_queue = JobQueue.new
-        task = Bosh::Director::Jobs::AttachDisk.enqueue(current_user, deployment, params[:job], params[:instance_id], params[:disk_cid], params[:disk_properties], job_queue)
+        task = Bosh::Director::Jobs::AttachDisk.enqueue(current_user, deployment, params[:job], params[:instance_id], params[:disk_cid], params[:disk_properties] || '', job_queue)
 
         redirect "/tasks/#{task.id}"
       end
