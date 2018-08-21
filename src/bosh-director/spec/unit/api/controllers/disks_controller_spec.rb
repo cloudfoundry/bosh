@@ -95,7 +95,7 @@ module Bosh::Director
         it 'queues an attach disk job' do
           basic_authorize('admin', 'admin')
           expect(Jobs::AttachDisk).to receive(:enqueue)
-                                        .with('admin', deployment, 'dea', '17f01a35', 'vol-af4a3e40', kind_of(JobQueue))
+                                        .with('admin', deployment, 'dea', '17f01a35', 'vol-af4a3e40', '', kind_of(JobQueue))
                                         .and_call_original
 
           put '/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35'
