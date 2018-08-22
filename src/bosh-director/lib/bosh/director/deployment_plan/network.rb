@@ -58,6 +58,10 @@ module Bosh::Director
       def manual?
         false
       end
+
+      def managed?
+        false
+      end
     end
 
     class NetworkWithSubnets < Network

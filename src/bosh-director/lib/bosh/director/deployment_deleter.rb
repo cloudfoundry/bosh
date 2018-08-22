@@ -1,5 +1,6 @@
 module Bosh::Director
   class DeploymentDeleter
+    include LockHelper
     def initialize(event_log, logger, powerdns_manager, max_threads)
       @event_log = event_log
       @logger = logger
@@ -36,6 +37,16 @@ module Bosh::Director
       deployment_model.properties.each do |property|
         event_log_stage.advance_and_track(property.name) do
           property.destroy
+        end
+      end
+
+      if Config.network_lifecycle_enabled?
+        deployment_model.networks.each do |network|
+          with_network_lock(network.name) do
+            if network.deployments.size == 1
+              OrphanNetworkManager.new(Config.logger).orphan_network(network)
+            end
+          end
         end
       end
 

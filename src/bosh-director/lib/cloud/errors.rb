@@ -6,6 +6,7 @@ module Bosh
 
     class CloudError < StandardError; end
     class VMNotFound < CloudError; end
+    class NetworkNotFound < CloudError; end
 
     class RetriableCloudError < CloudError
       attr_accessor :ok_to_retry

@@ -61,6 +61,10 @@ dns:
 
 trusted_certs: <%= trusted_certs %>
 
+
+networks:
+  enable_cpi_management: <%= networks['enable_cpi_management'] %>
+
 local_dns:
   enabled: <%= local_dns['enabled'] %>
   include_index: <%= local_dns['include_index'] %>

@@ -19,6 +19,7 @@ module Bosh::Clouds
 
     Bosh::Clouds::CloudError
     Bosh::Clouds::VMNotFound
+    Bosh::Clouds::NetworkNotFound
 
     Bosh::Clouds::NoDiskSpace
     Bosh::Clouds::DiskNotAttached
@@ -52,8 +53,10 @@ module Bosh::Clouds
     def current_vm_id(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def create_vm(*arguments) invoke_cpi_method(__method__.to_s, *arguments); end
+    def create_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def create_network(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def delete_network(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def has_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def reboot_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def set_vm_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end

@@ -60,6 +60,9 @@ describe 'director.yml.erb' do
           'max_orphaned_age_in_days' => 3,
           'cleanup_schedule' => '0 0,30 * * * * UTC',
         },
+        'networks' => {
+          'enable_cpi_management' => false,
+        },
         'vms' => {
           'cleanup_schedule' => '0 0,30 * * * * UTC',
         },
