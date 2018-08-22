@@ -31,7 +31,7 @@ module Bosh::Director
         network_metadata['network'] = json_payload['network'] if json_payload.has_key?('network')
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,
-          link_original_name: provider.name,
+          link_original_name: provider_intent.original_name,
           link_type: provider_intent.type,
           new_intent_metadata: network_metadata,
         )
