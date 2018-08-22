@@ -23,7 +23,7 @@ module Bosh::Director
       Bosh::Director::Models::Links::LinkProvider.create(
         deployment: deployment,
         instance_group: instance_group,
-        name: 'provider_name_1',
+        name: 'provider_name',
         type: 'job',
         serial_id: link_serial_id,
       )
@@ -35,7 +35,7 @@ module Bosh::Director
         shared: true,
         consumable: true,
         type: 'job',
-        original_name: 'provider_name_1',
+        original_name: 'provider_original_name',
         content: provider_json_content.to_json,
         serial_id: link_serial_id,
       )
@@ -68,7 +68,7 @@ module Bosh::Director
 
           external_consumer_intent = Bosh::Director::Models::Links::LinkConsumerIntent.find(
             link_consumer: external_consumer,
-            original_name: provider_1.name,
+            original_name: provider_1_intent_1.original_name,
           )
           expect(external_consumer_intent).to_not be_nil
           expect(external_consumer_intent.name).to eq(provider_1_intent_1.name)

@@ -919,6 +919,20 @@ describe 'links api', type: :integration do
       end
 
       context 'when provider already exists' do
+        let(:jobs) do
+          [
+            {
+              'name' => 'mongo_db',
+              'provides' => {
+                'read_only_db' => {
+                  'as' => 'foo',
+                  'shared' => true,
+                },
+              },
+            },
+          ]
+        end
+
         before do
           provider_response = get_link_providers
           provider_id = provider_response.first['id']
@@ -928,7 +942,8 @@ describe 'links api', type: :integration do
           response = send_director_post_request('/links', '', JSON.generate(payload_json))
           link = JSON.parse(response.read_body)
 
-          expect(link['name']).to eq(jobs[0]['name'])
+          provider_original_name = jobs[0]['provides'].keys[0]
+          expect(link['name']).to eq(provider_original_name)
           expect(link['link_provider_id']).to eq(provider_id)
         end
 
@@ -938,14 +953,27 @@ describe 'links api', type: :integration do
 
           expect(response.count).to_not eq(0)
           consumer = response[0]
+
+          provider_response = get_link_providers
+
+          expect(provider_response.count).to_not eq(0)
+          provider = provider_response[0]
+
           expect(consumer['deployment']).to eq('simple')
           expect(consumer['name']).to eq('foo')
           expect(consumer['owner_object']['type']).to eq('external')
           expect(consumer['owner_object']['info']).to be_nil
+
+          expect(consumer['link_consumer_definition']['name']).to eq(provider['link_provider_definition']['name'])
         end
 
         it 'keeps the consumer and link after redeploy' do
           send_director_post_request('/links', '', JSON.generate(payload_json))
+          provider_response = get_link_providers
+
+          expect(provider_response.count).to_not eq(0)
+          provider = provider_response[0]
+
           response = get_link_consumers
 
           deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -955,6 +983,7 @@ describe 'links api', type: :integration do
           consumer = response2[0]
           expect(consumer['deployment']).to eq('simple')
           expect(consumer['owner_object']['type']).to eq('external')
+          expect(consumer['link_consumer_definition']['name']).to eq(provider['link_provider_definition']['name'])
         end
 
         context 'when provider does not change during re-deploy' do
@@ -1013,7 +1042,7 @@ describe 'links api', type: :integration do
             context 'when provider properties change' do
               before do
                 updated_properties = {
-                  'nested' => {
+                  'foo' => {
                     'one' => 'updated-nested-property',
                     'two' => 'another-updated-nested-property',
                   },
@@ -1190,7 +1219,8 @@ describe 'links api', type: :integration do
             response = send_director_post_request('/links', '', JSON.generate(payload_json))
             link = JSON.parse(response.read_body)
 
-            expect(link['name']).to eq(jobs[0]['name'])
+            provider_original_name = jobs[0]['provides'].keys[0]
+            expect(link['name']).to eq(provider_original_name)
             expect(link['link_provider_id']).to eq(provider_id)
           end
         end
