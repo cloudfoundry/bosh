@@ -76,7 +76,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     context 'when network is managed' do
-
       let(:network_spec) do
         manifest_hash['networks'].first['managed'] = true
         manifest_hash['networks'].first

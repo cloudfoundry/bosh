@@ -50,7 +50,7 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
           'name' => 'some-subnet',
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.254',
-          'cloud_properties' => {'foo' => 'bar'}
+          'cloud_properties' => { 'foo' => 'bar' },
         },
         [],
       )
@@ -63,26 +63,23 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
     end
 
     it 'should fail when managed subnet has no name' do
-      expect {
+      expect do
         make_managed_subnet(
           {
             'netmask_bits' => 24,
-            'cloud_properties' => {'foo' => 'bar'}
+            'cloud_properties' => { 'foo' => 'bar' },
           },
           [],
         )
-        }.to raise_error(BD::ValidationMissingField)
+      end.to raise_error(BD::ValidationMissingField)
     end
 
     it 'should create a valid managed subnet with netmask bits' do
-      subnet = make_managed_subnet(
-          {
-            'name' => 'subnet-name',
-            'netmask_bits' => 24,
-            'cloud_properties' => {'foo' => 'bar'}
-          },
-          [],
-        )
+      subnet = make_managed_subnet({
+        'name' => 'subnet-name',
+        'netmask_bits' => 24,
+        'cloud_properties' => { 'foo' => 'bar' },
+      }, [])
       expect(subnet.netmask_bits).to eq(24)
     end
 

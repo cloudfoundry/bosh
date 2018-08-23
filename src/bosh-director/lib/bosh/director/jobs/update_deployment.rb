@@ -155,8 +155,10 @@ module Bosh::Director
 
       def mark_orphaned_networks(deployment_plan)
         return unless Config.network_lifecycle_enabled?
+
         deployment_model = deployment_plan.model
         deployment_networks = []
+
         deployment_plan.instance_groups.each do |inst_group|
           inst_group.networks.each do |jobnetwork|
             network = jobnetwork.deployment_network
@@ -168,6 +170,7 @@ module Bosh::Director
         deployment_model.networks.each do |network|
           with_network_lock(network.name) do
             next if deployment_networks.include?(network.name)
+
             deployment_model.remove_network(network)
             if network.deployments.empty?
               @logger.info("Orphaning managed network #{network.name}")

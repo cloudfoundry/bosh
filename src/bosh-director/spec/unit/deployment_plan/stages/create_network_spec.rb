@@ -4,9 +4,7 @@ require 'bosh/director/instance_group_updater'
 
 module Bosh::Director
   module DeploymentPlan::Stages
-
     describe CreateNetworkStage do
-
       before :each do
         allow(deployment_plan).to receive(:model).and_return(deployment_model)
         allow(deployment_plan).to receive(:instance_groups).and_return([instance_group])
@@ -34,7 +32,6 @@ module Bosh::Director
       let(:network_resolver) { Bosh::Director::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan, [], logger) }
 
       context 'valid spec' do
-
         let(:network_spec) do
           {
             'name' => 'a',
@@ -69,7 +66,6 @@ module Bosh::Director
         end
 
         describe '#perform' do
-          
           it 'creates all subnets successfully' do
             expect(cloud).to receive(:create_network).with(
               hash_including('gateway' => '192.168.10.1'),
@@ -135,8 +131,8 @@ module Bosh::Director
             subject.perform
 
             nw = Bosh::Director::Models::Network.first(name: 'a')
-            subnet_1 = nw.subnets.first
-            subnet_1.destroy
+            subnet1 = nw.subnets.first
+            subnet1.destroy
             nw.save
             expect { subject.perform }.to raise_error(Bosh::Director::SubnetNotFoundInDB)
           end
@@ -153,7 +149,7 @@ module Bosh::Director
             expect(cloud).to receive(:delete_network).with('12345')
             expect { subject.perform }.to raise_error
           end
-        end       
+        end
       end
 
       context 'subnet with no name' do
@@ -190,11 +186,9 @@ module Bosh::Director
         end
 
         describe '#perform' do
-
           it 'should fail when subnet has no name' do
             expect { subject.perform }.to raise_error
           end
-
         end
       end
 
@@ -238,7 +232,6 @@ module Bosh::Director
           end
         end
       end
-
     end
   end
 end
