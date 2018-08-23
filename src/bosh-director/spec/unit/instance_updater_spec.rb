@@ -184,7 +184,6 @@ module Bosh::Director
         it 'persists rendered templates to the blobstore' do
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan)
           expect(links_manager).to receive(:bind_links_to_instance).with(instance)
-          expect(instance).to receive(:update_variable_set)
 
           updater.update(instance_plan)
         end
