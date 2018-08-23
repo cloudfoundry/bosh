@@ -1,7 +1,6 @@
 require_relative '../spec_helper'
 
 describe 'network lifecycle', type: :integration do
-
   context 'disabled', type: :integration do
     with_reset_sandbox_before_each
     before { bosh_runner.reset }

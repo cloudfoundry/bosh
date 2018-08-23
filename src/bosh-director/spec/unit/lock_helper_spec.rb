@@ -112,5 +112,22 @@ module Bosh::Director
         expect(called).to be(true)
       end
     end
+
+    describe :with_network_lock do
+      it 'should supports a network name' do
+        lock = double(:lock)
+        allow(Lock).to receive(:new)
+          .with('lock:networks:network1', timeout: 20)
+          .and_return(lock)
+
+        expect(lock).to receive(:lock).and_yield
+
+        called = false
+        @test_instance.with_network_lock('network1', timeout: 20) do
+          called = true
+        end
+        expect(called).to be(true)
+      end
+    end
   end
 end

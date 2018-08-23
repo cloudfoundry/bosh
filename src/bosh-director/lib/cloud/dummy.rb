@@ -223,21 +223,22 @@ module Bosh
       CREATE_NETWORK_SCHEMA = Membrane::SchemaParser.parse { { subnet_definition: Hash } }
       def create_network(subnet_definition)
         validate_and_record_inputs(CREATE_NETWORK_SCHEMA, __method__, subnet_definition)
-        if subnet_definition['cloud_properties'].has_key?("error")
-          raise subnet_definition['cloud_properties']['error']
-        end
+
+        raise subnet_definition['cloud_properties']['error'] if subnet_definition['cloud_properties'].key?('error')
+
         network_id = SecureRandom.hex
         file = network_file(network_id)
         FileUtils.mkdir_p(File.dirname(file))
         network_info = JSON.generate(subnet_definition)
         File.write(file, network_info)
         addr_properties = {}
-        if subnet_definition.has_key?('netmask_bits')
+        if subnet_definition.key?('netmask_bits')
           addr_properties['range'] = '192.168.10.0/24'
           addr_properties['gateway'] = '192.168.10.1'
           addr_properties['reserved'] = ['192.168.10.2']
         end
-        [ network_id, addr_properties, { name: network_id } ]
+
+        [network_id, addr_properties, { name: network_id }]
       end
 
       DELETE_NETWORK_SCHEMA = Membrane::SchemaParser.parse { { network_id: String } }

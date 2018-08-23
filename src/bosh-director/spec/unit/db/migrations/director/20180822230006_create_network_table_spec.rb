@@ -3,7 +3,7 @@ require_relative '../../../../db_spec_helper'
 module Bosh::Director
   describe 'create_managed_network_tables' do
     let(:db) { DBSpecHelper.db }
-    let(:migration_file) { '20180327200711_create_network_table.rb' }
+    let(:migration_file) { '20180822230006_create_network_table.rb' }
     let(:created_at) { Time.now.utc }
 
     before do

@@ -12,20 +12,20 @@ module Bosh::Clouds
     # Raised when the external CPI bin/cpi is not executable
     class NonExecutable < StandardError; end
 
-    KNOWN_RPC_ERRORS = %w(
-    Bosh::Clouds::CpiError
-    Bosh::Clouds::NotSupported
-    Bosh::Clouds::NotImplemented
+    KNOWN_RPC_ERRORS = %w[
+      Bosh::Clouds::CpiError
+      Bosh::Clouds::NotSupported
+      Bosh::Clouds::NotImplemented
 
-    Bosh::Clouds::CloudError
-    Bosh::Clouds::VMNotFound
-    Bosh::Clouds::NetworkNotFound
+      Bosh::Clouds::CloudError
+      Bosh::Clouds::VMNotFound
+      Bosh::Clouds::NetworkNotFound
 
-    Bosh::Clouds::NoDiskSpace
-    Bosh::Clouds::DiskNotAttached
-    Bosh::Clouds::DiskNotFound
-    Bosh::Clouds::VMCreationFailed
-  ).freeze
+      Bosh::Clouds::NoDiskSpace
+      Bosh::Clouds::DiskNotAttached
+      Bosh::Clouds::DiskNotFound
+      Bosh::Clouds::VMCreationFailed
+    ].freeze
 
     RESPONSE_SCHEMA = Membrane::SchemaParser.parse do
       {
