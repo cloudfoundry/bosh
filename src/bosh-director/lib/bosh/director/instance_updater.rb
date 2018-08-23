@@ -53,6 +53,8 @@ module Bosh::Director
       @logger.info("Updating instance #{instance}, changes: #{instance_plan.changes.to_a.join(', ').inspect}")
 
       update_procedure = lambda do
+        @instance_state_updated = false
+
         # Optimization to only update DNS if nothing else changed.
         if dns_change_only?(instance_plan)
           @logger.debug('Only change is DNS configuration')
@@ -60,16 +62,12 @@ module Bosh::Director
           return
         end
 
-        links_bound_to_instance = false
-
         unless instance_plan.already_detached?
           # Rendered templates are persisted here, in the case where a vm is already soft stopped
           # It will update the rendered templates on the VM
           unless Config.enable_nats_delivered_templates && needs_recreate?(instance_plan)
             @rendered_templates_persistor.persist(instance_plan)
-            @links_manager.bind_links_to_instance(instance)
-            instance.update_variable_set
-            links_bound_to_instance = true
+            update_current_links_and_variable_set(instance)
           end
 
           unless instance_plan.needs_shutting_down? || instance.state == 'detached'
@@ -85,6 +83,7 @@ module Bosh::Director
           # desired state
           if instance.state == 'stopped'
             # Command issued: `bosh stop`
+            update_current_links_and_variable_set(instance)
             instance.update_state
             return
           end
@@ -100,10 +99,9 @@ module Bosh::Director
                                                .perform(instance_report)
           end
           instance_plan.release_obsolete_network_plans(@ip_provider)
-          @links_manager.bind_links_to_instance(instance)
-          instance.update_state
-          instance.update_variable_set
+          update_current_links_and_variable_set(instance)
           update_dns(instance_plan)
+          instance.update_state
           return
         end
 
@@ -168,8 +166,8 @@ module Bosh::Director
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
 
         @rendered_templates_persistor.persist(instance_plan)
-        instance.update_variable_set
-        @links_manager.bind_links_to_instance(instance) unless links_bound_to_instance
+
+        update_current_links_and_variable_set(instance)
 
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,
@@ -270,6 +268,13 @@ module Bosh::Director
 
     def agent(instance)
       AgentClient.with_agent_id(instance.model.agent_id)
+    end
+
+    def update_current_links_and_variable_set(instance)
+      return if @instance_state_updated
+      @links_manager.bind_links_to_instance(instance)
+      instance.update_variable_set
+      @instance_state_updated = true
     end
   end
 end
