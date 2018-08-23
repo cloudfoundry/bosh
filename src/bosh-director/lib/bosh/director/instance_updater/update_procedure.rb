@@ -1,7 +1,7 @@
 module Bosh::Director
   class InstanceUpdater
     class UpdateProcedure
-      attr_reader :instance, :instance_plan, :options, :instance_report, :action, :context
+      attr_reader :instance, :instance_plan, :options, :instance_report, :action, :context, :links_already_bound_to_instance
 
       def initialize(instance,
                      instance_plan,
@@ -38,8 +38,6 @@ module Bosh::Director
       end
 
       def perform
-        @instance_variable_and_links_updated = false
-
         # Optimization to only update DNS if nothing else changed.
         if dns_change_only?
           @logger.debug('Only change is DNS configuration')
@@ -53,7 +51,7 @@ module Bosh::Director
           # desired state
           if instance.state == 'stopped'
             # Command issued: `bosh stop`
-            update_instance
+            instance.update_state
             return
           end
 
@@ -88,13 +86,14 @@ module Bosh::Director
       end
 
       def handle_not_detached_instance_plan
+        @links_already_bound_to_instance = false
         # Rendered templates are persisted here, in the case where a vm is already soft stopped
         # It will update the rendered templates on the VM
         unless Config.enable_nats_delivered_templates && needs_recreate?
           @rendered_templates_persistor.persist(instance_plan)
           @links_manager.bind_links_to_instance(instance)
           instance.update_variable_set
-          @instance_variable_and_links_updated = true
+          @links_already_bound_to_instance = true
         end
 
         unless instance_plan.needs_shutting_down? || instance.state == 'detached'
@@ -122,9 +121,8 @@ module Bosh::Director
 
       def update_instance
         instance_plan.release_obsolete_network_plans(@ip_provider)
+        @links_manager.bind_links_to_instance(instance) unless links_already_bound_to_instance
         instance.update_state
-        return if @instance_variable_and_links_updated
-        @links_manager.bind_links_to_instance(instance)
         instance.update_variable_set
       end
 
