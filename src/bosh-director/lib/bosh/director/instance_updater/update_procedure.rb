@@ -51,7 +51,7 @@ module Bosh::Director
           # desired state
           if instance.state == 'stopped'
             # Command issued: `bosh stop`
-            instance.update_state
+            update_instance
             return
           end
 
