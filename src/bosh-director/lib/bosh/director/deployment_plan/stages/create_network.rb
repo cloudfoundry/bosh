@@ -29,19 +29,17 @@ module Bosh::Director
               next unless network.managed?
 
               with_network_lock(network.name) do
-                create_network_if_not_exists(network)
-                # the network is in the database
                 db_network = Bosh::Director::Models::Network.first(name: network.name)
+                db_network = create_network(network) if db_network.nil?
+
                 if db_network.orphaned
                   db_network.orphaned = false
                   db_network.save
                 end
+
                 # add relation between deployment and network
-                begin
-                  @deployment_plan.model.add_network(db_network)
-                rescue Sequel::UniqueConstraintViolation
-                  @logger.info('deployment to network relation already exists')
-                end
+                @deployment_plan.model.add_network(db_network) unless @deployment_plan.model.networks.include?(db_network)
+
                 # fetch the subnet cloud properties from the database
                 network.subnets.each do |subnet|
                   db_subnet = db_network.subnets.find { |sn| sn.name == subnet.name }
@@ -53,27 +51,26 @@ module Bosh::Director
           end
         end
 
-        def create_network_if_not_exists(network)
-          return if Bosh::Director::Models::Network.first(name: network.name)
-
+        def create_network(network)
           validate_subnets(network)
 
           @logger.info("Creating network: #{network.name}")
 
+          created_network = nil
+
           @event_log_stage.advance_and_track(network.name.to_s) do
-            # update the network database tables
-            nw = Bosh::Director::Models::Network.new(
+            created_network = Bosh::Director::Models::Network.create(
               name: network.name,
               type: 'manual',
               orphaned: false,
               created_at: Time.now,
             )
-            nw.save
+
             begin
               rollback = {}
-              # call cpi to create network subnets
+
               network.subnets.each do |subnet|
-                create_subnet(subnet, nw, rollback)
+                create_subnet(subnet, created_network, rollback)
               end
             rescue StandardError => e
               rollback.each do |cid, cpi|
@@ -84,11 +81,15 @@ module Bosh::Director
                   @logger.info("failed to delete subnet #{cid}: #{e.message}")
                 end
               end
-              @logger.info("deleting network #{nw.name}")
-              nw.destroy
+
+              @logger.info("deleting network #{created_network.name}")
+              created_network.destroy
+
               raise "deployment failed during creating managed networks: #{e.message}"
             end
           end
+
+          created_network
         end
 
         def validate_subnets(network)
