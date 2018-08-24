@@ -145,7 +145,9 @@ module Bosh::Dev::Sandbox
 
       cmds = drop_constraints_cmds + clear_table_cmds + add_constraints_cmds
 
-      @runner.run(%(PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c '#{cmds.join(';')}'))
+      @runner.run(
+        "PGPASSWORD=#{@password} psql -h #{@host} -p #{@port} -U #{@username} #{db_name} -c '#{cmds.join(';')}' > /dev/null 2>&1",
+      )
     end
 
     def execute_sql(statements)
