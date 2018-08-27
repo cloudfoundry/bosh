@@ -423,6 +423,10 @@ if_p('director.default_ssh_options.gateway_host',
   }
 end
 
+if_p('director.log_access_events_to_syslog') do |_|
+  raise 'property director.log_access_events_to_syslog has been removed. Please use director.log_access_events instead.'
+end
+
 cpi_job_name = p('director.cpi_job')
 
 params['cloud'] = {
