@@ -84,7 +84,6 @@ module Bosh::Director
       end
 
       def configure(config)
-        validate_config(config)
         @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
         @flush_arp = config.fetch('flush_arp', false)
 
@@ -230,11 +229,6 @@ module Bosh::Director
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
-      end
-
-      def validate_config(config)
-        return unless config.key?('log_access_events_to_syslog')
-        raise ArgumentError, 'Invalid configuration attribute "log_access_events_to_syslog", use "log_access_events" instead'
       end
 
       def agent_env

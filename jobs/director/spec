@@ -147,6 +147,8 @@ properties:
   director.log_level:
     description: Log level
     default: debug
+  director.log_access_events_to_syslog:
+    description: Removed. Please use director.log_access_events instead.
   director.log_access_events:
     description: Access to api is logged in CEF format
     default: false
