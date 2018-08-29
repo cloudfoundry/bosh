@@ -266,6 +266,38 @@ describe 'ignore/unignore-instance', type: :integration do
         expect(output).to match(/Updating instance foobar1: foobar1\/#{instance2.id}/)
         expect(output).to match(/Updating instance foobar1: foobar1\/#{instance3.id}/)
       end
+
+      context 'when the instances have persistent disks' do
+        let(:cloud_config) do
+          Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(azs: %w[z1 z2])
+          manifest['instance_groups'][0]['persistent_disk'] = 1024
+          manifest
+        end
+
+        it 'does not delete an unexpected instance' do
+          output = deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config)
+          expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(3)
+
+          # ignore first VM
+          initial_instances = director.instances
+          instance1 = initial_instances[0]
+          instance2 = initial_instances[1]
+          instance3 = initial_instances[2]
+          bosh_runner.run("ignore #{instance1.job_name}/#{instance1.id}", deployment_name: 'simple')
+
+          manifest['instance_groups'][0]['jobs'][0]['properties'] = { 'test_property' => 'new-value' }
+
+          output = deploy_simple_manifest(manifest_hash: manifest, cloud_config_hash: cloud_config)
+
+          expect(output).to_not match(%r{Updating instance foobar: foobar/#{instance1.id}})
+          expect(output).to match(%r{Updating instance foobar: foobar/#{instance2.id}})
+          expect(output).to match(%r{Updating instance foobar: foobar/#{instance3.id}})
+        end
+      end
     end
 
     context 'when the existing instances is less than the desired ones' do

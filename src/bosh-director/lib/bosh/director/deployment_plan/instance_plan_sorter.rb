@@ -46,6 +46,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     private
+
     def sort_in_az(instance_plans)
       instance_plans.sort { |plan1, plan2|
         "#{plan1.instance.job_name}/#{plan1.instance.uuid}" <=> "#{plan2.instance.job_name}/#{plan2.instance.uuid}"
