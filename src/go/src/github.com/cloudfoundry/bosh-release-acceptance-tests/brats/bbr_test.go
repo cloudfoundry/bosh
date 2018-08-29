@@ -55,7 +55,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--username", innerDirectorUser,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
-				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("wipe system, recreate inner director", func() {
@@ -81,13 +81,13 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore",
 					"--artifact-path", backupDir[0])
-				Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
 				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
 				session = bosh("-n", "upload-stemcell", "--fix", stemcellUrl)
-				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("cck the deployments", func() {
@@ -145,7 +145,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--username", innerDirectorUser,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("wipe system", func() {
@@ -164,13 +164,13 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore",
 					"--artifact-path", backupDir[0])
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
 
 				stemcellUrl := "https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent"
 				session = bosh("-n", "upload-stemcell", "--fix", stemcellUrl)
-				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 				session = bosh("-n", "-d", "syslog-deployment", "cck", "--report")
 				Eventually(session, 3*time.Minute).Should(gexec.Exit(0))
@@ -200,7 +200,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--username", innerDirectorUser,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("Restore deployment", func() {
@@ -215,7 +215,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore",
 					"--artifact-path", backupDir[0])
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
 			})
@@ -236,7 +236,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--username", innerDirectorUser,
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"backup")
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 			})
 
 			By("Check directories are still there after backup", func() {
@@ -262,7 +262,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 					"--private-key-path", innerBoshJumpboxPrivateKeyPath,
 					"restore",
 					"--artifact-path", backupDir[0])
-				Eventually(session, time.Minute).Should(gexec.Exit(0))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 
 				waitForBoshDirectorUp(boshBinaryPath)
 			})
