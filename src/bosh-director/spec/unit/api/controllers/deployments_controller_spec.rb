@@ -243,8 +243,8 @@ module Bosh::Director
                           .with(
                             anything,
                             anything,
-                            [dev_cloud_config, cloud_config],
-                            [dev_runtime_config, runtime_config_2, runtime_config_3],
+                            a_collection_containing_exactly(dev_cloud_config, cloud_config),
+                            a_collection_containing_exactly(dev_runtime_config, runtime_config_2, runtime_config_3),
                             anything,
                             anything,
                             anything
