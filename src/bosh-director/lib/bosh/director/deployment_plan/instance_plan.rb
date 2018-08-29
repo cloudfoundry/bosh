@@ -297,6 +297,8 @@ module Bosh
         end
 
         def vm_matches_plan?(vm)
+          return false if vm.cloud_properties_json.nil?
+
           desired_instance_group = @desired_instance.instance_group
           desired_cloud_properties = @config_server_client.interpolate_with_versioning(
             @instance.cloud_properties,
