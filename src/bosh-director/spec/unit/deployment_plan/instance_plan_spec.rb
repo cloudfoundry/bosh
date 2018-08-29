@@ -684,6 +684,21 @@ module Bosh::Director::DeploymentPlan
         ).to eq(true)
       end
 
+      it 'should not match if cloud_properties are nil' do
+        expect(
+          simple_instance_plan.vm_matches_plan?(
+            BD::Models::Vm.make(
+              instance: existing_instance,
+              stemcell_name: 'ubuntu-stemcell',
+              stemcell_version: '1',
+              env_json: { 'env' => 'env-val' }.to_json,
+              cloud_properties_json: nil,
+              active: true,
+            ),
+          ),
+        ).to eq(false)
+      end
+
       it 'should not match if stemcell differs' do
         expect(
           simple_instance_plan.vm_matches_plan?(

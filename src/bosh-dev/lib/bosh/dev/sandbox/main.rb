@@ -203,6 +203,7 @@ module Bosh::Dev::Sandbox
     def director_config
       attributes = {
         agent_wait_timeout: @agent_wait_timeout,
+        keep_unreachable_vms: @keep_unreachable_vms,
         blobstore_storage_dir: blobstore_storage_dir,
         cloud_storage_dir: cloud_storage_dir,
         config_server_enabled: @config_server_enabled,
@@ -344,6 +345,7 @@ module Bosh::Dev::Sandbox
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
       @agent_wait_timeout = options.fetch(:agent_wait_timeout, 600)
+      @keep_unreachable_vms = options.fetch(:keep_unreachable_vms, false)
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
       old_tls_enabled_value = @db_config[:tls_enabled]
       @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS']=='true')
@@ -412,6 +414,17 @@ module Bosh::Dev::Sandbox
       @nats_process.stop
     end
 
+    def start_nats
+      return if @nats_process.running?
+
+      nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
+      write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
+      write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
+      setup_nats
+      @nats_process.start
+      @nats_socket_connector.try_to_connect
+    end
+
     private
 
     def load_db_and_populate_blobstore(test_initial_state)
@@ -456,19 +469,11 @@ module Bosh::Dev::Sandbox
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
 
-      unless @test_initial_state.nil?
-        load_db_and_populate_blobstore(@test_initial_state)
-      end
+      load_db_and_populate_blobstore(@test_initial_state) unless @test_initial_state.nil?
 
-      # TODO: Move into its own service.
       if @nats_needs_restart || !@nats_process.running?
         @nats_process.stop
-        nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
-        write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
-        write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
-        setup_nats
-        @nats_process.start
-        @nats_socket_connector.try_to_connect
+        start_nats
       end
 
       @uaa_service.restart_if_needed if @user_authentication == 'uaa'
