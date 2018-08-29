@@ -46,19 +46,31 @@ module Bosh::Director::DeploymentPlan
           )
         end
 
+        let(:instance2_in_bootstrap_az) do
+          instance2_in_bootstrap_az = Instance.create_from_instance_group(
+            instance_group, 2, 'started', nil, {}, bootstrap_az, logger
+          )
+          instance2_in_bootstrap_az.bind_existing_instance_model(
+            BD::Models::Instance.make(uuid: 'bb-uuid2', index: 2, job: 'job_name'),
+          )
+          instance2_in_bootstrap_az
+        end
+
+        let(:instance_plan2_in_bootstrap_az) do
+          InstancePlan.new(
+            existing_instance: instance2_in_bootstrap_az.model,
+            desired_instance: desired_instance,
+            instance: instance2_in_bootstrap_az,
+            network_plans: [],
+          )
+        end
+
         it 'should put the bootstrap node first' do
           sorted_instance_plans = instance_plan_sorter.sort([instance_plan_in_bootstrap_az, bootstrap_instance_plan])
           expect(sorted_instance_plans).to eq([bootstrap_instance_plan, instance_plan_in_bootstrap_az])
         end
 
         it 'should sort instance plans in alphanum in the same az' do
-          instance2_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', nil, {}, bootstrap_az, logger)
-          instance2_in_bootstrap_az.bind_existing_instance_model(BD::Models::Instance.make(uuid: 'bb-uuid2', index: 2, job: 'job_name'))
-          instance_plan2_in_bootstrap_az = InstancePlan.new(
-            existing_instance: instance2_in_bootstrap_az.model,
-            desired_instance: desired_instance,
-            instance: instance2_in_bootstrap_az,
-            network_plans: [])
           sorted_instance_plans = instance_plan_sorter.sort([instance_plan2_in_bootstrap_az, instance_plan_in_bootstrap_az, bootstrap_instance_plan])
           expect(sorted_instance_plans).to eq([bootstrap_instance_plan, instance_plan_in_bootstrap_az, instance_plan2_in_bootstrap_az])
         end
@@ -134,6 +146,13 @@ module Bosh::Director::DeploymentPlan
             sorted_instance_plans = instance_plan_sorter.sort([instance_plan2_without_az, bootstrap_instance_plan])
 
             expect(sorted_instance_plans).to eq([bootstrap_instance_plan, instance_plan2_without_az])
+          end
+        end
+
+        context 'when there is no bootstrap node' do
+          it 'should sort the rest of the instance plans successfully' do
+            sorted_instance_plans = instance_plan_sorter.sort([instance_plan2_in_bootstrap_az, instance_plan_in_bootstrap_az])
+            expect(sorted_instance_plans).to eq([instance_plan_in_bootstrap_az, instance_plan2_in_bootstrap_az])
           end
         end
       end
