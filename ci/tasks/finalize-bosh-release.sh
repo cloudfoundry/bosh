@@ -2,8 +2,7 @@
 
 set -eux
 
-export FULL_VERSION=$(cat candidate-version/version)
-cp candidate-version/version bumped-candidate-version/version
+export FULL_VERSION=$(cat version/version)
 
 export ROOT_PATH=$PWD
 PROMOTED_MASTER=$PWD/bosh-master-with-final
