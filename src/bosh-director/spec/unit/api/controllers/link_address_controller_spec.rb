@@ -45,18 +45,7 @@ module Bosh::Director
         App.new(config)
       end
 
-      context 'when the user is lacking permissions' do
-        before do
-          basic_authorize 'dev-team-member', 'dev-team-member'
-        end
-
-        it 'returns an "unauthorized" response' do
-          get "/?link_id=#{link.id}"
-          expect(last_response.status).to eq(401)
-        end
-      end
-
-      context 'when the user has read permissions' do
+      context 'when the user has director read permissions' do
         before do
           basic_authorize 'reader', 'reader'
         end
@@ -226,6 +215,68 @@ module Bosh::Director
       context 'when the user has admin permissions' do
         before do
           basic_authorize 'admin', 'admin'
+        end
+
+        context 'when the link id is not specified' do
+          it 'should return a "bad request" response' do
+            get '/'
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['description']).to eq('Link id is required')
+          end
+        end
+
+        context 'when link does not exist' do
+          it 'should return link not found' do
+            get '/?link_id=1337'
+            expect(last_response.status).to eq(404)
+            expect(JSON.parse(last_response.body)['description']).to eq('Could not find a link with id 1337')
+          end
+        end
+
+        context 'when link exists' do
+          it 'should return the address in a hash' do
+            get "/?link_id=#{link.id}"
+            expect(last_response.status).to eq(200)
+            response = JSON.parse(last_response.body)
+            expect(response).to eq('address' => 'q-s0.ig-bar.baz.dep-foo.bosh')
+          end
+        end
+      end
+
+      context 'when the user has team read permissions' do
+        before do
+          basic_authorize 'dev-team-read-member', 'dev-team-read-member'
+        end
+
+        context 'when the link id is not specified' do
+          it 'should return a "bad request" response' do
+            get '/'
+            expect(last_response.status).to eq(400)
+            expect(JSON.parse(last_response.body)['description']).to eq('Link id is required')
+          end
+        end
+
+        context 'when link does not exist' do
+          it 'should return link not found' do
+            get '/?link_id=1337'
+            expect(last_response.status).to eq(404)
+            expect(JSON.parse(last_response.body)['description']).to eq('Could not find a link with id 1337')
+          end
+        end
+
+        context 'when link exists' do
+          it 'should return the address in a hash' do
+            get "/?link_id=#{link.id}"
+            expect(last_response.status).to eq(200)
+            response = JSON.parse(last_response.body)
+            expect(response).to eq('address' => 'q-s0.ig-bar.baz.dep-foo.bosh')
+          end
+        end
+      end
+
+      context 'when the user has team admin permissions' do
+        before do
+          basic_authorize 'dev-team-member', 'dev-team-member'
         end
 
         context 'when the link id is not specified' do
