@@ -11,7 +11,7 @@ module Bosh::Director
         @link_manager = Api::LinkManager.new
       end
 
-      get '/', authorization: :read do
+      get '/', authorization: :read_link do
         validate_query_params(params)
 
         query_options = {
