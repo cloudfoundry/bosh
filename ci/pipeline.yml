@@ -1422,7 +1422,6 @@ jobs:
       passed: [finalize-bosh-release]
       trigger: true
     - get: warden-ubuntu-xenial
-      passed: [brats-ubuntu-xenial, bbr-ubuntu-xenial]
       trigger: true
   - task: export-final-release
     file: bosh-master/ci/tasks/export-final-release.yml
