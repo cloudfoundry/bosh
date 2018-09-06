@@ -268,6 +268,10 @@ module Bosh::Director
       # @return [void]
       def use_compiled_package(compiled_package_model)
         compiled_package = CompiledPackage.new(compiled_package_model)
+
+        return unless !@packages[compiled_package.name] ||
+                      @packages[compiled_package.name].model.id < compiled_package.model.id
+
         @packages[compiled_package.name] = compiled_package
       end
 

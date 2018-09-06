@@ -14,16 +14,20 @@ module Bosh::Director
           packages_list = Bosh::Director::PackageDependenciesManager.new(release_version_model).transitive_dependencies(package)
           packages_list << package
           packages_list.each do |needed_package|
-            if needed_package.sha1.nil? || needed_package.blobstore_id.nil?
-              compiled_packages_list = Bosh::Director::Models::CompiledPackage.where(:package_id => needed_package.id,
-                :stemcell_os => stemcell.os).all
-              compiled_packages_list = compiled_packages_list.select do |compiled_package|
-                Bosh::Common::Version::StemcellVersion.match(compiled_package.stemcell_version, stemcell.version)
-              end
-              if compiled_packages_list.empty?
-                @faults[release_desc] ||= Set.new
-                @faults[release_desc] << Fault.new(needed_package, stemcell)
-              end
+            next unless needed_package.sha1.nil? || needed_package.blobstore_id.nil?
+
+            compiled_packages_list = Bosh::Director::Models::CompiledPackage.where(
+              package_id: needed_package.id,
+              stemcell_os: stemcell.os,
+            ).all
+
+            compiled_packages_list = compiled_packages_list.select do |compiled_package|
+              Bosh::Common::Version::StemcellVersion.match(compiled_package.stemcell_version, stemcell.version)
+            end
+
+            if compiled_packages_list.empty?
+              @faults[release_desc] ||= Set.new
+              @faults[release_desc] << Fault.new(needed_package, stemcell)
             end
           end
         end

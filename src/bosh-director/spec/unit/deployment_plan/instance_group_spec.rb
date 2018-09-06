@@ -974,4 +974,30 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
     end
   end
+
+  describe 'use_compiled_package' do
+    let(:package) { Bosh::Director::Models::Package.make }
+    let(:compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: package) }
+
+    it 'adds the package to the instance groups packages by name' do
+      subject.use_compiled_package(compiled_package)
+      expect(subject.packages[compiled_package.name].model).to equal(compiled_package)
+    end
+
+    context 'when the package is already registered' do
+      let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: package) }
+
+      before do
+        subject.use_compiled_package(compiled_package)
+      end
+
+      it 'replaces the package if the package id is greater than the registered package' do
+        subject.use_compiled_package(new_compiled_package)
+        expect(subject.packages[new_compiled_package.name].model).to equal(new_compiled_package)
+
+        subject.use_compiled_package(compiled_package)
+        expect(subject.packages[new_compiled_package.name].model).to equal(new_compiled_package)
+      end
+    end
+  end
 end
