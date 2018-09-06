@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-ruby-go
+
+inputs:
+  - name: bosh-src
+  - name: release-branch
+  - name: bosh-cli
+  - name: version
+
+outputs:
+  - name: bosh-src-with-release-commit
+  - name: release-tarball
+
+run:
+  path: bosh-src/ci/tasks/prepare-release.sh
