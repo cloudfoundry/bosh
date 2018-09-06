@@ -1316,33 +1316,42 @@ jobs:
             - bats-centos
             - bats-ubuntu-trusty
             - bats-ubuntu-xenial
-        - get: bosh-master
-        - get: bosh-dev-release
-          resource: bosh-candidate-release-tarballs
-          passed:
-            - bats-centos
-            - bats-ubuntu-trusty
-            - bats-ubuntu-xenial
+        - get: release-branch
+          resource: bosh-src
         - get: bosh-cli
         - get: version
           params:
             bump: final
-      - task: promote-release
+      # patch stage
+      - task: prepare-release
+        file: bosh-src/ci/tasks/prepare-release.yml
+      - put: bosh-src
+        params:
+          repository: bosh-src-with-release-commit
+          rebase: true
+      # finalize
+      - get: bosh-master
+      - task: finalize-release
         file: bosh-src/ci/tasks/finalize-bosh-release.yml
         params:
           BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
           BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
-      - put: version
-        params:
-          bump: patch
       - put: bosh-master
         params:
           repository: bosh-master-with-final
-          tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
-          annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
-      - put: bosh-src
+          tag: bosh-master-with-final/tag-name
+          annotate: bosh-master-with-final/annotate-msg
+          rebase: true
+      # patch with dev version
+      - put: version
         params:
-          repository: bosh-src-with-bumped-version
+          bump: patch
+      - task: patch-to-dev
+        file: bosh-src/ci/tasks/patch-to-dev.yml
+      - put: bosh-master
+        params:
+          repository: bosh-master-bumped-dev-version
+          rebase: true
 
   - name: bump-major
     serial: true
