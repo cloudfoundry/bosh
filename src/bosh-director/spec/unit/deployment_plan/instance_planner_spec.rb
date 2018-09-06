@@ -579,7 +579,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         instance: existing_instance_model,
         active: true,
       )
-
       instance_planner.orphan_unreusable_vms(instance_plans, existing_instance_models)
 
       expect(existing_instance_model.vms).to include(vm)
@@ -598,6 +597,22 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       expect(existing_instance_model.vms).to include(vm)
       expect(existing_instance_model.vms).to include(usable_vm)
+    end
+
+    it 'short circuits when detecting a matching instance plan for each vm' do
+      instance_plan2 = instance_double(Bosh::Director::DeploymentPlan::InstancePlan)
+      unusable_vm = BD::Models::Vm.make(
+        instance: existing_instance_model,
+        active: false,
+        agent_id: 'fake-agent-id',
+      )
+
+      allow(instance_plan).to receive(:vm_matches_plan?).with(unusable_vm).and_return true
+      expect(instance_plan).to receive(:vm_matches_plan?).once
+      expect(instance_plan2).not_to receive(:vm_matches_plan?)
+
+      instance_plans = [instance_plan, instance_plan2]
+      instance_planner.orphan_unreusable_vms(instance_plans, existing_instance_models)
     end
 
     it 'orphans VMs that do not match' do

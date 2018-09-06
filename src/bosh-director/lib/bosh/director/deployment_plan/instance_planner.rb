@@ -51,17 +51,21 @@ module Bosh
         end
 
         def orphan_unreusable_vms(desired_instance_plans, existing_instance_models)
-          desired_instance_plans.each do |instance_plan|
-            existing_instance_models.each do |instance_model|
-              instance_model.vms.each do |candidate_vm|
-                next if candidate_vm.active
-                next if instance_plan.vm_matches_plan?(candidate_vm)
+          existing_instance_models.each do |instance_model|
+            orphaned = false
 
-                Steps::OrphanVmStep.new(candidate_vm).perform(nil)
+            instance_model.vms.each do |candidate_vm|
+              next if candidate_vm.active
+              next if desired_instance_plans.any? do |desired_instance|
+                desired_instance.vm_matches_plan?(candidate_vm)
               end
 
-              instance_model.reload
+              orphaned = true
+
+              Steps::OrphanVmStep.new(candidate_vm).perform(nil)
             end
+
+            instance_model.reload if orphaned
           end
         end
 
