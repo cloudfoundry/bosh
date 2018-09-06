@@ -7,16 +7,13 @@ image_resource:
     repository: bosh/main-ruby-go
 
 inputs:
-  - name: bosh-src
   - name: bosh-master
-  - name: bosh-dev-release
   - name: bosh-cli
   - name: version
+  - name: release-tarball
 
 outputs:
-  - name: bosh-src-with-bumped-version
   - name: bosh-master-with-final
-  - name: bosh-src-with-bumped-version-tag
 
 params:
   BLOBSTORE_ACCESS_KEY_ID: replace-me
