@@ -1316,23 +1316,21 @@ jobs:
             - bats-centos
             - bats-ubuntu-trusty
             - bats-ubuntu-xenial
-        - get: release-branch
+        - get: bosh-src-latest
           resource: bosh-src
         - get: bosh-cli
         - get: version
           params:
             bump: final
-      # patch stage
       - task: prepare-release
         file: bosh-src/ci/tasks/prepare-release.yml
       - put: bosh-src
         params:
-          repository: bosh-src-with-release-commit
+          repository: bosh-src-latest-with-release-commit
           rebase: true
-      # finalize
       - get: bosh-master
       - task: finalize-release
-        file: bosh-src/ci/tasks/finalize-bosh-release.yml
+        file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
         params:
           BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
           BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
@@ -1342,16 +1340,10 @@ jobs:
           tag: bosh-master-with-final/tag-name
           annotate: bosh-master-with-final/annotate-msg
           rebase: true
-      # patch with dev version
-      - put: version
+      - put: bosh-github-release
         params:
-          bump: patch
-      - task: patch-to-dev
-        file: bosh-src/ci/tasks/patch-to-dev.yml
-      - put: bosh-master
-        params:
-          repository: bosh-master-bumped-dev-version
-          rebase: true
+          name: bosh-master-with-final/tag-name
+          tag: bosh-master-with-final/tag-name
 
   - name: bump-major
     serial: true
@@ -1401,6 +1393,14 @@ resources:
       uri: ((bosh_src_url))
       branch: ((branch_name))
       private_key: ((github_deployment_key))
+
+  - name: bosh-github-release
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: bosh
+      drafts: true
+      access_token: ((github_token))
 
   - name: version
     type: semver
