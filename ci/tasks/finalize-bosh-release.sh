@@ -15,6 +15,7 @@ chmod +x $GO_CLI_PATH
 git clone ./bosh-master $PROMOTED_MASTER
 
 pushd $PROMOTED_MASTER
+  git pull origin master
   git status
 
   cat >> config/private.yml <<EOF

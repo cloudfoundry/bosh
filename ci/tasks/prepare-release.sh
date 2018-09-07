@@ -6,7 +6,7 @@ export FULL_VERSION=$(cat version/version)
 
 export ROOT_PATH=$PWD
 BOSH_SRC=$PWD/bosh-src
-RELEASE_BRANCH=$PWD/release-branch
+LATEST_BRANCH=$PWD/bosh-src-latest
 TARBALL_OUTPUT_DIR=$PWD/release-tarball
 
 mkdir -p $TARBALL_OUTPUT_DIR
@@ -32,13 +32,13 @@ pushd $BOSH_SRC
   $GO_CLI_PATH create-release --version $FULL_VERSION --tarball=$TARBALL_OUTPUT_DIR/tarball.tgz
 popd
 
-git clone $BOSH_SRC $ROOT_PATH/bosh-src-with-release-commit
-
-
-pushd $RELEASE_BRANCH
+pushd $LATEST_BRANCH
   git status
 
   git remote add bosh-src $BOSH_SRC
 
-  git merge bosh-src --no-ff
+  git fetch bosh-src HEAD
+  git rebase FETCH_HEAD
 popd
+
+git clone $LATEST_BRANCH $ROOT_PATH/bosh-src-latest-with-release-commit
