@@ -20,4 +20,4 @@ params:
   BLOBSTORE_SECRET_ACCESS_KEY: replace-me
 
 run:
-  path: bosh-src/ci/tasks/finalize-bosh-release.sh
+  path: bosh-master/ci/tasks/finalize-bosh-release.sh
