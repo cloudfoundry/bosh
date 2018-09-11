@@ -481,63 +481,72 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         it_calls_cpi_method(:delete_stemcell, 'fake-stemcell-cid')
       end
 
-      context("#delete_vm") do
+      context('#delete_vm') do
         it_calls_cpi_method(:delete_vm, 'fake-vm-cid')
       end
 
-      context("#has_vm") do
+      context('#create_network') do
+        network_definition = { 'range' => '192.68.1.1' }
+        it_calls_cpi_method(:create_network, network_definition)
+      end
+
+      context('#delete_network') do
+        it_calls_cpi_method(:delete_vm, 'fake-network-id')
+      end
+
+      context('#has_vm') do
         it_calls_cpi_method(:has_vm, 'fake-vm-cid')
       end
 
-      context("#reboot_vm") do
+      context('#reboot_vm') do
         it_calls_cpi_method(:reboot_vm, 'fake-vm-cid')
       end
 
-      context("#set_vm_metadata") do
+      context('#set_vm_metadata') do
         it_calls_cpi_method(:set_vm_metadata, 'fake-vm-cid', {'metadata' => 'hash'})
       end
 
-      context("#set_disk_metadata") do
+      context('#set_disk_metadata') do
         it_calls_cpi_method(:set_disk_metadata, 'fake-disk-cid', {'metadata' => 'hash'})
       end
 
-      context("#create_disk") do
+      context('#create_disk') do
         it_calls_cpi_method(:create_disk, 100_000, {'type' => 'gp2'}, 'fake-vm-cid')
       end
 
-      context("#has_disk") do
+      context('#has_disk') do
         it_calls_cpi_method(:has_disk, 'fake-disk-cid')
       end
 
-      context("#delete_disk") do
+      context('#delete_disk') do
         it_calls_cpi_method(:delete_disk, 'fake-disk-cid')
       end
 
-      context("#detach_disk") do
+      context('#detach_disk') do
         it_calls_cpi_method(:detach_disk, 'fake-vm-cid', 'fake-disk-cid')
       end
 
-      context("#snapshot_disk") do
+      context('#snapshot_disk') do
         it_calls_cpi_method(:snapshot_disk, 'fake-disk-cid')
       end
 
-      context("#delete_snapshot") do
+      context('#delete_snapshot') do
         it_calls_cpi_method(:delete_snapshot, 'fake-snapshot-cid')
       end
 
-      context("#resize_disk") do
+      context('#resize_disk') do
         it_calls_cpi_method(:resize_disk, 'fake-disk-cid', 1024)
       end
 
-      context("#get_disks") do
+      context('#get_disks') do
         it_calls_cpi_method(:get_disks, 'fake-vm-cid')
       end
 
-      context("#ping") do
+      context('#ping') do
         it_calls_cpi_method(:ping)
       end
 
-      context("#info") do
+      context('#info') do
         it_calls_cpi_method(:info)
       end
     end
