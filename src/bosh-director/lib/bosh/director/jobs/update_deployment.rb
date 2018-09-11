@@ -1,3 +1,5 @@
+require 'ruby-prof'
+
 module Bosh::Director
   module Jobs
     class UpdateDeployment < BaseJob
@@ -17,6 +19,7 @@ module Bosh::Director
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
+        @variables_interpolator = ConfigServer::VariablesInterpolator.new
       end
 
       def dry_run?
@@ -24,6 +27,9 @@ module Bosh::Director
       end
 
       def perform
+        RubyProf.start
+        RubyProf.pause
+
         logger.info('Reading deployment manifest')
         manifest_hash = YAML.load(@manifest_text)
         logger.debug("Manifest:\n#{@manifest_text}")
@@ -84,7 +90,7 @@ module Bosh::Director
             @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
             create_network_stage(deployment_plan).perform unless dry_run?
 
-            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
+            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
 
             # that's where the links resolver is created
@@ -149,9 +155,23 @@ module Bosh::Director
             variable_set.update(:writable => false)
           end
         end
+
+        @variables_interpolator.erase_cache_with_fire!
+
+        reports
       end
 
       private
+
+      def reports
+        result = RubyProf.stop
+        time = Time.now.to_i
+        f = File.open("/tmp/profile_results-#{time}-flat.txt", 'w')
+        @logger.info ">>> profiling at /tmp/profile_results-#{time}-*"
+        flat = RubyProf::FlatPrinter.new(result)
+        flat.print(f)
+        f.close
+      end
 
       def mark_orphaned_networks(deployment_plan)
         return unless Config.network_lifecycle_enabled?
@@ -259,47 +279,47 @@ module Bosh::Director
       end
 
       def render_instance_groups_templates(instance_groups, template_blob_cache, dns_encoder)
+        RubyProf.resume
         errors = []
         instance_groups.each do |instance_group|
-          begin
+          # begin
             JobRenderer.render_job_instances_with_cache(
               instance_group.unignored_instance_plans,
               template_blob_cache,
               dns_encoder,
               logger,
             )
-          rescue Exception => e
-            errors.push e
-          end
+          # rescue Exception => e
+          #   errors.push e
+          # end
         end
+        RubyProf.pause
         errors
       end
 
       def snapshot_errands_variables_versions(errands_instance_groups, current_variable_set)
         errors = []
-        variables_interpolator = ConfigServer::VariablesInterpolator.new
-        config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
 
         errands_instance_groups.each do |instance_group|
           instance_group_errors = []
 
-          begin
-            variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
+          # begin
+            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
             unless instance_group&.env&.spec.nil?
-              config_server_client.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
+              @variables_interpolator.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
             end
-          rescue Exception => e
-            instance_group_errors.push e
-          end
+          # rescue Exception => e
+          #   instance_group_errors.push e
+          # end
 
           deployment = Bosh::Director::Models::Deployment.where(name: @deployment_name).first
           instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
-            begin
-              variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
-            rescue Exception => e
-              instance_group_errors.push e
-            end
+            # begin
+              @variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
+            # rescue Exception => e
+            #   instance_group_errors.push e
+            # end
           end
 
           unless instance_group_errors.empty?

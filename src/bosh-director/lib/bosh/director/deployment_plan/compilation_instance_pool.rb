@@ -45,6 +45,7 @@ module Bosh::Director
         @config = config
         @instance_provider = instance_provider
         @mutex = Mutex.new
+        @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
       end
 
       def with_reused_vm(stemcell)
@@ -85,6 +86,7 @@ module Bosh::Director
                 instance: instance_memo.instance,
                 desired_instance: DeploymentPlan::DesiredInstance.new,
                 network_plans: [],
+                variables_interpolator: @variables_interpolator
               )
               destroy_instance(instance_plan)
             end
@@ -138,6 +140,7 @@ module Bosh::Director
         @deployment_plan = deployment_plan
         @vm_creator = vm_creator
         @logger = logger
+        @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
       end
 
       def create_instance_plan(stemcell)
@@ -169,6 +172,7 @@ module Bosh::Director
           {},
           availability_zone,
           @logger,
+          @variables_interpolator,
         )
         instance.bind_new_instance_model
 
@@ -191,6 +195,7 @@ module Bosh::Director
           desired_instance: desired_instance,
           network_plans: [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)],
           tags: @deployment_plan.tags,
+          variables_interpolator: @variables_interpolator
         )
 
         compile_instance_group.add_instance_plans([instance_plan])

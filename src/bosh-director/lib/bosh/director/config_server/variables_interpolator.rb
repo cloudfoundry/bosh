@@ -5,6 +5,10 @@ module Bosh::Director::ConfigServer
       @config_server_client = ClientFactory.create(Bosh::Director::Config.logger).create_client
     end
 
+    def erase_cache_with_fire!
+      @config_server_client.clear_cache!
+    end
+
     # @param [Hash] template_spec_properties Hash to be interpolated
     # @param [Hash] deployment_name The deployment context in-which the interpolation will occur
     # @param [VariableSet] variable_set The variable set which the interpolation will use.
@@ -34,6 +38,14 @@ module Bosh::Director::ConfigServer
       raise errors.join("\n") unless errors.empty?
 
       result
+    end
+
+    def interpolate_with_versioning(raw_hash, variable_set, options = {})
+      @config_server_client.interpolate_with_versioning(raw_hash, variable_set, options)
+    end
+
+    def generate_values(variables, deployment_name, converge_variables = false)
+      @config_server_client.generate_values(variables, deployment_name, converge_variables)
     end
 
     # Note: The links properties will be interpolated in the context of the deployment that provides them
