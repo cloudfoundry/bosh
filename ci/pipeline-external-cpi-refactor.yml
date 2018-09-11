@@ -144,7 +144,7 @@ jobs:
       - integration-postgres-gocli-sha2
       - upgrade-tests
     - get: bosh-cli
-    - get: candidate-version
+    - get: version
       resource: candidate-version-v2
       params:
         bump: major
