@@ -89,7 +89,7 @@ module Bosh::Director::Models
       tags = YAML.load(manifest)['tags']
       return {} if tags.nil? || tags.empty?
 
-      variables_interpolator = ConfigServer::VariablesInterpolator.new
+      variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
       variables_interpolator.interpolate_with_versioning(tags, current_variable_set)
     end
 

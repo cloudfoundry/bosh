@@ -58,7 +58,8 @@ module Bosh::Director
 
         export_release_job = create_compilation_instance_group(release_version_model, release, deployment_plan_stemcell)
         planner.add_instance_group(export_release_job)
-        assembler = DeploymentPlan::Assembler.create(planner)
+        variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+        assembler = DeploymentPlan::Assembler.create(planner, variables_interpolator)
         assembler.bind_models({:should_bind_links => false, :should_bind_properties => false})
 
         lock_timeout = 15 * 60 # 15 minutes

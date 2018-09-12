@@ -282,16 +282,16 @@ module Bosh::Director
         RubyProf.resume
         errors = []
         instance_groups.each do |instance_group|
-          # begin
+          begin
             JobRenderer.render_job_instances_with_cache(
               instance_group.unignored_instance_plans,
               template_blob_cache,
               dns_encoder,
               logger,
             )
-          # rescue Exception => e
-          #   errors.push e
-          # end
+          rescue Exception => e
+            errors.push e
+          end
         end
         RubyProf.pause
         errors
@@ -303,23 +303,23 @@ module Bosh::Director
         errands_instance_groups.each do |instance_group|
           instance_group_errors = []
 
-          # begin
+          begin
             @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
             unless instance_group&.env&.spec.nil?
               @variables_interpolator.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
             end
-          # rescue Exception => e
-          #   instance_group_errors.push e
-          # end
+          rescue Exception => e
+            instance_group_errors.push e
+          end
 
           deployment = Bosh::Director::Models::Deployment.where(name: @deployment_name).first
           instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
-            # begin
+            begin
               @variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
-            # rescue Exception => e
-            #   instance_group_errors.push e
-            # end
+            rescue Exception => e
+              instance_group_errors.push e
+            end
           end
 
           unless instance_group_errors.empty?
