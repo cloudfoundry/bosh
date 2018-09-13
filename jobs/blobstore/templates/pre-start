@@ -1,0 +1,5 @@
+#!/bin/bash -eu
+
+if [ -e /var/vcap/data/blobstore/backend.sock ]; then
+  rm /var/vcap/data/blobstore/backend.sock
+fi
