@@ -21,6 +21,9 @@ main() {
     # Customize environment
     cp $env_assets/*.sh .
 
+    rm -rf bosh-deployment
+    ln -s ${build_dir}/bosh-deployment bosh-deployment
+
     bbl --debug up
 
     set +x

@@ -1254,6 +1254,7 @@ jobs:
         - get: bbl-state
           resource: acceptance-env-state
         - get: zookeeper-release
+        - get: bosh-deployment
         - get: stemcell
           resource: google-kvm-ubuntu-trusty
         - get: bosh-src
