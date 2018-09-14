@@ -36,7 +36,7 @@ module Bosh::Spec
               'name' => 'medium',
               'cloud_properties' => {
                   'instance_type' => 'm3.medium',
-                  'ephemeral_disk' => '((/ephemeral_disk_placeholder))'
+                  'ephemeral_disk' => '((/ephemeral_disk_placeholder))',
               }
           }],
 
@@ -49,6 +49,17 @@ module Bosh::Spec
           }, {
               'name' => 'vip',
               'type' => 'vip'
+          }, {
+              'name' => 'other',
+              'type' => 'manual',
+              'subnets' => [{
+                'range' => '10.10.0.0/24',
+                'gateway' => '10.10.0.1',
+                'az' => 'z1',
+                'static' => ['10.10.0.62'],
+                'dns' => ['10.10.0.2'],
+                'cloud_properties' => { 'thing' => '((/z3_variable_name))' },
+              }],
           }],
 
           'compilation' => {

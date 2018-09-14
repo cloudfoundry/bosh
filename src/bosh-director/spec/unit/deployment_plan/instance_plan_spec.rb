@@ -382,19 +382,21 @@ module Bosh::Director::DeploymentPlan
             end
 
             it 'compares the interpolated cloud_properties' do
-              expect(config_server_client).to receive(:interpolate_with_versioning)
-                .with(
-                  current_networks_hash,
-                  previous_variable_set,
-                ).and_return(interpolated_current_networks_hash)
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+              expect(config_server_client).to receive(:interpolated_versioned_variables_changed?).with(current_networks_hash,
+                                                                                                       desired_networks_hash,
+                                                                                                       previous_variable_set,
+                                                                                                       desired_variable_set)
+                                                .and_return(true)
 
               expect(simple_instance_plan.network_settings_changed?).to be_truthy
             end
 
             it 'does not log the interpolated cloud property changes' do
-              allow(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
-              allow(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
+              allow(config_server_client).to receive(:interpolated_versioned_variables_changed?).with(current_networks_hash,
+                                                                                                      desired_networks_hash,
+                                                                                                      previous_variable_set,
+                                                                                                      desired_variable_set)
+              .and_return(true)
 
               expect(logger).to receive(:debug).with(
                 "network_settings_changed? network settings changed FROM: #{current_networks_hash} TO: #{desired_networks_hash} on instance #{mock_existing_instance}"

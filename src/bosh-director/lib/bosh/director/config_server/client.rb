@@ -52,6 +52,17 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer.replace_variables(raw_hash, variables_paths, retrieved_config_server_values)
     end
 
+    def interpolated_versioned_variables_changed?(previous_raw_hash, next_raw_hash, previous_variable_set, target_variable_set)
+      begin
+        old_vars = interpolate_with_versioning(previous_raw_hash, previous_variable_set)
+      rescue Bosh::Director::ConfigServerFetchError => e
+        @logger.debug("Failed to fetch all variables while comparing with old variable set: #{e.message}")
+        return true
+      end
+      target_vars = interpolate_with_versioning(next_raw_hash, target_variable_set)
+      target_vars != old_vars
+    end
+
     # @param [Hash] link_properties_hash Link spec properties to be interpolated
     # @param [VariableSet] consumer_variable_set The variable set of the consumer deployment
     # @param [VariableSet] provider_variable_set The variable set of the provider deployment
@@ -413,17 +424,6 @@ module Bosh::Director::ConfigServer
       end
 
       generated_variable
-    end
-
-    def generate_certificate(name, deployment_name, variable_set, options)
-      dns_record_names = options[:dns_record_names]
-
-      certificate_options = {
-        'common_name' => dns_record_names.first,
-        'alternative_names' => dns_record_names
-      }
-
-      generate_value_and_record_event(name, 'certificate', deployment_name, variable_set, certificate_options)
     end
 
     def get_name_root(variable_name)
