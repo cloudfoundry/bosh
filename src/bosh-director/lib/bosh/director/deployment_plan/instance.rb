@@ -103,9 +103,7 @@ module Bosh::Director
         @is_deploy_action
       end
 
-      def is_deploy_action=(is_deploy_action)
-        @is_deploy_action = is_deploy_action
-      end
+      attr_writer :is_deploy_action
 
       def to_s
         if @uuid.nil?
@@ -129,13 +127,12 @@ module Bosh::Director
           uuid: SecureRandom.uuid,
           availability_zone: availability_zone_name,
           bootstrap: false,
-          variable_set_id: @deployment_model.current_variable_set.id
+          variable_set_id: @deployment_model.current_variable_set.id,
         )
         @uuid = @model.uuid
         @desired_variable_set = @model.variable_set
         @previous_variable_set = @model.variable_set
       end
-
 
       def stemcell_model
         @stemcell.model_for_az(availability_zone_name)

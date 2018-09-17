@@ -39,7 +39,7 @@ module Bosh::Director::ConfigServer
     def interpolate_with_versioning(raw_hash, variable_set, options = {})
       return raw_hash if raw_hash.nil?
       raise "Unable to interpolate provided object. Expected a 'Hash', got '#{raw_hash.class}'" unless raw_hash.is_a?(Hash)
-      raise "Variable Set cannot be nil." if variable_set.nil?
+      raise 'Variable Set cannot be nil.' if variable_set.nil?
 
       subtrees_to_ignore = options.fetch(:subtrees_to_ignore, [])
 
@@ -194,7 +194,7 @@ module Bosh::Director::ConfigServer
         name = ConfigServerHelper.add_prefix_if_not_absolute(
           ConfigServerHelper.extract_variable_name(variable),
           @director_name,
-          deployment_name
+          deployment_name,
         )
 
         begin
@@ -223,7 +223,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      if errors.length > 0
+      unless errors.empty?
         message = errors.map { |error| "- #{error.message}" }.join("\n")
         raise Bosh::Director::ConfigServerFetchError, message
       end
@@ -241,7 +241,7 @@ module Bosh::Director::ConfigServer
         raw_variable_name = ConfigServerHelper.add_prefix_if_not_absolute(
           ConfigServerHelper.extract_variable_name(variable),
           @director_name,
-          provider_deployment_name
+          provider_deployment_name,
         )
 
         variable_composed_name = get_name_root(raw_variable_name)
@@ -275,7 +275,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      if errors.length > 0
+      unless errors.empty?
         message = errors.map { |error| "- #{error.message}" }.join("\n")
         raise Bosh::Director::ConfigServerFetchError, message
       end
@@ -300,7 +300,7 @@ module Bosh::Director::ConfigServer
         end
       end
 
-      if errors.length > 0
+      unless errors.empty?
         message = errors.map { |error| "- #{error.message}" }.join("\n")
         raise Bosh::Director::ConfigServerFetchError, message
       end
@@ -318,15 +318,11 @@ module Bosh::Director::ConfigServer
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: Invalid JSON response"
       end
 
-      if response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' with id '#{id}' from config server: HTTP Code '404', Error: '#{parsed_response['error']}'"
-      elsif !response.kind_of? Net::HTTPOK
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: HTTP Code '#{response.code}', Error: '#{parsed_response['error']}'"
-      end
-
+      raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' with id '#{id}' from config server: HTTP Code '404', Error: '#{parsed_response['error']}'" if response.is_a? Net::HTTPNotFound
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: HTTP Code '#{response.code}', Error: '#{parsed_response['error']}'" unless response.is_a? Net::HTTPOK
       raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to be a hash, got '#{parsed_response.class}'" unless parsed_response.is_a?(Hash)
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'id'" unless parsed_response.has_key?('id')
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'value'" unless parsed_response.has_key?('value')
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'id'" unless parsed_response.key?('id')
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'value'" unless parsed_response.key?('value')
 
       extract_variable_value(name, parsed_response['value'])
     end
@@ -338,7 +334,7 @@ module Bosh::Director::ConfigServer
       name_tokens.each_with_index do |token, index|
         parent = index > 0 ? ([name_root] + name_tokens[0..(index - 1)]).join('.') : name_root
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' to be a hash" unless raw_value.is_a?(Hash)
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' hash to have key '#{token}'" unless raw_value.has_key?(token)
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected parent '#{parent}' hash to have key '#{token}'" unless raw_value.key?(token)
 
         raw_value = raw_value[token]
       end
@@ -356,18 +352,18 @@ module Bosh::Director::ConfigServer
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Invalid JSON response"
       end
 
-      if response.kind_of? Net::HTTPOK
+      if response.is_a? Net::HTTPOK
         response_data = response_body['data']
 
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be an array" unless response_data.is_a?(Array)
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data to be non empty array" if response_data.empty?
 
         fetched_variable = response_data[0]
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'id'" unless fetched_variable.has_key?('id')
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'value'" unless fetched_variable.has_key?('value')
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'id'" unless fetched_variable.key?('id')
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'value'" unless fetched_variable.key?('value')
 
         return fetched_variable['id'], extract_variable_value(name, fetched_variable['value'])
-      elsif response.kind_of? Net::HTTPNotFound
+      elsif response.is_a? Net::HTTPNotFound
         raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP Code '404', Error: '#{response_body['error']}'"
       else
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: HTTP Code '#{response.code}', Error: '#{response_body['error']}'"
@@ -391,7 +387,7 @@ module Bosh::Director::ConfigServer
       request_body = {
         'name' => name,
         'type' => type,
-        'parameters' => parameters
+        'parameters' => parameters,
       }
 
       request_body['mode'] = converge_variable ? 'converge' : 'no-overwrite'
@@ -408,14 +404,14 @@ module Bosh::Director::ConfigServer
         raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{get_name_root(name)}' with type '#{type}'"
       end
 
-      unless response.kind_of? Net::HTTPSuccess
+      unless response.is_a? Net::HTTPSuccess
         @logger.error("Config server error while generating value for '#{name}': #{response.code}  #{parsed_response_body['error']}. Request body sent: #{request_body}")
         raise Bosh::Director::ConfigServerGenerationError, "Config Server failed to generate value for '#{name}' with type '#{type}'. HTTP Code '#{response.code}', Error: '#{parsed_response_body['error']}'"
       end
 
       generated_variable = parsed_response_body
 
-      raise Bosh::Director::ConfigServerGenerationError, "Failed to version generated variable '#{name}'. Expected Config Server response to have key 'id'" unless generated_variable.has_key?('id')
+      raise Bosh::Director::ConfigServerGenerationError, "Failed to version generated variable '#{name}'. Expected Config Server response to have key 'id'" unless generated_variable.key?('id')
 
       begin
         save_variable(get_name_root(name), variable_set, generated_variable['id'])
@@ -433,37 +429,34 @@ module Bosh::Director::ConfigServer
 
     def add_event(options)
       Bosh::Director::Config.current_job.event_manager.create_event(
-        {
-          user: Bosh::Director::Config.current_job.username,
-          object_type: 'variable',
-          task: Bosh::Director::Config.current_job.task_id,
-          action: options.fetch(:action),
-          object_name: options.fetch(:object_name),
-          deployment: options.fetch(:deployment_name),
-          context: options.fetch(:context, {}),
-          error: options.fetch(:error, nil)
-        })
+        user: Bosh::Director::Config.current_job.username,
+        object_type: 'variable',
+        task: Bosh::Director::Config.current_job.task_id,
+        action: options.fetch(:action),
+        object_name: options.fetch(:object_name),
+        deployment: options.fetch(:deployment_name),
+        context: options.fetch(:context, {}),
+        error: options.fetch(:error, nil),
+      )
     end
 
     def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options, converge_variable)
-      begin
-        result = generate_value(variable_name, variable_type, variable_set, options, converge_variable)
-        add_event(
-          :action => 'create',
-          :deployment_name => deployment_name,
-          :object_name => variable_name,
-          :context => {'name' => result['name'], 'id' => result['id']}
-        )
-        result
-      rescue Exception => e
-        add_event(
-          :action => 'create',
-          :deployment_name => deployment_name,
-          :object_name => variable_name,
-          :error => e
-        )
-        raise e
-      end
+      result = generate_value(variable_name, variable_type, variable_set, options, converge_variable)
+      add_event(
+        action: 'create',
+        deployment_name: deployment_name,
+        object_name: variable_name,
+        context: { 'name' => result['name'], 'id' => result['id'] },
+      )
+      result
+    rescue Exception => e
+      add_event(
+        action: 'create',
+        deployment_name: deployment_name,
+        object_name: variable_name,
+        error: e,
+      )
+      raise e
     end
   end
 end

@@ -1,6 +1,6 @@
 module Bosh::Spec
   class Deployments
-    DEFAULT_DEPLOYMENT_NAME = 'simple'
+    DEFAULT_DEPLOYMENT_NAME = 'simple'.freeze
 
     def self.minimal_cloud_config
       {
@@ -21,54 +21,54 @@ module Bosh::Spec
 
     def self.cloud_config_with_placeholders
       {
-          'azs' => [
-              { 'name' => 'z1', 'cloud_properties' => '((/z1_cloud_properties))' },
-              { 'name' => 'z2', 'cloud_properties' => '((/z2_cloud_properties))' },
-          ],
+        'azs' => [
+          { 'name' => 'z1', 'cloud_properties' => '((/z1_cloud_properties))' },
+          { 'name' => 'z2', 'cloud_properties' => '((/z2_cloud_properties))' },
+        ],
 
-          'vm_types' => [{
-              'name' => 'small',
-              'cloud_properties' => {
-                  'instance_type' => 't2.micro',
-                  'ephemeral_disk' => '((/ephemeral_disk_placeholder))'
-              }
-          }, {
-              'name' => 'medium',
-              'cloud_properties' => {
-                  'instance_type' => 'm3.medium',
-                  'ephemeral_disk' => '((/ephemeral_disk_placeholder))',
-              }
+        'vm_types' => [{
+          'name' => 'small',
+          'cloud_properties' => {
+            'instance_type' => 't2.micro',
+            'ephemeral_disk' => '((/ephemeral_disk_placeholder))',
+          },
+        }, {
+          'name' => 'medium',
+          'cloud_properties' => {
+            'instance_type' => 'm3.medium',
+            'ephemeral_disk' => '((/ephemeral_disk_placeholder))',
+          },
+        }],
+
+        'disk_types' => '((/disk_types_placeholder))',
+
+        'networks' => [{
+          'name' => 'private',
+          'type' => 'manual',
+          'subnets' => '((/subnets_placeholder))',
+        }, {
+          'name' => 'vip',
+          'type' => 'vip',
+        }, {
+          'name' => 'other',
+          'type' => 'manual',
+          'subnets' => [{
+            'range' => '10.10.0.0/24',
+            'gateway' => '10.10.0.1',
+            'az' => 'z1',
+            'static' => ['10.10.0.62'],
+            'dns' => ['10.10.0.2'],
+            'cloud_properties' => { 'thing' => '((/z3_variable_name))' },
           }],
+        }],
 
-          'disk_types' => '((/disk_types_placeholder))',
-
-          'networks' => [{
-              'name' => 'private',
-              'type' => 'manual',
-              'subnets' => '((/subnets_placeholder))'
-          }, {
-              'name' => 'vip',
-              'type' => 'vip'
-          }, {
-              'name' => 'other',
-              'type' => 'manual',
-              'subnets' => [{
-                'range' => '10.10.0.0/24',
-                'gateway' => '10.10.0.1',
-                'az' => 'z1',
-                'static' => ['10.10.0.62'],
-                'dns' => ['10.10.0.2'],
-                'cloud_properties' => { 'thing' => '((/z3_variable_name))' },
-              }],
-          }],
-
-          'compilation' => {
-              'workers' => '((/workers_placeholder))',
-              'reuse_compilation_vms' => true,
-              'az' => 'z1',
-              'vm_type' => 'medium',
-              'network' => 'private'
-          }
+        'compilation' => {
+          'workers' => '((/workers_placeholder))',
+          'reuse_compilation_vms' => true,
+          'az' => 'z1',
+          'vm_type' => 'medium',
+          'network' => 'private',
+        },
       }
     end
 
@@ -78,26 +78,26 @@ module Bosh::Spec
           {
             'name' => 'z1',
             'cloud_properties' => {
-              'secret' => '((/never-log-me))'
-            }
-          }
+              'secret' => '((/never-log-me))',
+            },
+          },
         ],
         'vm_types' => [
           {
             'name' => 'small',
             'cloud_properties' => {
-              'secret' => '((/never-log-me))'
-            }
-          }
+              'secret' => '((/never-log-me))',
+            },
+          },
         ],
         'disk_types' => [
           {
             'name' => 'small',
             'disk_size' => 3000,
             'cloud_properties' => {
-              'secret' => '((/never-log-me))'
-            }
-          }
+              'secret' => '((/never-log-me))',
+            },
+          },
         ],
         'networks' => [
           {
@@ -109,41 +109,41 @@ module Bosh::Spec
                 'gateway' => '10.10.0.1',
                 'az' => 'z1',
                 'static' => [
-                  '10.10.0.62'
+                  '10.10.0.62',
                 ],
                 'dns' => [
-                  '10.10.0.2'
+                  '10.10.0.2',
                 ],
                 'cloud_properties' => {
-                  'secret' => '((/never-log-me))'
-                }
-              }
-            ]
-          }
+                  'secret' => '((/never-log-me))',
+                },
+              },
+            ],
+          },
         ],
         'vm_extensions' => [
           {
             'name' => 'pub-lbs',
             'cloud_properties' => {
-              'secret' => '((/never-log-me))'
-            }
-          }
+              'secret' => '((/never-log-me))',
+            },
+          },
         ],
         'compilation' => {
           'workers' => 5,
           'reuse_compilation_vms' => true,
           'az' => 'z1',
           'vm_type' => 'small',
-          'network' => 'private'
-        }
+          'network' => 'private',
+        },
       }
     end
 
     def self.simple_cloud_config
-      minimal_cloud_config.merge({
-          'networks' => [network],
-          'resource_pools' => [resource_pool]
-        })
+      minimal_cloud_config.merge(
+        'networks' => [network],
+        'resource_pools' => [resource_pool],
+      )
     end
 
     def self.simple_os_specific_cloud_config
@@ -156,7 +156,7 @@ module Bosh::Spec
           'stemcell' => {
             'os' => 'toronto-os',
             'version' => 'latest',
-          }
+          },
         },
         {
           'name' => 'b',
@@ -165,18 +165,18 @@ module Bosh::Spec
           'network' => 'a',
           'stemcell' => {
             'os' => 'toronto-centos',
-            'version' => 'latest'
-          }
-        }
+            'version' => 'latest',
+          },
+        },
       ]
-      minimal_cloud_config.merge({
+      minimal_cloud_config.merge(
         'networks' => [network],
         'resource_pools' => resource_pools,
-      })
+      )
     end
 
     def self.simple_network_specific_cloud_config
-      minimal_cloud_config.merge({
+      minimal_cloud_config.merge(
         'networks' => [
           {
             'name' => 'a',
@@ -185,17 +185,17 @@ module Bosh::Spec
           {
             'name' => 'b',
             'subnets' => [subnet],
-          }
+          },
         ],
-        'resource_pools' => [resource_pool]
-      })
+        'resource_pools' => [resource_pool],
+      )
     end
 
     def self.simple_cloud_config_with_multiple_azs_and_cpis
       cloud_config = simple_cloud_config_with_multiple_azs
 
       cloud_config['azs'].each_index do |i|
-        cloud_config['azs'][i]['cpi'] = "cpi-name#{i+1}"
+        cloud_config['azs'][i]['cpi'] = "cpi-name#{i + 1}"
       end
 
       cloud_config
@@ -203,161 +203,165 @@ module Bosh::Spec
 
     def self.simple_cloud_config_with_multiple_azs
       networks = [
-          {
-              'name' => 'a',
-              'subnets' => [subnet('az' => 'z1'),
-                            {
-                                'range' => '192.168.2.0/24',
-                                'gateway' => '192.168.2.1',
-                                'dns' => ['192.168.2.1', '192.168.2.2'],
-                                'static' => ['192.168.2.10'],
-                                'reserved' => [],
-                                'cloud_properties' => {},
-                                'az' => 'z2'
-                            }],
-          },
+        {
+          'name' => 'a',
+          'subnets' => [subnet('az' => 'z1'),
+                        {
+                          'range' => '192.168.2.0/24',
+                          'gateway' => '192.168.2.1',
+                          'dns' => ['192.168.2.1', '192.168.2.2'],
+                          'static' => ['192.168.2.10'],
+                          'reserved' => [],
+                          'cloud_properties' => {},
+                          'az' => 'z2',
+                        }],
+        },
       ]
 
       azs = [
-          {
-              'name' => 'z1',
-              'cloud_properties' => {'a' => 'b'}
-          },
-          {
-              'name' => 'z2',
-              'cloud_properties' => {'a' => 'b'}
-          }
+        {
+          'name' => 'z1',
+          'cloud_properties' => { 'a' => 'b' },
+        },
+        {
+          'name' => 'z2',
+          'cloud_properties' => { 'a' => 'b' },
+        },
       ]
-      minimal_cloud_config.merge({
-                                     'networks' => networks,
-                                     'resource_pools' => [resource_pool],
-                                     'azs' => azs,
-                                     'compilation' => {
-                                         'workers' => 1,
-                                         'network' => 'a',
-                                         'cloud_properties' => {},
-                                         'az' => 'z1'
-                                     },
-                                 })
+      minimal_cloud_config.merge(
+        'networks' => networks,
+        'resource_pools' => [resource_pool],
+        'azs' => azs,
+        'compilation' => {
+          'workers' => 1,
+          'network' => 'a',
+          'cloud_properties' => {},
+          'az' => 'z1',
+        },
+      )
     end
 
     def self.simple_runtime_config
       {
-        'releases' => [{'name' => 'test_release_2', 'version' => '2'}]
+        'releases' => [{ 'name' => 'test_release_2', 'version' => '2' }],
       }
     end
 
     def self.runtime_config_latest_release
       {
-        'releases' => [{'name' => 'bosh-release', 'version' => 'latest'}]
+        'releases' => [{ 'name' => 'bosh-release', 'version' => 'latest' }],
       }
     end
 
     def self.runtime_config_release_missing
       {
-        'releases' => [{'name' => 'test_release_2', 'version' => '2'}],
-        'addons' => [{'name' => 'addon1', 'jobs' => [{'name' => 'job_using_pkg_2', 'release' => 'release2'}]}]
+        'releases' => [{ 'name' => 'test_release_2', 'version' => '2' }],
+        'addons' => [{ 'name' => 'addon1', 'jobs' => [{ 'name' => 'job_using_pkg_2', 'release' => 'release2' }] }],
       }
     end
 
     def self.runtime_config_with_addon
       {
-        'releases' => [{'name' => 'dummy2', 'version' => '0.2-dev'}],
+        'releases' => [{ 'name' => 'dummy2', 'version' => '0.2-dev' }],
         'addons' => [
-        {
-          'name' => 'addon1',
-          'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}, {'name' => 'dummy_with_package', 'release' => 'dummy2'}],
-          'properties' => {'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}}
-        }]
+          {
+            'name' => 'addon1',
+            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }, { 'name' => 'dummy_with_package', 'release' => 'dummy2' }],
+            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'addon_prop_value' } },
+          },
+        ],
       }
     end
 
     def self.runtime_config_with_addon_includes
-      runtime_config_with_addon.merge({
+      runtime_config_with_addon.merge(
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
-            'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
+            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }],
+            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
             'include' => {
               'deployments' => ['dep1'],
               'jobs' => [
-                {'name'=> 'foobar', 'release' => 'bosh-release'}
-              ]
-            }
-          }]
-      })
+                { 'name' => 'foobar', 'release' => 'bosh-release' },
+              ],
+            },
+          },
+        ],
+      )
     end
 
     def self.runtime_config_with_addon_excludes
-      runtime_config_with_addon.merge({
+      runtime_config_with_addon.merge(
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
-            'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
+            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }],
+            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
             'exclude' => {
               'deployments' => ['dep1'],
               'jobs' => [
-                {'name'=> 'foobar', 'release' => 'bosh-release'}
-              ]
-            }
-          }]
-        })
+                { 'name' => 'foobar', 'release' => 'bosh-release' },
+              ],
+            },
+          },
+        ],
+      )
     end
 
     def self.runtime_config_with_addon_includes_stemcell_os
-      runtime_config_with_addon.merge({
+      runtime_config_with_addon.merge(
         'addons' => [
           'name' => 'addon1',
-          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy2' }],
           'include' => {
             'stemcell' => [
-              {'os' => 'toronto-os'}
-            ]
-          }
-        ]
-      })
+              { 'os' => 'toronto-os' },
+            ],
+          },
+        ],
+      )
     end
 
     def self.runtime_config_with_addon_includes_network
-      runtime_config_with_addon.merge({
+      runtime_config_with_addon.merge(
         'addons' => [
           'name' => 'addon1',
-          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy2' }],
           'include' => {
-            'networks' => ['a']
-          }
-        ]
-      })
+            'networks' => ['a'],
+          },
+        ],
+      )
     end
 
     def self.runtime_config_with_addon_excludes_lifecycle
-      runtime_config_with_addon.merge({
+      runtime_config_with_addon.merge(
         'addons' => [
           'name' => 'addon1',
-          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy2' }],
           'exclude' => {
-            'lifecycle' => 'errand'
-          }
-        ]
-      })
+            'lifecycle' => 'errand',
+          },
+        ],
+      )
     end
 
     def self.runtime_config_with_addon_placeholders
-      runtime_config_with_addon.merge({
+      runtime_config_with_addon.merge(
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{'name' => 'dummy_with_properties', 'release' => '((/release_name))'}],
-            'properties' => {'dummy_with_properties' => {'echo_value' => '((/addon_prop))'}}
-          }]
-      })
+            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => '((/release_name))' }],
+            'properties' => { 'dummy_with_properties' => { 'echo_value' => '((/addon_prop))' } },
+          },
+        ],
+      )
     end
 
     def self.runtime_config_with_job_placeholders
       {
-        'releases' => [{'name' => '((/release_name))', 'version' => '0.1-dev'}],
+        'releases' => [{ 'name' => '((/release_name))', 'version' => '0.1-dev' }],
         'addons' => [
           {
             'name' => 'addon1',
@@ -366,77 +370,76 @@ module Bosh::Spec
                 'name' => 'job_2_with_many_properties',
                 'release' => '((/release_name))',
                 'properties' => {
-                  'gargamel' => { 'color' => '((/gargamel_colour))'},
-                }
-              }
-            ]
-          }
-        ]
+                  'gargamel' => { 'color' => '((/gargamel_colour))' },
+                },
+              },
+            ],
+          },
+        ],
       }
     end
 
     def self.runtime_config_with_links
       {
-        'releases' => [{'name' => 'bosh-release', 'version' => '0+dev.1'}],
+        'releases' => [{ 'name' => 'bosh-release', 'version' => '0+dev.1' }],
         'addons' => [
-            {
-                'name' => 'addon_job',
-                'jobs' => [
-                    {'name' => 'addon',
-                     'release' => 'bosh-release',
-                     'consumes' => {'db' => {'from' => 'db'}}
-                    }
-                ]
-            }
-        ]
+          {
+            'name' => 'addon_job',
+            'jobs' => [
+              { 'name' => 'addon',
+                'release' => 'bosh-release',
+                'consumes' => { 'db' => { 'from' => 'db' } } },
+            ],
+          },
+        ],
       }
     end
 
-    def self.multi_cpi_config(exec_path=nil)
-      cpi_config =  {
-          'cpis' => [
-              {
-                  'name' => 'cpi-name1',
-                  'type' => 'cpi-type',
-                  'properties' => {
-                      'somekey' => 'someval'
-                  }
-              },
-              {
-                  'name' => 'cpi-name2',
-                  'type' => 'cpi-type2',
-                  'properties' => {
-                      'somekey2' => 'someval2'
-                  }
-              }
-          ]
+    def self.multi_cpi_config(exec_path = nil)
+      cpi_config = {
+        'cpis' => [
+          {
+            'name' => 'cpi-name1',
+            'type' => 'cpi-type',
+            'properties' => {
+              'somekey' => 'someval',
+            },
+          },
+          {
+            'name' => 'cpi-name2',
+            'type' => 'cpi-type2',
+            'properties' => {
+              'somekey2' => 'someval2',
+            },
+          },
+        ],
       }
-      cpi_config['cpis'].each{|cpi|cpi['exec_path'] = exec_path} unless exec_path.nil?
+      cpi_config['cpis'].each { |cpi| cpi['exec_path'] = exec_path } unless exec_path.nil?
       cpi_config
     end
 
-    def self.multi_cpi_config_with_variables(exec_path=nil)
-      cpi_config =  {
-          'cpis' => [
-              {
-                  'name' => 'cpi-name1',
-                  'type' => 'cpi-type1',
-                  'properties' => {
-                      'someKeyFoo1' => '((/cpi-someFooVal1-var))',
-                      'someKeyBar1' => '((/cpi-someBarVal1-var))'
-                  }
-              },
-              {
-                  'name' => 'cpi-name2',
-                  'type' => 'cpi-type2',
-                  'properties' => {
-                      'someKeyFoo2' => '((/cpi-someFooVal2-var))',
-                      'someKeyBar2' => '((/cpi-someBarVal2-var))'
-                  }
-              }
-          ]
+    def self.multi_cpi_config_with_variables(exec_path = nil)
+      cpi_config = {
+        'cpis' => [
+          {
+            'name' => 'cpi-name1',
+            'type' => 'cpi-type1',
+            'properties' => {
+              'someKeyFoo1' => '((/cpi-someFooVal1-var))',
+              'someKeyBar1' => '((/cpi-someBarVal1-var))',
+            },
+          },
+          {
+            'name' => 'cpi-name2',
+            'type' => 'cpi-type2',
+            'properties' => {
+              'someKeyFoo2' => '((/cpi-someFooVal2-var))',
+              'someKeyBar2' => '((/cpi-someBarVal2-var))',
+            },
+          },
+        ],
       }
-      cpi_config['cpis'].each{|cpi|cpi['exec_path'] = exec_path} unless exec_path.nil?
+      cpi_config['cpis'].each { |cpi| cpi['exec_path'] = exec_path } unless exec_path.nil?
       cpi_config
     end
 
@@ -460,17 +463,16 @@ module Bosh::Spec
 
     def self.remote_stemcell_manifest(stemcell_url, stemcell_sha1)
       minimal_manifest.merge(
-      {
         'networks' => [{
           'name' => 'a',
           'subnets' => [{
-              'range' => '192.168.1.0/24',
-              'gateway' => '192.168.1.1',
-              'dns' => ['192.168.1.1', '192.168.1.2'],
-              'static' => ['192.168.1.10'],
-              'reserved' => [],
-              'cloud_properties' => {},
-            }],
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'static' => ['192.168.1.10'],
+            'reserved' => [],
+            'cloud_properties' => {},
+          }],
         }],
 
         'compilation' => {
@@ -491,22 +493,21 @@ module Bosh::Spec
             'sha1' => stemcell_sha1,
           },
         }],
-      })
+      )
     end
 
     def self.local_stemcell_manifest(stemcell_path)
       minimal_manifest.merge(
-      {
         'networks' => [{
           'name' => 'a',
           'subnets' => [{
-              'range' => '192.168.1.0/24',
-              'gateway' => '192.168.1.1',
-              'dns' => ['192.168.1.1', '192.168.1.2'],
-              'static' => ['192.168.1.10'],
-              'reserved' => [],
-              'cloud_properties' => {},
-            }],
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'static' => ['192.168.1.10'],
+            'reserved' => [],
+            'cloud_properties' => {},
+          }],
         }],
 
         'compilation' => {
@@ -526,25 +527,25 @@ module Bosh::Spec
             'url' => stemcell_path,
           },
         }],
-      })
+      )
     end
 
     def self.stemcell_os_specific_addon_manifest
-      test_release_manifest.merge({
+      test_release_manifest.merge(
         'jobs' => [
-          simple_job(resource_pool: 'a', name: "has-addon-vm", instances: 1),
-          simple_job(resource_pool: 'b', name: "no-addon-vm", instances: 1)
-        ]
-      })
+          simple_job(resource_pool: 'a', name: 'has-addon-vm', instances: 1),
+          simple_job(resource_pool: 'b', name: 'no-addon-vm', instances: 1),
+        ],
+      )
     end
 
     def self.network_specific_addon_manifest
-      test_release_manifest.merge({
+      test_release_manifest.merge(
         'jobs' => [
-          simple_job(network_name: "a", name: "has-addon-vm", instances: 1),
-          simple_job(network_name: "b", name: "no-addon-vm", instances: 1)
-        ]
-      })
+          simple_job(network_name: 'a', name: 'has-addon-vm', instances: 1),
+          simple_job(network_name: 'b', name: 'no-addon-vm', instances: 1),
+        ],
+      )
     end
 
     def self.resource_pool
@@ -557,9 +558,9 @@ module Bosh::Spec
         },
         'env' => {
           'bosh' => {
-            'password' => 'foobar'
-          }
-        }
+            'password' => 'foobar',
+          },
+        },
       }
     end
 
@@ -580,29 +581,29 @@ module Bosh::Spec
 
     def self.vm_extension
       {
-          'name' => 'vm-extension-name',
-          'cloud_properties' => {'my' => 'cloud_property'},
+        'name' => 'vm-extension-name',
+        'cloud_properties' => { 'my' => 'cloud_property' },
       }
     end
 
     def self.disk_pool
       {
         'name' => 'disk_a',
-        'disk_size' => 123
+        'disk_size' => 123,
       }
     end
 
     def self.disk_type
       {
         'name' => 'disk_a',
-        'disk_size' => 123
+        'disk_size' => 123,
       }
     end
 
     def self.minimal_manifest
       {
         'name' => 'minimal',
-        'director_uuid'  => 'deadbeef',
+        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name'    => 'test_release',
@@ -613,25 +614,25 @@ module Bosh::Spec
           'canaries'          => 2,
           'canary_watch_time' => 4000,
           'max_in_flight'     => 1,
-          'update_watch_time' => 20
-        }
+          'update_watch_time' => 20,
+        },
       }
     end
 
     def self.dummy_job
       {
         'name' => 'dummy',
-        'templates' => [{'name'=> 'dummy', 'release' => 'dummy'}],
+        'templates' => [{ 'name' => 'dummy', 'release' => 'dummy' }],
         'resource_pool' => 'a',
-        'networks' => [{'name' => 'a'}],
-        'instances' => 1
+        'networks' => [{ 'name' => 'a' }],
+        'instances' => 1,
       }
     end
 
     def self.dummy_deployment
       {
         'name' => 'dummy',
-        'director_uuid'  => 'deadbeef',
+        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name'    => 'dummy',
@@ -639,13 +640,13 @@ module Bosh::Spec
         }],
 
         'update' => {
-            'canaries'          => 2,
-            'canary_watch_time' => 4000,
-            'max_in_flight'     => 1,
-            'update_watch_time' => 20
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight'     => 1,
+          'update_watch_time' => 20,
         },
 
-        'jobs' => [self.dummy_job]
+        'jobs' => [dummy_job],
       }
     end
 
@@ -655,27 +656,27 @@ module Bosh::Spec
         'director_uuid' => 'deadbeef',
 
         'releases' => [{
-            'name' => 'appcloud',
-            'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
-          }],
+          'name' => 'appcloud',
+          'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+        }],
 
         'update' => {
           'canaries' => 2,
           'canary_watch_time' => 4000,
           'max_in_flight' => 1,
-          'update_watch_time' => 20
+          'update_watch_time' => 20,
         },
 
         'jobs' => [{
+          'name' => 'cacher',
+          'templates' => [{
             'name' => 'cacher',
-            'templates' => [{
-                'name' => 'cacher',
-                'release' => 'appcloud'
-              }],
-            'resource_pool' => 'a',
-            'instances' => 3,
-            'networks' => [{'name' => 'a'}],
-          }]
+            'release' => 'appcloud',
+          }],
+          'resource_pool' => 'a',
+          'instances' => 3,
+          'networks' => [{ 'name' => 'a' }],
+        }],
       }
     end
 
@@ -687,21 +688,21 @@ module Bosh::Spec
             'name' => 'bosh-release',
             'version' => '0.1-dev',
           },
-          {'name' => 'dummy2',
-            'version' => '0.2-dev'}
+          { 'name' => 'dummy2',
+            'version' => '0.2-dev' },
         ],
         'jobs' => [{
           'name' => 'foobar',
-          'templates' => [{'name' => 'foobar', 'release' => 'bosh-release'}],
+          'templates' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
           'instances' => 1,
           'resource_pool' => 'a',
-          'networks' => [{'name' => 'a'}]
+          'networks' => [{ 'name' => 'a' }],
         }],
         'addons' => [{
           'name' => 'addon1',
-          'jobs' => [{'name' => 'dummy_with_properties', 'release' => 'dummy2'}],
-          'properties' => {'dummy_with_properties' => {'echo_value' => 'prop_value'}},
-        }]
+          'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }],
+          'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+        }],
       )
     end
 
@@ -713,135 +714,132 @@ module Bosh::Spec
             'name' => 'bosh-release',
             'version' => '0.1-dev',
           },
-          {'name' => 'dummy2',
-            'version' => '0.2-dev'}
+          { 'name' => 'dummy2',
+            'version' => '0.2-dev' },
         ],
         'jobs' => [
-          simple_job(resource_pool: 'b', name: 'has-rc-addon-vm', templates: [{"name" => "foobar", "release" => "bosh-release"}], instances: 1),
-          simple_job(resource_pool: 'a', name: 'has-depl-rc-addons-vm', templates: [{"name" => "foobar", "release" => 'bosh-release'}], instances: 1),
-          simple_job(resource_pool: 'a', name: 'has-depl-addon-vm', templates: [{"name" => "foobar_without_packages", "release" => 'bosh-release'}], instances: 1),
+          simple_job(resource_pool: 'b', name: 'has-rc-addon-vm', templates: [{ 'name' => 'foobar', 'release' => 'bosh-release' }], instances: 1),
+          simple_job(resource_pool: 'a', name: 'has-depl-rc-addons-vm', templates: [{ 'name' => 'foobar', 'release' => 'bosh-release' }], instances: 1),
+          simple_job(resource_pool: 'a', name: 'has-depl-addon-vm', templates: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }], instances: 1),
         ],
         'addons' => [
           'name' => 'addon1',
-          'jobs' => [{'name' => 'dummy', 'release' => 'dummy2'}],
+          'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy2' }],
           'include' => {
             'stemcell' => [
-              {'os' => 'toronto-os'}
-            ]
-          }
-        ]
+              { 'os' => 'toronto-os' },
+            ],
+          },
+        ],
       )
     end
 
     def self.test_deployment_manifest
       {
-          'name' => 'test_deployment',
-          'director_uuid'  => 'deadbeef',
+        'name' => 'test_deployment',
+        'director_uuid' => 'deadbeef',
 
-          'releases' => [{
-                             'name'    => 'test_release',
-                             'version' => '1'
-                         }],
+        'releases' => [{
+          'name' => 'test_release',
+          'version' => '1',
+        }],
 
-          'update' => {
-              'canaries'          => 2,
-              'canary_watch_time' => 4000,
-              'max_in_flight'     => 1,
-              'update_watch_time' => 20
-          }
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight'     => 1,
+          'update_watch_time' => 20,
+        },
       }
     end
 
     def self.test_deployment_manifest_with_job(job_name)
       test_deployment_manifest.merge(
-        {
-          'jobs' => [{
-              'name'          => job_name,
-              'templates'     => [{
-                                      'name'    => job_name
-                                  }],
-              'resource_pool' => 'a',
-              'instances'     => 1,
-              'networks'      => [{ 'name' => 'a' }],
-          }]
-        }
+        'jobs' => [{
+          'name' => job_name,
+          'templates' => [{
+            'name' => job_name,
+          }],
+          'resource_pool' => 'a',
+          'instances'     => 1,
+          'networks'      => [{ 'name' => 'a' }],
+        }],
       )
     end
 
     def self.test_deployment_manifest_referencing_multiple_releases
       {
-          'name' => 'multiple_release_deployment',
-          'director_uuid'  => 'deadbeef',
+        'name' => 'multiple_release_deployment',
+        'director_uuid' => 'deadbeef',
 
-          'releases' => [{
-                             'name'    => 'test_release',
-                             'version' => '1'
-                         },{
-                             'name'    => 'test_release_a',
-                             'version' => '1'
-                         }],
+        'releases' => [{
+          'name' => 'test_release',
+          'version' => '1',
+        }, {
+          'name'    => 'test_release_a',
+          'version' => '1',
+        }],
 
-          'update' => {
-              'canaries'          => 2,
-              'canary_watch_time' => 4000,
-              'max_in_flight'     => 1,
-              'update_watch_time' => 20
-          },
-          'jobs' => [{
-                         'name'          => 'job_name',
-                         'templates'     => [{
-                                                 'name'    => 'job_using_pkg_1_and_2',
-                                                 'release' => 'test_release'
-                                             },{
-                                                 'name'    => 'job_using_pkg_5',
-                                                 'release' => 'test_release_a'
-                                             }],
-                         'resource_pool' => 'a',
-                         'instances'     => 1,
-                         'networks'      => [{ 'name' => 'a' }],
-                     }]
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight'     => 1,
+          'update_watch_time' => 20,
+        },
+        'jobs' => [{
+          'name' => 'job_name',
+          'templates' => [{
+            'name'    => 'job_using_pkg_1_and_2',
+            'release' => 'test_release',
+          }, {
+            'name' => 'job_using_pkg_5',
+            'release' => 'test_release_a',
+          }],
+          'resource_pool' => 'a',
+          'instances'     => 1,
+          'networks'      => [{ 'name' => 'a' }],
+        }],
       }
     end
 
     def self.minimal_legacy_manifest
       simple_cloud_config.merge(
-      {
-          'name' => 'minimal_legacy_manifest',
-          'director_uuid'  => 'deadbeef',
+        'name' => 'minimal_legacy_manifest',
+        'director_uuid' => 'deadbeef',
 
-          'releases' => [{
-               'name'    => 'test_release',
-               'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
-           }],
+        'releases' => [{
+          'name' => 'test_release',
+          'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
+        }],
 
-          'update' => {
-              'canaries'          => 2,
-              'canary_watch_time' => 4000,
-              'max_in_flight'     => 1,
-              'update_watch_time' => 20
-          }
-      })
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight'     => 1,
+          'update_watch_time' => 20,
+        },
+      )
     end
 
     def self.multiple_release_manifest
       {
-          'name' => 'minimal',
-          'director_uuid'  => 'deadbeef',
+        'name' => 'minimal',
+        'director_uuid' => 'deadbeef',
 
-          'releases' => [{
-               'name'    => 'test_release',
-               'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
-           },{
-               'name'    => 'test_release_2',
-               'version' => '2' # It's our dummy valid release from spec/assets/test_release_2.tgz
-           }],
+        'releases' => [{
+          'name' => 'test_release',
+          'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
+        }, {
+          'name' => 'test_release_2',
+          'version' => '2' # It's our dummy valid release from spec/assets/test_release_2.tgz
+        }],
 
-          'update' => {
-              'canaries'          => 2,
-              'canary_watch_time' => 4000,
-              'max_in_flight'     => 1,
-              'update_watch_time' => 20
-          }
+        'update' => {
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight'     => 1,
+          'update_watch_time' => 20,
+        },
       }
     end
 
@@ -856,46 +854,46 @@ module Bosh::Spec
         'releases' => [{
           'name'    => 'bosh-release',
           'version' => '0.1-dev',
-        }]
+        }],
       )
     end
 
     def self.simple_manifest
-      test_release_manifest.merge({
-        'jobs' => [simple_job]
-      })
+      test_release_manifest.merge(
+        'jobs' => [simple_job],
+      )
     end
 
-    def self.remote_release_manifest(remote_release_url, sha1, version='latest')
-      minimal_manifest.merge(test_release_job).merge({
-          'releases' => [{
-              'name'    => 'test_release',
-              'version' => version,
-              'url' => remote_release_url,
-              'sha1' => sha1
-            }]
-        })
+    def self.remote_release_manifest(remote_release_url, sha1, version = 'latest')
+      minimal_manifest.merge(test_release_job).merge(
+        'releases' => [{
+          'name'    => 'test_release',
+          'version' => version,
+          'url' => remote_release_url,
+          'sha1' => sha1,
+        }],
+      )
     end
 
     def self.local_release_manifest(local_release_path, version = 'latest')
-      minimal_manifest.merge(test_release_job).merge({
-          'releases' => [{
-              'name'    => 'test_release',
-              'version' => version,
-              'url' => local_release_path,
-            }]
-        })
+      minimal_manifest.merge(test_release_job).merge(
+        'releases' => [{
+          'name'    => 'test_release',
+          'version' => version,
+          'url' => local_release_path,
+        }],
+      )
     end
 
     def self.test_release_job
       {
-          'jobs' => [{
-                         'name' => 'job',
-                         'templates' => [{ 'name' => 'job_using_pkg_1' }],
-                         'instances' => 1,
-                         'resource_pool' => 'a',
-                         'networks' => [{ 'name' => 'a' }]
-                     }]
+        'jobs' => [{
+          'name' => 'job',
+          'templates' => [{ 'name' => 'job_using_pkg_1' }],
+          'instances' => 1,
+          'resource_pool' => 'a',
+          'networks' => [{ 'name' => 'a' }],
+        }],
       }
     end
 
@@ -909,41 +907,33 @@ module Bosh::Spec
         'properties' => {},
       }
 
-      if opts.has_key?(:static_ips)
-        job_hash['networks'].first['static_ips'] = opts[:static_ips]
-      end
+      job_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)
 
-      if opts[:persistent_disk_pool]
-        job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool]
-      end
+      job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool] if opts[:persistent_disk_pool]
 
-      if opts.has_key?(:azs)
-        job_hash['azs'] = opts[:azs]
-      end
+      job_hash['azs'] = opts[:azs] if opts.key?(:azs)
 
-      if opts.has_key?(:properties)
-        job_hash['properties'] = opts[:properties]
-      end
+      job_hash['properties'] = opts[:properties] if opts.key?(:properties)
 
       job_hash
     end
     # Aliasing class method simple_job to simple_instance_group
     singleton_class.send(:alias_method, :simple_instance_group, :simple_job)
 
-    def self.job_with_many_templates(options={})
+    def self.job_with_many_templates(options = {})
       {
-          'name'          => options.fetch(:name),
-          'templates'      => options.fetch(:templates),
-          'resource_pool' => 'a',
-          'instances'     => options.fetch(:instances, 3),
-          'networks'      => [{ 'name' => 'a' }],
-          'properties'    => options.fetch(:properties, {}),
+        'name' => options.fetch(:name),
+        'templates' => options.fetch(:templates),
+        'resource_pool' => 'a',
+        'instances'     => options.fetch(:instances, 3),
+        'networks'      => [{ 'name' => 'a' }],
+        'properties'    => options.fetch(:properties, {}),
       }
     end
 
     def self.manifest_with_errand
       manifest = simple_manifest.merge('name' => 'errand')
-      manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
+      manifest['jobs'].find { |job| job['name'] == 'foobar' }['instances'] = 1
       manifest['jobs'] << simple_errand_job
       manifest
     end
@@ -957,11 +947,11 @@ module Bosh::Spec
     def self.service_job_with_errand
       {
         'name' => 'service_with_errand',
-        'templates' => [{'release' => 'bosh-release', 'name' => 'errand1'}],
+        'templates' => [{ 'release' => 'bosh-release', 'name' => 'errand1' }],
         'lifecycle' => 'service',
         'resource_pool' => 'a',
         'instances' => 1,
-        'networks' => [{'name' => 'a'}],
+        'networks' => [{ 'name' => 'a' }],
         'properties' => {
           'errand1' => {
             'exit_code' => 0,
@@ -979,13 +969,13 @@ module Bosh::Spec
         'templates' => [
           {
             'release' => 'bosh-release',
-            'name' => 'errand1'
-          }
+            'name' => 'errand1',
+          },
         ],
         'lifecycle' => 'errand',
         'resource_pool' => 'a',
         'instances' => 1,
-        'networks' => [{'name' => 'a'}],
+        'networks' => [{ 'name' => 'a' }],
         'properties' => {
           'errand1' => {
             'exit_code' => 0,
@@ -999,7 +989,7 @@ module Bosh::Spec
 
     def self.manifest_errand_with_placeholders
       manifest = manifest_with_errand
-      manifest['jobs'][1]['properties']['errand1']['stdout'] = "((placeholder))"
+      manifest['jobs'][1]['properties']['errand1']['stdout'] = '((placeholder))'
       manifest
     end
   end

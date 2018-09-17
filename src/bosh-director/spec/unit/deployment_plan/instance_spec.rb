@@ -248,9 +248,9 @@ module Bosh::Director::DeploymentPlan
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
 
               expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
-              .with(instance_model.cloud_properties_hash, merged_cloud_properties,
-                    instance.model.variable_set, desired_variable_set)
-              .and_return(true)
+                .with(instance_model.cloud_properties_hash, merged_cloud_properties,
+                      instance.model.variable_set, desired_variable_set)
+                .and_return(true)
             end
 
             it 'should NOT log the interpolated values' do
@@ -348,9 +348,9 @@ module Bosh::Director::DeploymentPlan
 
         it 'interpolates previous and desired cloud properties with the correct variable set' do
           expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
-                                            .with(instance_model.cloud_properties_hash, merged_cloud_properties,
-                                                  instance.model.variable_set, desired_variable_set)
-                                            .and_return(false)
+            .with(instance_model.cloud_properties_hash, merged_cloud_properties,
+                  instance.model.variable_set, desired_variable_set)
+            .and_return(false)
 
           expect(instance.cloud_properties_changed?).to be_falsey
         end
@@ -358,9 +358,9 @@ module Bosh::Director::DeploymentPlan
         context 'when interpolated values are different' do
           it 'return true' do
             expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
-                                              .with(instance_model.cloud_properties_hash, merged_cloud_properties,
-                                                    instance.model.variable_set, desired_variable_set)
-                                              .and_return(true)
+              .with(instance_model.cloud_properties_hash, merged_cloud_properties,
+                    instance.model.variable_set, desired_variable_set)
+              .and_return(true)
 
             expect(instance.cloud_properties_changed?).to be_truthy
           end

@@ -4,51 +4,51 @@ describe 'using director with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
   let(:manifest_hash) do
     {
-        'name' => 'simple',
-        'director_uuid' => 'deadbeef',
-        'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
-        'update' => {
-            'canaries' => 2,
-            'canary_watch_time' => 4000,
-            'max_in_flight' => 1,
-            'update_watch_time' => 20
-        },
-        'instance_groups' => [{
-            'name' => 'our_instance_group',
-            'templates' => [{
-                'name' => 'job_1_with_many_properties',
-                'properties' => {
-                    'gargamel' => {
-                        'color' => 'pitch black'
-                    }
-                }
-            }],
-            'instances' => 1,
-            'networks' => networks,
-            'properties' => {},
-            'vm_type' => 'medium',
-            'persistent_disk_type' => 'large',
-            'azs' => ['z1'],
-            'stemcell' => 'default'
+      'name' => 'simple',
+      'director_uuid' => 'deadbeef',
+      'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
+      'update' => {
+        'canaries' => 2,
+        'canary_watch_time' => 4000,
+        'max_in_flight' => 1,
+        'update_watch_time' => 20,
+      },
+      'instance_groups' => [{
+        'name' => 'our_instance_group',
+        'templates' => [{
+          'name' => 'job_1_with_many_properties',
+          'properties' => {
+            'gargamel' => {
+              'color' => 'pitch black',
+            },
+          },
         }],
-        'stemcells' => [{'alias' => 'default', 'os' => 'toronto-os', 'version' => '1'}]
+        'instances' => 1,
+        'networks' => networks,
+        'properties' => {},
+        'vm_type' => 'medium',
+        'persistent_disk_type' => 'large',
+        'azs' => ['z1'],
+        'stemcell' => 'default',
+      }],
+      'stemcells' => [{ 'alias' => 'default', 'os' => 'toronto-os', 'version' => '1' }],
     }
   end
 
   let(:networks) do
-    [{'name' => 'private'}]
+    [{ 'name' => 'private' }]
   end
 
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
+  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
 
   let(:log_options) do
     { include_credentials: false, env: client_env }
   end
 
-  def bosh_run_cck_with_resolution(num_errors, option=1, env={})
+  def bosh_run_cck_with_resolution(num_errors, option = 1, env = {})
     output = ''
     bosh_runner.run_interactively('cck', deployment_name: 'simple', client: env['BOSH_CLIENT'], client_secret: env['BOSH_CLIENT_SECRET']) do |runner|
       (1..num_errors).each do
@@ -66,57 +66,58 @@ describe 'using director with config server', type: :integration do
     output
   end
 
-
   context 'cloud config contains placeholders' do
     let(:cloud_config) { Bosh::Spec::Deployments.cloud_config_with_placeholders }
 
     context 'all placeholders are set in config server' do
       before do
-        config_server_helper.put_value('/z1_cloud_properties', {'availability_zone' => 'us-east-1a'})
-        config_server_helper.put_value('/z2_cloud_properties', {'availability_zone' => 'us-east-1b'})
+        config_server_helper.put_value('/z1_cloud_properties', 'availability_zone' => 'us-east-1a')
+        config_server_helper.put_value('/z2_cloud_properties', 'availability_zone' => 'us-east-1b')
         config_server_helper.put_value('/z3_variable_name', 'my_name')
-        config_server_helper.put_value('/ephemeral_disk_placeholder', {'size' => '3000', 'type' => 'gp2'})
-        config_server_helper.put_value('/disk_types_placeholder', [
-            {
-                'name' => 'small',
-                'disk_size' => 3000,
-                'cloud_properties' => {'type' => 'gp2'}
-            }, {
-                'name' => 'large',
-                'disk_size' => 50_000,
-                'cloud_properties' => {'type' => 'gp2'}
-            }
-        ])
-        config_server_helper.put_value('/subnets_placeholder', [
-            {
-                'range' => '10.10.0.0/24',
-                'gateway' => '10.10.0.1',
-                'az' => 'z1',
-                'static' => ['10.10.0.62'],
-                'dns' => ['10.10.0.2'],
-                'cloud_properties' => {'subnet' => 'subnet-f2744a86'}
-            },
-            {
-                'range' => '10.10.64.0/24',
-                'gateway' => '10.10.64.1',
-                'az' => 'z2',
-                'static' => ['10.10.64.121', '10.10.64.122'],
-                'dns' => ['10.10.0.2'],
-                'cloud_properties' => {'subnet' => 'subnet-eb8bd3ad'}
-            }
-        ])
+        config_server_helper.put_value('/ephemeral_disk_placeholder', 'size' => '3000', 'type' => 'gp2')
+        config_server_helper.put_value('/disk_types_placeholder',
+                                       [
+                                         {
+                                           'name' => 'small',
+                                           'disk_size' => 3000,
+                                           'cloud_properties' => { 'type' => 'gp2' },
+                                         }, {
+                                           'name' => 'large',
+                                           'disk_size' => 50_000,
+                                           'cloud_properties' => { 'type' => 'gp2' },
+                                         }
+                                       ])
+        config_server_helper.put_value('/subnets_placeholder',
+                                       [
+                                         {
+                                           'range' => '10.10.0.0/24',
+                                           'gateway' => '10.10.0.1',
+                                           'az' => 'z1',
+                                           'static' => ['10.10.0.62'],
+                                           'dns' => ['10.10.0.2'],
+                                           'cloud_properties' => { 'subnet' => 'subnet-f2744a86' },
+                                         },
+                                         {
+                                           'range' => '10.10.64.0/24',
+                                           'gateway' => '10.10.64.1',
+                                           'az' => 'z2',
+                                           'static' => ['10.10.64.121', '10.10.64.122'],
+                                           'dns' => ['10.10.0.2'],
+                                           'cloud_properties' => { 'subnet' => 'subnet-eb8bd3ad' },
+                                         },
+                                       ])
         config_server_helper.put_value('/workers_placeholder', 5)
       end
 
       it 'uses the interpolated values for a successful deploy' do
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-        
+
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-        expect(create_vm_invocations.last.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
+        expect(create_vm_invocations.last.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
 
         create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
         expect(create_disk_invocations.last.inputs['size']).to eq(50_000)
-        expect(create_disk_invocations.last.inputs['cloud_properties']).to eq({'type' => 'gp2'})
+        expect(create_disk_invocations.last.inputs['cloud_properties']).to eq('type' => 'gp2')
       end
 
       context 'after a successful deployment' do
@@ -126,14 +127,14 @@ describe 'using director with config server', type: :integration do
 
         context 'variable values were changed' do
           before do
-            config_server_helper.put_value('/z1_cloud_properties', {'availability_zone' => 'us-mid-west'})
-            config_server_helper.put_value('/disk_types_placeholder', [{'name' => 'large', 'disk_size' => 100_000, 'cloud_properties' => {'type' => 'gp1'}}])
+            config_server_helper.put_value('/z1_cloud_properties', 'availability_zone' => 'us-mid-west')
+            config_server_helper.put_value('/disk_types_placeholder', [{ 'name' => 'large', 'disk_size' => 100_000, 'cloud_properties' => { 'type' => 'gp1' } }])
           end
 
           context 'deployment has unresponsive agents' do
-            before {
+            before do
               current_sandbox.cpi.kill_agents
-            }
+            end
 
             it 'should use old variable value during CCK - recreate VM' do
               pre_kill_invocations_size = current_sandbox.cpi.invocations.size
@@ -143,7 +144,7 @@ describe 'using director with config server', type: :integration do
 
               invocations = current_sandbox.cpi.invocations.drop(pre_kill_invocations_size)
               create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-              expect(create_vm_invocation.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
+              expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
             end
           end
 
@@ -157,7 +158,7 @@ describe 'using director with config server', type: :integration do
             invocations = current_sandbox.cpi.invocations.drop(pre_start_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-            expect(create_vm_invocation.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
+            expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
           end
 
           it 'should use the new variable values on redeploy' do
@@ -166,17 +167,17 @@ describe 'using director with config server', type: :integration do
             invocations = current_sandbox.cpi.invocations.drop(pre_second_deploy_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-            expect(create_vm_invocation.inputs['cloud_properties']).to eq({'availability_zone'=>'us-mid-west', 'ephemeral_disk'=>{'size'=>'3000','type'=>'gp2'}, 'instance_type'=>'m3.medium'})
+            expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-mid-west', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
 
             create_disk_invocation = invocations.select { |invocation| invocation.method_name == 'create_disk' }.last
-            expect(create_disk_invocation.inputs['cloud_properties']).to eq({'type' => 'gp1'})
+            expect(create_disk_invocation.inputs['cloud_properties']).to eq('type' => 'gp1')
             expect(create_disk_invocation.inputs['size']).to eq(100_000)
           end
         end
 
         context 'only leaf-cloud-property variable values were changed' do
           before do
-            config_server_helper.put_value('/ephemeral_disk_placeholder',{'size' => '2000', 'type' => 'gp1'})
+            config_server_helper.put_value('/ephemeral_disk_placeholder', 'size' => '2000', 'type' => 'gp1')
           end
 
           it 'should recreate the VM on redeploy' do
@@ -193,13 +194,13 @@ describe 'using director with config server', type: :integration do
             invocations = current_sandbox.cpi.invocations.drop(pre_second_deploy_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-            expect(create_vm_invocation.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'2000','type'=>'gp1'}, 'instance_type'=>'m3.medium'})
+            expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '2000', 'type' => 'gp1' }, 'instance_type' => 'm3.medium')
           end
         end
 
         context 'cloud property variable is deleted and recreated' do
           let(:networks) do
-            [{ 'name' => 'private', 'default' => %w(gateway dns) }, { 'name' => 'other' }]
+            [{ 'name' => 'private', 'default' => %w[gateway dns] }, { 'name' => 'other' }]
           end
 
           before do
@@ -207,10 +208,10 @@ describe 'using director with config server', type: :integration do
             config_server_helper.put_value('/z3_variable_name', 'my_name')
           end
 
-          it "can redeploy" do
-            expect {
+          it 'can redeploy' do
+            expect do
               deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, return_exit_code: true, include_credentials: false, env: client_env)
-            }.to_not raise_error
+            end.to_not raise_error
           end
         end
       end
@@ -218,15 +219,15 @@ describe 'using director with config server', type: :integration do
 
     context 'all placeholders are NOT set in config server' do
       before do
-        config_server_helper.put_value('/z1_cloud_properties', {'availability_zone' => 'us-east-1a'})
-        config_server_helper.put_value('/z2_cloud_properties', {'availability_zone' => 'us-east-1b'})
-        config_server_helper.put_value('/ephemeral_disk_placeholder', {'size' => '3000', 'type' => 'gp2'})
+        config_server_helper.put_value('/z1_cloud_properties', 'availability_zone' => 'us-east-1a')
+        config_server_helper.put_value('/z2_cloud_properties', 'availability_zone' => 'us-east-1b')
+        config_server_helper.put_value('/ephemeral_disk_placeholder', 'size' => '3000', 'type' => 'gp2')
       end
 
       it 'errors on deploy' do
-        expect {
+        expect do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
-        }.to raise_error
+        end.to raise_error
       end
     end
 
@@ -237,52 +238,52 @@ describe 'using director with config server', type: :integration do
 
       it 'does NOT error on update of cloud-config' do
         cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
-        expect {
+        expect do
           bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", no_login: true, include_credentials: false, env: client_env)
-        }.to_not raise_error
+        end.to_not raise_error
       end
 
       it 'errors on deploy' do
-        expect {
+        expect do
           deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
-        }.to raise_error(RuntimeError, /Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'z1_cloud_properties'/)
+        end.to raise_error(RuntimeError, /Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'z1_cloud_properties'/)
       end
     end
   end
 
   context 'cloud config contains cloud properties only placeholders' do
-    let(:cloud_config) { Bosh::Spec::Deployments::cloud_config_with_cloud_properties_placeholders }
+    let(:cloud_config) { Bosh::Spec::Deployments.cloud_config_with_cloud_properties_placeholders }
 
     let(:manifest_hash) do
       {
         'name' => 'simple',
         'director_uuid' => 'deadbeef',
-        'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+        'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'update' => {
-            'canaries' => 2,
-            'canary_watch_time' => 4000,
-            'max_in_flight' => 1,
-            'update_watch_time' => 20
+          'canaries' => 2,
+          'canary_watch_time' => 4000,
+          'max_in_flight' => 1,
+          'update_watch_time' => 20,
         },
         'instance_groups' => [{
-            'name' => 'our_instance_group',
-            'templates' => [{
-                'name' => 'job_1_with_many_properties',
-                'properties' => {
-                    'gargamel' => {
-                        'color' => 'pitch black'
-                    }
-                }
-            }],
-            'instances' => 1,
-            'networks' => [{'name' => 'private'}],
-            'properties' => {},
-            'vm_type' => 'small',
-            'persistent_disk_type' => 'small',
-            'azs' => ['z1'],
-            'stemcell' => 'default'
+          'name' => 'our_instance_group',
+          'templates' => [{
+            'name' => 'job_1_with_many_properties',
+            'properties' => {
+              'gargamel' => {
+                'color' => 'pitch black',
+              },
+            },
+          }],
+          'instances' => 1,
+          'networks' => [{ 'name' => 'private' }],
+          'properties' => {},
+          'vm_type' => 'small',
+          'persistent_disk_type' => 'small',
+          'azs' => ['z1'],
+          'stemcell' => 'default',
         }],
-        'stemcells' => [{'alias' => 'default', 'os' => 'toronto-os', 'version' => '1'}]
+        'stemcells' => [{ 'alias' => 'default', 'os' => 'toronto-os', 'version' => '1' }],
       }
     end
 
@@ -306,9 +307,9 @@ describe 'using director with config server', type: :integration do
       end
 
       context 'deployment has unresponsive agents' do
-        before {
+        before do
           current_sandbox.cpi.kill_agents
-        }
+        end
 
         it 'does not log interpolated cloud properties in the task logs during CCK - recreate VM' do
           recreate_vm = 3
@@ -395,7 +396,7 @@ describe 'using director with config server', type: :integration do
     end
 
     before do
-      config_server_helper.put_value('/moVsfGUa',"c8jNLgq")
+      config_server_helper.put_value('/moVsfGUa', 'c8jNLgq')
     end
 
     it 'should not raise an error' do
@@ -404,9 +405,9 @@ describe 'using director with config server', type: :integration do
       manifest = yaml_file('manifest', manifest_hash)
       bosh_runner.run("deploy #{manifest.path}", deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
 
-      expect {
-        bosh_runner.run("recreate", deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
-      }.to_not raise_error
+      expect do
+        bosh_runner.run('recreate', deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
+      end.to_not raise_error
     end
   end
 
@@ -531,17 +532,16 @@ describe 'using director with config server', type: :integration do
   end
 
   context 'cloud properties interpolation' do
-
     let(:manifest_hash) do
       {
         'name' => 'my-dep',
         'director_uuid' => 'deadbeef',
-        'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
+        'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'update' => {
           'canaries' => 2,
           'canary_watch_time' => 4000,
           'max_in_flight' => 1,
-          'update_watch_time' => 20
+          'update_watch_time' => 20,
         },
         'instance_groups' => [
           {
@@ -551,55 +551,55 @@ describe 'using director with config server', type: :integration do
                 'name' => 'job_1_with_many_properties',
                 'properties' => {
                   'gargamel' => {
-                    'color' => 'pitch black'
-                  }
-                }
-              }
+                    'color' => 'pitch black',
+                  },
+                },
+              },
             ],
             'instances' => 1,
-            'networks' => [{'name' => 'private'}],
+            'networks' => [{ 'name' => 'private' }],
             'vm_extensions' => ['vm-extension-1'],
             'vm_type' => 'small',
             'persistent_disk_type' => 'normal_disk',
             'azs' => ['z1'],
-            'stemcell' => 'default'
-          }
+            'stemcell' => 'default',
+          },
         ],
-        'stemcells' => [{'alias' => 'default', 'os' => 'toronto-os', 'version' => '1'}]
+        'stemcells' => [{ 'alias' => 'default', 'os' => 'toronto-os', 'version' => '1' }],
       }
     end
 
     let(:cloud_config_hash) do
       {
         'azs' => [
-          {'name' => 'z1', 'cloud_properties' => {}},
-          {'name' => 'z2', 'cloud_properties' => {}}
+          { 'name' => 'z1', 'cloud_properties' => {} },
+          { 'name' => 'z2', 'cloud_properties' => {} },
         ],
 
         'vm_types' => [
           {
             'name' => 'small',
             'cloud_properties' => {
-              'instance_type' => 't2.micro'
-            }
+              'instance_type' => 't2.micro',
+            },
           },
           {
             'name' => 'medium',
             'cloud_properties' => {
-              'instance_type' => 'm3.medium'
-            }
-          }
+              'instance_type' => 'm3.medium',
+            },
+          },
         ],
 
         'disk_types' => [
           {
-          'name' => 'normal_disk',
-          'disk_size' => 504,
-          'cloud_properties' => {}
-          }
+            'name' => 'normal_disk',
+            'disk_size' => 504,
+            'cloud_properties' => {},
+          },
         ],
 
-        'vm_extensions' => [{'name' => 'vm-extension-1', 'cloud_properties' => {}}],
+        'vm_extensions' => [{ 'name' => 'vm-extension-1', 'cloud_properties' => {} }],
 
         'networks' => [
           {
@@ -612,22 +612,22 @@ describe 'using director with config server', type: :integration do
                 'az' => 'z1',
                 'static' => ['10.10.0.62'],
                 'dns' => ['10.10.0.2'],
-                'cloud_properties' => {}
+                'cloud_properties' => {},
               }, {
                 'range' => '10.10.64.0/24',
                 'gateway' => '10.10.64.1',
                 'az' => 'z2',
                 'static' => ['10.10.64.121', '10.10.64.122'],
                 'dns' => ['10.10.0.2'],
-                'cloud_properties' => {}
+                'cloud_properties' => {},
               }
-            ]
+            ],
           },
           {
             'name' => 'vip',
             'type' => 'vip',
-            'cloud_properties' => {}
-          }
+            'cloud_properties' => {},
+          },
         ],
 
         'compilation' => {
@@ -635,8 +635,8 @@ describe 'using director with config server', type: :integration do
           'reuse_compilation_vms' => true,
           'az' => 'z1',
           'vm_type' => 'medium',
-          'network' => 'private'
-        }
+          'network' => 'private',
+        },
       }
     end
 
@@ -651,9 +651,9 @@ describe 'using director with config server', type: :integration do
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
-        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1', 'instance_type' => 't2.micro')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
         expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'], log_options)
@@ -673,9 +673,9 @@ describe 'using director with config server', type: :integration do
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
-        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1', 'instance_type' => 't2.micro')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
       end
 
@@ -690,9 +690,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(2)
-          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2', 'instance_type' => 't2.micro'})
+          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq('smurf_1' => 'cat_2', 'instance_type' => 't2.micro')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable'])
 
           expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_2'], log_options)
@@ -711,9 +711,9 @@ describe 'using director with config server', type: :integration do
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
-        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1', 'instance_type' => 't2.micro')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
         expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'], log_options)
@@ -732,9 +732,9 @@ describe 'using director with config server', type: :integration do
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
-        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1', 'instance_type' => 't2.micro'})
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1', 'instance_type' => 't2.micro')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
       end
 
@@ -749,9 +749,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(2)
-          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2', 'instance_type' => 't2.micro'})
+          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq('smurf_1' => 'cat_2', 'instance_type' => 't2.micro')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable'])
         end
       end
@@ -768,9 +768,9 @@ describe 'using director with config server', type: :integration do
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
-        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_vm_extension', 'instance_type' => 't2.micro'})
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1_vm_extension', 'instance_type' => 't2.micro')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
 
         expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vm_extension'], log_options)
@@ -789,9 +789,9 @@ describe 'using director with config server', type: :integration do
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
-        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_vm_extension', 'instance_type' => 't2.micro'})
+        expect(create_vm_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1_vm_extension', 'instance_type' => 't2.micro')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
       end
 
@@ -806,9 +806,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(2)
-          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2_vm_extension', 'instance_type' => 't2.micro'})
+          expect(create_vm_invocations[1].inputs['cloud_properties']).to eq('smurf_1' => 'cat_2_vm_extension', 'instance_type' => 't2.micro')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
         end
       end
@@ -825,9 +825,9 @@ describe 'using director with config server', type: :integration do
 
         create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
         expect(create_disk_invocations.size).to eq(1)
-        expect(create_disk_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_disk'})
+        expect(create_disk_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1_disk')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
         expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_disk'], log_options)
@@ -846,9 +846,9 @@ describe 'using director with config server', type: :integration do
 
         create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
         expect(create_disk_invocations.size).to eq(1)
-        expect(create_disk_invocations[0].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_1_disk'})
+        expect(create_disk_invocations[0].inputs['cloud_properties']).to eq('smurf_1' => 'cat_1_disk')
 
-        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+        variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
       end
 
@@ -863,9 +863,9 @@ describe 'using director with config server', type: :integration do
 
           create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
           expect(create_disk_invocations.size).to eq(2)
-          expect(create_disk_invocations[1].inputs['cloud_properties']).to eq({'smurf_1' => 'cat_2_disk'})
+          expect(create_disk_invocations[1].inputs['cloud_properties']).to eq('smurf_1' => 'cat_2_disk')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable'])
         end
       end
@@ -886,11 +886,11 @@ describe 'using director with config server', type: :integration do
                   'static' => ['10.10.0.62'],
                   'dns' => ['10.10.0.2'],
                   'cloud_properties' => {
-                    'smurf_1' => '((/smurf_1_variable_manual_network))'
-                  }
-                }
-              ]
-            }
+                    'smurf_1' => '((/smurf_1_variable_manual_network))',
+                  },
+                },
+              ],
+            },
           ]
         end
 
@@ -904,9 +904,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
-          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq({'smurf_1' => 'cat_1_manual_network'})
+          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq('smurf_1' => 'cat_1_manual_network')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_manual_network'])
 
           expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_manual_network'], log_options)
@@ -925,9 +925,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
-          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq({'smurf_1' => 'cat_1_manual_network'})
+          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq('smurf_1' => 'cat_1_manual_network')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_manual_network'])
         end
 
@@ -942,9 +942,9 @@ describe 'using director with config server', type: :integration do
 
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(create_vm_invocations.size).to eq(2)
-            expect(create_vm_invocations[1].inputs['networks']['private']['cloud_properties']).to eq({'smurf_1' => 'cat_2_manual_network'})
+            expect(create_vm_invocations[1].inputs['networks']['private']['cloud_properties']).to eq('smurf_1' => 'cat_2_manual_network')
 
-            variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+            variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
             expect(variables_names).to match_array(['/smurf_1_variable_manual_network'])
           end
         end
@@ -960,11 +960,11 @@ describe 'using director with config server', type: :integration do
                 {
                   'az' => 'z1',
                   'cloud_properties' => {
-                    'smurf_1' => '((/smurf_1_variable_dynamic_network))'
-                  }
-                }
-              ]
-            }
+                    'smurf_1' => '((/smurf_1_variable_dynamic_network))',
+                  },
+                },
+              ],
+            },
           ]
         end
 
@@ -978,9 +978,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
-          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq({'smurf_1' => 'cat_1_dynamic_network'})
+          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq('smurf_1' => 'cat_1_dynamic_network')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_dynamic_network'])
 
           expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_dynamic_network'], log_options)
@@ -999,9 +999,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
-          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq({'smurf_1' => 'cat_1_dynamic_network'})
+          expect(create_vm_invocations[0].inputs['networks']['private']['cloud_properties']).to eq('smurf_1' => 'cat_1_dynamic_network')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_dynamic_network'])
         end
 
@@ -1016,9 +1016,9 @@ describe 'using director with config server', type: :integration do
 
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(create_vm_invocations.size).to eq(2)
-            expect(create_vm_invocations[1].inputs['networks']['private']['cloud_properties']).to eq({'smurf_1' => 'cat_2_dynamic_network'})
+            expect(create_vm_invocations[1].inputs['networks']['private']['cloud_properties']).to eq('smurf_1' => 'cat_2_dynamic_network')
 
-            variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+            variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
             expect(variables_names).to match_array(['/smurf_1_variable_dynamic_network'])
           end
         end
@@ -1037,16 +1037,16 @@ describe 'using director with config server', type: :integration do
                   'az' => 'z1',
                   'static' => ['10.10.0.62'],
                   'dns' => ['10.10.0.2'],
-                }
-              ]
+                },
+              ],
             },
             {
               'name' => 'vip',
               'type' => 'vip',
               'cloud_properties' => {
-                'smurf_1' => '((/smurf_1_variable_vip_network))'
-              }
-            }
+                'smurf_1' => '((/smurf_1_variable_vip_network))',
+              },
+            },
           ]
         end
 
@@ -1055,12 +1055,12 @@ describe 'using director with config server', type: :integration do
           manifest_hash['instance_groups'][0]['networks'] = [
             {
               'name' => 'private',
-              'default' => ['dns', 'gateway']
+              'default' => %w[dns gateway],
             },
             {
               'name' => 'vip',
-              'static_ips' => ['8.8.8.8']
-            }
+              'static_ips' => ['8.8.8.8'],
+            },
           ]
           config_server_helper.put_value('/smurf_1_variable_vip_network', 'cat_1_vip_network')
         end
@@ -1070,9 +1070,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
-          expect(create_vm_invocations[0].inputs['networks']['vip']['cloud_properties']).to eq({'smurf_1' => 'cat_1_vip_network'})
+          expect(create_vm_invocations[0].inputs['networks']['vip']['cloud_properties']).to eq('smurf_1' => 'cat_1_vip_network')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_vip_network'])
 
           expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vip_network'], log_options)
@@ -1091,9 +1091,9 @@ describe 'using director with config server', type: :integration do
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
-          expect(create_vm_invocations[0].inputs['networks']['vip']['cloud_properties']).to eq({'smurf_1' => 'cat_1_vip_network'})
+          expect(create_vm_invocations[0].inputs['networks']['vip']['cloud_properties']).to eq('smurf_1' => 'cat_1_vip_network')
 
-          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+          variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_vip_network'])
         end
 
@@ -1108,9 +1108,9 @@ describe 'using director with config server', type: :integration do
 
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(create_vm_invocations.size).to eq(2)
-            expect(create_vm_invocations[1].inputs['networks']['vip']['cloud_properties']).to eq({'smurf_1' => 'cat_2_vip_network'})
+            expect(create_vm_invocations[1].inputs['networks']['vip']['cloud_properties']).to eq('smurf_1' => 'cat_2_vip_network')
 
-            variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map{|v| v['name']}
+            variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
             expect(variables_names).to match_array(['/smurf_1_variable_vip_network'])
           end
         end
