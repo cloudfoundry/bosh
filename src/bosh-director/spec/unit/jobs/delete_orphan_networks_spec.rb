@@ -38,8 +38,7 @@ module Bosh::Director
     describe '#perform' do
       let(:event_log) { EventLog::Log.new }
       let(:event_log_stage) { instance_double(Bosh::Director::EventLog::Stage) }
-      let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
-      let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+      let(:orphan_network_manager) { instance_double(OrphanNetworkManager) }
 
       before do
         Bosh::Director::Models::Network.make(name: 'nw-1', orphaned: true)
@@ -49,24 +48,16 @@ module Bosh::Director
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
         allow(event_log_stage).to receive(:advance_and_track).and_yield
 
-        allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
-        allow(cloud_factory).to receive(:get).with('').and_return(cloud)
+        allow(OrphanNetworkManager).to receive(:new).and_return(orphan_network_manager)
       end
 
       context 'when deleting a network' do
         it 'logs and returns the result' do
-          pool = instance_double(ThreadPool)
-          allow(ThreadPool).to receive(:new).and_return(pool)
-          allow(pool).to receive(:wrap).and_yield(pool)
-
-          expect(event_log).to receive(:begin_stage).and_return(event_log_stage)
-          allow(cloud).to receive(:delete_network)
+          expect(orphan_network_manager).to receive(:delete_network).with('nw-1')
+          expect(orphan_network_manager).to receive(:delete_network).with('nw-2')
 
           delete_orphan_networks = Jobs::DeleteOrphanNetworks.new(['nw-1', 'nw-2'])
-          allow(pool).to receive(:process).twice.and_yield
-
           delete_orphan_networks.perform
-          expect(Bosh::Director::Models::Network.all).to be_empty
         end
       end
     end
