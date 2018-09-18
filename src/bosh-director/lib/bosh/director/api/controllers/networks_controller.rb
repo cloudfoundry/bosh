@@ -16,9 +16,9 @@ module Bosh::Director
         end
       end
 
-      delete '/:orphan_network_name' do
+      delete '/:orphaned_network_name' do
         job_queue = JobQueue.new
-        task = Bosh::Director::Jobs::DeleteOrphanNetworks.enqueue(current_user, [params[:orphan_network_name]], job_queue)
+        task = Bosh::Director::Jobs::DeleteOrphanNetworks.enqueue(current_user, [params[:orphaned_network_name]], job_queue)
         redirect "/tasks/#{task.id}"
       end
     end
