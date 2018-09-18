@@ -293,6 +293,16 @@ describe 'director.yml.erb' do
         end
       end
 
+      context 'orphaned network cleanup' do
+        it 'is a scheduled task with correct params' do
+          expect(parsed_yaml['scheduled_jobs']).to include(
+            'command' => 'ScheduledOrphanedNetworkCleanup',
+            'schedule' => '0 0,30 * * * * UTC',
+            'params' => [{ 'max_orphaned_age_in_days' => 5 }],
+          )
+        end
+      end
+
       describe 'config server' do
         context 'when turned on' do
           before do

@@ -5,8 +5,15 @@ module Bosh::Director
     class NetworksController < BaseController
       get '/' do
         content_type(:json)
-        orphan_json = OrphanNetworkManager.new(@logger).list_orphan_networks
-        json_encode(orphan_json)
+        orphan_param = params['orphaned']
+
+        if orphan_param.nil? || orphan_param == 'false'
+          # in the future, this might be used for listing active managed networks
+          halt 500, 'listing active networks is not implemented'
+        else
+          orphaned_networks = OrphanNetworkManager.new(@logger).list_orphan_networks
+          json_encode(orphaned_networks)
+        end
       end
 
       delete '/:orphan_network_name' do

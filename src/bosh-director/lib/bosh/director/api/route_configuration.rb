@@ -21,7 +21,6 @@ module Bosh
           controllers['/disks'] = Bosh::Director::Api::Controllers::DisksController.new(@config)
           controllers['/networks'] = Bosh::Director::Api::Controllers::NetworksController.new(@config)
           controllers['/orphan_disks'] = Bosh::Director::Api::Controllers::OrphanDisksController.new(@config)
-          controllers['/orphan_networks'] = Bosh::Director::Api::Controllers::OrphanNetworksController.new(@config)
           controllers['/orphaned_vms'] = Bosh::Director::Api::Controllers::OrphanedVmsController.new(@config)
           controllers['/info'] = Bosh::Director::Api::Controllers::InfoController.new(@config)
           controllers['/locks'] = Bosh::Director::Api::Controllers::LocksController.new(@config)

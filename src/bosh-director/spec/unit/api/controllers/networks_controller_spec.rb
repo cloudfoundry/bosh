@@ -41,8 +41,9 @@ module Bosh::Director
 
           basic_authorize 'admin', 'admin'
         end
+
         it 'returns a list of orphaned networks' do
-          get '/'
+          get '/?orphaned=true'
 
           expect(last_response.status).to eq(200)
           body = JSON.parse(last_response.body)
@@ -68,20 +69,25 @@ module Bosh::Director
           )
         end
 
-        it 'deletes an orphan network' do
-          delete '/nw-1'
+        it 'returns a 500 status when orphaned parameter is absent' do
+          get '/'
 
-          expect_redirect_to_queued_task(last_response)
+          expect(last_response.status).to eq(500)
         end
 
-        context 'delete /nw-1 with orphan parameter' do
-          it 'deletes an orphan network when orphan=false' do
-            expect(Jobs::DeleteOrphanNetworks).to receive(:enqueue)
+        it 'returns a 500 status when orphaned parameter is false' do
+          get '/'
+
+          expect(last_response.status).to eq(500)
+        end
+
+        it 'deletes an orphan network' do
+          expect(Jobs::DeleteOrphanNetworks).to receive(:enqueue)
               .with('admin', ['nw-1'], kind_of(JobQueue))
               .and_call_original
-            delete '/nw-1?orphan=false'
-            expect_redirect_to_queued_task(last_response)
-          end
+
+          delete '/nw-1'
+          expect_redirect_to_queued_task(last_response)
         end
       end
     end
