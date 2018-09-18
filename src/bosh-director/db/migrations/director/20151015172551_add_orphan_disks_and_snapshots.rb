@@ -15,7 +15,7 @@ Sequel.migration do
       primary_key :id
       foreign_key :orphan_disk_id, :orphan_disks, :null => false
       String :snapshot_cid, :unique => true, :null => false
-      Boolean :clean, :default => false
+      TrueClass :clean, default: false
       Time :created_at, :null => false
       Time :orphaned_at, :null => false, :index => true
     end

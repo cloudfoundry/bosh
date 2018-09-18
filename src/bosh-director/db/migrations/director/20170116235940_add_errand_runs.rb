@@ -4,7 +4,7 @@ Sequel.migration do
     create_table :errand_runs do
       primary_key :id
 
-      TrueClass :successful, :default => false
+      TrueClass :successful, default: false
       String :successful_configuration_hash, size: 512
 
       if [:mysql2, :mysql].include?(db_type)

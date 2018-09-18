@@ -5,7 +5,7 @@ Sequel.migration do
       foreign_key :instance_id, :instances, :null => false
       String :disk_cid, :unique => true, :null => false
       Integer :size
-      Boolean :active, :default => false
+      TrueClass :active, default: false
     end
 
     self[:instances].each do |instance|

@@ -3,7 +3,7 @@ Sequel.migration do
     create_table :snapshots do
       primary_key :id
       foreign_key :persistent_disk_id, :persistent_disks, :null => false
-      Boolean :clean, :default => false
+      TrueClass :clean, default: false
       Time :created_at, :null => false
       String :snapshot_cid, :unique => true, :null => false
     end
