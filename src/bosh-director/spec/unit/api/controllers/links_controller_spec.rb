@@ -341,18 +341,18 @@ module Bosh::Director
         end
 
         context 'when the user is authenticated' do
-          let(:link_manager) do
-            instance_double(Bosh::Director::Api::LinkManager)
+          let(:links_api_manager) do
+            instance_double(Bosh::Director::Api::LinksApiManager)
           end
 
           before do
-            expect(Api::LinkManager).to receive(:new).and_return(link_manager)
+            expect(Api::LinksApiManager).to receive(:new).and_return(links_api_manager)
             basic_authorize 'admin', 'admin'
           end
 
-          context 'and link_manager successfully deletes a link' do
+          context 'and links_api_manager successfully deletes a link' do
             before do
-              allow(link_manager).to receive(:delete_link)
+              allow(links_api_manager).to receive(:delete_link)
             end
 
             it 'returns completes successfully' do
@@ -362,9 +362,9 @@ module Bosh::Director
             end
           end
 
-          context 'and link_manager raised a error' do
+          context 'and links_api_manager raised a error' do
             before do
-              allow(link_manager).to receive(:delete_link).and_raise(error)
+              allow(links_api_manager).to receive(:delete_link).and_raise(error)
             end
 
             context 'and the error is a runtime error' do

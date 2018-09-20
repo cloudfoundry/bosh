@@ -1,6 +1,6 @@
 module Bosh::Director
   module Api
-    class LinkManager
+    class LinksApiManager
       include ApiHelper
 
       def initialize
