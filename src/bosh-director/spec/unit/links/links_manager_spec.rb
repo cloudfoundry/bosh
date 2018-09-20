@@ -3152,9 +3152,38 @@ describe Bosh::Director::Links::LinksManager do
         expect(providers.first.intents.count).to eq(2)
       end
 
-      # TODO: LINKS: add it later
-      xit 'removes unused disk providers' do
-        subject.remove_unused_links(deployment_model)
+      context 'when a disk link has an unused provider' do
+        let(:provider_1) do
+          Bosh::Director::Models::Links::LinkProvider.make(
+            deployment: deployment_model,
+            instance_group: 'foo-ig',
+            name: 'foo-provider',
+            type: 'disk',
+            serial_id: serial_id - 1,
+          )
+        end
+
+        let(:provider_1_intent_1) do
+          Bosh::Director::Models::Links::LinkProviderIntent.make(
+            link_provider: provider_1,
+            original_name: 'link_original_name_1',
+            name: 'link_name_1',
+            type: 'disk',
+            shared: true,
+            consumable: true,
+            content: '{}',
+            metadata: { 'mapped_properties' => { 'a' => '1' } }.to_json,
+            serial_id: serial_id - 1,
+          )
+        end
+
+        it 'removes unused disk providers' do
+          subject.remove_unused_links(deployment_model)
+          providers = Bosh::Director::Models::Links::LinkProvider.where(deployment: deployment_model)
+          expect(providers.count).to eq(1)
+          expect(providers.first.type).to_not eq('disk')
+          expect(providers.first.intents.count).to eq(2)
+        end
       end
     end
 
