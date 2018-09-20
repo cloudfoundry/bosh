@@ -182,7 +182,7 @@ properties:
   #Orphaned Networks automated cleanup
   director.networks.max_orphaned_age_in_days:
     description: Days to keep orphaned networks before cleanup
-    default: 5
+    default: 1
   director.networks.cleanup_schedule:
     description: RufusScheduler cron formatted schedule for cleanup of orphaned networks
     default: '0 0,30 * * * * UTC' #every 30min
