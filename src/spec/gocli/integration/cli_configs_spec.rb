@@ -154,7 +154,7 @@ describe 'cli configs', type: :integration do
         client: team_read_env['BOSH_CLIENT'],
         client_secret: team_read_env['BOSH_CLIENT_SECRET'],
       )
-      expect(output).to include('Retry: Post')
+      expect(output).to include("Director responded with non-successful status code '401'")
 
       bosh_runner.run(
         "update-config --type=team-type --name=team-name1 #{config.path}",
@@ -271,7 +271,7 @@ describe 'cli configs', type: :integration do
         include_credentials: false,
         failure_expected: true,
       ),
-    ).to include('Retry: Post')
+    ).to include("Director responded with non-successful status code '401'")
 
     # no file
     expect(
