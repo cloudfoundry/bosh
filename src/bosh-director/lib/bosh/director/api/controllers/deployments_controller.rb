@@ -24,6 +24,11 @@ module Bosh::Director
             rescue DeploymentNotFound
               permission = :create_deployment
             end
+          elsif permission == :read_link
+            if params.key?('link_id')
+              link = Bosh::Director::Models::Links::Link.where(id: params['link_id']).first
+              subject = link.link_consumer_intent.link_consumer.deployment unless link.nil?
+            end
           else
             if params.key?('deployment')
               @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
