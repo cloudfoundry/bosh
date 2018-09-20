@@ -42,7 +42,7 @@ module Bosh::Director
         when :admin
           # already allowed with initial expected_scope
           expected_scope
-        when :read
+        when :read, :read_link
           expected_scope << subject_teams_scopes(subject, 'read')
           expected_scope << director_permissions[:read]
         else
