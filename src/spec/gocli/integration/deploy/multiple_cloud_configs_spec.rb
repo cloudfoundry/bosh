@@ -96,7 +96,7 @@ describe 'multiple cloud configs', type: :integration do
           client_secret: team_admin_env['BOSH_CLIENT_SECRET'],
           failure_expected: true,
         )
-        expect(output).to include('/configs/diff: http: ContentLength=378 with Body length 0')
+        expect(output).to include("Director responded with non-successful status code '401'")
       end
 
       it "can deploy each team's configs without conflict" do
