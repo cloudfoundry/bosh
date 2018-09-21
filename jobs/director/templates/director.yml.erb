@@ -133,7 +133,7 @@ params['scheduled_jobs'] << {
 
 params['scheduled_jobs'] << {
   'command' => 'ScheduledDnsBlobsCleanup',
-  'schedule' => '0,30 * * * * * UTC',
+  'schedule' => '0 0,30 * * * * UTC', #every 30 min
   'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
 }
 
