@@ -287,7 +287,7 @@ describe 'director.yml.erb' do
         it 'is a scheduled task with correct params' do
           expect(parsed_yaml['scheduled_jobs']).to include({
             'command' => 'ScheduledDnsBlobsCleanup',
-            'schedule' => '0,30 * * * * * UTC',
+            'schedule' => '0 0,30 * * * * UTC',
             'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
           })
         end
