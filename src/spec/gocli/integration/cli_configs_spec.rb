@@ -118,7 +118,7 @@ describe 'cli configs', type: :integration do
         client: team_read_env['BOSH_CLIENT'],
         client_secret: team_read_env['BOSH_CLIENT_SECRET'],
       )
-      expect(output).to include('Retry: Post')
+      expect(output).to include(`Director responded with non-successful status code '401' response '{"code":600000,"description":"Require one of the scopes: bosh.admin, bosh.deadbeef.admin"}'`)
 
       bosh_runner.run(
         "update-config --type=team-type --name=team-name1 #{config.path}",
@@ -141,7 +141,7 @@ describe 'cli configs', type: :integration do
 
     it 'allows to create/delete team only for admin or team admin' do
       output = bosh_runner.run("update-config --type=team-type --name=default #{config.path}", failure_expected: true, client: team_read_env['BOSH_CLIENT'], client_secret: team_read_env['BOSH_CLIENT_SECRET'])
-      expect(output).to include('Retry: Post')
+      expect(output).to include(`Director responded with non-successful status code '401' response '{"code":600000,"description":"Require one of the scopes: bosh.admin, bosh.deadbeef.admin"}'`)
 
       bosh_runner.run("update-config --type=team-type --name=team-name1 #{config.path}", client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])
       bosh_runner.run("update-config --type=team-type --name=team-name2 #{config.path}", client: team_admin_env['BOSH_CLIENT'], client_secret: team_admin_env['BOSH_CLIENT_SECRET'])
@@ -194,7 +194,7 @@ describe 'cli configs', type: :integration do
         include_credentials: false,
         failure_expected: true,
       ),
-    ).to include('Retry: Post')
+    ).to include("Director responded with non-successful status code '401' response 'Not authorized: '")
 
     # no file
     expect(
