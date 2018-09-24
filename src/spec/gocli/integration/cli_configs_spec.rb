@@ -84,7 +84,7 @@ describe 'cli configs', type: :integration do
 
   it 'gives nice errors for common problems when uploading', no_reset: true do
     # not logged in
-    expect(bosh_runner.run("update-config --type=my-type --name=default #{config.path}", include_credentials: false, failure_expected: true)).to include('Retry: Post')
+    expect(bosh_runner.run("update-config --type=my-type --name=default #{config.path}", include_credentials: false, failure_expected: true)).to include("Director responded with non-successful status code '401' response 'Not authorized: '")
 
     # no file
     expect(bosh_runner.run('update-config --type=my-type --name=default  /some/nonsense/file', failure_expected: true)).to include('no such file or directory')
