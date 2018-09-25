@@ -9,5 +9,3 @@ RUN apt-get update && apt-get install -y mysql-server ruby-dev build-essential &
 RUN sed -i 's/bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/my.cnf && \
   echo "[mysqld]" >> /etc/mysql/my.cnf && \
   echo "max_connections = 400" >> /etc/mysql/my.cnf
-
-RUN chown -R mysql:mysql /var/lib/mysql /var/run/mysqld
