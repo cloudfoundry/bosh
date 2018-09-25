@@ -341,6 +341,17 @@ func StopInnerBosh() {
 	Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 }
 
+func InnerBoshExists() bool {
+	// If the inner BOSH has not been started, then the BOSH helper script will
+	// not exist.
+	_, err := os.Stat(BoshBinaryPath())
+	if os.IsNotExist(err) {
+		return false
+	}
+	Expect(err).NotTo(HaveOccurred())
+	return true
+}
+
 func BoshDeploymentAssetPath(assetPath string) string {
 	return filepath.Join(os.Getenv("BOSH_DEPLOYMENT_PATH"), assetPath)
 }
