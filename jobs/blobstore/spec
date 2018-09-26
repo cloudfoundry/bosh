@@ -12,6 +12,7 @@ templates:
   bbr_restore: bin/bbr/restore
   server_tls_cert.pem.erb: config/server_tls_cert.pem
   server_tls_private_key.pem.erb: config/server_tls_private_key.pem
+  pre-start: bin/pre-start
 
 packages:
 - nginx

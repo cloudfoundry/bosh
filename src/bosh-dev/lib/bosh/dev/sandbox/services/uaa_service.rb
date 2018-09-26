@@ -64,7 +64,7 @@ module Bosh::Dev::Sandbox
       @uaa_process.start
 
       begin
-        @connector.try_to_connect(3000)
+        @connector.try_to_connect(6000)
       rescue StandardError
         output_service_log(@uaa_process.description, @uaa_process.stdout_contents, @uaa_process.stderr_contents)
         raise
@@ -99,9 +99,10 @@ module Bosh::Dev::Sandbox
         'uaa.server_port' => @server_port,
         'uaa.access_log_dir' => File.dirname(@log_location),
         'uaa.webapps' => @uaa_webapps_path,
+        'securerandom.source' => 'file:/dev/urandom',
       }
 
-      catalina_opts = ' -Xms512M -Xmx512M -Dsecurerandom.source=file:/dev/urandom '
+      catalina_opts = ' -Xms512M -Xmx512M '
       catalina_opts += opts.map { |key, value| "-D#{key}=#{value}" }.join(' ')
 
       Service.new(

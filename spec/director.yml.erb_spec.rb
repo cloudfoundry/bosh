@@ -62,6 +62,8 @@ describe 'director.yml.erb' do
         },
         'networks' => {
           'enable_cpi_management' => false,
+          'max_orphaned_age_in_days' => 3,
+          'cleanup_schedule' => '0 0,30 * * * * UTC',
         },
         'vms' => {
           'cleanup_schedule' => '0 0,30 * * * * UTC',
@@ -286,9 +288,19 @@ describe 'director.yml.erb' do
         it 'is a scheduled task with correct params' do
           expect(parsed_yaml['scheduled_jobs']).to include({
             'command' => 'ScheduledDnsBlobsCleanup',
-            'schedule' => '0,30 * * * * * UTC',
+            'schedule' => '0 0,30 * * * * UTC',
             'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
           })
+        end
+      end
+
+      context 'orphaned network cleanup' do
+        it 'is a scheduled task with correct params' do
+          expect(parsed_yaml['scheduled_jobs']).to include(
+            'command' => 'ScheduledOrphanedNetworkCleanup',
+            'schedule' => '0 0,30 * * * * UTC',
+            'params' => [{ 'max_orphaned_age_in_days' => 3 }],
+          )
         end
       end
 
@@ -506,6 +518,14 @@ describe 'director.yml.erb' do
           expect(parsed_yaml['puma_workers']).to eq(3)
         end
       end
+      it 'should contain the trusted_certs field' do
+        expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
+      end
+
+      it 'should contain the version' do
+        expect(parsed_yaml['version']).to eq('268.0.1')
+      end
+
       it 'should contain the trusted_certs field' do
         expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
       end

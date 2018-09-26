@@ -8,7 +8,7 @@ module Bosh::Director
       def initialize(config)
         super(config)
         @deployment_manager = Api::DeploymentManager.new
-        @link_manager = Api::LinkManager.new
+        @links_api_manager = Api::LinksApiManager.new
       end
 
       get '/', authorization: :read_link do
@@ -21,7 +21,7 @@ module Bosh::Director
 
 
         result = {
-          address: @link_manager.link_address(params['link_id'], query_options)
+          address: @links_api_manager.link_address(params['link_id'], query_options),
         }
 
         body(json_encode(result))

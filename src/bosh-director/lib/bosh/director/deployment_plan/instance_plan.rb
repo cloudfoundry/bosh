@@ -153,26 +153,23 @@ module Bosh
         end
 
         def network_settings_changed?
-          changed = false
           old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
+          return false if old_network_settings == {}
+
           new_network_settings = network_settings_hash
 
-          interpolated_old_network_settings = @config_server_client.interpolate_with_versioning(
-            old_network_settings,
-            @instance.previous_variable_set,
-          )
-          interpolated_new_network_settings = @config_server_client.interpolate_with_versioning(
-            new_network_settings,
-            @instance.desired_variable_set,
-          )
+          old_network_settings = remove_dns_record_name_from_network_settings(old_network_settings)
+          new_network_settings = remove_dns_record_name_from_network_settings(new_network_settings)
 
-          if interpolated_old_network_settings != {} &&
-             remove_dns_record_name_from_network_settings(interpolated_old_network_settings) != interpolated_new_network_settings
+          changed = @config_server_client.interpolated_versioned_variables_changed?(old_network_settings, new_network_settings,
+                                                                                    @instance.previous_variable_set,
+                                                                                    @instance.desired_variable_set)
+
+          if changed
             @logger.debug(
               "#{__method__} network settings changed FROM: #{old_network_settings} " \
               "TO: #{new_network_settings} on instance #{@existing_instance}",
             )
-            changed = true
           end
 
           changed

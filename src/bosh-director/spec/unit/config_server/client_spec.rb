@@ -11,17 +11,17 @@ module Bosh::Director::ConfigServer
     let(:logger) { double('Logging::Logger') }
     let(:variables_set_id) { 2000 }
     let(:success_post_response) do
-      generate_success_response({ :id => 'some_id1'}.to_json)
+      generate_success_response({ id: 'some_id1' }.to_json)
     end
     let(:http_client) { double('Bosh::Director::ConfigServer::HTTPClient') }
 
-    let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
-    let(:task_id) {42}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
+    let(:task_id) { 42 }
+    let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
 
     let(:success_response) do
       result = SampleSuccessResponse.new
-      result.body = {'id'=> 504}.to_json
+      result.body = { 'id' => 504 }.to_json
       result
     end
 
@@ -45,20 +45,20 @@ module Bosh::Director::ConfigServer
           'properties' => {
             'integer_allowed' => '((/integer_placeholder))',
             'nil_allowed' => '((/nil_placeholder))',
-            'empty_allowed' => '((/empty_placeholder))'
+            'empty_allowed' => '((/empty_placeholder))',
           },
           'i_am_a_hash' => {
             'i_am_an_array' => [
               {
                 'name' => 'test_job',
-                'properties' => {'job_prop' => '((/string_placeholder))'}
-              }
-            ]
+                'properties' => { 'job_prop' => '((/string_placeholder))' },
+              },
+            ],
           },
           'i_am_another_array' => [
-            {'env' => {'env_prop' => '((/hash_placeholder))'}}
+            { 'env' => { 'env_prop' => '((/hash_placeholder))' } },
           ],
-          'my_value_will_be_a_hash' => '((/hash_placeholder))'
+          'my_value_will_be_a_hash' => '((/hash_placeholder))',
         }
       end
       let(:interpolated_hash) do
@@ -66,20 +66,20 @@ module Bosh::Director::ConfigServer
           'properties' => {
             'integer_allowed' => 123,
             'nil_allowed' => nil,
-            'empty_allowed' => ''
+            'empty_allowed' => '',
           },
           'i_am_a_hash' => {
             'i_am_an_array' => [
               {
                 'name' => 'test_job',
-                'properties' => {'job_prop' => 'i am a string'}
-              }
-            ]
+                'properties' => { 'job_prop' => 'i am a string' },
+              },
+            ],
           },
           'i_am_another_array' => [
-            {'env' => {'env_prop' => hash_placeholder_value}}
+            { 'env' => { 'env_prop' => hash_placeholder_value } },
           ],
-          'my_value_will_be_a_hash' => hash_placeholder_value
+          'my_value_will_be_a_hash' => hash_placeholder_value,
         }
       end
       let(:hash_placeholder_value) do
@@ -87,10 +87,10 @@ module Bosh::Director::ConfigServer
           'ca' => {
             'level_1' => 'level_1_value',
             'level_2' => {
-              'level_2_1' => 'level_2_1_value'
-            }
+              'level_2_1' => 'level_2_1_value',
+            },
           },
-          'private_key' => 'abc123'
+          'private_key' => 'abc123',
         }
       end
 
@@ -99,36 +99,34 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when object to be interpolated is NOT nil' do
-
         context 'when object to be interpolated is a hash' do
-
           context 'when hash does NOT contain any placeholders' do
             let(:raw_hash) do
               {
                 'properties' => {
                   'integer_allowed' => '1',
                   'nil_allowed' => nil,
-                  'empty_allowed' => ''
+                  'empty_allowed' => '',
                 },
                 'i_am_a_hash' => {
                   'i_am_an_array' => [
                     {
                       'name' => 'test_job',
-                      'properties' => {'job_prop' => 'string'}
-                    }
-                  ]
+                      'properties' => { 'job_prop' => 'string' },
+                    },
+                  ],
                 },
                 'i_am_another_array' => [
-                  {'env' => {'env_prop' => {}}}
+                  { 'env' => { 'env_prop' => {} } },
                 ],
-                'my_value_will_be_a_hash' => {}
+                'my_value_will_be_a_hash' => {},
               }
             end
 
             it 'does not raise an error' do
-              expect {
+              expect do
                 client.interpolate(raw_hash)
-              }.to_not raise_error
+              end.to_not raise_error
             end
 
             it 'returns an equivalent hash' do
@@ -193,7 +191,7 @@ module Bosh::Director::ConfigServer
             end
 
             it 'should use the latest variables from the config server' do
-              result = client.interpolate({'key' => "((#{variable_name}))"})
+              result = client.interpolate('key' => "((#{variable_name}))")
               expect(result['key']).to eq('var_val')
             end
 
@@ -201,9 +199,9 @@ module Bosh::Director::ConfigServer
               let(:variable_name) { 'boo' }
 
               it 'should error' do
-                expect {
-                  client.interpolate({'key' => "((#{variable_name}))"})
-                }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax
+                expect do
+                  client.interpolate('key' => "((#{variable_name}))")
+                end.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax
               end
             end
 
@@ -213,7 +211,7 @@ module Bosh::Director::ConfigServer
               end
 
               it 'should get the sub-value as needed' do
-                result = client.interpolate({'key' => '((/boo.ca))'})
+                result = client.interpolate('key' => '((/boo.ca))')
                 expect(result['key']).to eq('my ca')
               end
             end
@@ -223,39 +221,36 @@ module Bosh::Director::ConfigServer
                 {
                   'name' => 'deployment_name',
                   'properties' => {
-                    'name' => '((/bad))'
-                  }
+                    'name' => '((/bad))',
+                  },
                 }
               end
 
               [
-                {'response' => 'Invalid JSON response',
-                 'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response'},
+                { 'response' => 'Invalid JSON response',
+                  'message' => '- Failed to fetch variable \'/bad\' from config server: Invalid JSON response' },
 
-                {'response' => '{"x" : {}}',
-                 'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
+                { 'response' => '{"x" : {}}',
+                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array' },
 
-                {'response' => '{"data" : {"value" : "x"}}',
-                 'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array'},
+                { 'response' => '{"data" : {"value" : "x"}}',
+                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be an array' },
 
-                {'response' => '{"data" : []}',
-                 'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array'},
+                { 'response' => '{"data" : []}',
+                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data to be non empty array' },
 
-                {'response' => '{"data" : [{"name" : "name1", "id" : "id1", "val" : "x"}]}',
-                 'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\''},
+                { 'response' => '{"data" : [{"name" : "name1", "id" : "id1", "val" : "x"}]}',
+                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'value\'' },
 
-                {'response' => '{"data" : [{"name" : "name1", "value" : "x"}]}',
-                 'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'id\''},
+                { 'response' => '{"data" : [{"name" : "name1", "value" : "x"}]}',
+                  'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'id\'' },
 
               ].each do |entry|
                 it 'raises an error' do
                   allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response']))
-                  expect {
+                  expect do
                     client.interpolate(manifest_hash)
-                  }.to raise_error { |error|
-                    expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
-                    expect(error.message).to include(entry['message'])
-                  }
+                  end.to raise_error Bosh::Director::ConfigServerFetchError, entry['message']
                 end
               end
             end
@@ -265,17 +260,17 @@ module Bosh::Director::ConfigServer
                 {
                   'name' => 'deployment_name',
                   'properties' => {
-                    'name' => '((/missing_placeholder))'
-                  }
+                    'name' => '((/missing_placeholder))',
+                  },
                 }
               end
 
               it 'should raise a missing name error message' do
                 allow(http_client).to receive(:get).with('/missing_placeholder').and_return(SampleNotFoundResponse.new)
 
-                expect {
+                expect do
                   client.interpolate(manifest_hash)
-                }.to raise_error { |error|
+                end.to raise_error { |error|
                   expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                   expect(error.message).to include("- Failed to find variable '/missing_placeholder' from config server: HTTP Code '404', Error: 'Name not found'")
                 }
@@ -309,9 +304,9 @@ module Bosh::Director::ConfigServer
                 end
 
                 it 'fails to find values and throws formatting error' do
-                  expect {
+                  expect do
                     client.interpolate(raw_hash)
-                  }.to raise_error("- Failed to fetch variable '/hash_placeholder' " +
+                  end.to raise_error("- Failed to fetch variable '/hash_placeholder' " \
                                      "from config server: Expected parent '/hash_placeholder.ca' hash to have key 'level_n'")
                 end
               end
@@ -323,9 +318,9 @@ module Bosh::Director::ConfigServer
                 end
 
                 it 'fails to find all values and throws formatting error' do
-                  expect {
+                  expect do
                     client.interpolate(raw_hash)
-                  }.to raise_error { |error|
+                  end.to raise_error { |error|
                     expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                     expect(error.message).to include("- Failed to fetch variable '/hash_placeholder' from config server: Expected parent '/hash_placeholder.ca' hash to have key 'level_n'")
                     expect(error.message).to include("- Failed to fetch variable '/hash_placeholder' from config server: Expected parent '/hash_placeholder.ca' hash to have key 'level_m'")
@@ -339,9 +334,9 @@ module Bosh::Director::ConfigServer
                 end
 
                 it 'fails to find value and throws formatting error' do
-                  expect {
+                  expect do
                     client.interpolate(raw_hash)
-                  }.to raise_error { |error|
+                  end.to raise_error { |error|
                     expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
                     expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
                   }
@@ -350,9 +345,9 @@ module Bosh::Director::ConfigServer
 
               it 'returns an error for non absolute path placeholders' do
                 raw_hash['properties']['some-new-relative-key'] = '((some-relative-var))'
-                expect {
+                expect do
                   client.interpolate(raw_hash)
-                }.to raise_error { |error|
+                end.to raise_error { |error|
                   expect(error.message).to eq("Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'some-relative-var'")
                 }
               end
@@ -365,42 +360,42 @@ module Bosh::Director::ConfigServer
                 'properties' => {
                   'integer_allowed' => '((int&&&&eger_placeholder))',
                   'nil_allowed' => '((nil_place holder))',
-                  'empty_allowed' => '((emp**ty_placeholder))'
+                  'empty_allowed' => '((emp**ty_placeholder))',
                 },
                 'i_am_a_hash' => {
                   'i_am_an_array' => [
                     {
                       'name' => 'test_job',
-                      'properties' => {'job_prop' => '((job_placeholder+++ ))'}
-                    }
-                  ]
-                }
+                      'properties' => { 'job_prop' => '((job_placeholder+++ ))' },
+                    },
+                  ],
+                },
               }
             end
 
             # TODO: make sure all the errors are displayed
             it 'should raise an error' do
-              expect {
+              expect do
                 client.interpolate(provided_hash)
-              }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax,
-                               "Variable name 'int&&&&eger_placeholder' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+              end.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax,
+                                 "Variable name 'int&&&&eger_placeholder' must only contain alphanumeric, underscores, dashes, or forward slash characters"
             end
           end
         end
 
         context 'when object to be interpolated is NOT a hash' do
           it 'raises an error' do
-            expect {
+            expect do
               client.interpolate('i am not a hash')
-            }.to raise_error "Unable to interpolate provided object. Expected a 'Hash', got 'String'"
+            end.to raise_error "Unable to interpolate provided object. Expected a 'Hash', got 'String'"
           end
         end
       end
 
       context 'when object to be interpolated in is nil' do
-          it 'should return nil' do
-            expect(client.interpolate(nil)).to be_nil
-          end
+        it 'should return nil' do
+          expect(client.interpolate(nil)).to be_nil
+        end
       end
     end
 
@@ -412,20 +407,20 @@ module Bosh::Director::ConfigServer
           'properties' => {
             'integer_allowed' => '((integer_placeholder))',
             'nil_allowed' => '((nil_placeholder))',
-            'empty_allowed' => '((empty_placeholder))'
+            'empty_allowed' => '((empty_placeholder))',
           },
           'i_am_a_hash' => {
             'i_am_an_array' => [
               {
                 'name' => 'test_job',
-                'properties' => {'job_prop' => '((string_placeholder))'}
-              }
-            ]
+                'properties' => { 'job_prop' => '((string_placeholder))' },
+              },
+            ],
           },
           'i_am_another_array' => [
-            {'env' => {'env_prop' => '((hash_placeholder))'}}
+            { 'env' => { 'env_prop' => '((hash_placeholder))' } },
           ],
-          'my_value_will_be_a_hash' => '((hash_placeholder))'
+          'my_value_will_be_a_hash' => '((hash_placeholder))',
         }
       end
       let(:interpolated_hash) do
@@ -433,20 +428,20 @@ module Bosh::Director::ConfigServer
           'properties' => {
             'integer_allowed' => 123,
             'nil_allowed' => nil,
-            'empty_allowed' => ''
+            'empty_allowed' => '',
           },
           'i_am_a_hash' => {
             'i_am_an_array' => [
               {
                 'name' => 'test_job',
-                'properties' => {'job_prop' => 'i am a string'}
-              }
-            ]
+                'properties' => { 'job_prop' => 'i am a string' },
+              },
+            ],
           },
           'i_am_another_array' => [
-            {'env' => {'env_prop' => hash_placeholder_value}}
+            { 'env' => { 'env_prop' => hash_placeholder_value } },
           ],
-          'my_value_will_be_a_hash' => hash_placeholder_value
+          'my_value_will_be_a_hash' => hash_placeholder_value,
         }
       end
       let(:hash_placeholder_value) do
@@ -454,10 +449,10 @@ module Bosh::Director::ConfigServer
           'ca' => {
             'level_1' => 'level_1_value',
             'level_2' => {
-              'level_2_1' => 'level_2_1_value'
-            }
+              'level_2_1' => 'level_2_1_value',
+            },
           },
-          'private_key' => 'abc123'
+          'private_key' => 'abc123',
         }
       end
 
@@ -489,9 +484,9 @@ module Bosh::Director::ConfigServer
             end
 
             it 'fails to find values and throws formatting error' do
-              expect {
+              expect do
                 client.interpolate_with_versioning(raw_hash, variable_set_model)
-              }.to raise_error("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' " +
+              end.to raise_error("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' " \
                                  "from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
             end
           end
@@ -503,9 +498,9 @@ module Bosh::Director::ConfigServer
             end
 
             it 'fails to find all values and throws formatting error' do
-              expect {
+              expect do
                 client.interpolate_with_versioning(raw_hash, variable_set_model)
-              }.to raise_error { |error|
+              end.to raise_error { |error|
                 expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                 expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
                 expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_m'")
@@ -519,9 +514,9 @@ module Bosh::Director::ConfigServer
             end
 
             it 'fails to find value and throws formatting error' do
-              expect {
+              expect do
                 client.interpolate_with_versioning(raw_hash, variable_set_model)
-              }.to raise_error { |error|
+              end.to raise_error { |error|
                 expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
                 expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
               }
@@ -530,9 +525,9 @@ module Bosh::Director::ConfigServer
 
           context 'when absolute path is required' do
             it 'returns an error for non absolute path placeholders' do
-              expect {
-                client.interpolate_with_versioning(raw_hash, variable_set_model, {must_be_absolute_name: true})
-              }.to raise_error { |error|
+              expect do
+                client.interpolate_with_versioning(raw_hash, variable_set_model, must_be_absolute_name: true)
+              end.to raise_error { |error|
                 expect(error.message).to eq("Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
               }
             end
@@ -546,46 +541,43 @@ module Bosh::Director::ConfigServer
       end
 
       context 'when object to be interpolated is NOT nil' do
-
         context 'when object to be interpolated is a hash' do
-
           context 'when hash does NOT contain any placeholders' do
             let(:raw_hash) do
               {
                 'properties' => {
                   'integer_allowed' => '1',
                   'nil_allowed' => nil,
-                  'empty_allowed' => ''
+                  'empty_allowed' => '',
                 },
                 'i_am_a_hash' => {
                   'i_am_an_array' => [
                     {
                       'name' => 'test_job',
-                      'properties' => {'job_prop' => 'string'}
-                    }
-                  ]
+                      'properties' => { 'job_prop' => 'string' },
+                    },
+                  ],
                 },
                 'i_am_another_array' => [
-                  {'env' => {'env_prop' => {}}}
+                  { 'env' => { 'env_prop' => {} } },
                 ],
-                'my_value_will_be_a_hash' => {}
+                'my_value_will_be_a_hash' => {},
               }
             end
 
             it 'does not raise an error' do
-              expect {
+              expect do
                 client.interpolate_with_versioning(raw_hash, variable_set_model)
-              }.to_not raise_error
+              end.to_not raise_error
             end
 
             it 'returns an equivalent hash' do
-                interpolated_hash = client.interpolate_with_versioning(raw_hash, variable_set_model)
-                expect(interpolated_hash).to eq(raw_hash)
+              interpolated_hash = client.interpolate_with_versioning(raw_hash, variable_set_model)
+              expect(interpolated_hash).to eq(raw_hash)
             end
           end
 
           context 'when all placeholders syntax is correct' do
-
             let(:integer_placeholder) do
               { 'data' => [{ 'name' => prepend_namespace('integer_placeholder').to_s, 'value' => 123, 'id' => '1' }] }
             end
@@ -638,9 +630,9 @@ module Bosh::Director::ConfigServer
               end
 
               it 'should raise an error' do
-                expect {
-                  client.interpolate_with_versioning({'key' => "((#{variable_name}))"}, nil)
-                }.to raise_error "Variable Set cannot be nil."
+                expect do
+                  client.interpolate_with_versioning({ 'key' => "((#{variable_name}))" }, nil)
+                end.to raise_error 'Variable Set cannot be nil.'
               end
             end
 
@@ -684,17 +676,17 @@ module Bosh::Director::ConfigServer
                 end
 
                 it 'returns all the errors correctly formatted' do
-                  expected_error_msg = <<-EXPECTED.strip
-- Failed to find variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP Code '404', Error: 'Name not found'
+                  expected_error_msg = <<~EXPECTED.strip
+                    - Failed to find variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '404', Error: 'Name not found'
+                    - Failed to find variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP Code '404', Error: 'Name not found'
+                    - Failed to find variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP Code '404', Error: 'Name not found'
+                    - Failed to find variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP Code '404', Error: 'Name not found'
+                    - Failed to find variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP Code '404', Error: 'Name not found'
                   EXPECTED
 
-                  expect {
+                  expect do
                     client.interpolate_with_versioning(raw_hash, variable_set_model)
-                  }.to raise_error { |e|
+                  end.to raise_error { |e|
                     expect(e.message).to eq(expected_error_msg)
                   }
                 end
@@ -710,17 +702,17 @@ module Bosh::Director::ConfigServer
                 end
 
                 it 'returns all the errors correctly formatted' do
-                  expected_error_msg = <<-EXPECTED.strip
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '403', Error: 'There was a problem'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP Code '403', Error: 'There was a problem'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP Code '403', Error: 'There was a problem'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP Code '403', Error: 'There was a problem'
-- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP Code '403', Error: 'There was a problem'
+                  expected_error_msg = <<~EXPECTED.strip
+                    - Failed to fetch variable '/smurf_director_name/my_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '403', Error: 'There was a problem'
+                    - Failed to fetch variable '/smurf_director_name/my_deployment_name/nil_placeholder' with id '2' from config server: HTTP Code '403', Error: 'There was a problem'
+                    - Failed to fetch variable '/smurf_director_name/my_deployment_name/empty_placeholder' with id '3' from config server: HTTP Code '403', Error: 'There was a problem'
+                    - Failed to fetch variable '/smurf_director_name/my_deployment_name/string_placeholder' with id '4' from config server: HTTP Code '403', Error: 'There was a problem'
+                    - Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' with id '5' from config server: HTTP Code '403', Error: 'There was a problem'
                   EXPECTED
 
-                  expect {
+                  expect do
                     client.interpolate_with_versioning(raw_hash, variable_set_model)
-                  }.to raise_error { |e|
+                  end.to raise_error { |e|
                     expect(e.message).to eq(expected_error_msg)
                   }
                 end
@@ -731,7 +723,7 @@ module Bosh::Director::ConfigServer
                   index_integer = Integer
 
                   ignored_subtrees = []
-                  ignored_subtrees << ['properties', 'integer_allowed']
+                  ignored_subtrees << %w[properties integer_allowed]
                   ignored_subtrees << ['i_am_a_hash', 'i_am_an_array', index_integer, 'properties']
                   ignored_subtrees
                 end
@@ -741,27 +733,27 @@ module Bosh::Director::ConfigServer
                     'properties' => {
                       'integer_allowed' => '((integer_placeholder))',
                       'nil_allowed' => nil,
-                      'empty_allowed' => ''
+                      'empty_allowed' => '',
                     },
                     'i_am_a_hash' => {
                       'i_am_an_array' => [
                         {
                           'name' => 'test_job',
-                          'properties' => {'job_prop' => '((string_placeholder))'}
-                        }
-                      ]
+                          'properties' => { 'job_prop' => '((string_placeholder))' },
+                        },
+                      ],
                     },
                     'i_am_another_array' => [
-                      {'env' => {'env_prop' => hash_placeholder_value}}
+                      { 'env' => { 'env_prop' => hash_placeholder_value } },
                     ],
-                    'my_value_will_be_a_hash' => hash_placeholder_value
+                    'my_value_will_be_a_hash' => hash_placeholder_value,
                   }
                 end
 
                 it 'does NOT replace values in ignored subtrees' do
                   expect(http_client).to_not receive(:get_by_id).with('1')
                   expect(http_client).to_not receive(:get_by_id).with('4')
-                  expect(client.interpolate_with_versioning(raw_hash, variable_set_model, {subtrees_to_ignore: ignored_subtrees})).to eq(interpolated_hash)
+                  expect(client.interpolate_with_versioning(raw_hash, variable_set_model, subtrees_to_ignore: ignored_subtrees)).to eq(interpolated_hash)
                 end
               end
 
@@ -770,13 +762,13 @@ module Bosh::Director::ConfigServer
                   raw_hash['properties'] = {
                     '!integer_allowed' => '((integer_placeholder))',
                     '!nil_allowed' => '((nil_placeholder))',
-                    '!empty_allowed' => '((empty_placeholder))'
+                    '!empty_allowed' => '((empty_placeholder))',
                   }
 
-                  interpolated_hash['properties'] =  {
+                  interpolated_hash['properties'] = {
                     '!integer_allowed' => 123,
                     '!nil_allowed' => nil,
-                    '!empty_allowed' => ''
+                    '!empty_allowed' => '',
                   }
                 end
 
@@ -819,9 +811,9 @@ module Bosh::Director::ConfigServer
                   end
 
                   it 'fails to find values and throws formatting error' do
-                    expect {
+                    expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
-                    }.to raise_error("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' " +
+                    end.to raise_error("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' " \
                                        "from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
                   end
                 end
@@ -833,9 +825,9 @@ module Bosh::Director::ConfigServer
                   end
 
                   it 'fails to find all values and throws formatting error' do
-                    expect {
+                    expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
-                    }.to raise_error { |error|
+                    end.to raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                       expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
                       expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_m'")
@@ -849,9 +841,9 @@ module Bosh::Director::ConfigServer
                   end
 
                   it 'fails to find value and throws formatting error' do
-                    expect {
+                    expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
-                    }.to raise_error { |error|
+                    end.to raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
                       expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
                     }
@@ -860,9 +852,9 @@ module Bosh::Director::ConfigServer
 
                 context 'when absolute path is required' do
                   it 'returns an error for non absolute path placeholders' do
-                    expect {
-                      client.interpolate_with_versioning(raw_hash, variable_set_model, {must_be_absolute_name: true})
-                    }.to raise_error { |error|
+                    expect do
+                      client.interpolate_with_versioning(raw_hash, variable_set_model, must_be_absolute_name: true)
+                    end.to raise_error { |error|
                       expect(error.message).to eq("Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
                     }
                   end
@@ -874,26 +866,26 @@ module Bosh::Director::ConfigServer
                   {
                     'name' => 'deployment_name',
                     'properties' => {
-                      'name' => '((/bad))'
-                    }
+                      'name' => '((/bad))',
+                    },
                   }
                 end
 
                 [
-                  {'response' => 'Invalid JSON response',
-                   'message' => "- Failed to fetch variable '/bad' with id '20' from config server: Invalid JSON response"},
+                  { 'response' => 'Invalid JSON response',
+                    'message' => "- Failed to fetch variable '/bad' with id '20' from config server: Invalid JSON response" },
 
-                  {'response' => '{"id" : "some-id"}',
-                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'value'"},
+                  { 'response' => '{"id" : "some-id"}',
+                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'value'" },
 
-                  {'response' => '{"value" : "some-value-foo"}',
-                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
+                  { 'response' => '{"value" : "some-value-foo"}',
+                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'" },
 
-                  {'response' => '{}',
-                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'"},
+                  { 'response' => '{}',
+                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to have key 'id'" },
 
-                  {'response' => '[{"name" : "name1", "id" : "id1", "val" : "x"}, {"name" : "name2", "id" : "id2", "val" : "y"}]',
-                   'message' => "- Failed to fetch variable '/bad' from config server: Expected response to be a hash, got 'Array'"},
+                  { 'response' => '[{"name" : "name1", "id" : "id1", "val" : "x"}, {"name" : "name2", "id" : "id2", "val" : "y"}]',
+                    'message' => "- Failed to fetch variable '/bad' from config server: Expected response to be a hash, got 'Array'" },
                 ].each do |entry|
                   it 'raises an error' do
                     variable_model = instance_double(Bosh::Director::Models::Variable)
@@ -902,9 +894,9 @@ module Bosh::Director::ConfigServer
                     allow(variable_set_model).to receive(:find_variable_by_name).with('/bad').and_return(variable_model)
                     allow(http_client).to receive(:get_by_id).with('20').and_return(generate_success_response(entry['response']))
 
-                    expect {
+                    expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
-                    }.to raise_error { |error|
+                    end.to raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                       expect(error.message).to include(entry['message'])
                     }
@@ -917,7 +909,7 @@ module Bosh::Director::ConfigServer
 
             context 'when all the variables to be fetched are not in the current set' do
               before do
-                mock_config_store.each do |name, value|
+                mock_config_store.each do |name, _value|
                   allow(variable_set_model).to receive(:find_variable_by_name).with(name).and_return(nil)
                 end
               end
@@ -931,7 +923,7 @@ module Bosh::Director::ConfigServer
                     variable_id = result_body['data'][0]['id']
 
                     allow(http_client).to receive(:get).with(name).and_return(generate_success_response(result_body.to_json))
-                    allow(variable_set_model).to receive(:add_variable).with({:variable_name => name, :variable_id => variable_id})
+                    allow(variable_set_model).to receive(:add_variable).with(variable_name: name, variable_id: variable_id)
                   end
                 end
 
@@ -953,12 +945,12 @@ module Bosh::Director::ConfigServer
                       allow(variable_set_model).to receive(:find_variable_by_name).with(name).and_return(nil, variable_model)
 
                       allow(variable_set_model).to receive(:add_variable)
-                                                     .with({:variable_name => name, :variable_id => variable_id})
-                                                     .and_raise(Sequel::UniqueConstraintViolation.new)
+                        .with(variable_name: name, variable_id: variable_id)
+                        .and_raise(Sequel::UniqueConstraintViolation.new)
 
                       allow(http_client).to receive(:get_by_id)
-                                              .with(variable_id)
-                                              .and_return(generate_success_response(result_data.to_json))
+                        .with(variable_id)
+                        .and_return(generate_success_response(result_data.to_json))
                     end
                   end
                   it 'should fetch by id from database' do
@@ -974,9 +966,9 @@ module Bosh::Director::ConfigServer
                   allow(variable_set_model).to receive(:writable).and_return(false)
                 end
                 it 'should raise an error' do
-                  expect {
+                  expect do
                     client.interpolate_with_versioning(raw_hash, variable_set_model)
-                  }.to raise_error { |error|
+                  end.to raise_error { |error|
                     expect(error).to be_a(Bosh::Director::ConfigServerInconsistentVariableState)
                     expect(error.message).to include("Expected variable '/smurf_director_name/my_deployment_name/integer_placeholder' to be already versioned in deployment 'my_deployment_name'")
                   }
@@ -991,34 +983,34 @@ module Bosh::Director::ConfigServer
                 'properties' => {
                   'integer_allowed' => '((int&&&&eger_placeholder))',
                   'nil_allowed' => '((nil_place holder))',
-                  'empty_allowed' => '((emp**ty_placeholder))'
+                  'empty_allowed' => '((emp**ty_placeholder))',
                 },
                 'i_am_a_hash' => {
                   'i_am_an_array' => [
                     {
                       'name' => 'test_job',
-                      'properties' => {'job_prop' => '((job_placeholder+++ ))'}
-                    }
-                  ]
-                }
+                      'properties' => { 'job_prop' => '((job_placeholder+++ ))' },
+                    },
+                  ],
+                },
               }
             end
 
             # TODO: make sure all the errors are displayed
             it 'should raise an error' do
-              expect {
+              expect do
                 client.interpolate_with_versioning(provided_hash, variable_set_model)
-              }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax,
-                               "Variable name 'int&&&&eger_placeholder' must only contain alphanumeric, underscores, dashes, or forward slash characters"
+              end.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax,
+                                 "Variable name 'int&&&&eger_placeholder' must only contain alphanumeric, underscores, dashes, or forward slash characters"
             end
           end
         end
 
         context 'when object to be interpolated is NOT a hash' do
           it 'raises an error' do
-            expect {
+            expect do
               client.interpolate_with_versioning('i am not a hash', variable_set_model)
-            }.to raise_error "Unable to interpolate provided object. Expected a 'Hash', got 'String'"
+            end.to raise_error "Unable to interpolate provided object. Expected a 'Hash', got 'String'"
           end
         end
       end
@@ -1083,7 +1075,7 @@ module Bosh::Director::ConfigServer
           prepend_provider_namespace('empty_placeholder') => generate_success_response(empty_placeholder.to_json),
           prepend_provider_namespace('string_placeholder') => generate_success_response(string_placeholder.to_json),
           '/absolute_placeholder' => generate_success_response(absolute_placeholder.to_json),
-          prepend_provider_namespace('hash_placeholder') => generate_success_response(hash_placeholder.to_json)
+          prepend_provider_namespace('hash_placeholder') => generate_success_response(hash_placeholder.to_json),
         }
       end
 
@@ -1095,23 +1087,23 @@ module Bosh::Director::ConfigServer
           'nil_allowed' => '((nil_placeholder))',
           'empty_allowed' => '((empty_placeholder))',
           'nested_allowed' => {
-            'level_1' => '((!string_placeholder))'
+            'level_1' => '((!string_placeholder))',
           },
-          'absolute_allowed' => '((/absolute_placeholder))'
+          'absolute_allowed' => '((/absolute_placeholder))',
         }
       end
 
       let(:interpolated_links_properties_spec) do
         {
           'age' => 123,
-          'hash_value' => {'ca' => 'ca_value', 'private_key' => 'abc123'},
+          'hash_value' => { 'ca' => 'ca_value', 'private_key' => 'abc123' },
           'dots_allowed' => 'meow',
           'nil_allowed' => nil,
           'empty_allowed' => '',
           'nested_allowed' => {
-            'level_1' => 'test1'
+            'level_1' => 'test1',
           },
-          'absolute_allowed' => 'I am absolute'
+          'absolute_allowed' => 'I am absolute',
         }
       end
 
@@ -1140,14 +1132,13 @@ module Bosh::Director::ConfigServer
 
       context 'when links spec passed is NOT a hash' do
         it 'throws an error' do
-          expect {
+          expect do
             client.interpolate_cross_deployment_link('vroooom', consumer_variable_set, provider_variable_set)
-          }.to raise_error "Unable to interpolate cross deployment link properties. Expected a 'Hash', got 'String'"
+          end.to raise_error "Unable to interpolate cross deployment link properties. Expected a 'Hash', got 'String'"
         end
       end
 
       context 'when links spec passed is a hash' do
-
         context 'when links spec hash does NOT contain any placeholders' do
           let(:links_properties_spec) do
             {
@@ -1157,16 +1148,16 @@ module Bosh::Director::ConfigServer
               'nil_allowed' => true,
               'empty_allowed' => true,
               'nested_allowed' => {
-                'level_1' => ''
+                'level_1' => '',
               },
-              'absolute_allowed' => 'why?'
+              'absolute_allowed' => 'why?',
             }
           end
 
           it 'does not raise an error' do
-            expect {
+            expect do
               client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
-            }.to_not raise_error
+            end.to_not raise_error
           end
 
           it 'returns a hash equivalent to the links spec hash' do
@@ -1207,19 +1198,19 @@ module Bosh::Director::ConfigServer
             end
 
             it 'returns a formatted error message' do
-              expected_error_msg = <<-EXPECTED.strip
-- Failed to find variable '/smurf_director_name/provider_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/cert_placeholder' with id '2' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/hash_placeholder' with id '7' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/nil_placeholder' with id '3' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/empty_placeholder' with id '4' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/smurf_director_name/provider_deployment_name/string_placeholder' with id '5' from config server: HTTP Code '404', Error: 'Name not found'
-- Failed to find variable '/absolute_placeholder' with id '6' from config server: HTTP Code '404', Error: 'Name not found'
+              expected_error_msg = <<~EXPECTED.strip
+                - Failed to find variable '/smurf_director_name/provider_deployment_name/integer_placeholder' with id '1' from config server: HTTP Code '404', Error: 'Name not found'
+                - Failed to find variable '/smurf_director_name/provider_deployment_name/cert_placeholder' with id '2' from config server: HTTP Code '404', Error: 'Name not found'
+                - Failed to find variable '/smurf_director_name/provider_deployment_name/hash_placeholder' with id '7' from config server: HTTP Code '404', Error: 'Name not found'
+                - Failed to find variable '/smurf_director_name/provider_deployment_name/nil_placeholder' with id '3' from config server: HTTP Code '404', Error: 'Name not found'
+                - Failed to find variable '/smurf_director_name/provider_deployment_name/empty_placeholder' with id '4' from config server: HTTP Code '404', Error: 'Name not found'
+                - Failed to find variable '/smurf_director_name/provider_deployment_name/string_placeholder' with id '5' from config server: HTTP Code '404', Error: 'Name not found'
+                - Failed to find variable '/absolute_placeholder' with id '6' from config server: HTTP Code '404', Error: 'Name not found'
               EXPECTED
 
-              expect {
+              expect do
                 client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
-              }.to raise_error { |e|
+              end.to raise_error { |e|
                 expect(e.message).to eq(expected_error_msg)
               }
             end
@@ -1227,7 +1218,6 @@ module Bosh::Director::ConfigServer
         end
 
         context 'when the consumer variable_set does not have all the variables' do
-
           context 'when consumer variable set is NOT writable' do
             before do
               allow(consumer_variable_set).to receive(:writable).and_return(false)
@@ -1238,19 +1228,19 @@ module Bosh::Director::ConfigServer
             end
 
             it 'should raise an exception with formatted error messages' do
-              expected_error_msg = <<-EXPECTED.strip
-- Expected variable '/smurf_director_name/provider_deployment_name/integer_placeholder' to be already versioned in deployment 'consumer_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/cert_placeholder' to be already versioned in deployment 'consumer_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/hash_placeholder' to be already versioned in deployment 'consumer_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/nil_placeholder' to be already versioned in deployment 'consumer_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/empty_placeholder' to be already versioned in deployment 'consumer_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/string_placeholder' to be already versioned in deployment 'consumer_deployment_name'
-- Expected variable '/absolute_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+              expected_error_msg = <<~EXPECTED.strip
+                - Expected variable '/smurf_director_name/provider_deployment_name/integer_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+                - Expected variable '/smurf_director_name/provider_deployment_name/cert_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+                - Expected variable '/smurf_director_name/provider_deployment_name/hash_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+                - Expected variable '/smurf_director_name/provider_deployment_name/nil_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+                - Expected variable '/smurf_director_name/provider_deployment_name/empty_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+                - Expected variable '/smurf_director_name/provider_deployment_name/string_placeholder' to be already versioned in deployment 'consumer_deployment_name'
+                - Expected variable '/absolute_placeholder' to be already versioned in deployment 'consumer_deployment_name'
               EXPECTED
 
-              expect {
+              expect do
                 client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
-              }.to raise_error { |e|
+              end.to raise_error { |e|
                 expect(e.message).to eq(expected_error_msg)
               }
             end
@@ -1273,7 +1263,7 @@ module Bosh::Director::ConfigServer
 
                   allow(consumer_variable_set).to receive(:find_provided_variable_by_name).with(name, provider_deployment_name).and_return(nil)
                   # expecting here because we can !
-                  expect(consumer_variable_set).to receive(:add_variable).with({variable_name:name, variable_id: variable_id, is_local: false, provider_deployment: provider_deployment_name})
+                  expect(consumer_variable_set).to receive(:add_variable).with(variable_name: name, variable_id: variable_id, is_local: false, provider_deployment: provider_deployment_name)
                   allow(provider_variable_set).to receive(:find_variable_by_name).with(name).and_return(variable_model)
 
                   allow(http_client).to receive(:get_by_id).with(variable_id).and_return(generate_success_response(result_data.to_json))
@@ -1288,48 +1278,48 @@ module Bosh::Director::ConfigServer
               context 'when the consumer variable_set throws unique constraint violation while copying variable to it (concurrency possibility)' do
                 before do
                   allow(consumer_variable_set).to receive(:add_variable)
-                                                    .with({
-                                                            variable_name: '/smurf_director_name/provider_deployment_name/string_placeholder',
-                                                            variable_id: '5',
-                                                            is_local: false,
-                                                            provider_deployment: provider_deployment_name
-                                                          })
-                                                    .and_raise(Sequel::UniqueConstraintViolation.new)
+                    .with(
+                      variable_name: '/smurf_director_name/provider_deployment_name/string_placeholder',
+                      variable_id: '5',
+                      is_local: false,
+                      provider_deployment: provider_deployment_name,
+                    )
+                    .and_raise(Sequel::UniqueConstraintViolation.new)
                   allow(consumer_variable_set).to receive(:id).and_return('my_id')
                 end
 
                 it 'should catch the exception, log a debug message, and interpolates as correctly' do
                   expect(logger).to receive(:debug).with("Variable '/smurf_director_name/provider_deployment_name/string_placeholder' was already added to consumer variable set 'my_id'")
-                  expect {
+                  expect do
                     actual_interpolated_link_spec = client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
                     expect(actual_interpolated_link_spec).to eq(interpolated_links_properties_spec)
-                  }.to_not raise_error
+                  end.to_not raise_error
                 end
               end
             end
 
             context 'when the provider variable set does NOT have the variable' do
               before do
-                mock_config_store.each do |name, value|
+                mock_config_store.each do |name, _value|
                   allow(consumer_variable_set).to receive(:find_provided_variable_by_name).with(name, provider_deployment_name).and_return(nil)
                   allow(provider_variable_set).to receive(:find_variable_by_name).with(name).and_return(nil)
                 end
               end
 
               it 'should raise an exception' do
-                expected_error_msg = <<-EXPECTED.strip
-- Expected variable '/smurf_director_name/provider_deployment_name/integer_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/cert_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/hash_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/nil_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/empty_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
-- Expected variable '/smurf_director_name/provider_deployment_name/string_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
-- Expected variable '/absolute_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                expected_error_msg = <<~EXPECTED.strip
+                  - Expected variable '/smurf_director_name/provider_deployment_name/integer_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                  - Expected variable '/smurf_director_name/provider_deployment_name/cert_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                  - Expected variable '/smurf_director_name/provider_deployment_name/hash_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                  - Expected variable '/smurf_director_name/provider_deployment_name/nil_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                  - Expected variable '/smurf_director_name/provider_deployment_name/empty_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                  - Expected variable '/smurf_director_name/provider_deployment_name/string_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
+                  - Expected variable '/absolute_placeholder' to be already versioned in link provider deployment 'provider_deployment_name'
                 EXPECTED
 
-                expect {
+                expect do
                   client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
-                }.to raise_error { |e|
+                end.to raise_error { |e|
                   expect(e.message).to eq(expected_error_msg)
                 }
               end
@@ -1344,19 +1334,19 @@ module Bosh::Director::ConfigServer
         context 'when some variable names syntax are NOT correct' do
           let(:variable_specs_list) do
             [
-              [{'name' => 'p*laceholder_a', 'type' => 'password'}],
-              [{'name' => 'placeholder_a/', 'type' => 'password'}],
-              [{'name' => '', 'type' => 'password'}],
-              [{'name' => ' ', 'type' => 'password'}],
-              [{'name' => '((vroom))', 'type' => 'password'}],
+              [{ 'name' => 'p*laceholder_a', 'type' => 'password' }],
+              [{ 'name' => 'placeholder_a/', 'type' => 'password' }],
+              [{ 'name' => '', 'type' => 'password' }],
+              [{ 'name' => ' ', 'type' => 'password' }],
+              [{ 'name' => '((vroom))', 'type' => 'password' }],
             ]
           end
 
           it 'should throw an error and log it' do
             variable_specs_list.each do |variables_spec|
-              expect {
+              expect do
                 client.generate_values(Bosh::Director::DeploymentPlan::Variables.new(variables_spec), deployment_name)
-              }.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax
+              end.to raise_error Bosh::Director::ConfigServerIncorrectNameSyntax
             end
           end
         end
@@ -1364,9 +1354,9 @@ module Bosh::Director::ConfigServer
         context 'when ALL variable names syntax are correct' do
           let(:variables_spec) do
             [
-              {'name' => 'placeholder_a', 'type' => 'password'},
-              {'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io']}},
-              {'name' => '/placeholder_c', 'type' => 'gold', 'options' => {'need' => 'luck'}}
+              { 'name' => 'placeholder_a', 'type' => 'password' },
+              { 'name' => 'placeholder_b', 'type' => 'certificate', 'options' => { 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io'] } },
+              { 'name' => '/placeholder_c', 'type' => 'gold', 'options' => { 'need' => 'luck' } },
             ]
           end
 
@@ -1817,7 +1807,7 @@ module Bosh::Director::ConfigServer
             context 'when variable type is certificate & ca is relative' do
               let(:variables_spec) do
                 [
-                    {'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'ca' => 'my_ca', 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io']}},
+                  { 'name' => 'placeholder_b', 'type' => 'certificate', 'options' => { 'ca' => 'my_ca', 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io'] } },
                 ]
               end
 
@@ -1880,13 +1870,12 @@ module Bosh::Director::ConfigServer
 
                 client.generate_values(variables_obj, deployment_name)
               end
-
             end
 
             context 'when variable type is NOT certificate' do
               let(:variables_spec) do
                 [
-                    {'name' => 'placeholder_a', 'type' => 'something-else','options' => {'ca' => 'some_ca_value'}},
+                  { 'name' => 'placeholder_a', 'type' => 'something-else', 'options' => { 'ca' => 'some_ca_value' } },
                 ]
               end
 
@@ -1926,11 +1915,11 @@ module Bosh::Director::ConfigServer
             it 'should throw an error, log it, and record event' do
               expect(logger).to receive(:error)
 
-              expect {
+              expect do
                 client.generate_values(variables_obj, deployment_name)
-              }.to raise_error(
+              end.to raise_error(
                 Bosh::Director::ConfigServerGenerationError,
-                "Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. HTTP Code '403', Error: 'There was a problem'"
+                "Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. HTTP Code '403', Error: 'There was a problem'",
               )
 
               expect(Bosh::Director::Models::Event.count).to eq(1)
@@ -1940,7 +1929,7 @@ module Bosh::Director::ConfigServer
               expect(error_event.action).to eq('create')
               expect(error_event.object_type).to eq('variable')
               expect(error_event.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
-              expect(error_event.task).to eq("#{task_id}")
+              expect(error_event.task).to eq(task_id.to_s)
               expect(error_event.deployment).to eq(deployment_name)
               expect(error_event.instance).to eq(nil)
               expect(error_event.error).to eq("Config Server failed to generate value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. HTTP Code '403', Error: 'There was a problem'")
@@ -1958,17 +1947,17 @@ module Bosh::Director::ConfigServer
             it 'should throw an error and log it' do
               expect(logger).to_not receive(:error)
 
-              expect{
+              expect do
                 client.generate_values(variables_obj, deployment_name)
-              }.to raise_error(
-                     Bosh::Director::ConfigServerGenerationError,
-                     "Config Server returned a NON-JSON body while generating value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'"
-                   )
+              end.to raise_error(
+                Bosh::Director::ConfigServerGenerationError,
+                "Config Server returned a NON-JSON body while generating value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'",
+              )
             end
           end
 
           context 'but variable set is not writable' do
-            let(:deployment_lookup){ instance_double(Bosh::Director::Api::DeploymentLookup) }
+            let(:deployment_lookup) { instance_double(Bosh::Director::Api::DeploymentLookup) }
             let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
             before do
@@ -1982,9 +1971,9 @@ module Bosh::Director::ConfigServer
               models = Bosh::Director::Models::Variable.all
 
               expect(models.length).to eq(0)
-              expect{
+              expect do
                 client.generate_values(variables_obj, deployment_name)
-              }.to raise_error(Bosh::Director::ConfigServerGenerationError, "Variable '#{prepend_namespace('placeholder_a')}' cannot be generated. Variable generation allowed only during deploy action")
+              end.to raise_error(Bosh::Director::ConfigServerGenerationError, "Variable '#{prepend_namespace('placeholder_a')}' cannot be generated. Variable generation allowed only during deploy action")
               expect(models.length).to eq(0)
             end
           end
@@ -2021,6 +2010,67 @@ module Bosh::Director::ConfigServer
             end
           end
         end
+      end
+    end
+
+    describe '#interpolated_versioned_variables_changed?' do
+      let(:previous_variable_set) do
+        Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+      end
+
+      let(:next_variable_set) do
+        Bosh::Director::Models::VariableSet.make(deployment: deployment_model, writable: true)
+      end
+
+      let(:tasty_response) do
+        { 'name' => prepend_namespace('taste').to_s, 'value' => 'i am a string', 'id' => '1' }
+      end
+
+      let(:tasty_response2) do
+        { 'data' => [{ 'name' => prepend_namespace('taste').to_s, 'value' => 'i am a string meow', 'id' => '2' }] }
+      end
+
+      let(:settings_hash) do
+        { 'cookies' => '((taste))' }
+      end
+
+      before do
+        previous_variable_set.add_variable(variable_name: '/smurf_director_name/deployment_name/taste',
+                                           variable_id: '1',
+                                           is_local: true,
+                                           provider_deployment: deployment_model.name)
+      end
+
+      it 'returns true when the previous and next hashes differ' do
+        allow(http_client).to receive(:get_by_id).with('1')
+                                                 .and_return(generate_success_response(tasty_response.to_json))
+
+        allow(http_client).to receive(:get).with('/smurf_director_name/deployment_name/taste')
+                                           .and_return(generate_success_response(tasty_response2.to_json))
+
+        expect(client.interpolated_versioned_variables_changed?(settings_hash, settings_hash,
+                                                                previous_variable_set, next_variable_set)).to be_truthy
+      end
+
+      it 'returns false when the previous and next hashes match' do
+        allow(http_client).to receive(:get_by_id).with('1')
+                                                 .and_return(generate_success_response(tasty_response.to_json))
+
+        tasty_response2['data'][0] = tasty_response
+        allow(http_client).to receive(:get).with('/smurf_director_name/deployment_name/taste')
+                                           .and_return(generate_success_response(tasty_response2.to_json))
+
+        expect(client.interpolated_versioned_variables_changed?(settings_hash, settings_hash,
+                                                                previous_variable_set, next_variable_set)).to be_falsey
+      end
+
+      it 'returns true when one or more variables are unable to be obtained' do
+        allow(logger).to receive(:debug)
+        allow(http_client).to receive(:get_by_id).with('1')
+                                                 .and_return(SampleNotFoundResponse.new)
+
+        expect(client.interpolated_versioned_variables_changed?(settings_hash, settings_hash,
+                                                                previous_variable_set, next_variable_set)).to be_truthy
       end
     end
 

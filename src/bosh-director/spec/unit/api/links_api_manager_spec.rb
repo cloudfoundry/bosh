@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Api::LinkManager do
+  describe Api::LinksApiManager do
     let(:username) { 'LINK_CREATOR' }
     let(:link_serial_id) { 42 }
     let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id) }

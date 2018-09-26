@@ -32,6 +32,53 @@ describe 'stemcell configuration', type: :integration do
     end
   end
 
+  context 'when an update-deploy that also changes a stemcell' do
+    before do
+      create_and_upload_test_release
+
+      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}")
+
+      stemcell_v1_manifest = Bosh::Common::DeepCopy.copy(manifest_hash)
+      stemcell_v1_manifest['stemcells'].first['version'] = '1'
+      deploy_simple_manifest(manifest_hash: stemcell_v1_manifest)
+    end
+
+    let(:manifest_hash) do
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['stemcells'].first.delete('name')
+      manifest_hash['stemcells'].first['os'] = 'toronto-os'
+      manifest_hash['stemcells'].first['version'] = '2'
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      manifest_hash['instance_groups'].first['instances'] = 1
+      manifest_hash
+    end
+
+    context 'when the deployment fails' do
+      before do
+        current_sandbox.cpi.commands.make_create_vm_always_fail
+      end
+
+      it 'does not change the stemcell' do
+        deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
+        current_versions = table(bosh_runner.run('stemcells', json: true)).map { |s| s['version'] }
+        expect(current_versions).to contain_exactly('1*', '2*')
+      end
+    end
+
+    context 'when the deployment succeeds' do
+      it 'does change the stemcell' do
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        current_versions = table(bosh_runner.run('stemcells', json: true)).map { |s| s['version'] }
+        expect(current_versions).to contain_exactly('1', '2*')
+      end
+    end
+  end
+
   context 'when stemcell is using latest version' do
     it 'redeploys with latest version of stemcell' do
       cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config

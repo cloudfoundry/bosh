@@ -127,8 +127,14 @@ params['scheduled_jobs'] << {
 }
 
 params['scheduled_jobs'] << {
+  'command' => 'ScheduledOrphanedNetworkCleanup',
+  'schedule' => p('director.networks.cleanup_schedule'),
+  'params' => [{'max_orphaned_age_in_days' => p('director.networks.max_orphaned_age_in_days')}]
+}
+
+params['scheduled_jobs'] << {
   'command' => 'ScheduledDnsBlobsCleanup',
-  'schedule' => '0,30 * * * * * UTC',
+  'schedule' => '0 0,30 * * * * UTC', #every 30 min
   'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
 }
 

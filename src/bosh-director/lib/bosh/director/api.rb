@@ -8,7 +8,7 @@ require 'bosh/director/api/http_constants'
 require 'bosh/director/api/api_helper'
 
 require 'bosh/director/api/deployment_manager'
-require 'bosh/director/api/link_manager'
+require 'bosh/director/api/links_api_manager'
 require 'bosh/director/api/instance_manager'
 require 'bosh/director/api/problem_manager'
 require 'bosh/director/api/property_manager'

@@ -207,6 +207,8 @@ module Bosh::Director
   NetworkInvalidProperty = err(160008)
   NetworkSubnetInvalidAvailabilityZone = err(160009)
   NetworkInvalidIpRangeFormat = err(160010)
+  NetworkDeletingUnorphanedError = err(160011)
+  NetworkNotFoundError = err(16012)
 
   # ResourcePool
   ResourcePoolUnknownNetwork = err(170001)
