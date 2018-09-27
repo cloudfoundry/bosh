@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 
 describe 'using director with config server and a deployment with errands', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:director_name) { current_sandbox.director_name }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}

@@ -321,7 +321,6 @@ module Bosh::Dev::Sandbox
       @dns_enabled = options.fetch(:dns_enabled, true)
       @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false, use_dns_addresses: false})
       @nginx_service.reconfigure(options[:ssl_mode])
-      @uaa_service.reconfigure(options[:uaa_encryption])
       @users_in_manifest = options.fetch(:users_in_manifest, true)
       @enable_post_deploy = options.fetch(:enable_post_deploy, false)
       @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
@@ -451,11 +450,11 @@ module Bosh::Dev::Sandbox
         @nats_socket_connector.try_to_connect
       end
 
-      @uaa_service.restart_if_needed if @user_authentication == 'uaa'
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
 
       @director_service.start(director_config, @drop_database)
 
+      @uaa_service.start if @user_authentication == 'uaa'
       @nginx_service.restart_if_needed
 
       @cpi.reset

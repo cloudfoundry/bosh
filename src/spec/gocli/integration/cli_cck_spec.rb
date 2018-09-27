@@ -274,7 +274,7 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   context 'with config server enabled' do
-    with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+    with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
     let (:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
     let(:client_env) { {'BOSH_LOG_LEVEL' => 'debug', 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'} }
