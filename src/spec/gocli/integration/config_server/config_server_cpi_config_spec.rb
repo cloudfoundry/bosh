@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 
 describe 'cpi config', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
