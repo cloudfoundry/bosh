@@ -103,15 +103,7 @@ module Bosh::Director
       end
 
       context 'when instance does not have reference to vm' do
-        context 'when using multiple cpis' do
-          it 'does not try to delete from cloud' do
-            allow(cloud_factory).to receive(:uses_cpi_config?).and_return(true)
-            expect(cloud).to_not receive(:delete_vm).with(vm_cid)
-            job.perform
-          end
-        end
-
-        context 'when NOT using multiple cpis' do
+        context 'it deletes and stores event' do
           before do
             expect(cloud_factory).to receive(:get).with(nil, 2).and_return(cloud)
           end
