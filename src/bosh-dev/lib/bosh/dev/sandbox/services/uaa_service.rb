@@ -37,7 +37,7 @@ module Bosh::Dev::Sandbox
 
       @config_path = File.join(sandbox_root, 'uaa_config')
       FileUtils.mkdir_p(@config_path)
-      write_config_path('symmetric')
+      write_config_path
 
       @uaa_process = initialize_uaa_process
     end
@@ -71,24 +71,6 @@ module Bosh::Dev::Sandbox
     def stop
       @uaa_process.stop
       @running_mode = 'stopped'
-    end
-
-    def reconfigure(encryption_mode)
-      if encryption_mode == 'asymmetric'
-        requested_config_mode = 'asymmetric'
-      else
-        requested_config_mode = 'symmetric'
-      end
-
-      @requires_restart = (@running_mode != requested_config_mode)
-      write_config_path(requested_config_mode)
-    end
-
-    def restart_if_needed
-      if @requires_restart
-        stop
-        start
-      end
     end
 
     private
@@ -130,22 +112,14 @@ module Bosh::Dev::Sandbox
       File.join(REPO_ROOT, 'bosh-dev', 'assets', 'sandbox', 'tomcat-server.xml')
     end
 
-    def write_config_path(encryption)
+    def write_config_path
       spec_assets_base_path = 'spec/assets/uaa_config'
 
-      if encryption == 'asymmetric'
-        FileUtils.cp(
-            File.expand_path(File.join(spec_assets_base_path, 'asymmetric', 'uaa.yml'), REPO_ROOT),
-            @config_path
-        )
-        @current_uaa_config_mode = 'asymmetric'
-      else
-        FileUtils.cp(
-            File.expand_path(File.join(spec_assets_base_path, 'symmetric', 'uaa.yml'), REPO_ROOT),
-            @config_path
-        )
-        @current_uaa_config_mode = 'symmetric'
-      end
+      FileUtils.cp(
+        File.expand_path(File.join(spec_assets_base_path, 'asymmetric', 'uaa.yml'), REPO_ROOT),
+        @config_path,
+      )
+      @current_uaa_config_mode = 'asymmetric'
     end
 
     DEBUG_HEADER = '*' * 20
