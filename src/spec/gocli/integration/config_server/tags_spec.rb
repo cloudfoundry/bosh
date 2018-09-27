@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'tags', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:manifest_hash) do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups

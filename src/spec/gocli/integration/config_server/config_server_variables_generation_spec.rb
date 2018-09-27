@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 
 describe 'variable generation with config server', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   def prepend_namespace(key)
     "/#{director_name}/#{deployment_name}/#{key}"

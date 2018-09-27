@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'env values in instance groups and resource pools', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
@@ -166,7 +166,6 @@ describe 'env values in instance groups and resource pools', type: :integration 
       remove_dev_tools: true,
       config_server_enabled: true,
       user_authentication: 'uaa',
-      uaa_encryption: 'asymmetric',
     )
 
     let(:env_hash) do
