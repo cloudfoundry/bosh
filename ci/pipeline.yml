@@ -73,6 +73,10 @@ groups:
       - bump-patch
       - finalize-release
 
+  - name: export
+    jobs:
+    - export-final-release
+
 shared:
   - &install-dependencies
     task: install-dependencies
@@ -1293,6 +1297,31 @@ jobs:
         params:
           name: bosh-master-with-final/tag-name
           tag: bosh-master-with-final/tag-name
+
+  - name: export-final-release
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-master
+      - get: bosh-github-release
+        trigger: true
+      - get: warden-ubuntu-xenial
+    - task: export-final-release
+      file: bosh-master/ci/tasks/export-final-release.yml
+      privileged: true
+      input_mapping:
+        version: bosh-github-release
+        stemcell: warden-ubuntu-xenial
+        bosh-src: bosh-master
+    - task: push-bosh-compiled-releases
+      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
+      input_mapping:
+        candidate-version: bosh-github-release
+        bosh-src: bosh-master
+      params:
+        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+        git_private_key: ((bosh-compiled-releases-index-deploy-key))
 
   - name: bump-major
     serial: true
