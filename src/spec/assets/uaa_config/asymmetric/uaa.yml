@@ -1,6 +1,7 @@
 scim:
   users:
-    - marissa|koala|marissa@test.org|Marissa|Bloggs|uaa.user
+    - marissa|koala|marissa@test.org|Marissa|Bloggs|bosh.admin
+    - non-admin|password|marissa@test.org|Marissa|Bloggs|uaa.user
   userids_enabled: true
 
 oauth:
