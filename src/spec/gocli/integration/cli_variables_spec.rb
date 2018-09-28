@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'cli: variables', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
