@@ -219,6 +219,7 @@ module Bosh::Director
 end
 
 require 'bosh/director/thread_pool'
+require 'bosh/director/api/extensions/deployment_security'
 require 'bosh/director/api/extensions/scoping'
 require 'bosh/director/api/extensions/request_logger'
 require 'bosh/director/api/controllers/backups_controller'

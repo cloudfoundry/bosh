@@ -3,7 +3,7 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class LinkAddressController < BaseController
-      register DeploymentsSecurity
+      register Bosh::Director::Api::Extensions::DeploymentsSecurity
 
       def initialize(config)
         super(config)
