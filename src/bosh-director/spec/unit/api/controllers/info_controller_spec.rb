@@ -7,9 +7,15 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
+
       let(:config) { Config.load_hash(test_config) }
-      let(:base_config) { SpecHelper.spec_get_director_config }
       let(:test_config) { base_config }
+
+      let(:base_config) do
+        config = SpecHelper.spec_get_director_config
+        config['local_dns'] = { 'enabled' => true }
+        config
+      end
 
       before { App.new(config) }
 
@@ -41,8 +47,8 @@ module Bosh::Director
         end
       end
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-             "test purposes (even though user doesn't exist)" do
+      it 'allows Basic HTTP Auth with admin/admin credentials for ' \
+         "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
         expect(last_response.status).to eq(200)
@@ -64,24 +70,27 @@ module Bosh::Director
             'options' => {},
           },
           'features' => {
-            'dns' => {
+            'local_dns' => {
               'status' => true,
-              'extras' => {'domain_name' => 'bosh'}
+            },
+            'power_dns' => {
+              'status' => true,
+              'extras' => { 'domain_name' => 'bosh' },
             },
             'compiled_package_cache' => {
               'status' => true,
-              'extras' => {'provider' => 'local'}
+              'extras' => { 'provider' => 'local' },
             },
             'snapshots' => {
-              'status' => false
+              'status' => false,
             },
             'config_server' => {
               'status' => false,
               'extras' => {
-                'urls' => []
-              }
-            }
-          }
+                'urls' => [],
+              },
+            },
+          },
         }
 
         expect(JSON.parse(last_response.body)).to eq(expected)
@@ -93,7 +102,7 @@ module Bosh::Director
           cfg['cloud'].delete('plugin')
           cfg['cloud']['provider'] = {
             'name' => 'test-cpi',
-            'path' => '/path/to/test-cpi/bin/cpi'
+            'path' => '/path/to/test-cpi/bin/cpi',
           }
           cfg
         end
@@ -121,12 +130,12 @@ module Bosh::Director
           get '/'
           response_hash = JSON.parse(last_response.body)
           expect(response_hash['user_authentication']).to eq(
-              'type' => 'uaa',
-              'options' => {
-                'url' => 'http://localhost:8080/uaa',
-                'urls' => ['http://localhost:8080/uaa']
-              }
-            )
+            'type' => 'uaa',
+            'options' => {
+              'url' => 'http://localhost:8080/uaa',
+              'urls' => ['http://localhost:8080/uaa'],
+            },
+          )
         end
 
         context 'if multiple urls are provided' do
@@ -149,8 +158,8 @@ module Bosh::Director
               'type' => 'uaa',
               'options' => {
                 'url' => 'http://localhost:8080/uaa',
-                'urls' => ['http://localhost:8080/uaa', 'http://localhost:8081/uaa']
-              }
+                'urls' => ['http://localhost:8080/uaa', 'http://localhost:8081/uaa'],
+              },
             )
           end
         end
@@ -158,12 +167,12 @@ module Bosh::Director
 
       context 'when configured with a config server' do
         let(:test_config) do
-          base_config.merge({
+          base_config.merge(
             'config_server' => {
               'enabled' => true,
-              'url' => 'https://config.example.com'
-            }
-          })
+              'url' => 'https://config.example.com',
+            },
+          )
         end
 
         it 'reports that config server feature is enabled with the uri' do
@@ -172,8 +181,8 @@ module Bosh::Director
           expect(response_hash['features']['config_server']).to eq(
             'status' => true,
             'extras' => {
-              'urls' => ['https://config.example.com']
-            }
+              'urls' => ['https://config.example.com'],
+            },
           )
         end
       end
