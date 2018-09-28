@@ -143,10 +143,11 @@ module Bosh::Director
           @release_version_model.uncommitted_changes = @uncommitted_changes if @uncommitted_changes
           @release_version_model.commit_hash = @commit_hash if @commit_hash
           @release_version_model.save
-        else
-          if @release_version_model.commit_hash != @commit_hash || @release_version_model.uncommitted_changes != @uncommitted_changes
-            raise ReleaseVersionCommitHashMismatch, "release '#{@name}/#{@version}' has already been uploaded with commit_hash as '#{@commit_hash}' and uncommitted_changes as '#{@uncommitted_changes}'"
-          end
+        elsif @release_version_model.commit_hash != @commit_hash ||
+              @release_version_model.uncommitted_changes != @uncommitted_changes
+          raise ReleaseVersionCommitHashMismatch,
+                "release '#{@name}/#{@version}' has already been uploaded with commit_hash as " \
+                "'#{@release_version_model.commit_hash}' and uncommitted_changes as '#{@uncommitted_changes}'"
         end
 
         single_step_stage("Resolving package dependencies") do
