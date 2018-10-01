@@ -27,6 +27,8 @@ describe 'CPI and Agent:', type: :integration do
     it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
       invocations = Support::InvocationsHelper::InvocationIterator.new(fresh_deploy_invocations)
 
+      expect(invocations.size).to eq(55)
+
       # Compilation VM
       expect(invocations.next).to be_cpi_call('info')
       create_compilation_vm1 = invocations.next
@@ -79,6 +81,8 @@ describe 'CPI and Agent:', type: :integration do
       expect(create_disk).to be_cpi_call('create_disk')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('attach_disk', match([create_vm.response, create_disk.response]))
+      expect(invocations.next).to be_agent_call('ping')
+      expect(invocations.next).to be_agent_call('update_persistent_disk')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('set_disk_metadata')
       expect(invocations.next).to be_agent_call('ping')
@@ -89,8 +93,6 @@ describe 'CPI and Agent:', type: :integration do
       expect(invocations.next).to be_agent_call('start')
       expect(invocations.next).to be_agent_call('get_state')
       expect(invocations.next).to be_agent_call('run_script', match(['post-start', {}]))
-
-      expect(invocations.size).to eq(53)
     end
   end
 
@@ -99,6 +101,8 @@ describe 'CPI and Agent:', type: :integration do
       manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
       task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
       invocations = Support::InvocationsHelper::InvocationIterator.new(get_invocations(task_output))
+
+      expect(invocations.size).to eq(34)
 
       # Old VM
       expect(invocations.next).to be_agent_call('get_state')
@@ -123,6 +127,8 @@ describe 'CPI and Agent:', type: :integration do
       expect(invocations.next).to be_agent_call('ping')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('attach_disk', match([create_vm.response, disk_id]))
+      expect(invocations.next).to be_agent_call('ping')
+      expect(invocations.next).to be_agent_call('update_persistent_disk')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('set_disk_metadata')
       expect(invocations.next).to be_agent_call('ping')
@@ -136,8 +142,6 @@ describe 'CPI and Agent:', type: :integration do
       expect(invocations.next).to be_agent_call('start')
       expect(invocations.next).to be_agent_call('get_state')
       expect(invocations.next).to be_agent_call('run_script', match(['post-start', {}]))
-
-      expect(invocations.size).to eq(32)
     end
 
     context 'when create-swap-delete is enabled', create_swap_delete: true do
