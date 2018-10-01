@@ -6,7 +6,8 @@ module Bosh::Director
       describe AttachDiskStep do
         subject(:step) { AttachDiskStep.new(disk, tags) }
 
-        let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: 25) }
+        let(:stemcell_api_version) { 2 }
+        let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: stemcell_api_version) }
         let(:instance) { Models::Instance.make }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
@@ -17,17 +18,19 @@ module Bosh::Director
         end
         let(:meta_updater) { instance_double(MetadataUpdater, update_disk_metadata: nil) }
         let(:report) { instance_double(Stages::Report).as_null_object }
+        let(:agent_client) { instance_double(AgentClient).as_null_object }
 
         before do
           allow(CloudFactory).to receive(:create).and_return(cloud_factory)
-          allow(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
+          allow(cloud_factory).to receive(:get).with(disk&.cpi, stemcell_api_version).once.and_return(cloud)
           allow(cloud_factory).to receive(:get).with(disk&.cpi).once.and_return(metadata_updater_cloud)
           allow(cloud).to receive(:attach_disk)
           allow(MetadataUpdater).to receive(:build).and_return(meta_updater)
+          allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         end
 
         it 'calls out to cpi associated with disk to attach disk' do
-          expect(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
+          expect(cloud_factory).to receive(:get).with(disk&.cpi, stemcell_api_version).once.and_return(cloud)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk.disk_cid)
 
           step.perform(report)
@@ -41,6 +44,13 @@ module Bosh::Director
 
           it 'updates the report with disk hint with the disk hint' do
             expect(report).to receive(:disk_hint=).with(disk_hint)
+            step.perform(report)
+          end
+
+          it 'sends an update_persistent_disk message to agent' do
+            allow(report).to receive(:disk_hint).and_return(disk_hint)
+            expect(agent_client).to receive(:wait_until_ready)
+            expect(agent_client).to receive(:update_persistent_disk).with(disk.disk_cid, disk_hint)
             step.perform(report)
           end
 

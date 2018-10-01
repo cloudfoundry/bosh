@@ -63,6 +63,7 @@ module Bosh::Director
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
       allow(agent_client).to receive(:update_settings)
+      allow(agent_client).to receive(:update_persistent_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:enable_cpi_resize_disk).and_return(enable_cpi_resize_disk)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)

@@ -240,4 +240,21 @@ describe 'multiple persistent disks', type: :integration do
       'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name', 'additional-persistent-disk-name'
     )
   end
+
+  it 'director should send update_persistent_disk action to agent' do
+    agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid)
+
+    disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
+    expect(disk_names).to include(
+      'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name'
+    )
+
+    disk_hints = JSON.parse(File.read("#{agent_dir}/bosh/persistent_disk_hints.json"))
+    expect(disk_hints.count).to eq(2)
+    disk_hints_cids = disk_hints.keys
+
+    attached_disks = current_sandbox.cpi.attached_disk_infos(director.instances.first.vm_cid)
+    attached_disks_cids = attached_disks.collect { |d| d['disk_cid'] }
+    expect(attached_disks_cids).to match_array(disk_hints_cids)
+  end
 end
