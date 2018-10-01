@@ -523,7 +523,7 @@ describe 'director.yml.erb' do
       end
 
       it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('268.0.1')
+        expect(parsed_yaml['version']).to eq('268.1.0')
       end
 
       it 'should contain the trusted_certs field' do
