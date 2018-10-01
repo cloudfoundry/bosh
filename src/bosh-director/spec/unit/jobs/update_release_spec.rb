@@ -335,12 +335,14 @@ module Bosh::Director
       end
 
       context 'when the same release is uploaded with different commit hash' do
-        before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: 'bad123', uncommitted_changes: true) }
+        let!(:previous_release_version) do
+          Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: 'bad123', uncommitted_changes: true)
+        end
 
         it 'fails with a ReleaseVersionCommitHashMismatch exception' do
           expect {
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseVersionCommitHashMismatch)
+          }.to raise_exception(Bosh::Director::ReleaseVersionCommitHashMismatch, /#{previous_release_version.commit_hash}/)
         end
       end
 

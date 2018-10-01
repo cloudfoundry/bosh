@@ -3,7 +3,6 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class InfoController < BaseController
-
       def initialize(config)
         super(config)
         @powerdns_manager = PowerDnsManagerProvider.create
@@ -22,24 +21,27 @@ module Bosh::Director
           'cpi' => Config.cloud_type,
           'user_authentication' => @config.identity_provider.client_info,
           'features' => {
-            'dns' => {
+            'local_dns' => {
+              'status' => Config.local_dns_enabled?,
+            },
+            'power_dns' => {
               'status' => @powerdns_manager.dns_enabled?,
-              'extras' => {'domain_name' => @powerdns_manager.root_domain}
+              'extras' => { 'domain_name' => @powerdns_manager.root_domain },
             },
             'compiled_package_cache' => {
               'status' => Config.use_compiled_package_cache?,
-              'extras' => {'provider' => Config.compiled_package_cache_provider}
+              'extras' => { 'provider' => Config.compiled_package_cache_provider },
             },
             'snapshots' => {
-              'status' => Config.enable_snapshots
+              'status' => Config.enable_snapshots,
             },
             'config_server' => {
               'status' => Config.config_server_enabled,
               'extras' => {
-                'urls' => @config.config_server_urls
-              }
-            }
-          }
+                'urls' => @config.config_server_urls,
+              },
+            },
+          },
         }
 
         content_type(:json)

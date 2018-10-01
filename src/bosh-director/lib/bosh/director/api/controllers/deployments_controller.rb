@@ -2,47 +2,8 @@ require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
   module Api::Controllers
-    module DeploymentsSecurity
-      def route(verb, path, options = {}, &block)
-        options[:scope] ||= :authorization
-        options[:authorization] ||= :admin
-        super(verb, path, options, &block)
-      end
-
-      def authorization(perm)
-        return unless perm
-
-        condition do
-          subject = :director
-          permission = perm
-
-          if permission == :diff
-            begin
-              @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
-              subject = @deployment
-              permission = :admin
-            rescue DeploymentNotFound
-              permission = :create_deployment
-            end
-          elsif permission == :read_link
-            if params.key?('link_id')
-              link = Bosh::Director::Models::Links::Link.where(id: params['link_id']).first
-              subject = link.link_consumer_intent.link_consumer.deployment unless link.nil?
-            end
-          else
-            if params.key?('deployment')
-              @deployment = Bosh::Director::Api::DeploymentLookup.new.by_name(params[:deployment])
-              subject = @deployment
-            end
-          end
-
-          @permission_authorizer.granted_or_raise(subject, permission, token_scopes)
-        end
-      end
-    end
-
     class DeploymentsController < BaseController
-      register DeploymentsSecurity
+      register Bosh::Director::Api::Extensions::DeploymentsSecurity
       include LegacyDeploymentHelper
 
       def initialize(config)

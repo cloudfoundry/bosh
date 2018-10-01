@@ -313,18 +313,6 @@ module Bosh::Director
               response = JSON.parse(last_response.body)
               expect(response).to eq('address' => 'q-s0.ig-bar.baz.dep-foo.bosh')
             end
-
-            context 'and belongs to non-team owned deployment' do
-              it 'should return an error listing teams' do
-                get "/?link_id=#{other_link.id}"
-                expect(last_response.status).to eq(401)
-                response = JSON.parse(last_response.body)
-                expect(response['description']).to match(
-                  'Require one of the scopes: bosh.admin, bosh\..*\.admin, bosh.teams.other.admin, ' \
-                  'bosh.teams.other.read, bosh.read, bosh\..*\.read',
-                )
-              end
-            end
           end
         end
 
@@ -356,18 +344,22 @@ module Bosh::Director
               response = JSON.parse(last_response.body)
               expect(response).to eq('address' => 'q-s0.ig-bar.baz.dep-foo.bosh')
             end
+          end
+        end
 
-            context 'and belongs to non-team owned deployment' do
-              it 'should return an error listing teams' do
-                get "/?link_id=#{other_link.id}"
-                expect(last_response.status).to eq(401)
-                response = JSON.parse(last_response.body)
-                expect(response['description']).to match(
-                  'Require one of the scopes: bosh.admin, bosh\..*\.admin, bosh.teams.other.admin, ' \
-                  'bosh.teams.other.read, bosh.read, bosh\..*\.read',
-                )
-              end
-            end
+        context 'when the user does not have read/admin permissions' do
+          before do
+            basic_authorize 'outsider', 'outsider'
+          end
+
+          it 'should return with unauthorized error' do
+            get "/?link_id=#{other_link.id}"
+            expect(last_response.status).to eq(401)
+            response = JSON.parse(last_response.body)
+            expect(response['description']).to match(
+              'Require one of the scopes: bosh.admin, bosh\..*\.admin, ' \
+              'bosh.read, bosh\..*\.read',
+            )
           end
         end
       end

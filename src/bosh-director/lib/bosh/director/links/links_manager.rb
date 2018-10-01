@@ -365,9 +365,6 @@ module Bosh::Director::Links
           found_provider_intents = [external_provider_intent]
         end
 
-        consumer = consumer_intent.link_consumer
-        current_deployment_name = consumer.deployment.name
-
         link_network = consumer_intent_metadata['network']
         is_explicit_link = !!consumer_intent_metadata['explicit_link']
 
