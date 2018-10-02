@@ -65,7 +65,7 @@ module Bosh
 
           attrs = {
             name: name,
-            properties: migrated_manifest_hash.fetch('properties', {})
+            properties: migrated_manifest_hash.fetch('properties', {}),
           }
 
           plan_options = {
@@ -77,13 +77,19 @@ module Bosh
             'job_states' => options['job_states'] || {},
             'max_in_flight' => validate_and_get_argument(options['max_in_flight'], 'max_in_flight'),
             'canaries' => validate_and_get_argument(options['canaries'], 'canaries'),
-            'tags' => parse_tags(migrated_manifest_hash, runtime_config_consolidator)
+            'tags' => parse_tags(migrated_manifest_hash, runtime_config_consolidator),
           }
 
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment = Planner.new(attrs, migrated_manifest_object.manifest_hash, migrated_manifest_object.manifest_text, cloud_config_consolidator.cloud_configs, runtime_config_consolidator.runtime_configs, deployment_model, plan_options)
+          deployment = Planner.new(attrs,
+                                   migrated_manifest_object.manifest_hash,
+                                   migrated_manifest_object.manifest_text,
+                                   cloud_config_consolidator.cloud_configs,
+                                   runtime_config_consolidator.runtime_configs,
+                                   deployment_model,
+                                   plan_options)
           global_network_resolver = GlobalNetworkResolver.new(deployment, Config.director_ips, @logger)
           ip_provider_factory = IpProviderFactory.new(deployment.using_global_networking?, @logger)
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, global_network_resolver, ip_provider_factory)

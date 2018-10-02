@@ -358,10 +358,17 @@ module Bosh::Director
 
           context 'with errand not running' do
             before do
-              allow(job2).to receive(:instances).and_return([
-                                                              instance_double('Bosh::Director::DeploymentPlan::Instance',
-                                                                              vm_created?: false),
-                                                            ])
+              allow(job2)
+                .to receive(:instances)
+                .and_return(
+                  [
+                    instance_double(
+                      'Bosh::Director::DeploymentPlan::Instance',
+                      vm_created?: false,
+                      model: instance_double('Bosh::Director::Models::Instance', state: 'started'),
+                    ),
+                  ],
+                )
             end
 
             it 'returns only the regular job' do
