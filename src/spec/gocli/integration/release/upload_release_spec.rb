@@ -260,9 +260,13 @@ describe 'upload release', type: :integration do
 
     it 'does not allow uploading same release version with different commit hash' do
       bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release-1-corrupted_with_different_commit.tgz')}")
-      expect {
+      expect do
         bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-      }.to raise_error(RuntimeError, /Error: release 'test_release\/1' has already been uploaded with commit_hash as '50e58513' and uncommitted_changes as 'true'/)
+      end.to raise_error(
+        RuntimeError,
+        Regexp.new("Error: release 'test_release/1' has already been uploaded with commit_hash as '50e58577' " \
+                   "and uncommitted_changes as 'true'"),
+      )
     end
   end
 
