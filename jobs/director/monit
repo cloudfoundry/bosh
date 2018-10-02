@@ -4,7 +4,7 @@ check process director
   stop program "/var/vcap/jobs/bpm/bin/bpm stop director"
   group vcap
 
-<% (1..(p('director.workers', 3))).each do |index| %>
+<% (1..(p('director.workers'))).each do |index| %>
 check process worker_<%= index %>
   with pidfile /var/vcap/sys/run/director/worker_<%= index %>.pid
   start program "/var/vcap/jobs/director/bin/worker_ctl start <%= index %>"
