@@ -68,10 +68,10 @@ describe 'Links', type: :integration do
       task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
-      expect(task_debug_logs).to include("Manifest defines unknown consumers:\n"\
-                                         "  - Job 'api_server_with_optional_db_link'"\
-                                         " does not define link consumer 'link_that_does_not_exist'"\
-                                         ' in the release spec')
+      expect(task_debug_logs).to include(<<~OUTPUT.strip)
+        Manifest defines unknown consumers:
+          - Job 'api_server_with_optional_db_link' does not define link consumer 'link_that_does_not_exist' in the release spec
+      OUTPUT
     end
   end
 
@@ -107,9 +107,10 @@ describe 'Links', type: :integration do
       task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
-      expect(task_debug_logs).to include("Manifest defines unknown consumers:\n"\
-                                         "  - Job 'provider' does not define link consumer 'link_that_does_not_exist'"\
-                                         ' in the release spec')
+      expect(task_debug_logs).to include(<<~OUTPUT.strip)
+        Manifest defines unknown consumers:
+          - Job 'provider' does not define link consumer 'link_that_does_not_exist' in the release spec
+      OUTPUT
     end
   end
 
@@ -145,9 +146,10 @@ describe 'Links', type: :integration do
       task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
-      expect(task_debug_logs).to include("Manifest defines unknown providers:\n"\
-                                         "  - Job 'provider' does not define link provider 'link_that_does_not_exist'"\
-                                         ' in the release spec')
+      expect(task_debug_logs).to include(<<~OUTPUT.strip)
+        Manifest defines unknown providers:
+          - Job 'provider' does not define link provider 'link_that_does_not_exist' in the release spec
+      OUTPUT
     end
   end
 
@@ -183,10 +185,10 @@ describe 'Links', type: :integration do
       task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
-      expect(task_debug_logs).to include("Manifest defines unknown providers:\n"\
-                                         "  - Job 'api_server_with_optional_db_link'"\
-                                         " does not define link provider 'link_that_does_not_exist'"\
-                                         ' in the release spec')
+      expect(task_debug_logs).to include(<<~OUTPUT.strip)
+        Manifest defines unknown providers:
+          - Job 'api_server_with_optional_db_link' does not define link provider 'link_that_does_not_exist' in the release spec
+      OUTPUT
     end
   end
 end

@@ -192,11 +192,11 @@ describe 'cross deployment links', type: :integration do
         it 'should fail to resolve the link' do
           expect { deploy_simple_manifest(manifest_hash: second_manifest) }.to raise_error(
             RuntimeError,
-            Regexp.new("Failed to resolve links from deployment 'second'. See errors below:\n" \
-            "  - Failed to resolve link 'node1' with type 'node1' from job 'node' in instance group "\
-            "'second_deployment_node'. Details below:\n" \
-            '    - No link providers found'),
-          )
+            Regexp.new(<<~OUTPUT.strip))
+              Failed to resolve links from deployment 'second'. See errors below:
+                - Failed to resolve link 'node1' with type 'node1' from job 'node' in instance group 'second_deployment_node'. Details below:
+                  - No link providers found
+            OUTPUT
         end
       end
     end
@@ -372,11 +372,11 @@ describe 'cross deployment links', type: :integration do
       deploy_simple_manifest(manifest_hash: first_manifest)
 
       expect { deploy_simple_manifest(manifest_hash: second_manifest) }.to raise_error do |error|
-        expect(error.message).to include("Failed to resolve link 'node1'"\
-                                         " with type 'node1'"\
-                                         " from job 'node'"\
-                                         " in instance group 'second_deployment_node'")
-        expect(error.message).to include('No link providers found')
+        expect(error.message).to include(<<~OUTPUT.strip)
+          Error: Failed to resolve links from deployment 'second'. See errors below:
+            - Failed to resolve link 'node1' with type 'node1' from job 'node' in instance group 'second_deployment_node'. Details below:
+              - No link providers found
+        OUTPUT
       end
     end
   end
