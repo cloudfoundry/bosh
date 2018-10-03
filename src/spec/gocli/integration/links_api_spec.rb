@@ -733,6 +733,7 @@ describe 'links api', type: :integration do
     let(:jobs) { explicit_provider_and_consumer }
 
     before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       @expected_providers = get_link_providers
       @expected_consumers = get_link_consumers
       @expected_links = get_links
