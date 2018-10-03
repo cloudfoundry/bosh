@@ -8,8 +8,7 @@ module Bosh::Director
         @links_manager = nil
       end
 
-      # TODO: Links: if we want to track the user link_create task, what to do with the username
-      def create_link(username, json_payload)
+      def create_link(json_payload)
         network_metadata = {}
         validate_link_payload(json_payload)
         consumer_data = json_payload['link_consumer']
@@ -41,7 +40,7 @@ module Bosh::Director
         filter_content_and_create_link(consumer_intent, provider_intent)
       end
 
-      def delete_link(username, link_id)
+      def delete_link(link_id)
         link = find_link(link_id)
         raise Bosh::Director::LinkLookupError, "Invalid link id: #{link_id}" if link.nil?
 
@@ -93,8 +92,6 @@ module Bosh::Director
         end
       end
 
-      # TODO: Links: all provider and consumer related functions should be moved to respective managers/controller?
-
       def validate_link_payload(json_payload)
         if json_payload['link_provider_id'].nil? || json_payload['link_provider_id'] == ''
           raise 'Invalid request: `link_provider_id` must be provided'
@@ -112,12 +109,14 @@ module Bosh::Director
       end
 
       def validate_consumer_network(provider_intent, consumer_network, consumer_name)
-        # TODO: Links: discuss about possibility of value of content being empty; will cause nil class error
-        content = provider_intent.content
+        content = provider_intent.content || '{}'
         provider_intent_networks = JSON.parse(content)['networks']
 
-        if consumer_network && !provider_intent_networks.include?(consumer_network)
-          raise Bosh::Director::LinkNetworkLookupError, "Can't resolve network: `#{consumer_network}` in provider id: #{provider_intent.id} for `#{consumer_name}`"
+        if consumer_network && (
+          provider_intent_networks.nil? ||
+          !provider_intent_networks.include?(consumer_network))
+          raise Bosh::Director::LinkNetworkLookupError,
+                "Can't resolve network: `#{consumer_network}` in provider id: #{provider_intent.id} for `#{consumer_name}`"
         end
       end
 

@@ -2,7 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::LinksApiManager do
-    let(:username) { 'LINK_CREATOR' }
     let(:link_serial_id) { 42 }
     let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id) }
     let(:instance_group) { 'instance_group' }
@@ -56,7 +55,7 @@ module Bosh::Director
     describe '#create_link' do
       shared_examples 'creates consumer, consumer_intent and link' do
         it '#filter_content_and_create_link' do
-          subject.create_link(username, payload_json)
+          subject.create_link(payload_json)
 
           external_consumer = Bosh::Director::Models::Links::LinkConsumer.find(
             deployment: deployment,
@@ -91,14 +90,20 @@ module Bosh::Director
       context 'when link_provider_id is invalid' do
         let(:provider_id) { '42' }
         it 'return error' do
-          expect { subject.create_link(username, payload_json) }.to raise_error(Bosh::Director::LinkProviderLookupError, "Invalid link_provider_id: #{provider_id}")
+          expect { subject.create_link(payload_json) }.to raise_error(
+            Bosh::Director::LinkProviderLookupError,
+            "Invalid link_provider_id: #{provider_id}",
+          )
         end
       end
 
       context 'when link_provider_id is missing' do
         let(:provider_id) { '' }
         it 'return error' do
-          expect { subject.create_link(username, payload_json) }.to raise_error(RuntimeError, /Invalid request: `link_provider_id` must be provided/)
+          expect { subject.create_link(payload_json) }.to raise_error(
+            RuntimeError,
+            /Invalid request: `link_provider_id` must be provided/,
+          )
         end
       end
 
@@ -106,7 +111,7 @@ module Bosh::Director
         it '#find_provider_intent' do
           expect(Bosh::Director::Models::Links::LinkProviderIntent).to receive(:find).and_return(provider_1_intent_1)
 
-          subject.create_link(username, payload_json)
+          subject.create_link(payload_json)
         end
 
         context 'when provider_id (provider_intent_id) is not shared' do
@@ -123,7 +128,10 @@ module Bosh::Director
               )
           end
           it 'return error' do
-            expect { subject.create_link(username, payload_json) }.to raise_error(Bosh::Director::LinkProviderNotSharedError, "Provider not `shared`")
+            expect { subject.create_link(payload_json) }.to raise_error(
+              Bosh::Director::LinkProviderNotSharedError,
+              'Provider not `shared`',
+            )
           end
         end
       end
@@ -137,7 +145,9 @@ module Bosh::Director
           end
 
           it 'return error' do
-            expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer` section must be defined/)
+            expect { subject.create_link(payload_json) }.to raise_error(
+              /Invalid request: `link_consumer` section must be defined/,
+            )
           end
         end
 
@@ -154,7 +164,9 @@ module Bosh::Director
             end
 
             it 'return error' do
-              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object` section must be defined/)
+              expect { subject.create_link(payload_json) }.to raise_error(
+                /Invalid request: `link_consumer.owner_object` section must be defined/,
+              )
             end
           end
 
@@ -172,7 +184,9 @@ module Bosh::Director
             end
 
             it 'return error' do
-              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object.name` must not be empty/)
+              expect { subject.create_link(payload_json) }.to raise_error(
+                /Invalid request: `link_consumer.owner_object.name` must not be empty/,
+              )
             end
           end
 
@@ -190,7 +204,9 @@ module Bosh::Director
             end
 
             it 'return error' do
-              expect { subject.create_link(username, payload_json) }.to raise_error(/Invalid request: `link_consumer.owner_object.type` should be 'external'/)
+              expect { subject.create_link(payload_json) }.to raise_error(
+                /Invalid request: `link_consumer.owner_object.type` should be 'external'/,
+              )
             end
           end
         end
@@ -245,7 +261,9 @@ module Bosh::Director
             let(:network_name) { 'invalid_network_name' }
 
             it 'return error' do
-              expect { subject.create_link(username, payload_json) }.to raise_error(/Can't resolve network: `invalid_network_name` in provider id: 1 for `external_consumer_1`/)
+              expect { subject.create_link(payload_json) }.to raise_error(
+                /Can't resolve network: `invalid_network_name` in provider id: 1 for `external_consumer_1`/,
+              )
             end
           end
         end
@@ -287,25 +305,25 @@ module Bosh::Director
         context 'when link is not external' do
           let(:link_id) { not_external_link_1.id }
           it 'return error' do
-            expect { subject.delete_link(username, link_id) }.to raise_error(LinkNotExternalError, /Error deleting link: not a external link/)
+            expect { subject.delete_link(link_id) }.to raise_error(
+              LinkNotExternalError,
+              /Error deleting link: not a external link/,
+            )
           end
         end
 
         context 'when link_id is non-existing' do
           let(:link_id) { 42 + not_external_link_1.id }
           it 'return error' do
-            expect { subject.delete_link(username, link_id) }.to raise_error(LinkLookupError, "Invalid link id: #{link_id}")
+            expect { subject.delete_link(link_id) }.to raise_error(
+              LinkLookupError,
+              "Invalid link id: #{link_id}",
+            )
           end
         end
       end
 
       context 'when link id is valid' do
-        context 'when link is not created by the user' do
-          it 'return access error' do
-            # TODO: Links: need to discuss more about the access filter
-          end
-        end
-
         context 'when link is external' do
           let(:deployment) do
             Bosh::Director::Models::Deployment.make
@@ -364,7 +382,7 @@ module Bosh::Director
               expect(Bosh::Director::Models::Links::Link.count).to eq(2)
 
               expect do
-                subject.delete_link(username, external_link[:id])
+                subject.delete_link(external_link[:id])
               end.to_not raise_error
 
               expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)
@@ -396,7 +414,7 @@ module Bosh::Director
                 expect(Bosh::Director::Models::Links::Link.count).to eq(2)
 
                 expect do
-                  subject.delete_link(username, external_link[:id])
+                  subject.delete_link(external_link[:id])
                 end.to_not raise_error
 
                 expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)
@@ -421,7 +439,7 @@ module Bosh::Director
                 expect(Bosh::Director::Models::Links::Link.count).to eq(2)
 
                 expect do
-                  subject.delete_link(username, external_link[:id])
+                  subject.delete_link(external_link[:id])
                 end.to_not raise_error
 
                 expect(Bosh::Director::Models::Links::LinkConsumer.count).to eq(1)

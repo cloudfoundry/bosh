@@ -377,17 +377,9 @@ module Bosh::Director::Links
         unless dry_run
           provider_intent = found_provider_intents.first
 
-          # TODO: Links: discuss about possibility of value of content being empty; will cause nil class error
-          if is_explicit_link
-            content = provider_intent.content || '{}'
-            provider_intent_networks = JSON.parse(content)['networks']
-
-            if link_network && !provider_intent_networks.include?(link_network)
-              raise Bosh::Director::DeploymentInvalidLink, Bosh::Director::Links::LinksErrorBuilder.build_link_error(
-                consumer_intent, found_provider_intents, link_network
-              )
-            end
-          end
+          validate_provider_with_explicit_link(
+            consumer_intent, found_provider_intents, is_explicit_link, link_network, provider_intent
+          )
 
           link_content = extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
 
@@ -433,6 +425,21 @@ module Bosh::Director::Links
     end
 
     private
+
+    def validate_provider_with_explicit_link(
+      consumer_intent, found_provider_intents, is_explicit_link, link_network, provider_intent
+    )
+      return unless is_explicit_link
+
+      content = provider_intent.content || '{}'
+      provider_intent_networks = JSON.parse(content)['networks']
+
+      return unless link_network && (provider_intent_networks.nil? || !provider_intent_networks.include?(link_network))
+
+      raise Bosh::Director::DeploymentInvalidLink, Bosh::Director::Links::LinksErrorBuilder.build_link_error(
+        consumer_intent, found_provider_intents, link_network
+      )
+    end
 
     # A consumer which is within the same deployment
     def consumer?(provider_intent, deployment_plan)
