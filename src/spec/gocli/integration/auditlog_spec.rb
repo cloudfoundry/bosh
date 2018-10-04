@@ -27,8 +27,9 @@ describe 'Audit log', type: :integration do
   it 'contains request logs' do
     audit_log_content = File.open(audit_director_log).read
 
-    audit_log_entries = audit_log_content
-                        .scan(%r{^I.*CEF.*\|/deployments\|.*\|requestClientApplication=audit_log .*requestMethod=POST.*})
+    audit_log_entries = audit_log_content.scan(
+      %r{^I.*CEF.*\|/deployments\|.*\|requestClientApplication=audit_log .*requestMethod=POST.*},
+    )
 
     expect(audit_log_entries.size).to eq(1)
   end

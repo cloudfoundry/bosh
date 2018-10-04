@@ -19,7 +19,6 @@ module Bosh::Director::Links
         migrated_from = manifest_details.fetch(:migrated_from, [])
 
         migrated_from.each do |migration_block|
-          # old_instance_group_name = migration_block['name']
           job_name = safe_property(manifest_job_spec, 'name', class: String)
 
           providers = Bosh::Director::Models::Links::LinkProvider.find(
@@ -150,11 +149,11 @@ module Bosh::Director::Links
 
         provider_definitions.each do |provider_definition|
           provider_intent_params = {
-            original_name: provider_definition['name'],
-            type: provider_definition['type'],
-            alias: provider_definition['name'],
-            shared: false,
-            consumable: true,
+            'original_name' => provider_definition['name'],
+            'type' => provider_definition['type'],
+            'alias' => provider_definition['name'],
+            'shared' => false,
+            'consumable' => true,
           }
 
           if manifest_provides_links.key?(provider_definition['name'])
@@ -184,15 +183,15 @@ module Bosh::Director::Links
       def create_provider_intent(are_custom_definitions, mapped_properties, provider, provider_intent_params)
         provider_intent = @links_manager.find_or_create_provider_intent(
           link_provider: provider,
-          link_original_name: provider_intent_params[:original_name],
-          link_type: provider_intent_params[:type],
+          link_original_name: provider_intent_params['original_name'],
+          link_type: provider_intent_params['type'],
         )
 
-        provider_intent.name = provider_intent_params[:alias]
-        provider_intent.shared = provider_intent_params[:shared]
+        provider_intent.name = provider_intent_params['alias']
+        provider_intent.shared = provider_intent_params['shared']
         is_custom = are_custom_definitions || false
         provider_intent.metadata = { mapped_properties: mapped_properties, custom: is_custom }.to_json
-        provider_intent.consumable = provider_intent_params[:consumable]
+        provider_intent.consumable = provider_intent_params['consumable']
         provider_intent.save
       end
 
@@ -336,10 +335,10 @@ module Bosh::Director::Links
         current_release_template_model.consumes.each do |consumes|
           metadata = {}
           consumer_intent_params = {
-            original_name: consumes['name'],
-            alias: consumes['name'],
-            blocked: false,
-            type: consumes['type'],
+            'original_name' => consumes['name'],
+            'alias' => consumes['name'],
+            'blocked' => false,
+            'type' => consumes['type'],
           }
 
           if !consumes_links.key?(consumes['name'])
@@ -384,12 +383,12 @@ module Bosh::Director::Links
         metadata['explicit_link'] = true
 
         if manifest_source.eql? 'nil'
-          consumer_intent_params[:blocked] = true
+          consumer_intent_params['blocked'] = true
         elsif @link_helper.manual_link? manifest_source
           metadata['manual_link'] = true
           process_manual_link(consumer, consumer_intent_params, manifest_source)
         else
-          consumer_intent_params[:alias] = manifest_source.fetch('from', consumer_intent_params[:alias])
+          consumer_intent_params['alias'] = manifest_source.fetch('from', consumer_intent_params['alias'])
           metadata['ip_addresses'] = manifest_source['ip_addresses'] if manifest_source.key?('ip_addresses')
           metadata['network'] = manifest_source['network'] if manifest_source.key?('network')
           validate_consumes_deployment(
@@ -412,7 +411,7 @@ module Bosh::Director::Links
         from_deployment = Bosh::Director::Models::Deployment.find(name: manifest_source['deployment'])
         metadata['from_deployment'] = manifest_source['deployment']
 
-        from_deployment_error_message = "Link '#{consumer_intent_params[:alias]}' in job '#{job_name}' from instance group"\
+        from_deployment_error_message = "Link '#{consumer_intent_params['alias']}' in job '#{job_name}' from instance group"\
                   " '#{instance_group_name}' consumes from deployment '#{manifest_source['deployment']}',"\
                   ' but the deployment does not exist.'
         errors.push(from_deployment_error_message) unless from_deployment
@@ -421,13 +420,13 @@ module Bosh::Director::Links
       def create_consumer_intent(consumer, consumer_intent_params, consumes, metadata)
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,
-          link_original_name: consumer_intent_params[:original_name],
-          link_type: consumer_intent_params[:type],
+          link_original_name: consumer_intent_params['original_name'],
+          link_type: consumer_intent_params['type'],
           new_intent_metadata: metadata,
         )
 
-        consumer_intent.name = consumer_intent_params[:alias].split('.')[-1]
-        consumer_intent.blocked = consumer_intent_params[:blocked]
+        consumer_intent.name = consumer_intent_params['alias'].split('.')[-1]
+        consumer_intent.blocked = consumer_intent_params['blocked']
         consumer_intent.optional = consumes['optional'] || false
         consumer_intent.save
       end
@@ -442,8 +441,8 @@ module Bosh::Director::Links
 
         manual_provider_intent = @links_manager.find_or_create_provider_intent(
           link_provider: manual_provider,
-          link_original_name: consumer_intent_params[:original_name],
-          link_type: consumer_intent_params[:type],
+          link_original_name: consumer_intent_params['original_name'],
+          link_type: consumer_intent_params['type'],
         )
 
         content = {}
@@ -453,7 +452,7 @@ module Bosh::Director::Links
 
         content['deployment_name'] = consumer.deployment.name
 
-        manual_provider_intent.name = consumer_intent_params[:original_name]
+        manual_provider_intent.name = consumer_intent_params['original_name']
         manual_provider_intent.content = content.to_json
         manual_provider_intent.save
       end
@@ -532,10 +531,10 @@ module Bosh::Director::Links
 
       def generate_provider_intent_params(manifest_source, provider_intent_params)
         if manifest_source.eql? 'nil'
-          provider_intent_params[:consumable] = false
+          provider_intent_params['consumable'] = false
         else
-          provider_intent_params[:alias] = manifest_source['as'] if manifest_source.key?('as')
-          provider_intent_params[:shared] = double_negate_value(manifest_source['shared'])
+          provider_intent_params['alias'] = manifest_source['as'] if manifest_source.key?('as')
+          provider_intent_params['shared'] = double_negate_value(manifest_source['shared'])
         end
         provider_intent_params
       end

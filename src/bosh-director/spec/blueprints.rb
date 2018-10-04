@@ -291,6 +291,7 @@ module Bosh::Director::Models
 
   VariableSet.blueprint do
     deployment { Deployment.make }
+    writable { false }
   end
 
   Variable.blueprint {}

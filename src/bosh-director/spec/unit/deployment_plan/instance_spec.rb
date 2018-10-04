@@ -246,12 +246,11 @@ module Bosh::Director::DeploymentPlan
               instance.desired_variable_set = desired_variable_set
               allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
-              expect(config_server_client).to receive(:interpolate_with_versioning)
-                .with(merged_cloud_properties, desired_variable_set)
-                .and_return(interpolated_merged_cloud_properties)
-              expect(config_server_client).to receive(:interpolate_with_versioning)
-                .with(instance_model.cloud_properties_hash, instance.model.variable_set)
-                .and_return(instance_model.cloud_properties_hash)
+
+              expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                .with(instance_model.cloud_properties_hash, merged_cloud_properties,
+                      instance.model.variable_set, desired_variable_set)
+                .and_return(true)
             end
 
             it 'should NOT log the interpolated values' do
@@ -348,31 +347,20 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'interpolates previous and desired cloud properties with the correct variable set' do
-          expect(config_server_client).to receive(:interpolate_with_versioning)
-            .with(merged_cloud_properties, desired_variable_set)
-            .and_return(interpolated_merged_cloud_properties)
-          expect(config_server_client).to receive(:interpolate_with_versioning)
-            .with(instance_model.cloud_properties_hash, instance.model.variable_set)
-            .and_return(interpolated_existing_cloud_properties)
+          expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+            .with(instance_model.cloud_properties_hash, merged_cloud_properties,
+                  instance.model.variable_set, desired_variable_set)
+            .and_return(false)
 
           expect(instance.cloud_properties_changed?).to be_falsey
         end
 
         context 'when interpolated values are different' do
-          let(:interpolated_merged_cloud_properties) do
-            { 'vm_cloud_prop' => 'p1-new', 'vm_ext_cloud_prop' => 'p2', 'az_cloud_prop' => 'p3' }
-          end
-          let(:interpolated_existing_cloud_properties) do
-            { 'vm_ext_cloud_prop' => 'p2-old', 'az_cloud_prop' => 'p3', 'vm_cloud_prop' => 'p1' }
-          end
-
           it 'return true' do
-            expect(config_server_client).to receive(:interpolate_with_versioning)
-              .with(merged_cloud_properties, desired_variable_set)
-              .and_return(interpolated_merged_cloud_properties)
-            expect(config_server_client).to receive(:interpolate_with_versioning)
-              .with(instance_model.cloud_properties_hash, instance.model.variable_set)
-              .and_return(interpolated_existing_cloud_properties)
+            expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+              .with(instance_model.cloud_properties_hash, merged_cloud_properties,
+                    instance.model.variable_set, desired_variable_set)
+              .and_return(true)
 
             expect(instance.cloud_properties_changed?).to be_truthy
           end

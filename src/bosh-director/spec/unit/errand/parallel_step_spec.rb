@@ -19,7 +19,7 @@ module Bosh::Director
     def wait_for_parallel_call(queue, result)
       queue << true
 
-      10.times do
+      20.times do
         return result if queue.length == 2
         sleep 0.1
       end

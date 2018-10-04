@@ -583,11 +583,13 @@ module Bosh::Director
         it 'uses the interpolated cloud config' do
           instance_plan.instance.desired_variable_set = desired_variable_set
 
-          # 1 call to check if disks has changed, 1 to figure out the change, 1 to interpolate before we send to CPI
-          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(3).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
+          # Detecting if interpolated config changed for short-circuit in disk_manager, another call from checking before determining differences
+          expect(config_server_client).to receive(:interpolated_versioned_variables_changed?).exactly(2).times
+                                            .with(anything, anything, anything, anything)
+                                            .and_return(false)
 
-          # 1 call to check if disks has changed, 1 to figure out the change
-          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(2).times.with(cloud_properties, instance_plan.instance.previous_variable_set).and_return(interpolated_cloud_properties)
+          # 1 call to interpolate before we send to CPI
+          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(1).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
 
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
@@ -598,6 +600,9 @@ module Bosh::Director
 
         it 'does not save PersistentDisk model with the interpolated cloud config' do
           allow(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          allow(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                                            .with(anything, anything, anything, anything)
+                                            .and_return(false)
           disk_manager.update_persistent_disk(instance_plan)
           expect(Models::PersistentDisk.first.cloud_properties).to eq(cloud_properties)
         end

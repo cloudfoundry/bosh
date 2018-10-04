@@ -48,7 +48,12 @@ module Bosh::Director::ConfigServer
       @config_server_client.generate_values(variables, deployment_name, converge_variables)
     end
 
-    # Note: The links properties will be interpolated in the context of the deployment that provides them
+    def interpolated_versioned_variables_changed?(previous_raw_hash, next_raw_hash, previous_variable_set, target_variable_set)
+      @config_server_client.interpolated_versioned_variables_changed?(previous_raw_hash, next_raw_hash, previous_variable_set, target_variable_set)
+    end
+
+
+      # Note: The links properties will be interpolated in the context of the deployment that provides them
     # @param [Hash] links_spec Hash to be interpolated
     # @param [Bosh::Director::Models::VariableSet] consumer_variable_set
     # @return [Hash] A Deep copy of the interpolated links_spec. Only the properties for the links will be interpolated

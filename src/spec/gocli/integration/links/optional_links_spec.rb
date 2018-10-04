@@ -104,9 +104,11 @@ describe 'optional links', type: :integration do
     it 'throws an error if the optional link was not found' do
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
       expect(exit_code).not_to eq(0)
-      expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
-      expect(out).to include("Failed to resolve link 'optional_link_name' with alias 'backup_db' and type 'optional_link_type' from job 'api_server_with_optional_links_1' in instance group 'my_api'. Details below:")
-      expect(out).to include('No link providers found')
+      expect(out).to include(<<~OUTPUT.strip)
+        Error: Failed to resolve links from deployment 'simple'. See errors below:
+          - Failed to resolve link 'optional_link_name' with alias 'backup_db' and type 'optional_link_type' from job 'api_server_with_optional_links_1' in instance group 'my_api'. Details below:
+            - No link providers found
+      OUTPUT
     end
   end
 
@@ -195,9 +197,11 @@ describe 'optional links', type: :integration do
       it 'should throw an error' do
         out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).not_to eq(0)
-        expect(out).to include("Error: Failed to resolve links from deployment 'simple'. See errors below:")
-        expect(out).to include("- Failed to resolve link 'db' with type 'db' from job 'api_server_with_optional_links_1' in instance group 'my_api'. Details below:")
-        expect(out).to include('- No link providers found')
+        expect(out).to include(<<~OUTPUT.strip)
+          Error: Failed to resolve links from deployment 'simple'. See errors below:
+            - Failed to resolve link 'db' with type 'db' from job 'api_server_with_optional_links_1' in instance group 'my_api'. Details below:
+              - No link providers found
+        OUTPUT
       end
     end
   end
@@ -284,9 +288,12 @@ describe 'optional links', type: :integration do
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(output).to include("Failed to resolve link 'db' with type 'db' from job 'api_server_with_optional_db_link' in instance group 'optional_db'. Multiple link providers found:")
-      expect(output).to include("Link provider 'db' from job 'database' in instance group 'mysql' in deployment 'simple'")
-      expect(output).to include("Link provider 'backup_db' from job 'backup_database' in instance group 'postgres' in deployment 'simple'")
+      expect(output).to include(<<~OUTPUT.strip)
+        Error: Failed to resolve links from deployment 'simple'. See errors below:
+          - Failed to resolve link 'db' with type 'db' from job 'api_server_with_optional_db_link' in instance group 'optional_db'. Multiple link providers found:
+            - Link provider 'db' from job 'database' in instance group 'mysql' in deployment 'simple'
+            - Link provider 'backup_db' from job 'backup_database' in instance group 'postgres' in deployment 'simple'
+      OUTPUT
     end
   end
 end

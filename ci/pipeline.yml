@@ -14,8 +14,6 @@ groups:
       - integration-db-tls-mysql
       - load-tests-postgres
       - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
       - fuzz-tests
       - candidate-release
       - bats-centos
@@ -63,8 +61,6 @@ groups:
     jobs:
       - load-tests-postgres
       - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
 
   # - name: version
   #   jobs:
@@ -76,6 +72,10 @@ groups:
       - bump-minor
       - bump-patch
       - finalize-release
+
+  - name: export
+    jobs:
+    - export-final-release
 
 shared:
   - &install-dependencies
@@ -524,30 +524,6 @@ jobs:
         DB: postgresql
         LEGACY: false
 
-  - name: legacy-load-tests-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    interruptible: true
-    plan:
-    - { get: load-tests-interval, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: bosh-src }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests-2"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: postgresql
-        LEGACY: true
-
   - name: load-tests-mysql
     public: true
     serial: true
@@ -571,30 +547,6 @@ jobs:
       params:
         DB: mysql
         LEGACY: false
-
-  - name: legacy-load-tests-mysql
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    interruptible: true
-    plan:
-    - { get: load-tests-interval, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: bosh-src }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests-4"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: mysql
-        LEGACY: true
 
   - name: fuzz-tests
     public: true
@@ -1254,6 +1206,7 @@ jobs:
         - get: bbl-state
           resource: acceptance-env-state
         - get: zookeeper-release
+        - get: bosh-deployment
         - get: stemcell
           resource: google-kvm-ubuntu-trusty
         - get: bosh-src
@@ -1344,6 +1297,31 @@ jobs:
         params:
           name: bosh-master-with-final/tag-name
           tag: bosh-master-with-final/tag-name
+
+  - name: export-final-release
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-master
+      - get: bosh-github-release
+        trigger: true
+      - get: warden-ubuntu-xenial
+    - task: export-final-release
+      file: bosh-master/ci/tasks/export-final-release.yml
+      privileged: true
+      input_mapping:
+        version: bosh-github-release
+        stemcell: warden-ubuntu-xenial
+        bosh-src: bosh-master
+    - task: push-bosh-compiled-releases
+      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
+      input_mapping:
+        candidate-version: bosh-github-release
+        bosh-src: bosh-master
+      params:
+        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+        git_private_key: ((bosh-compiled-releases-index-deploy-key))
 
   - name: bump-major
     serial: true

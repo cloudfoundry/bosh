@@ -106,9 +106,7 @@ module Bosh::Director
         @is_deploy_action
       end
 
-      def is_deploy_action=(is_deploy_action)
-        @is_deploy_action = is_deploy_action
-      end
+      attr_writer :is_deploy_action
 
       def to_s
         if @uuid.nil?
@@ -132,13 +130,12 @@ module Bosh::Director
           uuid: SecureRandom.uuid,
           availability_zone: availability_zone_name,
           bootstrap: false,
-          variable_set_id: @deployment_model.current_variable_set.id
+          variable_set_id: @deployment_model.current_variable_set.id,
         )
         @uuid = @model.uuid
         @desired_variable_set = @model.variable_set
         @previous_variable_set = @model.variable_set
       end
-
 
       def stemcell_model
         @stemcell.model_for_az(availability_zone_name)
@@ -196,13 +193,15 @@ module Bosh::Director
       end
 
       def cloud_properties_changed?
-        proposed = @variables_interpolator.interpolate_with_versioning(cloud_properties, @desired_variable_set)
-        existing = @variables_interpolator.interpolate_with_versioning(@model.cloud_properties_hash, @previous_variable_set)
+        changed = @variables_interpolator.interpolated_versioned_variables_changed?(
+          @model.cloud_properties_hash,
+          cloud_properties,
+          @previous_variable_set,
+          @desired_variable_set
+        )
 
-        @cloud_properties_changed = existing != proposed
-        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if @cloud_properties_changed
-
-        @cloud_properties_changed
+        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
+        changed
       end
 
       def current_job_spec

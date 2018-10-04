@@ -58,10 +58,12 @@ describe 'consuming and providing', type: :integration do
       it 'should NOT be able to reach the links from the co-located job' do
         out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).to eq(1)
-        expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
-        expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
-        expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
-        expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        expect(out).to include(<<~OUTPUT.strip)
+          Error: Unable to render instance groups for deployment. Errors are:
+            - Unable to render jobs for instance group 'provider_instance_group'. Errors are:
+              - Unable to render templates for job 'app_server'. Errors are:
+                - Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')
+        OUTPUT
       end
     end
 
@@ -89,10 +91,12 @@ describe 'consuming and providing', type: :integration do
       it 'should NOT be able to reach the links from the co-located job' do
         out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).to eq(1)
-        expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
-        expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
-        expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
-        expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        expect(out).to include(<<~OUTPUT.strip)
+          Error: Unable to render instance groups for deployment. Errors are:
+            - Unable to render jobs for instance group 'provider_instance_group'. Errors are:
+              - Unable to render templates for job 'app_server'. Errors are:
+                - Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')
+        OUTPUT
       end
     end
 
@@ -118,10 +122,12 @@ describe 'consuming and providing', type: :integration do
       it 'should NOT be able to reach the links from the co-located jobs' do
         out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).to eq(1)
-        expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
-        expect(out).to include("- Unable to render jobs for instance group 'provider_instance_group'. Errors are:")
-        expect(out).to include("- Unable to render templates for job 'app_server'. Errors are:")
-        expect(out).to include("- Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')")
+        expect(out).to include(<<~OUTPUT.strip)
+          Error: Unable to render instance groups for deployment. Errors are:
+            - Unable to render jobs for instance group 'provider_instance_group'. Errors are:
+              - Unable to render templates for job 'app_server'. Errors are:
+                - Error filling in template 'config.yml.erb' (line 2: Can't find link 'provider')
+        OUTPUT
       end
     end
 
@@ -151,10 +157,12 @@ describe 'consuming and providing', type: :integration do
 
         out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).to eq(1)
-        expect(out).to include('Error: Unable to render instance groups for deployment. Errors are:')
-        expect(out).to include("- Error filling in template 'config.yml.erb' " \
-          '(line 2: Expected exactly two instances of db in current deployment)')
-
+        expect(out).to include(<<~OUTPUT.strip)
+          Error: Unable to render instance groups for deployment. Errors are:
+            - Unable to render jobs for instance group 'instance_group'. Errors are:
+              - Unable to render templates for job 'api_server_2_instances'. Errors are:
+                - Error filling in template 'config.yml.erb' (line 2: Expected exactly two instances of db in current deployment)
+        OUTPUT
         manifest['instance_groups'][0]['instances'] = 2
         deploy_simple_manifest(manifest_hash: manifest)
       end
@@ -391,8 +399,11 @@ describe 'consuming and providing', type: :integration do
       it 'should fail to create the link' do
         bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
         output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
-        expect(output).to include("Failed to resolve link 'login' with alias 'provider_login' and type 'usernamepassword' from job 'consumer_job' in instance group 'consumer_ig'. Details below:")
-        expect(output).to include('No link providers found')
+        expect(output).to include(<<~OUTPUT.strip)
+          Error: Failed to resolve links from deployment 'minimal'. See errors below:
+            - Failed to resolve link 'login' with alias 'provider_login' and type 'usernamepassword' from job 'consumer_job' in instance group 'consumer_ig'. Details below:
+              - No link providers found
+        OUTPUT
       end
 
       context 'and the link is shared from another deployment' do
@@ -437,8 +448,11 @@ describe 'consuming and providing', type: :integration do
 
         it 'should fail to create the link' do
           output = deploy_simple_manifest(manifest_hash: consumer_manifest, failure_expected: true)
-          expect(output).to include("Failed to resolve link 'login' with alias 'provider_login' and type 'usernamepassword' from job 'consumer_job' in instance group 'consumer_ig'. Details below:")
-          expect(output).to include('No link providers found')
+          expect(output).to include(<<~OUTPUT.strip)
+            Error: Failed to resolve links from deployment 'consumer_deployment'. See errors below:
+              - Failed to resolve link 'login' with alias 'provider_login' and type 'usernamepassword' from job 'consumer_job' in instance group 'consumer_ig'. Details below:
+                - No link providers found
+          OUTPUT
         end
       end
     end

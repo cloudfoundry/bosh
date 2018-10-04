@@ -1,5 +1,3 @@
-require 'ruby-prof'
-
 module Bosh::Director
   module Jobs
     class UpdateDeployment < BaseJob
@@ -27,9 +25,6 @@ module Bosh::Director
       end
 
       def perform
-        RubyProf.start
-        RubyProf.pause
-
         logger.info('Reading deployment manifest')
         manifest_hash = YAML.load(@manifest_text)
         logger.debug("Manifest:\n#{@manifest_text}")
@@ -109,31 +104,27 @@ module Bosh::Director
 
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 
-            if dry_run?
-              return "/deployments/#{deployment_plan.name}"
-            else
-              compilation_step(deployment_plan).perform
+            return "/deployments/#{deployment_plan.name}" if dry_run?
 
-              update_stage(deployment_plan, dns_encoder).perform
+            compilation_step(deployment_plan).perform
 
-              if check_for_changes(deployment_plan)
-                PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
-              end
+            update_stage(deployment_plan, dns_encoder).perform
 
-              # only in the case of a deploy should you be cleaning up
-              if is_deploy_action
-                @links_manager.remove_unused_links(deployment_plan.model)
-                current_variable_set.update(deployed_successfully: true)
-                remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
-                mark_orphaned_networks(deployment_plan)
-              end
+            PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan) if check_for_changes(deployment_plan)
 
-              @notifier.send_end_event
-              logger.info('Finished updating deployment')
-              add_event(context, parent_id)
-
-              "/deployments/#{deployment_plan.name}"
+            # only in the case of a deploy should you be cleaning up
+            if is_deploy_action
+              @links_manager.remove_unused_links(deployment_plan.model)
+              current_variable_set.update(deployed_successfully: true)
+              remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
+              mark_orphaned_networks(deployment_plan)
             end
+
+            @notifier.send_end_event
+            logger.info('Finished updating deployment')
+            add_event(context, parent_id)
+
+            "/deployments/#{deployment_plan.name}"
           ensure
             deployment_plan.template_blob_cache.clean_cache!
           end
@@ -142,36 +133,17 @@ module Bosh::Director
         begin
           @notifier.send_error_event e unless dry_run?
         rescue Exception => e2
-          # log the second error
+          # ignore the second error
         ensure
           add_event(context, parent_id, e)
           raise e
         end
       ensure
-        if @options['deploy']
-          deployment = current_deployment
-          variable_set = deployment == nil ? nil : deployment.current_variable_set
-          if variable_set
-            variable_set.update(:writable => false)
-          end
-        end
-
+        current_deployment&.current_variable_set&.update(writable: false) if @options['deploy']
         @variables_interpolator.erase_cache_with_fire!
-
-        reports
       end
 
       private
-
-      def reports
-        result = RubyProf.stop
-        time = Time.now.to_i
-        f = File.open("/tmp/profile_results-#{time}-flat.txt", 'w')
-        @logger.info ">>> profiling at /tmp/profile_results-#{time}-*"
-        flat = RubyProf::FlatPrinter.new(result)
-        flat.print(f)
-        f.close
-      end
 
       def mark_orphaned_networks(deployment_plan)
         return unless Config.network_lifecycle_enabled?
@@ -217,19 +189,18 @@ module Bosh::Director
       end
 
       def add_event(context = {}, parent_id = nil, error = nil)
-        action = @options.fetch('new', false) ? "create" : "update"
+        action = @options.fetch('new', false) ? 'create' : 'update'
         event = event_manager.create_event(
-          {
-            parent_id: parent_id,
-            user: username,
-            action: action,
-            object_type: "deployment",
-            object_name: @deployment_name,
-            deployment: @deployment_name,
-            task: task_id,
-            error: error,
-            context: context
-          })
+          parent_id: parent_id,
+          user: username,
+          action: action,
+          object_type: 'deployment',
+          object_name: @deployment_name,
+          deployment: @deployment_name,
+          task: task_id,
+          error: error,
+          context: context,
+        )
         event.id
       end
 
@@ -279,7 +250,6 @@ module Bosh::Director
       end
 
       def render_instance_groups_templates(instance_groups, template_blob_cache, dns_encoder)
-        RubyProf.resume
         errors = []
         instance_groups.each do |instance_group|
           begin
@@ -293,7 +263,6 @@ module Bosh::Director
             errors.push e
           end
         end
-        RubyProf.pause
         errors
       end
 
@@ -350,7 +319,8 @@ module Bosh::Director
             "#{sc.name}/#{sc.version}"
           end
         end
-        return releases, stemcells
+
+        [releases, stemcells]
       end
 
       def current_deployment

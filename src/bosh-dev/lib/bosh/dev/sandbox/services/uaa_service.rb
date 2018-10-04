@@ -37,7 +37,7 @@ module Bosh::Dev::Sandbox
 
       @config_path = File.join(sandbox_root, 'uaa_config')
       FileUtils.mkdir_p(@config_path)
-      write_config_path('symmetric')
+      write_config_path
 
       @uaa_process = initialize_uaa_process
     end
@@ -64,7 +64,7 @@ module Bosh::Dev::Sandbox
       @uaa_process.start
 
       begin
-        @connector.try_to_connect(3000)
+        @connector.try_to_connect(6000)
       rescue StandardError
         output_service_log(@uaa_process.description, @uaa_process.stdout_contents, @uaa_process.stderr_contents)
         raise
@@ -77,20 +77,6 @@ module Bosh::Dev::Sandbox
       @running_mode = 'stopped'
     end
 
-    def reconfigure(encryption_mode)
-      requested_config_mode = encryption_mode == 'asymmetric' ? encryption_mode : 'symmetric'
-
-      @requires_restart = (@running_mode != requested_config_mode)
-      write_config_path(requested_config_mode)
-    end
-
-    def restart_if_needed
-      return unless @requires_restart
-
-      stop
-      start
-    end
-
     private
 
     def initialize_uaa_process
@@ -99,9 +85,10 @@ module Bosh::Dev::Sandbox
         'uaa.server_port' => @server_port,
         'uaa.access_log_dir' => File.dirname(@log_location),
         'uaa.webapps' => @uaa_webapps_path,
+        'securerandom.source' => 'file:/dev/urandom',
       }
 
-      catalina_opts = ' -Xms512M -Xmx512M -Dsecurerandom.source=file:/dev/urandom '
+      catalina_opts = ' -Xms512M -Xmx512M '
       catalina_opts += opts.map { |key, value| "-D#{key}=#{value}" }.join(' ')
 
       Service.new(
@@ -129,16 +116,14 @@ module Bosh::Dev::Sandbox
       File.join(REPO_ROOT, 'bosh-dev', 'assets', 'sandbox', 'tomcat-server.xml')
     end
 
-    def write_config_path(encryption)
+    def write_config_path
       spec_assets_base_path = 'spec/assets/uaa_config'
 
-      encryption = encryption == 'asymmetric' ? encryption : 'symmetric'
-
       FileUtils.cp(
-        File.expand_path(File.join(spec_assets_base_path, encryption, 'uaa.yml'), REPO_ROOT),
+        File.expand_path(File.join(spec_assets_base_path, 'asymmetric', 'uaa.yml'), REPO_ROOT),
         @config_path,
       )
-      @current_uaa_config_mode = encryption
+      @current_uaa_config_mode = 'asymmetric'
     end
 
     DEBUG_HEADER = '*' * 20
