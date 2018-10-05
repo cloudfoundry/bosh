@@ -16,9 +16,8 @@ module Bosh::Director
 
         query_options = {
           azs: params['azs'],
-          status: params['status']
+          status: params['status'],
         }
-
 
         result = {
           address: @links_api_manager.link_address(params['link_id'], query_options),
