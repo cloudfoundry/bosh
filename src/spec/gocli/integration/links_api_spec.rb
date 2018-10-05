@@ -169,7 +169,6 @@ describe 'links api', type: :integration do
     upload_stemcell
 
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
-    deploy_simple_manifest(manifest_hash: manifest_hash)
   end
 
   def add_extra_networks_and_mark_default(cloud_config_hash, manifest_hash)
@@ -191,6 +190,10 @@ describe 'links api', type: :integration do
   end
 
   context 'when requesting for a list of providers via link_providers endpoint' do
+    before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
     context 'when deployment has an implicit link provider' do
       let(:jobs) { [{ 'name' => 'provider' }] }
 
@@ -391,6 +394,10 @@ describe 'links api', type: :integration do
   end
 
   context 'when requesting for a list of consumers via link_consumers endpoint' do
+    before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
     context 'when a job has a link consumer' do
       let(:jobs) { implicit_provider_and_consumer }
 
@@ -458,6 +465,10 @@ describe 'links api', type: :integration do
   end
 
   context 'when requesting for a list of links via links endpoint' do
+    before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
     context 'when deployment has an implicit provider + consumer' do
       let(:jobs) { implicit_provider_and_consumer }
 
@@ -722,9 +733,11 @@ describe 'links api', type: :integration do
     let(:jobs) { explicit_provider_and_consumer }
 
     before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       @expected_providers = get_link_providers
       @expected_consumers = get_link_consumers
       @expected_links = get_links
+      deploy_simple_manifest(manifest_hash: manifest_hash)
     end
 
     context 'redeploying no changes' do
@@ -1308,13 +1321,56 @@ describe 'links api', type: :integration do
       end
     end
 
-    # TODO: Links API
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
         response = send_director_post_request('/links', '', JSON.generate({}), {})
 
         expect(response.read_body).to include("Not authorized: '/links'")
       end
+    end
+  end
+
+  context 'when the provider deploy fails' do
+    let(:provider_id) { '1' }
+    let(:payload_json) do
+      {
+        'link_provider_id' => provider_id,
+        'network' => 'a',
+        'link_consumer' => {
+          'owner_object' => {
+            'name' => 'external_consumer_1',
+            'type' => 'external',
+          },
+        },
+      }
+    end
+    let(:jobs) do
+      [
+        {
+          'name' => 'provider',
+          'provides' => {
+            'provider' => {
+              'as' => 'foo',
+              'shared' => true,
+            },
+          },
+        },
+      ]
+    end
+
+    before do
+      manifest_hash['instance_groups'][0]['azs'] = ['unknown_az']
+
+      _, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+      expect(exit_code).to_not eq(0)
+    end
+
+    it 'should fail to create the link gracefully' do
+      response = send_director_post_request('/links', '', JSON.generate(payload_json))
+
+      link = JSON.parse(response.read_body)
+      expect(link['code']).to eq(810003)
+      expect(link['description']).to eq("Can't resolve network: `a` in provider id: 1 for `external_consumer_1`")
     end
   end
 
@@ -1347,6 +1403,7 @@ describe 'links api', type: :integration do
     end
 
     before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       provider_response = get_link_providers
       provider_id = provider_response.first['id']
       send_director_post_request('/links', '', JSON.generate(payload_json))
@@ -1403,6 +1460,7 @@ describe 'links api', type: :integration do
     end
 
     before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       provider_response = get_link_providers
       provider_id = provider_response.first['id']
       payload_json['link_provider_id'] = provider_id

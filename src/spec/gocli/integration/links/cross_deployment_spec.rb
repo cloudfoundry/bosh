@@ -201,6 +201,25 @@ describe 'cross deployment links', type: :integration do
       end
     end
 
+    context 'when the provider fails to deploy' do
+      before do
+        first_manifest['instance_groups'][0]['azs'] = ['unknown_az']
+        _, exit_code = deploy_simple_manifest(manifest_hash: first_manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code).to_not eq(0)
+      end
+
+      it 'causes the consumer to fail gracefully' do
+        second_manifest['instance_groups'][0]['jobs'][0]['consumes']['node1']['network'] = 'a'
+        output, exit_code = deploy_simple_manifest(manifest_hash: second_manifest, failure_expected: true, return_exit_code: true)
+        expect(exit_code).to_not eq(0)
+        expect(output).to include(<<~ERROR.strip)
+          Error: Failed to resolve links from deployment 'second'. See errors below:
+            - Failed to resolve link 'node1' with type 'node1' from job 'node' in instance group 'second_deployment_node'. Details below:
+              - Link provider 'node1' from job 'node' in instance group 'first_deployment_node' in deployment 'first' does not belong to network 'a'
+        ERROR
+      end
+    end
+
     context 'when network changes to non-static in consumer and provider' do
       before do
         first_manifest['instance_groups'][0]['networks'][0].delete('static_ips')
