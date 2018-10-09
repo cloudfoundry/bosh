@@ -53,7 +53,7 @@ module Bosh::Director::ConfigServer
     end
 
 
-      # Note: The links properties will be interpolated in the context of the deployment that provides them
+    # Note: The links properties will be interpolated in the context of the deployment that provides them
     # @param [Hash] links_spec Hash to be interpolated
     # @param [Bosh::Director::Models::VariableSet] consumer_variable_set
     # @return [Hash] A Deep copy of the interpolated links_spec. Only the properties for the links will be interpolated
