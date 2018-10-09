@@ -134,7 +134,7 @@ module Bosh::Director
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
           it_acts_as_asynchronous_message :start
-          it_acts_as_asynchronous_message :update_persistent_disk
+          it_acts_as_asynchronous_message :add_persistent_disk
         end
 
         describe 'update_settings' do
@@ -264,15 +264,15 @@ module Bosh::Director
           end
         end
 
-        describe 'update_persistent_disk' do
+        describe 'add_persistent_disk' do
           it 'logs a warning if the message is not handled' do
-            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'unknown message update_persistent_disk')
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'unknown message add_persistent_disk')
 
             expect(Config.logger).to receive(:warn).with(
-              "Ignoring update_persistent_disk 'unknown message' error from the agent: "\
-              '#<Bosh::Director::RpcRemoteException: unknown message update_persistent_disk>',
+              "Ignoring add_persistent_disk 'unknown message' error from the agent: "\
+              '#<Bosh::Director::RpcRemoteException: unknown message add_persistent_disk>',
             )
-            expect { client.update_persistent_disk('diskCID', 'hint') }.to_not raise_error
+            expect { client.add_persistent_disk('diskCID', 'hint') }.to_not raise_error
           end
         end
 

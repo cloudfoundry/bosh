@@ -284,7 +284,7 @@ module Bosh::Director
           allow(cloud).to receive(:attach_disk)
           allow(cloud).to receive(:set_disk_metadata)
           allow(agent_client).to receive(:wait_until_ready)
-          allow(agent_client).to receive(:update_persistent_disk)
+          allow(agent_client).to receive(:add_persistent_disk)
         end
 
         it 'attaches the new disk and sets disk metadata' do
@@ -292,7 +292,7 @@ module Bosh::Director
           expect(cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           expect(cloud).to receive(:detach_disk)
           expect(agent_client).to receive(:wait_until_ready)
-          expect(agent_client).to receive(:update_persistent_disk)
+          expect(agent_client).to receive(:add_persistent_disk)
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
@@ -330,13 +330,13 @@ module Bosh::Director
           allow(cloud).to receive(:attach_disk)
           allow(cloud_for_set_disk_metadata).to receive(:set_disk_metadata)
           allow(agent_client).to receive(:wait_until_ready)
-          allow(agent_client).to receive(:update_persistent_disk)
+          allow(agent_client).to receive(:add_persistent_disk)
         end
 
         it 'attaches the new disk' do
           expect(cloud).to receive(:attach_disk)
           expect(agent_client).to receive(:wait_until_ready)
-          expect(agent_client).to receive(:update_persistent_disk)
+          expect(agent_client).to receive(:add_persistent_disk)
           expect(cloud_for_set_disk_metadata).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           attach_disk_job.perform
 

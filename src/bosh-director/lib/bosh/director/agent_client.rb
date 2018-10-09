@@ -98,8 +98,8 @@ module Bosh::Director
       send_message(:unmount_disk, *args)
     end
 
-    def update_persistent_disk(*args)
-      safe_send_message(:update_persistent_disk, *args)
+    def add_persistent_disk(*args)
+      safe_send_message(:add_persistent_disk, *args)
     end
 
     def shutdown

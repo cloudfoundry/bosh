@@ -50,7 +50,7 @@ module Bosh::Director
           it 'sends an update_persistent_disk message to agent' do
             allow(report).to receive(:disk_hint).and_return(disk_hint)
             expect(agent_client).to receive(:wait_until_ready)
-            expect(agent_client).to receive(:update_persistent_disk).with(disk.disk_cid, disk_hint)
+            expect(agent_client).to receive(:add_persistent_disk).with(disk.disk_cid, disk_hint)
             step.perform(report)
           end
 

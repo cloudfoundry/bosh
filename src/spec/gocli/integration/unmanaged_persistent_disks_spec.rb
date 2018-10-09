@@ -251,7 +251,7 @@ describe 'multiple persistent disks', type: :integration do
     )
   end
 
-  it 'director should send update_persistent_disk action to agent' do
+  it 'director should send add_persistent_disk action to agent' do
     agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid)
 
     disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
@@ -268,7 +268,7 @@ describe 'multiple persistent disks', type: :integration do
     expect(attached_disks_cids).to match_array(disk_hints_cids)
   end
 
-  context 'when update_persisten_disk action is not supported in agent (legacy agent)' do
+  context 'when add_persistent_disk action is not supported in agent (legacy agent)' do
     let(:cloud_properties) do
       { 'legacy_agent_path' => get_legacy_agent_path('before-registry-removal-20181001') }
     end
@@ -295,8 +295,8 @@ describe 'multiple persistent disks', type: :integration do
     it 'should get response from agent' do
       ignored_messages = get_agent_ignored_messages(@deploy_output)
       expect(ignored_messages).to include(
-        "update_persistent_disk 'unknown message' error from the agent: "\
-        '#<Bosh::Director::RpcRemoteException: unknown message update_persistent_disk>',
+        "add_persistent_disk 'unknown message' error from the agent: "\
+        '#<Bosh::Director::RpcRemoteException: unknown message add_persistent_disk>',
       )
       expect(ignored_messages.count).to eq(2)
     end
