@@ -315,6 +315,7 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
+        attempts: 3
 
   - name: integration-postgres-gocli-sha2
     public: true
