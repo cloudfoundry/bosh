@@ -11,10 +11,6 @@ module Bosh::Director::ConfigServer
       @cache_by_id = {}
     end
 
-    def clear_cache!
-      @cache_by_id = {}
-    end
-
     # @param [Hash] raw_hash Hash to be interpolated. This method only supports Absolute Names.
     # @param [Hash] options Additional options
     #   Options include:

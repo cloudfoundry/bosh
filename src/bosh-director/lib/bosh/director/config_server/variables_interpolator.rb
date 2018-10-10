@@ -5,10 +5,6 @@ module Bosh::Director::ConfigServer
       @config_server_client = ClientFactory.create(Bosh::Director::Config.logger).create_client
     end
 
-    def erase_cache_with_fire!
-      @config_server_client.clear_cache!
-    end
-
     # @param [Hash] template_spec_properties Hash to be interpolated
     # @param [Hash] deployment_name The deployment context in-which the interpolation will occur
     # @param [VariableSet] variable_set The variable set which the interpolation will use.

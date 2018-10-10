@@ -81,7 +81,6 @@ module Bosh::Director
           allow(DeploymentPlan::Stages::UpdateStage).to receive(:new).and_return(update_stage)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
           allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
-          allow(variables_interpolator).to receive(:erase_cache_with_fire!)
           allow(DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
           allow(planner).to receive(:variables).and_return(DeploymentPlan::Variables.new([]))
           allow(planner).to receive(:features).and_return(DeploymentPlan::DeploymentFeatures.new)

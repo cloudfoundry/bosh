@@ -140,7 +140,6 @@ module Bosh::Director
         end
       ensure
         current_deployment&.current_variable_set&.update(writable: false) if @options['deploy']
-        @variables_interpolator.erase_cache_with_fire!
       end
 
       private
