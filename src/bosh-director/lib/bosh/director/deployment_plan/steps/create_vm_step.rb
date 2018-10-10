@@ -86,38 +86,9 @@ module Bosh::Director
           parent_id = add_event(deployment_name, instance_model.name, 'create')
           agent_id = SecureRandom.uuid
 
-
-          config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
-          env = config_server_client.interpolate_with_versioning(env, instance.desired_variable_set)
-          cloud_properties = config_server_client.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
-          network_settings = config_server_client.interpolate_with_versioning(network_settings, instance.desired_variable_set)
-
-          # TODO this is what we should use. However, there is a currently unexplained problem with in which manifests as:
-=begin
-Task 8 | 19:46:06 | Creating missing vms: zookeeper/e0b06ec7-f799-4837-8696-39b9a476bdb2 (4) (00:00:26)
-                   L Error: - Unable to render templates for job 'zookeeper'. Errors are:
-  wrong status line: "0"
-Task 8 | 19:46:06 | Creating missing vms: zookeeper/51a68807-727b-4c71-b837-89eaf3faf520 (2) (00:00:26)
-                   L Error: - Unable to render templates for job 'zookeeper'. Errors are:
-  Bad file descriptor
-Task 8 | 19:46:09 | Creating missing vms: zookeeper/ed72f006-786a-44ec-b885-8e210acf07ee (1) (00:00:29)
-Task 8 | 19:46:09 | Creating missing vms: zookeeper/55b93f46-92f2-4afe-ae98-d3124af37ff7 (0) (00:00:29)
-                   L Error: - Unable to render templates for job 'zookeeper'. Errors are:
-  undefined method `closed?' for nil:NilClass
-Task 8 | 19:46:09 | Creating missing vms: zookeeper/c3735152-cb45-4df0-a3c3-32a0e60c41ce (6) (00:00:29)
-                   L Error: - Unable to render templates for job 'zookeeper'. Errors are:
-  wrong status line: "0"
-Task 8 | 19:46:09 | Creating missing vms: zookeeper/85661e99-1a32-4d6d-a587-eafdd488bb5c (8) (00:00:29)
-                   L Error: - Unable to render templates for job 'zookeeper'. Errors are:
-  undefined method `closed?' for nil:NilClass
-Task 8 | 19:46:10 | Creating missing vms: zookeeper/dbd9c999-2810-4378-b862-ee88054fa34f (5) (00:00:30)
-                   L Error: - Unable to render templates for job 'zookeeper'. Errors are:
-  closed stream
-=end
-
-          # env = @variables_interpolator.interpolate_with_versioning(env, instance.desired_variable_set)
-          # cloud_properties = @variables_interpolator.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
-          # network_settings = @variables_interpolator.interpolate_with_versioning(network_settings, instance.desired_variable_set)
+          env = @variables_interpolator.interpolate_with_versioning(env, instance.desired_variable_set)
+          cloud_properties = @variables_interpolator.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
+          network_settings = @variables_interpolator.interpolate_with_versioning(network_settings, instance.desired_variable_set)
 
           cpi = cloud_factory.get_name_for_az(instance_model.availability_zone)
 
