@@ -35,6 +35,7 @@ module Bosh::Director
     end
     let(:instance_model_state) { 'started' }
     let(:deployment_model) { Models::Deployment.make(name: 'deployment') }
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:instance) do
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
       vm_type = DeploymentPlan::VmType.new('name' => 'small_vm')
@@ -52,6 +53,7 @@ module Bosh::Director
         {},
         az,
         logger,
+        variables_interpolator,
       )
       instance.bind_existing_instance_model(instance_model)
 
@@ -66,6 +68,7 @@ module Bosh::Director
         instance: instance,
         desired_instance: desired_instance,
         tags: tags,
+        variables_interpolator: variables_interpolator,
       )
       allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)
       allow(instance_plan).to receive(:needs_disk?).and_return(false)
@@ -97,6 +100,7 @@ module Bosh::Director
       allow(rendered_templates_persistor).to receive(:persist)
       allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
       allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
+      allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).and_return(false)
     end
 
     context 'for any state' do

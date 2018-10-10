@@ -13,6 +13,8 @@ module Bosh::Director
     let(:changed_updater) { instance_double('Bosh::Director::InstanceUpdater') }
     let(:unchanged_updater) { instance_double('Bosh::Director::InstanceUpdater') }
 
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+
     before do
       allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
                                                   .with(ip_provider, template_blob_cache, dns_encoder)
@@ -56,12 +58,14 @@ module Bosh::Director
       context 'when job is up to date' do
         let(:serial_id) { 64 }
         let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
+        let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
         let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
             instance: needed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: nil
+            existing_instance: nil,
+            variables_interpolator: variables_interpolator,
           )
           allow(instance_plan).to receive(:changed?) { false }
           allow(instance_plan).to receive(:should_be_ignored?) { false }
@@ -105,33 +109,37 @@ module Bosh::Director
           instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
             name: 'job_name',
             update: update_config,
-	    instances: [needed_instance],
+            instances: [needed_instance],
             unneeded_instances: [],
-	    needed_instance_plans: needed_instance_plans,
+            needed_instance_plans: needed_instance_plans,
             obsolete_instance_plans: [],
-	    lifecycle: 'errand',
+            lifecycle: 'errand',
           })
-	end
+        end
 
-	let(:vm_created) { false }
+        let(:vm_created) { false }
         let(:needed_instance_model) { nil }
         let(:needed_instance) { instance_double(DeploymentPlan::Instance, vm_created?: vm_created, availability_zone: 'z1', model: needed_instance_model) }
+        let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
         let(:needed_instance_plans) do
-          instance_plan = DeploymentPlan::InstancePlan.new(
-            instance: needed_instance,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: nil
-          )
-          allow(instance_plan).to receive(:changed?) { true }
-          allow(instance_plan).to receive(:should_be_ignored?) { false }
-          allow(instance_plan).to receive(:changes) { [] }
-          allow(instance_plan).to receive(:persist_current_spec)
-          [instance_plan]
-	end
+          [
+            DeploymentPlan::InstancePlan.new(
+              instance: needed_instance,
+              desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+              existing_instance: nil,
+              variables_interpolator: variables_interpolator,
+            ).tap do |instance_plan|
+              allow(instance_plan).to receive(:changed?) { true }
+              allow(instance_plan).to receive(:should_be_ignored?) { false }
+              allow(instance_plan).to receive(:changes) { [] }
+              allow(instance_plan).to receive(:persist_current_spec)
+            end,
+          ]
+        end
 
-	context 'when a vm is already running' do
-	  let(:vm_created) { true }
-	  let(:needed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
+        context 'when a vm is already running' do
+          let(:vm_created) { true }
+          let(:needed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: 'job_name/fake_uuid (1)') }
 
           it 'applies' do
             expect(canary_updater).to receive(:update)
@@ -147,7 +155,7 @@ module Bosh::Director
               end
             end
           end
-	end
+        end
 
         it 'should not apply' do
           instance_group_updater.update
@@ -164,7 +172,8 @@ module Bosh::Director
           instance_plan = DeploymentPlan::InstancePlan.new(
             instance: needed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: nil
+            existing_instance: nil,
+            variables_interpolator: variables_interpolator,
           )
           allow(instance_plan).to receive(:changed?) { true }
           allow(instance_plan).to receive(:should_be_ignored?) { true }
@@ -185,8 +194,8 @@ module Bosh::Director
       context 'when job needs to be updated' do
         let(:serial_id) { 64 }
         let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
-        let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
-        let(:changed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (2)") }
+        let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: 'job_name/fake_uuid (1)') }
+        let(:changed_instance_model) { instance_double('Bosh::Director::Models::Instance', to_s: 'job_name/fake_uuid (2)') }
         let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: nil, index: 1, model: canary_model) }
         let(:links_manager) do
           instance_double(Bosh::Director::Links::LinksManager).tap do |double|
@@ -202,7 +211,8 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: canary,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: nil
+            existing_instance: nil,
+            variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
           allow(plan).to receive(:should_be_ignored?) { false }
@@ -213,7 +223,8 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: Models::Instance.make
+            existing_instance: Models::Instance.make,
+            variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
           allow(plan).to receive(:should_be_ignored?) { false }
@@ -224,7 +235,8 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: unchanged_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: Models::Instance.make
+            existing_instance: Models::Instance.make,
+            variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { false }
           allow(plan).to receive(:should_be_ignored?) { false }
@@ -303,7 +315,7 @@ module Bosh::Director
 
       context 'when the job has unneeded instances' do
         let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-        let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance) }
+        let(:instance_plan) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance, variables_interpolator: variables_interpolator) }
         before { allow(job).to receive(:unneeded_instances).and_return([instance]) }
         before { allow(job).to receive(:obsolete_instance_plans).and_return([instance_plan]) }
 
@@ -328,12 +340,12 @@ module Bosh::Director
           )
         end
 
-        let (:canaries) { 1 }
-        let (:max_in_flight) { 2 }
-        let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (1)") }
-        let(:changed_instance_model_1) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (2)") }
-        let(:changed_instance_model_2) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (3)") }
-        let(:changed_instance_model_3) { instance_double('Bosh::Director::Models::Instance', to_s: "job_name/fake_uuid (4)") }
+        let(:canaries) { 1 }
+        let(:max_in_flight) { 2 }
+        let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: 'job_name/fake_uuid (1)') }
+        let(:changed_instance_model_1) { instance_double('Bosh::Director::Models::Instance', to_s: 'job_name/fake_uuid (2)') }
+        let(:changed_instance_model_2) { instance_double('Bosh::Director::Models::Instance', to_s: 'job_name/fake_uuid (3)') }
+        let(:changed_instance_model_3) { instance_double('Bosh::Director::Models::Instance', to_s: 'job_name/fake_uuid (4)') }
         let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: 'z1', index: 1, model: canary_model) }
         let(:changed_instance_1) { instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: 'z1', index: 2, model: changed_instance_model_1) }
         let(:changed_instance_2) { instance_double('Bosh::Director::DeploymentPlan::Instance', availability_zone: 'z2', index: 3, model: changed_instance_model_2) }
@@ -343,7 +355,8 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: canary,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: nil
+            existing_instance: nil,
+            variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
           allow(plan).to receive(:should_be_ignored?) { false }
@@ -354,7 +367,8 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_1,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: Models::Instance.make
+            existing_instance: Models::Instance.make,
+            variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
           allow(plan).to receive(:should_be_ignored?) { false }
@@ -365,7 +379,8 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_2,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: Models::Instance.make
+            existing_instance: Models::Instance.make,
+            variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
           allow(plan).to receive(:should_be_ignored?) { false }
@@ -376,7 +391,8 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_3,
             desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
-            existing_instance: Models::Instance.make
+            existing_instance: Models::Instance.make,
+            variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
           allow(plan).to receive(:should_be_ignored?) { false }

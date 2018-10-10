@@ -17,6 +17,7 @@ module Bosh::Director
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
+        @variables_interpolator = ConfigServer::VariablesInterpolator.new
       end
 
       def dry_run?
@@ -84,7 +85,7 @@ module Bosh::Director
             @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
             create_network_stage(deployment_plan).perform unless dry_run?
 
-            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
+            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
 
             # that's where the links resolver is created
@@ -266,16 +267,14 @@ module Bosh::Director
 
       def snapshot_errands_variables_versions(errands_instance_groups, current_variable_set)
         errors = []
-        variables_interpolator = ConfigServer::VariablesInterpolator.new
-        config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
 
         errands_instance_groups.each do |instance_group|
           instance_group_errors = []
 
           begin
-            variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
+            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
             unless instance_group&.env&.spec.nil?
-              config_server_client.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
+              @variables_interpolator.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
             end
           rescue Exception => e
             instance_group_errors.push e
@@ -285,7 +284,7 @@ module Bosh::Director
           instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
             begin
-              variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
+              @variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
             rescue Exception => e
               instance_group_errors.push e
             end

@@ -12,14 +12,16 @@ module Bosh::Director
     let(:cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
     let(:encoder) { DnsEncoder.new }
 
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+
     let(:instance_plan) do
-      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance)
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance, variables_interpolator: variables_interpolator)
     end
 
     let(:instance) do
       deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
       availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
-      DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, logger)
+      DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, logger, variables_interpolator)
     end
 
     let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }

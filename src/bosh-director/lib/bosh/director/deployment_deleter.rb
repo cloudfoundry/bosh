@@ -6,6 +6,7 @@ module Bosh::Director
       @logger = logger
       @powerdns_manager = powerdns_manager
       @max_threads = max_threads
+      @variables_interpolator = ConfigServer::VariablesInterpolator.new
     end
 
     def delete(deployment_model, instance_deleter, vm_deleter)
@@ -14,7 +15,8 @@ module Bosh::Director
           existing_instance: instance_model,
           instance: nil,
           desired_instance: nil,
-          network_plans: []
+          network_plans: [],
+          variables_interpolator: @variables_interpolator
         )
       end
       event_log_stage = @event_log.begin_stage('Deleting instances', instance_plans.size)
