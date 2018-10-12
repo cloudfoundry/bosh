@@ -87,7 +87,7 @@ module Bosh::Director
         it 'attaches + mounts disk' do
           expect(attach_step).to receive(:perform)
           expect(agent_client).to receive(:wait_until_ready)
-          expect(agent_client).to receive(:mount_disk).with('disk123', disk_hint)
+          expect(agent_client).to receive(:mount_disk).with('disk123')
           disk_manager.attach_disk(persistent_disk, tags)
         end
       end
@@ -395,7 +395,7 @@ module Bosh::Director
               end
 
               it 'mounts the new disk' do
-                expect(agent_client).to receive(:mount_disk).with('new-disk-cid', disk_hint)
+                expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
                 disk_manager.update_persistent_disk(instance_plan)
               end
 
@@ -419,7 +419,7 @@ module Bosh::Director
                 end
 
                 it 'mounts the new disk' do
-                  expect(agent_client).to receive(:mount_disk).with('new-disk-cid', disk_hint)
+                  expect(agent_client).to receive(:mount_disk).with('new-disk-cid')
                   disk_manager.update_persistent_disk(instance_plan)
                 end
               end
@@ -475,7 +475,7 @@ module Bosh::Director
                 context 'when mounting the disk raises' do
                   before do
                     allow(agent_client).to receive(:list_disk).and_return(['disk123'])
-                    expect(agent_client).to receive(:mount_disk).with('new-disk-cid', disk_hint).and_raise(disk_error)
+                    expect(agent_client).to receive(:mount_disk).with('new-disk-cid').and_raise(disk_error)
                   end
 
                   it 'detaches the disk and re-raises the error' do

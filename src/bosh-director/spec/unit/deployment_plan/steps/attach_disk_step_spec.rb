@@ -37,30 +37,15 @@ module Bosh::Director
         end
 
         context 'when the cpi returns a disk hint for attach disk' do
-          let(:disk_hint) { nil }
+          let(:disk_hint) { 'foo' }
           before do
             allow(cloud).to receive(:attach_disk).and_return(disk_hint)
           end
 
-          it 'updates the report with disk hint with the disk hint' do
-            expect(report).to receive(:disk_hint=).with(disk_hint)
-            step.perform(report)
-          end
-
-          it 'sends an update_persistent_disk message to agent' do
-            allow(report).to receive(:disk_hint).and_return(disk_hint)
+          it 'sends an add_persistent_disk message to agent' do
             expect(agent_client).to receive(:wait_until_ready)
             expect(agent_client).to receive(:add_persistent_disk).with(disk.disk_cid, disk_hint)
             step.perform(report)
-          end
-
-          context 'when the cpi returned non-nil disk hint for attach disk' do
-            let(:disk_hint) { 'foo' }
-
-            it 'should update the report with the disk hint' do
-              expect(report).to receive(:disk_hint=).with(disk_hint)
-              step.perform(report)
-            end
           end
         end
 

@@ -17,10 +17,10 @@ module Bosh::Director
           cloud_factory = CloudFactory.create
           attach_disk_cloud = cloud_factory.get(@disk.cpi, instance_active_vm.stemcell_api_version)
           @logger.info("Attaching disk #{@disk.disk_cid}")
-          report.disk_hint = attach_disk_cloud.attach_disk(@disk.instance.vm_cid, @disk.disk_cid)
+          disk_hint = attach_disk_cloud.attach_disk(@disk.instance.vm_cid, @disk.disk_cid)
 
           agent_client(@disk.instance).wait_until_ready
-          agent_client(@disk.instance).add_persistent_disk(@disk.disk_cid, report.disk_hint)
+          agent_client(@disk.instance).add_persistent_disk(@disk.disk_cid, disk_hint)
 
           metadata_updater_cloud = cloud_factory.get(@disk.cpi)
           MetadataUpdater.build.update_disk_metadata(metadata_updater_cloud, @disk, @tags)

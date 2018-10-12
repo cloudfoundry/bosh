@@ -36,17 +36,6 @@ module Bosh::Director
             step.perform(report)
           end
 
-          context 'when disk_hint is provided' do
-            let(:disk_hint) { '/dev/sdc' }
-
-            it 'sends mount_disk method to agent' do
-              expect(agent_client).to receive(:wait_until_ready)
-              expect(agent_client).to receive(:mount_disk).with(disk.disk_cid, disk_hint)
-
-              step.perform(report)
-            end
-          end
-
           context 'when given nil disk' do
             let(:disk) { nil }
 
