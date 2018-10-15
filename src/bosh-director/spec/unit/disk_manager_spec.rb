@@ -62,6 +62,7 @@ module Bosh::Director
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
+      allow(agent_client).to receive(:remove_persistent_disk)
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:add_persistent_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
@@ -119,6 +120,7 @@ module Bosh::Director
           expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).once.and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
           expect(agent_client).to receive(:unmount_disk).with('disk123')
+          expect(agent_client).to receive(:remove_persistent_disk).with('disk123')
           disk_manager.detach_disk(persistent_disk)
         end
       end
@@ -128,6 +130,7 @@ module Bosh::Director
           persistent_disk.update(name: 'chewbacca')
           expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).at_least(:once).and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(agent_client).to receive(:remove_persistent_disk).with('disk123')
           expect(agent_client).to_not receive(:unmount_disk)
           disk_manager.detach_disk(persistent_disk)
         end
@@ -167,6 +170,7 @@ module Bosh::Director
               expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123')
               expect(cloud).to have_received(:resize_disk).with('disk123', 4096)
               expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
+              expect(agent_client).to have_received(:remove_persistent_disk).with('disk123')
               expect(agent_client).to have_received(:mount_disk)
             end
 
@@ -443,11 +447,13 @@ module Bosh::Director
                     before do
                       persistent_disk.add_snapshot(snapshot)
                       allow(agent_client).to receive(:unmount_disk).with('disk123')
+                      allow(agent_client).to receive(:remove_persistent_disk).with('disk123')
                       allow(cloud).to receive(:detach_disk).with('vm234', 'disk123')
                     end
 
                     it 'orphans the old mounted disk' do
                       expect(agent_client).to receive(:unmount_disk).with('disk123')
+                      expect(agent_client).to receive(:remove_persistent_disk).with('disk123')
                       expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
 
                       disk_manager.update_persistent_disk(instance_plan)
@@ -480,6 +486,7 @@ module Bosh::Director
 
                   it 'detaches the disk and re-raises the error' do
                     expect(agent_client).to_not receive(:unmount_disk)
+                    expect(agent_client).to receive(:remove_persistent_disk).with('new-disk-cid')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
                     expect do
                       disk_manager.update_persistent_disk(instance_plan)
@@ -495,6 +502,7 @@ module Bosh::Director
 
                   it 'deletes the disk and re-raises the error' do
                     expect(agent_client).to receive(:unmount_disk).with('new-disk-cid')
+                    expect(agent_client).to receive(:remove_persistent_disk).with('new-disk-cid')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
                     expect do
                       disk_manager.update_persistent_disk(instance_plan)
