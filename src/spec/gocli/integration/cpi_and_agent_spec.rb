@@ -102,7 +102,7 @@ describe 'CPI and Agent:', type: :integration do
       task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
       invocations = Support::InvocationsHelper::InvocationIterator.new(get_invocations(task_output))
 
-      expect(invocations.size).to eq(34)
+      expect(invocations.size).to eq(35)
 
       # Old VM
       expect(invocations.next).to be_agent_call('get_state')
@@ -113,6 +113,7 @@ describe 'CPI and Agent:', type: :integration do
       expect(invocations.next).to be_cpi_call('snapshot_disk')
       expect(invocations.next).to be_agent_call('list_disk')
       expect(invocations.next).to be_agent_call('unmount_disk')
+      expect(invocations.next).to be_agent_call('remove_persistent_disk')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('detach_disk', match([old_vm_id, disk_id]))
       expect(invocations.next).to be_cpi_call('info')
