@@ -52,7 +52,7 @@ describe 'calculated vm properties', type: :integration do
           'name' => 'dummy',
           'instances' => 1,
           'vm_resources' => vm_resources,
-          'jobs' => [{'name'=> 'foobar', 'release' => 'bosh-release'}],
+          'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
           'stemcell' => 'default',
           'networks' => [
             {
@@ -97,7 +97,9 @@ describe 'calculated vm properties', type: :integration do
       expect(invocations[4].inputs['vm_resources']).to eq(vm_resources)
 
       invocations.select {|inv| inv.method_name == 'create_vm'}.each do |inv|
-        expect(inv.inputs['cloud_properties']).to eq({"instance_type"=>"dummy", "ephemeral_disk"=>{"size"=>10}})
+        expect(inv.inputs['cloud_properties']).to eq(
+          'instance_type' => 'dummy', 'cpu' => 2, 'ram' => 1024, 'ephemeral_disk' => { 'size' => 10 },
+        )
       end
     end
 
@@ -165,6 +167,97 @@ describe 'calculated vm properties', type: :integration do
       create_vm_cloud_properties = invocations.select{|inv| inv.method_name == 'create_vm'}.map{|inv| inv.inputs['cloud_properties']}
       expect(create_vm_cloud_properties.select {|props| props['instance_type'] == 'dummy'}.count).to eq(3)
       expect(create_vm_cloud_properties.select {|props| props['instance_type'] == 'from-vm-type'}.count).to eq(1)
+    end
+  end
+
+  context 'when using vm_resources for one or multiple deployment' do
+    let(:cloud_config_with_vm_types_and_vm_resources) do
+      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config.delete('resource_pools')
+      cloud_config['vm_types'] = [{ 'name' => 'vm_type_1' }]
+      cloud_config['networks'].first['subnets'].first['static'] << '192.168.1.11'
+      cloud_config['networks'][0]['subnets'][0]['azs'] = ['z1']
+      cloud_config['compilation']['az'] = 'z1'
+      cloud_config['azs'] = [{ 'name' => 'z1' }]
+      cloud_config
+    end
+    let(:either_instance_group) do
+      {
+        'name' => 'dummy2',
+        'azs' => ['z1'],
+        'instances' => 1,
+        'jobs' => [],
+        'stemcell' => 'default',
+        'networks' => [
+          {
+            'name' => 'a',
+            'static_ips' => ['192.168.1.11'],
+          },
+        ],
+      }
+    end
+
+    context 'when not using vm_resources in the second deployment' do
+      let(:manifest) do
+        instance_group_with_vm_type = either_instance_group.merge('vm_type' => 'vm_type_1')
+        deployment_manifest_with_vm_block['instance_groups'][0]['jobs'] = []
+        deployment_manifest_with_vm_block['instance_groups'][0]['azs'] = ['z1']
+        deployment_manifest_with_vm_block['instance_groups'] << instance_group_with_vm_type
+        deployment_manifest_with_vm_block
+      end
+
+      before do
+        create_and_upload_test_release
+        upload_stemcell
+        upload_cloud_config(cloud_config_hash: cloud_config_with_vm_types_and_vm_resources)
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+
+      it 'only adds vm_resources for the specified instance_group' do
+        invocations = current_sandbox.cpi.invocations
+        ig_create_vm = invocations.select do |inv|
+          inv.method_name == 'create_vm' && inv.inputs['cloud_properties'] ==
+            { 'instance_type' => 'dummy', 'ram' => 1024, 'cpu' => 2, 'ephemeral_disk' => { 'size' => 10 } }
+        end
+        expect(ig_create_vm.count).to eq(1)
+      end
+    end
+
+    context 'when using other vm_resources in the second deployment' do
+      let(:manifest) do
+        instance_group_with_vm_resources = either_instance_group.merge(
+          'vm_resources' => {
+            'cpu' => 1,
+            'ram' => 512,
+            'ephemeral_disk_size' => 204800,
+          },
+        )
+        deployment_manifest_with_vm_block['instance_groups'][0]['jobs'] = []
+        deployment_manifest_with_vm_block['instance_groups'][0]['azs'] = ['z1']
+        deployment_manifest_with_vm_block['instance_groups'] << instance_group_with_vm_resources
+        deployment_manifest_with_vm_block
+      end
+
+      before do
+        create_and_upload_test_release
+        upload_stemcell
+        upload_cloud_config(cloud_config_hash: cloud_config_with_vm_types_and_vm_resources)
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+
+      it 'only adds vm_resources for the specified instance_group' do
+        invocations = current_sandbox.cpi.invocations
+        ig1_create_vm = invocations.select do |inv|
+          inv.method_name == 'create_vm' && inv.inputs['cloud_properties'] ==
+            { 'instance_type' => 'dummy', 'ram' => 512, 'cpu' => 1, 'ephemeral_disk' => { 'size' => 204800 } }
+        end
+        ig2_create_vm = invocations.select do |inv|
+          inv.method_name == 'create_vm' && inv.inputs['cloud_properties'] ==
+            { 'instance_type' => 'dummy', 'ram' => 1024, 'cpu' => 2, 'ephemeral_disk' => { 'size' => 10 } }
+        end
+        expect(ig1_create_vm.count).to eq(1)
+        expect(ig2_create_vm.count).to eq(1)
+      end
     end
   end
 
