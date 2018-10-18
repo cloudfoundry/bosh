@@ -188,6 +188,10 @@ if p('hm.datadog_enabled')
     datadog_plugin['options']['pagerduty_service_name'] = pagerduty_service_name
   end
 
+  if_p('hm.datadog.custom_tags') do |custom_tags|
+    datadog_plugin['options']['custom_tags'] = custom_tags
+  end
+
   params['plugins'] << datadog_plugin
 end
 

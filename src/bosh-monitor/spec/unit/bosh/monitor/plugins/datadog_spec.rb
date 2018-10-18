@@ -2,8 +2,9 @@ require 'spec_helper'
 
 describe Bhm::Plugins::DataDog do
   let(:options) do
-    { 'api_key' => 'api_key', 'application_key' => 'application_key' }
+    { 'api_key' => 'api_key', 'application_key' => 'application_key', 'custom_tags' => { 'customkey' => 'customvalue', 'customkey2' => 'customvalue2' } }
   end
+
   subject { described_class.new(options) }
 
   let(:dog_client) { double('DataDog Client') }
@@ -96,6 +97,8 @@ describe Bhm::Plugins::DataDog do
           agent:deadbeef
           team:ateam
           team:bteam
+          customkey:customvalue
+          customkey2:customvalue2
       ]
       time = Time.now
       expect(dog_client).to receive(:emit_points).with('bosh.healthmonitor.system.load.1m', [[Time.at(time.to_i) , 0.2]], tags: tags)
