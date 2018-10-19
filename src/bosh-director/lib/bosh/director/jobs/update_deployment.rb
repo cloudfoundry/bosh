@@ -89,6 +89,63 @@ module Bosh::Director
         end
       end
 
+      # unused_subnets returns all the subnets in the iaas that are not being used any more
+      def unused_subnets(new_subnets, old_subnets)
+        old_subnets.select do |subnet|
+          new_subnets.find { |e| e.name == subnet.name }.nil?
+        end
+      end
+
+      def used_cloud_config_state(deployment)
+        latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
+        if deployment.cloud_configs.empty?
+          'none'
+        elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
+          'latest'
+        else
+          'outdated'
+        end
+      end
+
+      # removes a subnet model in the iaas and from the database
+      def delete_subnet(cloud_factory, subnet)
+        cpi = cloud_factory.get(subnet.cpi)
+        begin
+          @logger.info("deleting unused subnet #{subnet.name}")
+          cpi.delete_network(subnet.cid)
+        rescue StandardError => e
+          # failing to delete the subnet in the iaas shouldn't fail the deployment
+          @logger.error("failed to delete subnet #{subnet.name}: #{e.message}")
+        end
+
+        subnet.destroy
+      end
+
+      def remove_unused_subnets
+        return unless Config.network_lifecycle_enabled?
+
+        deployment_model = deployment_plan.model
+        deployment_plan.instance_groups.each do |inst_group|
+          inst_group.networks.each do |jobnetwork|
+            network = jobnetwork.deployment_network
+            next unless network.managed?
+
+            with_network_lock(network.name) do
+              db_network = Bosh::Director::Models::Network.first(name: network.name)
+              # To actually remove the subnets, two conditions have to be met:
+              # 1) all deployments are upgraded to the latest cloud config
+              # 2) There are subnets in the database for that network that don't exist anymore in the manifest
+              if db_network.deployments.all? { |deployment| used_cloud_config_state(deployment) == 'latest' }
+                unused_subnets(network.subnets, db_network.subnets).each do |subnet|
+                  cloud_factory = AZCloudFactory.create_with_latest_configs(deployment_model)
+                  delete_subnet(cloud_factory, subnet)
+                end
+              end
+            end
+          end
+        end
+      end
+
       def mark_orphaned_networks
         return unless deploy_action?
         return unless Config.network_lifecycle_enabled?
@@ -436,6 +493,7 @@ module Bosh::Director
         remove_unused_links
         remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
         mark_orphaned_networks
+        remove_unused_subnets
       end
 
       def remove_unused_links

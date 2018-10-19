@@ -246,9 +246,9 @@ module Bosh
         File.write(file, network_info)
         addr_properties = {}
         if subnet_definition.key?('netmask_bits')
-          addr_properties['range'] = '192.168.10.0/24'
-          addr_properties['gateway'] = '192.168.10.1'
-          addr_properties['reserved'] = ['192.168.10.2']
+          addr_properties['range'] = '172.16.10.0/24'
+          addr_properties['gateway'] = '172.16.10.1'
+          addr_properties['reserved'] = ['172.16.10.2']
         end
 
         [network_id, addr_properties, { name: network_id }]

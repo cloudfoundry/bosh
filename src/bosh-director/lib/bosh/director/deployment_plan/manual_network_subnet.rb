@@ -23,7 +23,7 @@ module Bosh::Director
         restricted_ips = Set.new
         static_ips = Set.new
 
-        if managed && !range_property
+        if managed && !range_property && !size_defined_subnet_modified?(network_name, subnet_spec)
           range_property, gateway_property, reserved_property = parse_properties_from_database(network_name, sn_name)
         end
 
@@ -100,6 +100,17 @@ module Bosh::Director
           sn_name,
           netmask_bits,
         )
+      end
+
+      def self.size_defined_subnet_modified?(network_name, subnet_spec)
+        network = Bosh::Director::Models::Network.first(name: network_name)
+        return false unless network
+
+        subnet = network.subnets.find { |s| s.name == subnet_spec['name'] }
+        return false unless subnet
+
+        subnet_spec['netmask_bits'] != subnet.netmask_bits ||
+          subnet_spec['cloud_properties'] != JSON.parse(subnet.predeployment_cloud_properties)
       end
 
       def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil)
