@@ -27,7 +27,7 @@ describe 'CPI and Agent:', type: :integration do
     it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
       invocations = Support::InvocationsHelper::InvocationIterator.new(fresh_deploy_invocations)
 
-      expect(invocations.size).to eq(55)
+      expect(invocations.size).to eq(53)
 
       # Compilation VM
       expect(invocations.next).to be_cpi_call('info')
@@ -81,8 +81,6 @@ describe 'CPI and Agent:', type: :integration do
       expect(create_disk).to be_cpi_call('create_disk')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('attach_disk', match([create_vm.response, create_disk.response]))
-      expect(invocations.next).to be_agent_call('ping')
-      expect(invocations.next).to be_agent_call('add_persistent_disk')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('set_disk_metadata')
       expect(invocations.next).to be_agent_call('ping')
@@ -102,7 +100,7 @@ describe 'CPI and Agent:', type: :integration do
       task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
       invocations = Support::InvocationsHelper::InvocationIterator.new(get_invocations(task_output))
 
-      expect(invocations.size).to eq(35)
+      expect(invocations.size).to eq(33)
 
       # Old VM
       expect(invocations.next).to be_agent_call('get_state')
@@ -128,8 +126,6 @@ describe 'CPI and Agent:', type: :integration do
       expect(invocations.next).to be_agent_call('ping')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('attach_disk', match([create_vm.response, disk_id]))
-      expect(invocations.next).to be_agent_call('ping')
-      expect(invocations.next).to be_agent_call('add_persistent_disk')
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('set_disk_metadata')
       expect(invocations.next).to be_agent_call('ping')
