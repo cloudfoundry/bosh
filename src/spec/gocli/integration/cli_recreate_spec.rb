@@ -75,6 +75,34 @@ describe 'recreate instance', type: :integration do
     expect(director.instances).not_to match_array(initial_instances.map(&:vm_cid))
   end
 
+  it 'recreates vms for an instance created with a persistent disk' do
+    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(persistent_disk_pool: 'fast_disks')
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config['disk_types'] = [
+      {
+        'name' => 'fast_disks',
+        'disk_size' => 1024,
+        'cloud_properties' => {},
+      },
+    ]
+
+    deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config)
+
+    bosh_runner.run('instances --details', deployment_name: 'simple')
+    instance = director.find_instance(director.instances, 'foobar', '0')
+    original_disk_cids = instance.disk_cids
+
+    output = bosh_runner.run('recreate foobar/0', deployment_name: 'simple')
+    expect(output).to match(/Updating instance foobar: foobar.* \(0\)/)
+
+    instance_was_recreated = director.find_instance(director.instances, 'foobar', '0')
+    post_recreate_disk_cids = instance_was_recreated.disk_cids
+
+    bosh_runner.run('instances --details', deployment_name: 'simple')
+
+    expect(post_recreate_disk_cids).to match_array(original_disk_cids)
+  end
+
   context 'when a new release is uploaded and the release version in the manifest is latest' do
     it 'recreates an instance with initially resolved release version' do
       release_filename = spec_asset('unsorted-release-0+dev.1.tgz')
