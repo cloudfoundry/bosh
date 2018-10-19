@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'Managed persistent disk', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
 
   let(:cloud_config_hash) do
     hash = Bosh::Spec::NewDeployments.simple_cloud_config
