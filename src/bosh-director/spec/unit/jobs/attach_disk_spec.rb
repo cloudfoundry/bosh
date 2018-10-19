@@ -288,12 +288,12 @@ module Bosh::Director
         end
 
         it 'attaches the new disk and sets disk metadata' do
-          expect(cloud).to receive(:attach_disk)
+          expect(cloud).to receive(:attach_disk).and_return('/dev/sdf')
           expect(cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           expect(cloud).to receive(:detach_disk)
-          expect(agent_client).to receive(:remove_persistent_disk)
+          expect(agent_client).to receive(:remove_persistent_disk).with('original-disk-cid')
           expect(agent_client).to receive(:wait_until_ready)
-          expect(agent_client).to receive(:add_persistent_disk)
+          expect(agent_client).to receive(:add_persistent_disk).with(disk_cid, '/dev/sdf')
           attach_disk_job.perform
 
           active_disks = instance_model.persistent_disks.select { |disk| disk.active }
@@ -304,7 +304,7 @@ module Bosh::Director
         it 'orphans and unmounts the previous disk' do
           expect(Models::OrphanDisk.all).to be_empty
           expect(cloud).to receive(:detach_disk).with(vm_cid, 'original-disk-cid')
-          expect(agent_client).to receive(:remove_persistent_disk)
+          expect(agent_client).to receive(:remove_persistent_disk).with('original-disk-cid')
           expect(agent_client).to receive(:unmount_disk)
 
           attach_disk_job.perform
@@ -336,9 +336,9 @@ module Bosh::Director
         end
 
         it 'attaches the new disk' do
-          expect(cloud).to receive(:attach_disk)
+          expect(cloud).to receive(:attach_disk).and_return('/dev/sdf')
           expect(agent_client).to receive(:wait_until_ready)
-          expect(agent_client).to receive(:add_persistent_disk)
+          expect(agent_client).to receive(:add_persistent_disk).with(disk_cid, '/dev/sdf')
           expect(cloud_for_set_disk_metadata).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           attach_disk_job.perform
 

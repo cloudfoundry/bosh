@@ -19,8 +19,10 @@ module Bosh::Director
           @logger.info("Attaching disk #{@disk.disk_cid}")
           disk_hint = attach_disk_cloud.attach_disk(@disk.instance.vm_cid, @disk.disk_cid)
 
-          agent_client(@disk.instance).wait_until_ready
-          agent_client(@disk.instance).add_persistent_disk(@disk.disk_cid, disk_hint)
+          if disk_hint
+            agent_client(@disk.instance).wait_until_ready
+            agent_client(@disk.instance).add_persistent_disk(@disk.disk_cid, disk_hint)
+          end
 
           metadata_updater_cloud = cloud_factory.get(@disk.cpi)
           MetadataUpdater.build.update_disk_metadata(metadata_updater_cloud, @disk, @tags)
