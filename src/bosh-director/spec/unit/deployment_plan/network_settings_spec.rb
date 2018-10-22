@@ -50,9 +50,12 @@ module Bosh::Director::DeploymentPlan
     let(:use_short_dns_addresses) { false }
 
     before do
-      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:num_for_uuid).with('uuid-1').and_return('1')
-      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:id_for_network).with('net_a').and_return('1')
-      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:id_for_group_tuple).with('fake-job', 'fake-deployment').and_return('1')
+      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:num_for_uuid)
+        .with('uuid-1').and_return('1')
+      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:id_for_network)
+        .with('net_a').and_return('1')
+      allow_any_instance_of(Bosh::Director::DnsEncoder).to receive(:id_for_group_tuple)
+        .with('instance-group', 'fake-job', 'fake-deployment').and_return('1')
     end
 
     describe '#to_hash' do

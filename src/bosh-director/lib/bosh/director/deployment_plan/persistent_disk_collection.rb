@@ -15,15 +15,19 @@ module Bosh::Director
       end
 
       def add_by_disk_size(disk_size)
-        raise Exception, 'This instance group is not supposed to have multiple disks,
-                          but tried to attach multiple disks.' if @collection.size > 0
+        unless @collection.empty?
+          raise Exception, 'This instance group is not supposed to have multiple disks,
+                            but tried to attach multiple disks.'
+        end
 
         add_to_collection(ManagedPersistentDisk.new(DiskType.new(SecureRandom.uuid, disk_size, {})))
       end
 
       def add_by_disk_type(disk_type)
-        raise Exception, 'This instance group is not supposed to have multiple disks,
-                        but tried to attach multiple disks.' if @collection.size > 0
+        unless @collection.empty?
+          raise Exception, 'This instance group is not supposed to have multiple disks,
+                          but tried to attach multiple disks.'
+        end
 
         add_to_collection(ManagedPersistentDisk.new(disk_type))
       end
@@ -33,7 +37,7 @@ module Bosh::Director
       end
 
       def add_by_disk_name_and_type(disk_name, disk_type)
-        unless collection.find { |disk| disk.managed? }.nil?
+        unless collection.find(&:managed?).nil?
           raise Exception, 'This instance group cannot have multiple disks when using a managed disk.'
         end
 
@@ -41,11 +45,11 @@ module Bosh::Director
       end
 
       def non_managed_disks
-        collection.reject { |disk| disk.managed? }
+        collection.reject(&:managed?)
       end
 
       def needs_disk?
-        collection.length > 0
+        !collection.empty?
       end
 
       def self.changed_disk_pairs(old_disk_collection,
@@ -67,29 +71,27 @@ module Bosh::Director
         old_disk_collection.each do |old_disk|
           new_disk = new_disk_collection.find { |disk| old_disk.name == disk.name }
 
-          if new_disk.nil?
-            paired << {
-              old: old_disk,
-              new: new_disk,
-            }
-          end
+          next unless new_disk.nil?
+
+          paired << {
+            old: old_disk,
+            new: new_disk,
+          }
         end
 
         return paired if recreate_persistent_disks
 
         disk_comparator = Bosh::Director::Disk::PersistentDiskComparator.new
 
-        paired.select do |disk_pair|
+        paired.reject do |disk_pair|
           old_pair = Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_pair[:old], old_variable_set)
           new_pair = Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_pair[:new], new_variable_set)
-          !disk_comparator.is_equal?(old_pair, new_pair)
+          disk_comparator.is_equal?(old_pair, new_pair)
         end
       end
 
       def generate_spec
-        if @collection.empty?
-          return {'persistent_disk' => 0}
-        end
+        return { 'persistent_disk' => 0 } if @collection.empty?
 
         spec = {}
 
@@ -121,7 +123,11 @@ module Bosh::Director
         end
 
         def to_s
-          {name: name, size: size, cloud_properties: cloud_properties}.inspect
+          { name: name, size: size, cloud_properties: cloud_properties }.inspect
+        end
+
+        def to_json
+          { name: name, size: size, cloud_properties: cloud_properties }.to_json
         end
 
         def managed?
@@ -130,12 +136,14 @@ module Bosh::Director
 
         def ==(other)
           return false unless other.is_a? PersistentDisk
+
           cloud_properties == other.cloud_properties &&
             size == other.size && name == other.name
         end
 
         def size_diff_only?(other)
           return false unless other.is_a? PersistentDisk
+
           cloud_properties == other.cloud_properties &&
             size != other.size && name == other.name
         end

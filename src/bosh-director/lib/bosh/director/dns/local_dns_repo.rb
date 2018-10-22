@@ -5,8 +5,9 @@ module Bosh::Director
       @root_domain = root_domain
     end
 
-    def update_for_instance(instance_model)
-      diff = diff(instance_model)
+    def update_for_instance(instance_plan)
+      diff = diff(instance_plan)
+      instance_model = instance_plan.instance.model
       @logger.debug("Updating local dns records for '#{instance_model}': obsolete records: #{dump(diff.obsolete)}, new records: #{dump(diff.missing)}, unmodified records: #{dump(diff.unaffected)}")
 
       Config.db.transaction do
@@ -15,7 +16,9 @@ module Bosh::Director
         end
 
         diff.obsolete.each do |record_hash|
-          delete_obsolete_local_dns_records(record_hash)
+          delete_obsolete_local_dns_records(record_hash.reject do |k, _|
+            k == :links
+          end)
         end
 
         if diff.missing.empty? && !diff.obsolete.empty?
@@ -24,9 +27,10 @@ module Bosh::Director
       end
     end
 
-    def diff(instance_model)
+    def diff(instance_plan)
+      instance_model = instance_plan.instance.model
       existing_record_hashes = existing_record_hashes(instance_model)
-      desired_record_hashes = desired_record_hashes(instance_model)
+      desired_record_hashes = desired_record_hashes(instance_plan)
 
       new_record_hashes = desired_record_hashes - existing_record_hashes
       obsolete_record_hashes = existing_record_hashes - desired_record_hashes
@@ -48,24 +52,16 @@ module Bosh::Director
 
     private
 
-    def desired_record_hashes(instance_model)
-      networks_and_ips(instance_model).map do |network_to_ip|
-        agent_id = nil
-        if instance_model.active_vm != nil
-          agent_id = instance_model.active_vm.agent_id
-        end
-
-        {
-          :ip => network_to_ip[:ip],
-          :instance_id => instance_model.id,
-          :az => instance_model.availability_zone,
-          :network => network_to_ip[:name],
-          :deployment => instance_model.deployment.name,
-          :instance_group => instance_model.job,
-          :agent_id => agent_id,
-          :domain => @root_domain
-        }
+    def desired_record_hashes(instance_plan)
+      desired_record_hashes = []
+      networks_and_ips(instance_plan.instance.model).map do |network_to_ip|
+        desired_record_hashes << instance_plan.instance_group_properties.merge(
+          ip: network_to_ip[:ip],
+          network: network_to_ip[:name],
+          domain: @root_domain,
+        )
       end
+      desired_record_hashes
     end
 
     def existing_record_hashes(instance_model)
@@ -81,11 +77,9 @@ module Bosh::Director
     end
 
     def insert_new_record(attrs)
-      begin
-        Models::LocalDnsRecord.create(attrs)
-      rescue Sequel::UniqueConstraintViolation
-        @logger.info('Ignoring duplicate DNS record for performance reason')
-      end
+      Models::LocalDnsRecord.create(attrs)
+    rescue Sequel::UniqueConstraintViolation
+      @logger.info('Ignoring duplicate DNS record for performance reason')
     end
 
     def networks_and_ips(instance_model)

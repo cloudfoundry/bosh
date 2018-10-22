@@ -154,15 +154,28 @@ module Bosh
           encoder_to_inject = @dns_encoder
         end
 
-        return EvaluationLink.new(
+        instance_group = link_spec['instance_group']
+        link_provider_name = if String(link_spec['link_provider_name']).empty?
+                               String(link_spec['link_provider_original_name'])
+                             else
+                               String(link_spec['link_provider_name'])
+                             end
+
+        link_provider_type = String(link_spec['link_provider_type'])
+
+        if !link_provider_name.empty? && !link_provider_type.empty?
+          instance_group = "link-#{link_provider_name}-#{link_provider_type}"
+        end
+
+        EvaluationLink.new(
           link_instances,
           link_spec['properties'],
-          link_spec['instance_group'],
+          instance_group,
           link_spec['default_network'],
           link_spec['deployment_name'],
           link_spec['domain'],
           encoder_to_inject,
-          link_spec.fetch('use_short_dns_addresses', false)
+          link_spec.fetch('use_short_dns_addresses', false),
         )
       end
 

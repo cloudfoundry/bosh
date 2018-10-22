@@ -72,7 +72,7 @@ module Bosh::Director
           perform
 
           expect(instance_plan.rendered_templates.template_hashes.keys).to eq ['dummy']
-          expect(instance.configuration_hash).to eq('8c0d7fac26d36e3b51de2d43f17302b4c04fa377')
+          expect(instance.configuration_hash).to eq('53b2a7cac279af8bb73885b08a794ab5dd21bb8c')
           expect(instance.template_hashes.keys).to eq(['dummy'])
         end
 
@@ -88,11 +88,11 @@ module Bosh::Director
       context 'when getting the templates spec of an instance plan errors' do
         before do
           allow(instance).to receive(:instance_group_name).and_return('my_instance_group')
-          allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_raise Exception, <<-EOF
-- Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-- Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-- Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
-          EOF
+          allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_raise StandardError, <<~ERRORMSG
+            - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+            - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+            - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          ERRORMSG
         end
 
         it 'formats the error messages' do

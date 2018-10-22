@@ -16,7 +16,7 @@ module Bosh::Director
         octets << criteria[:uuid]
       end
 
-      if use_short_dns
+      if use_short_dns || criteria[:group_type] == Models::LocalDnsEncodedGroup::Types::LINK
         octets << encode_service_group(criteria)
       else
         octets += encode_long_subdomains(criteria)
@@ -55,12 +55,13 @@ module Bosh::Director
       "#{index}"
     end
 
-    def id_for_group_tuple(instance_group, deployment)
+    def id_for_group_tuple(group_type, group_name, deployment)
       index = @service_groups[{
-        instance_group: instance_group,
-        deployment: deployment
+        group_type: group_type,
+        group_name: group_name,
+        deployment: deployment,
       }]
-      "#{index}"
+      index.to_s
     end
 
     private
@@ -105,15 +106,16 @@ module Bosh::Director
 
     def encode_long_subdomains(criteria)
       [
-        Canonicalizer.canonicalize(criteria[:instance_group]),
-        Canonicalizer.canonicalize(criteria[:default_network]),
-        Canonicalizer.canonicalize(criteria[:deployment_name])
+        Canonicalizer.canonicalize(criteria.fetch(:group_name)),
+        Canonicalizer.canonicalize(criteria.fetch(:default_network)),
+        Canonicalizer.canonicalize(criteria.fetch(:deployment_name)),
       ]
     end
 
     def encode_service_group(criteria)
       "q-g#{id_for_group_tuple(
-        criteria[:instance_group],
+        criteria[:group_type],
+        criteria[:group_name],
         criteria[:deployment_name])}"
     end
   end

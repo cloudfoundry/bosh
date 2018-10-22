@@ -11,7 +11,9 @@ module Bosh::Director
         let(:vm_creator) { instance_double(VmCreator) }
 
         let(:instance_model_create_swap_delete) { instance_double(Models::Instance) }
-        let(:deployment_plan_instance_create_swap_delete) { instance_double(DeploymentPlan::Instance, model: instance_model_create_swap_delete) }
+        let(:deployment_plan_instance_create_swap_delete) do
+          instance_double(DeploymentPlan::Instance, model: instance_model_create_swap_delete)
+        end
         let(:instance_plans_with_create_swap_delete_and_needs_duplicate_vm) do
           [instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_create_swap_delete)]
         end
@@ -20,11 +22,17 @@ module Bosh::Director
         let(:deployment_plan_instance_0) { instance_double(DeploymentPlan::Instance, model: instance_model_0) }
         let(:instance_model_1) { instance_double(Models::Instance) }
         let(:deployment_plan_instance_1) { instance_double(DeploymentPlan::Instance, model: instance_model_1) }
+        let(:deployment_plan_instance_plan_0) do
+          instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_0)
+        end
+        let(:deployment_plan_instance_plan_1) do
+          instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_1)
+        end
 
         let(:instance_plans_with_missing_vms) do
           [
-            instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_0),
-            instance_double(DeploymentPlan::InstancePlan, instance: deployment_plan_instance_1),
+            deployment_plan_instance_plan_0,
+            deployment_plan_instance_plan_1,
           ]
         end
         let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
@@ -74,8 +82,8 @@ module Bosh::Director
           end
 
           it 'updates and publishes local dns records for the missing plans' do
-            expect(local_dns_repo).to receive(:update_for_instance).with(instance_model_0).ordered
-            expect(local_dns_repo).to receive(:update_for_instance).with(instance_model_1).ordered
+            expect(local_dns_repo).to receive(:update_for_instance).with(deployment_plan_instance_plan_0).ordered
+            expect(local_dns_repo).to receive(:update_for_instance).with(deployment_plan_instance_plan_1).ordered
             expect(dns_publisher).to receive(:publish_and_broadcast).ordered
             subject.perform
           end

@@ -168,8 +168,9 @@ module Bosh::Director::ConfigServer
       use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)
       dns_encoder = Bosh::Director::LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
       query_criteria = {
+        group_type: Bosh::Director::Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+        group_name: link_content['instance_group'],
         deployment_name: link_content['deployment_name'],
-        instance_group: link_content['instance_group'],
         default_network: link_content['default_network'],
         root_domain: link_content['domain'],
       }

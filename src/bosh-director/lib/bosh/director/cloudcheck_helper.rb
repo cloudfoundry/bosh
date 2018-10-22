@@ -103,7 +103,7 @@ module Bosh::Director
 
         @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
         powerdns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
-        local_dns_manager.update_dns_record_for_instance(instance_model)
+        local_dns_manager.update_dns_record_for_instance(instance_plan_to_create)
 
         powerdns_manager.flush_dns_cache
 
