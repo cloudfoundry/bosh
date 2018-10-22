@@ -16,7 +16,6 @@ groups:
       - load-tests-mysql
       - fuzz-tests
       - candidate-release
-      - compile-bosh-dev-release-trusty
       - compile-bosh-dev-release-xenial
       - bats-centos
       - bats-ubuntu-trusty
@@ -651,35 +650,19 @@ jobs:
       params:
         file: "compiled-release/*.tgz"
 
-  - name: compile-bosh-dev-release-trusty
-    plan:
-    - aggregate:
-      - get: bosh-src
-      - get: release
-        resource: bosh-candidate-release-tarballs
-        passed:
-        - candidate-release
-        trigger: true
-      - get: stemcell
-        resource: warden-ubuntu-trusty
-        trigger: true
-    - task: export-release
-      file: bosh-src/ci/tasks/export-release.yml
-      privileged: true
-    - put: bosh-compiled-candidate-trusty
-      params:
-        file: "compiled-release/*.tgz"
-
   - name: bats-centos
     serial: true
     plan:
     - do:
       - aggregate:
-        - get: bosh-release
-          resource: bosh-candidate-release-tarballs
-          trigger: true
+        - get: bosh-candidate-release-tarballs
           passed:
           - candidate-release
+        - get: bosh-release
+          resource: bosh-compiled-candidate-xenial
+          trigger: true
+          passed:
+          - compile-bosh-dev-release-xenial
         - get: cpi-release
         - get: stemcell
           resource: vsphere-esxi-centos-7
@@ -714,10 +697,10 @@ jobs:
           passed:
           - candidate-release
         - get: bosh-release
-          resource: bosh-compiled-candidate-trusty
+          resource: bosh-compiled-candidate-xenial
           trigger: true
           passed:
-          - compile-bosh-dev-release-trusty
+          - compile-bosh-dev-release-xenial
         - get: cpi-release
         - get: stemcell
           resource: vsphere-esxi-ubuntu-trusty
@@ -793,10 +776,10 @@ jobs:
           passed:
           - candidate-release
         - get: bosh-release
-          resource: bosh-compiled-candidate-trusty
+          resource: bosh-compiled-candidate-xenial
           trigger: true
           passed:
-          - compile-bosh-dev-release-trusty
+          - compile-bosh-dev-release-xenial
         - get: bats
         - get: bosh-cli
         - get: bosh-src
@@ -865,10 +848,10 @@ jobs:
         passed:
         - candidate-release
       - get: bosh-release
-        resource: bosh-compiled-candidate-trusty
+        resource: bosh-compiled-candidate-xenial
         trigger: true
         passed:
-        - compile-bosh-dev-release-trusty
+        - compile-bosh-dev-release-xenial
     - do:
       - put: brats-terraform
         attempts: 2
@@ -965,10 +948,10 @@ jobs:
         passed:
         - candidate-release
       - get: bosh-release
-        resource: bosh-compiled-candidate-trusty
+        resource: bosh-compiled-candidate-xenial
         trigger: true
         passed:
-        - compile-bosh-dev-release-trusty
+        - compile-bosh-dev-release-xenial
       - get: bbr-compiled-release
         resource: bbr-compiled-trusty
         passed: [compile-bbr-trusty]
@@ -1453,14 +1436,6 @@ resources:
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
       versioned_file: "bosh-dev-release.tgz"
-
-  - name: bosh-compiled-candidate-trusty
-    type: s3
-    source:
-      bucket: "bosh-compiled-candidate-tarballs"
-      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
-      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
-      regexp: "bosh-(\\d+).*trusty.*.tgz"
 
   - name: bosh-compiled-candidate-xenial
     type: s3
