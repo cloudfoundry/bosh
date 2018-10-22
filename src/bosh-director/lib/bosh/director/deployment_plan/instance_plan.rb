@@ -7,6 +7,7 @@ module Bosh
         # existing_instance: Model::Instance
         # desired_instance: DeploymentPlan::DesiredInstance
         # instance: DeploymentPlan::Instance
+
         def initialize(existing_instance:,
                        desired_instance:,
                        instance:,
@@ -17,7 +18,8 @@ module Bosh
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
                        logger: Config.logger,
-                       tags: {})
+                       tags: {},
+                       variables_interpolator:)
           @existing_instance = existing_instance
           @desired_instance = desired_instance
           @instance = instance
@@ -30,12 +32,14 @@ module Bosh
           @logger = logger
           @tags = tags
           @powerdns_manager = PowerDnsManagerProvider.create
-          @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
+          @variables_interpolator = variables_interpolator
         end
 
         attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :tags
 
         attr_accessor :network_plans
+
+        attr_reader :variables_interpolator
 
         # An instance of Bosh::Director::Core::Templates::RenderedJobInstance
         attr_accessor :rendered_templates
@@ -161,7 +165,7 @@ module Bosh
           old_network_settings = remove_dns_record_name_from_network_settings(old_network_settings)
           new_network_settings = remove_dns_record_name_from_network_settings(new_network_settings)
 
-          changed = @config_server_client.interpolated_versioned_variables_changed?(old_network_settings, new_network_settings,
+          changed = @variables_interpolator.interpolated_versioned_variables_changed?(old_network_settings, new_network_settings,
                                                                                     @instance.previous_variable_set,
                                                                                     @instance.desired_variable_set)
 
@@ -297,11 +301,11 @@ module Bosh
           return false if vm.cloud_properties_json.nil?
 
           desired_instance_group = @desired_instance.instance_group
-          desired_cloud_properties = @config_server_client.interpolate_with_versioning(
+          desired_cloud_properties = @variables_interpolator.interpolate_with_versioning(
             @instance.cloud_properties,
             @instance.desired_variable_set,
           )
-          vm_cloud_properties = @config_server_client.interpolate_with_versioning(
+          vm_cloud_properties = @variables_interpolator.interpolate_with_versioning(
             JSON.parse(vm.cloud_properties_json),
             @instance.previous_variable_set,
           )
@@ -437,7 +441,7 @@ module Bosh
         end
 
         def spec
-          InstanceSpec.create_from_database(@existing_instance.spec, @instance)
+          InstanceSpec.create_from_database(@existing_instance.spec, @instance, @variables_interpolator)
         end
 
         def needs_disk?

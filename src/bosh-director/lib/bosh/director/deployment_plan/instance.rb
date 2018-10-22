@@ -38,7 +38,7 @@ module Bosh::Director
 
       attr_reader :deployment_model
 
-      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, az, logger)
+      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, az, logger, variables_interpolator)
         new(
           instance_group.name,
           index,
@@ -51,6 +51,7 @@ module Bosh::Director
           instance_state,
           az,
           logger,
+          variables_interpolator,
         )
       end
 
@@ -64,7 +65,8 @@ module Bosh::Director
                      deployment_model,
                      instance_state,
                      availability_zone,
-                     logger)
+                     logger,
+                     variables_interpolator)
         @index = index
         @availability_zone = availability_zone
         @logger = logger
@@ -89,6 +91,7 @@ module Bosh::Director
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
 
         @virtual_state = virtual_state
+        @variables_interpolator = variables_interpolator
       end
 
       def bootstrap?
@@ -190,11 +193,12 @@ module Bosh::Director
       end
 
       def cloud_properties_changed?
-        config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
-        config_server_client = config_server_client_factory.create_client
-
-        changed = config_server_client.interpolated_versioned_variables_changed?(@model.cloud_properties_hash, cloud_properties,
-                                                                                 @previous_variable_set, @desired_variable_set)
+        changed = @variables_interpolator.interpolated_versioned_variables_changed?(
+          @model.cloud_properties_hash,
+          cloud_properties,
+          @previous_variable_set,
+          @desired_variable_set
+        )
 
         log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
         changed

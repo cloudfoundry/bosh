@@ -39,8 +39,14 @@ describe 'cli: vms', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     vms = director.vms_cloud_properties
-    cloud_props_from_dummy_cpi = "ephemeral_disk:\n  size: 10\ninstance_type: dummy"
-    expect(vms.map { |vm| vm[:cloud_properties]}).to eq([cloud_props_from_dummy_cpi, cloud_props_from_dummy_cpi, cloud_props_from_dummy_cpi])
+    cloud_props_from_dummy_cpi = "cpu: 2\nephemeral_disk:\n  size: 10\ninstance_type: dummy\nram: 1024"
+    expect(vms.map { |vm| vm[:cloud_properties] }).to eq(
+      [
+        cloud_props_from_dummy_cpi,
+        cloud_props_from_dummy_cpi,
+        cloud_props_from_dummy_cpi,
+      ],
+    )
   end
 
   it 'should return az with vms' do

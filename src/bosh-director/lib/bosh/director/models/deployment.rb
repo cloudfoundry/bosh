@@ -89,8 +89,8 @@ module Bosh::Director::Models
       tags = YAML.load(manifest)['tags']
       return {} if tags.nil? || tags.empty?
 
-      client = Bosh::Director::ConfigServer::ClientFactory.create(Bosh::Director::Config.logger).create_client
-      client.interpolate_with_versioning(tags, current_variable_set)
+      variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+      variables_interpolator.interpolate_with_versioning(tags, current_variable_set)
     end
 
     def current_variable_set

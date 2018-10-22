@@ -300,6 +300,8 @@ module Bosh
         instance_type = @context['cvcpkey'].nil? ? 'dummy' : @context['cvcpkey']
         {
           instance_type: instance_type,
+          cpu: vm_resources['cpu'],
+          ram: vm_resources['ram'],
           ephemeral_disk: { size: vm_resources['ephemeral_disk_size'] }
         }
       end

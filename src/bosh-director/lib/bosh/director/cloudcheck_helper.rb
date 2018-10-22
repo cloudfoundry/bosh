@@ -147,6 +147,7 @@ module Bosh::Director
         nil,
       )
 
+      variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
       instance_from_model = DeploymentPlan::Instance.new(
         instance_model.job,
         instance_model.index,
@@ -159,6 +160,7 @@ module Bosh::Director
         instance_model.spec,
         availability_zone,
         @logger,
+        variables_interpolator,
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
@@ -168,6 +170,7 @@ module Bosh::Director
         desired_instance: DeploymentPlan::DesiredInstance.new,
         recreate_deployment: true,
         tags: instance_from_model.deployment_model.tags,
+        variables_interpolator: variables_interpolator
       )
     end
 
