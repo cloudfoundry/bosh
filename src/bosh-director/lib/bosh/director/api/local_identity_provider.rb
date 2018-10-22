@@ -26,15 +26,14 @@ module Bosh
             raise AuthenticationError
           end
 
-          LocalUser.new(*auth.credentials)
+          username, password = auth.credentials
+          scopes = @user_manager.user_scopes(username)
+
+          LocalUser.new(username, password, scopes)
         end
       end
 
-      class LocalUser < Struct.new(:username, :password)
-        def scopes
-          ['bosh.admin']
-        end
-
+      class LocalUser < Struct.new(:username, :password, :scopes)
         def username_or_client
           username
         end
