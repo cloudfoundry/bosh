@@ -256,9 +256,9 @@ module Bosh::Director::Links
 
         content = JSON.parse(link.link_content)
 
-        content['link_provider_name'] = provider_intent.name
-        content['link_provider_type'] = provider_intent.type
-        content['link_provider_original_name'] = provider_intent.original_name
+        content['link_provider_name'] = provider_intent&.name
+        content['link_provider_type'] = provider_intent&.type
+        content['link_provider_original_name'] = provider_intent&.original_name
 
         links[consumer.name] ||= {}
         links[consumer.name][consumer_intent.original_name] = content

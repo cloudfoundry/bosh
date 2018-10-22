@@ -2606,6 +2606,20 @@ describe Bosh::Director::Links::LinksManager do
         )
       end
     end
+
+    context 'when the instance does not have a provider intent' do
+      let(:serial_id) { 1 }
+
+      before do
+        provider_intent.destroy
+      end
+
+      it 'doesn not fail' do
+        links = subject.get_links_for_instance(instance)
+        expect(links.length).to eq(1)
+        expect(links['consumer']['tweet']).to_not be_nil
+      end
+    end
   end
 
   describe '#get_links_from_deployment' do
