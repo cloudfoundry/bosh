@@ -69,9 +69,6 @@ properties:
   director.backend_port:
     description: Port that the director listens on
     default: 25556
-  director.nginx.workers:
-    description: Number of nginx workers for director
-    default: 2
   director.workers:
     description: Number of director workers
     default: 3
@@ -81,6 +78,9 @@ properties:
   director.puma_workers:
     description: Number of puma workers
     default: 3
+  director.nginx.workers:
+    description: Number of nginx workers for director
+    default: 2
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true
@@ -90,6 +90,9 @@ properties:
   director.nginx.ssl_ciphers:
     description: "List of SSL ciphers to allow (format: https://www.openssl.org/docs/manmaster/man1/ciphers.html - CIPHER LIST FORMAT section)"
     default: "DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
+  director.nginx.enable_metrics_endpoint:
+    description: Expose basic nginx metrics on localhost:<director.port>/stats endpoint. Uses the ngx_http_stub_status_module (see http://nginx.org/en/docs/http/ngx_http_stub_status_module.html).
+    default: false
   director.timeout:
     description: Timeout for connection from bosh CLI to nginx
     default: 7200
