@@ -168,18 +168,11 @@ module Bosh
 
         context 'link.instance_group' do
           context 'when links are present' do
-            it 'prefers link_provider_name' do
+            it 'uses the instance group name to encode the address' do
               expect(dns_encoder).to receive(:encode_query) do |criteria|
-                expect(criteria).to include(instance_group: 'link-provider1-link_type1')
+                expect(criteria).to include(group_name: 'fake-instance-group-1', group_type: 'instance-group')
               end
               eval_template("<%= link('fake-link-1').address %>", @context)
-            end
-
-            it 'should use link_provider_original_name if link_provider_name is not present' do
-              expect(dns_encoder).to receive(:encode_query) do |criteria|
-                expect(criteria).to include(instance_group: 'link-orig_name1-link_type2')
-              end
-              eval_template("<%= link('fake-link-4').address %>", @context)
             end
           end
         end
@@ -280,7 +273,8 @@ module Bosh
           before do
             allow(dns_encoder).to receive(:encode_query).with(
               {
-                instance_group: 'link-provider1-link_type1',
+                group_type: 'instance-group',
+                group_name: 'fake-instance-group-1',
                 default_network: 'default',
                 deployment_name: 'fake-deployment',
                 root_domain: 'otherbosh',

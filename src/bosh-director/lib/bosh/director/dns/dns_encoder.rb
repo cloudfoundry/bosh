@@ -16,7 +16,7 @@ module Bosh::Director
         octets << criteria[:uuid]
       end
 
-      if use_short_dns || criteria[:group_type] == Models::LocalDnsEncodedGroup::Types::LINK
+      if use_short_dns || criteria[:group_type] == 'link'
         octets << encode_service_group(criteria)
       else
         octets += encode_long_subdomains(criteria)
