@@ -88,7 +88,6 @@ describe 'recreate instance', type: :integration do
 
     deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config)
 
-    bosh_runner.run('instances --details', deployment_name: 'simple')
     instance = director.find_instance(director.instances, 'foobar', '0')
     original_disk_cids = instance.disk_cids
 
@@ -97,8 +96,6 @@ describe 'recreate instance', type: :integration do
 
     instance_was_recreated = director.find_instance(director.instances, 'foobar', '0')
     post_recreate_disk_cids = instance_was_recreated.disk_cids
-
-    bosh_runner.run('instances --details', deployment_name: 'simple')
 
     expect(post_recreate_disk_cids).to match_array(original_disk_cids)
   end
