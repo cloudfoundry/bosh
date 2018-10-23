@@ -968,10 +968,10 @@ jobs:
         passed:
         - candidate-release
       - get: bosh-release
-        resource: bosh-compiled-candidate-xenial
+        resource: bosh-compiled-candidate-trusty
         trigger: true
         passed:
-        - compile-bosh-dev-release-xenial
+        - compile-bosh-dev-release-trusty
       - get: bbr-compiled-release
         resource: bbr-compiled-trusty
         passed: [compile-bbr-trusty]
