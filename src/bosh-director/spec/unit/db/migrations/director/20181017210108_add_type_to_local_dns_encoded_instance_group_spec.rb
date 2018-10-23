@@ -49,19 +49,18 @@ module Bosh::Director
       end
     end
 
-    it 'requires type to be set' do
+    it 'defaults type to instance-group' do
       DBSpecHelper.migrate(subject)
       db[:deployments] << {
         id: 1,
         name: 'foo',
       }
 
-      expect do
-        db[:local_dns_encoded_instance_groups] << {
-          name: 'foo-name',
-          deployment_id: 1,
-        }
-      end.to raise_error(Sequel::NotNullConstraintViolation)
+      db[:local_dns_encoded_instance_groups] << {
+        name: 'foo-name',
+        deployment_id: 1,
+      }
+      expect(db[:local_dns_encoded_instance_groups].first[:type]).to eq 'instance-group'
     end
   end
 end
