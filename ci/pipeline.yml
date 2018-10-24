@@ -1172,13 +1172,9 @@ jobs:
       input_mapping:
         database-metadata: brats-terraform
       params:
-        GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-mysql-external-db-client-certificate))
-        GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-mysql-external-db-client-private-key))
         GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
         GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
         GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
-        GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-postgres-external-db-client-certificate))
-        GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-postgres-external-db-client-private-key))
         GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
         GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
         GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
@@ -1199,13 +1195,9 @@ jobs:
         input_mapping:
           database-metadata: brats-terraform
         params:
-          GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-mysql-external-db-client-certificate))
-          GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-mysql-external-db-client-private-key))
           GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
           GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
           GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
-          GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-postgres-external-db-client-certificate))
-          GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-postgres-external-db-client-private-key))
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
           GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
