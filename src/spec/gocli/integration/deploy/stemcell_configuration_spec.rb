@@ -77,6 +77,28 @@ describe 'stemcell configuration', type: :integration do
         expect(current_versions).to contain_exactly('1', '2*')
       end
     end
+
+    context 'when there is a stopped instance during the update' do
+      let(:manifest_hash) do
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['stemcells'].first.delete('name')
+        manifest_hash['stemcells'].first['os'] = 'toronto-os'
+        manifest_hash['stemcells'].first['version'] = '2'
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        manifest_hash
+      end
+
+      it 'also upgrades the stopped instance to the new stemcell when it is restarted' do
+        bosh_runner.run('stop foobar/0', deployment_name: 'simple')
+        bosh_runner.run('stop --hard foobar/1', deployment_name: 'simple')
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        bosh_runner.run('start foobar/0', deployment_name: 'simple')
+        bosh_runner.run('start foobar/1', deployment_name: 'simple')
+
+        current_versions = table(bosh_runner.run('stemcells', json: true)).map { |s| s['version'] }
+        expect(current_versions).to contain_exactly('1', '2*')
+      end
+    end
   end
 
   context 'when stemcell is using latest version' do
