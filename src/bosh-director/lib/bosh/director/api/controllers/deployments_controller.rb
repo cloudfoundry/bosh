@@ -454,7 +454,7 @@ module Bosh::Director
             },
           }
 
-          diff = before_manifest.diff(after_manifest, redact)
+          diff = before_manifest.diff(after_manifest, redact, teams)
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue StandardError => error
           result = {

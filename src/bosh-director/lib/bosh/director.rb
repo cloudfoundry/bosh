@@ -150,6 +150,8 @@ require 'bosh/director/links/links_parser'
 
 require 'bosh/director/disk/persistent_disk_comparators'
 
+require 'bosh/director/manifest/instance_group_config'
+require 'bosh/director/manifest/deployment_config'
 require 'bosh/director/manifest/manifest'
 require 'bosh/director/manifest/changeset'
 require 'bosh/director/manifest/redactor'

@@ -16,7 +16,7 @@ module Bosh::Director
       load_manifest(manifest_hash, manifest_text, consolidated_cloud_config, consolidated_runtime_config, options)
     end
 
-    def self.generate_empty_manifest
+    def self.generate_empty_manifest()
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new([])
       load_manifest({}, '{}', nil, consolidated_runtime_config, resolve_interpolation: false)
     end
@@ -37,15 +37,54 @@ module Bosh::Director
       resolve_aliases_for_generic_hash(to_hash)
     end
 
-    def diff(other_manifest, redact)
-      Changeset.new(to_hash, other_manifest.to_hash).diff(redact).order
+    def diff(other_manifest, redact, teams)
+      Changeset.new(to_hash_filter_addons(teams), other_manifest.to_hash_filter_addons(teams)).diff(redact).order
     end
 
     def to_hash
       merge_manifests(@manifest_hash, @cloud_config_hash, @runtime_config_hash)
     end
 
+    def to_hash_filter_addons(teams)
+      deployment = DeploymentConfig.new(@manifest_hash, teams.map(&:name))
+      filtered_runtime_config = filter_addons(@runtime_config_hash, deployment)
+      merge_manifests(@manifest_hash, @cloud_config_hash, filtered_runtime_config)
+    end
+
     private
+
+    def filter_addons(runtime_manifest, deployment)
+      return deployment.manifest_hash if runtime_manifest == {} || !runtime_manifest.key?('releases')
+
+      filtered_runtime_manifest = Bosh::Common::DeepCopy.copy(runtime_manifest)
+      runtime_manifest_parser = Bosh::Director::RuntimeConfig::RuntimeManifestParser.new(Config.logger)
+      parsed_runtime_config = runtime_manifest_parser.parse(runtime_manifest)
+
+      applicable_releases = parsed_runtime_config.get_applicable_releases(deployment)
+      filtered_runtime_manifest['releases'] = filter_releases_array(filtered_runtime_manifest['releases'], applicable_releases)
+
+      applicable_addons = parsed_runtime_config.get_applicable_addons(deployment)
+      filtered_runtime_manifest['addons'] = filter_addons_array(filtered_runtime_manifest['addons'], applicable_addons)
+
+      filtered_runtime_manifest.compact
+    end
+
+    def filter_addons_array(addons, applicable_addons)
+      return nil unless addons && applicable_addons
+
+      filtered_addons = addons.select do |addon|
+        applicable_addons.any? { |applicable_addon| applicable_addon.name == addon['name'] }
+      end
+      filtered_addons.empty? ? nil : filtered_addons
+    end
+
+    def filter_releases_array(releases, applicable_releases)
+      return [] unless releases && applicable_releases
+
+      releases.select do |release|
+        applicable_releases.any? { |applicable_release| applicable_release.name == release['name'] }
+      end
+    end
 
     def self.load_manifest(manifest_hash, manifest_text, cloud_config, runtime_config, options = {})
       resolve_interpolation = options.fetch(:resolve_interpolation, true)

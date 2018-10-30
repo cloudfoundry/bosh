@@ -487,6 +487,7 @@ module Bosh::Director
 
       let(:new_manifest_hash) do
         {
+          'releases' => [],
           'properties' => {
             'something' => 'worth-redacting',
           },
@@ -504,7 +505,7 @@ module Bosh::Director
       let(:new_cloud_config_hash) { cloud_config_hash }
       let(:new_runtime_config_hash) { runtime_config_hash }
       let(:diff) do
-        manifest_object.diff(new_manifest_object, redact).map(&:text).join("\n")
+        manifest_object.diff(new_manifest_object, redact, []).map(&:text).join("\n")
       end
 
       context 'when called' do
@@ -516,9 +517,9 @@ module Bosh::Director
           expect(Bosh::Director::Changeset).to receive(:new).and_return(mock_changeset)
           expect(mock_changeset).to receive(:diff).with(true).and_return(diff_return)
           expect(diff_return).to receive(:order)
-          expect(manifest_object).to receive(:to_hash).and_return({})
-          expect(new_manifest_object).to receive(:to_hash).and_return({})
-          manifest_object.diff(new_manifest_object, redact)
+          expect(manifest_object).to receive(:to_hash_filter_addons).and_return({})
+          expect(new_manifest_object).to receive(:to_hash_filter_addons).and_return({})
+          manifest_object.diff(new_manifest_object, redact, [])
         end
       end
 
@@ -583,6 +584,42 @@ module Bosh::Director
                                               'properties' => {
                                                 'test' => '((test_placeholder))',
                                               })
+      end
+
+      context 'when deployment manifest has no releases' do
+        let(:manifest_hash) do
+          {
+            'name' => 'test_deployment',
+            'instance_groups' => [
+              {
+                'name' => 'test_instance_group',
+                'jobs' => [],
+              },
+            ],
+          }
+        end
+        let(:runtime_config_hash) do
+          {
+            'releases' => [
+              { 'name' => 'runtime_release', 'version' => '2' },
+            ],
+            'addons' => [
+              {
+                'name' => 'test',
+                'jobs' => [{
+                  'name' => 'addon_job',
+                  'release' => 'runtime_release',
+                }],
+              },
+            ],
+          }
+        end
+
+        it 'returns manifest with addon and release' do
+          filtered_manifest = manifest_object.to_hash_filter_addons([])
+          expect(filtered_manifest['releases']).to eq(runtime_config_hash['releases'])
+          expect(filtered_manifest['addons']).to eq(runtime_config_hash['addons'])
+        end
       end
 
       context 'when both deployment manifest and runtime config contain addons' do
@@ -668,6 +705,78 @@ module Bosh::Director
                 'tag_1' => 'runtime_level_tag',
               )
             end
+          end
+        end
+      end
+
+      context 'when runtime config contains an addon' do
+        let(:manifest_hash) do
+          {
+            'name' => 'test_deployment',
+            'releases' => [
+              { 'name' => 'simple', 'version' => '2' },
+            ],
+            'instance_groups' => [
+              {
+                'name' => 'test_instance_group',
+                'jobs' => [],
+              },
+            ],
+          }
+        end
+        let(:runtime_config_hash) do
+          {
+            'releases' => [
+              { 'name' => 'runtime_release', 'version' => '2' },
+            ],
+            'addons' => [
+              {
+                'name' => 'test',
+                'jobs' => [{
+                  'name' => 'addon_job',
+                  'release' => 'runtime_release',
+                }],
+              },
+            ],
+          }
+        end
+
+        context 'that is not applicable to the deployment name' do
+          before do
+            runtime_config_hash['addons'][0]['exclude'] = {
+              'deployments' => ['test_deployment'],
+            }
+          end
+
+          it 'returns the merged hashes without the addon and release' do
+            expect(manifest_object.to_hash_filter_addons([])).to eq(manifest_hash)
+          end
+        end
+
+        context 'that is not applicable to the deployment by excluding the instance_group name' do
+          before do
+            runtime_config_hash['addons'][0]['exclude'] = {
+              'instance_groups' => ['test_instance_group'],
+            }
+          end
+
+          it 'returns the merged hashes without the addon and release' do
+            expect(manifest_object.to_hash_filter_addons([])).to eq(manifest_hash)
+          end
+        end
+
+        context 'that is not applicable to the deployment by defined team' do
+          let(:non_eligable_team) { Models::Team.make(name: 'non-eligable-team') }
+          before do
+            runtime_config_hash['addons'][0]['exclude'] = {
+              'teams' => [
+                'non-eligable-team',
+              ],
+            }
+          end
+
+          it 'returns the merged hashes without the addon and release' do
+            expect(manifest_object.to_hash_filter_addons([non_eligable_team])).to eq(manifest_hash)
           end
         end
       end
