@@ -164,9 +164,6 @@ properties:
   director.enable_virtual_delete_vms:
     description: When true, bosh will not delete vm from cloud when instance update, just destroy vm record in db
     default: false
-  director.cpi_api_test_max_version:
-    description: CPI Max Version for director to communicate to CPI with
-    default: 2
   director.local_dns.enabled:
     description: Enables local DNS, i.e., sending sync_dns messages with all names/IPs to all agents managed by this director
     default: false
@@ -176,6 +173,9 @@ properties:
   director.local_dns.use_dns_addresses:
     description: When true, address references in rendered templates will evaluate to DNS entries rather than IP addresses
     default: false
+
+  director.cpi.preferred_api_version:
+    description: The preferred api version to use when communicating with the CPI. If specified greater than the max supported version it will only communicate via the highest available api version.
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:

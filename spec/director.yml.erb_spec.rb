@@ -675,7 +675,7 @@ describe 'director.yml.erb' do
       end
     end
 
-    context 'director.cpi_api_test_max_version' do
+    context 'director.cpi.preferred_api_version' do
       subject(:parsed_yaml) do
         release = Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '../'))
         job = release.job('director')
@@ -683,25 +683,55 @@ describe 'director.yml.erb' do
         YAML.load(template.render(merged_manifest_properties))
       end
 
+      let(:max_cpi_api_version) { 2 }
+
       before do
         merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
       end
 
-      context 'when default' do
+      it 'should have a max_cpi_api_version' do
+        expect(parsed_yaml['cpi']['max_supported_api_version']).to eq(max_cpi_api_version)
+      end
+
+      context 'when preferred_api_version not specified' do
         it 'should be the default value' do
-          expect(parsed_yaml['cpi_api_test_max_version']).to eq(2)
+          expect(parsed_yaml['cpi']['preferred_api_version']).to eq(max_cpi_api_version)
         end
       end
 
       context 'when set to a specified version' do
-        let(:cpi_version) { 10 }
+        let(:preferred_api_version) { 1 }
+
+        let(:cpi_config) do
+          {
+            'preferred_api_version' => preferred_api_version,
+          }
+        end
 
         before do
-          merged_manifest_properties['director']['cpi_api_test_max_version'] = cpi_version
+          merged_manifest_properties['director']['cpi'] = cpi_config
         end
 
         it 'should be the specified version' do
-          expect(parsed_yaml['cpi_api_test_max_version']).to eq(cpi_version)
+          expect(parsed_yaml['cpi']['preferred_api_version']).to eq(preferred_api_version)
+        end
+
+        context 'when preferred_api_version is greater than max_cpi_api_version' do
+          let(:preferred_api_version) { max_cpi_api_version + 1 }
+          it 'should raise an error' do
+            expect do
+              parsed_yaml
+            end.to raise_error "Max supported api version is #{max_cpi_api_version} but got #{preferred_api_version}"
+          end
+        end
+
+        context 'when preferred_api_version is less than 1' do
+          let(:preferred_api_version) { 0 }
+          it 'should raise an error' do
+            expect do
+              parsed_yaml
+            end.to raise_error "Min supported api version is 1 but got #{preferred_api_version}"
+          end
         end
       end
     end
