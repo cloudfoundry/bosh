@@ -2,31 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan::Stages
   describe 'deployment prepare & update', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
-    before do
-      release = Bosh::Director::Models::Release.make(name: 'fake-release')
-
-      release_version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
-      release.add_version(release_version)
-
-      template = Bosh::Director::Models::Template.make(name: 'fake-template')
-      release_version.add_template(template)
-    end
-
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let!(:stemcell) { Bosh::Director::Models::Stemcell.make({'name' => 'fake-stemcell', 'version' => 'fake-stemcell-version'}) }
 
-    before do
-      allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
-      allow(agent_client).to receive(:apply)
-      allow(agent_client).to receive(:drain).and_return(0)
-      allow(agent_client).to receive(:stop)
-      allow(agent_client).to receive(:run_script).with('post-stop', {})
-      allow(agent_client).to receive(:wait_until_ready)
-      allow(agent_client).to receive(:update_settings)
-      allow(agent_client).to receive(:get_state)
-    end
-
-    let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+    let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
     let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
     let(:update_step) { UpdateStage.new(base_job, deployment_plan, multi_instance_group_updater, dns_encoder) }
 
@@ -47,17 +26,17 @@ module Bosh::Director::DeploymentPlan::Stages
     let(:deployment_manifest) do
       {
         'name' => 'fake-deployment',
-        'jobs' => [
+        'instance_groups' => [
           {
             'name' => 'fake-job',
-            'templates' => [
+            'instances' => 1,
+            'jobs' => [
               {
                 'name' => 'fake-template',
                 'release' => 'fake-release',
               }
             ],
             'resource_pool' => 'fake-resource-pool',
-            'instances' => 1,
             'networks' => [
               {
                 'name' => 'fake-network',
@@ -115,12 +94,29 @@ module Bosh::Director::DeploymentPlan::Stages
       }
     end
 
-    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpiResponseWrapper) }
 
     let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
+    let(:blobstore) { instance_double(Bosh::Blobstore::Sha1VerifiableBlobstoreClient) }
+
     before do
+      release = Bosh::Director::Models::Release.make(name: 'fake-release')
+      release_version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
+      release.add_version(release_version)
+      template = Bosh::Director::Models::Template.make(name: 'fake-template')
+      release_version.add_template(template)
+
+      allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+      allow(agent_client).to receive(:apply)
+      allow(agent_client).to receive(:drain).and_return(0)
+      allow(agent_client).to receive(:stop)
+      allow(agent_client).to receive(:run_script).with('post-stop', {})
+      allow(agent_client).to receive(:wait_until_ready)
+      allow(agent_client).to receive(:update_settings)
+      allow(agent_client).to receive(:get_state)
+
       Bosh::Director::Models::VariableSet.make(deployment: deployment)
       allow(base_job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
@@ -129,18 +125,16 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
-      allow(cloud).to receive(:info)
-      allow(cloud).to receive(:request_cpi_api_version=)
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid', stemcell_api_version: nil).and_return(cloud)
+      # allow(cloud).to receive(:info)
+      # allow(cloud).to receive(:set_vm_metadata)
+      allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(anything, anything).and_return(cloud)
       allow(variables_interpolator).to receive(:interpolate_template_spec_properties).and_return({})
       allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).and_return(false)
+
+      allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(blobstore).to receive(:get)
+      allow(Bosh::Director::JobRenderer).to receive(:render_job_instances_with_cache)
     end
-
-    before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
-    let(:blobstore) { instance_double(Bosh::Blobstore::Sha1VerifiableBlobstoreClient) }
-
-    before { allow(blobstore).to receive(:get) }
-    before { allow(Bosh::Director::JobRenderer).to receive(:render_job_instances_with_cache) }
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       let(:instance_model) do
@@ -152,15 +146,24 @@ module Bosh::Director::DeploymentPlan::Stages
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
           let(:multi_instance_group_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater', run: nil) }
+
           before do
             deployment.add_job_instance(instance_model)
           end
+
           it 'deletes the existing VM, and creates a new VM with the same IP' do
             expect(cloud).to receive(:delete_vm).ordered
             expect(cloud).to receive(:create_vm)
-                               .with(anything, stemcell.cid, anything, {'fake-network' => hash_including('ip' => '127.0.0.1')}, anything, anything)
-                               .and_return('vm-cid-2')
-                               .ordered
+              .with(
+                anything,
+                stemcell.cid,
+                anything,
+                { 'fake-network' => hash_including('ip' => '127.0.0.1') },
+                anything,
+                anything,
+              )
+              .and_return(['vm-cid-2'])
+              .ordered
 
             update_step.perform
             expect(Bosh::Director::Models::Vm.find(cid: 'vm-cid-1')).to be_nil
@@ -186,7 +189,7 @@ module Bosh::Director::DeploymentPlan::Stages
         allow(agent_client).to receive(:prepare)
         allow(agent_client).to receive(:run_script)
         allow(agent_client).to receive(:start)
-        allow(cloud).to receive(:create_vm).and_return('vm-cid-2').ordered
+        allow(cloud).to receive(:create_vm).and_return(['vm-cid-2']).ordered
       end
 
       it "creates an instance with 'lifecycle' in the spec" do

@@ -172,6 +172,7 @@ describe 'CPI and Agent:', type: :integration do
         expect(invocations.next).to be_cpi_call('snapshot_disk')
         expect(invocations.next).to be_agent_call('list_disk')
         expect(invocations.next).to be_agent_call('unmount_disk')
+        expect(invocations.next).to be_agent_call('remove_persistent_disk', match([disk_id]))
         expect(invocations.next).to be_cpi_call('info')
         expect(invocations.next).to be_cpi_call('detach_disk', match([old_vm_id, disk_id]))
 
@@ -189,7 +190,7 @@ describe 'CPI and Agent:', type: :integration do
         expect(invocations.next).to be_agent_call('get_state')
         expect(invocations.next).to be_agent_call('run_script', match(['post-start', {}]))
 
-        expect(invocations.size).to eq(31)
+        expect(invocations.size).to eq(32)
       end
     end
   end
