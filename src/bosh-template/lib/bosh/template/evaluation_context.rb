@@ -154,12 +154,19 @@ module Bosh
           encoder_to_inject = @dns_encoder
         end
 
-        instance_group = link_spec['instance_group']
+        group_name = link_spec['instance_group']
+        group_type = 'instance-group'
+
+        if link_spec.fetch('use_link_dns_names', false)
+          group_name = link_spec['group_name']
+          group_type = 'link'
+        end
 
         EvaluationLink.new(
           link_instances,
           link_spec['properties'],
-          instance_group,
+          group_name,
+          group_type,
           link_spec['default_network'],
           link_spec['deployment_name'],
           link_spec['domain'],

@@ -52,6 +52,38 @@ module Bosh::Director
             end
           end
 
+          describe 'use_link_dns_names' do
+            context 'when use_link_dns_names is NOT specified' do
+              it 'defaults use_link_dns_names value to nil' do
+                features = deployment_features_parser.parse({})
+                expect(features.use_link_dns_names).to be_nil
+              end
+            end
+
+            context 'when use_link_dns_names is specified' do
+              context 'when use_link_dns_names is NOT a boolean' do
+                it 'raises an error' do
+                  expect do
+                    deployment_features_parser.parse('use_link_dns_names' => 'vroom')
+                  end.to raise_error(
+                    FeaturesInvalidFormat,
+                    "Key 'use_link_dns_names' in 'features' expected to be a boolean, but received 'String'",
+                  )
+                end
+              end
+
+              context 'when use_link_dns_names is a boolean' do
+                it 'sets the use_link_dns_names value to the features object' do
+                  features = deployment_features_parser.parse('use_link_dns_names' => true)
+                  expect(features.use_link_dns_names).to eq(true)
+
+                  features = deployment_features_parser.parse('use_link_dns_names' => false)
+                  expect(features.use_link_dns_names).to eq(false)
+                end
+              end
+            end
+          end
+
           describe 'randomize_az_placement' do
             context 'when randomize_az_placement is NOT specified' do
               it 'defaults randomize_az_placement to nil' do

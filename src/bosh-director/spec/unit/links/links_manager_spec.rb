@@ -11,6 +11,7 @@ describe Bosh::Director::Links::LinksManager do
   let(:task) { Bosh::Director::Models::Task.make(username: 'user') }
   let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager) }
   let(:use_dns_addresses) { true }
+  let(:use_link_dns_names) { true }
 
   let(:deployment_model) do
     Bosh::Director::Models::Deployment.create(
@@ -1152,7 +1153,12 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'pi1',
                 name: 'provider_alias',
                 type: 'foo',
-                content: { use_dns_addresses: use_dns_addresses, default_network: 'netb', instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }] }.to_json,
+                content: {
+                  use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
+                  default_network: 'netb',
+                  instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                }.to_json,
                 serial_id: serial_id,
               )
             end
@@ -1163,6 +1169,7 @@ describe Bosh::Director::Links::LinksManager do
               expect(Bosh::Director::Models::Links::Link.count).to eq(1)
               link_hash = {
                 use_dns_addresses: use_dns_addresses,
+                use_link_dns_names: use_link_dns_names,
                 default_network: 'netb',
                 instances: [{ address: 'dns2' }],
               }
@@ -1177,7 +1184,12 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'pi1',
                 name: 'non-matching-alias',
                 type: 'foo',
-                content: { use_dns_addresses: use_dns_addresses, default_network: 'netb', instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }] }.to_json,
+                content: {
+                  use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
+                  default_network: 'netb',
+                  instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
+                }.to_json,
                 serial_id: serial_id,
               )
             end
@@ -1375,6 +1387,7 @@ describe Bosh::Director::Links::LinksManager do
           let(:provider_intent_content) do
             {
               use_dns_addresses: use_dns_addresses,
+              use_link_dns_names: use_link_dns_names,
               default_network: 'netb',
               networks: %w[neta netb],
               instances: [
@@ -1410,6 +1423,7 @@ describe Bosh::Director::Links::LinksManager do
 
             expected_hash = {
               'use_dns_addresses' => use_dns_addresses,
+              'use_link_dns_names' => use_link_dns_names,
               'default_network' => 'netb',
               'networks' => %w[neta netb],
               'instances' => [{ 'address' => 'ip2' }],
@@ -1450,6 +1464,7 @@ describe Bosh::Director::Links::LinksManager do
                 expect(deployment_model.link_consumers.count).to be > 0
                 expected_hash = {
                   'use_dns_addresses' => use_dns_addresses,
+                  'use_link_dns_names' => use_link_dns_names,
                   'default_network' => 'neta',
                   'networks' => %w[neta netb],
                   'instances' => [{ 'address' => 'ip1' }],
@@ -1464,6 +1479,7 @@ describe Bosh::Director::Links::LinksManager do
                 let(:provider_intent_content) do
                   {
                     use_dns_addresses: use_dns_addresses,
+                    use_link_dns_names: use_link_dns_names,
                     default_network: 'netb',
                     networks: %w[neta netb],
                     instances: [
@@ -1484,6 +1500,7 @@ describe Bosh::Director::Links::LinksManager do
               let(:provider_intent_content) do
                 {
                   use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
                   default_network: 'netb',
                   networks: ['netb'],
                   instances: [
@@ -1520,6 +1537,7 @@ describe Bosh::Director::Links::LinksManager do
           let(:provider_intent_content) do
             {
               use_dns_addresses: use_dns_addresses,
+              use_link_dns_names: use_link_dns_names,
               default_network: 'netb',
               networks: %w[neta netb],
               instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
@@ -1553,6 +1571,7 @@ describe Bosh::Director::Links::LinksManager do
             expect(links.size).to eq(1)
             expected_link_content = {
               'use_dns_addresses' => use_dns_addresses,
+              'use_link_dns_names' => use_link_dns_names,
               'default_network' => 'netb',
               'networks' => %w[neta netb],
               'instances' => [{ 'address' => 'dns2' }],
@@ -1593,6 +1612,7 @@ describe Bosh::Director::Links::LinksManager do
 
                 expected_hash = {
                   'use_dns_addresses' => use_dns_addresses,
+                  'use_link_dns_names' => use_link_dns_names,
                   'default_network' => 'neta',
                   'networks' => %w[neta netb],
                   'instances' => [{ 'address' => 'dns1' }],
@@ -1607,6 +1627,7 @@ describe Bosh::Director::Links::LinksManager do
                 let(:provider_intent_content) do
                   {
                     use_dns_addresses: use_dns_addresses,
+                    use_link_dns_names: use_link_dns_names,
                     default_network: 'netb',
                     networks: %w[neta netb],
                     instances: [
@@ -1627,6 +1648,7 @@ describe Bosh::Director::Links::LinksManager do
               let(:provider_intent_content) do
                 {
                   use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
                   default_network: 'netb',
                   networks: ['netb'],
                   instances: [
@@ -1662,6 +1684,7 @@ describe Bosh::Director::Links::LinksManager do
           let(:provider_intent_content) do
             {
               use_dns_addresses: use_dns_addresses,
+              use_link_dns_names: use_link_dns_names,
               default_network: 'netb',
               instances: [
                 {
@@ -1700,6 +1723,7 @@ describe Bosh::Director::Links::LinksManager do
               expect(links.size).to eq(1)
               expected_link_content = {
                 'use_dns_addresses' => use_dns_addresses,
+                'use_link_dns_names' => use_link_dns_names,
                 'default_network' => 'netb',
                 'instances' => [{ 'address' => 'dns2' }],
               }
@@ -1712,6 +1736,7 @@ describe Bosh::Director::Links::LinksManager do
               it 'creates a link with a DNS address' do
                 expected_link_content_with_dns = {
                   'use_dns_addresses' => use_dns_addresses,
+                  'use_link_dns_names' => use_link_dns_names,
                   'default_network' => 'netb',
                   'instances' => [{ 'address' => 'dns2' }],
                 }
@@ -1727,6 +1752,7 @@ describe Bosh::Director::Links::LinksManager do
               let(:provider_intent_content) do
                 {
                   use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
                   default_network: 'netb',
                   instances: [
                     {
@@ -1740,6 +1766,7 @@ describe Bosh::Director::Links::LinksManager do
               it 'creates a link with an IP address' do
                 expected_link_content_with_dns = {
                   'use_dns_addresses' => use_dns_addresses,
+                  'use_link_dns_names' => use_link_dns_names,
                   'default_network' => 'netb',
                   'instances' => [{ 'address' => 'ip2' }],
                 }
@@ -1774,6 +1801,7 @@ describe Bosh::Director::Links::LinksManager do
             let(:link_provider_content) do
               {
                 use_dns_addresses: use_dns_addresses,
+                use_link_dns_names: use_link_dns_names,
                 default_network: 'netb',
                 networks: %w[neta netb],
                 instances: [
@@ -1798,6 +1826,7 @@ describe Bosh::Director::Links::LinksManager do
 
               expected_link_content_with_dns = {
                 'use_dns_addresses' => use_dns_addresses,
+                'use_link_dns_names' => use_link_dns_names,
                 'default_network' => 'neta',
                 'networks' => %w[neta netb],
                 'instances' => [{ 'address' => 'dns1' }],
@@ -1839,6 +1868,7 @@ describe Bosh::Director::Links::LinksManager do
                 type: 'foo',
                 content: {
                   use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
                   default_network: 'netb',
                   networks: [],
                   instances: [
@@ -1880,6 +1910,7 @@ describe Bosh::Director::Links::LinksManager do
               type: 'foo',
               content: {
                 use_dns_addresses: use_dns_addresses,
+                use_link_dns_names: use_link_dns_names,
                 default_network: 'netb',
                 instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
               }.to_json,
@@ -1944,6 +1975,7 @@ describe Bosh::Director::Links::LinksManager do
                 type: 'foo',
                 content: {
                   use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
                   default_network: 'netb',
                   instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
                 }.to_json,
@@ -1958,6 +1990,7 @@ describe Bosh::Director::Links::LinksManager do
               expect(Bosh::Director::Models::Links::Link.count).to eq(1)
               expect(Bosh::Director::Models::Links::Link.first.link_content).to eq({
                 use_dns_addresses: use_dns_addresses,
+                use_link_dns_names: use_link_dns_names,
                 default_network: 'netb',
                 instances: [{ address: 'dns2' }],
               }.to_json)
@@ -1971,7 +2004,15 @@ describe Bosh::Director::Links::LinksManager do
                 original_name: 'ci1',
                 name: 'ci1',
                 type: 'non-matching-type',
-                content: { use_dns_addresses: use_dns_addresses, default_network: 'netb', instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }] }.to_json,
+                content: {
+                  use_dns_addresses: use_dns_addresses,
+                  use_link_dns_names: use_link_dns_names,
+                  default_network: 'netb',
+                  instances: [{
+                    dns_addresses: { neta: 'dns1', netb: 'dns2' },
+                    addresses: { neta: 'ip1', netb: 'ip2' },
+                  }],
+                }.to_json,
                 serial_id: serial_id,
               )
             end
@@ -2062,6 +2103,7 @@ describe Bosh::Director::Links::LinksManager do
               type: 'foo',
               content: {
                 use_dns_addresses: use_dns_addresses,
+                use_link_dns_names: use_link_dns_names,
                 default_network: 'netb',
                 instances: [{ dns_addresses: { neta: 'dns1', netb: 'dns2' }, addresses: { neta: 'ip1', netb: 'ip2' } }],
               }.to_json,
@@ -2424,8 +2466,14 @@ describe Bosh::Director::Links::LinksManager do
             expect(links.size).to eq(1)
             expect(links['job-1'].size).to eq(2)
 
-            expect(links['job-1']['foo']).to eq('properties' => { 'fizz' => 'buzz' })
-            expect(links['job-1']['meow']).to eq('properties' => { 'snoopy' => 'dog' })
+            expect(links['job-1']['foo']).to eq(
+              'properties' => { 'fizz' => 'buzz' },
+              'group_name' => '',
+            )
+            expect(links['job-1']['meow']).to eq(
+              'properties' => { 'snoopy' => 'dog' },
+              'group_name' => '',
+            )
           end
 
           context 'when the consumer intent serial id does not match the consumer serial id' do
@@ -2438,7 +2486,10 @@ describe Bosh::Director::Links::LinksManager do
               links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
               expect(links.size).to eq(1)
               expect(links['job-1'].size).to eq(1)
-              expect(links['job-1']['meow']).to eq('properties' => { 'snoopy' => 'dog' })
+              expect(links['job-1']['meow']).to eq(
+                'properties' => { 'snoopy' => 'dog' },
+                'group_name' => '',
+              )
             end
           end
 
@@ -2459,7 +2510,10 @@ describe Bosh::Director::Links::LinksManager do
             it 'should return the latest created link' do
               links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
               expect(links.size).to eq(1)
-              expect(links['job-1']['foo']).to eq(JSON.parse('{"properties": {"fizz": "buzz"}}'))
+              expect(links['job-1']['foo']).to eq(
+                'properties' => { 'fizz' => 'buzz' },
+                'group_name' => '',
+              )
             end
           end
 
@@ -2479,14 +2533,20 @@ describe Bosh::Director::Links::LinksManager do
             it 'should choose the link the consumer_intent recorded' do
               links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
               expect(links.size).to eq(1)
-              expect(links['job-1']['foo']).to eq(JSON.parse('{"properties": {"fizz": "buzz"}}'))
+              expect(links['job-1']['foo']).to eq(
+                'properties' => { 'fizz' => 'buzz' },
+                'group_name' => '',
+              )
 
               consumer_intent.target_link_id = link_2.id
               consumer_intent.save
 
               links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
               expect(links.size).to eq(1)
-              expect(links['job-1']['foo']).to eq(JSON.parse('{"properties": {"buzz": "fizz"}}'))
+              expect(links['job-1']['foo']).to eq(
+                'properties' => { 'buzz' => 'fizz' },
+                'group_name' => '',
+              )
             end
           end
         end
@@ -2600,9 +2660,7 @@ describe Bosh::Director::Links::LinksManager do
         expect(links.length).to eq(1)
         expect(links['consumer']['foo2']).to eq(
           'properties' => { 'puddy' => 'tat' },
-          'link_provider_name' => nil,
-          'link_provider_original_name' => 'ci1',
-          'link_provider_type' => 'foo',
+          'group_name' => 'ci1-foo',
         )
       end
     end
@@ -2877,6 +2935,7 @@ describe Bosh::Director::Links::LinksManager do
 
       let(:use_short_dns_addresses) { false }
       let(:use_dns_addresses) { false }
+      let(:use_link_dns_names) { false }
 
       before do
         allow(provider_1).to receive(:intents).and_return([provider_1_intent_1, provider_1_intent_2])
@@ -2892,6 +2951,7 @@ describe Bosh::Director::Links::LinksManager do
         allow(deployment_plan).to receive(:model).and_return(deployment_model)
         allow(deployment_plan).to receive(:use_short_dns_addresses?).and_return(use_short_dns_addresses)
         allow(deployment_plan).to receive(:use_dns_addresses?).and_return(use_dns_addresses)
+        allow(deployment_plan).to receive(:use_link_dns_names?).and_return(use_link_dns_names)
 
         consumer = Bosh::Director::Models::Links::LinkConsumer.make(
           deployment: deployment_model,
@@ -2953,35 +3013,75 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, false, false).and_return(link_1)
+          .to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, false, false, false).and_return(link_1)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, false, false).and_return(link_2)
+          .to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, false, false, false).and_return(link_2)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false, false).and_return(link_3)
+          .to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false, false, false).and_return(link_3)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, false, false).and_return(link_4)
+          .to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, false, false, false).and_return(link_4)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'e' => '5' }, false, false).and_return(link_5)
+          .to receive(:new).with(deployment_model.name, instance_group, { 'e' => '5' }, false, false, false).and_return(link_5)
       end
 
-      context 'and use_short_dns_addresses is enabled' do
-        let(:use_short_dns_addresses) { true }
-        let(:use_dns_addresses) { true }
-
-        it 'updates the contents field of the provider intents' do
-          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, use_dns_addresses, use_short_dns_addresses).and_return(link_1)
-          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, use_dns_addresses, use_short_dns_addresses).and_return(link_2)
-          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, use_dns_addresses, use_short_dns_addresses).and_return(link_4)
+      context 'link provider intent contents' do
+        before do
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
+            deployment_model.name,
+            instance_group,
+            { 'a' => '1' },
+            use_dns_addresses,
+            use_short_dns_addresses,
+            use_link_dns_names,
+          ).and_return(link_1)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
+            deployment_model.name,
+            instance_group,
+            { 'b' => '2' },
+            use_dns_addresses,
+            use_short_dns_addresses,
+            use_link_dns_names,
+          ).and_return(link_2)
+          expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
+            deployment_model.name,
+            instance_group,
+            { 'd' => '2' },
+            use_dns_addresses,
+            use_short_dns_addresses,
+            use_link_dns_names,
+          ).and_return(link_4)
 
           expect(provider_1_intent_1).to receive(:save)
           expect(provider_1_intent_2).to receive(:save)
           expect(provider_2_intent_2).to receive(:save)
+        end
 
-          subject.update_provider_intents_contents(link_providers, deployment_plan)
+        context 'when use_link_dns_names is enabled' do
+          let(:use_short_dns_addresses) { false }
+          let(:use_dns_addresses) { true }
+          let(:use_link_dns_names) { true }
 
-          expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
-          expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
-          expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+          it 'updates the contents field' do
+            subject.update_provider_intents_contents(link_providers, deployment_plan)
+
+            expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
+            expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
+            expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+          end
+        end
+
+        context 'when use_short_dns_addresses is enabled' do
+          let(:use_short_dns_addresses) { true }
+          let(:use_dns_addresses) { true }
+          let(:use_link_dns_names) { false }
+
+          it 'updates the contents field' do
+            subject.update_provider_intents_contents(link_providers, deployment_plan)
+
+            expect(provider_1_intent_1.content).to eq("{'foo_1':'bar_1'}")
+            expect(provider_1_intent_2.content).to eq("{'foo_2':'bar_2'}")
+            expect(provider_2_intent_2.content).to eq("{'foo_4':'bar_4'}")
+          end
         end
       end
 
@@ -3007,15 +3107,30 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       it 'updates all other valid providers' do
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new)
-          .with(deployment_model.name, instance_group, { 'a' => '1' }, use_dns_addresses, use_short_dns_addresses)
-          .and_return(link_1)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new)
-          .with(deployment_model.name, instance_group, { 'b' => '2' }, use_dns_addresses, use_short_dns_addresses)
-          .and_return(link_2)
-        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new)
-          .with(deployment_model.name, instance_group, { 'd' => '2' }, use_dns_addresses, use_short_dns_addresses)
-          .and_return(link_4)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
+          deployment_model.name,
+          instance_group,
+          { 'a' => '1' },
+          use_dns_addresses,
+          use_short_dns_addresses,
+          use_link_dns_names,
+        ).and_return(link_1)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
+          deployment_model.name,
+          instance_group,
+          { 'b' => '2' },
+          use_dns_addresses,
+          use_short_dns_addresses,
+          use_link_dns_names,
+        ).and_return(link_2)
+        expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
+          deployment_model.name,
+          instance_group,
+          { 'd' => '2' },
+          use_dns_addresses,
+          use_short_dns_addresses,
+          use_link_dns_names,
+        ).and_return(link_4)
 
         expect(provider_1_intent_1).to receive(:save)
         expect(provider_1_intent_2).to receive(:save)

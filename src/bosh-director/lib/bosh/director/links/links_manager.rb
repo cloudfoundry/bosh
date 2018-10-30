@@ -230,6 +230,8 @@ module Bosh::Director::Links
                   link.link_provider_intent.serial_id != consumer_intent.serial_id
 
           content = JSON.parse(link.link_content)
+          content['group_name'] = link.group_name
+
           links[consumer.name][link.name] = content
         end
       end
@@ -252,13 +254,8 @@ module Bosh::Director::Links
         consumer_intent = link.link_consumer_intent
         consumer = consumer_intent.link_consumer
 
-        provider_intent = link.link_provider_intent
-
         content = JSON.parse(link.link_content)
-
-        content['link_provider_name'] = provider_intent&.name
-        content['link_provider_type'] = provider_intent&.type
-        content['link_provider_original_name'] = provider_intent&.original_name
+        content['group_name'] = link.group_name
 
         links[consumer.name] ||= {}
         links[consumer.name][consumer_intent.original_name] = content
@@ -309,7 +306,14 @@ module Bosh::Director::Links
 
           properties = metadata['mapped_properties']
 
-          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_dns_addresses?, deployment_plan.use_short_dns_addresses?).spec.to_json
+          content = Bosh::Director::DeploymentPlan::Link.new(
+            provider.deployment.name,
+            instance_group,
+            properties,
+            deployment_plan.use_dns_addresses?,
+            deployment_plan.use_short_dns_addresses?,
+            deployment_plan.use_link_dns_names?,
+          ).spec.to_json
           provider_intent.content = content
           provider_intent.save
         end

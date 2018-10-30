@@ -11,19 +11,26 @@ module Bosh
       end
 
       let(:dns_encoder) { double('some dns encoder', encode_query: 'some.fqdn') }
-      let(:instances) { [{'address' => '123.456.789.101', 'properties' => {'prop1' => 'value'}}] }
-      let(:use_short_dns_addresses) { false }
+      let(:manual_link_dns_encoder) do
+        manual_link_dns_encoder = double(Bosh::Template::ManualLinkDnsEncoder, encode_query: 'some.fqdn')
+        allow(Bosh::Template::ManualLinkDnsEncoder).to receive(:new).and_return(manual_link_dns_encoder)
+        manual_link_dns_encoder
+      end
 
-      before do
-        @spec = {
+      let(:instances) { [{ 'address' => '123.456.789.101', 'properties' => { 'prop1' => 'value' } }] }
+      let(:use_short_dns_addresses) { false }
+      let(:use_link_dns_names) { false }
+
+      let(:spec) do
+        {
           'job' => {
-            'name' => 'foobar'
+            'name' => 'foobar',
           },
           'properties' => {
             'foo' => 'bar',
-            'router' => {'token' => 'zbb'},
+            'router' => { 'token' => 'zbb' },
             'vtrue' => true,
-            'vfalse' => false
+            'vfalse' => false,
           },
           'links' => {
             'fake-link-1' => {
@@ -53,6 +60,8 @@ module Bosh
             'fake-link-3' => {
               'deployment_name' => 'fake-deployment',
               'instance_group' => 'fake-instance-group-3',
+              'group_name' => 'link-group-name-3',
+              'use_link_dns_names' => use_link_dns_names,
               'default_network' => 'default',
               'domain' => 'otherbosh',
               'instances' => [
@@ -80,11 +89,11 @@ module Bosh
           'networks' => {
             'network1' => {
               'foo' => 'bar',
-              'ip' => '192.168.0.1'
+              'ip' => '192.168.0.1',
             },
             'network2' => {
               'baz' => 'bang',
-              'ip' => '10.10.10.10'
+              'ip' => '10.10.10.10',
             },
           },
           'index' => 0,
@@ -94,347 +103,343 @@ module Bosh
           'resource_pool' => 'a',
           'release' => {
             'name' => 'test',
-            'version' => '1.0'
-          }
+            'version' => '1.0',
+          },
         }
-
-        @context = EvaluationContext.new(@spec, dns_encoder)
       end
 
-      it 'unrolls properties into OpenStruct' do
-        expect(eval_template('<%= properties.foo %>', @context)).to eq('bar')
+      let(:evaluation_context) do
+        EvaluationContext.new(spec, dns_encoder)
       end
 
-      it 'should support the ip address snippet widely used by release authors' do
-        expect(eval_template('<%= spec.networks.send(spec.networks.methods(false).first).ip %>', @context)).to eq('192.168.0.1')
-      end
-
-      it 'retains raw_properties' do
-        expect(eval_template("<%= raw_properties['router']['token'] %>", @context)).to eq('zbb')
-      end
-
-      it 'supports looking up template index' do
-        expect(eval_template('<%= spec.index %>', @context)).to eq('0')
-      end
-
-      it 'supports looking up template instance id' do
-        expect(eval_template('<%= spec.id %>', @context)).to eq(@context.spec.id)
-      end
-
-      it 'supports looking up template availability zone' do
-        expect(eval_template('<%= spec.az %>', @context)).to eq(@context.spec.az)
-      end
-
-      it 'exposes an resource pool' do
-        expect(eval_template('<%= spec.resource_pool %>', @context)).to eq('a')
-      end
-
-      it 'supports looking up whether template is bootstrap or not' do
-        expect(eval_template('<%= spec.bootstrap %>', @context)).to eq('true')
-      end
-
-      it 'supports looking up template release name' do
-        expect(eval_template('<%= spec.release.name %>', @context)).to eq(@context.spec.release.name)
-      end
-
-      it 'supports looking up template release version' do
-        expect(eval_template('<%= spec.release.version %>', @context)).to eq(@context.spec.release.version)
-      end
-
-      describe 'link' do
-        it 'evaluates links' do
-          expect(eval_template("<%= link('fake-link-1').instances[0].address %>", @context)).to eq('123.456.789.101')
-          expect(eval_template("<%= link('fake-link-2').instances[0].address %>", @context)).to eq('123.456.789.102')
+      context 'openstruct' do
+        it 'should support the ip address snippet widely used by release authors' do
+          expect(
+            eval_template('<%= spec.networks.send(spec.networks.methods(false).first).ip %>', evaluation_context),
+          ).to eq('192.168.0.1')
         end
 
-        it 'evaluates link properties' do
-          expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value')
-          expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value')
+        it 'retains raw_properties' do
+          expect(eval_template("<%= raw_properties['router']['token'] %>", evaluation_context)).to eq('zbb')
         end
 
-        it 'evaluates link addresses using the given dns encoder' do
-          expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('some.fqdn')
+        it 'supports looking up template index' do
+          expect(eval_template('<%= spec.index %>', evaluation_context)).to eq('0')
         end
 
-        it 'evaluates manual spec address ignoring the dns encoder' do
-          expect(eval_template("<%= link('fake-link-2').address %>", @context)).to eq('some-address')
+        it 'supports looking up template instance id' do
+          expect(eval_template('<%= spec.id %>', evaluation_context)).to eq(evaluation_context.spec.id)
         end
 
-        it 'should throw a nice error when a link cannot be found' do
-          expect do
-            eval_template("<%= link('invisi-link') %>", @context)
-          end.to raise_error(UnknownLink, "Can't find link 'invisi-link'")
+        it 'supports looking up template availability zone' do
+          expect(eval_template('<%= spec.az %>', evaluation_context)).to eq(evaluation_context.spec.az)
         end
 
-        context 'link.instance_group' do
-          context 'when links are present' do
-            it 'uses the instance group name to encode the address' do
-              expect(dns_encoder).to receive(:encode_query) do |criteria|
-                expect(criteria).to include(group_name: 'fake-instance-group-1', group_type: 'instance-group')
+        it 'exposes an resource pool' do
+          expect(eval_template('<%= spec.resource_pool %>', evaluation_context)).to eq('a')
+        end
+
+        it 'supports looking up whether template is bootstrap or not' do
+          expect(eval_template('<%= spec.bootstrap %>', evaluation_context)).to eq('true')
+        end
+
+        it 'supports looking up template release name' do
+          expect(eval_template('<%= spec.release.name %>', evaluation_context)).to eq(evaluation_context.spec.release.name)
+        end
+
+        it 'supports looking up template release version' do
+          expect(eval_template('<%= spec.release.version %>', evaluation_context)).to eq(evaluation_context.spec.release.version)
+        end
+      end
+
+      it 'evaluates templates' do
+        expect(eval_template('a', evaluation_context)).to eq('a')
+      end
+
+      context 'links' do
+        let(:instance1) { double(Bosh::Template::EvaluationLinkInstance) }
+        let(:instance2) { double(Bosh::Template::EvaluationLinkInstance, address: 'instance2_address', p: 'p2') }
+        let(:evaluation_link1) { double(Bosh::Template::EvaluationLink, instances: [instance1]) }
+        let(:evaluation_link2) { double(Bosh::Template::EvaluationLink, instances: [instance2]) }
+
+        before do
+          allow(EvaluationLinkInstance).to receive(:new).with(
+            nil,
+            nil,
+            nil,
+            nil,
+            '123.456.789.101',
+            { 'prop1' => 'value' },
+            nil,
+          ).and_return instance1
+
+          allow(EvaluationLink).to receive(:new).with(
+            [instance1],
+            nil,
+            'fake-instance-group-1',
+            'instance-group',
+            'default',
+            'fake-deployment',
+            'otherbosh',
+            dns_encoder,
+            false,
+          ).and_return evaluation_link1
+        end
+
+        before do
+          allow(EvaluationLinkInstance).to receive(:new).with(
+            nil,
+            nil,
+            nil,
+            nil,
+            '123.456.789.102',
+            { 'prop2' => 'value' },
+            nil,
+          ).and_return instance2
+
+          allow(EvaluationLink).to receive(:new).with(
+            [instance2],
+            nil,
+            'fake-instance-group-2',
+            'instance-group',
+            'default',
+            'fake-deployment',
+            'otherbosh',
+            manual_link_dns_encoder,
+            false,
+          ).and_return evaluation_link2
+        end
+
+        describe 'link' do
+          it 'evaluates links' do
+            expect(evaluation_context.link('fake-link-1')).to eq(evaluation_link1)
+            expect(evaluation_context.link('fake-link-2')).to eq(evaluation_link2)
+          end
+
+          it 'should throw a nice error when a link cannot be found' do
+            expect do
+              evaluation_context.link('invisi-link')
+            end.to raise_error(UnknownLink, "Can't find link 'invisi-link'")
+          end
+
+          context 'with use_link_dns_names enabled' do
+            let(:use_link_dns_names) { true }
+            let(:instance3) { double(Bosh::Template::EvaluationLinkInstance) }
+            let(:evaluation_link3) { double(Bosh::Template::EvaluationLink, instances: [instance3]) }
+
+            before do
+              allow(EvaluationLinkInstance).to receive(:new).with(
+                nil,
+                nil,
+                nil,
+                nil,
+                '123.456.789.103',
+                { 'prop3' => 'value' },
+                nil,
+              ).and_return instance3
+
+              allow(EvaluationLink).to receive(:new).with(
+                [instance3],
+                nil,
+                'link-group-name-3',
+                'link',
+                'default',
+                'fake-deployment',
+                'otherbosh',
+                dns_encoder,
+                false,
+              ).and_return evaluation_link3
+            end
+
+            it 'evaluates links' do
+              expect(evaluation_context.link('fake-link-3')).to eq(evaluation_link3)
+            end
+          end
+
+        end
+
+        describe 'if_link' do
+          it 'works when link is found' do
+            evaluation_context.if_link('fake-link-1') do |link|
+              expect(link.instances).to eq([instance1])
+            end
+          end
+
+          it "does not call the block if a link can't be found" do
+            evaluation_context.if_link('imaginary-link-1') do
+              raise 'should never get here'
+            end
+          end
+
+          describe '.else' do
+            it 'does not call the else block if link is found' do
+              evaluation_context.if_link('fake-link-1') do |link|
+                expect(link.instances).to eq([instance1])
+              end.else do
+                raise 'should never get here'
               end
-              eval_template("<%= link('fake-link-1').address %>", @context)
+            end
+
+            it 'calls the else block if the link is missing' do
+              expect do
+                evaluation_context.if_link('imaginary-link-1') do
+                  raise 'should not get here'
+                end.else do
+                  raise 'got here'
+                end
+              end.to raise_error 'got here'
+            end
+          end
+
+          describe '.else_if_link' do
+            it 'is not called when if_link matches' do
+              evaluation_context.if_link('fake-link-1') do |link|
+                expect(link.instances).to eq([instance1])
+              end.else_if_link('should never get here link') do
+                raise 'it should never get here pt 1'
+              end.else do
+                raise 'it should never get here pt 2'
+              end
+            end
+
+            it 'is called when if_link does not match' do
+              evaluation_context.if_link('imaginary-link') do
+                raise 'it should never get here pt 1'
+              end.else_if_link('fake-link-1') do |link|
+                expect(link.instances).to eq([instance1])
+              end.else do
+                raise 'it should never get here pt 2'
+              end
+            end
+
+            it "calls else when its conditions aren't met" do
+              expect do
+                evaluation_context.if_link('imaginary-link-1') do
+                  raise 'it should never get here pt 1'
+                end.else_if_link('imaginary-link-2') do
+                  raise 'it should never get here pt 2'
+                end.else do
+                  raise 'got to the else'
+                end
+              end.to raise_error 'got to the else'
             end
           end
         end
       end
 
-      describe 'if_link' do
-        it 'works when link is found' do
-          template = <<-TMPL
-        <% if_link("fake-link-1") do |link| %>
-        <%= link.instances[0].address %>
-        <% end %>
-          TMPL
-
-          expect(eval_template(template, @context).strip).to eq('123.456.789.101')
-        end
-
-        it "does not call the block if a link can't be found" do
-          template = <<-TMPL
-          <% if_link("imaginary-link-1") do |link| %>
-          <%= link.instances[0].address %>
-          <% end %>
-          TMPL
-
-          expect(eval_template(template, @context).strip).to eq('')
-        end
-
-        describe '.else' do
-          it 'does not call the else block if link is found' do
-            template = <<-TMPL
-          <% if_link("fake-link-1") do |link| %>
-          <%= link.instances[0].address %>
-          <% end.else do %>
-          should never get here
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('123.456.789.101')
+      context 'p and if_p' do
+        describe 'p' do
+          it 'looks up properties' do
+            expect(evaluation_context.p('router.token')).to eq('zbb')
+            expect(evaluation_context.p('vtrue')).to eq(true)
+            expect(evaluation_context.p('vfalse')).to eq(false)
           end
 
-          it 'calls the else block if the link is missing' do
-            template = <<-TMPL
-          <% if_link("imaginary-link-1") do |link| %>
-          <%= link.instances[0].address %>
-          <% end.else do %>
-          it should show me
-          <% end %>
-            TMPL
+          it 'returns the default value if the property doesnt exist and there was a default value given' do
+            expect(evaluation_context.p('bar.baz', 22)).to eq(22)
+            expect(evaluation_context.p(%w[a b c], 22)).to eq(22)
+          end
 
-            expect(eval_template(template, @context).strip).to eq('it should show me')
+          it 'throws an UnknowProperty error if the property does not exist' do
+            expect do
+              evaluation_context.p('bar.baz')
+            end.to raise_error(Bosh::Template::UnknownProperty, "Can't find property '[\"bar.baz\"]'")
+
+            expect do
+              evaluation_context.p(%w[a b c])
+            end.to raise_error(Bosh::Template::UnknownProperty,
+                               "Can't find property '[\"a\", \"b\", \"c\"]'")
+          end
+
+          it 'supports hash properties' do
+            expect(evaluation_context.p(%w[a b router c])['token']).to eq('zbb')
+          end
+
+          it 'chains property lookups' do
+            expect(evaluation_context.p(%w[a b router.token c])).to eq('zbb')
+          end
+
+          it "allows booleans and 'nil' defaults for 'p' helper" do
+            expect(evaluation_context.p(%w[a b c], false)).to eq(false)
+            expect(evaluation_context.p(%w[a b c], true)).to eq(true)
+            expect(evaluation_context.p(%w[a b c], nil)).to eq(nil)
           end
         end
 
-        describe '.else_if_link' do
-          it 'is not called when if_link matches' do
-            template = <<-TMPL
-          <% if_link("fake-link-1") do |link| %>
-          <%= link.instances[0].address %>
-          <% end.else_if_link("should-never-get-here-link") do |v| %>
-          hidden words
-          <% end.else do %>
-          not going to get here
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('123.456.789.101')
+        describe 'if_p' do
+          it 'works with a single property' do
+            evaluation_context.if_p('router.token') do |p|
+              expect(p).to eq('zbb')
+            end
           end
 
-          it 'is called when if_link does not match' do
-            template = <<-TMPL
-          <% if_link("imaginary-link-1") do |v| %>
-          should not get here
-          <% end.else_if_link("fake-link-1") do |link| %>
-          <%= link.instances[0].address %>
-          <% end.else do %>
-          not going to get here
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('123.456.789.101')
+          it 'works with two properties' do
+            evaluation_context.if_p('router.token', 'foo') do |p1, p2|
+              expect(p1).to eq('zbb')
+              expect(p2).to eq('bar')
+            end
           end
 
-          it "calls else when its conditions aren't met" do
-            template = <<-TMPL
-          <% if_link("imaginary-link-1") do |v| %>
-          should not get here
-          <% end.else_if_link("imaginary-link-3") do |link| %>
-          I do not exist
-          <% end.else do %>
-          I am alive
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('I am alive')
-          end
-        end
-
-        describe 'when use_short_dns is enabled in provider' do
-          before do
-            allow(dns_encoder).to receive(:encode_query).with(
-              {
-                group_type: 'instance-group',
-                group_name: 'fake-instance-group-1',
-                default_network: 'default',
-                deployment_name: 'fake-deployment',
-                root_domain: 'otherbosh',
-              },
-              true,
-            ).and_return('q-n1s0.q-g1.bosh')
+          it "does not call the block if any property can't be found" do
+            evaluation_context.if_p('router.token', 'nonexistent.prop') do
+              raise 'doesnt blow up'
+            end
           end
 
-          let(:instances) { [{ 'properties' => { 'prop1' => 'value' } }] }
-          let(:use_short_dns_addresses) { true }
+          describe '.else' do
+            it 'does not call the else block if all properties are found' do
+              evaluation_context.if_p('router.token', 'foo') do |p1, p2|
+                expect(p1).to eq('zbb')
+                expect(p2).to eq('bar')
+              end.else do
+                raise 'doesnt blow up'
+              end
+            end
 
-          it 'should evaluate the short dns for instances' do
-            expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('q-n1s0.q-g1.bosh')
-          end
-        end
-      end
-
-      describe 'p' do
-        it 'looks up properties' do
-          expect(eval_template("<%= p('router.token') %>", @context)).to eq('zbb')
-          expect(eval_template("<%= p('vtrue') %>", @context)).to eq('true')
-          expect(eval_template("<%= p('vfalse') %>", @context)).to eq('false')
-          expect {
-            eval_template("<%= p('bar.baz') %>", @context)
-          }.to raise_error(UnknownProperty, "Can't find property '[\"bar.baz\"]'")
-          expect(eval_template("<%= p('bar.baz', 22) %>", @context)).to eq('22')
-        end
-
-        it 'supports hash properties' do
-          expect(eval_template(<<-TMPL, @context).strip).to eq('zbb')
-        <%= p(%w(a b router c))['token'] %>
-          TMPL
-        end
-
-        it 'chains property lookups' do
-          expect(eval_template(<<-TMPL, @context).strip).to eq('zbb')
-        <%= p(%w(a b router.token c)) %>
-          TMPL
-
-          expect {
-            eval_template(<<-TMPL, @context)
-          <%= p(%w(a b c)) %>
-            TMPL
-          }.to raise_error(UnknownProperty,
-                           "Can't find property '[\"a\", \"b\", \"c\"]'")
-
-          expect(eval_template(<<-TMPL, @context).strip).to eq('22')
-        <%= p(%w(a b c), 22) %>
-          TMPL
-        end
-      end
-
-      it "allows 'false' and 'nil' defaults for 'p' helper" do
-        expect(eval_template(<<-TMPL, @context).strip).to eq('false')
-      <%= p(%w(a b c), false) %>
-        TMPL
-
-        expect(eval_template(<<-TMPL, @context).strip).to eq('')
-      <%= p(%w(a b c), nil) %>
-        TMPL
-      end
-
-      describe 'if_p' do
-        it 'works with a single property' do
-          template = <<-TMPL
-        <% if_p("router.token") do |token| %>
-        <%= token %>
-        <% end %>
-          TMPL
-
-          expect(eval_template(template, @context).strip).to eq('zbb')
-        end
-
-        it 'works with two properties' do
-          template = <<-TMPL
-        <% if_p("router.token", "foo") do |token, foo| %>
-        <%= token %>, <%= foo %>
-        <% end %>
-          TMPL
-
-          expect(eval_template(template, @context).strip).to eq('zbb, bar')
-        end
-
-        it "does not call the block if a property can't be found" do
-          template = <<-TMPL
-        <% if_p("router.token", "no.such.prop") do |token, none| %>
-        test output
-        <% end %>
-          TMPL
-
-          expect(eval_template(template, @context).strip).to eq('')
-        end
-
-        describe '.else' do
-          it 'does not call the else block if all properties are found' do
-            template = <<-TMPL
-          <% if_p("router.token", "foo") do |token, foo| %>
-          <%= token %>, <%= foo %>
-          <% end.else do %>
-          hidden words
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('zbb, bar')
+            it 'calls the else block if any of the properties are missing' do
+              expect do
+                evaluation_context.if_p('router.token', 'nonexistent.prop') do
+                  raise 'doesnt blow up'
+                end.else do
+                  raise 'be cool?'
+                end
+              end.to raise_error 'be cool?'
+            end
           end
 
-          it 'calls the else block if any of the properties are missing' do
-            template = <<-TMPL
-          <% if_p("router.token", "no.such.prop") do |token, none| %>
-          test output
-          <% end.else do %>
-          visible text
-          <% end %>
-            TMPL
+          describe '.else_if_p' do
+            it 'is not called when if_p matches' do
+              evaluation_context.if_p('router.token', 'foo') do |token, foo|
+                expect(token).to eq('zbb')
+                expect(foo).to eq('bar')
+              end.else_if_p('vtrue') do
+                raise 'no get here'
+              end.else do
+                raise 'nor here'
+              end
+            end
 
-            expect(eval_template(template, @context).strip).to eq('visible text')
-          end
-        end
+            it 'is called when if_p does not match' do
+              evaluation_context.if_p('nonexistent.prop') do
+                raise 'im not gonna pop'
+              end.else_if_p('vtrue') do |v|
+                expect(v).to be_truthy
+              end.else do
+                raise 'not gonna happen, seriously'
+              end
+            end
 
-        describe '.else_if_p' do
-          it 'is not called when if_p matches' do
-            template = <<-TMPL
-          <% if_p("router.token", "foo") do |token, foo| %>
-          <%= token %>, <%= foo %>
-          <% end.else_if_p("vtrue") do |v| %>
-          hidden words
-          <% end.else do %>
-          not going to get here
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('zbb, bar')
-          end
-
-          it 'is called when if_p does not match' do
-            template = <<-TMPL
-          <% if_p("router.token", "no.such.prop") do |token, foo| %>
-          <%= token %>, <%= foo %>
-          <% end.else_if_p("vtrue") do |v| %>
-          <%= v %>
-          <% end.else do %>
-          not going to get here
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('true')
-          end
-
-          it "calls else when its conditions aren't met" do
-            template = <<-TMPL
-          <% if_p("router.token", "no.such.prop") do |token, foo| %>
-          <%= token %>, <%= foo %>
-          <% end.else_if_p("other.missing.prop") do |bar| %>
-          <%= bar %>
-          <% end.else do %>
-          totally going to get here
-          <% end %>
-            TMPL
-
-            expect(eval_template(template, @context).strip).to eq('totally going to get here')
+            it "calls else when its conditions aren't met" do
+              expect do
+                evaluation_context.if_p('nonexistent.prop') do
+                  raise 'im not gonna pop'
+                end.else_if_p('401.prop') do
+                  raise 'not gonna happen, seriously'
+                end.else do
+                  raise 'catch me if you can'
+                end
+              end.to raise_error 'catch me if you can'
+            end
           end
         end
       end

@@ -304,11 +304,34 @@ module Bosh::Director::Models
   end
 
   module Links
-    LinkProvider.blueprint {}
-    LinkProviderIntent.blueprint {}
-    LinkConsumer.blueprint {}
-    LinkConsumerIntent.blueprint {}
-    Link.blueprint {}
+    LinkProvider.blueprint do
+      name           { Sham.name }
+      type           { Sham.name }
+      deployment     { Deployment.make }
+      instance_group { Sham.name }
+    end
+    LinkProviderIntent.blueprint do
+      name          { Sham.name }
+      original_name { Sham.name }
+      type          { Sham.name }
+      link_provider { LinkProvider.make }
+    end
+    LinkConsumer.blueprint do
+      name       { Sham.name }
+      type       { Sham.name }
+      deployment { Deployment.make }
+    end
+    LinkConsumerIntent.blueprint do
+      name          { Sham.name }
+      original_name { Sham.name }
+      type          { Sham.name }
+      link_consumer { LinkConsumer.make }
+    end
+    Link.blueprint do
+      name                 { Sham.name }
+      link_consumer_intent { LinkConsumerIntent.make }
+      link_content         { '{}' }
+    end
   end
 
   module Dns

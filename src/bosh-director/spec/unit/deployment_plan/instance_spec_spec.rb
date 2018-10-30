@@ -42,7 +42,9 @@ module Bosh::Director::DeploymentPlan
             'default_network' => 'smurf-net',
             'domain' => 'smurf.bosh',
             'use_short_dns_addresses' => true,
+            'use_link_dns_names' => true,
             'non-whitelisted-key' => 'some_value',
+            'group_name' => 'link_provider_name-link_provider_type',
           },
         },
       }
@@ -227,6 +229,8 @@ module Bosh::Director::DeploymentPlan
               'deployment_name' => 'dep1',
               'domain' => 'smurf.bosh',
               'use_short_dns_addresses' => true,
+              'use_link_dns_names' => true,
+              'group_name' => 'link_provider_name-link_provider_type',
             },
           },
         }

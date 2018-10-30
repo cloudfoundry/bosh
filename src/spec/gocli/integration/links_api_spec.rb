@@ -1566,6 +1566,19 @@ describe 'links api', type: :integration do
       end
     end
 
+    context 'and the provider deployment has use_link_dns_names enabled' do
+      let(:features) do
+        { 'use_link_dns_names' => true }
+      end
+
+      it 'returns the address as a link dns entry' do
+        external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
+        response = get_json('/link_address', "link_id=#{external_link_response['id']}")
+
+        expect(response).to eq('address' => 'q-s0.q-g2.bosh')
+      end
+    end
+
     context 'and the link is manual' do
       let(:explicit_consumer) do
         {

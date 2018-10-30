@@ -55,15 +55,21 @@ module Bosh::Director
 
         link_content = JSON.parse(link.link_content)
 
-        if link.link_provider_intent&.link_provider&.type == 'manual'
-          return link_content['address']
-        end
+        return link_content['address'] if link.link_provider_intent&.link_provider&.type == 'manual'
 
         use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)
+        use_link_dns_names = link_content.fetch('use_link_dns_names', false)
         dns_encoder = LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
+
+        group_name, group_type = if use_link_dns_names
+                                   [link.group_name, Models::LocalDnsEncodedGroup::Types::LINK]
+                                 else
+                                   [link_content['instance_group'], Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP]
+                                 end
+
         query_criteria = {
-          group_name: link_content['instance_group'],
-          group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+          group_name: group_name,
+          group_type: group_type,
           deployment_name: link_content['deployment_name'],
           default_network: link_content['default_network'],
           root_domain: link_content['domain'],

@@ -8,10 +8,21 @@ module Bosh
       attr_reader :instances
       attr_reader :properties
 
-      def initialize(instances, properties, instance_group, default_network, deployment_name, root_domain, dns_encoder, use_short_dns)
+      def initialize(
+        instances,
+        properties,
+        group_name,
+        group_type,
+        default_network,
+        deployment_name,
+        root_domain,
+        dns_encoder,
+        use_short_dns
+      )
         @instances = instances
         @properties = properties
-        @instance_group = instance_group
+        @group_name = group_name
+        @group_type = group_type
         @default_network = default_network
         @deployment_name = deployment_name
         @root_domain = root_domain
@@ -28,31 +39,33 @@ module Bosh
         end
 
         return args[1] if args.length == 2
-        raise UnknownProperty.new(names)
+
+        raise UnknownProperty, names
       end
 
       def if_p(*names)
         values = names.map do |name|
           value = lookup_property(@properties, name)
           return Bosh::Template::EvaluationContext::ActiveElseBlock.new(self) if value.nil?
+
           value
         end
 
-        yield *values
+        yield(*values)
+
         Bosh::Template::EvaluationContext::InactiveElseBlock.new
       end
 
       def address(criteria = {})
-        raise NotImplementedError.new('link.address requires bosh director') if @dns_encoder.nil?
+        raise NotImplementedError, 'link.address requires bosh director' if @dns_encoder.nil?
 
         full_criteria = criteria.merge(
-          group_name: @instance_group,
-          group_type: 'instance-group',
+          group_name: @group_name,
+          group_type: @group_type,
           default_network: @default_network,
           deployment_name: @deployment_name,
           root_domain: @root_domain,
         )
-
         @dns_encoder.encode_query(full_criteria, @use_short_dns)
       end
     end

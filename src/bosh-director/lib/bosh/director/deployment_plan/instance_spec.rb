@@ -126,13 +126,15 @@ module Bosh::Director
         ]
 
         whitelisted_link_spec_keys = [
-          'instances',
-          'properties',
-          'instance_group',
+          'address',
           'default_network',
           'deployment_name',
           'domain',
-          'address',
+          'group_name',
+          'instance_group',
+          'instances',
+          'properties',
+          'use_link_dns_names',
           'use_short_dns_addresses',
         ]
 

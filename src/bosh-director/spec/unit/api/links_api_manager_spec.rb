@@ -467,11 +467,11 @@ module Bosh::Director
 
         let(:link_content) do
           {
-            "deployment_name" => "dep_foo",
-            "instance_group" => "ig_bar",
-            "default_network" => "baz",
-            "domain" => "bosh",
-            "use_short_dns_addresses" => false
+            'deployment_name' => 'dep_foo',
+            'instance_group' => 'ig_bar',
+            'default_network' => 'baz',
+            'domain' => 'bosh',
+            'use_short_dns_addresses' => false,
           }
         end
 
@@ -497,7 +497,7 @@ module Bosh::Director
             link_consumer_intent: consumer_intent,
             link_content: link_content.to_json,
             name: link_name,
-            )
+          )
         end
 
         it 'should return the address of the link' do
@@ -564,16 +564,16 @@ module Bosh::Director
               link_consumer_intent: consumer_intent,
               link_content: link_content.to_json,
               name: link_name,
-              )
+            )
           end
 
           let(:link_content) do
             {
-              "deployment_name" => "test_deployment",
-              "instance_group" => "ig_bar",
-              "default_network" => "baz",
-              "domain" => "bosh",
-              "use_short_dns_addresses" => true
+              'deployment_name' => 'test_deployment',
+              'instance_group' => 'ig_bar',
+              'default_network' => 'baz',
+              'domain' => 'bosh',
+              'use_short_dns_addresses' => true,
             }
           end
 
@@ -582,6 +582,68 @@ module Bosh::Director
               name: 'ig_bar',
               deployment_id: 1,
               type: Bosh::Director::Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+            )
+
+            link_address = subject.link_address(link.id)
+            expect(link_address).to eq('q-n2s0.q-g1.bosh')
+          end
+        end
+
+        context 'and the provider deployment is using link DNS names' do
+          before do
+            Models::LocalDnsEncodedNetwork.create(name: 'bar')
+            Models::LocalDnsEncodedNetwork.create(name: 'baz')
+          end
+
+          let(:provider) do
+            Bosh::Director::Models::Links::LinkProvider.create(
+              deployment: deployment,
+              instance_group: instance_group,
+              name: 'provider_name',
+              type: 'job',
+              serial_id: link_serial_id,
+            )
+          end
+
+          let(:provider_intent) do
+            Models::Links::LinkProviderIntent.create(
+              name: 'link_name_1',
+              link_provider: provider,
+              shared: true,
+              consumable: true,
+              type: 'job',
+              original_name: 'provider_original_name',
+              content: provider_json_content.to_json,
+              serial_id: link_serial_id,
+            )
+          end
+
+          let!(:link) do
+            Bosh::Director::Models::Links::Link.create(
+              link_consumer_intent: consumer_intent,
+              link_provider_intent: provider_intent,
+              link_content: link_content.to_json,
+              name: link_name,
+            )
+          end
+
+          let(:link_content) do
+            {
+              'deployment_name' => 'test_deployment',
+              'instance_group' => 'ig_bar',
+              'group_name' => 'link_name_1-job',
+              'default_network' => 'baz',
+              'domain' => 'bosh',
+              'use_short_dns_addresses' => true,
+              'use_link_dns_names' => true,
+            }
+          end
+
+          it 'should return the short DNS address of the link' do
+            Bosh::Director::Models::LocalDnsEncodedGroup.create(
+              name: 'link_name_1-job',
+              deployment_id: 1,
+              type: Bosh::Director::Models::LocalDnsEncodedGroup::Types::LINK,
             )
 
             link_address = subject.link_address(link.id)
@@ -610,7 +672,7 @@ module Bosh::Director
               original_name: 'napolean',
               content: provider_json_content.to_json,
               serial_id: link_serial_id,
-              )
+            )
           end
 
           let!(:link) do
@@ -636,7 +698,7 @@ module Bosh::Director
           context 'when the address is not in the link content' do
             let(:link_content) do
               {
-                'address' => nil
+                'address' => nil,
               }
             end
             it 'should return a null address' do

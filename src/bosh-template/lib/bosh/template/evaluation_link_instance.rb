@@ -32,18 +32,20 @@ module Bosh
         end
 
         return args[1] if args.length == 2
-        raise UnknownProperty.new(names)
+
+        raise UnknownProperty, names
       end
 
       def if_p(*names)
         values = names.map do |name|
           value = lookup_property(@properties, name)
-          return ActiveElseBlock.new(self) if value.nil?
+          return Bosh::Template::EvaluationContext::ActiveElseBlock.new(self) if value.nil?
+
           value
         end
 
-        yield *values
-        InactiveElseBlock.new
+        yield(*values)
+        Bosh::Template::EvaluationContext::InactiveElseBlock.new
       end
     end
   end

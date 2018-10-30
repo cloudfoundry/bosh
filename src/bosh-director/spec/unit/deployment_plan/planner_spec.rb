@@ -531,6 +531,30 @@ module Bosh::Director
           end
         end
 
+        describe '#use_link_dns_names?' do
+          let(:deployment_features) { DeploymentFeatures.new(true, nil, nil, false, use_link_dns_names) }
+
+          before do
+            subject.set_features(deployment_features)
+          end
+
+          context 'when deployment use_link_dns_names is TRUE' do
+            let(:use_link_dns_names) { true }
+
+            it 'returns TRUE' do
+              expect(subject.use_link_dns_names?).to be_truthy
+            end
+          end
+
+          context 'when deployment use_link_dns_names is FALSE' do
+            let(:use_link_dns_names) { false }
+
+            it 'returns FALSE' do
+              expect(subject.use_link_dns_names?).to be_falsey
+            end
+          end
+        end
+
         describe '#using_global_networking?' do
           context 'when cloud configs are empty' do
             it 'returns false' do
