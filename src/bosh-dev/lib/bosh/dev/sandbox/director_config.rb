@@ -38,8 +38,7 @@ module Bosh::Dev::Sandbox
                 :user_authentication,
                 :users_in_manifest,
                 :verify_multidigest_path,
-                :cpi_api_test_max_version,
-                :preferred_cpi_api_version
+                :cpi_api_test_max_version
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -93,7 +92,7 @@ module Bosh::Dev::Sandbox
       @nats_client_ca_certificate_path = attrs.fetch(:nats_client_ca_certificate_path)
       @nats_director_tls = attrs.fetch(:nats_director_tls)
       @agent_wait_timeout = attrs.fetch(:agent_wait_timeout, 600)
-      @preferred_cpi_api_version = attrs.fetch(:preferred_cpi_api_version)
+      @cpi_api_test_max_version = attrs.fetch(:cpi_api_test_max_version)
       @keep_unreachable_vms = attrs.fetch(:keep_unreachable_vms, false)
     end
 

@@ -40,6 +40,7 @@ params = {
       'include_index' => p('director.local_dns.include_index'),
       'use_dns_addresses' => p('director.local_dns.use_dns_addresses'),
   },
+  'cpi_api_test_max_version' => p('director.cpi_api_test_max_version'),
   'audit_log_path' => '/var/vcap/sys/log/director',
 }
 
@@ -433,19 +434,6 @@ if_p('director.log_access_events_to_syslog') do |_|
 end
 
 cpi_job_name = p('director.cpi_job')
-
-cpi = {
-  'max_supported_api_version' => 2,
-  'preferred_api_version' => 2,
-}
-
-if_p('director.cpi.preferred_api_version') do |preferred_api_version|
-  raise "Max supported api version is #{cpi['max_supported_api_version']} but got #{preferred_api_version}" if preferred_api_version > cpi['max_supported_api_version']
-  raise "Min supported api version is 1 but got #{preferred_api_version}" if preferred_api_version < 1
-  cpi['preferred_api_version'] = preferred_api_version
-end
-
-params['cpi'] = cpi
 
 params['cloud'] = {
     'provider' => {
