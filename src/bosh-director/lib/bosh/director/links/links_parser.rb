@@ -722,7 +722,7 @@ module Bosh::Director::Links
         consumer_intent = @links_manager.find_or_create_consumer_intent(
           link_consumer: consumer,
           link_original_name: original_name,
-          link_type: 'address',
+          link_type: value['link_type'] || 'address',
           new_intent_metadata: metadata,
         )
         consumer_intent.name = from_name

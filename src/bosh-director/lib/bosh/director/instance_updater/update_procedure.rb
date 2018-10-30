@@ -187,7 +187,7 @@ module Bosh::Director
       def update_dns
         return unless instance_plan.dns_changed?
 
-        @dns_state_updater.update_dns_for_instance(instance_plan.instance.model, instance_plan.network_settings.dns_record_info)
+        @dns_state_updater.update_dns_for_instance(instance_plan, instance_plan.network_settings.dns_record_info)
       end
 
       def agent

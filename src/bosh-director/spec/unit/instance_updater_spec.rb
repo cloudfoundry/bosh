@@ -217,7 +217,7 @@ module Bosh::Director
           expect(unmount_step).to receive(:perform)
           expect(delete_step).to receive(:perform)
           expect(director_state_updater).to receive(:update_dns_for_instance)
-            .with(instance_model, instance_plan.network_settings.dns_record_info)
+            .with(instance_plan, instance_plan.network_settings.dns_record_info)
 
           expect(agent_client).to receive(:run_script).with('post-stop', {})
           expect(agent_client).to receive(:stop)
@@ -243,7 +243,7 @@ module Bosh::Director
 
           it 'still updates dns' do
             expect(director_state_updater).to receive(:update_dns_for_instance)
-              .with(instance_model, instance_plan.network_settings.dns_record_info)
+              .with(instance_plan, instance_plan.network_settings.dns_record_info)
 
             updater.update(instance_plan)
             expect(instance_model.update_completed).to eq true

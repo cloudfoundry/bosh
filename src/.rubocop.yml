@@ -67,3 +67,6 @@ Style/TrailingCommaInHashLiteral:
 Style/TrailingCommaInArguments:
   Enabled: true
   EnforcedStyleForMultiline: comma
+
+Style/MultilineBlockChain:
+  Enabled: false

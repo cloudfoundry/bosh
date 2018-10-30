@@ -26,15 +26,18 @@ module Bosh::Director::Core::Templates
         {
           'index' => 1,
           'job' => {
-            'name' => 'fake-job-name'
-          }
+            'name' => 'fake-job-name',
+          },
         }
       end
 
       let(:release) { double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version: '0.1') }
-      let(:job_template) { double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name', release: release) }
+      let(:job_template_model) { double('Bosh::Director::Models::Template', provides: []) }
+      let(:job_template) do
+        double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name', release: release, model: job_template_model)
+      end
       let(:logger) { instance_double('Logger', debug: nil) }
-      let(:dns_encoder) { double('some DNS encoder')}
+      let(:dns_encoder) { double('some DNS encoder') }
 
       subject(:job_template_renderer) do
         JobTemplateRenderer.new(job_template, 'template-name', monit_erb, [source_erb], logger, dns_encoder)
@@ -63,25 +66,23 @@ module Bosh::Director::Core::Templates
       context 'when template has local properties' do
         let(:spec) do
           {
-              'index' => 1,
-              'job' => {
-                  'name' => 'reg-job-name',
-                  'templates' =>
+            'index' => 1,
+            'job' => {
+              'name' => 'reg-job-name',
+              'templates' =>
                       [{ 'name' => 'template-name',
-                        'version' => '1bbe5ab00082797999e2101d730de64aeb601b6a',
-                        'sha1' => '728399f9ef342532c6224bce4eb5331b5c38d595',
-                        'blobstore_id' => '6c1eec85-3c08-4464-8b11-dc43acaa79f9',
-                       }
-                      ],
+                         'version' => '1bbe5ab00082797999e2101d730de64aeb601b6a',
+                         'sha1' => '728399f9ef342532c6224bce4eb5331b5c38d595',
+                         'blobstore_id' => '6c1eec85-3c08-4464-8b11-dc43acaa79f9' }],
+            },
+            'properties' => {
+              'template-name' => {
+                'inside' => 'insideValue',
+                'smurfs' => { 'name' => 'snoopy' },
               },
-              'properties' => {
-                  'template-name' => {
-                      'inside' => 'insideValue',
-                      'smurfs' =>{ 'name' => 'snoopy' },
-                  }
-              },
-              'properties_need_filtering' => true,
-              'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
+            },
+            'properties_need_filtering' => true,
+            'release' => { 'name' => 'fake-release-name', 'version' => '0.1' },
           }
         end
 
@@ -92,25 +93,23 @@ module Bosh::Director::Core::Templates
         it 'should adjust the spec passed to the evaluation context' do
           job_template_renderer.render(spec)
           expect(Bosh::Template::EvaluationContext).to have_received(:new).with(
-              {
-                  'index' => 1,
-                  'job' => {
-                      'name' => 'reg-job-name',
-                      'templates'=>
-                          [{'name'=>'template-name',
-                            'version'=>'1bbe5ab00082797999e2101d730de64aeb601b6a',
-                            'sha1'=>'728399f9ef342532c6224bce4eb5331b5c38d595',
-                            'blobstore_id'=>'6c1eec85-3c08-4464-8b11-dc43acaa79f9',
-                           }
-                          ],
-                  },
-                  'properties' => { # note: loses 'template-name' from :spec
-                      'inside' => 'insideValue',
-                      'smurfs' => {'name'=>'snoopy'}
-                  },
-                  'properties_need_filtering' => true,
-                  'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
-              }, dns_encoder
+            {
+              'index' => 1,
+              'job' => {
+                'name' => 'reg-job-name',
+                'templates' =>
+                        [{ 'name' => 'template-name',
+                           'version' => '1bbe5ab00082797999e2101d730de64aeb601b6a',
+                           'sha1' => '728399f9ef342532c6224bce4eb5331b5c38d595',
+                           'blobstore_id' => '6c1eec85-3c08-4464-8b11-dc43acaa79f9' }],
+              },
+              'properties' => { # note: loses 'template-name' from :spec
+                'inside' => 'insideValue',
+                'smurfs' => { 'name' => 'snoopy' },
+              },
+              'properties_need_filtering' => true,
+              'release' => { 'name' => 'fake-release-name', 'version' => '0.1' },
+            }, dns_encoder
           ).at_least(2).times
         end
 
@@ -124,17 +123,15 @@ module Bosh::Director::Core::Templates
           end
 
           it 'formats the error messages is a generic way' do
-            expected_error_msg = <<-EXPECTED.strip
-- Unable to render templates for job 'fake-job-name'. Errors are:
-  - Error filling something in the template
-  - Error filling something in the template
+            expected_error_msg = <<~EXPECTED.strip
+              - Unable to render templates for job 'fake-job-name'. Errors are:
+                - Error filling something in the template
+                - Error filling something in the template
             EXPECTED
 
-            expect {
+            expect do
               job_template_renderer.render(spec)
-            }.to raise_error { |error|
-              expect(error.message).to eq(expected_error_msg)
-            }
+            end.to(raise_error { |error| expect(error.message).to eq(expected_error_msg) })
           end
         end
       end
@@ -142,46 +139,77 @@ module Bosh::Director::Core::Templates
       context 'when spec has links' do
         let(:raw_spec) do
           {
-              'index' => 1,
-              'job' => {
-                  'name' => 'template-name',
+            'index' => 1,
+            'job' => {
+              'name' => 'template-name',
+            },
+            'properties_need_filtering' => true,
+            'links' => {
+              'template-name' => {
+                'db_link' =>
+                    { 'properties' => { 'foo' => 'bar' }, 'instances' => [{ 'name' => 'mysql1' }, { 'name' => 'mysql' }] },
+                'backup_db' =>
+                    { 'properties' => { 'moop' => 'yar' }, 'instances' => [{ 'name' => 'postgres1' }, { 'name' => 'postgres' }] },
               },
-              'properties_need_filtering' => true,
-              'links' => {
-                'template-name' => {
-                  'db_link' =>
-                      { 'properties' => { 'foo' => 'bar'}, 'instances' =>[{ 'name' => 'mysql1' }, { 'name' => 'mysql' }]},
-                  'backup_db' =>
-                      { 'properties' =>{ 'moop' => 'yar'}, 'instances' =>[{ 'name' => 'postgres1' },{ 'name' => 'postgres' }]}
-                }
-              },
-              'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
+            },
+            'release' => { 'name' => 'fake-release-name', 'version' => '0.1' },
           }
         end
 
         let(:modified_spec) do
           {
-              'index' => 1,
-              'job' => {
-                  'name' => 'template-name',
+            'index' => 1,
+            'job' => {
+              'name' => 'template-name',
+            },
+            'properties_need_filtering' => true,
+            'links' => {
+              'db_link' =>
+              {
+                'properties' => { 'foo' => 'bar' },
+                'instances' => [{ 'name' => 'mysql1' }, { 'name' => 'mysql' }],
               },
-              'properties_need_filtering' => true,
-              'links' => {
-                  'db_link' =>
-                      { 'properties' => { 'foo' => 'bar'}, 'instances' =>[{ 'name' => 'mysql1' }, { 'name' => 'mysql' }]},
-                  'backup_db' =>
-                      { 'properties' =>{ 'moop' => 'yar'}, 'instances' =>[{ 'name' => 'postgres1' },{ 'name' => 'postgres' }]}
-              },
-              'release'=> {'name'=>'fake-release-name', 'version'=>'0.1'}
+              'backup_db' =>
+                  {
+                    'properties' => { 'moop' => 'yar' },
+                    'instances' => [{ 'name' => 'postgres1' }, { 'name' => 'postgres' }],
+                  },
+            },
+            'release' => { 'name' => 'fake-release-name', 'version' => '0.1' },
           }
         end
 
         before do
           allow(Bosh::Template::EvaluationContext).to receive(:new)
-          job_template_renderer.render(raw_spec)
+          allow(job_template_model).to receive(:provides).and_return([{
+            'name' => 'LINKNAME',
+            'type' => 'LINKTYPE',
+          }])
+          allow(dns_encoder).to receive(:id_for_group_tuple).and_return('group_id')
         end
+
         it 'should have EvaluationContext called with correct spec' do
+          job_template_renderer.render(raw_spec)
           expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).at_least(2).times
+        end
+
+        it 'appends a rendered template with link dns data' do
+          rendered_files = job_template_renderer.render(raw_spec).templates
+          expect(dns_encoder).to have_received(:id_for_group_tuple).with(
+            'link',
+            'LINKNAME-LINKTYPE',
+            nil,
+          )
+
+          rendered_links_file = rendered_files.pop
+          expect(rendered_links_file.src_name).to(eq('.bosh/links.json'))
+          expect(rendered_links_file.dest_name).to(eq('.bosh/links.json'))
+
+          expect(JSON.parse(rendered_links_file.contents)).to(eq([{
+            'name' => 'LINKNAME',
+            'type' => 'LINKTYPE',
+            'group' => 'group_id',
+          }]))
         end
       end
     end

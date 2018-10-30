@@ -46,7 +46,8 @@ module Bosh
         raise NotImplementedError.new('link.address requires bosh director') if @dns_encoder.nil?
 
         full_criteria = criteria.merge(
-          instance_group: @instance_group,
+          group_name: @instance_group,
+          group_type: 'instance-group',
           default_network: @default_network,
           deployment_name: @deployment_name,
           root_domain: @root_domain,

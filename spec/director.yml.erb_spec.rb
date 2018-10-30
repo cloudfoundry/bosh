@@ -518,20 +518,13 @@ describe 'director.yml.erb' do
           expect(parsed_yaml['puma_workers']).to eq(3)
         end
       end
-      it 'should contain the trusted_certs field' do
-        expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
-      end
-
-      it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('268.1.0')
-      end
 
       it 'should contain the trusted_certs field' do
         expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
       end
 
       it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('268.1.0')
+        expect(parsed_yaml['version']).to eq('268.2.0')
       end
 
       it 'should contain the audit log path' do

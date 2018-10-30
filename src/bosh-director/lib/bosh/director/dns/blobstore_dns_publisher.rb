@@ -13,14 +13,12 @@ module Bosh::Director
         local_dns_blob = nil
         max_dns_record_version = nil
 
-        Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
+        Config.db.transaction(isolation: :committed, retry_on: [Sequel::SerializationFailure]) do
           local_dns_blob = Models::LocalDnsBlob.order(:version).last
           max_dns_record_version = Models::LocalDnsRecord.max(:id)
         end
 
-        if local_dns_blob.nil? && max_dns_record_version.nil?
-          return
-        end
+        return if local_dns_blob.nil? && max_dns_record_version.nil?
 
         if local_dns_blob.nil? || local_dns_blob.version < max_dns_record_version
           @logger.debug("Exporting local dns records max_dns_record_version:#{max_dns_record_version} local_dns_blob.version:#{local_dns_blob.nil? ? nil : local_dns_blob.version}")
@@ -41,14 +39,14 @@ module Bosh::Director
 
     def create_dns_blob(dns_records)
       blob = Models::Blob.create(
-          blobstore_id: @blobstore_provider.call.create(dns_records.to_json),
-          sha1: dns_records.shasum,
-          created_at: Time.new
+        blobstore_id: @blobstore_provider.call.create(dns_records.to_json),
+        sha1: dns_records.shasum,
+        created_at: Time.new,
       )
       dns_blob = Models::LocalDnsBlob.create(
-          blob_id: blob.id,
-          version: dns_records.version,
-          created_at: blob.created_at
+        blob_id: blob.id,
+        version: dns_records.version,
+        created_at: blob.created_at,
       )
 
       dns_blob
@@ -57,7 +55,7 @@ module Bosh::Director
     def export_dns_records
       local_dns_records = []
       version = nil
-      Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
+      Config.db.transaction(isolation: :committed, retry_on: [Sequel::SerializationFailure]) do
         version = Models::LocalDnsRecord.max(:id) || 0
         local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
       end
@@ -66,16 +64,17 @@ module Bosh::Director
       dns_records = DnsRecords.new(version, Config.local_dns_include_index?, dns_encoder)
       local_dns_records.each do |dns_record|
         dns_records.add_record(
-          dns_record.instance.uuid,
-          dns_record.instance.id,
-          dns_record.instance.index,
-          dns_record.instance_group,
-          dns_record.az,
-          dns_record.network,
-          dns_record.deployment,
-          dns_record.ip,
-          dns_record.domain.nil? ? @domain_name : dns_record.domain,
-          dns_record.agent_id,
+          instance_id:         dns_record.instance.uuid,
+          num_id:              dns_record.instance.id,
+          index:               dns_record.instance.index,
+          instance_group_name: dns_record.instance_group,
+          az_name:             dns_record.az,
+          network_name:        dns_record.network,
+          deployment_name:     dns_record.deployment,
+          ip:                  dns_record.ip,
+          domain:              dns_record.domain.nil? ? @domain_name : dns_record.domain,
+          agent_id:            dns_record.agent_id,
+          links:               dns_record.links,
         )
       end
       dns_records

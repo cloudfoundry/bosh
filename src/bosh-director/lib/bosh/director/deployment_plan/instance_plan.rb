@@ -57,6 +57,7 @@ module Bosh
 
         def unresponsive_agent?
           return false if @instance.nil?
+
           @instance.current_job_state == 'unresponsive'
         end
 
@@ -87,6 +88,7 @@ module Bosh
         def persistent_disk_changed?
           return true if recreate_persistent_disks_requested?
           return @existing_instance.active_persistent_disks.any? if @existing_instance && obsolete?
+
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
 
@@ -166,8 +168,8 @@ module Bosh
           new_network_settings = remove_dns_record_name_from_network_settings(new_network_settings)
 
           changed = @variables_interpolator.interpolated_versioned_variables_changed?(old_network_settings, new_network_settings,
-                                                                                    @instance.previous_variable_set,
-                                                                                    @instance.desired_variable_set)
+                                                                                      @instance.previous_variable_set,
+                                                                                      @instance.desired_variable_set)
 
           if changed
             @logger.debug(
@@ -215,7 +217,7 @@ module Bosh
             end
           end
 
-          diff = LocalDnsRepo.new(@logger, Config.root_domain).diff(instance_model)
+          diff = LocalDnsRepo.new(@logger, Config.root_domain).diff(self)
           if diff.changes?
             log_changes(:local_dns_changed?, diff.obsolete + diff.unaffected, diff.unaffected + diff.missing, instance)
           end
@@ -242,6 +244,26 @@ module Bosh
 
         def release_all_network_plans
           network_plans.clear
+        end
+
+        def instance_group_properties
+          desired_job_templates = templates.map(&:model)
+          job_templates = desired_job_templates.empty? ? instance.model.templates : desired_job_templates
+          agent_id = instance.model.active_vm&.agent_id
+
+          properties = {
+            instance_id: instance.model.id,
+            az: instance.model.availability_zone,
+            deployment: instance.model.deployment.name,
+            agent_id: agent_id,
+            instance_group: instance.model.job,
+          }
+          links = job_templates.flat_map(&:provides).map do |link_provider|
+            {
+              name: "#{link_provider['name']}-#{link_provider['type']}",
+            }
+          end
+          properties.merge(links: links)
         end
 
         def obsolete?
@@ -431,7 +453,9 @@ module Bosh
         end
 
         def log_changes(method_sym, old_state, new_state, instance)
-          @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state} on instance #{instance}")
+          old_state_msg = old_state.is_a?(String) ? old_state : old_state.to_json
+          new_state_msg = new_state.is_a?(String) ? new_state : new_state.to_json
+          @logger.debug("#{method_sym} changed FROM: #{old_state_msg} TO: #{new_state_msg} on instance #{instance}")
         end
       end
 

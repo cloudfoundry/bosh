@@ -5,7 +5,7 @@ module Bosh::Director
     subject { described_class.new(service_groups, az_hash, short_dns_enabled) }
     let(:az_hash) {}
     let(:short_dns_enabled) { false }
-    let(:instance_group) { 'potato-group' }
+    let(:group_name) { 'potato-group' }
     let(:default_network) { 'potato-net' }
     let(:default_network_id) { 1 }
     let(:deployment_name) { 'fake-deployment' }
@@ -13,25 +13,36 @@ module Bosh::Director
     let(:specific_query) do
       {}
     end
+    let(:group_type_1) { 'group-type-1' }
+    let(:group_type_2) { 'group-type-2' }
+
     let(:criteria) do
       {
-        instance_group: instance_group,
+        group_type: group_type_1,
+        group_name: group_name,
         default_network: default_network,
         deployment_name: deployment_name,
-        root_domain: root_domain
+        root_domain: root_domain,
       }.merge(specific_query)
     end
 
     let(:service_groups) do
       {
         {
-          instance_group: 'potato-group',
+          group_type: group_type_1,
+          group_name: 'potato-group',
           deployment:     'fake-deployment',
         } => 3,
         {
-          instance_group: 'lemon-group',
+          group_type: group_type_1,
+          group_name: 'lemon-group',
           deployment:     'fake-deployment',
         } => 7,
+        {
+          group_type: group_type_2,
+          group_name: 'lemon-group',
+          deployment:     'fake-deployment',
+        } => 10,
       }
     end
 
@@ -141,7 +152,7 @@ module Bosh::Director
         end
 
         context 'when desired group is not default' do
-          let(:instance_group) { 'lemon-group' }
+          let(:group_name) { 'lemon-group' }
 
           it 'chooses chooses correct service groups' do
             expect(subject.encode_query(criteria)).to eq('q-n1s0.q-g7.sub.bosh')
@@ -197,26 +208,53 @@ module Bosh::Director
       context 'when short dns is enabled' do
         let(:short_dns_enabled) { true }
         it 'can look up the group id' do
-          expect(subject.id_for_group_tuple(
-            'potato-group',
-            'fake-deployment'
-          )).to eq '3'
-          expect(subject.id_for_group_tuple(
-            'lemon-group',
-            'fake-deployment'
-          )).to eq '7'
+          expect(
+            subject.id_for_group_tuple(
+              group_type_1,
+              'potato-group',
+              'fake-deployment',
+            ),
+          ).to eq '3'
+          expect(
+            subject.id_for_group_tuple(
+              group_type_1,
+              'lemon-group',
+              'fake-deployment',
+            ),
+          ).to eq '7'
+          expect(
+            subject.id_for_group_tuple(
+              group_type_2,
+              'lemon-group',
+              'fake-deployment',
+            ),
+          ).to eq '10'
         end
       end
+
       context 'even when short dns is not enabled' do
         it 'can still look up the group id' do
-          expect(subject.id_for_group_tuple(
-            'potato-group',
-            'fake-deployment'
-          )).to eq '3'
-          expect(subject.id_for_group_tuple(
-            'lemon-group',
-            'fake-deployment'
-          )).to eq '7'
+          expect(
+            subject.id_for_group_tuple(
+              group_type_1,
+              'potato-group',
+              'fake-deployment',
+            ),
+          ).to eq '3'
+          expect(
+            subject.id_for_group_tuple(
+              group_type_1,
+              'lemon-group',
+              'fake-deployment',
+            ),
+          ).to eq '7'
+          expect(
+            subject.id_for_group_tuple(
+              group_type_2,
+              'lemon-group',
+              'fake-deployment',
+            ),
+          ).to eq '10'
         end
       end
     end

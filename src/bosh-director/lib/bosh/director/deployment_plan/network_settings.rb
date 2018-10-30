@@ -69,11 +69,12 @@ module Bosh::Director
     def get_address(network_name, network, prefer_dns_entry = true)
       if should_use_dns?(network, prefer_dns_entry)
         return @dns_encoder.encode_query({
+          group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+          group_name: @instance_group_name,
           root_domain: @root_domain,
           default_network: network_name,
           deployment_name: @deployment_name,
           uuid: @instance_id,
-          instance_group: @instance_group_name,
         })
       else
         return network['ip']

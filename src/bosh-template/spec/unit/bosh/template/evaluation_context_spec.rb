@@ -12,6 +12,7 @@ module Bosh
 
       let(:dns_encoder) { double('some dns encoder', encode_query: 'some.fqdn') }
       let(:instances) { [{'address' => '123.456.789.101', 'properties' => {'prop1' => 'value'}}] }
+      let(:use_short_dns_addresses) { false }
 
       before do
         @spec = {
@@ -30,16 +31,51 @@ module Bosh
               'instance_group' => 'fake-instance-group-1',
               'default_network' => 'default',
               'domain' => 'otherbosh',
-              'instances' => instances
+              'instances' => instances,
+              'use_short_dns_addresses' => use_short_dns_addresses,
+              'link_provider_name' => 'provider1',
+              'link_provider_type' => 'link_type1',
             },
             'fake-link-2' => {
               'deployment_name' => 'fake-deployment',
               'instance_group' => 'fake-instance-group-2',
               'default_network' => 'default',
-              'domain' => 'otherbosh',
               'address' => 'some-address',
-              'instances' => [{'address' => '123.456.789.102', 'properties' => {'prop2' => 'value'}}]
-            }
+              'domain' => 'otherbosh',
+              'instances' => [
+                'address' => '123.456.789.102',
+                'properties' => { 'prop2' => 'value' },
+              ],
+              'link_provider_name' => '',
+              'link_provider_original_name' => 'orig_name1',
+              'link_provider_type' => 'link_type2',
+            },
+            'fake-link-3' => {
+              'deployment_name' => 'fake-deployment',
+              'instance_group' => 'fake-instance-group-3',
+              'default_network' => 'default',
+              'domain' => 'otherbosh',
+              'instances' => [
+                'address' => '123.456.789.103',
+                'properties' => { 'prop3' => 'value' },
+              ],
+              'link_provider_name' => nil,
+              'link_provider_original_name' => '',
+              'link_provider_type' => '',
+            },
+            'fake-link-4' => {
+              'deployment_name' => 'fake-deployment',
+              'instance_group' => 'fake-instance-group-2',
+              'default_network' => 'default',
+              'domain' => 'otherbosh',
+              'instances' => [
+                'address' => '123.456.789.102',
+                'properties' => { 'prop2' => 'value' },
+              ],
+              'link_provider_name' => '',
+              'link_provider_original_name' => 'orig_name1',
+              'link_provider_type' => 'link_type2',
+            },
           },
           'networks' => {
             'network1' => {
@@ -105,32 +141,44 @@ module Bosh
         expect(eval_template('<%= spec.release.version %>', @context)).to eq(@context.spec.release.version)
       end
 
-      it 'evaluates links' do
-        expect(eval_template("<%= link('fake-link-1').instances[0].address %>", @context)).to eq('123.456.789.101')
-        expect(eval_template("<%= link('fake-link-2').instances[0].address %>", @context)).to eq('123.456.789.102')
-      end
+      describe 'link' do
+        it 'evaluates links' do
+          expect(eval_template("<%= link('fake-link-1').instances[0].address %>", @context)).to eq('123.456.789.101')
+          expect(eval_template("<%= link('fake-link-2').instances[0].address %>", @context)).to eq('123.456.789.102')
+        end
 
-      it 'evaluates link properties' do
-        expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value')
-        expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value')
-      end
+        it 'evaluates link properties' do
+          expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value')
+          expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value')
+        end
 
-      it 'evaluates link addresses using the given dns encoder' do
-        expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('some.fqdn')
-      end
+        it 'evaluates link addresses using the given dns encoder' do
+          expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('some.fqdn')
+        end
 
-      it 'evaluates manual spec address ignoring the dns encoder' do
-        expect(eval_template("<%= link('fake-link-2').address %>", @context)).to eq('some-address')
-      end
+        it 'evaluates manual spec address ignoring the dns encoder' do
+          expect(eval_template("<%= link('fake-link-2').address %>", @context)).to eq('some-address')
+        end
 
-      it 'should throw a nice error when a link cannot be found' do
-        expect {
-          eval_template("<%= link('invisi-link') %>", @context)
-        }.to raise_error(UnknownLink, "Can't find link 'invisi-link'")
+        it 'should throw a nice error when a link cannot be found' do
+          expect do
+            eval_template("<%= link('invisi-link') %>", @context)
+          end.to raise_error(UnknownLink, "Can't find link 'invisi-link'")
+        end
+
+        context 'link.instance_group' do
+          context 'when links are present' do
+            it 'uses the instance group name to encode the address' do
+              expect(dns_encoder).to receive(:encode_query) do |criteria|
+                expect(criteria).to include(group_name: 'fake-instance-group-1', group_type: 'instance-group')
+              end
+              eval_template("<%= link('fake-link-1').address %>", @context)
+            end
+          end
+        end
       end
 
       describe 'if_link' do
-
         it 'works when link is found' do
           template = <<-TMPL
         <% if_link("fake-link-1") do |link| %>
@@ -222,9 +270,24 @@ module Bosh
         end
 
         describe 'when use_short_dns is enabled in provider' do
-          let(:instances) { [{'address' => 'q-n1s0.q-g1.bosh', 'properties' => {'prop1' => 'value'}}] }
+          before do
+            allow(dns_encoder).to receive(:encode_query).with(
+              {
+                group_type: 'instance-group',
+                group_name: 'fake-instance-group-1',
+                default_network: 'default',
+                deployment_name: 'fake-deployment',
+                root_domain: 'otherbosh',
+              },
+              true,
+            ).and_return('q-n1s0.q-g1.bosh')
+          end
+
+          let(:instances) { [{ 'properties' => { 'prop1' => 'value' } }] }
+          let(:use_short_dns_addresses) { true }
+
           it 'should evaluate the short dns for instances' do
-            expect(eval_template("<%= link('fake-link-1').instances[0].address %>", @context)).to eq('q-n1s0.q-g1.bosh')
+            expect(eval_template("<%= link('fake-link-1').address %>", @context)).to eq('q-n1s0.q-g1.bosh')
           end
         end
       end

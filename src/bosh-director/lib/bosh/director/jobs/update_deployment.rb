@@ -244,7 +244,11 @@ module Bosh::Director
         unless errors.empty?
           message = errors.map { |error| error.message.strip }.join("\n")
           header = 'Unable to render instance groups for deployment. Errors are:'
-          raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2})
+          raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(
+            header,
+            message,
+            indent_by: 2,
+          )
         end
       end
 

@@ -578,7 +578,11 @@ module Bosh::Director
           end
 
           it 'should return the short DNS address of the link' do
-            Bosh::Director::Models::LocalDnsEncodedInstanceGroup.create(name: 'ig_bar', deployment_id: 1)
+            Bosh::Director::Models::LocalDnsEncodedGroup.create(
+              name: 'ig_bar',
+              deployment_id: 1,
+              type: Bosh::Director::Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+            )
 
             link_address = subject.link_address(link.id)
             expect(link_address).to eq('q-n2s0.q-g1.bosh')
