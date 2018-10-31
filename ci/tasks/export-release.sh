@@ -8,7 +8,7 @@ main() {
 
   tar -xzf release/*.tgz $( tar -tzf release/*.tgz | grep 'release.MF' )
   local RELEASE_NAME=$( grep -E '^name: ' release.MF | awk '{print $2}' | tr -d "\"'" )
-  local RELEASE_VERSION=$( cat release/version )
+  local RELEASE_VERSION=$( grep -E '^version: ' release.MF | awk '{print $2}' | tr -d "\"'" )
   local RELEASE_TARBALL=$( echo release/*.tgz )
 
   tar -xzf stemcell/*.tgz $( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )

@@ -12,6 +12,7 @@ module Bosh::Director::Core::Templates
     attr_reader :monit_erb, :source_erbs
 
     def initialize(job_template, template_name, monit_erb, source_erbs, logger, dns_encoder = nil)
+      @links_provided = job_template.model.provides
       @name = job_template.name
       @release = job_template.release
       @template_name = template_name
@@ -58,6 +59,8 @@ module Bosh::Director::Core::Templates
         raise message
       end
 
+      rendered_files << RenderedFileTemplate.new('.bosh/links.json', '.bosh/links.json', links_data(spec))
+
       RenderedJobTemplate.new(@name, monit, rendered_files)
     end
 
@@ -98,5 +101,20 @@ module Bosh::Director::Core::Templates
       modified_spec
     end
 
+    def links_data(spec)
+      data = @links_provided.map do |provide|
+        {
+          'name' => provide['name'],
+          'type' => provide['type'],
+          'group' => @dns_encoder.id_for_group_tuple(
+            'link',
+            "#{provide['name']}-#{provide['type']}",
+            spec['deployment'],
+          ),
+        }
+      end
+
+      JSON.pretty_generate(data) + "\n"
+    end
   end
 end

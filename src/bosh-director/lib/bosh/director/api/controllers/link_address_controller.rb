@@ -3,25 +3,24 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class LinkAddressController < BaseController
-      register DeploymentsSecurity
+      register Bosh::Director::Api::Extensions::DeploymentsSecurity
 
       def initialize(config)
         super(config)
         @deployment_manager = Api::DeploymentManager.new
-        @link_manager = Api::LinkManager.new
+        @links_api_manager = Api::LinksApiManager.new
       end
 
-      get '/', authorization: :read do
+      get '/', authorization: :read_link do
         validate_query_params(params)
 
         query_options = {
           azs: params['azs'],
-          status: params['status']
+          status: params['status'],
         }
 
-
         result = {
-          address: @link_manager.link_address(params['link_id'], query_options)
+          address: @links_api_manager.link_address(params['link_id'], query_options),
         }
 
         body(json_encode(result))

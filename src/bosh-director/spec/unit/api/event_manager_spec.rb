@@ -4,6 +4,12 @@ describe Bosh::Director::Api::EventManager do
   let(:manager) { described_class.new(true) }
 
   describe '#create_event' do
+    let(:audit_logger) { instance_double(Bosh::Director::AuditLogger) }
+
+    before do
+      allow(Bosh::Director::AuditLogger).to receive(:instance).and_return(audit_logger)
+      allow(audit_logger).to receive(:info)
+    end
 
     context 'record_events is true' do
       it 'should create a new event model' do
@@ -19,16 +25,10 @@ describe Bosh::Director::Api::EventManager do
         expect( Bosh::Director::Models::Event.first.timestamp.to_i).to eq(1479673560)
       end
 
-      it 'should write event to syslog' do
-        pending("Syslog::Logger does not exist in ruby version '#{RUBY_VERSION}'") if RUBY_VERSION.to_i < 2
-
-        syslog = instance_double(Syslog::Logger)
-        allow(Syslog::Logger).to receive(:new).with('vcap.bosh.director').and_return(syslog)
-        allow(syslog).to receive(:info)
-
+      it 'should write event to audit logger' do
         event = manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment'})
 
-        expect(syslog).to have_received(:info).with(JSON.generate(event.to_hash))
+        expect(audit_logger).to have_received(:info).with(JSON.generate(event.to_hash))
       end
     end
 
@@ -43,16 +43,10 @@ describe Bosh::Director::Api::EventManager do
         }
       end
 
-      it 'should not write event to syslog' do
-        pending("Syslog::Logger does not exist in ruby version '#{RUBY_VERSION}'") if RUBY_VERSION.to_i < 2
-
-        syslog = instance_double(Syslog::Logger)
-        allow(Syslog::Logger).to receive(:new).with('vcap.bosh.director').and_return(syslog)
-        allow(syslog).to receive(:info)
-
+      it 'should not write event to audit logger' do
         manager.create_event({:user => 'user', :action => 'action', :object_type => 'deployment'})
 
-        expect(syslog).to_not have_received(:info)
+        expect(audit_logger).to_not have_received(:info)
       end
 
       it 'returns an empty event' do

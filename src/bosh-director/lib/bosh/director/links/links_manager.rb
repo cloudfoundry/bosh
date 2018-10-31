@@ -207,6 +207,13 @@ module Bosh::Director::Links
       links
     end
 
+    def get_link_providers_for_deployment(deployment)
+      Bosh::Director::Models::Links::LinkProviderIntent .where(
+        serial_id: deployment.links_serial_id,
+        link_provider: Bosh::Director::Models::Links::LinkProvider.where(deployment: deployment),
+      ).all
+    end
+
     def get_links_for_instance_group(deployment_model, instance_group_name)
       links = {}
       consumers = Bosh::Director::Models::Links::LinkConsumer.where(deployment: deployment_model, instance_group: instance_group_name, serial_id: deployment_model.links_serial_id)
@@ -223,6 +230,8 @@ module Bosh::Director::Links
                   link.link_provider_intent.serial_id != consumer_intent.serial_id
 
           content = JSON.parse(link.link_content)
+          content['group_name'] = link.group_name
+
           links[consumer.name][link.name] = content
         end
       end
@@ -244,7 +253,9 @@ module Bosh::Director::Links
         link = instance_link.link
         consumer_intent = link.link_consumer_intent
         consumer = consumer_intent.link_consumer
+
         content = JSON.parse(link.link_content)
+        content['group_name'] = link.group_name
 
         links[consumer.name] ||= {}
         links[consumer.name][consumer_intent.original_name] = content
@@ -289,12 +300,20 @@ module Bosh::Director::Links
         instance_group = deployment_plan.instance_group(provider.instance_group)
         provider.intents.each do |provider_intent|
           next if provider_intent.serial_id != deployment_plan.model.links_serial_id
+          next unless consumer?(provider_intent, deployment_plan)
           metadata = {}
           metadata = JSON.parse(provider_intent.metadata) unless provider_intent.metadata.nil?
 
           properties = metadata['mapped_properties']
 
-          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_dns_addresses?, deployment_plan.use_short_dns_addresses?).spec.to_json
+          content = Bosh::Director::DeploymentPlan::Link.new(
+            provider.deployment.name,
+            instance_group,
+            properties,
+            deployment_plan.use_dns_addresses?,
+            deployment_plan.use_short_dns_addresses?,
+            deployment_plan.use_link_dns_names?,
+          ).spec.to_json
           provider_intent.content = content
           provider_intent.save
         end
@@ -364,9 +383,6 @@ module Bosh::Director::Links
           found_provider_intents = [external_provider_intent]
         end
 
-        consumer = consumer_intent.link_consumer
-        current_deployment_name = consumer.deployment.name
-
         link_network = consumer_intent_metadata['network']
         is_explicit_link = !!consumer_intent_metadata['explicit_link']
 
@@ -379,17 +395,9 @@ module Bosh::Director::Links
         unless dry_run
           provider_intent = found_provider_intents.first
 
-          # TODO: Links: discuss about possibility of value of content being empty; will cause nil class error
-          if is_explicit_link
-            content = provider_intent.content || '{}'
-            provider_intent_networks = JSON.parse(content)['networks']
-
-            if link_network && !provider_intent_networks.include?(link_network)
-              raise Bosh::Director::DeploymentInvalidLink, Bosh::Director::Links::LinksErrorBuilder.build_link_error(
-                consumer_intent, found_provider_intents, link_network
-              )
-            end
-          end
+          validate_provider_with_explicit_link(
+            consumer_intent, found_provider_intents, is_explicit_link, link_network, provider_intent
+          )
 
           link_content = extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
 
@@ -435,6 +443,56 @@ module Bosh::Director::Links
     end
 
     private
+
+    def validate_provider_with_explicit_link(
+      consumer_intent, found_provider_intents, is_explicit_link, link_network, provider_intent
+    )
+      return unless is_explicit_link
+
+      content = provider_intent.content || '{}'
+      provider_intent_networks = JSON.parse(content)['networks']
+
+      return unless link_network && (provider_intent_networks.nil? || !provider_intent_networks.include?(link_network))
+
+      raise Bosh::Director::DeploymentInvalidLink, Bosh::Director::Links::LinksErrorBuilder.build_link_error(
+        consumer_intent, found_provider_intents, link_network
+      )
+    end
+
+    # A consumer which is within the same deployment
+    def consumer?(provider_intent, deployment_plan)
+      return true if provider_intent.shared
+
+      link_consumers = deployment_plan.model.link_consumers
+      link_consumers = link_consumers.select do |consumer|
+        consumer.serial_id == @serial_id
+      end
+
+      link_consumers.any? do |consumer|
+        consumer.intents.any? do |consumer_intent|
+          can_be_consumed?(consumer, provider_intent, consumer_intent, @serial_id)
+        end
+      end
+    end
+
+    def can_be_consumed?(consumer, provider_intent, consumer_intent, serial_id)
+      consumer_intent_metadata = JSON.parse(consumer_intent.metadata || '{}')
+
+      !consumer_intent.blocked &&
+        consumer_intent.serial_id == serial_id &&
+        provider_intent.type == consumer_intent.type &&
+        !cross_deployment?(consumer, consumer_intent_metadata) &&
+        explict_link_matching?(consumer_intent_metadata, provider_intent, consumer_intent)
+    end
+
+    def explict_link_matching?(metadata, provider_intent, consumer_intent)
+      !metadata['explicit_link'] || provider_intent.name == consumer_intent.name
+    end
+
+    def cross_deployment?(consumer, consumer_intent_metadata)
+      deployment_name = consumer_intent_metadata['from_deployment'] || consumer.deployment.name
+      consumer.deployment.name != deployment_name
+    end
 
     def extract_provider_link_content(consumer_intent_metadata, global_use_dns_entry, link_network, provider_intent)
       link_use_ip_address = consumer_intent_metadata['ip_addresses']

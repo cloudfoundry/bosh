@@ -186,9 +186,21 @@ describe 'Links with local_dns enabled', type: :integration do
           end
 
           it 'uses a short DNS name if manifest so indicates' do
-            manifest['features'] = {'use_short_dns_addresses' => true}
+            manifest['features'] = {
+              'use_short_dns_addresses' => true,
+              'use_link_dns_names' => false,
+            }
             deploy_simple_manifest(manifest_hash: manifest)
             expect(rendered_template['db_az_link']['address']).to match(/q-a1n\ds0.q-g2.bosh/)
+          end
+
+          it 'uses a link DNS name if manifest so indicates' do
+            manifest['features'] = {
+              'use_short_dns_addresses' => true,
+              'use_link_dns_names' => true,
+            }
+            deploy_simple_manifest(manifest_hash: manifest)
+            expect(rendered_template['db_az_link']['address']).to match(/q-a1n\ds0.q-g3.bosh/)
           end
 
           it 'respects address provided in a manual link' do
@@ -403,6 +415,25 @@ describe 'Links with local_dns enabled', type: :integration do
         expect(addresses).to eq(["#{mysql_instance.id}.mysql.manual-network.simple.bosh"])
       end
 
+      context 'when deployment manifest features specifies use_link_dns_names to TRUE' do
+        before do
+          manifest['features']['use_link_dns_names'] = true
+        end
+
+        it 'uses the instance long DNS address when accessing instance.address of the link' do
+          deploy_simple_manifest(manifest_hash: manifest)
+          instances = director.instances
+          mysql_instance = director.find_instance(instances, 'mysql', '0')
+          api_instance = director.find_instance(instances, 'my_api', '0')
+          template = YAML.safe_load(api_instance.read_job_template('api_server', 'config.yml'))
+          addresses = template['databases']['main'].map do |elem|
+            elem['address']
+          end
+          expect(addresses.length).to eq(1)
+          expect(addresses).to eq(["#{mysql_instance.id}.mysql.manual-network.simple.bosh"])
+        end
+      end
+
       context 'when deployment manifest features specifies use_short_dns_addresses to TRUE' do
         before do
           manifest['features']['use_short_dns_addresses'] = true
@@ -412,12 +443,43 @@ describe 'Links with local_dns enabled', type: :integration do
           deploy_simple_manifest(manifest_hash: manifest)
           instances = director.instances
           api_instance = director.find_instance(instances, 'my_api', '0')
-          template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+          template = YAML.safe_load(api_instance.read_job_template('api_server', 'config.yml'))
           addresses = template['databases']['main'].map do |elem|
             elem['address']
           end
           expect(addresses.length).to eq(1)
           expect(addresses[0]).to match(/q-m\dn\ds0\.q-g\d\.bosh/)
+        end
+
+        context 'when deployment manifest features specifies both use_short_dns_addresses and use_link_dns_names as TRUE' do
+          before do
+            manifest['features']['use_link_dns_names'] = true
+            manifest['features']['use_short_dns_addresses'] = true
+          end
+
+          it 'outputs an abbreviated DNS address when accessing instance.address of the link' do
+            deploy_simple_manifest(manifest_hash: manifest)
+            instances = director.instances
+            api_instance = director.find_instance(instances, 'my_api', '0')
+            template = YAML.safe_load(api_instance.read_job_template('api_server', 'config.yml'))
+            addresses = template['databases']['main'].map do |elem|
+              elem['address']
+            end
+            expect(addresses.length).to eq(1)
+            expect(addresses[0]).to match(/q-m\d+n\d+s0\.q-g\d+\.bosh/)
+          end
+
+          it 'outputs an abbreviated DNS address when accessing the short link address' do
+            deploy_simple_manifest(manifest_hash: manifest)
+            instances = director.instances
+            api_instance = director.find_instance(instances, 'my_api', '0')
+            template = YAML.safe_load(api_instance.read_job_template('api_server', 'config.yml'))
+            backup_addresses = template['optional_backup_link'].map do |elem|
+              elem['address']
+            end
+            expect(backup_addresses.length).to eq(1)
+            expect(backup_addresses[0]).to match(/q-n\d+s0\.q-g\d+\.bosh/)
+          end
         end
       end
     end

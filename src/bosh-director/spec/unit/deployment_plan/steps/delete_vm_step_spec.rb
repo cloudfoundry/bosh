@@ -58,6 +58,7 @@ module Bosh
               )
               instance_group
             end
+            let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
             let(:instance) do
               instance = DeploymentPlan::Instance.create_from_instance_group(
                 instance_group,
@@ -67,6 +68,7 @@ module Bosh
                 {},
                 nil,
                 logger,
+                variables_interpolator,
               )
               instance.bind_existing_instance_model(instance_model)
               instance
@@ -170,6 +172,17 @@ module Bosh
                 expect(cloud).to receive(:delete_vm).with('vm-cid')
 
                 expect { subject.perform(report) }.to(change { Models::Event.count }.from(0).to(2))
+              end
+            end
+
+            context 'when trying to delete VM mutiple times' do
+              it 'deletes the instances vm and stores an event' do
+                expect(logger).to receive(:info).with('Deleting VM').twice
+                expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
+                expect(cloud).to receive(:delete_vm).with('vm-cid').twice
+
+                subject.perform(report)
+                expect { subject.perform(report) }.to_not raise_error
               end
             end
           end

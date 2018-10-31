@@ -36,17 +36,21 @@ module Bosh::Director::DeploymentPlan
                 'id' => '3d46803d-1527-4209-8e1f-822105fece7c',
                 'az' => 'z1',
                 'address' => '10.244.0.4',
-              }
+              },
             ],
             'instance_group' => 'smurf-ig',
             'default_network' => 'smurf-net',
             'domain' => 'smurf.bosh',
-            'non-whitelisted-key' => 'some_value'
-          }
-        }
+            'use_short_dns_addresses' => true,
+            'use_link_dns_names' => true,
+            'non-whitelisted-key' => 'some_value',
+            'group_name' => 'link_provider_name-link_provider_type',
+          },
+        },
       }
     end
     let(:smurf_job_links) { links['smurf-job'] }
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:lifecycle) { InstanceGroup::DEFAULT_LIFECYCLE_PROFILE }
     let(:network_spec) do
@@ -90,6 +94,7 @@ module Bosh::Director::DeploymentPlan
         instance_state,
         availability_zone,
         logger,
+        variables_interpolator,
       )
       instance.desired_variable_set = desired_variable_set
       instance
@@ -102,7 +107,12 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) do
-      InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(instance_group), instance: instance)
+      InstancePlan.new(
+        existing_instance: nil,
+        desired_instance: DesiredInstance.new(instance_group),
+        instance: instance,
+        variables_interpolator: variables_interpolator,
+      )
     end
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 
@@ -218,6 +228,9 @@ module Bosh::Director::DeploymentPlan
               'default_network' => 'smurf-net',
               'deployment_name' => 'dep1',
               'domain' => 'smurf.bosh',
+              'use_short_dns_addresses' => true,
+              'use_link_dns_names' => true,
+              'group_name' => 'link_provider_name-link_provider_type',
             },
           },
         }
@@ -237,7 +250,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'links specs whitelisting' do
         it 'respects whitelist for links spec' do
-          expect(instance_spec.as_template_spec['links']).to eq(expected_links)
+          expect([instance_spec.as_template_spec['links']]).to include(expected_links)
         end
       end
 
@@ -443,57 +456,57 @@ module Bosh::Director::DeploymentPlan
     describe '#full_spec' do
       it 'return correct json format' do
         expected_spec = {
-          "deployment" => "fake-deployment",
-          "job" => {
-            "name" => "smurf-job",
-            "release" => "release",
-            "templates" => []
+          'deployment' => 'fake-deployment',
+          'job' => {
+            'name' => 'smurf-job',
+            'release' => 'release',
+            'templates' => [],
           },
-          "index" => 0,
-          "bootstrap" => true,
-          "lifecycle" => "service",
-          "name" => "fake-job",
-          "id" => "uuid-1",
-          "az" => "foo-az",
-          "networks" => {
-            "default" => {
-              "type" => "dynamic",
-              "cloud_properties" => {"foo" => "bar"},
-              "default" => ["gateway"]
-            }
+          'index' => 0,
+          'bootstrap' => true,
+          'lifecycle' => 'service',
+          'name' => 'fake-job',
+          'id' => 'uuid-1',
+          'az' => 'foo-az',
+          'networks' => {
+            'default' => {
+              'type' => 'dynamic',
+              'cloud_properties' => { 'foo' => 'bar' },
+              'default' => ['gateway'],
+            },
           },
-          "vm_type" => {
-            "name" => "fake-vm-type",
-            "cloud_properties" => {}
+          'vm_type' => {
+            'name' => 'fake-vm-type',
+            'cloud_properties' => {},
           },
-          "vm_resources" => nil,
-          "stemcell" => {
-            "name" => "fake-stemcell-name",
-            "version" => "1.0"
+          'vm_resources' => nil,
+          'stemcell' => {
+            'name' => 'fake-stemcell-name',
+            'version' => '1.0',
           },
-          "env" => {"key" => "value"},
-          "packages" => {
-            "pkg" => {
-              "name" => "package",
-              "version" => "1.0"
-            }
+          'env' => { 'key' => 'value' },
+          'packages' => {
+            'pkg' => {
+              'name' => 'package',
+              'version' => '1.0',
+            },
           },
-          "properties" => {"key" => "value"},
-          "properties_need_filtering" => true,
-          "dns_domain_name" => "bosh",
-          "address" => "uuid-1.fake-job.default.fake-deployment.bosh",
-          "update" => {},
-          "persistent_disk" => 0,
-          "persistent_disk_pool" => {
-            "name" => String,
-            "disk_size" => 0,
-            "cloud_properties" => {}
+          'properties' => { 'key' => 'value' },
+          'properties_need_filtering' => true,
+          'dns_domain_name' => 'bosh',
+          'address' => 'uuid-1.fake-job.default.fake-deployment.bosh',
+          'update' => {},
+          'persistent_disk' => 0,
+          'persistent_disk_pool' => {
+            'name' => String,
+            'disk_size' => 0,
+            'cloud_properties' => {},
           },
-          "persistent_disk_type" => {
-            "name" => String,
-            "disk_size" => 0,
-            "cloud_properties" => {}
-          }
+          'persistent_disk_type' => {
+            'name' => String,
+            'disk_size' => 0,
+            'cloud_properties' => {},
+          },
         }
         expect(instance_spec.full_spec).to match(expected_spec)
       end

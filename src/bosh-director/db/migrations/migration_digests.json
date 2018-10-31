@@ -145,5 +145,9 @@
   "20180411165035_migrate_update_strategy_to_vm_strategy": "116a03febc41f331316bb0d14385093ed941bc68",
   "20180427184448_add_historical_metadata_to_orphaned_vms": "405597203ab69f062481a9896a667617bc3207f7",
   "20180515204145_add_vm_metadata_spec": "3a094f32feef551247aeb82432cb551d4804ac16",
-  "20180613190204_links_api_longtext_support": "555ab4f70cc81a7a5889429f8ddadb08dcd432f0"
+  "20180613190204_links_api_longtext_support": "555ab4f70cc81a7a5889429f8ddadb08dcd432f0",
+  "20180822230006_create_network_table": "167d33bbd968ad671f2c1f7bac5d5046e77edd4f",
+  "20181017210108_add_type_to_local_dns_encoded_instance_group": "c381ec9869bd19121f80f7a9c99213dbce55c680",
+  "20181017233927_add_links_json_to_local_dns_record": "90ad875b1b9ab1aa665951c10a7c1b09076779e6",
+  "20181019225226_rename_table_local_dns_encoded_instance_group": "b8a98f3b040a03f8ee30a39d5c9d3bd5102858fe"
 }

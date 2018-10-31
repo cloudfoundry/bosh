@@ -12,6 +12,7 @@ templates:
   bbr_restore: bin/bbr/restore
   server_tls_cert.pem.erb: config/server_tls_cert.pem
   server_tls_private_key.pem.erb: config/server_tls_private_key.pem
+  pre-start: bin/pre-start
 
 packages:
 - nginx
@@ -44,6 +45,10 @@ properties:
   blobstore.nginx.workers:
     description: Number of nginx workers for blobstore
     default: 2
+
+  blobstore.nginx.enable_metrics_endpoint:
+    description: Expose basic nginx metrics on localhost:<blobstore.port>/stats endpoint. Uses the ngx_http_stub_status_module (see http://nginx.org/en/docs/http/ngx_http_stub_status_module.html).
+    default: false
 
   blobstore.tls.cert.certificate:
     description: SSL cert for blobstore nginx server

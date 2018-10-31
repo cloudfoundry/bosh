@@ -12,13 +12,10 @@ groups:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
-      - load-tests-postgres
-      - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
       - fuzz-tests
       - candidate-release
-      # - finalize-bosh-release
+      - compile-bosh-dev-release-trusty
+      - compile-bosh-dev-release-xenial
       - bats-centos
       - bats-ubuntu-trusty
       - bats-ubuntu-xenial
@@ -60,20 +57,20 @@ groups:
       - bbr-ubuntu-trusty
       - bbr-ubuntu-xenial
 
-  - name: load
-    jobs:
-      - load-tests-postgres
-      - load-tests-mysql
-      - legacy-load-tests-postgres
-      - legacy-load-tests-mysql
-
-  - name: version
-    jobs:
-      - bump-candidate-major
-
-  # - name: finalize
+  # - name: version
   #   jobs:
-  #     - finalize-bosh-release
+  #     - bump-candidate-major
+
+  - name: PM
+    jobs:
+      - bump-major
+      - bump-minor
+      - bump-patch
+      - finalize-release
+
+  - name: export
+    jobs:
+    - export-final-release
 
 shared:
   - &install-dependencies
@@ -313,6 +310,7 @@ jobs:
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
+        attempts: 3
 
   - name: integration-postgres-gocli-sha2
     public: true
@@ -498,102 +496,6 @@ jobs:
           params:
             DB: mysql
 
-  - name: load-tests-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    interruptible: true
-    plan:
-    - { get: load-tests-interval, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: warden-ubuntu-trusty }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: bosh-src }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
-      tags: ["bosh-load-tests"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: postgresql
-        LEGACY: false
-
-  - name: legacy-load-tests-postgres
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    interruptible: true
-    plan:
-    - { get: load-tests-interval, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: bosh-src }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests-2"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: postgresql
-        LEGACY: true
-
-  - name: load-tests-mysql
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    interruptible: true
-    plan:
-    - { get: load-tests-interval, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: bosh-src }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test-garden.yml
-      tags: ["bosh-load-tests-3"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: mysql
-        LEGACY: false
-
-  - name: legacy-load-tests-mysql
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    interruptible: true
-    plan:
-    - { get: load-tests-interval, trigger: true }
-    - { get: bosh-load-tests-workspace }
-    - { get: bosh-cli }
-    - { get: bosh-candidate-release-tarballs }
-    - { get: bosh-src }
-    - { get: warden-ubuntu-trusty }
-
-    - task: test
-      privileged: true
-      file: bosh-load-tests-workspace/ci/tasks/test.yml
-      tags: ["bosh-load-tests-4"]
-      input_mapping:
-        bosh-candidate-stemcell: warden-ubuntu-trusty
-        bosh-candidate-release: bosh-candidate-release-tarballs
-      params:
-        DB: mysql
-        LEGACY: true
-
   - name: fuzz-tests
     public: true
     serial: true
@@ -666,7 +568,7 @@ jobs:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
     - get: bosh-cli
-    - put: candidate-version
+    - put: version
       params:
         pre: rc
     - task: make
@@ -675,16 +577,57 @@ jobs:
       params:
         file: "release/bosh-dev-release.tgz"
 
+  - name: compile-bosh-dev-release-xenial
+    plan:
+    - aggregate:
+      - get: bosh-src
+      - get: release
+        resource: bosh-candidate-release-tarballs
+        passed:
+        - candidate-release
+        trigger: true
+      - get: stemcell
+        resource: warden-ubuntu-xenial
+        trigger: true
+    - task: export-release
+      file: bosh-src/ci/tasks/export-release.yml
+      privileged: true
+    - put: bosh-compiled-candidate-xenial
+      params:
+        file: "compiled-release/*.tgz"
+
+  - name: compile-bosh-dev-release-trusty
+    plan:
+    - aggregate:
+      - get: bosh-src
+      - get: release
+        resource: bosh-candidate-release-tarballs
+        passed:
+        - candidate-release
+        trigger: true
+      - get: stemcell
+        resource: warden-ubuntu-trusty
+        trigger: true
+    - task: export-release
+      file: bosh-src/ci/tasks/export-release.yml
+      privileged: true
+    - put: bosh-compiled-candidate-trusty
+      params:
+        file: "compiled-release/*.tgz"
+
   - name: bats-centos
     serial: true
     plan:
     - do:
       - aggregate:
-        - get: bosh-release
-          resource: bosh-candidate-release-tarballs
-          trigger: true
+        - get: bosh-candidate-release-tarballs
           passed:
           - candidate-release
+        - get: bosh-release
+          resource: bosh-compiled-candidate-xenial
+          trigger: true
+          passed:
+          - compile-bosh-dev-release-xenial
         - get: cpi-release
         - get: stemcell
           resource: vsphere-esxi-centos-7
@@ -715,11 +658,14 @@ jobs:
     plan:
     - do:
       - aggregate:
+        - get: bosh-candidate-release-tarballs
+          passed:
+          - candidate-release
         - get: bosh-release
-          resource: bosh-candidate-release-tarballs
+          resource: bosh-compiled-candidate-xenial
           trigger: true
           passed:
-            - candidate-release
+          - compile-bosh-dev-release-xenial
         - get: cpi-release
         - get: stemcell
           resource: vsphere-esxi-ubuntu-trusty
@@ -750,11 +696,14 @@ jobs:
     plan:
     - do:
       - aggregate:
+        - get: bosh-candidate-release-tarballs
+          passed:
+          - candidate-release
         - get: bosh-release
-          resource: bosh-candidate-release-tarballs
+          resource: bosh-compiled-candidate-xenial
           trigger: true
           passed:
-            - candidate-release
+          - compile-bosh-dev-release-xenial
         - get: cpi-release
         - get: stemcell
           resource: vsphere-esxi-ubuntu-xenial
@@ -788,11 +737,14 @@ jobs:
         - get: stemcell
           resource: aws-xen-hvm-ubuntu-trusty
           trigger: true
+        - get: bosh-candidate-release-tarballs
+          passed:
+          - candidate-release
         - get: bosh-release
-          resource: bosh-candidate-release-tarballs
+          resource: bosh-compiled-candidate-xenial
           trigger: true
           passed:
-            - candidate-release
+          - compile-bosh-dev-release-xenial
         - get: bats
         - get: bosh-cli
         - get: bosh-src
@@ -857,11 +809,14 @@ jobs:
       - get: bosh-dns-release
       - get: stemcell
         resource: warden-ubuntu-trusty
+      - get: bosh-candidate-release-tarballs
+        passed:
+        - candidate-release
       - get: bosh-release
-        resource: bosh-candidate-release-tarballs
+        resource: bosh-compiled-candidate-trusty
         trigger: true
         passed:
-          - candidate-release
+        - compile-bosh-dev-release-trusty
     - do:
       - put: brats-terraform
         attempts: 2
@@ -954,11 +909,14 @@ jobs:
       - get: stemcell
         resource: warden-ubuntu-trusty
         passed: [compile-bbr-trusty]
+      - get: bosh-candidate-release-tarballs
+        passed:
+        - candidate-release
       - get: bosh-release
-        resource: bosh-candidate-release-tarballs
+        resource: bosh-compiled-candidate-trusty
         trigger: true
         passed:
-          - candidate-release
+        - compile-bosh-dev-release-trusty
       - get: bbr-compiled-release
         resource: bbr-compiled-trusty
         passed: [compile-bbr-trusty]
@@ -1054,11 +1012,14 @@ jobs:
       - get: bosh-dns-release
       - get: stemcell
         resource: warden-ubuntu-xenial
+      - get: bosh-candidate-release-tarballs
+        passed:
+        - candidate-release
       - get: bosh-release
-        resource: bosh-candidate-release-tarballs
+        resource: bosh-compiled-candidate-xenial
         trigger: true
         passed:
-          - candidate-release
+        - compile-bosh-dev-release-xenial
     - do:
       - put: brats-terraform
         attempts: 2
@@ -1105,13 +1066,9 @@ jobs:
           GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
           GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
           GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
-          GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-mysql-external-db-client-certificate))
-          GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-mysql-external-db-client-private-key))
           GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
           GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
-          GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE: ((brats-gcp-postgres-external-db-client-certificate))
-          GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY: ((brats-gcp-postgres-external-db-client-private-key))
           STEMCELL_OS: ubuntu-xenial
       ensure:
         do:
@@ -1155,11 +1112,14 @@ jobs:
       - get: stemcell
         resource: warden-ubuntu-xenial
         passed: [compile-bbr-xenial]
+      - get: bosh-candidate-release-tarballs
+        passed:
+        - candidate-release
       - get: bosh-release
-        resource: bosh-candidate-release-tarballs
+        resource: bosh-compiled-candidate-xenial
         trigger: true
         passed:
-          - candidate-release
+        - compile-bosh-dev-release-xenial
       - get: bbr-compiled-release
         resource: bbr-compiled-xenial
         passed: [compile-bbr-xenial]
@@ -1252,6 +1212,7 @@ jobs:
         - get: bbl-state
           resource: acceptance-env-state
         - get: zookeeper-release
+        - get: bosh-deployment
         - get: stemcell
           resource: google-kvm-ubuntu-trusty
         - get: bosh-src
@@ -1305,68 +1266,98 @@ jobs:
           repos:
           - bosh-src
 
-  # - name: finalize-bosh-release
-  #   serial: true
-  #   plan:
-  #     - aggregate:
-  #       - get: bosh-src
-  #         passed:
-  #           - bats-centos
-  #           - bats-ubuntu
-  #       - get: bosh-master
-  #       - get: bosh-dev-release
-  #         resource: bosh-candidate-release-tarballs
-  #         passed:
-  #           - bats-centos
-  #           - bats-ubuntu
-  #       - get: bosh-cli
-  #       - get: candidate-version
-  #         params:
-  #           bump: minor
-  #     - task: promote-release
-  #       file: bosh-src/ci/tasks/finalize-bosh-release.yml
-  #       params:
-  #         BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
-  #         BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
-  #     - put: candidate-version
-  #       params:
-  #         file: bumped-candidate-version/version
-  #     - put: bosh-master
-  #       params:
-  #         repository: bosh-master-with-final
-  #         tag: /tmp/build/put/bosh-src-with-bumped-version-tag/tag-name
-  #         annotate: /tmp/build/put/bosh-src-with-bumped-version-tag/annotate-msg
-  #     - put: bosh-src
-  #       params:
-  #         repository: bosh-src-with-bumped-version
-
-  - name: bump-candidate-major
+  - name: finalize-release
     serial: true
     plan:
-    - get: latest-major-version
-      trigger: true
-    - task: semvertify
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: busybox
-        inputs:
-        - name: latest-major-version
-        outputs:
-        - name: latest-major-semver
-        run:
-          path: /bin/sh
-          args:
-          - -c
-          - echo -n $(cat latest-major-version/version).0.0 > latest-major-semver/version
-    - put: candidate-version
+      - aggregate:
+        - get: bosh-src
+          passed:
+            - bats-centos
+            - bats-ubuntu-trusty
+            - bats-ubuntu-xenial
+        - get: bosh-src-latest
+          resource: bosh-src
+        - get: bosh-cli
+        - get: version
+          params:
+            bump: final
+      - task: prepare-release
+        file: bosh-src/ci/tasks/prepare-release.yml
+      - put: bosh-src
+        params:
+          repository: bosh-src-latest-with-release-commit
+          rebase: true
+      - get: bosh-master
+      - task: finalize-release
+        file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
+        params:
+          BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
+          BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
+      - put: bosh-master
+        params:
+          repository: bosh-master-with-final
+          tag: bosh-master-with-final/tag-name
+          annotate: bosh-master-with-final/annotate-msg
+          rebase: true
+      - put: bosh-github-release
+        params:
+          name: bosh-master-with-final/tag-name
+          tag: bosh-master-with-final/tag-name
+
+  - name: export-final-release
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-master
+      - get: bosh-github-release
+        trigger: true
+      - get: warden-ubuntu-xenial
+    - task: export-final-release
+      file: bosh-master/ci/tasks/export-final-release.yml
+      privileged: true
+      input_mapping:
+        version: bosh-github-release
+        stemcell: warden-ubuntu-xenial
+        bosh-src: bosh-master
+    - task: push-bosh-compiled-releases
+      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
+      input_mapping:
+        candidate-version: bosh-github-release
+        bosh-src: bosh-master
       params:
-        file: latest-major-semver/version
-    - put: candidate-version
+        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+        git_private_key: ((bosh-compiled-releases-index-deploy-key))
+
+  - name: bump-major
+    serial: true
+    plan:
+    - get: version
       params:
         bump: major
+    - put: version
+      params:
+        file: version/version
+
+  - name: bump-minor
+    serial: true
+    plan:
+    - get: version
+      params:
+        bump: minor
+    - put: version
+      params:
+        file: version/version
+
+  - name: bump-patch
+    serial: true
+    plan:
+    - get: version
+      params:
+        bump: patch
+    - put: version
+      params:
+        file: version/version
 
 resource_types:
 - name: terraform
@@ -1387,19 +1378,19 @@ resources:
       branch: ((branch_name))
       private_key: ((github_deployment_key))
 
-  - name: candidate-version
+  - name: bosh-github-release
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: bosh
+      drafts: true
+      access_token: ((github_token))
+
+  - name: version
     type: semver
     source:
       bucket: ((candidate_release_bucket))
       key: version
-      access_key_id: ((candidate_release_access_key_id))
-      secret_access_key: ((candidate_release_secret_access_key))
-
-  - name: latest-major-version
-    type: s3
-    source:
-      bucket: ((candidate_release_bucket))
-      regexp: (.*)\.x/version
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
 
@@ -1410,6 +1401,22 @@ resources:
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
       versioned_file: "bosh-dev-release.tgz"
+
+  - name: bosh-compiled-candidate-xenial
+    type: s3
+    source:
+      bucket: "bosh-compiled-candidate-tarballs"
+      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
+      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+      regexp: "bosh-(\\d+).*xenial.*.tgz"
+
+  - name: bosh-compiled-candidate-trusty
+    type: s3
+    source:
+      bucket: "bosh-compiled-candidate-tarballs"
+      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
+      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+      regexp: "bosh-(\\d+).*trusty.*.tgz"
 
   - name: bbr-sdk-release
     type: bosh-io-release
@@ -1476,28 +1483,17 @@ resources:
       uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
       branch: master
 
-  - name: bosh-load-tests-workspace
+  - name: bosh-master
     type: git
     source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-load-tests-workspace
+      uri: ((bosh_src_url))
       branch: master
-
-  # - name: bosh-master
-  #   type: git
-  #   source:
-  #     uri: ((bosh_src_url))
-  #     branch: master
-  #     private_key: ((github_deployment_key))
+      private_key: ((github_deployment_key))
 
   - name: fuzz-interval-trigger
     type: time
     source:
       interval: 15m
-
-  - name: load-tests-interval
-    type: time
-    source:
-      interval: 5h
 
   - name: bosh-cli
     type: s3

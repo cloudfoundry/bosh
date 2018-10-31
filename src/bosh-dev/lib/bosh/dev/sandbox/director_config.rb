@@ -1,7 +1,9 @@
 module Bosh::Dev::Sandbox
   class DirectorConfig
+    attr_accessor :audit_log_path
     attr_reader :director_name,
                 :agent_wait_timeout,
+                :keep_unreachable_vms,
                 :blobstore_storage_dir,
                 :cloud_storage_dir,
                 :config_server_cert_path,
@@ -28,13 +30,15 @@ module Bosh::Dev::Sandbox
                 :nats_director_tls,
                 :nats_port,
                 :nats_server_ca_path,
+                :networks,
                 :remove_dev_tools,
                 :sandbox_root,
                 :trusted_certs,
                 :uaa_url,
                 :user_authentication,
                 :users_in_manifest,
-                :verify_multidigest_path
+                :verify_multidigest_path,
+                :cpi_api_test_max_version
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -55,6 +59,8 @@ module Bosh::Dev::Sandbox
                                'enabled' => false,
                                'include_index' => false,
                                'use_dns_addresses' => false)
+
+      @networks = attrs.fetch(:networks, 'enable_cpi_management' => false)
 
       @external_cpi_config = attrs.fetch(:external_cpi_config)
 
@@ -86,6 +92,8 @@ module Bosh::Dev::Sandbox
       @nats_client_ca_certificate_path = attrs.fetch(:nats_client_ca_certificate_path)
       @nats_director_tls = attrs.fetch(:nats_director_tls)
       @agent_wait_timeout = attrs.fetch(:agent_wait_timeout, 600)
+      @cpi_api_test_max_version = attrs.fetch(:cpi_api_test_max_version)
+      @keep_unreachable_vms = attrs.fetch(:keep_unreachable_vms, false)
     end
 
     def render(template_path)

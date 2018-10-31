@@ -169,7 +169,6 @@ describe 'links api', type: :integration do
     upload_stemcell
 
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
-    deploy_simple_manifest(manifest_hash: manifest_hash)
   end
 
   def add_extra_networks_and_mark_default(cloud_config_hash, manifest_hash)
@@ -191,6 +190,10 @@ describe 'links api', type: :integration do
   end
 
   context 'when requesting for a list of providers via link_providers endpoint' do
+    before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
     context 'when deployment has an implicit link provider' do
       let(:jobs) { [{ 'name' => 'provider' }] }
 
@@ -391,6 +394,10 @@ describe 'links api', type: :integration do
   end
 
   context 'when requesting for a list of consumers via link_consumers endpoint' do
+    before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
     context 'when a job has a link consumer' do
       let(:jobs) { implicit_provider_and_consumer }
 
@@ -458,6 +465,10 @@ describe 'links api', type: :integration do
   end
 
   context 'when requesting for a list of links via links endpoint' do
+    before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
     context 'when deployment has an implicit provider + consumer' do
       let(:jobs) { implicit_provider_and_consumer }
 
@@ -722,9 +733,11 @@ describe 'links api', type: :integration do
     let(:jobs) { explicit_provider_and_consumer }
 
     before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       @expected_providers = get_link_providers
       @expected_consumers = get_link_consumers
       @expected_links = get_links
+      deploy_simple_manifest(manifest_hash: manifest_hash)
     end
 
     context 'redeploying no changes' do
@@ -919,6 +932,20 @@ describe 'links api', type: :integration do
       end
 
       context 'when provider already exists' do
+        let(:jobs) do
+          [
+            {
+              'name' => 'mongo_db',
+              'provides' => {
+                'read_only_db' => {
+                  'as' => 'foo',
+                  'shared' => true,
+                },
+              },
+            },
+          ]
+        end
+
         before do
           provider_response = get_link_providers
           provider_id = provider_response.first['id']
@@ -928,7 +955,8 @@ describe 'links api', type: :integration do
           response = send_director_post_request('/links', '', JSON.generate(payload_json))
           link = JSON.parse(response.read_body)
 
-          expect(link['name']).to eq(jobs[0]['name'])
+          provider_original_name = jobs[0]['provides'].keys[0]
+          expect(link['name']).to eq(provider_original_name)
           expect(link['link_provider_id']).to eq(provider_id)
         end
 
@@ -938,14 +966,27 @@ describe 'links api', type: :integration do
 
           expect(response.count).to_not eq(0)
           consumer = response[0]
+
+          provider_response = get_link_providers
+
+          expect(provider_response.count).to_not eq(0)
+          provider = provider_response[0]
+
           expect(consumer['deployment']).to eq('simple')
           expect(consumer['name']).to eq('foo')
           expect(consumer['owner_object']['type']).to eq('external')
           expect(consumer['owner_object']['info']).to be_nil
+
+          expect(consumer['link_consumer_definition']['name']).to eq(provider['link_provider_definition']['name'])
         end
 
         it 'keeps the consumer and link after redeploy' do
           send_director_post_request('/links', '', JSON.generate(payload_json))
+          provider_response = get_link_providers
+
+          expect(provider_response.count).to_not eq(0)
+          provider = provider_response[0]
+
           response = get_link_consumers
 
           deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -955,6 +996,7 @@ describe 'links api', type: :integration do
           consumer = response2[0]
           expect(consumer['deployment']).to eq('simple')
           expect(consumer['owner_object']['type']).to eq('external')
+          expect(consumer['link_consumer_definition']['name']).to eq(provider['link_provider_definition']['name'])
         end
 
         context 'when provider does not change during re-deploy' do
@@ -1013,7 +1055,7 @@ describe 'links api', type: :integration do
             context 'when provider properties change' do
               before do
                 updated_properties = {
-                  'nested' => {
+                  'foo' => {
                     'one' => 'updated-nested-property',
                     'two' => 'another-updated-nested-property',
                   },
@@ -1190,7 +1232,8 @@ describe 'links api', type: :integration do
             response = send_director_post_request('/links', '', JSON.generate(payload_json))
             link = JSON.parse(response.read_body)
 
-            expect(link['name']).to eq(jobs[0]['name'])
+            provider_original_name = jobs[0]['provides'].keys[0]
+            expect(link['name']).to eq(provider_original_name)
             expect(link['link_provider_id']).to eq(provider_id)
           end
         end
@@ -1278,13 +1321,56 @@ describe 'links api', type: :integration do
       end
     end
 
-    # TODO: Links API
     context 'when user does not have sufficient permissions' do
       it 'should raise an error' do
         response = send_director_post_request('/links', '', JSON.generate({}), {})
 
         expect(response.read_body).to include("Not authorized: '/links'")
       end
+    end
+  end
+
+  context 'when the provider deploy fails' do
+    let(:provider_id) { '1' }
+    let(:payload_json) do
+      {
+        'link_provider_id' => provider_id,
+        'network' => 'a',
+        'link_consumer' => {
+          'owner_object' => {
+            'name' => 'external_consumer_1',
+            'type' => 'external',
+          },
+        },
+      }
+    end
+    let(:jobs) do
+      [
+        {
+          'name' => 'provider',
+          'provides' => {
+            'provider' => {
+              'as' => 'foo',
+              'shared' => true,
+            },
+          },
+        },
+      ]
+    end
+
+    before do
+      manifest_hash['instance_groups'][0]['azs'] = ['unknown_az']
+
+      _, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+      expect(exit_code).to_not eq(0)
+    end
+
+    it 'should fail to create the link gracefully' do
+      response = send_director_post_request('/links', '', JSON.generate(payload_json))
+
+      link = JSON.parse(response.read_body)
+      expect(link['code']).to eq(810003)
+      expect(link['description']).to eq("Can't resolve network: `a` in provider id: 1 for `external_consumer_1`")
     end
   end
 
@@ -1317,6 +1403,7 @@ describe 'links api', type: :integration do
     end
 
     before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       provider_response = get_link_providers
       provider_id = provider_response.first['id']
       send_director_post_request('/links', '', JSON.generate(payload_json))
@@ -1373,6 +1460,7 @@ describe 'links api', type: :integration do
     end
 
     before do
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       provider_response = get_link_providers
       provider_id = provider_response.first['id']
       payload_json['link_provider_id'] = provider_id
@@ -1475,6 +1563,19 @@ describe 'links api', type: :integration do
         external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
         response = get_json('/link_address', "link_id=#{external_link_response['id']}")
         expect(response).to eq('address' => 'q-n1s0.q-g1.bosh')
+      end
+    end
+
+    context 'and the provider deployment has use_link_dns_names enabled' do
+      let(:features) do
+        { 'use_link_dns_names' => true }
+      end
+
+      it 'returns the address as a link dns entry' do
+        external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
+        response = get_json('/link_address', "link_id=#{external_link_response['id']}")
+
+        expect(response).to eq('address' => 'q-s0.q-g2.bosh')
       end
     end
 

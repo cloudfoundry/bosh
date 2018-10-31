@@ -207,6 +207,8 @@ module Bosh::Director
   NetworkInvalidProperty = err(160008)
   NetworkSubnetInvalidAvailabilityZone = err(160009)
   NetworkInvalidIpRangeFormat = err(160010)
+  NetworkDeletingUnorphanedError = err(160011)
+  NetworkNotFoundError = err(16012)
 
   # ResourcePool
   ResourcePoolUnknownNetwork = err(170001)
@@ -349,4 +351,7 @@ module Bosh::Director
   LinkInvalidStatusError = err(810007, BAD_REQUEST)
   LinkInvalidAzsError = err(810008, BAD_REQUEST)
   LinkProviderNotSharedError = err(810009, FORBIDDEN)
+
+  # Managed Networks
+  SubnetNotFoundInDB = err(91000)
 end

@@ -7,6 +7,7 @@ module Bosh
         # existing_instance: Model::Instance
         # desired_instance: DeploymentPlan::DesiredInstance
         # instance: DeploymentPlan::Instance
+
         def initialize(existing_instance:,
                        desired_instance:,
                        instance:,
@@ -17,7 +18,8 @@ module Bosh
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
                        logger: Config.logger,
-                       tags: {})
+                       tags: {},
+                       variables_interpolator:)
           @existing_instance = existing_instance
           @desired_instance = desired_instance
           @instance = instance
@@ -30,12 +32,14 @@ module Bosh
           @logger = logger
           @tags = tags
           @powerdns_manager = PowerDnsManagerProvider.create
-          @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
+          @variables_interpolator = variables_interpolator
         end
 
         attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :tags
 
         attr_accessor :network_plans
+
+        attr_reader :variables_interpolator
 
         # An instance of Bosh::Director::Core::Templates::RenderedJobInstance
         attr_accessor :rendered_templates
@@ -53,6 +57,7 @@ module Bosh
 
         def unresponsive_agent?
           return false if @instance.nil?
+
           @instance.current_job_state == 'unresponsive'
         end
 
@@ -83,6 +88,7 @@ module Bosh
         def persistent_disk_changed?
           return true if recreate_persistent_disks_requested?
           return @existing_instance.active_persistent_disks.any? if @existing_instance && obsolete?
+
           existing_disk_collection = instance_model.active_persistent_disks
           desired_disks_collection = @desired_instance.instance_group.persistent_disk_collection
 
@@ -153,26 +159,23 @@ module Bosh
         end
 
         def network_settings_changed?
-          changed = false
           old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
+          return false if old_network_settings == {}
+
           new_network_settings = network_settings_hash
 
-          interpolated_old_network_settings = @config_server_client.interpolate_with_versioning(
-            old_network_settings,
-            @instance.previous_variable_set,
-          )
-          interpolated_new_network_settings = @config_server_client.interpolate_with_versioning(
-            new_network_settings,
-            @instance.desired_variable_set,
-          )
+          old_network_settings = remove_dns_record_name_from_network_settings(old_network_settings)
+          new_network_settings = remove_dns_record_name_from_network_settings(new_network_settings)
 
-          if interpolated_old_network_settings != {} &&
-             remove_dns_record_name_from_network_settings(interpolated_old_network_settings) != interpolated_new_network_settings
+          changed = @variables_interpolator.interpolated_versioned_variables_changed?(old_network_settings, new_network_settings,
+                                                                                      @instance.previous_variable_set,
+                                                                                      @instance.desired_variable_set)
+
+          if changed
             @logger.debug(
               "#{__method__} network settings changed FROM: #{old_network_settings} " \
               "TO: #{new_network_settings} on instance #{@existing_instance}",
             )
-            changed = true
           end
 
           changed
@@ -214,7 +217,7 @@ module Bosh
             end
           end
 
-          diff = LocalDnsRepo.new(@logger, Config.root_domain).diff(instance_model)
+          diff = LocalDnsRepo.new(@logger, Config.root_domain).diff(self)
           if diff.changes?
             log_changes(:local_dns_changed?, diff.obsolete + diff.unaffected, diff.unaffected + diff.missing, instance)
           end
@@ -241,6 +244,26 @@ module Bosh
 
         def release_all_network_plans
           network_plans.clear
+        end
+
+        def instance_group_properties
+          desired_job_templates = templates.map(&:model)
+          job_templates = desired_job_templates.empty? ? instance.model.templates : desired_job_templates
+          agent_id = instance.model.active_vm&.agent_id
+
+          properties = {
+            instance_id: instance.model.id,
+            az: instance.model.availability_zone,
+            deployment: instance.model.deployment.name,
+            agent_id: agent_id,
+            instance_group: instance.model.job,
+          }
+          links = job_templates.flat_map(&:provides).map do |link_provider|
+            {
+              name: "#{link_provider['name']}-#{link_provider['type']}",
+            }
+          end
+          properties.merge(links: links)
         end
 
         def obsolete?
@@ -297,12 +320,14 @@ module Bosh
         end
 
         def vm_matches_plan?(vm)
+          return false if vm.cloud_properties_json.nil?
+
           desired_instance_group = @desired_instance.instance_group
-          desired_cloud_properties = @config_server_client.interpolate_with_versioning(
+          desired_cloud_properties = @variables_interpolator.interpolate_with_versioning(
             @instance.cloud_properties,
             @instance.desired_variable_set,
           )
-          vm_cloud_properties = @config_server_client.interpolate_with_versioning(
+          vm_cloud_properties = @variables_interpolator.interpolate_with_versioning(
             JSON.parse(vm.cloud_properties_json),
             @instance.previous_variable_set,
           )
@@ -428,7 +453,9 @@ module Bosh
         end
 
         def log_changes(method_sym, old_state, new_state, instance)
-          @logger.debug("#{method_sym} changed FROM: #{old_state} TO: #{new_state} on instance #{instance}")
+          old_state_msg = old_state.is_a?(String) ? old_state : old_state.to_json
+          new_state_msg = new_state.is_a?(String) ? new_state : new_state.to_json
+          @logger.debug("#{method_sym} changed FROM: #{old_state_msg} TO: #{new_state_msg} on instance #{instance}")
         end
       end
 
@@ -438,7 +465,7 @@ module Bosh
         end
 
         def spec
-          InstanceSpec.create_from_database(@existing_instance.spec, @instance)
+          InstanceSpec.create_from_database(@existing_instance.spec, @instance, @variables_interpolator)
         end
 
         def needs_disk?

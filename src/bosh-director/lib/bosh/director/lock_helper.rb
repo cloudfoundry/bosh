@@ -13,6 +13,12 @@ module Bosh::Director
       Lock.new("lock:deployment:#{name}", {:timeout => timeout, :deployment_name => name }).lock { yield }
     end
 
+    def with_network_lock(name, opts = {})
+      timeout = opts[:timeout] || 10
+      Config.logger.info("Acquiring network lock on #{name}")
+      Lock.new("lock:networks:#{name}", timeout: timeout).lock { yield }
+    end
+
     def with_stemcell_lock(name, version, opts = {})
       timeout = opts[:timeout] || 10
       Config.logger.info("Acquiring stemcell lock on #{name}:#{version}")

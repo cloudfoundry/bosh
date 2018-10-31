@@ -7,12 +7,14 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:enable_cpi_resize_disk) { false }
     let(:cloud_factory) { instance_double(CloudFactory) }
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(existing_instance: instance_model,
                                        desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
                                        instance: instance,
                                        network_plans: [],
-                                       tags: tags)
+                                       tags: tags,
+                                       variables_interpolator: variables_interpolator)
     end
     let(:tags) do
       { 'tags' => { 'mytag' => 'myvalue' } }
@@ -28,7 +30,7 @@ module Bosh::Director
     end
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
     let(:deployment_model) { Models::Deployment.make(name: 'dep1') }
-    let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger) }
+    let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10)
       Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true, cpi: 'my-cpi')
@@ -46,6 +48,8 @@ module Bosh::Director
     let(:event_manager) { Api::EventManager.new(true) }
     let(:task_id) { 42 }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
+    let(:step_report) { instance_double(Bosh::Director::DeploymentPlan::Stages::Report) }
+    let(:disk_hint) { '/dev/sdc' }
 
     before do
       instance.bind_existing_instance_model(instance_model)
@@ -60,10 +64,15 @@ module Bosh::Director
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:migrate_disk)
       allow(agent_client).to receive(:unmount_disk)
+      allow(agent_client).to receive(:remove_persistent_disk)
       allow(agent_client).to receive(:update_settings)
+      allow(agent_client).to receive(:add_persistent_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:enable_cpi_resize_disk).and_return(enable_cpi_resize_disk)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)
+      allow(DeploymentPlan::Stages::Report).to receive(:new).and_return(step_report)
+      allow(step_report).to receive(:disk_hint).and_return(disk_hint)
+      allow(step_report).to receive(:disk_hint=)
     end
 
     describe '#attach_disk' do
@@ -113,6 +122,7 @@ module Bosh::Director
           expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).once.and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
           expect(agent_client).to receive(:unmount_disk).with('disk123')
+          expect(agent_client).to receive(:remove_persistent_disk).with('disk123')
           disk_manager.detach_disk(persistent_disk)
         end
       end
@@ -122,6 +132,7 @@ module Bosh::Director
           persistent_disk.update(name: 'chewbacca')
           expect(cloud_factory).to receive(:get).with(persistent_disk.cpi, nil).at_least(:once).and_return(cloud)
           expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
+          expect(agent_client).to receive(:remove_persistent_disk).with('disk123')
           expect(agent_client).to_not receive(:unmount_disk)
           disk_manager.detach_disk(persistent_disk)
         end
@@ -161,6 +172,7 @@ module Bosh::Director
               expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123')
               expect(cloud).to have_received(:resize_disk).with('disk123', 4096)
               expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
+              expect(agent_client).to have_received(:remove_persistent_disk).with('disk123')
               expect(agent_client).to have_received(:mount_disk)
             end
 
@@ -277,13 +289,14 @@ module Bosh::Director
         context 'when uuid has been set' do
           let(:instance_plan) do
             instance_model.uuid = '123-456-789'
-            instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', nil, {}, nil, logger)
+            instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', nil, {}, nil, logger, variables_interpolator)
             instance.bind_existing_instance_model(instance_model)
 
             DeploymentPlan::InstancePlan.new(existing_instance: instance_model,
                                              desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
                                              instance: instance,
-                                             network_plans: [])
+                                             network_plans: [],
+                                             variables_interpolator: variables_interpolator)
           end
 
           it 'raises' do
@@ -437,11 +450,13 @@ module Bosh::Director
                     before do
                       persistent_disk.add_snapshot(snapshot)
                       allow(agent_client).to receive(:unmount_disk).with('disk123')
+                      allow(agent_client).to receive(:remove_persistent_disk).with('disk123')
                       allow(cloud).to receive(:detach_disk).with('vm234', 'disk123')
                     end
 
                     it 'orphans the old mounted disk' do
                       expect(agent_client).to receive(:unmount_disk).with('disk123')
+                      expect(agent_client).to receive(:remove_persistent_disk).with('disk123')
                       expect(cloud).to receive(:detach_disk).with('vm234', 'disk123')
 
                       disk_manager.update_persistent_disk(instance_plan)
@@ -474,6 +489,7 @@ module Bosh::Director
 
                   it 'detaches the disk and re-raises the error' do
                     expect(agent_client).to_not receive(:unmount_disk)
+                    expect(agent_client).to receive(:remove_persistent_disk).with('new-disk-cid')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
                     expect do
                       disk_manager.update_persistent_disk(instance_plan)
@@ -484,12 +500,12 @@ module Bosh::Director
                 context 'when migrating the disk raises' do
                   before do
                     allow(agent_client).to receive(:list_disk).and_return(['disk123', 'new-disk-cid'])
-                    allow(agent_client).to receive(:mount_disk).with('new-disk-cid')
                     expect(agent_client).to receive(:migrate_disk).with('disk123', 'new-disk-cid').and_raise(disk_error)
                   end
 
                   it 'deletes the disk and re-raises the error' do
                     expect(agent_client).to receive(:unmount_disk).with('new-disk-cid')
+                    expect(agent_client).to receive(:remove_persistent_disk).with('new-disk-cid')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
                     expect do
                       disk_manager.update_persistent_disk(instance_plan)
@@ -563,8 +579,7 @@ module Bosh::Director
       end
 
       context 'when cloud properties has placeholders' do
-        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-        let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
+        let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
         let(:cloud_properties) do
           { 'cloud' => '((cloud_placeholder))' }
@@ -576,18 +591,19 @@ module Bosh::Director
         let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
         before do
-          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-          allow(client_factory).to receive(:create_client).and_return(config_server_client)
+          allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
         end
 
         it 'uses the interpolated cloud config' do
           instance_plan.instance.desired_variable_set = desired_variable_set
 
-          # 1 call to check if disks has changed, 1 to figure out the change, 1 to interpolate before we send to CPI
-          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(3).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
+          # Detecting if interpolated config changed for short-circuit in disk_manager, another call from checking before determining differences
+          expect(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).exactly(2).times
+                                            .with(anything, anything, anything, anything)
+                                            .and_return(false)
 
-          # 1 call to check if disks has changed, 1 to figure out the change
-          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(2).times.with(cloud_properties, instance_plan.instance.previous_variable_set).and_return(interpolated_cloud_properties)
+          # 1 call to interpolate before we send to CPI
+          expect(variables_interpolator).to receive(:interpolate_with_versioning).exactly(1).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
 
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
@@ -597,7 +613,10 @@ module Bosh::Director
         end
 
         it 'does not save PersistentDisk model with the interpolated cloud config' do
-          allow(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          allow(variables_interpolator).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
+          allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?)
+                                            .with(anything, anything, anything, anything)
+                                            .and_return(false)
           disk_manager.update_persistent_disk(instance_plan)
           expect(Models::PersistentDisk.first.cloud_properties).to eq(cloud_properties)
         end

@@ -13,11 +13,11 @@ module Bosh
       attr_reader :commands
       attr_accessor :options
 
-      def initialize(options, context, request_api_version)
+      def initialize(options, context, api_version)
         @options = options
         @context = context
-        @api_version = options.fetch('api_version', nil)
-        @request_api_version = request_api_version
+        @api_version = api_version
+        @stemcell_api_version = options.fetch('api_version', nil)
 
         @supported_formats = context['formats'] || ['dummy']
         @base_dir = options['dir']
@@ -159,7 +159,11 @@ module Bosh
 
       def info
         record_inputs(__method__, nil)
-        {stemcell_formats: @supported_formats}
+        {
+          stemcell_formats: @supported_formats,
+        }.tap do |response|
+          response['api_version'] = @api_version unless @api_version.nil?
+        end
       end
 
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
@@ -220,7 +224,34 @@ module Bosh
         FileUtils.rm(disk_file(disk_id))
       end
 
-      SNAPSHOT_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, metadata: Hash} }
+      CREATE_NETWORK_SCHEMA = Membrane::SchemaParser.parse { { subnet_definition: Hash } }
+      def create_network(subnet_definition)
+        validate_and_record_inputs(CREATE_NETWORK_SCHEMA, __method__, subnet_definition)
+
+        raise subnet_definition['cloud_properties']['error'] if subnet_definition['cloud_properties'].key?('error')
+
+        network_id = SecureRandom.hex
+        file = network_file(network_id)
+        FileUtils.mkdir_p(File.dirname(file))
+        network_info = JSON.generate(subnet_definition)
+        File.write(file, network_info)
+        addr_properties = {}
+        if subnet_definition.key?('netmask_bits')
+          addr_properties['range'] = '192.168.10.0/24'
+          addr_properties['gateway'] = '192.168.10.1'
+          addr_properties['reserved'] = ['192.168.10.2']
+        end
+
+        [network_id, addr_properties, { name: network_id }]
+      end
+
+      DELETE_NETWORK_SCHEMA = Membrane::SchemaParser.parse { { network_id: String } }
+      def delete_network(network_id)
+        validate_and_record_inputs(DELETE_NETWORK_SCHEMA, __method__, network_id)
+        FileUtils.rm(network_file(network_id))
+      end
+
+      SNAPSHOT_DISK_SCHEMA = Membrane::SchemaParser.parse { { disk_id: String, metadata: Hash } }
       def snapshot_disk(disk_id, metadata)
         validate_and_record_inputs(SNAPSHOT_DISK_SCHEMA, __method__, disk_id, metadata)
         snapshot_id = SecureRandom.hex
@@ -269,6 +300,8 @@ module Bosh
         instance_type = @context['cvcpkey'].nil? ? 'dummy' : @context['cvcpkey']
         {
           instance_type: instance_type,
+          cpu: vm_resources['cpu'],
+          ram: vm_resources['ram'],
           ephemeral_disk: { size: vm_resources['ephemeral_disk_size'] }
         }
       end
@@ -292,6 +325,11 @@ module Bosh
       def disk_cids
         # Shuffle so that no one relies on the order of disks
         Dir.glob(disk_file('*')).map { |disk| File.basename(disk) }.shuffle
+      end
+
+      def network_cids
+        # Shuffle so that no one relies on the order of networks
+        Dir.glob(network_file('*')).map { |network| File.basename(network) }.shuffle
       end
 
       def kill_agents
@@ -500,6 +538,10 @@ module Bosh
 
       def disk_file(disk_id)
         File.join(@base_dir, 'disks', disk_id)
+      end
+
+      def network_file(network_id)
+        File.join(@base_dir, 'networks', network_id)
       end
 
       def disk_attached?(disk_id)

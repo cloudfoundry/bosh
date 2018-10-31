@@ -61,6 +61,10 @@ dns:
 
 trusted_certs: <%= trusted_certs %>
 
+
+networks:
+  enable_cpi_management: <%= networks['enable_cpi_management'] %>
+
 local_dns:
   enabled: <%= local_dns['enabled'] %>
   include_index: <%= local_dns['include_index'] %>
@@ -128,6 +132,7 @@ enable_post_deploy: <%= enable_post_deploy %>
 enable_nats_delivered_templates: <%= enable_nats_delivered_templates %>
 enable_cpi_resize_disk: <%= enable_cpi_resize_disk %>
 default_update_vm_strategy: <%= default_update_vm_strategy %>
+cpi_api_test_max_version: <%= cpi_api_test_max_version %>
 
 <% if config_server_enabled %>
 config_server:
@@ -170,6 +175,8 @@ remove_dev_tools: <%= remove_dev_tools %>
 
 record_events: true
 
+log_access_events: true
+
 director_ips: <%= director_ips %>
 
 nats:
@@ -184,3 +191,6 @@ agent:
   env:
     bosh:
       dummy_agent_key_merged: "This key must be sent to agent"
+
+audit_log_path: <%= audit_log_path %>
+keep_unreachable_vms: <%= keep_unreachable_vms %>

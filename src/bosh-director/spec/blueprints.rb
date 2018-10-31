@@ -11,6 +11,7 @@ Sham.define do
   job              { |index| "job-#{index}" }
   vm_cid           { |index| "vm-cid-#{index}" }
   disk_cid         { |index| "disk-cid-#{index}" }
+  network_cid      { |index| "network-cid-#{index}" }
   snapshot_cid     { |index| "snapshot-cid-#{index}" }
   stemcell_cid     { |index| "stemcell-cid-#{index}" }
   stemcell_os      { |index| "stemcell-os-#{index}" }
@@ -133,6 +134,25 @@ module Bosh::Director::Models
       vm = Vm.make(instance_id: is.id)
       is.active_vm = vm
     end
+  end
+
+  Network.blueprint do
+    name { Sham.name }
+    type { 'manual' }
+    created_at { Time.now }
+    orphaned { false }
+    orphaned_at { nil }
+  end
+
+  Subnet.blueprint do
+    name { Sham.name }
+    cid { Sham.network_cid }
+    range { '192.168.10.0/24' }
+    gateway { '192.168.10.1' }
+    reserved { '[]' }
+    cloud_properties { '{}' }
+    cpi { '' }
+    network { Network.make }
   end
 
   Snapshot.blueprint do
@@ -271,6 +291,7 @@ module Bosh::Director::Models
 
   VariableSet.blueprint do
     deployment { Deployment.make }
+    writable { false }
   end
 
   Variable.blueprint {}
@@ -283,11 +304,34 @@ module Bosh::Director::Models
   end
 
   module Links
-    LinkProvider.blueprint {}
-    LinkProviderIntent.blueprint {}
-    LinkConsumer.blueprint {}
-    LinkConsumerIntent.blueprint {}
-    Link.blueprint {}
+    LinkProvider.blueprint do
+      name           { Sham.name }
+      type           { Sham.name }
+      deployment     { Deployment.make }
+      instance_group { Sham.name }
+    end
+    LinkProviderIntent.blueprint do
+      name          { Sham.name }
+      original_name { Sham.name }
+      type          { Sham.name }
+      link_provider { LinkProvider.make }
+    end
+    LinkConsumer.blueprint do
+      name       { Sham.name }
+      type       { Sham.name }
+      deployment { Deployment.make }
+    end
+    LinkConsumerIntent.blueprint do
+      name          { Sham.name }
+      original_name { Sham.name }
+      type          { Sham.name }
+      link_consumer { LinkConsumer.make }
+    end
+    Link.blueprint do
+      name                 { Sham.name }
+      link_consumer_intent { LinkConsumerIntent.make }
+      link_content         { '{}' }
+    end
   end
 
   module Dns

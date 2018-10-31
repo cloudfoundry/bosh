@@ -91,9 +91,13 @@ module Bosh::Director
         allow(Config).to receive(:uuid).and_return('woof-uuid')
         allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
         allow(fake_cloud).to receive(:info)
+        allow(fake_cloud).to receive(:set_vm_metadata)
         allow(fake_cloud).to receive(:request_cpi_api_version=)
         allow(fake_cloud).to receive(:request_cpi_api_version)
-        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(fake_cloud)
+        allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
+                                                               'woof-uuid',
+                                                               instance_of(Logging::Logger),
+                                                               stemcell_api_version: nil).and_return(fake_cloud)
 
         allow(fake_new_agent).to receive(:sync_dns) do |_, _, _, &blk|
           blk.call('value' => 'synced')
@@ -122,6 +126,11 @@ module Bosh::Director
         expect(fake_new_agent).to receive(:start).ordered
 
         expect(fake_cloud).to receive(:delete_vm).with(instance.vm_cid)
+        #TODO Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper.
+        # Even though wrapper::set_vm_metadata gets called now, the wrapper is real (but it houses a fake cloud). If we didn't need
+        # to allow set_vm_metadata on the fake cloud before the wrapper changes, why do we need to now?
+        expect(fake_cloud).to receive(:set_vm_metadata)
+
         expect(fake_cloud)
           .to receive(:create_vm)
           .with(

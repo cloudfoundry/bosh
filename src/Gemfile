@@ -18,6 +18,8 @@ gem 'talentbox-delayed_job_sequel', '~>4.3'
 
 gem 'bundler', '~>1.16.0'
 
+gem 'ruby-prof', '0.17.0'
+
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
   # also bosh_openstack_registry, director
@@ -33,6 +35,7 @@ end
 
 group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'
+  gem 'bosh_cpi', path: 'bosh_cpi'
 
   gem 'rspec', '~> 3.0.0'
   gem 'rspec-instafail'

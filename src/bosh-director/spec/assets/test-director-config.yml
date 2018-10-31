@@ -20,6 +20,7 @@ blobstore:
     user: admin
     password:
     davcli_path: true
+cpi_api_test_max_version: 2
 local_dns:
   enabled: false
   include_index: false

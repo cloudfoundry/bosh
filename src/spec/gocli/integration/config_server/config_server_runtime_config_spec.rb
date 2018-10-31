@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 
 describe 'using director with config server', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(

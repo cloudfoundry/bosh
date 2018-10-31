@@ -3,8 +3,17 @@ module Bosh::Director
     class Filter
       extend ValidationHelper
 
-      def initialize(jobs, deployment_names, stemcells, networks, teams, availability_zones, lifecycle_type, filter_type)
+      def initialize(jobs:,
+                     instance_groups:,
+                     deployment_names:,
+                     stemcells:,
+                     networks:,
+                     teams:,
+                     availability_zones:,
+                     lifecycle_type:,
+                     filter_type:)
         @applicable_jobs = jobs
+        @applicable_instance_groups = instance_groups
         @applicable_deployment_names = deployment_names
         @applicable_stemcells = stemcells
         @applicable_networks = networks
@@ -20,6 +29,7 @@ module Bosh::Director
           raise AddonDeploymentFilterNotAllowed, 'Deployment filter is not allowed for deployment level addons.'
         end
         applicable_jobs = safe_property(addon_filter_hash, 'jobs', class: Array, default: [])
+        applicable_instance_groups = safe_property(addon_filter_hash, 'instance_groups', class: Array, default: [])
         applicable_stemcells = safe_property(addon_filter_hash, 'stemcell', class: Array, default: [])
         applicable_networks = safe_property(addon_filter_hash, 'networks', class: Array, default: [])
         applicable_teams = safe_property(addon_filter_hash, 'teams', class: Array, default: [])
@@ -33,14 +43,15 @@ module Bosh::Director
         verify_stemcells_section(applicable_stemcells, filter_type, addon_level)
 
         new(
-          applicable_jobs,
-          applicable_deployment_names,
-          applicable_stemcells,
-          applicable_networks,
-          applicable_teams,
-          applicable_availability_zones,
-          applicable_lifecycle_type,
-          filter_type,
+          jobs: applicable_jobs,
+          instance_groups: applicable_instance_groups,
+          deployment_names: applicable_deployment_names,
+          stemcells: applicable_stemcells,
+          networks: applicable_networks,
+          teams: applicable_teams,
+          availability_zones: applicable_availability_zones,
+          lifecycle_type: applicable_lifecycle_type,
+          filter_type: filter_type,
         )
       end
 
@@ -50,15 +61,32 @@ module Bosh::Director
         return false if teams? && !applicable_team?(deployment_teams)
         return false if stemcells? && !applicable_stemcell?(deployment_instance_group)
         return false if networks? && !applicable_network?(deployment_instance_group)
-        deployments_and_jobs_present = { has_deployments: deployments?, has_jobs: jobs? }
-        case deployments_and_jobs_present
-        when { has_deployments: true, has_jobs: false }
+        deployments_jobs_and_instance_groups = {
+          has_deployments: deployments?,
+          has_jobs: jobs?,
+          has_instance_groups: instance_groups?,
+        }
+        case deployments_jobs_and_instance_groups
+        when { has_deployments: true, has_instance_groups: true, has_jobs: true }
+          return @applicable_deployment_names.include?(deployment_name) &&
+                 applicable_job?(deployment_instance_group) &&
+                 applicable_instance_group?(deployment_instance_group)
+        when { has_deployments: true, has_instance_groups: false, has_jobs: true }
+          return @applicable_deployment_names.include?(deployment_name) &&
+                 applicable_job?(deployment_instance_group)
+        when { has_deployments: true, has_instance_groups: true, has_jobs: false }
+          return @applicable_deployment_names.include?(deployment_name) &&
+                 applicable_instance_group?(deployment_instance_group)
+        when { has_deployments: true, has_instance_groups: false, has_jobs: false }
           return @applicable_deployment_names.include?(deployment_name)
-        when { has_deployments: false, has_jobs: true }
+        when { has_deployments: false, has_instance_groups: true, has_jobs: true }
+          return applicable_job?(deployment_instance_group) &&
+                 applicable_instance_group?(deployment_instance_group)
+        when { has_deployments: false, has_instance_groups: false, has_jobs: true }
           return applicable_job?(deployment_instance_group)
-        when { has_deployments: true, has_jobs: true }
-          return @applicable_deployment_names.include?(deployment_name) && applicable_job?(deployment_instance_group)
-        else
+        when { has_deployments: false, has_instance_groups: true, has_jobs: false }
+          return applicable_instance_group?(deployment_instance_group)
+        when { has_deployments: false, has_instance_groups: false, has_jobs: false }
           return true if @filter_type == :include
           # cases with `has_stemcells? && !has_applicable_stemcell?`, `has_networks? && !has_applicable_network?`,
           # `has_team? && !has_applicable_team?`, has_availability_zones? && !has_applicable_availability_zones?
@@ -68,7 +96,7 @@ module Bosh::Director
         end
       end
 
-      private
+      private_class_method
 
       def self.verify_jobs_section(applicable_jobs, filter_type, addon_level = RUNTIME_LEVEL)
         applicable_jobs.each do |job|
@@ -94,8 +122,16 @@ module Bosh::Director
         !@applicable_deployment_names.nil? && !@applicable_deployment_names.empty?
       end
 
+      def instance_groups?
+        !@applicable_instance_groups.nil? && !@applicable_instance_groups.empty?
+      end
+
       def jobs?
         !@applicable_jobs.nil? && !@applicable_jobs.empty?
+      end
+
+      def applicable_instance_group?(deployment_instance_group)
+        @applicable_instance_groups.include?(deployment_instance_group.name)
       end
 
       def applicable_job?(deployment_instance_group)

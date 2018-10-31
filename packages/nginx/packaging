@@ -29,7 +29,8 @@ pushd nginx-1.14.0
     --add-module=../headers-more-nginx-module-0.30 \
     --with-http_ssl_module \
     --with-http_dav_module \
-    --add-module=../nginx-upload-module-2.2
+    --add-module=../nginx-upload-module-2.2 \
+    --with-http_stub_status_module
 
   make
   make install

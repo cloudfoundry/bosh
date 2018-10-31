@@ -4,10 +4,10 @@ module Bosh::Dev::Sandbox
   class UaaService
     attr_reader :port
 
-    TOMCAT_VERSIONED_FILENAME = 'apache-tomcat-8.0.21'
-    UAA_FILENAME = 'uaa.war'
+    TOMCAT_VERSIONED_FILENAME = 'apache-tomcat-8.0.21'.freeze
+    UAA_FILENAME = 'uaa.war'.freeze
 
-    UAA_VERSION = 'cloudfoundry-identity-uaa-3.5.0'
+    UAA_VERSION = 'cloudfoundry-identity-uaa-3.5.0'.freeze
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'integration-uaa', UAA_VERSION)
@@ -29,15 +29,15 @@ module Bosh::Dev::Sandbox
 
       @connector = HTTPEndpointConnector.new('uaa', 'localhost', @port, '/uaa/login', 'Reset password', @log_location, logger)
 
-      @uaa_webapps_path = File.join(sandbox_root,'uaa.webapps')
-      if ! File.exists? @uaa_webapps_path
+      @uaa_webapps_path = File.join(sandbox_root, 'uaa.webapps')
+      unless File.exist? @uaa_webapps_path
         FileUtils.mkdir_p @uaa_webapps_path
         FileUtils.cp WAR_FILE_PATH, @uaa_webapps_path
       end
 
       @config_path = File.join(sandbox_root, 'uaa_config')
       FileUtils.mkdir_p(@config_path)
-      write_config_path('symmetric')
+      write_config_path
 
       @uaa_process = initialize_uaa_process
     end
@@ -56,12 +56,16 @@ module Bosh::Dev::Sandbox
       end
     end
 
+    def self.retryable
+      Bosh::Retryable.new(tries: 6)
+    end
+
     def start
       @uaa_process.start
 
       begin
-        @connector.try_to_connect(3000)
-      rescue
+        @connector.try_to_connect(6000)
+      rescue StandardError
         output_service_log(@uaa_process.description, @uaa_process.stdout_contents, @uaa_process.stderr_contents)
         raise
       end
@@ -73,48 +77,30 @@ module Bosh::Dev::Sandbox
       @running_mode = 'stopped'
     end
 
-    def reconfigure(encryption_mode)
-      if encryption_mode == 'asymmetric'
-        requested_config_mode = 'asymmetric'
-      else
-        requested_config_mode = 'symmetric'
-      end
-
-      @requires_restart = (@running_mode != requested_config_mode)
-      write_config_path(requested_config_mode)
-    end
-
-    def restart_if_needed
-      if @requires_restart
-        stop
-        start
-      end
-    end
-
     private
-
-    def self.retryable
-      Bosh::Retryable.new({tries: 6})
-    end
 
     def initialize_uaa_process
       opts = {
-          'uaa.http_port' => @port,
-          'uaa.server_port' => @server_port,
-          'uaa.access_log_dir' => File.dirname(@log_location),
-          'uaa.webapps' => @uaa_webapps_path
+        'uaa.http_port' => @port,
+        'uaa.server_port' => @server_port,
+        'uaa.access_log_dir' => File.dirname(@log_location),
+        'uaa.webapps' => @uaa_webapps_path,
+        'securerandom.source' => 'file:/dev/urandom',
       }
 
+      catalina_opts = ' -Xms512M -Xmx512M '
+      catalina_opts += opts.map { |key, value| "-D#{key}=#{value}" }.join(' ')
+
       Service.new(
-          [executable_path, 'run', '-config', server_xml],
-          {
-              output: @log_location,
-              env: {
-                  'CATALINA_OPTS' => ' -Xms512M -Xmx512M ' + opts.map { |k, v| "-D#{k}=#{v}" }.join(" "),
-                  'UAA_CONFIG_PATH' => @config_path
-              }
+        [executable_path, 'run', '-config', server_xml],
+        {
+          output: @log_location,
+          env: {
+            'CATALINA_OPTS' => catalina_opts,
+            'UAA_CONFIG_PATH' => @config_path,
           },
-          @logger
+        },
+        @logger,
       )
     end
 
@@ -130,22 +116,14 @@ module Bosh::Dev::Sandbox
       File.join(REPO_ROOT, 'bosh-dev', 'assets', 'sandbox', 'tomcat-server.xml')
     end
 
-    def write_config_path(encryption)
+    def write_config_path
       spec_assets_base_path = 'spec/assets/uaa_config'
 
-      if encryption == 'asymmetric'
-        FileUtils.cp(
-            File.expand_path(File.join(spec_assets_base_path, 'asymmetric', 'uaa.yml'), REPO_ROOT),
-            @config_path
-        )
-        @current_uaa_config_mode = 'asymmetric'
-      else
-        FileUtils.cp(
-            File.expand_path(File.join(spec_assets_base_path, 'symmetric', 'uaa.yml'), REPO_ROOT),
-            @config_path
-        )
-        @current_uaa_config_mode = 'symmetric'
-      end
+      FileUtils.cp(
+        File.expand_path(File.join(spec_assets_base_path, 'asymmetric', 'uaa.yml'), REPO_ROOT),
+        @config_path,
+      )
+      @current_uaa_config_mode = 'asymmetric'
     end
 
     DEBUG_HEADER = '*' * 20

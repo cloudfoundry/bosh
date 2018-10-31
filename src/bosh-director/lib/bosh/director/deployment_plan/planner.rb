@@ -217,18 +217,19 @@ module Bosh::Director
       end
 
       def instance_plans_with_create_swap_delete_and_needs_duplicate_vm
-        instance_groups_starting_on_deploy.collect_concat do |instance_group|
-          return [] unless instance_group.should_create_swap_delete?
+        instance_plans = instance_groups_starting_on_deploy.collect_concat do |instance_group|
+          next unless instance_group.should_create_swap_delete?
           instance_group.unignored_instance_plans_needing_duplicate_vm
         end
+        instance_plans.compact
       end
 
       def skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm
-        instance_groups_starting_on_deploy.collect_concat do |instance_group|
-          return [] if instance_group.create_swap_delete? == instance_group.should_create_swap_delete?
-
+        skipped_instance_plans = instance_groups_starting_on_deploy.collect_concat do |instance_group|
+          next if instance_group.create_swap_delete? == instance_group.should_create_swap_delete?
           instance_group.unignored_instance_plans_needing_duplicate_vm
         end
+        skipped_instance_plans.compact
       end
 
       def mark_instance_plans_for_deletion(instance_plans)
@@ -262,7 +263,9 @@ module Bosh::Director
           if instance_group.service?
             instance_groups << instance_group
           elsif instance_group.errand?
-            instance_groups << instance_group if instance_group.instances.any?(&:vm_created?)
+            if instance_group.instances.any?(&:vm_created?) || instance_group.instances.any? { |i| i.model.state == 'detached' }
+              instance_groups << instance_group
+            end
           end
         end
 
@@ -288,6 +291,10 @@ module Bosh::Director
 
       def use_dns_addresses?
         @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
+      end
+
+      def use_link_dns_names?
+        @features.use_link_dns_names
       end
 
       def use_short_dns_addresses?

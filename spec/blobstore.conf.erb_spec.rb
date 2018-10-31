@@ -5,7 +5,15 @@ require 'bosh/template/evaluation_context'
 require_relative './template_example_group'
 
 describe 'blobstore.conf.erb' do
-  context 'allow_http is true' do
+  let(:spec_yaml) { YAML.load_file(File.join(File.dirname(__FILE__), '../jobs/blobstore/spec')) }
+
+  context 'when nginx.enable_metrics_endpoint is not set' do
+    it 'it defaults to false' do
+      expect(spec_yaml['properties']['blobstore.nginx.enable_metrics_endpoint']['default']).to eq(false)
+    end
+  end
+
+  context 'nginx.enable_metrics_endpoint is true' do
     it_should_behave_like 'a rendered file' do
       let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
       let(:properties) do
@@ -15,7 +23,10 @@ describe 'blobstore.conf.erb' do
               'ipv6_listen' => true,
               'port' => 25550,
               'max_upload_size' => 300,
-              'allow_http' => true
+              'allow_http' => true,
+              'nginx' => {
+                'enable_metrics_endpoint' => true
+              }
             }
           }
         }
@@ -56,6 +67,83 @@ server {
       auth_basic_user_file write_users;
     }
   }
+
+  
+  location /stats {
+    # Config for basic metrics module: ngx_http_stub_status_module
+    stub_status;
+    access_log off;
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
+  }
+  
+
+  location @handler {
+    proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
+  }
+}
+        HEREDOC
+      end
+    end
+  end
+
+  context 'allow_http is true' do
+    it_should_behave_like 'a rendered file' do
+      let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+      let(:properties) do
+        {
+          'properties' => {
+            'blobstore' => {
+              'ipv6_listen' => true,
+              'port' => 25550,
+              'max_upload_size' => 300,
+              'allow_http' => true,
+              'nginx' => {
+                'enable_metrics_endpoint' => false
+              }
+            }
+          }
+        }
+      end
+      let(:expected_content) do
+        <<~HEREDOC
+server {
+  listen unix:/var/vcap/data/blobstore/backend.sock;
+  listen 25550 ssl;
+  listen [::]:25550 ssl;
+
+
+  server_name "";
+
+  access_log  /var/vcap/sys/log/blobstore/blobstore_access.log common_event_format;
+  error_log   /var/vcap/sys/log/blobstore/blobstore_error.log;
+
+  client_max_body_size 300;
+
+  
+  error_page 497 = @handler;
+  
+
+  ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
+  ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
+
+  location / {
+    root /var/vcap/store/blobstore/store/;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
+
+    auth_basic "Blobstore Read";
+    auth_basic_user_file read_users;
+
+    limit_except GET {
+      auth_basic "Blobstore Write";
+      auth_basic_user_file write_users;
+    }
+  }
+
+  
 
   location @handler {
     proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
@@ -76,7 +164,10 @@ server {
               'ipv6_listen' => true,
               'port' => 25550,
               'max_upload_size' => 300,
-              'allow_http' => false
+              'allow_http' => false,
+              'nginx' => {
+                'enable_metrics_endpoint' => false
+              }
             }
           }
         }
@@ -115,6 +206,8 @@ server {
       auth_basic_user_file write_users;
     }
   }
+
+  
 
   location @handler {
     proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
@@ -135,7 +228,10 @@ server {
               'ipv6_listen' => true,
               'port' => 25550,
               'max_upload_size' => 300,
-              'allow_http' => true
+              'allow_http' => true,
+              'nginx' => {
+                'enable_metrics_endpoint' => false
+              }
             }
           }
         }
@@ -177,6 +273,8 @@ server {
     }
   }
 
+  
+
   location @handler {
     proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }
@@ -196,7 +294,10 @@ server {
               'ipv6_listen' => false,
               'port' => 25550,
               'max_upload_size' => 300,
-              'allow_http' => true
+              'allow_http' => true,
+              'nginx' => {
+                'enable_metrics_endpoint' => false
+              }
             }
           }
         }
@@ -238,6 +339,8 @@ server {
     }
   }
 
+  
+
   location @handler {
     proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }
@@ -247,7 +350,6 @@ server {
     end
   end
 end
-
 
 describe 'server_tls_cert.pem.erb' do
   context 'should render the pem file' do
@@ -277,7 +379,6 @@ CERT
   end
 end
 
-
 describe 'server_tls_private_key.pem.erb' do
   context 'should render the pem file' do
     it_should_behave_like 'a rendered file' do
@@ -305,7 +406,6 @@ PRIVATE KEY
     end
   end
 end
-
 
 describe 'ngnix.conf.erb' do
   context 'should updated number of ngnix workers to user provided value' do

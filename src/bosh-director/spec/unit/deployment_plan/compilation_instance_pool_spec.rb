@@ -17,6 +17,8 @@ module Bosh::Director
     let(:another_agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:availability_zone) { nil }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+    let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, 1) }
+
     let(:cloud_properties) { { 'cloud' => 'properties' } }
     let(:create_instance_error) { RuntimeError.new('failed to create instance') }
     let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
@@ -131,10 +133,13 @@ module Bosh::Director
     before do
       allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(cloud).to receive(:create_vm)
+      #TODO Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper
+      allow(cloud).to receive(:set_vm_metadata)
       allow(cloud).to receive(:info).and_return({})
       allow(cloud).to receive(:request_cpi_api_version=).with(1)
       allow(cloud).to receive(:request_cpi_api_version).and_return(1)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
+      allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(cloud, anything).and_return(cloud_wrapper)
       allow(network).to receive(:network_settings)
         .with(instance_of(DesiredNetworkReservation), %w[dns gateway], availability_zone).and_return(network_settings)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)

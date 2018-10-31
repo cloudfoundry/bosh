@@ -2,13 +2,13 @@ module Bosh::Director
   class LocalDnsEncoderManager
     def self.persist_az_names(azs)
       azs.each do |azname|
-        self.encode_az(azname)
+        encode_az(azname)
       end
     end
 
     def self.persist_network_names(networks)
       networks.each do |networkname|
-        self.encode_network(networkname)
+        encode_network(networkname)
       end
     end
 
@@ -16,15 +16,18 @@ module Bosh::Director
       az_hash = Models::LocalDnsEncodedAz.as_hash(:name, :id)
 
       service_groups = {}
-      Bosh::Director::Models::LocalDnsEncodedInstanceGroup.
-        inner_join(:deployments, Sequel.qualify('local_dns_encoded_instance_groups', 'deployment_id') => Sequel.qualify('deployments', 'id')).
-        select(
-          Sequel.expr(Sequel.qualify('local_dns_encoded_instance_groups', 'id')).as(:id),
-          Sequel.expr(Sequel.qualify('local_dns_encoded_instance_groups', 'name')).as(:name),
+      dns_groups_table_name = Bosh::Director::Models::LocalDnsEncodedGroup.table_name
+      Bosh::Director::Models::LocalDnsEncodedGroup
+        .inner_join(:deployments, Sequel.qualify(dns_groups_table_name, 'deployment_id') => Sequel.qualify('deployments', 'id'))
+        .select(
+          Sequel.expr(Sequel.qualify(dns_groups_table_name, 'id')).as(:id),
+          Sequel.expr(Sequel.qualify(dns_groups_table_name, 'name')).as(:name),
+          Sequel.expr(Sequel.qualify(dns_groups_table_name, 'type')).as(:type),
           Sequel.expr(Sequel.qualify('deployments', 'name')).as(:deployment_name),
         ).all.each do |join_row|
         service_groups[{
-          instance_group: join_row[:name],
+          group_type: join_row[:type],
+          group_name: join_row[:name],
           deployment: join_row[:deployment_name],
         }] = join_row[:id].to_s
       end
@@ -39,35 +42,54 @@ module Bosh::Director
       create_dns_encoder(plan.use_short_dns_addresses?)
     end
 
-    private
+    class << self
+      private
 
-    def self.with_skip_dupes
-      yield
-    rescue Sequel::UniqueConstraintViolation => _
-    end
-
-    def self.encode_az(name)
-      with_skip_dupes { Models::LocalDnsEncodedAz.find_or_create(name: name) }
-    end
-
-    def self.encode_instance_group(name, deployment_model)
-      with_skip_dupes do
-        Models::LocalDnsEncodedInstanceGroup.find_or_create(
-          name: name,
-          deployment: deployment_model,
-        )
+      # rubocop:disable Lint/HandleExceptions
+      def with_skip_dupes
+        yield
+      rescue Sequel::UniqueConstraintViolation => _
       end
-    end
+      # rubocop:enable Lint/HandleExceptions
 
-    def self.encode_network(name)
-      with_skip_dupes { Models::LocalDnsEncodedNetwork.find_or_create(name: name) }
-    end
+      def encode_az(name)
+        with_skip_dupes { Models::LocalDnsEncodedAz.find_or_create(name: name) }
+      end
 
-    def self.persist_service_groups(plan)
-      deployment_model = plan.model
+      def encode_instance_group(name, deployment_model)
+        with_skip_dupes do
+          Models::LocalDnsEncodedGroup.find_or_create(
+            type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+            name: name,
+            deployment: deployment_model,
+          )
+        end
+      end
 
-      plan.instance_groups.each do |ig|
-        encode_instance_group(ig.name, deployment_model)
+      def encode_link_provider(name, type, deployment_model)
+        with_skip_dupes do
+          Models::LocalDnsEncodedGroup.find_or_create(
+            type: Models::LocalDnsEncodedGroup::Types::LINK,
+            name: "#{name}-#{type}",
+            deployment: deployment_model,
+          )
+        end
+      end
+
+      def encode_network(name)
+        with_skip_dupes { Models::LocalDnsEncodedNetwork.find_or_create(name: name) }
+      end
+
+      def persist_service_groups(plan)
+        deployment_model = plan.model
+
+        plan.instance_groups.each do |ig|
+          encode_instance_group(ig.name, deployment_model)
+        end
+
+        plan.links_manager.get_link_providers_for_deployment(deployment_model).each do |provider|
+          encode_link_provider(provider.name, provider.type, deployment_model)
+        end
       end
     end
   end

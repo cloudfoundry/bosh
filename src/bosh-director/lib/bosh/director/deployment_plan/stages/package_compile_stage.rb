@@ -180,7 +180,7 @@ module Bosh::Director
           @event_log_stage = Config.event_log.begin_stage('Compiling packages', compilation_count)
 
           begin
-            ThreadPool.new(:max_threads => @compilation_config.workers).wrap do |pool|
+            ThreadPool.new(max_threads: @compilation_config.workers).wrap do |pool|
               loop do
                 # process as many tasks without waiting
                 loop do

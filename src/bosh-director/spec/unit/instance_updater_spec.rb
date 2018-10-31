@@ -35,6 +35,7 @@ module Bosh::Director
     end
     let(:instance_model_state) { 'started' }
     let(:deployment_model) { Models::Deployment.make(name: 'deployment') }
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:instance) do
       az = DeploymentPlan::AvailabilityZone.new('az-1', {})
       vm_type = DeploymentPlan::VmType.new('name' => 'small_vm')
@@ -52,6 +53,7 @@ module Bosh::Director
         {},
         az,
         logger,
+        variables_interpolator,
       )
       instance.bind_existing_instance_model(instance_model)
 
@@ -66,6 +68,7 @@ module Bosh::Director
         instance: instance,
         desired_instance: desired_instance,
         tags: tags,
+        variables_interpolator: variables_interpolator,
       )
       allow(instance_plan).to receive(:spec).and_return(DeploymentPlan::InstanceSpec.create_empty)
       allow(instance_plan).to receive(:needs_disk?).and_return(false)
@@ -97,6 +100,7 @@ module Bosh::Director
       allow(rendered_templates_persistor).to receive(:persist)
       allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
       allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
+      allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).and_return(false)
     end
 
     context 'for any state' do
@@ -184,6 +188,7 @@ module Bosh::Director
         it 'persists rendered templates to the blobstore' do
           expect(rendered_templates_persistor).to receive(:persist).with(instance_plan)
           expect(links_manager).to receive(:bind_links_to_instance).with(instance)
+          expect(instance).to receive(:update_variable_set)
 
           updater.update(instance_plan)
         end
@@ -212,7 +217,7 @@ module Bosh::Director
           expect(unmount_step).to receive(:perform)
           expect(delete_step).to receive(:perform)
           expect(director_state_updater).to receive(:update_dns_for_instance)
-            .with(instance_model, instance_plan.network_settings.dns_record_info)
+            .with(instance_plan, instance_plan.network_settings.dns_record_info)
 
           expect(agent_client).to receive(:run_script).with('post-stop', {})
           expect(agent_client).to receive(:stop)
@@ -238,7 +243,7 @@ module Bosh::Director
 
           it 'still updates dns' do
             expect(director_state_updater).to receive(:update_dns_for_instance)
-              .with(instance_model, instance_plan.network_settings.dns_record_info)
+              .with(instance_plan, instance_plan.network_settings.dns_record_info)
 
             updater.update(instance_plan)
             expect(instance_model.update_completed).to eq true

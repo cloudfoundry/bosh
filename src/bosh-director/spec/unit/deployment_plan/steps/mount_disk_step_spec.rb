@@ -12,7 +12,8 @@ module Bosh::Director
         let(:agent_client) do
           instance_double(AgentClient, list_disk: [disk&.disk_cid], mount_disk: nil)
         end
-        let(:report) { Stages::Report.new }
+        let(:disk_hint) { nil }
+        let(:report) { Stages::Report.new(nil, nil, disk_hint) }
 
         before do
           allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(agent_client)

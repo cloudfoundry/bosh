@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::Jobs::SnapshotSelf do
-  let(:cloud) { instance_double('Bosh::Cloud') }
+  let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
   let(:director_uuid) { 'cafebabe' }
   let(:director_name) { 'Test Director' }
   let(:enable_snapshots) { true }

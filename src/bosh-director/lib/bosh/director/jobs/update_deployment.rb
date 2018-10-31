@@ -17,6 +17,7 @@ module Bosh::Director
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
+        @variables_interpolator = ConfigServer::VariablesInterpolator.new
       end
 
       def dry_run?
@@ -82,8 +83,9 @@ module Bosh::Director
             # that's where the link path is created
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
             @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
+            create_network_stage(deployment_plan).perform unless dry_run?
 
-            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
+            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
 
             # that's where the links resolver is created
@@ -102,30 +104,27 @@ module Bosh::Director
 
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 
-            if dry_run?
-              return "/deployments/#{deployment_plan.name}"
-            else
-              compilation_step(deployment_plan).perform
+            return "/deployments/#{deployment_plan.name}" if dry_run?
 
-              update_stage(deployment_plan, dns_encoder).perform
+            compilation_step(deployment_plan).perform
 
-              if check_for_changes(deployment_plan)
-                PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
-              end
+            update_stage(deployment_plan, dns_encoder).perform
 
-              # only in the case of a deploy should you be cleaning up
-              if is_deploy_action
-                @links_manager.remove_unused_links(deployment_plan.model)
-                current_variable_set.update(deployed_successfully: true)
-                remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
-              end
+            PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan) if check_for_changes(deployment_plan)
 
-              @notifier.send_end_event
-              logger.info('Finished updating deployment')
-              add_event(context, parent_id)
-
-              "/deployments/#{deployment_plan.name}"
+            # only in the case of a deploy should you be cleaning up
+            if is_deploy_action
+              @links_manager.remove_unused_links(deployment_plan.model)
+              current_variable_set.update(deployed_successfully: true)
+              remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
+              mark_orphaned_networks(deployment_plan)
             end
+
+            @notifier.send_end_event
+            logger.info('Finished updating deployment')
+            add_event(context, parent_id)
+
+            "/deployments/#{deployment_plan.name}"
           ensure
             deployment_plan.template_blob_cache.clean_cache!
           end
@@ -134,22 +133,45 @@ module Bosh::Director
         begin
           @notifier.send_error_event e unless dry_run?
         rescue Exception => e2
-          # log the second error
+          # ignore the second error
         ensure
           add_event(context, parent_id, e)
           raise e
         end
       ensure
-        if @options['deploy']
-          deployment = current_deployment
-          variable_set = deployment == nil ? nil : deployment.current_variable_set
-          if variable_set
-            variable_set.update(:writable => false)
-          end
-        end
+        current_deployment&.current_variable_set&.update(writable: false) if @options['deploy']
       end
 
       private
+
+      def mark_orphaned_networks(deployment_plan)
+        return unless Config.network_lifecycle_enabled?
+
+        deployment_model = deployment_plan.model
+        deployment_networks = []
+
+        deployment_plan.instance_groups.each do |inst_group|
+          inst_group.networks.each do |jobnetwork|
+            network = jobnetwork.deployment_network
+            next unless network.managed?
+            deployment_networks << jobnetwork.deployment_network.name
+          end
+        end
+
+        deployment_model.networks.each do |network|
+          with_network_lock(network.name) do
+            next if deployment_networks.include?(network.name)
+
+            deployment_model.remove_network(network)
+            if network.deployments.empty?
+              @logger.info("Orphaning managed network #{network.name}")
+              network.orphaned = true
+              network.orphaned_at = Time.now
+              network.save
+            end
+          end
+        end
+      end
 
       def remove_unused_variable_sets(deployment, instance_groups)
         variable_sets_to_keep = []
@@ -166,19 +188,18 @@ module Bosh::Director
       end
 
       def add_event(context = {}, parent_id = nil, error = nil)
-        action = @options.fetch('new', false) ? "create" : "update"
+        action = @options.fetch('new', false) ? 'create' : 'update'
         event = event_manager.create_event(
-          {
-            parent_id: parent_id,
-            user: username,
-            action: action,
-            object_type: "deployment",
-            object_name: @deployment_name,
-            deployment: @deployment_name,
-            task: task_id,
-            error: error,
-            context: context
-          })
+          parent_id: parent_id,
+          user: username,
+          action: action,
+          object_type: 'deployment',
+          object_name: @deployment_name,
+          deployment: @deployment_name,
+          task: task_id,
+          error: error,
+          context: context,
+        )
         event.id
       end
 
@@ -193,6 +214,10 @@ module Bosh::Director
 
       def compilation_step(deployment_plan)
         DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
+      end
+
+      def create_network_stage(deployment_plan)
+        DeploymentPlan::Stages::CreateNetworkStage.new(Config.logger, deployment_plan)
       end
 
       def update_stage(deployment_plan, dns_encoder)
@@ -219,7 +244,11 @@ module Bosh::Director
         unless errors.empty?
           message = errors.map { |error| error.message.strip }.join("\n")
           header = 'Unable to render instance groups for deployment. Errors are:'
-          raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, message, {:indent_by => 2})
+          raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(
+            header,
+            message,
+            indent_by: 2,
+          )
         end
       end
 
@@ -242,16 +271,14 @@ module Bosh::Director
 
       def snapshot_errands_variables_versions(errands_instance_groups, current_variable_set)
         errors = []
-        variables_interpolator = ConfigServer::VariablesInterpolator.new
-        config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
 
         errands_instance_groups.each do |instance_group|
           instance_group_errors = []
 
           begin
-            variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
+            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
             unless instance_group&.env&.spec.nil?
-              config_server_client.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
+              @variables_interpolator.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
             end
           rescue Exception => e
             instance_group_errors.push e
@@ -261,7 +288,7 @@ module Bosh::Director
           instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
             begin
-              variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
+              @variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
             rescue Exception => e
               instance_group_errors.push e
             end
@@ -295,7 +322,8 @@ module Bosh::Director
             "#{sc.name}/#{sc.version}"
           end
         end
-        return releases, stemcells
+
+        [releases, stemcells]
       end
 
       def current_deployment

@@ -121,6 +121,7 @@ describe Bhm::Deployment do
       context 'when instance expects vm' do
         let(:instance) {Bhm::Instance.create({'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true})}
         it 'refuses to add active agent' do
+          expect(Bhm.logger).to receive(:warn).with('No agent id for instance zb/iuuid in deployment deployment-name')
           expect(deployment.upsert_agent(instance)).to be_falsey
         end
 

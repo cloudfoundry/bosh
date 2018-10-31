@@ -30,13 +30,18 @@ params = {
   'enable_cpi_resize_disk' => p('director.enable_cpi_resize_disk'),
   'generate_vm_passwords' => p('director.generate_vm_passwords'),
   'remove_dev_tools' => p('director.remove_dev_tools'),
-  'log_access_events_to_syslog' => p('director.log_access_events_to_syslog'),
+  'log_access_events' => p('director.log_access_events'),
   'flush_arp' => p('director.flush_arp'),
+  'networks' => {
+      'enable_cpi_management' => p('director.networks.enable_cpi_management'),
+  },
   'local_dns' => {
       'enabled' => p('director.local_dns.enabled'),
       'include_index' => p('director.local_dns.include_index'),
       'use_dns_addresses' => p('director.local_dns.use_dns_addresses'),
   },
+  'cpi_api_test_max_version' => p('director.cpi_api_test_max_version'),
+  'audit_log_path' => '/var/vcap/sys/log/director',
 }
 
 director_db = {
@@ -122,8 +127,14 @@ params['scheduled_jobs'] << {
 }
 
 params['scheduled_jobs'] << {
+  'command' => 'ScheduledOrphanedNetworkCleanup',
+  'schedule' => p('director.networks.cleanup_schedule'),
+  'params' => [{'max_orphaned_age_in_days' => p('director.networks.max_orphaned_age_in_days')}]
+}
+
+params['scheduled_jobs'] << {
   'command' => 'ScheduledDnsBlobsCleanup',
-  'schedule' => '0,30 * * * * * UTC',
+  'schedule' => '0 0,30 * * * * UTC', #every 30 min
   'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
 }
 
@@ -240,7 +251,7 @@ params['blobstore'] = {
 
 params['verify_multidigest_path'] = '/var/vcap/packages/verify_multidigest/bin/verify-multidigest'
 
-params['version'] = '0.0.0'
+params['version'] = '268.2.0'
 
 if p('blobstore.provider') == "s3"
    params['blobstore']['provider'] = "s3cli"
@@ -416,6 +427,10 @@ if_p('director.default_ssh_options.gateway_host',
     'gateway_host' => gateway_host,
     'gateway_user' => gateway_user
   }
+end
+
+if_p('director.log_access_events_to_syslog') do |_|
+  raise 'property director.log_access_events_to_syslog has been removed. Please use director.log_access_events instead.'
 end
 
 cpi_job_name = p('director.cpi_job')

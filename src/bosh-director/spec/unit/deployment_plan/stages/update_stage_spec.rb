@@ -41,6 +41,18 @@ module Bosh::Director
       end
 
       describe '#perform' do
+        before do
+          allow(logger).to receive(:info)
+          allow(pre_cleanup).to receive(:perform)
+          allow(update_active_vm_cpis).to receive(:perform)
+          allow(setup).to receive(:perform)
+          allow(deployment_plan).to receive(:availability_zones)
+          allow(download_packages_step).to receive(:perform)
+          allow(update_instance_groups).to receive(:perform)
+          allow(update_errands).to receive(:perform)
+          allow(persist_deployment).to receive(:perform)
+        end
+
         it 'runs deployment plan update steps in the correct order' do
           expect(logger).to receive(:info).with('Updating deployment').ordered
           expect(pre_cleanup).to receive(:perform).ordered
@@ -62,11 +74,11 @@ module Bosh::Director
           let(:some_error) { RuntimeError.new('oops') }
 
           before do
-            allow(logger).to receive(:info).and_raise(some_error)
+            allow(persist_deployment).to receive(:perform).and_raise(some_error)
           end
 
-          it 'still updates the stemcell references' do
-            expect(cleanup_stemcell_reference).to receive(:perform)
+          it 'does not update the stemcell references' do
+            expect(cleanup_stemcell_reference).to_not receive(:perform)
 
             expect {
               subject.perform

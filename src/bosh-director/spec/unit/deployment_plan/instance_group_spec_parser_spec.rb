@@ -331,7 +331,6 @@ module Bosh::Director
         shared_examples_for 'templates/jobs key' do
           before { instance_group_spec.delete('jobs') }
 
-          # TODO LINKS: Add tests to ensure links_manager's methods get invoked.
           context 'when value is an array of hashes' do
             context 'when one of the hashes specifies a release' do
               before do
@@ -826,12 +825,6 @@ module Bosh::Director
                   .with({ 'property_1' => 'property_1_value', 'property_2' => { 'life' => 'life_value' } }, 'instance-group-name')
 
                 parsed_instance_group
-              end
-            end
-
-            context 'when the manifest specifies a job' do
-              it 'will parse the links using links parser' do
-                # TODO LINKS
               end
             end
 

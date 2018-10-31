@@ -39,7 +39,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-core',          "~>#{version}"
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
-  spec.add_dependency 'bosh_cpi',           '=2.4.1'
 
   spec.add_dependency 'bcrypt-ruby',      '~>3.0.1'
   spec.add_dependency 'eventmachine',     '~>1.2.0'
@@ -59,4 +58,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
   spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.3'
   spec.add_dependency 'unix-crypt',       '~>1.3.0'
+  spec.add_dependency 'bosh_cpi'
 end

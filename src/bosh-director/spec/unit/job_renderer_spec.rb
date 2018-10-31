@@ -12,14 +12,16 @@ module Bosh::Director
     let(:cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
     let(:encoder) { DnsEncoder.new }
 
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+
     let(:instance_plan) do
-      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance)
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: DeploymentPlan::DesiredInstance.new(instance_group), instance: instance, variables_interpolator: variables_interpolator)
     end
 
     let(:instance) do
       deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
       availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
-      DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, logger)
+      DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, logger, variables_interpolator)
     end
 
     let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
@@ -70,7 +72,7 @@ module Bosh::Director
           perform
 
           expect(instance_plan.rendered_templates.template_hashes.keys).to eq ['dummy']
-          expect(instance.configuration_hash).to eq('8c0d7fac26d36e3b51de2d43f17302b4c04fa377')
+          expect(instance.configuration_hash).to eq('53b2a7cac279af8bb73885b08a794ab5dd21bb8c')
           expect(instance.template_hashes.keys).to eq(['dummy'])
         end
 
@@ -86,11 +88,11 @@ module Bosh::Director
       context 'when getting the templates spec of an instance plan errors' do
         before do
           allow(instance).to receive(:instance_group_name).and_return('my_instance_group')
-          allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_raise Exception, <<-EOF
-- Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-- Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-- Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
-          EOF
+          allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_raise StandardError, <<~ERRORMSG
+            - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+            - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+            - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          ERRORMSG
         end
 
         it 'formats the error messages' do

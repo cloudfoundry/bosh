@@ -6,7 +6,7 @@ module Bosh
     module DeploymentPlan
       module Steps
         describe CreateVmStep do
-          subject { CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing )}
+          subject { CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing) }
           let(:use_existing) { false }
           let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
           let(:agent_client) do
@@ -26,6 +26,12 @@ module Bosh
           let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
           let(:cloud_factory) { instance_double(AZCloudFactory) }
           let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
+          let(:cpi_api_version) { 1 }
+          before {
+            allow(cloud).to receive(:request_cpi_api_version=)
+            allow(cloud).to receive(:request_cpi_api_version).and_return(1)
+          }
+          let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
           let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
           let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
           let(:deployment_plan) do
@@ -63,7 +69,8 @@ module Bosh
               deployment,
               {},
               nil,
-              logger
+              logger,
+              nil
             )
             instance.bind_existing_instance_model(instance_model)
             instance
@@ -78,7 +85,7 @@ module Bosh
           let(:instance_plan) do
             desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)
             network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-            BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
+            BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan], variables_interpolator: nil)
           end
 
           let(:instance_group) do
@@ -133,6 +140,8 @@ module Bosh
           let(:report) { Stages::Report.new }
           let(:delete_vm_step) { instance_double(DeleteVmStep) }
 
+          let(:create_vm_response) { ['new-vm-cid', {}, {}] }
+
           before do
             allow(Config).to receive(:current_job).and_return(update_job)
             Config.name = 'fake-director-name'
@@ -142,12 +151,12 @@ module Bosh
             allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
             allow(AZCloudFactory).to receive(:create_with_latest_configs).with(deployment).and_return(cloud_factory)
             allow(cloud_factory).to receive(:get_name_for_az).with(instance_model.availability_zone).and_return('cpi1')
-            allow(cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud)
-            allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+            allow(cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud_wrapper)
+            allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud_wrapper)
             allow(Models::Vm).to receive(:create).and_return(vm_model)
-            allow(cloud).to receive(:create_vm)
-            allow(cloud).to receive(:info)
-            allow(cloud).to receive(:request_cpi_api_version).and_return(1)
+            allow(cloud_wrapper).to receive(:create_vm).and_return(['', {}, {}])
+            allow(cloud_wrapper).to receive(:info)
+            allow(cloud).to receive(:set_vm_metadata)
             allow(DeleteVmStep).to receive(:new).and_return(delete_vm_step)
           end
 
@@ -172,11 +181,11 @@ module Bosh
             it 'uses the outdated cloud config from the existing deployment' do
               expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
               expect(non_default_cloud_factory).to receive(:get_name_for_az).with('az1').at_least(:once).and_return 'cpi1'
-              expect(non_default_cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
-              expect(non_default_cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud)
-              expect(cloud).to receive(:create_vm).with(
+              expect(non_default_cloud_factory).to receive(:get).with('cpi1').and_return(cloud_wrapper)
+              expect(non_default_cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud_wrapper)
+              expect(cloud_wrapper).to receive(:create_vm).with(
                 kind_of(String), 'old-stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
-              ).and_return('new-vm-cid')
+              ).and_return(create_vm_response)
 
               subject.perform(report)
             end
@@ -187,13 +196,13 @@ module Bosh
 
               it 'uses any cloud config if availability zones are not used, even though requested' do
                 expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
-                expect(non_default_cloud_factory).to receive(:get).with('').and_return(cloud)
-                expect(non_default_cloud_factory).to receive(:get).with('', nil).and_return(cloud)
+                expect(non_default_cloud_factory).to receive(:get).with('').and_return(cloud_wrapper)
+                expect(non_default_cloud_factory).to receive(:get).with('', nil).and_return(cloud_wrapper)
 
                 expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
-                expect(cloud).to receive(:create_vm).with(
+                expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
-                ).and_return('new-vm-cid')
+                ).and_return(create_vm_response)
 
                 subject.perform(report)
               end
@@ -201,11 +210,11 @@ module Bosh
           end
 
           it 'should create a vm' do
-            expect(cloud).to receive(:create_vm).with(
+            expect(cloud_wrapper).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
               'groups' => expected_groups
             }}
-            ).and_return('new-vm-cid')
+            ).and_return(create_vm_response)
 
             expect(agent_client).to receive(:wait_until_ready)
             expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: nil))
@@ -214,12 +223,12 @@ module Bosh
           end
 
           it 'should record events' do
-            expect(cloud).to receive(:create_vm).with(
+            expect(cloud_wrapper).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
               'groups' => expected_groups
             }}
 
-            ).and_return('new-vm-cid')
+            ).and_return(create_vm_response)
             expect {
               subject.perform(report)
             }.to change { Models::Event.count }.from(0).to(2)
@@ -245,7 +254,7 @@ module Bosh
           end
 
           it 'should record events about error' do
-            expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+            expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
             expect {
               subject.perform(report)
             }.to raise_error Bosh::Clouds::VMCreationFailed
@@ -255,18 +264,18 @@ module Bosh
           end
 
           it 'deletes created VM from cloud on DB failure' do
-            expect(cloud).to receive(:create_vm).and_return('vm-cid')
+            expect(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
             expect(Bosh::Director::Models::Vm).to receive(:create).and_raise('Bad DB. Bad.')
-            expect(vm_deleter).to receive(:delete_vm_by_cid).with('vm-cid', nil)
+            expect(vm_deleter).to receive(:delete_vm_by_cid).with('new-vm-cid', nil)
             expect {
               subject.perform(report)
             }.to raise_error ('Bad DB. Bad.')
           end
 
           it 'flushes the ARP cache' do
-            allow(cloud).to receive(:create_vm).with(
+            allow(cloud_wrapper).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), disks, {'bosh' => {'group' => expected_group, 'groups' => expected_groups}}
-            ).and_return('new-vm-cid')
+            ).and_return(create_vm_response)
 
             allow(instance_plan).to receive(:network_settings_hash).and_return(
               network_settings.merge(extra_ip)
@@ -279,9 +288,9 @@ module Bosh
           it 'does not flush the arp cache when arp_flush set to false' do
             Config.flush_arp = false
 
-            allow(cloud).to receive(:create_vm).with(
+            allow(cloud_wrapper).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), disks, {'bosh' => {'group' => expected_group, 'groups' => expected_groups}}
-            ).and_return('new-vm-cid')
+            ).and_return(create_vm_response)
 
             allow(instance_plan).to receive(:network_settings_hash).and_return(
               network_settings.merge(extra_ip)
@@ -293,14 +302,14 @@ module Bosh
           end
 
           it 'sets vm metadata' do
-            expect(cloud).to receive(:create_vm).with(
+            expect(cloud_wrapper).to receive(:create_vm).with(
               kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, disks, {'bosh' => {'group' => expected_group,
               'groups' => expected_groups
             }}
-            ).and_return('new-vm-cid')
+            ).and_return(create_vm_response)
 
             Timecop.freeze do
-              expect(cloud).to receive(:set_vm_metadata) do |vm_cid, metadata|
+              expect(cloud_wrapper).to receive(:set_vm_metadata) do |vm_cid, metadata|
                 expect(vm_cid).to eq('new-vm-cid')
                 expect(metadata).to match({
                   'deployment' => 'deployment_name',
@@ -320,9 +329,10 @@ module Bosh
           end
 
           context 'when there is a vm creation error' do
+            let(:create_vm_response) { ['fake-vm-cid', {}, {}] }
             it 'should retry creating a VM if it is told it is a retryable error' do
-              expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
-              expect(cloud).to receive(:create_vm).once.and_return('fake-vm-cid')
+              expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+              expect(cloud_wrapper).to receive(:create_vm).once.and_return(create_vm_response)
 
               expect(Models::Vm).to receive(:create).with(hash_including(cid: 'fake-vm-cid', instance: instance_model, stemcell_api_version: nil))
 
@@ -330,7 +340,7 @@ module Bosh
             end
 
             it 'should not retry creating a VM if it is told it is not a retryable error' do
-              expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+              expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
               expect {subject.perform(report)}.to raise_error(Bosh::Clouds::VMCreationFailed)
             end
@@ -338,7 +348,7 @@ module Bosh
             it 'should try exactly the configured number of times (max_vm_create_tries) when it is a retryable error' do
               Config.max_vm_create_tries = 3
 
-              expect(cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+              expect(cloud_wrapper).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
               expect {subject.perform(report)}.to raise_error(Bosh::Clouds::VMCreationFailed)
             end
@@ -347,16 +357,16 @@ module Bosh
           it 'should not destroy the VM if the Config.keep_unreachable_vms flag is true' do
             expect(agent_client).to receive(:wait_until_ready).and_raise(metadata_err)
             Config.keep_unreachable_vms = true
-            expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
-            expect(cloud).to_not receive(:delete_vm)
+            expect(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
+            expect(cloud_wrapper).to_not receive(:delete_vm)
 
-            expect {subject.perform(report)}.to raise_error(metadata_err)
+            expect { subject.perform(report) }.to raise_error(metadata_err)
           end
 
           it 'should destroy the VM if the Config.keep_unreachable_vms flag is false' do
             expect(agent_client).to receive(:wait_until_ready).and_raise(metadata_err)
             Config.keep_unreachable_vms = false
-            expect(cloud).to receive(:create_vm).and_return('new-vm-cid')
+            expect(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
             expect(delete_vm_step).to receive(:perform).with(report)
 
             expect { subject.perform(report) }.to raise_error(metadata_err)
@@ -364,15 +374,17 @@ module Bosh
 
           it 'should have deep copy of environment' do
             env_id = nil
-
-            expect(cloud).to receive(:create_vm) do |*args|
+            # create_vm now expected to return an array, so object response need to transformed into array
+            expect(cloud_wrapper).to receive(:create_vm) do |*args|
               env_id = args[5].object_id
+              [env_id, {}, {}]
             end
 
             subject.perform(report)
 
-            expect(cloud).to receive(:create_vm) do |*args|
+            expect(cloud_wrapper).to receive(:create_vm) do |*args|
               expect(args[5].object_id).not_to eq(env_id)
+              [env_id, {}, {}]
             end
 
             subject.perform(report)
@@ -383,7 +395,7 @@ module Bosh
               it 'should NOT include the uri in ENV' do
                 Config.nats_uri = 'nats://localhost:1234'
 
-                expect(cloud).to receive(:create_vm).with(
+                expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id',
                   kind_of(Hash), network_settings, disks,
                   {
@@ -392,7 +404,7 @@ module Bosh
                       'groups' => kind_of(Array),
                     },
                   }
-                ).and_return('new-vm-cid')
+                ).and_return(create_vm_response)
                 subject.perform(report)
               end
 
@@ -417,7 +429,7 @@ module Bosh
                   })
                   allow(Config).to receive(:nats_server_ca).and_return('nats begin\nnats content\nnats end\n')
 
-                  expect(cloud).to receive(:create_vm).with(
+                  expect(cloud_wrapper).to receive(:create_vm).with(
                     kind_of(String), 'stemcell-id',
                     kind_of(Hash), network_settings, disks,
                     {
@@ -433,7 +445,7 @@ module Bosh
                         'groups' => kind_of(Array),
                       }
                     }
-                  ).and_return('new-vm-cid')
+                  ).and_return(create_vm_response)
                   subject.perform(report)
                 end
               end
@@ -444,7 +456,7 @@ module Bosh
                 Config.nats_server_ca = nil
                 Config.nats_uri = nil
 
-                expect(cloud).to receive(:create_vm).with(
+                expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id',
                   kind_of(Hash), network_settings, disks,
                   {
@@ -453,7 +465,7 @@ module Bosh
                       'groups' => kind_of(Array),
                     }
                   }
-                ).and_return('new-vm-cid')
+                ).and_return(create_vm_response)
                 subject.perform(report)
               end
             end
@@ -466,9 +478,9 @@ module Bosh
 
             context 'no password is specified' do
               it 'should generate a random VM password' do
-                expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
                   expect(env['bosh']['password'].length).to_not eq(0)
-                end.and_return('new-vm-cid')
+                end.and_return(create_vm_response)
 
                 subject.perform(report)
               end
@@ -481,9 +493,9 @@ module Bosh
                 )
               end
               it 'should generate a random VM password' do
-                expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
                   expect(env['bosh']['password']).to eq('custom-password')
-                end.and_return('new-vm-cid')
+                end.and_return(create_vm_response)
 
                 subject.perform(report)
               end
@@ -497,9 +509,9 @@ module Bosh
 
             context 'no password is specified' do
               it 'should generate a random VM password' do
-                expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
                   expect(env['bosh']).to eq({'group' => expected_group, 'groups' => expected_groups})
-                end.and_return('new-vm-cid')
+                end.and_return(create_vm_response)
 
                 subject.perform(report)
               end
@@ -513,9 +525,9 @@ module Bosh
               end
 
               it 'should generate a random VM password' do
-                expect(cloud).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
                   expect(env['bosh']['password']).to eq('custom-password')
-                end.and_return('new-vm-cid')
+                end.and_return(create_vm_response)
 
                 subject.perform(report)
               end
@@ -523,8 +535,7 @@ module Bosh
           end
 
           context 'cloud_properties, networks_settings, env interpolation' do
-            let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-            let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
+            let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
             let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
 
@@ -666,41 +677,41 @@ module Bosh
               allow(instance_spec).to receive(:full_spec).and_return({})
               allow(instance_spec).to receive(:as_template_spec).and_return({})
               allow(instance_plan).to receive(:spec).and_return(instance_spec)
-              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+              allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
               allow(Config).to receive(:agent_env).and_return(agent_env_bosh_hash)
             end
 
             it 'should interpolate them correctly, and merge agent env properties with the user provided ones' do
               instance_plan.instance.desired_variable_set = desired_variable_set
 
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(user_provided_env_hash, desired_variable_set).and_return(resolved_user_provided_env_hash)
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, desired_variable_set).and_return(resolved_cloud_properties)
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(unresolved_networks_settings, desired_variable_set).and_return(resolved_networks_settings)
+              expect(variables_interpolator).to receive(:interpolate_with_versioning).with(user_provided_env_hash, desired_variable_set).and_return(resolved_user_provided_env_hash)
+              expect(variables_interpolator).to receive(:interpolate_with_versioning).with(cloud_properties, desired_variable_set).and_return(resolved_cloud_properties)
+              expect(variables_interpolator).to receive(:interpolate_with_versioning).with(unresolved_networks_settings, desired_variable_set).and_return(resolved_networks_settings)
 
-              expect(cloud).to receive(:create_vm) do |_, _, cloud_properties_param, network_settings_param, _, env_param|
+              expect(cloud_wrapper).to receive(:create_vm) do |_, _, cloud_properties_param, network_settings_param, _, env_param|
                 expect(cloud_properties_param).to eq(resolved_cloud_properties)
                 expect(network_settings_param).to eq(resolved_networks_settings)
                 expect(env_param).to eq(expected_env)
-              end.and_return('new-vm-cid')
+              end.and_return(create_vm_response)
 
               subject.perform(report)
             end
           end
 
           context 'when stemcell has api_version' do
-            let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: '25') }
+            let(:stemcell_api_version) { 25 }
+            let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version) }
 
             before do
-              expect(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
+              expect(cloud_factory).to receive(:get).with('cpi1', stemcell_api_version).and_return(cloud_wrapper)
             end
 
-            it 'should create a cloud associated with the stemcell api version' do
-              expect(cloud).to receive(:create_vm).with(
+            it 'should create a cloud_wrapper associated with the stemcell api version' do
+              expect(cloud_wrapper).to receive(:create_vm).with(
                 kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
                                                                                                        'groups' => expected_groups
               }}
-              ).and_return('new-vm-cid')
+              ).and_return(create_vm_response)
 
               expect(agent_client).to receive(:wait_until_ready)
               expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model))
@@ -709,22 +720,22 @@ module Bosh
             end
 
             it 'should associate VM with stemcell api version' do
-              expect(cloud).to receive(:create_vm).with(
+              expect(cloud_wrapper).to receive(:create_vm).with(
                 kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
                                                                                                        'groups' => expected_groups
               }}
-              ).and_return('new-vm-cid')
+              ).and_return(create_vm_response)
 
               expect(agent_client).to receive(:wait_until_ready)
-              expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: 25))
+              expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: stemcell_api_version))
 
               subject.perform(report)
             end
 
             it 'deletes created VM from cloud on DB failure' do
-              expect(cloud).to receive(:create_vm).and_return('vm-cid')
+              expect(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
               expect(Bosh::Director::Models::Vm).to receive(:create).and_raise('Bad DB. Bad.')
-              expect(vm_deleter).to receive(:delete_vm_by_cid).with('vm-cid', 25)
+              expect(vm_deleter).to receive(:delete_vm_by_cid).with('new-vm-cid', stemcell_api_version)
               expect {
                 subject.perform(report)
               }.to raise_error ('Bad DB. Bad.')

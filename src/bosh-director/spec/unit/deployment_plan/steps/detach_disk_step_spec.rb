@@ -12,11 +12,21 @@ module Bosh::Director
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:report) { Stages::Report.new }
+        let(:agent_client) do
+          instance_double(AgentClient, list_disk: [disk&.disk_cid], remove_persistent_disk: nil)
+        end
 
         before do
+          allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(agent_client)
           allow(CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
           allow(cloud).to receive(:detach_disk)
+        end
+
+        it 'sends remove_persistent_disk method to agent' do
+          expect(agent_client).to receive(:remove_persistent_disk).with(disk.disk_cid)
+
+          step.perform(report)
         end
 
         it 'calls out to cpi associated with disk to detach disk' do

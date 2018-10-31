@@ -12,6 +12,7 @@ module Bosh::Director
 
         validate_network_has_no_key('az', name, network_spec)
         validate_network_has_no_key('azs', name, network_spec)
+        validate_network_has_no_key('managed', name, network_spec)
 
         if network_spec.has_key?('subnets')
           validate_network_has_no_key_while_subnets_present('dns', name, network_spec)

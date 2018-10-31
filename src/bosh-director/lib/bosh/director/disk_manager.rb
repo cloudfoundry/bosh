@@ -4,7 +4,7 @@ module Bosh::Director
       @logger = logger
       @orphan_disk_manager = OrphanDiskManager.new(@logger)
       @transactor = Transactor.new
-      @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
+      @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
     end
 
     def update_persistent_disk(instance_plan)
@@ -64,8 +64,9 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(step_report)
-      mount_disk(disk) if disk.managed?
+      report = step_report
+      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(report)
+      mount_disk(disk, report) if disk.managed?
     end
 
     def detach_disk(disk)
@@ -134,8 +135,8 @@ module Bosh::Director
       AgentClient.with_agent_id(instance_model.agent_id)
     end
 
-    def mount_disk(disk)
-      DeploymentPlan::Steps::MountDiskStep.new(disk).perform(step_report)
+    def mount_disk(disk, report = step_report)
+      DeploymentPlan::Steps::MountDiskStep.new(disk).perform(report)
     rescue => e
       @logger.debug("Failed to mount disk, deleting new disk. #{e.inspect}")
 
@@ -177,7 +178,7 @@ module Bosh::Director
       disk_model = nil
       instance_model = instance.model
 
-      cloud_properties = @config_server_client.interpolate_with_versioning(disk.cloud_properties, instance.desired_variable_set)
+      cloud_properties = @variables_interpolator.interpolate_with_versioning(disk.cloud_properties, instance.desired_variable_set)
 
       begin
         parent_id = add_event('create', instance_model.deployment.name, "#{instance_model.job}/#{instance_model.uuid}")

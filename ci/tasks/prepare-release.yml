@@ -1,0 +1,24 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-ruby-go
+
+inputs:
+  - name: bosh-src
+  - name: bosh-src-latest
+  - name: bosh-cli
+  - name: version
+
+outputs:
+  - name: bosh-src-latest-with-release-commit
+  - name: release-tarball
+
+params:
+  BLOBSTORE_ACCESS_KEY_ID: replace-me
+  BLOBSTORE_SECRET_ACCESS_KEY: replace-me
+
+run:
+  path: bosh-src/ci/tasks/prepare-release.sh

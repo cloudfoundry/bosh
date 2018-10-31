@@ -1,10 +1,9 @@
 module Bosh::Director
   module Api
     class EventManager
-    include SyslogHelper
-
       def initialize(record_events)
         @record_events = record_events
+        @audit_logger = AuditLogger.instance
       end
 
       def event_to_hash(event)
@@ -52,7 +51,7 @@ module Bosh::Director
             deployment:  deployment,
             instance:    instance,
             context:     context)
-        syslog(:info, JSON.generate(event.to_hash))
+        @audit_logger.info(JSON.generate(event.to_hash))
         event
       end
 

@@ -2,10 +2,25 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/bosh-utils"
+  packages = [
+    "errors",
+    "uuid"
+  ]
+  revision = "15c556314b68953d0449541ded010b033767c805"
+
+[[projects]]
   name = "github.com/kr/pty"
   packages = ["."]
   revision = "282ce0e5322c82529687d609ee670fac7c7d917c"
   version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/nu7hatch/gouuid"
+  packages = ["."]
+  revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -110,6 +125,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2496db5f4bd5c007ee50941b5ef795c7053a5acc9a4c491380287c21bfe15552"
+  inputs-digest = "240682a5e517247e7538d0e95c6e8cb2bdf35ec9cef4f381d483d3e4c9dd5559"
   solver-name = "gps-cdcl"
   solver-version = 1

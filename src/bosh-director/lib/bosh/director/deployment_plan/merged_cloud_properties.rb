@@ -23,7 +23,8 @@ module Bosh::Director::DeploymentPlan
     private
 
     def merge_cloud_properties(merged_cloud_properties, new_cloud_properties)
-      merged_cloud_properties.nil? ? new_cloud_properties : merged_cloud_properties.merge(new_cloud_properties)
+      cloud_properties = new_cloud_properties.clone
+      merged_cloud_properties.nil? ? cloud_properties : merged_cloud_properties.merge(cloud_properties)
     end
   end
 end

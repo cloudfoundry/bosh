@@ -62,10 +62,6 @@ module Bosh::Director
       send_message(:list_disk, *args)
     end
 
-    def associate_disks(*args)
-      send_message(:associate_disks, *args)
-    end
-
     def start(*args)
       send_message(:start, *args)
     end
@@ -100,6 +96,14 @@ module Bosh::Director
 
     def unmount_disk(*args)
       send_message(:unmount_disk, *args)
+    end
+
+    def add_persistent_disk(*args)
+      safe_send_message(:add_persistent_disk, *args)
+    end
+
+    def remove_persistent_disk(*args)
+      safe_send_message(:remove_persistent_disk, *args)
     end
 
     def shutdown
@@ -152,15 +156,7 @@ module Bosh::Director
     end
 
     def update_settings(certs, disk_associations)
-      begin
-        send_message(:update_settings, {'trusted_certs' => certs, 'disk_associations' => disk_associations })
-      rescue RpcRemoteException => e
-        if e.message =~ /unknown message/
-          @logger.warn("Ignoring update_settings 'unknown message' error from the agent: #{e.inspect}")
-        else
-          raise
-        end
-      end
+      safe_send_message(:update_settings, 'trusted_certs' => certs, 'disk_associations' => disk_associations)
     end
 
     def run_script(script_name, options)
@@ -356,6 +352,18 @@ module Bosh::Director
         wait_for_task(task['agent_task_id'], &blk)
       else
         task['value']
+      end
+    end
+
+    def safe_send_message(method_name, *args, &blk)
+      begin
+        send_message(method_name, *args, &blk)
+      rescue RpcRemoteException => e
+        if e.message.match?(/unknown message/)
+          @logger.warn("Ignoring #{method_name} 'unknown message' error from the agent: #{e.inspect}")
+        else
+          raise
+        end
       end
     end
 

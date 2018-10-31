@@ -1,12 +1,13 @@
 require 'bosh/dev/sandbox/database_migrator'
+require 'bosh/dev/sandbox/tmux_runner'
+require 'bosh/dev/sandbox/shell_runner'
 
 module Bosh::Dev::Sandbox
   class DirectorService
-
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
-    DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'
+    DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'.freeze
     DIRECTOR_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_test.yml.erb')
 
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
@@ -17,38 +18,40 @@ module Bosh::Dev::Sandbox
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
       @base_log_path = options[:base_log_path]
+      @audit_log_path = options[:audit_log_path]
+      @runner = ENV['TMUX_DEBUG'] ? TmuxRunner.new('bosh-director') : ShellRunner.new
 
       log_location = "#{@base_log_path}.director.out"
+
       @process = Service.new(
-        %W[bosh-director -c #{@director_config}],
-        {output: log_location},
+        @runner.run("bundle exec bosh-director -c #{@director_config}"),
+        { output: log_location },
         @logger,
       )
 
-      @connector = HTTPEndpointConnector.new('director', 'localhost', options[:director_port], '/info', "\"uuid\"", log_location, @logger)
+      @connector = HTTPEndpointConnector.new(
+        'director',
+        'localhost',
+        options[:director_port],
+        '/info',
+        '"uuid"',
+        log_location,
+        @logger,
+      )
 
-      if ENV['TMUX_DEBUG']
-        @worker_processes = 2.times.map do |index|
-          Service.new(
-            %W[tmux new-window -n bosh-director-worker-#{index} -d bundle exec bosh-director-worker -c #{@director_config} -i #{index}],
-            {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal,urgent'}},
-            @logger,
-          )
-        end
-      else
-        @worker_processes = 3.times.map do |index|
-          Service.new(
-            %W[bosh-director-worker -c #{@director_config} -i #{index}],
-            {output: "#{@base_log_path}.worker_#{index}.out", env: {'QUEUE' => 'normal,urgent'}},
-            @logger,
-          )
-        end
+      @worker_processes = Array.new(3).map do |index|
+        Service.new(
+          @runner.run("bundle exec bosh-director-worker -c #{@director_config} -i #{index}"),
+          { output: "#{@base_log_path}.worker_#{index}.out", env: { 'QUEUE' => 'normal,urgent' } },
+          @logger,
+        )
       end
 
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, @director_config, @logger)
     end
 
     def start(config)
+      config.audit_log_path = @audit_log_path
       write_config(config)
 
       migrate_database
@@ -56,14 +59,14 @@ module Bosh::Dev::Sandbox
       reset
 
       @process.start
-
       start_workers
+      system(*@runner.after_start)
 
       begin
         # CI does not have enough time to start bosh-director
         # for some parallel tests; increasing to 60 secs (= 300 tries).
         @connector.try_to_connect(300)
-      rescue
+      rescue StandardError
         output_service_log(@process)
         raise
       end
@@ -73,6 +76,7 @@ module Bosh::Dev::Sandbox
       wait_for_tasks_to_finish
       stop_workers
       @process.stop
+      system(*@runner.kill)
     end
 
     def hard_stop
@@ -93,7 +97,7 @@ module Bosh::Dev::Sandbox
       attempt = 0
       delay = 0.1
       timeout = 60
-      max_attempts = timeout/delay
+      max_attempts = timeout / delay
 
       until delayed_job_done?
         if attempt > max_attempts
@@ -127,12 +131,12 @@ module Bosh::Dev::Sandbox
         db_ca_path = certificate_paths.fetch('ca')
 
         case connection_config['adapter']
-          when 'mysql2'
-            connection_config['ssl_mode'] = 'verify_identity'
-            connection_config['sslca'] = db_ca_path
-          when 'postgres'
-            connection_config['sslmode'] = 'verify-full'
-            connection_config['sslrootcert'] = db_ca_path
+        when 'mysql2'
+          connection_config['ssl_mode'] = 'verify_identity'
+          connection_config['sslca'] = db_ca_path
+        when 'postgres'
+          connection_config['sslmode'] = 'verify-full'
+          connection_config['sslrootcert'] = db_ca_path
         end
       end
 
@@ -154,7 +158,7 @@ module Bosh::Dev::Sandbox
       end
       started = true
       @worker_processes.each do |worker|
-        started = started && worker.stdout_contents.include?('Starting job worker')
+        started &&= worker.stdout_contents.include?('Starting job worker')
       end
       started
     end
@@ -164,7 +168,7 @@ module Bosh::Dev::Sandbox
       attempt = 0
       delay = 0.5
       timeout = 60 * 5
-      max_attempts = timeout/delay
+      max_attempts = timeout / delay
 
       until delayed_job_ready?
         if attempt > max_attempts
@@ -176,32 +180,25 @@ module Bosh::Dev::Sandbox
         sleep delay
       end
 
-      if ENV['TMUX_DEBUG']
-        return
-      end
+      return if ENV['TMUX_DEBUG']
 
       start_monitor_workers
     end
 
     def stop_workers
-      if ENV['TMUX_DEBUG']
-        @worker_processes.length.times.map do |index|
-          system("tmux kill-window -t :bosh-director-worker-#{index}")
-        end
-        return
-      end
       # wait for workers in parallel for fastness
       stop_monitor_workers
-      @worker_processes.map { |worker_process| Thread.new {
-        child_processes = worker_process.get_child_pids
-        worker_process.stop
-        child_processes.each do |pid|
-          # if we kill worker children before the parent, the parent sees the
-          # failed child process and marks the task as a failure which is not
-          # what we are wanting to simulate with this sort of stop
-          worker_process.kill_pid(pid, 'KILL')
-        end
-      } }.each(&:join)
+      @worker_processes.map do |worker_process|
+        Thread.new do
+          child_processes = worker_process.get_child_pids
+          worker_process.stop
+          child_processes.each do |pid|
+            # if we kill worker children before the parent, the parent sees the
+            # failed child process and marks the task as a failure which is not
+            # what we are wanting to simulate with this sort of stop
+            worker_process.kill_pid(pid, 'KILL')
+          end
+        end end.each(&:join)
     end
 
     def start_monitor_workers
@@ -241,7 +238,7 @@ module Bosh::Dev::Sandbox
     end
 
     def delayed_job_done?
-      @database.current_locked_jobs.count == 0
+      @database.current_locked_jobs.count.zero?
     end
 
     DEBUG_HEADER = '*' * 20

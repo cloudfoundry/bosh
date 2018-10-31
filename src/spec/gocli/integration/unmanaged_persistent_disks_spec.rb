@@ -7,7 +7,17 @@ def upload_multidisk_release
 end
 
 describe 'multiple persistent disks', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
+
+  def get_agent_ignored_messages(output)
+    task_id = output.match(/^Task (\d+)$/)[1]
+    task_debug = File.read("#{current_sandbox.sandbox_root}/boshdir/tasks/#{task_id}/debug")
+    ignore_messages = []
+    task_debug.scan(/DirectorJobRunner: Ignoring (.*)$/).each do |match|
+      ignore_messages << match[0]
+    end
+    ignore_messages
+  end
 
   let(:cloud_config_hash) do
     hash = Bosh::Spec::NewDeployments.simple_cloud_config
@@ -96,7 +106,7 @@ describe 'multiple persistent disks', type: :integration do
     upload_stemcell
 
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
-    deploy_simple_manifest(manifest_hash: manifest_hash)
+    @deploy_output = deploy_simple_manifest(manifest_hash: manifest_hash)
   end
 
   it 'should attach multiple persistent disks to the VM, add a disk, and delete a disk' do
@@ -239,5 +249,80 @@ describe 'multiple persistent disks', type: :integration do
     expect(disk_names).to include(
       'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name', 'additional-persistent-disk-name'
     )
+  end
+
+  it 'director should send add_persistent_disk action to agent' do
+    agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid)
+
+    disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
+    expect(disk_names).to include(
+      'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name'
+    )
+
+    disk_hints = JSON.parse(File.read("#{agent_dir}/bosh/persistent_disk_hints.json"))
+    expect(disk_hints.count).to eq(2)
+    disk_hints_cids = disk_hints.keys
+
+    attached_disks = current_sandbox.cpi.attached_disk_infos(director.instances.first.vm_cid)
+    attached_disks_cids = attached_disks.collect { |d| d['disk_cid'] }
+    expect(attached_disks_cids).to match_array(disk_hints_cids)
+  end
+
+  context 'when CPI is v1' do
+    with_reset_sandbox_before_each(dummy_cpi_api_version: 1)
+
+    before do
+      upload_multidisk_release
+      upload_stemcell
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      @deploy_output = deploy_simple_manifest(manifest_hash: manifest_hash)
+    end
+
+    it 'director should not send add_persistent_disk action to agent' do
+      agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid)
+
+      disk_names = JSON.parse(File.read("#{agent_dir}/bosh/disk_associations.json"))
+      expect(disk_names).to include(
+        'high-iops-persistent-disk-name', 'low-iops-persistent-disk-name'
+      )
+
+      v2_only_disk_settings_file = "#{agent_dir}/bosh/persistent_disk_hints.json"
+      expect(File.exist?(v2_only_disk_settings_file)).to be_falsey
+    end
+  end
+
+  context 'when add_persistent_disk action is not supported in agent (legacy agent)' do
+    let(:cloud_properties) do
+      { 'legacy_agent_path' => get_legacy_agent_path('before-registry-removal-20181001') }
+    end
+
+    let(:cloud_config_hash) do
+      hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      hash['disk_types'] = [
+        {
+          'name' => 'low-performance-disk-type',
+          'disk_size' => low_perf_disk_size,
+          'cloud_properties' => { 'type' => 'gp2' },
+        },
+        {
+          'name' => 'high-performance-disk-type',
+          'disk_size' => high_perf_disk_size,
+          'cloud_properties' => { 'type' => 'io1' },
+        },
+      ]
+
+      hash['vm_types'][0]['cloud_properties'] = cloud_properties
+      hash
+    end
+
+    it 'should get response from agent' do
+      ignored_messages = get_agent_ignored_messages(@deploy_output)
+      expect(ignored_messages).to include(
+        "add_persistent_disk 'unknown message' error from the agent: "\
+        '#<Bosh::Director::RpcRemoteException: unknown message add_persistent_disk>',
+      )
+      expect(ignored_messages.count).to eq(2)
+    end
   end
 end

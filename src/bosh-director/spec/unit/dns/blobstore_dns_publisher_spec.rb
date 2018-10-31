@@ -9,9 +9,26 @@ module Bosh::Director
     let(:dns_encoder) do
       DnsEncoder.new(
         {
-          { instance_group: 'instance1', deployment: 'test-deployment' } => '1',
-          { instance_group: 'instance4', deployment: 'test-deployment' } => '4',
-          { instance_group: 'instance2', deployment: 'test-deployment' } => '2',
+          {
+            group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+            group_name: 'instance1',
+            deployment: 'test-deployment',
+          } => '1',
+          {
+            group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+            group_name: 'instance4',
+            deployment: 'test-deployment',
+          } => '4',
+          {
+            group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+            group_name: 'instance2',
+            deployment: 'test-deployment',
+          } => '2',
+          {
+            group_type: Models::LocalDnsEncodedGroup::Types::LINK,
+            group_name: 'link-1',
+            deployment: 'test-deployment',
+          } => '10',
         },
         {
           'az1' => '1',
@@ -40,44 +57,45 @@ module Bosh::Director
     end
 
     describe 'publish and broadcast' do
-      let!(:original_local_dns_blob) { Models::LocalDnsBlob.make() }
+      let!(:original_local_dns_blob) { Models::LocalDnsBlob.make }
 
       before do
         Bosh::Director::Models::LocalDnsRecord.make(
-            instance_id: instance1.id,
-            ip: '192.0.2.101',
-            deployment: 'test-deployment',
-            az: 'az1',
-            instance_group: 'instance1',
-            network: 'net-name1',
-            agent_id: 'fake-agent-uuid1',
-            domain: 'fake-domain-name'
+          instance_id: instance1.id,
+          ip: '192.0.2.101',
+          deployment: 'test-deployment',
+          az: 'az1',
+          instance_group: 'instance1',
+          network: 'net-name1',
+          agent_id: 'fake-agent-uuid1',
+          domain: 'fake-domain-name',
         )
 
         Bosh::Director::Models::LocalDnsRecord.make(
-            instance_id: instance1.id,
-            ip: '192.0.3.101',
-            deployment: 'test-deployment',
-            az: 'az1',
-            instance_group: 'instance1',
-            network: 'net-name3',
-            agent_id: 'fake-agent-uuid1',
-            domain: 'fake-domain-name'
+          instance_id: instance1.id,
+          ip: '192.0.3.101',
+          deployment: 'test-deployment',
+          az: 'az1',
+          instance_group: 'instance1',
+          network: 'net-name3',
+          agent_id: 'fake-agent-uuid1',
+          domain: 'fake-domain-name',
         )
 
         instance2 = Models::Instance.make(
-            uuid: 'uuid2',
-            index: 2,
+          uuid: 'uuid2',
+          index: 2,
         )
         Bosh::Director::Models::LocalDnsRecord.make(
-            instance_id: instance2.id,
-            ip: '192.0.2.102',
-            deployment: 'test-deployment',
-            az: 'az2',
-            instance_group: 'instance2',
-            network: 'net-name2',
-            agent_id: 'fake-agent-uuid2',
-            domain: 'fake-domain-name'
+          instance_id: instance2.id,
+          ip: '192.0.2.102',
+          deployment: 'test-deployment',
+          az: 'az2',
+          instance_group: 'instance2',
+          network: 'net-name2',
+          agent_id: 'fake-agent-uuid2',
+          domain: 'fake-domain-name',
+          links: [{ name: 'link-1' }],
         )
 
         Bosh::Director::Models::LocalDnsRecord.make(instance_id: nil, ip: 'tombstone')
@@ -102,19 +120,63 @@ module Bosh::Director
         end
 
         it 'puts a blob containing the records into the blobstore' do
-          expected_records = JSON.dump({
-              'records' => [
-                  ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
-                  ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
-                  ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name']],
-              'version' => 4,
-              'record_keys' =>
-                  ['id', 'num_id', 'instance_group', 'group_ids', 'az', 'az_id', 'network', 'network_id',  'deployment', 'ip', 'domain', 'agent_id', 'instance_index'],
-              'record_infos' => [
-                  ['uuid1', '1', 'instance1', ['1'], 'az1', '1', 'net-name1', '1', 'test-deployment', '192.0.2.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
-                  ['uuid1', '1', 'instance1', ['1'], 'az1', '1', 'net-name3', '3', 'test-deployment', '192.0.3.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
-                  ['uuid2', '2', 'instance2', ['2'], 'az2', '2', 'net-name2', '2', 'test-deployment', '192.0.2.102', 'fake-domain-name', 'fake-agent-uuid2', 2]],
-          })
+          expected_records = JSON.dump(
+            'records' => [
+              ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+              ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+              ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
+            ],
+            'version' => 4,
+            'record_keys' =>
+                  %w[id num_id instance_group group_ids az az_id network network_id deployment ip domain agent_id instance_index],
+            'record_infos' => [
+              [
+                'uuid1',
+                '1',
+                'instance1',
+                ['1'],
+                'az1',
+                '1',
+                'net-name1',
+                '1',
+                'test-deployment',
+                '192.0.2.101',
+                'fake-domain-name',
+                'fake-agent-uuid1',
+                1,
+              ],
+              [
+                'uuid1',
+                '1',
+                'instance1',
+                ['1'],
+                'az1',
+                '1',
+                'net-name3',
+                '3',
+                'test-deployment',
+                '192.0.3.101',
+                'fake-domain-name',
+                'fake-agent-uuid1',
+                1,
+              ],
+              [
+                'uuid2',
+                '2',
+                'instance2',
+                %w[2 10],
+                'az2',
+                '2',
+                'net-name2',
+                '2',
+                'test-deployment',
+                '192.0.2.102',
+                'fake-domain-name',
+                'fake-agent-uuid2',
+                2,
+              ],
+            ],
+          )
           expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
           dns.publish_and_broadcast
         end
@@ -128,7 +190,7 @@ module Bosh::Director
 
         it 'broadcasts the blob to the agents' do
           expect(agent_broadcaster).to receive(:filter_instances).with(nil).and_return([])
-          expect(agent_broadcaster).to receive(:sync_dns).with([], 'blob_id_1', '4d5ac6d74589cdbc82a073abf7009cc5f4540dc3', 4)
+          expect(agent_broadcaster).to receive(:sync_dns).with([], 'blob_id_1', 'a7a7f1e24dec2634c2919e7a7bb0ef211598de81', 4)
           dns.publish_and_broadcast
         end
 
@@ -145,29 +207,86 @@ module Bosh::Director
               az: 'az2',
               instance_group: 'instance4',
               network: 'net-name2',
-              agent_id: 'fake-agent-uuid4'
+              agent_id: 'fake-agent-uuid4',
             )
-
           end
 
           it 'backfills the current root_domain' do
-              expected_records = JSON.dump({
-                'records' => [
-                  ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
-                  ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
-                  ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
-                  ['192.0.2.104', 'uuid3.instance4.net-name2.test-deployment.fake-domain-name']],
-                'version' => 5,
-                'record_keys' =>
-                  ['id', 'num_id', 'instance_group', 'group_ids', 'az', 'az_id', 'network', 'network_id', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'],
-                'record_infos' => [
-                  ['uuid1', '1', 'instance1', ['1'], 'az1', '1', 'net-name1', '1', 'test-deployment', '192.0.2.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
-                  ['uuid1', '1', 'instance1', ['1'], 'az1', '1', 'net-name3', '3', 'test-deployment', '192.0.3.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
-                  ['uuid2', '2', 'instance2', ['2'], 'az2', '2', 'net-name2', '2', 'test-deployment', '192.0.2.102', 'fake-domain-name', 'fake-agent-uuid2', 2],
-                  ['uuid3', '3', 'instance4', ['4'], 'az2', '2', 'net-name2', '2', 'test-deployment', '192.0.2.104', 'fake-domain-name', 'fake-agent-uuid4', 3]]
-              })
-              expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
-              dns.publish_and_broadcast
+            expected_records = JSON.dump(
+              'records' => [
+                ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
+                ['192.0.2.104', 'uuid3.instance4.net-name2.test-deployment.fake-domain-name'],
+              ],
+              'version' => 5,
+              'record_keys' =>
+                %w[id num_id instance_group group_ids az az_id network network_id deployment ip domain agent_id instance_index],
+              'record_infos' => [
+                [
+                  'uuid1',
+                  '1',
+                  'instance1',
+                  ['1'],
+                  'az1',
+                  '1',
+                  'net-name1',
+                  '1',
+                  'test-deployment',
+                  '192.0.2.101',
+                  'fake-domain-name',
+                  'fake-agent-uuid1',
+                  1,
+                ],
+                [
+                  'uuid1',
+                  '1',
+                  'instance1',
+                  ['1'],
+                  'az1',
+                  '1',
+                  'net-name3',
+                  '3',
+                  'test-deployment',
+                  '192.0.3.101',
+                  'fake-domain-name',
+                  'fake-agent-uuid1',
+                  1,
+                ],
+                [
+                  'uuid2',
+                  '2',
+                  'instance2',
+                  %w[2 10],
+                  'az2',
+                  '2',
+                  'net-name2',
+                  '2',
+                  'test-deployment',
+                  '192.0.2.102',
+                  'fake-domain-name',
+                  'fake-agent-uuid2',
+                  2,
+                ],
+                [
+                  'uuid3',
+                  '3',
+                  'instance4',
+                  ['4'],
+                  'az2',
+                  '2',
+                  'net-name2',
+                  '2',
+                  'test-deployment',
+                  '192.0.2.104',
+                  'fake-domain-name',
+                  'fake-agent-uuid4',
+                  3,
+                ],
+              ],
+            )
+            expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+            dns.publish_and_broadcast
           end
         end
 
@@ -175,9 +294,9 @@ module Bosh::Director
           it 'fails uploading records' do
             expect(blobstore).to receive(:create).and_raise(Bosh::Blobstore::BlobstoreError)
 
-            expect {
+            expect do
               dns.publish_and_broadcast
-            }.to raise_error(Bosh::Blobstore::BlobstoreError)
+            end.to raise_error(Bosh::Blobstore::BlobstoreError)
           end
         end
 
@@ -194,22 +313,80 @@ module Bosh::Director
           end
 
           it 'should include index records too' do
-            expected_records = JSON.dump({
-                 'records' => [
-                     ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
-                     ['192.0.2.101', '1.instance1.net-name1.test-deployment.fake-domain-name'],
-                     ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
-                     ['192.0.3.101', '1.instance1.net-name3.test-deployment.fake-domain-name'],
-                     ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
-                     ['192.0.2.102', '2.instance2.net-name2.test-deployment.fake-domain-name']],
-                 'version' => 4,
-                 'record_keys' =>
-                     ['id', 'num_id', 'instance_group', 'group_ids', 'az', 'az_id', 'network', 'network_id', 'deployment', 'ip', 'domain', 'agent_id', 'instance_index'],
-                 'record_infos' => [
-                     ['uuid1', '1', 'instance1', ['1'], 'az1', '1', 'net-name1', '1', 'test-deployment', '192.0.2.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
-                     ['uuid1', '1', 'instance1', ['1'], 'az1', '1', 'net-name3', '3', 'test-deployment', '192.0.3.101', 'fake-domain-name', 'fake-agent-uuid1', 1],
-                     ['uuid2', '2', 'instance2', ['2'], 'az2', '2', 'net-name2', '2', 'test-deployment', '192.0.2.102', 'fake-domain-name', 'fake-agent-uuid2', 2]]
-             })
+            expected_records = JSON.dump(
+              'records' => [
+                ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
+                ['192.0.2.101', '1.instance1.net-name1.test-deployment.fake-domain-name'],
+                ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
+                ['192.0.3.101', '1.instance1.net-name3.test-deployment.fake-domain-name'],
+                ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
+                ['192.0.2.102', '2.instance2.net-name2.test-deployment.fake-domain-name'],
+              ],
+              'version' => 4,
+              'record_keys' =>
+              %w[
+                id
+                num_id
+                instance_group
+                group_ids
+                az
+                az_id
+                network
+                network_id
+                deployment
+                ip
+                domain
+                agent_id
+                instance_index
+              ],
+              'record_infos' => [
+                [
+                  'uuid1',
+                  '1',
+                  'instance1',
+                  ['1'],
+                  'az1',
+                  '1',
+                  'net-name1',
+                  '1',
+                  'test-deployment',
+                  '192.0.2.101',
+                  'fake-domain-name',
+                  'fake-agent-uuid1',
+                  1,
+                ],
+                [
+                  'uuid1',
+                  '1',
+                  'instance1',
+                  ['1'],
+                  'az1',
+                  '1',
+                  'net-name3',
+                  '3',
+                  'test-deployment',
+                  '192.0.3.101',
+                  'fake-domain-name',
+                  'fake-agent-uuid1',
+                  1,
+                ],
+                [
+                  'uuid2',
+                  '2',
+                  'instance2',
+                  %w[2 10],
+                  'az2',
+                  '2',
+                  'net-name2',
+                  '2',
+                  'test-deployment',
+                  '192.0.2.102',
+                  'fake-domain-name',
+                  'fake-agent-uuid2',
+                  2,
+                ],
+              ],
+            )
 
             expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
             dns.publish_and_broadcast

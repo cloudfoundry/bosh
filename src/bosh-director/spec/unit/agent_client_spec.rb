@@ -133,8 +133,9 @@ module Bosh::Director
           it_acts_as_asynchronous_message :stop
           it_acts_as_asynchronous_message :cancel_task
           it_acts_as_asynchronous_message :list_disk
-          it_acts_as_asynchronous_message :associate_disks
           it_acts_as_asynchronous_message :start
+          it_acts_as_asynchronous_message :add_persistent_disk
+          it_acts_as_asynchronous_message :remove_persistent_disk
         end
 
         describe 'update_settings' do
@@ -261,6 +262,30 @@ module Bosh::Director
 
             expect(client).to_not receive(:warning)
             expect { client.upload_blob('blob_id', 'payload_checksum', 'base64_encoded_payload') }.to raise_error
+          end
+        end
+
+        describe 'add_persistent_disk' do
+          it 'logs a warning if the message is not handled' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'unknown message add_persistent_disk')
+
+            expect(Config.logger).to receive(:warn).with(
+              "Ignoring add_persistent_disk 'unknown message' error from the agent: "\
+              '#<Bosh::Director::RpcRemoteException: unknown message add_persistent_disk>',
+            )
+            expect { client.add_persistent_disk('diskCID', 'hint') }.to_not raise_error
+          end
+        end
+
+        describe 'remove_persistent_disk' do
+          it 'logs a warning if the message is not handled' do
+            allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'unknown message remove_persistent_disk')
+
+            expect(Config.logger).to receive(:warn).with(
+              "Ignoring remove_persistent_disk 'unknown message' error from the agent: "\
+              '#<Bosh::Director::RpcRemoteException: unknown message remove_persistent_disk>',
+            )
+            expect { client.remove_persistent_disk('diskCID') }.to_not raise_error
           end
         end
 

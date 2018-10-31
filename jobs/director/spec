@@ -69,9 +69,6 @@ properties:
   director.backend_port:
     description: Port that the director listens on
     default: 25556
-  director.nginx.workers:
-    description: Number of nginx workers for director
-    default: 2
   director.workers:
     description: Number of director workers
     default: 3
@@ -81,6 +78,9 @@ properties:
   director.puma_workers:
     description: Number of puma workers
     default: 3
+  director.nginx.workers:
+    description: Number of nginx workers for director
+    default: 2
   director.nginx.ssl_prefer_server_ciphers:
     description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
     default: true
@@ -90,6 +90,9 @@ properties:
   director.nginx.ssl_ciphers:
     description: "List of SSL ciphers to allow (format: https://www.openssl.org/docs/manmaster/man1/ciphers.html - CIPHER LIST FORMAT section)"
     default: "DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
+  director.nginx.enable_metrics_endpoint:
+    description: Expose basic nginx metrics on localhost:<director.port>/stats endpoint. Uses the ngx_http_stub_status_module (see http://nginx.org/en/docs/http/ngx_http_stub_status_module.html).
+    default: false
   director.timeout:
     description: Timeout for connection from bosh CLI to nginx
     default: 7200
@@ -148,14 +151,22 @@ properties:
     description: Log level
     default: debug
   director.log_access_events_to_syslog:
-    description: Access to api is logged to the syslog
+    description: Removed. Please use director.log_access_events instead.
+  director.log_access_events:
+    description: Access to api is logged in CEF format
     default: false
   director.flush_arp:
     description: Clear up arp entries when machines are recreated
     default: false
+  director.networks.enable_cpi_management:
+    description: Enables bosh managed networks
+    default: false
   director.enable_virtual_delete_vms:
     description: When true, bosh will not delete vm from cloud when instance update, just destroy vm record in db
     default: false
+  director.cpi_api_test_max_version:
+    description: CPI Max Version for director to communicate to CPI with
+    default: 2
   director.local_dns.enabled:
     description: Enables local DNS, i.e., sending sync_dns messages with all names/IPs to all agents managed by this director
     default: false
@@ -168,10 +179,18 @@ properties:
 
   #Orphaned disk and orphaned snapshot automated cleanup
   director.disks.max_orphaned_age_in_days:
-    description: Days to keep orphaned disks and orhaned snapshots before cleanup
+    description: Days to keep orphaned disks and orphaned snapshots before cleanup
     default: 5
   director.disks.cleanup_schedule:
     description: RufusScheduler cron formatted schedule for cleanup of orphaned disks and orphaned snapshots
+    default: '0 0,30 * * * * UTC' #every 30min
+
+  #Orphaned Networks automated cleanup
+  director.networks.max_orphaned_age_in_days:
+    description: Days to keep orphaned networks before cleanup
+    default: 1
+  director.networks.cleanup_schedule:
+    description: RufusScheduler cron formatted schedule for cleanup of orphaned networks
     default: '0 0,30 * * * * UTC' #every 30min
 
   #Orphaned VMs automated cleanup
@@ -306,7 +325,7 @@ properties:
 
   # Events
   director.events.record_events:
-    description: Enable recording of events to the database and syslog
+    description: Enable recording of events to the database and audit logs
     default: false
   director.events.max_events:
     description: Max number of events to keep

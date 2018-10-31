@@ -1,10 +1,12 @@
 module Bosh::Director
   class CloudFactory
-    MAX_SUPPORTED_CPI_VERSION = 1
-
     class << self
       def create
         new(parse_cpi_configs)
+      end
+
+      def max_supported_cpi_version
+        Config.cpi_api_test_max_version || 2 # TODO this needs to be in lockstep with director property default value
       end
 
       protected
@@ -52,6 +54,7 @@ module Bosh::Director
         cloud = Bosh::Clouds::ExternalCpi.new(
           cpi_config.exec_path,
           @director_uuid,
+          @logger,
           properties_from_cpi_config: cpi_config.properties,
           stemcell_api_version: stemcell_api_version
         )
@@ -63,9 +66,9 @@ module Bosh::Director
       rescue
         cpi_api_version = 1
       end
-      supported_cpi_version = [cpi_api_version, MAX_SUPPORTED_CPI_VERSION].min
-      cloud.request_cpi_api_version = supported_cpi_version
-      cloud
+      supported_cpi_version = [cpi_api_version, CloudFactory.max_supported_cpi_version].min
+      @logger.debug("Using cpi_version #{supported_cpi_version} for CPI #{cpi_name}")
+      Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, supported_cpi_version)
     end
 
     private
@@ -74,6 +77,7 @@ module Bosh::Director
       Bosh::Clouds::ExternalCpi.new(
         Config.cloud_options['provider']['path'],
         @director_uuid,
+        @logger,
         stemcell_api_version: stemcell_api_version
       )
     end

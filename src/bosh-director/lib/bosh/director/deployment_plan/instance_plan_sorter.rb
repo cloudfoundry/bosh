@@ -10,17 +10,21 @@ module Bosh::Director::DeploymentPlan
       @logger.debug('Sorting instance plan to update them always in the same order')
 
       @sorted_instance_plans = []
+      remaining_instance_plans = instance_plans
+
       bootstrap_instance_plan = instance_plans.find { |instance_plan| instance_plan.instance.bootstrap? }
-      @sorted_instance_plans << bootstrap_instance_plan
+      unless bootstrap_instance_plan.nil?
+        @sorted_instance_plans << bootstrap_instance_plan
 
-      bootstrap_az = bootstrap_instance_plan.instance.availability_zone_name
-      remaining_instance_plans = instance_plans - [bootstrap_instance_plan]
+        bootstrap_az = bootstrap_instance_plan.instance.availability_zone_name
+        remaining_instance_plans -= [bootstrap_instance_plan]
 
-      sorted_instance_plans_for_bootstrap_az = sorted_instance_plans_in_special_az(bootstrap_az, remaining_instance_plans)
-      remaining_instance_plans = remaining_instance_plans - sorted_instance_plans_for_bootstrap_az
+        sorted_instance_plans_for_bootstrap_az = sorted_instance_plans_in_special_az(bootstrap_az, remaining_instance_plans)
+        remaining_instance_plans -= sorted_instance_plans_for_bootstrap_az
+      end
 
       sorted_instance_plans_for_no_az = sorted_instance_plans_in_special_az(nil, remaining_instance_plans)
-      remaining_instance_plans = remaining_instance_plans - sorted_instance_plans_for_no_az
+      remaining_instance_plans -= sorted_instance_plans_for_no_az
 
       instance_plans_sorted_by_az = remaining_instance_plans.sort do |plan1, plan2|
         plan1.instance.availability_zone_name <=> plan2.instance.availability_zone_name
@@ -42,6 +46,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     private
+
     def sort_in_az(instance_plans)
       instance_plans.sort { |plan1, plan2|
         "#{plan1.instance.instance_group_name}/#{plan1.instance.uuid}" <=> "#{plan2.instance.instance_group_name}/#{plan2.instance.uuid}"

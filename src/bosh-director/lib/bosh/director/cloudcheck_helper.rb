@@ -103,7 +103,7 @@ module Bosh::Director
 
         @logger.debug("Updating DNS record for instance: #{instance_model.inspect}; to: #{dns_names_to_ip.inspect}")
         powerdns_manager.update_dns_record_for_instance(instance_model, dns_names_to_ip)
-        local_dns_manager.update_dns_record_for_instance(instance_model)
+        local_dns_manager.update_dns_record_for_instance(instance_plan_to_create)
 
         powerdns_manager.flush_dns_cache
 
@@ -147,6 +147,7 @@ module Bosh::Director
         nil,
       )
 
+      variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
       instance_from_model = DeploymentPlan::Instance.new(
         instance_model.job,
         instance_model.index,
@@ -159,6 +160,7 @@ module Bosh::Director
         instance_model.spec,
         availability_zone,
         @logger,
+        variables_interpolator,
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
@@ -168,6 +170,7 @@ module Bosh::Director
         desired_instance: DeploymentPlan::DesiredInstance.new,
         recreate_deployment: true,
         tags: instance_from_model.deployment_model.tags,
+        variables_interpolator: variables_interpolator
       )
     end
 

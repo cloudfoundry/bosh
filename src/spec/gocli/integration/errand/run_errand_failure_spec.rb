@@ -97,6 +97,20 @@ describe 'run-errand failure', type: :integration, with_tmp_dir: true do
     end
   end
 
+  context 'when errand is forcefully stopped' do
+    with_reset_sandbox_before_each
+
+    it 'should be re-runnable' do
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      bosh_runner.run('run-errand errand1 --keep-alive', deployment_name: deployment_name)
+
+      bosh_runner.run('stop fake-errand-name --force --hard', deployment_name: deployment_name)
+      bosh_runner.run('start fake-errand-name', deployment_name: deployment_name)
+
+      bosh_runner.run('run-errand errand1 --keep-alive', deployment_name: deployment_name)
+    end
+  end
+
   context 'when errand cannot be run because there is no bin/run found in the job template' do
     with_reset_sandbox_before_each
 

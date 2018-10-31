@@ -1,6 +1,8 @@
 package bbr_test
 
 import (
+	"time"
+
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,10 +31,13 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	bratsutils.Bootstrap()
 	bratsutils.CreateAndUploadBOSHRelease()
+
+	session := bratsutils.OuterBosh("-n", "upload-release", bbrReleasePath)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
 	bratsutils.StartInnerBosh(
 		fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("bbr.yml")),
 		fmt.Sprintf("-o %s", bratsutils.AssetPath("latest-bbr-release.yml")),
-		fmt.Sprintf("-v bbr_release_path=%s", bbrReleasePath),
 	)
 
 	return nil

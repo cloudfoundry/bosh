@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 
 describe 'sequenced deploys scenarios when using config server', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', enable_nats_delivered_templates: true)
 
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
@@ -19,7 +19,14 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
+  let(:cloud_config) do
+    Bosh::Spec::NewDeployments.simple_cloud_config.tap do |config|
+      config['vm_types'] = [
+        { 'name' => 'a' },
+        { 'name' => 'b', 'cloud_properties' => { 'foo' => 'bar' } },
+      ]
+    end
+  end
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
@@ -122,6 +129,23 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
         instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
         template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
         expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+      end
+
+      it "DOES update jobs on 'stop' then 'deploy' then 'start'" do
+        bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+
+        manifest_hash['instance_groups'].first['vm_type'] = 'b'
+        deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
+
+        output = parse_blocks(bosh_runner.run('start', deployment_name: 'simple', json: true, include_credentials: false, env: client_env))
+        expect(scrub_random_ids(output)).to include('Updating instance our_instance_group: our_instance_group/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0) (canary)')
+
+        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
+        template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
+        expect(template_hash['properties_list']['gargamel_color']).to eq('dogs are happy')
       end
     end
   end

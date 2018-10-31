@@ -13,6 +13,8 @@ module Bosh::Director
           instance_active_vm = @disk.instance.active_vm
           return if instance_active_vm.nil?
 
+          agent_client(@disk.instance).remove_persistent_disk(@disk.disk_cid)
+
           cloud_factory = CloudFactory.create
           cloud = cloud_factory.get(@disk.cpi, instance_active_vm.stemcell_api_version)
           @logger.info("Detaching disk #{@disk.disk_cid}")
@@ -23,6 +25,12 @@ module Bosh::Director
                   "'#{@disk.instance}' VM should have persistent disk " \
                   "'#{@disk.disk_cid}' attached but it doesn't (according to CPI)"
           end
+        end
+
+        private
+
+        def agent_client(instance_model)
+          @agent_client ||= AgentClient.with_agent_id(instance_model.agent_id)
         end
       end
     end

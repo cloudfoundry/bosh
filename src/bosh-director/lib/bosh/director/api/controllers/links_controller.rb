@@ -3,12 +3,12 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class LinksController < BaseController
-      register DeploymentsSecurity
+      register Bosh::Director::Api::Extensions::DeploymentsSecurity
 
       def initialize(config)
         super(config)
         @deployment_manager = Api::DeploymentManager.new
-        @link_manager = Api::LinkManager.new
+        @links_api_manager = Api::LinksApiManager.new
       end
 
       get '/', authorization: :read do
@@ -35,7 +35,7 @@ module Bosh::Director
       post '/', authorization: :create_link, consumes: :json do
         payload = JSON.parse(request.body.read)
         begin
-          link = @link_manager.create_link(current_user, payload)
+          link = @links_api_manager.create_link(payload)
           link_hash = generate_link_hash(link)
 
           body(json_encode(link_hash))
@@ -46,7 +46,7 @@ module Bosh::Director
 
       delete '/:linkid', authorization: :delete_link do
         begin
-          @link_manager.delete_link(current_user, params[:linkid])
+          @links_api_manager.delete_link(params[:linkid])
         rescue RuntimeError => e
           raise LinkDeleteError, e
         end

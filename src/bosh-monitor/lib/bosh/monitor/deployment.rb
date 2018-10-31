@@ -66,7 +66,7 @@ module Bosh::Monitor
       agent_id = instance.agent_id
 
       if agent_id.nil?
-        @logger.warn("No agent id for Instance: #{instance.inspect}")
+        @logger.warn("No agent id for instance #{instance.job}/#{instance.id} in deployment #{name}")
         #count agents for instances with deleted vm, which expect to have vm
         if instance.expects_vm? && !instance.has_vm?
           agent = Agent.new("agent_with_no_vm", deployment: name)

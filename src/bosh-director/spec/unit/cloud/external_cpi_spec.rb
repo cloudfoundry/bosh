@@ -4,19 +4,19 @@ require 'fakefs/spec_helpers'
 describe Bosh::Clouds::ExternalCpi do
   include FakeFS::SpecHelpers
 
-  subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
+  subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid', logger) }
 
-  def self.it_calls_cpi_method(method, *arguments)
+  def self.it_calls_cpi_method(method, *arguments, api_version: 1)
     define_method(:call_cpi_method) { external_cpi.public_send(method, *arguments) }
 
     before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
 
     let(:method) { method }
     let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
-
-    before { stub_const('Bosh::Clouds::Config', config) }
-    let(:config) { double('Bosh::Clouds::Config', logger: double(:logger, debug: nil), cpi_task_log: cpi_log_path) }
     let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+    let(:logger) { double(:logger, debug: nil, info: nil) }
+    let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path) }
+    before { stub_const('Bosh::Director::Config', config) }
 
     before { FileUtils.mkdir_p('/var/vcap/task/5') }
 
@@ -25,9 +25,8 @@ describe Bosh::Clouds::ExternalCpi do
     let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
     context 'api version specified' do
-
       before do
-        subject.request_cpi_api_version = 1
+        subject.request_cpi_api_version = api_version
       end
 
       it 'should call cpi binary with correct arguments' do
@@ -36,7 +35,7 @@ describe Bosh::Clouds::ExternalCpi do
         expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
         expected_cmd = '/path/to/fake-cpi/bin/cpi'
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":) +
-                         %({"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":1})
+                         %({"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{api_version}})
 
         expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
         call_cpi_method
@@ -68,13 +67,7 @@ describe Bosh::Clouds::ExternalCpi do
           properties_from_cpi_config: cpi_config_properties
         }
       end
-      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
-      let(:logger) { double }
-      before do
-        allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
-        allow(logger).to receive(:info)
-        allow(logger).to receive(:debug)
-      end
+      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, logger, options) }
 
       it 'passes the properties in context to the cpi' do
         stub_const('ENV', 'TMPDIR' => '/some/tmp')
@@ -147,14 +140,7 @@ describe Bosh::Clouds::ExternalCpi do
         }
       end
 
-      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, options ) }
-      let(:logger) { double }
-
-      before do
-        allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
-        allow(logger).to receive(:info)
-        allow(logger).to receive(:debug)
-      end
+      let(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid, logger, options) }
 
       it 'puts api_version in context passed to cpi and logs it in CPI logs' do
         stub_const('ENV', 'TMPDIR' => '/some/tmp')

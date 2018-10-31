@@ -1,7 +1,6 @@
 package brats_test
 
 import (
-	"os"
 	"strings"
 
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
@@ -47,11 +46,9 @@ var _ = AfterSuite(func() {
 })
 
 var _ = AfterEach(func() {
-	_, err := os.Stat(bratsutils.BoshBinaryPath())
-	if os.IsNotExist(err) {
+	if !bratsutils.InnerBoshExists() {
 		return
 	}
-	Expect(err).NotTo(HaveOccurred())
 
 	By("cleaning up deployments")
 	session := bratsutils.Bosh("deployments", "--column=name")

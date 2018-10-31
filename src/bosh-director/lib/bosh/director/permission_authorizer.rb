@@ -42,7 +42,7 @@ module Bosh::Director
         when :admin
           # already allowed with initial expected_scope
           expected_scope
-        when :read
+        when :read, :read_link
           expected_scope << subject_teams_scopes(subject, 'read')
           expected_scope << director_permissions[:read]
         else
@@ -78,7 +78,7 @@ module Bosh::Director
         expected_scope
       when :create_deployment, :create_link, :delete_link
         expected_scope << bosh_team_admin_scopes(user_scopes)
-      when :read_events, :list_configs
+      when :read_events, :list_configs, :read_link
         expected_scope << director_permissions[:read]
         expected_scope << bosh_team_scopes(user_scopes)
       when :read_releases, :list_deployments, :read_stemcells, :list_tasks

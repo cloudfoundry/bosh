@@ -38,7 +38,8 @@ module Support
         'reader' => ['bosh.read'],
         'director-reader' => ["bosh.#{@uuid_provider.uuid}.read"],
         'dev-team-member' => ['bosh.teams.dev.admin'],
-        'dev-team-read-member' => ['bosh.teams.dev.read']
+        'dev-team-read-member' => ['bosh.teams.dev.read'],
+        'outsider' => ['uaa.admin'],
       }
     end
 

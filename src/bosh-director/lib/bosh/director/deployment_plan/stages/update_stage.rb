@@ -22,7 +22,6 @@ module Bosh::Director
             @logger.info('Committing updates')
             PersistDeploymentStage.new(@deployment_plan).perform
             @logger.info('Finished updating deployment')
-          ensure
             CleanupStemcellReferencesStage.new(@deployment_plan).perform
           end
         end

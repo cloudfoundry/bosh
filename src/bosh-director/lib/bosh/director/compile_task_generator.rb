@@ -31,9 +31,8 @@ module Bosh::Director
       task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
       compiled_package = task.find_compiled_package(@logger, @event_log_stage)
-      if compiled_package
-        task.use_compiled_package(compiled_package)
-      end
+
+      task.use_compiled_package(compiled_package) if compiled_package
 
       @logger.info("Processing package '#{package.desc}' dependencies")
       dependencies = package_dependency_manager.dependencies(package)
@@ -46,6 +45,5 @@ module Bosh::Director
       compile_tasks[task_key] = task
       task
     end
-
   end
 end

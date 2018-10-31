@@ -2,7 +2,7 @@
 
 set -e
 
-export version=$(cat candidate-version/version)
+export version=$(cat version/version)
 export ROOT_PATH=$PWD
 
 mv bosh-cli/alpha-bosh-cli-*-linux-amd64 bosh-cli/bosh-cli

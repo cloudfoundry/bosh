@@ -542,7 +542,7 @@ describe Bosh::Director::Config do
       expect(event.object_name).to eq('custom-name')
       expect(event.context).to eq({'custom' => 'context'})
     end
-  end  
+  end
 
   context 'multiple digest' do
     context 'when verify multidigest is provided' do
@@ -969,6 +969,19 @@ describe Bosh::Director::Config do
           end
 
         end
+      end
+    end
+  end
+
+  # TODO this can be deleted once the CPI api version no longer needs to be specified in the spec
+  describe 'cpi_api_test_max_version' do
+    context 'when cpi_api_test_max_version is set' do
+      before do
+        described_class.configure(test_config)
+      end
+
+      it 'returns the value' do
+        expect(described_class.cpi_api_test_max_version).to eq(2)
       end
     end
   end

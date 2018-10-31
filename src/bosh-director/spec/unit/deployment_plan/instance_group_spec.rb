@@ -19,6 +19,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new('name' => 'dea') }
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
+  let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
   let(:network) do
     instance_double(
@@ -491,20 +492,22 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
       instance_plan0 = BD::DeploymentPlan::InstancePlan.new(
         desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
         existing_instance: nil,
         instance: instance0,
+        variables_interpolator: variables_interpolator,
       )
       instance_plan1 = BD::DeploymentPlan::InstancePlan.new(
         desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
         existing_instance: nil,
         instance: instance1,
+        variables_interpolator: variables_interpolator,
       )
-      obsolete_plan = BD::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1)
+      obsolete_plan = BD::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1, variables_interpolator: variables_interpolator)
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
     end
@@ -515,9 +518,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
       instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)
@@ -526,11 +529,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         desired_instance: BD::DeploymentPlan::DesiredInstance.new,
         existing_instance: nil,
         instance: instance0,
+        variables_interpolator: variables_interpolator,
       )
       instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new(
         desired_instance: BD::DeploymentPlan::DesiredInstance.new,
         existing_instance: nil,
         instance: instance1,
+        variables_interpolator: variables_interpolator,
       )
       instance_plan0.network_plans = [
         BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_reservation),
@@ -545,6 +550,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         desired_instance: nil,
         existing_instance: nil,
         instance: instance1,
+        variables_interpolator: variables_interpolator,
       )
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
@@ -660,6 +666,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
+        variables_interpolator,
       )
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
@@ -671,6 +678,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
+        variables_interpolator,
       )
       instance2.bind_new_instance_model
       instance3 = BD::DeploymentPlan::Instance.create_from_instance_group(
@@ -681,6 +689,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
+        variables_interpolator,
       )
       instance3.bind_new_instance_model
 
@@ -689,16 +698,19 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         instance: instance1,
         existing_instance: nil,
         desired_instance: desired_instance,
+        variables_interpolator: variables_interpolator,
       )
       instance_plan2 = BD::DeploymentPlan::InstancePlan.new(
         instance: instance2,
         existing_instance: nil,
         desired_instance: desired_instance,
+        variables_interpolator: variables_interpolator,
       )
       instance_plan3 = BD::DeploymentPlan::InstancePlan.new(
         instance: instance3,
         existing_instance: nil,
         desired_instance: nil,
+        variables_interpolator: variables_interpolator,
       )
 
       unsorted_plans = [instance_plan3, instance_plan1, instance_plan2]
@@ -738,6 +750,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
+        variables_interpolator,
       )
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
@@ -749,6 +762,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
+        variables_interpolator,
       )
       instance2.bind_new_instance_model
 
@@ -759,11 +773,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         instance: instance1,
         existing_instance: nil,
         desired_instance: desired_instance,
+        variables_interpolator: variables_interpolator,
       )
       instance_plan2 = BD::DeploymentPlan::InstancePlan.new(
         instance: instance2,
         existing_instance: nil,
         desired_instance: desired_instance,
+        variables_interpolator: variables_interpolator,
       )
       instance_group.add_instance_plans([instance_plan1, instance_plan2])
 
@@ -971,6 +987,32 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
       it 'should not be considered for hot swap' do
         expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
+      end
+    end
+  end
+
+  describe 'use_compiled_package' do
+    let(:package) { Bosh::Director::Models::Package.make }
+    let(:compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: package) }
+
+    it 'adds the package to the instance groups packages by name' do
+      subject.use_compiled_package(compiled_package)
+      expect(subject.packages[compiled_package.name].model).to equal(compiled_package)
+    end
+
+    context 'when the package is already registered' do
+      let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: package) }
+
+      before do
+        subject.use_compiled_package(compiled_package)
+      end
+
+      it 'replaces the package if the package id is greater than the registered package' do
+        subject.use_compiled_package(new_compiled_package)
+        expect(subject.packages[new_compiled_package.name].model).to equal(new_compiled_package)
+
+        subject.use_compiled_package(compiled_package)
+        expect(subject.packages[new_compiled_package.name].model).to equal(new_compiled_package)
       end
     end
   end

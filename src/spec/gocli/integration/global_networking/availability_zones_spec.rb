@@ -58,10 +58,10 @@ describe 'availability zones', type: :integration do
       vm_cid = instances[0].vm_cid
 
       expect(current_sandbox.cpi.read_cloud_properties(vm_cid)).to eq({
-            'a' => 'vm_value_for_a',
-            'd' => 'az_value_for_d',
-            'e' => 'vm_value_for_e',
-          })
+        'a' => 'vm_value_for_a',
+        'd' => 'az_value_for_d',
+        'e' => 'vm_value_for_e',
+      })
     end
 
     context 'when hm is running', hm: true do

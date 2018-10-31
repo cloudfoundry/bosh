@@ -223,7 +223,7 @@ CERT
   end
 
   context 'when UAA is configured with asymmetric key' do
-    with_reset_sandbox_before_each(user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+    with_reset_sandbox_before_each(user_authentication: 'uaa')
 
     it 'logs in successfully' do
       client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}

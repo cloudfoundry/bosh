@@ -414,10 +414,11 @@ module IntegrationSandboxBeforeHelpers
     end
   end
 
-  def with_reset_sandbox_before_all
+  def with_reset_sandbox_before_all(options = {})
     # `example` is not available in before(:all)
     before(:all) do
       prepare_sandbox
+      reconfigure_sandbox(options) unless options.empty?
       if !sandbox_started?
         start_sandbox
       else

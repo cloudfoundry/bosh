@@ -5,8 +5,8 @@ module Bosh::Director
         EmptyInstanceSpec.new
       end
 
-      def self.create_from_database(spec, instance)
-        new(spec, instance)
+      def self.create_from_database(spec, instance, variables_interpolator)
+        new(spec, instance, variables_interpolator)
       end
 
       def self.create_from_instance_plan(instance_plan)
@@ -37,17 +37,18 @@ module Bosh::Director
           'update' => instance_group.update_spec
         }
 
+
         disk_spec = instance_group.persistent_disk_collection.generate_spec
 
         spec.merge!(disk_spec)
 
-        new(spec, instance)
+        new(spec, instance, instance_plan.variables_interpolator)
       end
 
-      def initialize(full_spec, instance)
+      def initialize(full_spec, instance, variables_interpolator)
         @full_spec = full_spec
         @instance = instance
-        @variables_interpolator = ConfigServer::VariablesInterpolator.new
+        @variables_interpolator = variables_interpolator
       end
 
       def as_template_spec
@@ -125,13 +126,15 @@ module Bosh::Director
         ]
 
         whitelisted_link_spec_keys = [
-          'instances',
-          'properties',
-          'instance_group',
+          'address',
           'default_network',
           'deployment_name',
           'domain',
-          'address',
+          'group_name',
+          'instance_group',
+          'instances',
+          'properties',
+          'use_link_dns_names',
           'use_short_dns_addresses',
         ]
 

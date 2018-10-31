@@ -12,19 +12,20 @@ module Bosh::Clouds
     # Raised when the external CPI bin/cpi is not executable
     class NonExecutable < StandardError; end
 
-    KNOWN_RPC_ERRORS = %w(
-    Bosh::Clouds::CpiError
-    Bosh::Clouds::NotSupported
-    Bosh::Clouds::NotImplemented
+    KNOWN_RPC_ERRORS = %w[
+      Bosh::Clouds::CpiError
+      Bosh::Clouds::NotSupported
+      Bosh::Clouds::NotImplemented
 
-    Bosh::Clouds::CloudError
-    Bosh::Clouds::VMNotFound
+      Bosh::Clouds::CloudError
+      Bosh::Clouds::VMNotFound
+      Bosh::Clouds::NetworkNotFound
 
-    Bosh::Clouds::NoDiskSpace
-    Bosh::Clouds::DiskNotAttached
-    Bosh::Clouds::DiskNotFound
-    Bosh::Clouds::VMCreationFailed
-  ).freeze
+      Bosh::Clouds::NoDiskSpace
+      Bosh::Clouds::DiskNotAttached
+      Bosh::Clouds::DiskNotFound
+      Bosh::Clouds::VMCreationFailed
+    ].freeze
 
     RESPONSE_SCHEMA = Membrane::SchemaParser.parse do
       {
@@ -41,10 +42,10 @@ module Bosh::Clouds
 
     attr_accessor :request_cpi_api_version
 
-    def initialize(cpi_path, director_uuid, options = {})
+    def initialize(cpi_path, director_uuid, logger, options = {})
       @cpi_path = cpi_path
       @director_uuid = director_uuid
-      @logger = ::Bosh::Director::TaggedLogger.new(Config.logger, "external-cpi")
+      @logger = Bosh::Director::TaggedLogger.new(logger, 'external-cpi')
       @properties_from_cpi_config = options.fetch(:properties_from_cpi_config, nil)
       @stemcell_api_version = options.fetch(:stemcell_api_version, nil)
     end
@@ -52,8 +53,10 @@ module Bosh::Clouds
     def current_vm_id(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def create_vm(*arguments) invoke_cpi_method(__method__.to_s, *arguments); end
+    def create_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def create_network(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def delete_network(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def has_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def reboot_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def set_vm_metadata(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
@@ -218,7 +221,7 @@ module Bosh::Clouds
     def save_cpi_log(output)
       # cpi log path is set up at the beginning of every task in Config
       # see JobRunner#setup_task_logging
-      File.open(Config.cpi_task_log, 'a') do |f|
+      File.open(Bosh::Director::Config.cpi_task_log, 'a') do |f|
         f.write(output)
       end
     end

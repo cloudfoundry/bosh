@@ -33,6 +33,17 @@ server {
     }
   }
 
+  <% if p('blobstore.nginx.enable_metrics_endpoint') %>
+  location /stats {
+    # Config for basic metrics module: ngx_http_stub_status_module
+    stub_status;
+    access_log off;
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
+  }
+  <% end %>
+
   location @handler {
     proxy_pass http://unix:/var/vcap/data/blobstore/backend.sock:$request_uri;
   }

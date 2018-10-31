@@ -109,6 +109,10 @@ module Bosh::Director
       allow(cloud).to receive(:info)
       allow(cloud).to receive(:request_cpi_api_version=)
       allow(cloud).to receive(:request_cpi_api_version)
+      #TODO Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper.
+      # Even though wrapper::set_vm_metadata gets called now, the wrapper is real (but it houses a fake cloud). If we didn't need
+      # to allow set_vm_metadata on the fake cloud before the wrapper changes, why do we need to now?
+      allow(cloud).to receive(:set_vm_metadata)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       @all_packages = []
     end

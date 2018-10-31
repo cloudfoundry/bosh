@@ -6,14 +6,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
   subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
   let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(deployment, logger) }
-  let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository, options) }
+  let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository, variables_interpolator, options) }
   let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
   let(:options) do
     {}
   end
   let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
-  let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
+  let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+  let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
   let(:deployment) { instance_double(BD::DeploymentPlan::Planner, model: deployment_model) }
   let(:deployment_model) { BD::Models::Deployment.make }
   let(:variable_set_model) { BD::Models::VariableSet.create(deployment: deployment_model) }
@@ -46,13 +47,13 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   end
 
   def make_instance(idx=0)
-    instance = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, idx, 'started', deployment_model, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, idx, 'started', deployment_model, {}, az, logger, variables_interpolator)
     instance.bind_new_instance_model
     instance
   end
 
   def make_instance_with_existing_model(existing_instance_model)
-    instance = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, existing_instance_model.index, 'started', deployment_model, {}, az, logger)
+    instance = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, existing_instance_model.index, 'started', deployment_model, {}, az, logger, variables_interpolator)
     instance.bind_existing_instance_model(existing_instance_model)
     instance
   end
@@ -579,7 +580,6 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         instance: existing_instance_model,
         active: true,
       )
-
       instance_planner.orphan_unreusable_vms(instance_plans, existing_instance_models)
 
       expect(existing_instance_model.vms).to include(vm)
@@ -598,6 +598,22 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       expect(existing_instance_model.vms).to include(vm)
       expect(existing_instance_model.vms).to include(usable_vm)
+    end
+
+    it 'short circuits when detecting a matching instance plan for each vm' do
+      instance_plan2 = instance_double(Bosh::Director::DeploymentPlan::InstancePlan)
+      unusable_vm = BD::Models::Vm.make(
+        instance: existing_instance_model,
+        active: false,
+        agent_id: 'fake-agent-id',
+      )
+
+      allow(instance_plan).to receive(:vm_matches_plan?).with(unusable_vm).and_return true
+      expect(instance_plan).to receive(:vm_matches_plan?).once
+      expect(instance_plan2).not_to receive(:vm_matches_plan?)
+
+      instance_plans = [instance_plan, instance_plan2]
+      instance_planner.orphan_unreusable_vms(instance_plans, existing_instance_models)
     end
 
     it 'orphans VMs that do not match' do

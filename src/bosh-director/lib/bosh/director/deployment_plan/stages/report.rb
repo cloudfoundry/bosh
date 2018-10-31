@@ -4,6 +4,7 @@ module Bosh::Director
       Report = Struct.new(
         :vm,
         :network_plans,
+        :disk_hint,
       )
     end
   end

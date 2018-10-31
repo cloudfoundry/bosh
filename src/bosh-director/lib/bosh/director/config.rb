@@ -14,8 +14,11 @@ module Bosh::Director
   class Config
     class << self
       attr_accessor(
+        :audit_filename,
+        :audit_log_path,
         :base_dir,
         :cloud_options,
+        :cpi_api_test_max_version,
         :current_job,
         :db,
         :default_ssh_options,
@@ -116,6 +119,8 @@ module Bosh::Director
         @logger.add_appenders(shared_appender)
         @logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
 
+        @audit_log_path = config['audit_log_path']
+
         # Event logger supposed to be overridden per task,
         # the default one does nothing
         @event_log = EventLog::Log.new
@@ -181,6 +186,8 @@ module Bosh::Director
         @local_dns_include_index = config.fetch('local_dns', {}).fetch('include_index', false)
         @local_dns_use_dns_addresses = config.fetch('local_dns', {}).fetch('use_dns_addresses', false)
 
+        @network_lifecycle_enabled = config.fetch('networks', {}).fetch('enable_cpi_management', false)
+
         # UUID in config *must* only be used for tests
         @uuid = config['uuid'] || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
@@ -213,8 +220,6 @@ module Bosh::Director
           end
         end
 
-        Bosh::Clouds::Config.configure(self)
-
         @lock = Monitor.new
 
         if config['verify_multidigest_path'].nil?
@@ -223,6 +228,7 @@ module Bosh::Director
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
+        @cpi_api_test_max_version = config.fetch('cpi_api_test_max_version')
       end
 
       def agent_env
@@ -260,6 +266,10 @@ module Bosh::Director
 
       def local_dns_enabled?
         !!@local_dns_enabled
+      end
+
+      def network_lifecycle_enabled?
+        !!@network_lifecycle_enabled
       end
 
       def local_dns_include_index?
@@ -510,8 +520,8 @@ module Bosh::Director
       hash['backup_destination']
     end
 
-    def log_access_events_to_syslog
-      hash['log_access_events_to_syslog']
+    def log_access_events
+      hash['log_access_events']
     end
 
     def director_pool
