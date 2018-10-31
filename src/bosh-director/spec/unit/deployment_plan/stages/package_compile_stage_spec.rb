@@ -101,6 +101,7 @@ module Bosh::Director
       allow(plan).to receive(:network).with('default').and_return(network)
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
 
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:name).and_return('fake-director-name')

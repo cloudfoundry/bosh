@@ -65,6 +65,9 @@ agent:
       - provider: 'local'
         options:
           'blobstore_path': /path/to/blobstore
+cpi:
+  max_supported_api_version: 2
+  preferred_api_version: 2
 
 nats:
   server_ca_path: '/path/to/server_ca_path'

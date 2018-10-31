@@ -138,6 +138,7 @@ module Bosh::Director
       allow(cloud).to receive(:info).and_return({})
       allow(cloud).to receive(:request_cpi_api_version=).with(1)
       allow(cloud).to receive(:request_cpi_api_version).and_return(1)
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(cloud, anything).and_return(cloud_wrapper)
       allow(network).to receive(:network_settings)

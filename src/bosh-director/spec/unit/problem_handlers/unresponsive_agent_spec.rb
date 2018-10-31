@@ -16,6 +16,7 @@ module Bosh::Director
     before(:each) do
       allow(Config).to receive(:uuid).and_return('woof-uuid')
       allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
 
       @cloud = instance_double(Bosh::Clouds::ExternalCpi)
       allow(@cloud).to receive(:info)
