@@ -39,7 +39,7 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      @worker_processes = Array.new(3).map do |index|
+      @worker_processes = (0..2).map do |index|
         Service.new(
           @runner.run("bundle exec bosh-director-worker -c #{@director_config} -i #{index}"),
           { output: "#{@base_log_path}.worker_#{index}.out", env: { 'QUEUE' => 'normal,urgent' } },
