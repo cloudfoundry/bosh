@@ -229,7 +229,7 @@ module Bosh::Dev::Sandbox
         user_authentication: @user_authentication,
         users_in_manifest: @users_in_manifest,
         verify_multidigest_path: verify_multidigest_path,
-        cpi_api_test_max_version: @dummy_cpi_api_version,
+        preferred_cpi_api_version: @dummy_cpi_api_version,
       }
 
       DirectorConfig.new(attributes, @port_provider)
