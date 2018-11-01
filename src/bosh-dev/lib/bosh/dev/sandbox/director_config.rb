@@ -38,7 +38,6 @@ module Bosh::Dev::Sandbox
                 :user_authentication,
                 :users_in_manifest,
                 :verify_multidigest_path,
-                :cpi_api_test_max_version,
                 :preferred_cpi_api_version
 
     def initialize(attrs, port_provider)

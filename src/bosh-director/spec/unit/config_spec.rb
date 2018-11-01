@@ -974,14 +974,14 @@ describe Bosh::Director::Config do
   end
 
   # TODO this can be deleted once the CPI api version no longer needs to be specified in the spec
-  describe 'cpi_api_test_max_version' do
-    context 'when cpi_api_test_max_version is set' do
+  describe 'preferred_cpi_api_version' do
+    context 'when preferred_cpi_api_version is set' do
       before do
         described_class.configure(test_config)
       end
 
       it 'returns the value' do
-        expect(described_class.cpi_api_test_max_version).to eq(2)
+        expect(described_class.preferred_cpi_api_version).to eq(2)
       end
     end
   end

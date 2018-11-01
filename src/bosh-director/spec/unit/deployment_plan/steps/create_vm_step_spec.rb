@@ -25,7 +25,7 @@ module Bosh
           end
           let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
           let(:cloud_factory) { instance_double(AZCloudFactory) }
-          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
+          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
           let(:cpi_api_version) { 1 }
           before {
             allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
