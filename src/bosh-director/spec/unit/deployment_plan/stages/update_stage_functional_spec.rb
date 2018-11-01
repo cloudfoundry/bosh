@@ -125,6 +125,7 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(1)
       # allow(cloud).to receive(:info)
       # allow(cloud).to receive(:set_vm_metadata)
       allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(anything, anything).and_return(cloud)
