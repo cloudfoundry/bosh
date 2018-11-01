@@ -26,7 +26,6 @@ groups:
       - bbr-ubuntu-xenial
       - upgrade-tests
       - blobstore-performance
-      - deploy-acceptance-env
       - delivery
 
   - name: mysql
@@ -1205,48 +1204,6 @@ jobs:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
 
-  - name: deploy-acceptance-env
-    serial: true
-    plan:
-      - aggregate:
-        - get: bbl-state
-          resource: acceptance-env-state
-        - get: zookeeper-release
-        - get: bosh-deployment
-        - get: stemcell
-          resource: google-kvm-ubuntu-trusty
-        - get: bosh-src
-          passed:
-          - bats-ubuntu-trusty
-          - bats-ubuntu-xenial
-          - bats-centos
-          - brats-ubuntu-trusty
-          - brats-ubuntu-xenial
-          - bbr-ubuntu-trusty
-          - bbr-ubuntu-xenial
-        - get: candidate-release
-          resource: bosh-candidate-release-tarballs
-          trigger: true
-          passed:
-          - bats-ubuntu-trusty
-          - bats-ubuntu-xenial
-          - bats-centos
-          - brats-ubuntu-trusty
-          - brats-ubuntu-xenial
-          - bbr-ubuntu-trusty
-          - bbr-ubuntu-xenial
-      - task: deploy-env
-        file: bosh-src/ci/tasks/setup-env.yml
-        params:
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((acceptance_gcp_service_account_key))
-          BBL_GCP_REGION: us-west2
-          BBL_IAAS: gcp
-        ensure:
-          put: acceptance-env-state
-          params:
-            repository: updated-bbl-state
-            rebase: true
-
   - name: delivery
     plan:
       - aggregate:
@@ -1457,19 +1414,6 @@ resources:
         access_key_id: ((bosh-ci-database-terraform-aws-access-key-id))
         secret_access_key: ((bosh-ci-database-terraform-aws-secret-access-key))
 
-  - name: acceptance-env-state
-    type: git
-    source:
-      branch: master
-      uri: git@github.com:cloudfoundry/bosh-bbl-ci-envs.git
-      private_key: ((bosh-bbl-ci-envs-private-key))
-
-  - name: zookeeper-release
-    type: git
-    source:
-      uri: https://github.com/cppforlife/zookeeper-release
-      branch: master
-
   - name: davcli
     type: s3
     source:
@@ -1540,11 +1484,6 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
-
-  - name: google-kvm-ubuntu-trusty
-    type: bosh-io-stemcell
-    source:
-      name: bosh-google-kvm-ubuntu-trusty-go_agent
 
   - name: aws-xen-hvm-ubuntu-trusty
     type: bosh-io-stemcell
