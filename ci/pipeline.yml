@@ -1358,7 +1358,7 @@ resources:
       bucket: ((candidate_release_bucket))
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
-      versioned_file: "bosh-dev-release.tgz"
+      versioned_file: 268.2.x/bosh-dev-release.tgz
 
   - name: bosh-compiled-candidate-xenial
     type: s3
