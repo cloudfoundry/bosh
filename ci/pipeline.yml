@@ -1347,7 +1347,8 @@ resources:
     type: semver
     source:
       bucket: ((candidate_release_bucket))
-      key: version
+      key: 268.2.x/version
+      initial_version: 268.2.0
       access_key_id: ((candidate_release_access_key_id))
       secret_access_key: ((candidate_release_secret_access_key))
 
