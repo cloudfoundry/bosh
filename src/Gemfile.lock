@@ -91,13 +91,6 @@ PATH
       logging (~> 2.2.2)
       semi_semantic (~> 1.2.0)
 
-PATH
-  remote: bosh_cpi
-  specs:
-    bosh_cpi (2.4.2)
-      httpclient (~> 2.8.3)
-      membrane (~> 1.1.0)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -122,6 +115,9 @@ GEM
     beefcake (1.0.0)
     blue-shell (0.3.0)
       rspec
+    bosh_cpi (2.5.0)
+      httpclient (~> 2.8.3)
+      membrane (~> 1.1.0)
     builder (3.1.4)
     byebug (9.1.0)
     cf-uaa-lib (3.2.5)
@@ -309,7 +305,7 @@ DEPENDENCIES
   bosh-registry!
   bosh-template!
   bosh_common!
-  bosh_cpi!
+  bosh_cpi
   bundler (~> 1.16.0)
   eventmachine (~> 1.2)
   fakefs
