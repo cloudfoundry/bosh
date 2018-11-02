@@ -1408,7 +1408,7 @@ resources:
       bucket: "bosh-compiled-candidate-tarballs"
       access_key_id: ((bosh-compiled-releases-aws-access-key-id))
       secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
-      regexp: "bosh-(\\d+).*xenial.*.tgz"
+      regexp: "bosh-.*dev\\.(\\d+).*xenial.*.tgz"
 
   - name: bosh-compiled-candidate-trusty
     type: s3
@@ -1416,7 +1416,7 @@ resources:
       bucket: "bosh-compiled-candidate-tarballs"
       access_key_id: ((bosh-compiled-releases-aws-access-key-id))
       secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
-      regexp: "bosh-(\\d+).*trusty.*.tgz"
+      regexp: "bosh-.*dev\\.(\\d+).*trusty.*.tgz"
 
   - name: bbr-sdk-release
     type: bosh-io-release
