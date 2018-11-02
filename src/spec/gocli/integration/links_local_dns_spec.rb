@@ -424,7 +424,7 @@ describe 'Links with local_dns enabled', type: :integration do
           manifest['features']['use_link_dns_names'] = true
         end
 
-        it 'uses the instance long DNS address when accessing instance.address of the link' do
+        it 'uses the instance short DNS address when accessing instance.address of the link' do
           deploy_simple_manifest(manifest_hash: manifest)
           instances = director.instances
           mysql_instance = director.find_instance(instances, 'mysql', '0')
@@ -434,7 +434,7 @@ describe 'Links with local_dns enabled', type: :integration do
             elem['address']
           end
           expect(addresses.length).to eq(1)
-          expect(addresses).to eq(["#{mysql_instance.id}.mysql.manual-network.simple.bosh"])
+          expect(addresses[0]).to match(/q-m\dn\ds0\.q-g\d\.bosh/)
         end
       end
 
