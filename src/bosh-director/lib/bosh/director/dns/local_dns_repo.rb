@@ -11,14 +11,14 @@ module Bosh::Director
       @logger.debug("Updating local dns records for '#{instance_model}': obsolete records: #{dump(diff.obsolete)}, new records: #{dump(diff.missing)}, unmodified records: #{dump(diff.unaffected)}")
 
       Config.db.transaction do
-        diff.missing.each do |record_hash|
-          insert_new_record(record_hash)
-        end
-
         diff.obsolete.each do |record_hash|
           delete_obsolete_local_dns_records(record_hash.reject do |k, _|
             k == :links
           end)
+        end
+
+        diff.missing.each do |record_hash|
+          insert_new_record(record_hash)
         end
 
         if diff.missing.empty? && !diff.obsolete.empty?
