@@ -62,6 +62,10 @@ describe 'Links with local_dns enabled', type: :integration do
     manifest
   end
 
+  before do
+    manifest['features'] = {}
+  end
+
   context 'when use_dns_addresses director flag is TRUE' do
     with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true})
 

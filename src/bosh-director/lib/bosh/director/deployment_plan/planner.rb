@@ -293,12 +293,12 @@ module Bosh::Director
         @features.use_dns_addresses.nil? ? Config.local_dns_use_dns_addresses? : @features.use_dns_addresses
       end
 
-      def use_link_dns_names?
-        @features.use_link_dns_names
-      end
-
       def use_short_dns_addresses?
         @features.use_short_dns_addresses.nil? ? false : @features.use_short_dns_addresses
+      end
+
+      def use_link_dns_names?
+        @features.use_link_dns_names
       end
 
       def randomize_az_placement?

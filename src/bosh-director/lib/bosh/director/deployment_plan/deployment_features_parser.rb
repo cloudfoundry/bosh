@@ -11,10 +11,12 @@ module Bosh::Director::DeploymentPlan
       return DeploymentFeatures.new if spec.nil?
 
       validate(spec)
+      use_dns_addresses = spec.fetch('use_dns_addresses', spec['use_link_dns_names'])
+      use_short_dns_addresses = spec.fetch('use_short_dns_addresses', spec['use_link_dns_names'])
 
       DeploymentFeatures.new(
-        spec['use_dns_addresses'],
-        spec['use_short_dns_addresses'],
+        use_dns_addresses,
+        use_short_dns_addresses,
         spec['randomize_az_placement'],
         spec.fetch('converge_variables', false),
         spec['use_link_dns_names'],
@@ -30,6 +32,7 @@ module Bosh::Director::DeploymentPlan
 
       validate_use_dns_addresses(spec)
       validate_bool_or_nil(spec, 'converge_variables')
+      validate_dns_consistency(spec)
     end
 
     def validate_use_dns_addresses(spec)
@@ -37,6 +40,22 @@ module Bosh::Director::DeploymentPlan
       validate_bool_or_nil(spec, 'use_link_dns_names')
       validate_bool_or_nil(spec, 'use_short_dns_addresses')
       validate_bool_or_nil(spec, 'randomize_az_placement')
+    end
+
+    def validate_dns_consistency(spec)
+      return unless spec['use_link_dns_names']
+
+      enforce_unset_or_true!(spec, 'use_short_dns_addresses')
+      enforce_unset_or_true!(spec, 'use_dns_addresses')
+    end
+
+    def enforce_unset_or_true!(spec, key)
+      return unless spec.key?(key) && !spec[key]
+
+      raise(
+        Bosh::Director::IncompatibleFeatures,
+        "cannot enable `use_link_dns_names` when `#{key}` is explicitly disabled",
+      )
     end
 
     def validate_bool_or_nil(spec, key)
