@@ -19,6 +19,8 @@ module Bosh::Director
           'version' => "#{Config.version} (#{Config.revision})",
           'user' => current_user,
           'cpi' => Config.cloud_type,
+          'stemcell_os' => Config.stemcell_os,
+          'stemcell_version' => Config.stemcell_version,
           'user_authentication' => @config.identity_provider.client_info,
           'features' => {
             'local_dns' => {

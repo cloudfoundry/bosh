@@ -443,6 +443,27 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe 'director_stemcell_owner deletagion' do
+    let(:director_stemcell_owner) do
+      double(
+        Bosh::Director::DirectorStemcellOwner,
+        stemcell_os: 'foo',
+        stemcell_version: 'bar',
+      )
+    end
+
+    before do
+      Bosh::Director::Config.director_stemcell_owner = director_stemcell_owner
+    end
+
+    it 'delegates' do
+      expect(Bosh::Director::Config.stemcell_os).to eq('foo')
+      expect(director_stemcell_owner).to have_received(:stemcell_os)
+      expect(Bosh::Director::Config.stemcell_version).to eq('bar')
+      expect(director_stemcell_owner).to have_received(:stemcell_version)
+    end
+  end
+
   describe '#port' do
     subject(:config) { Bosh::Director::Config.new(test_config) }
 

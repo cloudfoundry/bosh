@@ -8,6 +8,11 @@ module Bosh::Director
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
 
+      before do
+        allow(Config).to receive(:stemcell_os).and_return 'ubuntu-xenial'
+        allow(Config).to receive(:stemcell_version).and_return '123.45'
+      end
+
       let(:config) { Config.load_hash(test_config) }
       let(:test_config) { base_config }
 
@@ -65,6 +70,8 @@ module Bosh::Director
           'uuid' => Config.uuid,
           'user' => 'admin',
           'cpi' => 'dummy',
+          'stemcell_os' => 'ubuntu-xenial',
+          'stemcell_version' => '123.45',
           'user_authentication' => {
             'type' => 'basic',
             'options' => {},

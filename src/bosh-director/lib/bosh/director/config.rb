@@ -438,6 +438,20 @@ module Bosh::Director
       def load_hash(hash)
         Config.new(hash)
       end
+
+      def stemcell_os
+        director_stemcell_owner.stemcell_os
+      end
+
+      def stemcell_version
+        director_stemcell_owner.stemcell_version
+      end
+
+      def director_stemcell_owner
+        @director_stemcell_owner ||= DirectorStemcellOwner.new
+      end
+
+      attr_writer :director_stemcell_owner
     end
 
     def name
