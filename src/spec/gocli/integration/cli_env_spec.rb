@@ -11,7 +11,7 @@ describe 'cli: env', type: :integration do
     expect(out).to match(/^Name\s*TestDirector\s*/)
     expect(out).to match(/^UUID\s*deadbeef\s*/)
     expect(out).to match(/^Version\s*0\.0\.0 .*/)
-    expect(out).to match(%r{^Director Stemcell\s*-/-\s*})
+    expect(out).to match(%r{^Director Stemcell\s*\S*/\S*\s*})
     expect(out).to match(/^CPI\s*test-cpi\s*/)
     expect(out).to match(/^User\s*test\s*/)
     features = []
