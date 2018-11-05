@@ -1309,20 +1309,21 @@ jobs:
     plan:
     - aggregate:
       - get: bosh-master
-      - get: bosh-github-release
+      - get: version
+        passed: [finalize-release]
         trigger: true
       - get: warden-ubuntu-xenial
+        trigger: true
     - task: export-final-release
       file: bosh-master/ci/tasks/export-final-release.yml
       privileged: true
       input_mapping:
-        version: bosh-github-release
         stemcell: warden-ubuntu-xenial
         bosh-src: bosh-master
     - task: push-bosh-compiled-releases
       file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
       input_mapping:
-        candidate-version: bosh-github-release
+        candidate-version: version
         bosh-src: bosh-master
       params:
         AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
