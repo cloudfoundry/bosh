@@ -1,0 +1,31 @@
+#!/bin/bash
+
+do-rsync() {
+  rsync -PrlptDv -e "ssh -i $key_path" \
+    --rsync-path="sudo rsync" \
+    "$HOME/workspace/src/github.com/cloudfoundry/bosh/src/$1/$2" \
+    "jumpbox@192.168.50.6:/var/vcap/packages/director/gem_home/ruby/*/gems/$1-0.0.0/"
+}
+
+main() {
+  local key_dir
+  key_dir=$(mktemp -d)
+  local key_path="$key_dir/private_key"
+  bosh int "$HOME/deployments/vbox/creds.yml" --path /jumpbox_ssh/private_key > "$key_path"
+  chmod 700 "$key_dir"
+  chmod 600 "$key_path"
+
+  do-rsync bosh-director bin
+  do-rsync bosh-director db
+  do-rsync bosh-director lib
+  do-rsync bosh-core lib
+  do-rsync bosh-director-core lib
+  do-rsync bosh-template bin
+  do-rsync bosh-template lib
+
+  monit_cmd="/var/vcap/bosh/bin/monit"
+  ssh -i "$key_path" jumpbox@192.168.50.6 \
+    "sudo bash -c '$monit_cmd restart director; $monit_cmd restart director_scheduler; $monit_cmd restart director_sync_dns'"
+}
+
+main
