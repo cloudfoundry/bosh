@@ -11,10 +11,6 @@ module Bosh
       end
 
       describe '.find_or_create_by_name' do
-        it 'all happens in a transaction' do
-          skip 'probably a better solution is to put canonical_name in the db and enforce this there'
-        end
-
         context 'when a deployment with that name exists' do
           it 'loads that one' do
             existing = Models::Deployment.create(name: 'existing')
