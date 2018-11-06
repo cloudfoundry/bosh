@@ -349,6 +349,10 @@ describe 'using director with config server and deployments having links', type:
             'name' => 'bbs',
             'type' => 'certificate',
             'consumes' => {
+              'common_name' => {
+                'from' => 'http_endpoint',
+                'properties' => { 'wildcard' => true },
+              },
               'alternative_name' => {
                 'from' => 'http_endpoint',
                 'properties' => { 'wildcard' => true },
@@ -370,11 +374,13 @@ describe 'using director with config server and deployments having links', type:
           cert = config_server_helper.get_value(prepend_namespace('bbs'))
           cert = OpenSSL::X509::Certificate.new(cert['certificate'])
           subject_alt_name = cert.extensions.find { |e| e.oid == 'subjectAltName' }
+          common_name = cert.subject.to_a.find { |e| e.first == 'CN' }[1]
 
           alternative_names = subject_alt_name.value.split(', ').map do |names|
             names.split(':', 2)[1]
           end
 
+          expect(common_name).to eq(expected_dns)
           expect(alternative_names).to match_array(['127.0.0.1', expected_dns])
         end
       end
@@ -389,6 +395,15 @@ describe 'using director with config server and deployments having links', type:
         let(:expected_dns) { '*.q-g1.bosh' }
         before do
           deployment_manifest['features'] = { 'use_short_dns_addresses' => true }
+        end
+
+        it_behaves_like 'generates the certificate'
+      end
+
+      context 'when use_link_dns_names is enabled' do
+        let(:expected_dns) { '*.q-g2.bosh' }
+        before do
+          deployment_manifest['features'] = { 'use_link_dns_names' => true }
         end
 
         it_behaves_like 'generates the certificate'

@@ -330,26 +330,33 @@ module Bosh::Director
           end
 
           context 'when it is a deploy action' do
-            let(:converge_variables) do
-              false
-            end
+            let(:converge_variables) { false }
+            let(:use_link_dns_names) { false }
 
             before do
               allow(deployment_plan).to receive_message_chain(:features, :converge_variables).and_return(converge_variables)
+              allow(deployment_plan).to receive_message_chain(:features, :use_link_dns_names).and_return(use_link_dns_names)
             end
 
             it 'generates the values through config server' do
-              expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false)
+              expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, false)
               assembler.bind_models(is_deploy_action: true)
             end
 
             context 'when the deployment wants to converge variables' do
-              let(:converge_variables) do
-                true
-              end
+              let(:converge_variables) { true }
 
               it 'should generate the values through config server' do
-                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', true)
+                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', true, false)
+                assembler.bind_models(is_deploy_action: true)
+              end
+            end
+
+            context 'when the deployment wants to use link dns names' do
+              let(:use_link_dns_names) { true }
+
+              it 'should generate the values through config server' do
+                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, true)
                 assembler.bind_models(is_deploy_action: true)
               end
             end

@@ -2009,6 +2009,111 @@ module Bosh::Director::ConfigServer
               client.generate_values(variables_obj, deployment_name, true)
             end
           end
+
+          context 'when use_link_dns_names is set to true' do
+            let(:variables_spec) do
+              [
+                {
+                  'name' => 'placeholder_b',
+                  'type' => 'certificate',
+                  'consumes' => {
+                    'alternative_name' => { 'from' => 'foo', 'link_type' => 'something', 'properties' => { 'wildcard' => true } },
+                  },
+                  'options' => {
+                    'ca' => 'my_ca',
+                    'common_name' => 'bosh.io',
+                    'alternative_names' => ['a.bosh.io', 'b.bosh.io'],
+                  },
+                },
+              ]
+            end
+
+            let(:deployment_attrs) do
+              { id: 1, name: deployment_name, links_serial_id: link_serial_id }
+            end
+
+            let(:link_serial_id) { 8080 }
+
+            let(:consumer) do
+              Bosh::Director::Models::Links::LinkConsumer.create(
+                deployment: deployment_model,
+                instance_group: '',
+                type: 'variable',
+                name: 'placeholder_b',
+                serial_id: link_serial_id,
+              )
+            end
+
+            let(:consumer_intent) do
+              Bosh::Director::Models::Links::LinkConsumerIntent.create(
+                link_consumer: consumer,
+                original_name: 'alternative_name',
+                type: 'something',
+                name: 'foo',
+                optional: false,
+                blocked: false,
+                serial_id: link_serial_id,
+                metadata: '{"wildcard": true}',
+              )
+            end
+
+            let(:consumer_intent2) do
+              Bosh::Director::Models::Links::LinkConsumerIntent.create(
+                link_consumer: consumer,
+                original_name: 'common_name',
+                type: 'something',
+                name: 'foo',
+                optional: false,
+                blocked: false,
+                serial_id: link_serial_id,
+              )
+            end
+
+            let(:encoded_group) do
+              Bosh::Director::Models::LocalDnsEncodedGroup.create(
+                name: 'foo-something',
+                type: 'link',
+                deployment: deployment_model,
+              )
+            end
+
+            before do
+              Bosh::Director::Models::LocalDnsEncodedNetwork.make(name: 'net-a')
+              Bosh::Director::Models::Links::Link.create(
+                name: 'foo',
+                link_provider_intent: Bosh::Director::Models::Links::LinkProviderIntent.make(name: 'foo', type: 'something'),
+                link_consumer_intent_id: consumer_intent.id,
+                link_content: {
+                  deployment_name: deployment_name,
+                  instance_group: 'ig1',
+                  default_network: 'net-a',
+                  domain: 'bosh',
+                }.to_json,
+                created_at: Time.now,
+              )
+            end
+
+            it 'should generate the certificate with the SAN appended' do
+              expect(http_client).to receive(:post).with(
+                'name' => prepend_namespace('placeholder_b'),
+                'type' => 'certificate',
+                'parameters' => {
+                  'ca' => prepend_namespace('my_ca'),
+                  'common_name' => 'bosh.io',
+                  'alternative_names' => %W[a.bosh.io b.bosh.io *.q-g#{encoded_group.id}.bosh],
+                },
+                'mode' => 'no-overwrite',
+              ).ordered.and_return(
+                generate_success_response(
+                  {
+                    "id": 'some_id2',
+                  }.to_json,
+                ),
+              )
+
+              client.generate_values(variables_obj, deployment_name, false, true)
+            end
+          end
         end
       end
     end

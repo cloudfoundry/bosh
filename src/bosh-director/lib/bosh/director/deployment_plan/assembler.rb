@@ -174,7 +174,12 @@ module Bosh::Director
     end
 
     def generate_variables
-      @variables_interpolator.generate_values(@deployment_plan.variables, @deployment_plan.name, @deployment_plan.features.converge_variables)
+      @variables_interpolator.generate_values(
+        @deployment_plan.variables,
+        @deployment_plan.name,
+        @deployment_plan.features.converge_variables,
+        @deployment_plan.features.use_link_dns_names,
+      )
     end
 
     # Binds template models for each release spec in the deployment plan
