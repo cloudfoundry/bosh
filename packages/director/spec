@@ -13,5 +13,4 @@ files:
 - bosh-core/**/*
 - bosh-director-core/**/*
 - bosh-template/**/*
-- bosh_cpi/**/*
 - vendor/cache/*.gem
