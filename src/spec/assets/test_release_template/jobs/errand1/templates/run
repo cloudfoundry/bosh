@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "job=<%= spec.job.name %> index=<%= spec.index %> id=<%= spec.id %>"
 
 # Stdout and stderr
@@ -23,7 +25,7 @@ until [ -a "jobs/errand1/unblock_errand" ]; do
 done
 <% end %>
 
-sleep
+sleep 1
 
 # Exit code
 exit <%= properties.errand1.exit_code %>
