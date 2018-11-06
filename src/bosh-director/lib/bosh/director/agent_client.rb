@@ -24,7 +24,7 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_agent_id(agent_id, options = {})
+    def self.with_agent_id(agent_id, instance_name, options = {})
       defaults = {
         retry_methods: {
           get_state: GET_STATE_MAX_RETRIES,
@@ -33,12 +33,13 @@ module Bosh::Director
         }
       }
 
-      self.new('agent', agent_id, defaults.merge(options))
+      new('agent', agent_id, instance_name, defaults.merge(options))
     end
 
-    def initialize(service_name, client_id, options = {})
+    def initialize(service_name, client_id, instance_name, options = {})
       @service_name = service_name
       @client_id = client_id
+      @instance_name = instance_name || 'unknown'
       @nats_rpc = Config.nats_rpc
       @timeout = options[:timeout] || 45
       @logger = Config.logger
@@ -266,8 +267,8 @@ module Bosh::Director
           if timeout <= 0
             @nats_rpc.cancel_request(request_id)
             raise RpcTimeout,
-              "Timed out sending '#{method_name}' to #{@client_id} " +
-                "after #{@timeout} seconds"
+                  "Timed out sending '#{method_name}' to instance: '#{@instance_name}', agent-id: '#{@client_id}' " \
+                  "after #{@timeout} seconds"
           end
           cond.wait(timeout)
         end

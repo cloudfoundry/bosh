@@ -16,7 +16,7 @@ module Bosh::Director
         let(:report) { Stages::Report.new(nil, nil, disk_hint) }
 
         before do
-          allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(agent_client)
+          allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, vm.instance.name).and_return(agent_client)
         end
 
         describe '#perform' do

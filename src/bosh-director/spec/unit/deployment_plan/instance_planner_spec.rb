@@ -571,7 +571,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       allow(Bosh::Director::Config.current_job).to receive(:username).and_return 'fake-username'
       allow(instance_plan).to receive(:vm_matches_plan?).and_return false
-      allow(Bosh::Director::AgentClient).to receive(:with_agent_id).with('fake-agent-id').and_return(agent)
+      allow(Bosh::Director::AgentClient).to receive(:with_agent_id)
+        .with('fake-agent-id', existing_instance_model.name).and_return(agent)
       allow(agent).to receive(:shutdown)
     end
 

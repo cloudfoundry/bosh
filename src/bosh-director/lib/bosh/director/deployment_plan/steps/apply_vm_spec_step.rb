@@ -10,7 +10,7 @@ module Bosh::Director
       def perform(report)
         vm = report.vm
         spec = @instance_plan.spec
-        agent_client = AgentClient.with_agent_id(vm.agent_id)
+        agent_client = AgentClient.with_agent_id(vm.agent_id, 'unknown')
 
         # Agent will return dynamic network settings, we need to update spec with it
         # so that we can render templates with new spec later.

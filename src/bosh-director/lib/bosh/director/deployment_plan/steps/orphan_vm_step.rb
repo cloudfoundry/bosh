@@ -8,7 +8,7 @@ module Bosh::Director
         end
 
         def perform(_)
-          AgentClient.with_agent_id(@vm.agent_id).shutdown
+          AgentClient.with_agent_id(@vm.agent_id, @vm.instance.name).shutdown
 
           @transactor.retryable_transaction(Bosh::Director::Config.db) do
             begin

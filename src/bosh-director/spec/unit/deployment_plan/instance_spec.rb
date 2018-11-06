@@ -114,7 +114,8 @@ module Bosh::Director::DeploymentPlan
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       before do
-        allow(BD::AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client)
+        allow(BD::AgentClient).to receive(:with_agent_id)
+          .with(instance_model.agent_id, instance_model.name).and_return(agent_client)
         instance.bind_existing_instance_model(instance_model)
       end
 
@@ -380,7 +381,8 @@ module Bosh::Director::DeploymentPlan
 
       before do
         allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
-        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id)
+          .with(instance_model.agent_id, instance_model.name).and_return(agent_client)
         allow(Bosh::Director::Config).to receive(:trusted_certs).and_return(fake_cert)
         instance.bind_existing_instance_model(instance_model)
       end

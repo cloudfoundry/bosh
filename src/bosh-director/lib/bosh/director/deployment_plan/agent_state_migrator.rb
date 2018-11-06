@@ -7,7 +7,7 @@ module Bosh::Director
 
       def get_state(instance)
         @logger.debug("Requesting current VM state for: #{instance.agent_id}")
-        agent = AgentClient.with_agent_id(instance.agent_id)
+        agent = AgentClient.with_agent_id(instance.agent_id, instance.name)
         state = agent.get_state { Config.job_cancelled? }
 
         @logger.debug("Received VM state: #{state.pretty_inspect}")

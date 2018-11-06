@@ -24,8 +24,8 @@ module Bosh::Director
             before do
               Models::Vm.make(instance: instance, agent_id: 'active-agent', active: true)
               Models::Vm.make(instance: instance, agent_id: 'lazy-agent', active: false)
-              allow(AgentClient).to receive(:with_agent_id).with('active-agent').and_return(active_agent)
-              allow(AgentClient).to receive(:with_agent_id).with('lazy-agent').and_return(lazy_agent)
+              allow(AgentClient).to receive(:with_agent_id).with('active-agent', instance.name).and_return(active_agent)
+              allow(AgentClient).to receive(:with_agent_id).with('lazy-agent', instance.name).and_return(lazy_agent)
             end
 
             context 'when preparing the active vm' do
@@ -54,7 +54,7 @@ module Bosh::Director
 
             before do
               Models::Vm.make(instance: instance, agent_id: 'old-agent', active: true)
-              allow(AgentClient).to receive(:with_agent_id).with('old-agent').and_return(old_agent)
+              allow(AgentClient).to receive(:with_agent_id).with('old-agent', instance.name).and_return(old_agent)
             end
 
             context 'when preparing the active vm' do
@@ -81,7 +81,7 @@ module Bosh::Director
 
             before do
               Models::Vm.make(instance: instance, agent_id: 'new-agent', active: false)
-              allow(AgentClient).to receive(:with_agent_id).with('new-agent').and_return(new_agent)
+              allow(AgentClient).to receive(:with_agent_id).with('new-agent', instance.name).and_return(new_agent)
             end
 
             context 'when preparing the active vm' do

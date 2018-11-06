@@ -32,6 +32,7 @@ describe 'health_monitor: 2', type: :integration, hm: true do
       original_instance = director.instance('foobar', '0', deployment_name: 'simple')
       original_instance.kill_agent
       resurrected_instance = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
+      expect(resurrected_instance).to_not be(nil)
       expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
     end
   end

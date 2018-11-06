@@ -54,7 +54,11 @@ module Bosh::Director
         expect(event_logger).to receive(:track_and_log).with('1 OK, 1 unresponsive, 0 missing, 0 unbound')
 
         good_agent_client = instance_double(AgentClient, list_disk: [])
-        allow(AgentClient).to receive(:with_agent_id).with(instances[1].agent_id, anything).and_return(good_agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with(
+          instances[1].agent_id,
+          instances[1].name,
+          anything,
+        ).and_return(good_agent_client)
         good_state = {
           'deployment' => 'fake-deployment',
           'job' => {'name' => 'job-2'},
@@ -63,7 +67,11 @@ module Bosh::Director
         expect(good_agent_client).to receive(:get_state).and_return(good_state)
 
         unresponsive_agent_client = instance_double(AgentClient)
-        allow(AgentClient).to receive(:with_agent_id).with(instances[0].agent_id, anything).and_return(unresponsive_agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with(
+          instances[0].agent_id,
+          instances[0].name,
+          anything,
+        ).and_return(unresponsive_agent_client)
         expect(unresponsive_agent_client).to receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
         allow(cloud).to receive(:has_vm).and_raise(Bosh::Clouds::NotImplemented)
         expect(cloud_factory).to receive(:get_for_az).with(instances[0].availability_zone).and_return(cloud)
@@ -73,7 +81,7 @@ module Bosh::Director
           instances[0]
         )
 
-        expect(AgentClient).to_not receive(:with_agent_id).with(instances[2].agent_id, anything)
+        expect(AgentClient).to_not receive(:with_agent_id).with(instances[2].agent_id, instances[2].name, anything)
 
         vm_scanner.scan([['job-1', 1], ['job-2', 2]])
       end
@@ -84,7 +92,11 @@ module Bosh::Director
         before(:each) do
           unresponsive_agent = double(AgentClient)
           agent_options = { timeout: 10, retry_methods: { get_state: 0}}
-          allow(AgentClient).to receive(:with_agent_id).with(detached_instance.agent_id, agent_options).and_return(unresponsive_agent)
+          allow(AgentClient).to receive(:with_agent_id).with(
+            detached_instance.agent_id,
+            detached_instance.name,
+            agent_options,
+          ).and_return(unresponsive_agent)
           allow(unresponsive_agent).to receive(:get_state).and_raise(RpcTimeout)
         end
 
@@ -118,8 +130,12 @@ module Bosh::Director
 
         before(:each) do
           unresponsive_agent = double(AgentClient)
-          agent_options = { timeout: 10, retry_methods: { get_state: 0}}
-          allow(AgentClient).to receive(:with_agent_id).with(errand_vm.agent_id, agent_options).and_return(unresponsive_agent)
+          agent_options = { timeout: 10, retry_methods: { get_state: 0 } }
+          allow(AgentClient).to receive(:with_agent_id).with(
+            errand_vm.agent_id,
+            errand_vm.name,
+            agent_options,
+          ).and_return(unresponsive_agent)
           allow(unresponsive_agent).to receive(:get_state).and_raise(RpcTimeout)
         end
 
@@ -144,9 +160,21 @@ module Bosh::Director
           responsive_agent = double(AgentClient)
           agent_options = { timeout: 10, retry_methods: { get_state: 0}}
 
-          allow(AgentClient).to receive(:with_agent_id).with(unresponsive_vm1.agent_id, agent_options).and_return(unresponsive_agent1)
-          allow(AgentClient).to receive(:with_agent_id).with(unresponsive_vm2.agent_id, agent_options).and_return(unresponsive_agent2)
-          allow(AgentClient).to receive(:with_agent_id).with(responsive_vm.agent_id, agent_options).and_return(responsive_agent)
+          allow(AgentClient).to receive(:with_agent_id).with(
+            unresponsive_vm1.agent_id,
+            unresponsive_vm1.name,
+            agent_options,
+          ).and_return(unresponsive_agent1)
+          allow(AgentClient).to receive(:with_agent_id).with(
+            unresponsive_vm2.agent_id,
+            unresponsive_vm2.name,
+            agent_options,
+          ).and_return(unresponsive_agent2)
+          allow(AgentClient).to receive(:with_agent_id).with(
+            responsive_vm.agent_id,
+            responsive_vm.name,
+            agent_options,
+          ).and_return(responsive_agent)
 
           # Unresponsive agent
           allow(unresponsive_agent1).to receive(:get_state).and_raise(RpcTimeout)
@@ -168,7 +196,11 @@ module Bosh::Director
           before(:each) {
             unresponsive_agent = double(AgentClient)
             agent_options = { timeout: 10, retry_methods: { get_state: 0}}
-            allow(AgentClient).to receive(:with_agent_id).with(instance_without_vm.agent_id, agent_options).and_return(unresponsive_agent)
+            allow(AgentClient).to receive(:with_agent_id).with(
+              instance_without_vm.agent_id,
+              instance_without_vm.name,
+              agent_options,
+            ).and_return(unresponsive_agent)
             allow(unresponsive_agent).to receive(:get_state).and_raise(RpcTimeout)
             allow(cloud).to receive(:has_vm).with('vm-cid-0').and_return(true)
             allow(cloud).to receive(:has_vm).with('vm-cid-1').and_return(true)
@@ -291,8 +323,16 @@ module Bosh::Director
             agent_options = { timeout: 10, retry_methods: { get_state: 0}}
 
 
-            allow(AgentClient).to receive(:with_agent_id).with(ignored_unresponsive_vm.agent_id, agent_options).and_return(ignored_unresponsive_agent)
-            allow(AgentClient).to receive(:with_agent_id).with(ignored_responsive_vm.agent_id, agent_options).and_return(ignored_responsive_agent)
+            allow(AgentClient).to receive(:with_agent_id).with(
+              ignored_unresponsive_vm.agent_id,
+              ignored_unresponsive_vm.name,
+              agent_options,
+            ).and_return(ignored_unresponsive_agent)
+            allow(AgentClient).to receive(:with_agent_id).with(
+              ignored_responsive_vm.agent_id,
+              ignored_responsive_vm.name,
+              agent_options,
+            ).and_return(ignored_responsive_agent)
             allow(ignored_unresponsive_agent).to receive(:get_state).and_raise(RpcTimeout)
 
             # Working agent
@@ -324,7 +364,7 @@ module Bosh::Director
       before { allow(cloud).to receive(:has_vm).and_return(true) }
 
       let(:agent) { double('Bosh::Director::AgentClient') }
-      before { allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, anything).and_return(agent) }
+      before { allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent) }
 
       before do
         Models::PersistentDisk.make(instance_id: instance.id, active: true, disk_cid: 'fake-disk-cid')
@@ -382,7 +422,11 @@ module Bosh::Director
           second_instance = create_vm(1)
 
           agent_2 = double('agent-2')
-          allow(AgentClient).to receive(:with_agent_id).with(second_instance.agent_id, anything).and_return(agent_2)
+          allow(AgentClient).to receive(:with_agent_id).with(
+            second_instance.agent_id,
+            second_instance.name,
+            anything,
+          ).and_return(agent_2)
 
           good_state_2 = {
             'deployment' => 'fake-deployment',

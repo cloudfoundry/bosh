@@ -33,7 +33,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
     @handler = make_handler(@disk.id, 'owner_vms' => []) # Not mounted
     allow(@handler).to receive(:cloud).and_return(@cloud)
-    allow(@handler).to receive(:agent_client).with(@instance.agent_id).and_return(@agent)
+    allow(@handler).to receive(:agent_client).with(@instance.agent_id, @instance.name).and_return(@agent)
     allow(Bosh::Director::AZCloudFactory).to receive(:create_with_latest_configs).and_return(az_cloud_factory)
     allow(Bosh::Director::AZCloudFactory).to receive(:create_from_deployment).and_return(az_cloud_factory)
     allow(Bosh::Director::CloudFactory).to receive(:create).and_return(base_cloud_factory)

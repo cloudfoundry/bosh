@@ -14,15 +14,18 @@ module Bosh::Director
           if @use_active_vm
             spec = spec.as_apply_spec
             agent_id = instance_model.agent_id
+            name = instance_model.name
             raise 'no active VM available to prepare for instance' if agent_id.nil?
           else
             spec = spec.as_jobless_apply_spec
             vm = instance_model.most_recent_inactive_vm
             raise 'no inactive VM available to prepare for instance' if vm.nil?
+
             agent_id = vm.agent_id
+            name = vm.instance.name
           end
 
-          AgentClient.with_agent_id(agent_id).prepare(spec)
+          AgentClient.with_agent_id(agent_id, name).prepare(spec)
         end
       end
     end

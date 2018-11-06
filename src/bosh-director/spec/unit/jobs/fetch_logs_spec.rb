@@ -36,7 +36,7 @@ module Bosh::Director
             instance.active_vm = vm
           end
 
-          before { allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id).and_return(agent) }
+          before { allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name).and_return(agent) }
           let(:agent) { instance_double('Bosh::Director::AgentClient', fetch_logs: {'blobstore_id' => 'new-fake-blobstore-id'}) }
 
           it 'cleans old log bundles' do
@@ -130,8 +130,8 @@ module Bosh::Director
         end
 
         before do
-          allow(AgentClient).to receive(:with_agent_id).with(instance_1.agent_id).and_return(agent_1)
-          allow(AgentClient).to receive(:with_agent_id).with(instance_2.agent_id).and_return(agent_2)
+          allow(AgentClient).to receive(:with_agent_id).with(instance_1.agent_id, instance_1.name).and_return(agent_1)
+          allow(AgentClient).to receive(:with_agent_id).with(instance_2.agent_id, instance_2.name).and_return(agent_2)
           allow(blobstore).to receive(:delete)
           allow(blobstore).to receive(:get)
           allow(blobstore).to receive(:create).and_return('common-blobstore-id')

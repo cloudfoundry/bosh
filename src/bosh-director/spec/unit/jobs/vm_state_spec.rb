@@ -45,7 +45,7 @@ module Bosh::Director
 
     describe '#perform' do
       before do
-        allow(AgentClient).to receive(:with_agent_id).with(anything, timeout: 5).and_return(agent)
+        allow(AgentClient).to receive(:with_agent_id).with(anything, anything, timeout: 5).and_return(agent)
         instance.active_vm = vm
         instance.save
       end
@@ -455,7 +455,7 @@ module Bosh::Director
             address_str: NetAddr::CIDR.create('1.1.1.2').to_i.to_s,
             task_id: '12345',
           )
-          allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', timeout: 5).and_return(lazy_agent)
+          allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', anything, timeout: 5).and_return(lazy_agent)
           allow(lazy_agent).to receive(:get_state).with('full').and_return(lazy_agent_state)
           allow(agent).to receive(:get_state).with('full').and_return(agent_state)
           instance.update(spec: { 'vm_type' => { 'name' => 'fake-vm-type', 'cloud_properties' => {} } })

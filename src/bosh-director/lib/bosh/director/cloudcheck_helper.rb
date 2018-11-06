@@ -18,7 +18,7 @@ module Bosh::Director
       cloud.reboot_vm(vm.cid)
 
       begin
-        agent_client(instance.agent_id).wait_until_ready
+        agent_client(instance.agent_id, instance.name).wait_until_ready
       rescue Bosh::Director::RpcTimeout
         handler_error('Agent still unresponsive after reboot')
       rescue Bosh::Director::TaskCancelled
@@ -28,7 +28,7 @@ module Bosh::Director
 
     def delete_vm(instance)
       # Paranoia: don't blindly delete VMs with persistent disk
-      disk_list = agent_timeout_guard(instance.vm_cid, instance.agent_id, &:list_disk)
+      disk_list = agent_timeout_guard(instance.vm_cid, instance.agent_id, instance.name, &:list_disk)
 
       handler_error('VM has persistent disk attached') unless disk_list.empty?
 
@@ -120,7 +120,7 @@ module Bosh::Director
 
           InstanceUpdater::StateApplier.new(
             instance_plan_to_create,
-            agent_client(instance_model.agent_id),
+            agent_client(instance_model.agent_id, instance_model.name),
             cleaner,
             @logger,
             {}
@@ -178,17 +178,17 @@ module Bosh::Director
       raise Bosh::Director::ProblemHandlerError, message
     end
 
-    def agent_client(agent_id, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
+    def agent_client(agent_id, instance_name, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
       options = {
         timeout: timeout,
         retry_methods: { get_state: retries },
       }
       @clients ||= {}
-      @clients[agent_id] ||= AgentClient.with_agent_id(agent_id, options)
+      @clients[agent_id] ||= AgentClient.with_agent_id(agent_id, instance_name, options)
     end
 
-    def agent_timeout_guard(vm_cid, agent_id)
-      yield agent_client(agent_id)
+    def agent_timeout_guard(vm_cid, agent_id, instance_name)
+      yield agent_client(agent_id, instance_name)
     rescue Bosh::Director::RpcTimeout
       handler_error("VM '#{vm_cid}' is not responding")
     end

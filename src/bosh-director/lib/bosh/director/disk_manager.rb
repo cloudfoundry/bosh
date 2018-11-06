@@ -132,7 +132,7 @@ module Bosh::Director
     end
 
     def agent_client(instance_model)
-      AgentClient.with_agent_id(instance_model.agent_id)
+      AgentClient.with_agent_id(instance_model.agent_id, instance_model.name)
     end
 
     def mount_disk(disk, report = step_report)

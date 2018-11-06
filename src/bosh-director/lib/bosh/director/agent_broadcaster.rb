@@ -14,7 +14,7 @@ module Bosh::Director
       @logger.info("deleting arp entries for the following ip addresses: #{ip_addresses}")
       instances = filter_instances(vm_cid_to_exclude)
       instances.each do |instance|
-        agent_client(instance.agent_id).delete_arp_entries(ips: ip_addresses)
+        agent_client(instance.agent_id, instance.name).delete_arp_entries(ips: ip_addresses)
       end
     end
 
@@ -33,7 +33,8 @@ module Bosh::Director
 
       instances.each do |instance|
         pending.add(instance)
-        instance_to_request_id[instance] = agent_client(instance.agent_id).sync_dns(blobstore_id, sha1, version) do |response|
+        instance_to_request_id[instance] = agent_client(instance.agent_id,
+                                                        instance.name).sync_dns(blobstore_id, sha1, version) do |response|
           valid_response = (response['value'] == VALID_SYNC_DNS_RESPONSE)
 
           if valid_response
@@ -80,7 +81,7 @@ module Bosh::Director
 
         unresponsive_agents = []
         pending_clone.each do |instance|
-          agent_client = agent_client(instance.agent_id)
+          agent_client = agent_client(instance.agent_id, instance.name)
           agent_client.cancel_sync_dns(instance_to_request_id[instance])
 
           lock.synchronize do
@@ -112,8 +113,8 @@ module Bosh::Director
 
     private
 
-    def agent_client(instance_agent_id)
-      AgentClient.with_agent_id(instance_agent_id)
+    def agent_client(instance_agent_id, instance_name)
+      AgentClient.with_agent_id(instance_agent_id, instance_name)
     end
   end
 

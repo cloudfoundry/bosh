@@ -54,8 +54,8 @@ module Bosh::Director
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     before do
-      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, anything).and_return(agent_client)
-      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name).and_return(agent_client)
       allow(agent_client).to receive(:sync_dns) do |_,_,_,&blk|
         blk.call({'value' => 'synced'})
       end.and_return(0)
