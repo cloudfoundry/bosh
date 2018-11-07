@@ -6,12 +6,6 @@ libpq_dir=/var/vcap/packages/libpq
 mysqlclient_dir=/var/vcap/packages/mysql
 source /var/vcap/packages/ruby-2.4-r5/bosh/compile.env
 
-
-pushd bosh_cpi
-  gem build bosh_cpi
-  mv *.gem ../vendor/cache
-popd
-
 for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   gem_name="$( basename "$( dirname "$gemspec" )" )"
   gem_spec="$( basename "$gemspec" )"
