@@ -1,7 +1,7 @@
 ---
 name: health_monitor
 dependencies:
-- ruby-2.4-r4
+- ruby-2.4-r5
 
 files:
 - bosh-monitor/**/*
