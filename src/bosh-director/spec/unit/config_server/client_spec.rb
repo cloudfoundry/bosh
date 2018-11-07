@@ -2029,7 +2029,7 @@ module Bosh::Director::ConfigServer
             end
 
             let(:deployment_attrs) do
-              { id: 1, name: deployment_name, links_serial_id: link_serial_id }
+              { id: 2, name: deployment_name, links_serial_id: link_serial_id }
             end
 
             let(:link_serial_id) { 8080 }
