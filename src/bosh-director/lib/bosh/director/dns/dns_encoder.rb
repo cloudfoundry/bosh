@@ -9,14 +9,14 @@ module Bosh::Director
     def encode_query(criteria, force_short_dns = nil)
       octets = []
 
-      use_short_dns = (!force_short_dns.nil? ? force_short_dns : @short_dns_enabled)
-      if criteria[:uuid].nil? || use_short_dns
-        octets << "q-#{query_slug(criteria, use_short_dns)}"
-      else
-        octets << criteria[:uuid]
-      end
+      use_short_dns = !force_short_dns.nil? ? force_short_dns : @short_dns_enabled
+      octets << if criteria[:uuid].nil? || use_short_dns
+                  "q-#{query_slug(criteria, use_short_dns)}"
+                else
+                  criteria[:uuid]
+                end
 
-      if use_short_dns || criteria[:group_type] == 'link'
+      if use_short_dns
         octets << encode_service_group(criteria)
       else
         octets += encode_long_subdomains(criteria)

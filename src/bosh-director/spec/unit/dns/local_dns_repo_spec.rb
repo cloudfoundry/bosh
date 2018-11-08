@@ -5,6 +5,8 @@ module Bosh::Director
     subject(:local_dns_repo) { LocalDnsRepo.new(logger, root_domain) }
     let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
     let(:root_domain) { 'bosh1.tld' }
+    let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: instance_model) }
+    let(:record_0_ip) { '1234' }
 
     let(:instance_model) do
       Models::Instance.make(
@@ -16,8 +18,6 @@ module Bosh::Director
         spec_json: JSON.dump(spec_json),
       )
     end
-
-    let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: instance_model) }
 
     let(:instance_plan) do
       ip = instance_double(Bosh::Director::DeploymentPlan::InstancePlan, instance: instance)
@@ -39,11 +39,11 @@ module Bosh::Director
         active: true,
       )
     end
+
     let(:spec_json) do
       { 'networks' => { 'net-name' => { 'ip' => '1234' } } }
     end
 
-    let(:record_0_ip) { '1234' }
     let!(:local_dns_record_0) do
       Models::LocalDnsRecord.create(
         ip: record_0_ip,
@@ -291,6 +291,66 @@ module Bosh::Director
         end
       end
 
+      context 'when the existing record does not contain links' do
+        let!(:local_dns_record_0) do
+          Models::LocalDnsRecord.create(
+            ip: record_0_ip,
+            instance: instance_model,
+            az: 'az1',
+            network: 'net-name',
+            deployment: 'bosh.1',
+            instance_group: 'instance-group-0',
+            agent_id: 'some-agent-id',
+            domain: 'bosh1.tld',
+          )
+        end
+
+        it 'inserts a new record' do
+          expect do
+            local_dns_repo.update_for_instance(instance_plan)
+          end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
+
+          records = Models::LocalDnsRecord.all
+          expect(records.size).to eq(1)
+
+          local_dns_record = records.first
+          expect(local_dns_record.ip).to eq('1234')
+          expect(local_dns_record.az).to eq('az1')
+          expect(local_dns_record.network).to eq('net-name')
+          expect(local_dns_record.deployment).to eq('bosh.1')
+          expect(local_dns_record.instance_group).to eq('instance-group-0')
+          expect(local_dns_record.instance).to eq(instance_model)
+        end
+
+        it 'will compute the difference between the instance model and the existing local dns records' do
+          diff = local_dns_repo.diff(instance_plan)
+          expect(diff.changes?).to be(true)
+          expect(diff.obsolete).to eq([{
+            ip: '1234',
+            instance_id: instance_model.id,
+            az: 'az1',
+            network: 'net-name',
+            deployment: 'bosh.1',
+            instance_group: 'instance-group-0',
+            agent_id: 'some-agent-id',
+            domain: 'bosh1.tld',
+            links: [],
+          }])
+          expect(diff.missing).to eq([{
+            ip: '1234',
+            instance_id: instance_model.id,
+            az: 'az1',
+            network: 'net-name',
+            deployment: 'bosh.1',
+            instance_group: 'instance-group-0',
+            agent_id: 'some-agent-id',
+            domain: 'bosh1.tld',
+            links: [{ name: 'name1-type1' }, { name: 'name2-type2' }],
+          }])
+          expect(diff.unaffected).to be_empty
+        end
+      end
+
       it 'causes the max id to increase when instance deployment changes' do
         instance_model.update('deployment' => Models::Deployment.make(name: 'bosh.2'))
         expect do
@@ -514,6 +574,7 @@ module Bosh::Director
         end
       end
     end
+
     context 'delete for instance' do
       context 'when an instance has records' do
         let(:instance_model_too) do

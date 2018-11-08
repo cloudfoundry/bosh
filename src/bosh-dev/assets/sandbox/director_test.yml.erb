@@ -132,7 +132,9 @@ enable_post_deploy: <%= enable_post_deploy %>
 enable_nats_delivered_templates: <%= enable_nats_delivered_templates %>
 enable_cpi_resize_disk: <%= enable_cpi_resize_disk %>
 default_update_vm_strategy: <%= default_update_vm_strategy %>
-cpi_api_test_max_version: <%= cpi_api_test_max_version %>
+cpi:
+  max_supported_api_version: 2
+  preferred_api_version: <%= preferred_cpi_api_version %>
 
 <% if config_server_enabled %>
 config_server:

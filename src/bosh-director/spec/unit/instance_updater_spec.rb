@@ -142,7 +142,7 @@ module Bosh::Director
 
     context 'when stopping instances' do
       before do
-        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool', instance_model.name).and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(links_manager).to receive(:bind_links_to_instance).with(instance)
       end
@@ -257,7 +257,7 @@ module Bosh::Director
       let(:instance_desired_state) { 'started' }
 
       before do
-        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool', instance_model.name).and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
       end
 
@@ -540,7 +540,7 @@ module Bosh::Director
 
       it 'updates the instance settings and bind links' do
         allow(instance_plan).to receive(:changes).and_return([:trusted_certs])
-        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool', instance_model.name).and_return(agent_client)
 
         allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
 
@@ -560,7 +560,7 @@ module Bosh::Director
 
     context 'when something goes wrong in the update procedure' do
       before do
-        allow(AgentClient).to receive(:with_agent_id).with('scool').and_return(agent_client)
+        allow(AgentClient).to receive(:with_agent_id).with('scool', instance_model.name).and_return(agent_client)
         allow(instance_plan).to receive(:changes).and_return([:state])
         allow(rendered_templates_persistor).to receive(:persist)
         allow(links_manager).to receive(:bind_links_to_instance).with(instance)

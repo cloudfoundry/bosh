@@ -2,6 +2,10 @@ require 'spec_helper'
 require 'net/http'
 
 describe Bosh::Director::Jobs::UpdateStemcell do
+  before do
+    allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(2)
+  end
+
   describe 'DJ job class expectations' do
     let(:job_type) { :update_stemcell }
     let(:queue) { :normal }

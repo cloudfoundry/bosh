@@ -247,6 +247,9 @@ module Bosh::Director
   # DiskType
   DiskTypeInvalidDiskSize = err(200001)
 
+  # Manifest Features Section
+  IncompatibleFeatures = err(210001)
+
   CloudDiskNotAttached = err(390001)
   CloudDiskMissing = err(390002)
   CloudNotEnoughDiskSpace = err(390003)

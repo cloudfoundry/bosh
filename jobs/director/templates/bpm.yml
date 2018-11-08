@@ -5,6 +5,9 @@ director_config = {
   "executable" => "/var/vcap/jobs/director/bin/director",
   "ephemeral_disk" => true,
   "persistent_disk" => true,
+  "unsafe" => {
+    "unrestricted_volumes" => [{"path" => "/var/vcap/bosh/etc"}]
+  }
 }
 
 nginx_config = {

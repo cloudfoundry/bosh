@@ -29,7 +29,7 @@ module Bosh::Director
           end
 
           before do
-            allow(AgentClient).to receive(:with_agent_id).with('my-agent').and_return(agent_client)
+            allow(AgentClient).to receive(:with_agent_id).with('my-agent', 'unknown').and_return(agent_client)
             allow(spec).to receive(:as_apply_spec).and_return(
               'networks' => 'my-networks',
               'deployment' => 'my-deployment',

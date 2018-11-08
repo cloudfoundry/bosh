@@ -18,7 +18,7 @@ module Bosh::Director
           end
 
           vm = report.vm
-          AgentClient.with_agent_id(vm.agent_id).update_settings(Config.trusted_certs, disk_associations)
+          AgentClient.with_agent_id(vm.agent_id, instance_model.name).update_settings(Config.trusted_certs, disk_associations)
           vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
 
           instance_model.update(cloud_properties: JSON.dump(@instance.cloud_properties))

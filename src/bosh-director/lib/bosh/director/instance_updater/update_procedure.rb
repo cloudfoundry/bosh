@@ -191,7 +191,7 @@ module Bosh::Director
       end
 
       def agent
-        AgentClient.with_agent_id(instance.model.agent_id)
+        AgentClient.with_agent_id(instance.model.agent_id, instance.model.name)
       end
 
       def take_snapshot

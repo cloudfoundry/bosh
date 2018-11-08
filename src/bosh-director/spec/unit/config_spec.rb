@@ -443,6 +443,27 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe 'director_stemcell_owner deletagion' do
+    let(:director_stemcell_owner) do
+      double(
+        Bosh::Director::DirectorStemcellOwner,
+        stemcell_os: 'foo',
+        stemcell_version: 'bar',
+      )
+    end
+
+    before do
+      Bosh::Director::Config.director_stemcell_owner = director_stemcell_owner
+    end
+
+    it 'delegates' do
+      expect(Bosh::Director::Config.stemcell_os).to eq('foo')
+      expect(director_stemcell_owner).to have_received(:stemcell_os)
+      expect(Bosh::Director::Config.stemcell_version).to eq('bar')
+      expect(director_stemcell_owner).to have_received(:stemcell_version)
+    end
+  end
+
   describe '#port' do
     subject(:config) { Bosh::Director::Config.new(test_config) }
 
@@ -974,14 +995,14 @@ describe Bosh::Director::Config do
   end
 
   # TODO this can be deleted once the CPI api version no longer needs to be specified in the spec
-  describe 'cpi_api_test_max_version' do
-    context 'when cpi_api_test_max_version is set' do
+  describe 'preferred_cpi_api_version' do
+    context 'when preferred_cpi_api_version is set' do
       before do
         described_class.configure(test_config)
       end
 
       it 'returns the value' do
-        expect(described_class.cpi_api_test_max_version).to eq(2)
+        expect(described_class.preferred_cpi_api_version).to eq(2)
       end
     end
   end

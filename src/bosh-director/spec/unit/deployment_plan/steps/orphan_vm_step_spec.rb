@@ -27,7 +27,7 @@ module Bosh::Director
         before do
           allow(job).to receive(:event_manager).and_return(event_manager)
           allow(Config).to receive(:current_job).and_return(job)
-          allow(AgentClient).to receive(:with_agent_id).with('fake-agent-id').and_return(agent)
+          allow(AgentClient).to receive(:with_agent_id).with('fake-agent-id', 'fake-job-1/fake-uuid-1').and_return(agent)
           allow(agent).to receive(:shutdown)
         end
 

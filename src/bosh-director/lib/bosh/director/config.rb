@@ -18,7 +18,7 @@ module Bosh::Director
         :audit_log_path,
         :base_dir,
         :cloud_options,
-        :cpi_api_test_max_version,
+        :preferred_cpi_api_version,
         :current_job,
         :db,
         :default_ssh_options,
@@ -228,7 +228,10 @@ module Bosh::Director
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
-        @cpi_api_test_max_version = config.fetch('cpi_api_test_max_version')
+
+        cpi_config = config.fetch('cpi')
+        max_cpi_api_version = cpi_config.fetch('max_supported_api_version')
+        @preferred_cpi_api_version = [max_cpi_api_version, cpi_config.fetch('preferred_api_version')].min
       end
 
       def agent_env
@@ -435,6 +438,20 @@ module Bosh::Director
       def load_hash(hash)
         Config.new(hash)
       end
+
+      def stemcell_os
+        director_stemcell_owner.stemcell_os
+      end
+
+      def stemcell_version
+        director_stemcell_owner.stemcell_version
+      end
+
+      def director_stemcell_owner
+        @director_stemcell_owner ||= DirectorStemcellOwner.new
+      end
+
+      attr_writer :director_stemcell_owner
     end
 
     def name

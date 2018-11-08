@@ -1575,7 +1575,7 @@ describe 'links api', type: :integration do
         external_link_response = JSON.parse(send_director_post_request('/links', '', JSON.generate(payload_json)).read_body)
         response = get_json('/link_address', "link_id=#{external_link_response['id']}")
 
-        expect(response).to eq('address' => 'q-s0.q-g2.bosh')
+        expect(response).to eq('address' => 'q-n1s0.q-g2.bosh')
       end
     end
 

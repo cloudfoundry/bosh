@@ -68,7 +68,7 @@ module Bosh::Director
       allow(instance_plan).to receive(:spec).and_return(instance_spec)
 
       instance_model.active_vm = vm_model
-      allow(AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client)
+      allow(AgentClient).to receive(:with_agent_id).with(instance_model.agent_id, instance_model.name).and_return(agent_client)
     end
 
     describe '#stop' do

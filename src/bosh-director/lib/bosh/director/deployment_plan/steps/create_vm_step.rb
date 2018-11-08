@@ -53,7 +53,7 @@ module Bosh::Director
         def update_metadata(instance_plan, vm, factory)
           instance_model = instance_plan.instance.model
           MetadataUpdater.build.update_vm_metadata(instance_model, vm, @tags, factory)
-          agent_client = AgentClient.with_agent_id(vm.agent_id)
+          agent_client = AgentClient.with_agent_id(vm.agent_id, instance_model.name)
           agent_client.wait_until_ready
 
           if Config.flush_arp

@@ -183,7 +183,7 @@ module Bosh::Director
     describe '#agent_client_for' do
       it 'creates an agent client for the specified instance' do
         fake_agent_client = instance_double(AgentClient)
-        expect(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(fake_agent_client)
+        expect(AgentClient).to receive(:with_agent_id).with(vm.agent_id, instance.name).and_return(fake_agent_client)
         agent_client = subject.agent_client_for(instance)
         expect(agent_client).to eq(fake_agent_client)
       end

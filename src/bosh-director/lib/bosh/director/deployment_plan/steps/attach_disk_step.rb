@@ -29,7 +29,7 @@ module Bosh::Director
         end
 
         def agent_client(instance_model)
-          @agent_client ||= AgentClient.with_agent_id(instance_model.agent_id)
+          @agent_client ||= AgentClient.with_agent_id(instance_model.agent_id, instance_model.name)
         end
       end
     end

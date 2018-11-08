@@ -82,58 +82,63 @@ module Bosh::Director::ConfigServer
 
     # @param [DeploymentPlan::Variables] variables Object representing variables passed by the user
     # @param [String] deployment_name
-    def generate_values(variables, deployment_name, converge_variables = false)
+    def generate_values(variables, deployment_name, converge_variables = false, use_link_dns_names = false)
       deployment_model = @deployment_lookup.by_name(deployment_name)
-      current_variable_set = deployment_model.current_variable_set
 
-      variables.spec.each do |variable|
-        variable_name = variable['name']
-        ConfigServerHelper.validate_variable_name(variable_name)
-
-        constructed_name = ConfigServerHelper.add_prefix_if_not_absolute(
-          variable_name,
-          @director_name,
-          deployment_name,
-        )
-
-        if variable['type'] == 'certificate' && variable['options'] && variable['options']['ca']
-          variable['options']['ca'] = ConfigServerHelper.add_prefix_if_not_absolute(
-            variable['options']['ca'],
-            @director_name,
-            deployment_name,
-          )
-        end
+      variables.spec.map do |variable|
+        ConfigServerHelper.validate_variable_name(variable['name'])
 
         if variable['type'] == 'certificate'
-          links = find_variable_link(deployment_model, variable_name)
-
-          unless links.empty?
-            variable['options'] ||= {}
-            links.each do |type, link|
-              link_url = generate_dns_address_from_link(link)
-
-              if type == 'alternative_name'
-                variable['options']['alternative_names'] ||= []
-                variable['options']['alternative_names'] << link_url
-              elsif type == 'common_name'
-                variable['options'][type] = variable['options'][type] || link_url
-              end
-            end
-          end
+          has_ca = variable['options'] && variable['options']['ca']
+          generate_ca(variable, deployment_name) if has_ca
+          variable = generate_links(variable, deployment_model, use_link_dns_names)
         end
 
+        constructed_name = ConfigServerHelper.add_prefix_if_not_absolute(variable['name'], @director_name, deployment_name)
         generate_value_and_record_event(
           constructed_name,
           variable['type'],
           deployment_name,
-          current_variable_set,
+          deployment_model.current_variable_set,
           variable['options'],
           converge_variables,
         )
+
+        variable
       end
     end
 
     private
+
+    def generate_ca(variable, deployment_name)
+      variable['options']['ca'] = ConfigServerHelper.add_prefix_if_not_absolute(
+        variable['options']['ca'],
+        @director_name,
+        deployment_name,
+      )
+    end
+
+    def generate_links(variable, deployment_model, use_link_dns_names)
+      links = find_variable_link(deployment_model, variable['name'])
+
+      return variable if links.empty?
+
+      start_options = variable['options'] || {}
+      variable['options'] = links.reduce(start_options) do |options, (type, link)|
+        link_url = generate_dns_address_from_link(link, use_link_dns_names)
+
+        if type == 'alternative_name'
+          options['alternative_names'] ||= []
+          options['alternative_names'] << link_url
+        elsif type == 'common_name'
+          options[type] ||= link_url
+        end
+
+        options
+      end
+
+      variable
+    end
 
     def generate_wildcard(link_url)
       exploded = link_url.split('.', 2)
@@ -160,16 +165,24 @@ module Bosh::Director::ConfigServer
       result
     end
 
-    def generate_dns_address_from_link(link)
+    def generate_dns_address_from_link(link, use_link_dns_names)
       link_content = JSON.parse(link.link_content)
 
       return link_content['address'] if link.link_provider_intent&.link_provider&.type == 'manual'
 
       use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)
-      dns_encoder = Bosh::Director::LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
+      group_type = Bosh::Director::Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP
+      group_name = link_content['instance_group']
+      if use_link_dns_names
+        use_short_dns_addresses = true
+        group_type = Bosh::Director::Models::LocalDnsEncodedGroup::Types::LINK
+        group_name = link.group_name
+      end
+
+      dns_encoder = Bosh::Director::LocalDnsEncoderManager.create_dns_encoder(use_link_dns_names || use_short_dns_addresses)
       query_criteria = {
-        group_type: Bosh::Director::Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
-        group_name: link_content['instance_group'],
+        group_type: group_type,
+        group_name: group_name,
         deployment_name: link_content['deployment_name'],
         default_network: link_content['default_network'],
         root_domain: link_content['domain'],

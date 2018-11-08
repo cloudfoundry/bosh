@@ -25,11 +25,10 @@ module Bosh
           end
           let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
           let(:cloud_factory) { instance_double(AZCloudFactory) }
-          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
+          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
           let(:cpi_api_version) { 1 }
           before {
-            allow(cloud).to receive(:request_cpi_api_version=)
-            allow(cloud).to receive(:request_cpi_api_version).and_return(1)
+            allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
           }
           let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
           let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }

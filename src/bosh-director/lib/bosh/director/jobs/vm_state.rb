@@ -103,7 +103,7 @@ module Bosh::Director
 
         unless vm.nil?
           begin
-            agent = AgentClient.with_agent_id(vm.agent_id, :timeout => TIMEOUT)
+            agent = AgentClient.with_agent_id(vm.agent_id, vm.instance.name, timeout: TIMEOUT)
             agent_state = agent.get_state(@format)
             agent_state['networks'].each_value do |network|
               ips << network['ip']

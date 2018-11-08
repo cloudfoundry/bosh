@@ -91,7 +91,7 @@ describe 'cli: events', type: :integration do
     bosh_events_output
   end
 
-  it 'deletes vms', no_create_swap_delete: true do
+  it 'del   etes vms', no_create_swap_delete: true do
     bosh_events_output = first_part_of_test
 
     instance_name = parse_first_instance_name(bosh_events_output)

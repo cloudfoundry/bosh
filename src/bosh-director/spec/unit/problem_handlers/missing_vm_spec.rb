@@ -56,6 +56,7 @@ module Bosh::Director
       allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
       fake_app
       allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
     end
 
     it 'registers under missing_vm type' do

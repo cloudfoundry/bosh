@@ -17,7 +17,7 @@ module Bosh::Director
         end
 
         before do
-          allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id).and_return(agent_client)
+          allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, vm.instance.name).and_return(agent_client)
           allow(CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
           allow(cloud).to receive(:detach_disk)
