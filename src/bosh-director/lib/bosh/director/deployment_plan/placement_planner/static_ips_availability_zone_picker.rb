@@ -176,7 +176,7 @@ module Bosh
           end
 
           def find_instance_ips_on_network(existing_instance_model, network)
-            existing_instance_model.ip_addresses.select { |ip_address| network.static_ips.include?(ip_address.address) }
+            existing_instance_model.ip_addresses_dataset.where(network_name: network.name, address_str: network.static_ips).all
           end
 
           def already_has_instance_plan?(existing_instance_model, instance_plans)

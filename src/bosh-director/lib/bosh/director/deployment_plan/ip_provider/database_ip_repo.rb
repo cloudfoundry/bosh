@@ -88,7 +88,7 @@ module Bosh::Director::DeploymentPlan
       ip_address
     end
 
-    def all_ip_addresses
+    def all_ip_addresses(network_name)
       Bosh::Director::Models::IpAddress.where(network_name: network_name).select(:address_str).all.map { |a| a.address_str.to_i }
     end
 

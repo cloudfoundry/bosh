@@ -142,6 +142,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when reservation changes network' do
+        # FAILS; do we need this behavior?
         it 'updates network name' do
           network_spec['subnets'].first['static'] = ['192.168.1.5']
           static_reservation = BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
@@ -225,6 +226,29 @@ module Bosh::Director::DeploymentPlan
             ip_repo.add(static_network_reservation)
           }.not_to raise_error
         end
+
+        it 'should succeed if it is reserved with a different network (overlapping IPs)' do
+          network_spec['subnets'].first['static'] = ['192.168.1.5']
+
+          other_instance_model = Bosh::Director::Models::Instance.make(availability_zone: 'az-2')
+          original_static_network_reservation = BD::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
+          other_static_network_reservation = BD::DesiredNetworkReservation.new_static(other_instance_model, other_network, '192.168.1.5')
+
+          ip_repo.add(original_static_network_reservation)
+
+          expect {
+            ip_repo.add(other_static_network_reservation)
+          }.not_to raise_error
+
+          expect(Bosh::Director::Models::IpAddress.count).to eq(2)
+          original_address = Bosh::Director::Models::IpAddress.first
+          expect(original_address.static).to eq(true)
+          expect(original_address.network_name).to eq(network.name)
+
+          other_address = Bosh::Director::Models::IpAddress.last
+          expect(other_address.static).to eq(true)
+          expect(other_address.network_name).to eq(other_network.name)
+        end
       end
     end
 
@@ -303,7 +327,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when there are IPs reserved by other networks with overlapping subnet' do
-        it 'returns the next non-reserved IP' do
+        it 'returns the same IP adress since it only needs to be unique per network' do
           ip_address = ip_repo.allocate_dynamic_ip(other_reservation, other_subnet)
 
           expected_ip_address = cidr_ip('192.168.1.2')
@@ -311,7 +335,7 @@ module Bosh::Director::DeploymentPlan
 
           ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
 
-          expected_ip_address = cidr_ip('192.168.1.3')
+          expected_ip_address = cidr_ip('192.168.1.2')
           expect(ip_address).to eq(expected_ip_address)
         end
       end
