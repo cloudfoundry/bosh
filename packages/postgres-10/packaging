@@ -1,6 +1,6 @@
 set -e -x
 
-tar xzf postgres/postgresql-9.4.*.tar.gz
+tar xzf postgres/postgresql-10.*.tar.gz
 
 pushd postgresql-*
   ./configure --prefix=${BOSH_INSTALL_TARGET}

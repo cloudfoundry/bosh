@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -eu
+
+PACKAGE_DIR=/var/vcap/packages/postgres-10
+PACKAGE_DIR_OLD=/var/vcap/packages/postgres-9.4
+
+STORE_DIR=/var/vcap/store
+
+DATA_DIR=$STORE_DIR/postgres-10
+DATA_DIR_OLD=$STORE_DIR/postgres-9.4
+
+USER='<%= p("postgres.user") %>'
+
+
+sysctl -w "kernel.shmmax=67108864"
+
+if [[ -d /var/vcap/store/postgres ]]; then
+  echo "Please use a previous bosh release version (264.x or lower) to migrate data from postgres to postgres-9.4."
+  exit 1
+fi
+
+# We cannot kill the following conditional
+# because initdb is very picky about looking at an empty dir
+if [ ! -d $DATA_DIR ] || [ ! -f $DATA_DIR/postgresql.conf ]; then
+  mkdir -p $DATA_DIR
+  chown vcap:vcap $DATA_DIR
+
+  # initdb creates data directories
+  su - vcap -c "$PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
+
+  if [ $? != 0 ]; then
+    echo "ERROR: Unable to Initialize Postgres DB"
+    exit 1
+  fi
+
+  echo "host all $USER 0.0.0.0/0 md5" >> $DATA_DIR/pg_hba.conf
+
+  mkdir -p $DATA_DIR/pg_log
+  chown vcap:vcap $DATA_DIR/pg_log
+fi
+
+if [[ -d /var/vcap/store/postgres-9.4 ]] && [[ ! -d /var/vcap/store/postgres-10 ]] ; then
+  echo "Copying contents of postgres-9.4 to postgres-10 for postgres upgrade"
+  su - vcap -c "/var/vcap/packages/postgres-10/bin/pg_upgrade \
+    --old-bindir=$PACKAGE_DIR_OLD/bin \
+    --new-bindir=$PACKAGE_DIR/bin \
+    --old-datadir=$DATA_DIR_OLD \
+    --new-datadir=$DATA_DIR"
+fi

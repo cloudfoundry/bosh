@@ -1,0 +1,422 @@
+---
+groups:
+  - name: bosh
+    jobs:
+      - candidate-release
+      - brats-ubuntu-xenial
+      - compile-bosh-dev-release-xenial
+
+jobs:
+  - name: candidate-release
+    plan:
+    - get: bosh-src
+      trigger: true
+    - get: bosh-cli
+    - put: version
+      params:
+        pre: rc
+    - task: make
+      file: bosh-src/ci/tasks/make-candidate.yml
+    - put: bosh-candidate-release-tarballs
+      params:
+        file: "release/bosh-dev-release.tgz"
+
+  - name: compile-bosh-dev-release-xenial
+    plan:
+    - aggregate:
+      - get: bosh-src
+      - get: release
+        resource: bosh-candidate-release-tarballs
+        passed:
+        - candidate-release
+        trigger: true
+      - get: stemcell
+        resource: warden-ubuntu-xenial
+        trigger: true
+    - task: export-release
+      file: bosh-src/ci/tasks/export-release.yml
+      privileged: true
+    - put: bosh-compiled-candidate-xenial
+      params:
+        file: "compiled-release/*.tgz"
+
+  - name: brats-ubuntu-xenial
+    serial: true
+    plan:
+    - aggregate:
+      - get: bosh-src
+      - get: bosh-dns-release
+      - get: stemcell
+        resource: warden-ubuntu-xenial
+      - get: bosh-candidate-release-tarballs
+      - get: bosh-release
+        resource: bosh-compiled-candidate-xenial
+        trigger: true
+        passed:
+        - compile-bosh-dev-release-xenial
+    - do:
+      - put: brats-terraform
+        attempts: 2
+        params:
+          env_name: brats-ubuntu-xenial-((branch_name))
+          terraform_source: bosh-src/ci/brats
+          vars:
+            rds_mysql_username: ((brats-rds-mysql-external-db-user))
+            rds_mysql_password: ((brats-rds-mysql-external-db-password))
+            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+            rds_postgres_username: ((brats-rds-postgres-external-db-user))
+            rds_postgres_password: ((brats-rds-postgres-external-db-password))
+            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+            aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+            aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+            gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
+            gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
+            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+            gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
+            gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
+            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+          env:
+            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+      - task: create-ssl-certificates
+        attempts: 2
+        file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
+        params:
+          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+        input_mapping:
+          terraform-output: brats-terraform
+      - task: test-brats
+        file: bosh-src/ci/tasks/test-brats.yml
+        input_mapping:
+          database-metadata: brats-terraform
+        tags: ["worker-brats"]
+        privileged: true
+        params: &brats-dbs-params
+          RDS_MYSQL_EXTERNAL_DB_USER: ((brats-rds-mysql-external-db-user))
+          RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-rds-mysql-external-db-password))
+          RDS_MYSQL_EXTERNAL_DB_NAME: ((brats-rds-mysql-external-db-name))
+          RDS_POSTGRES_EXTERNAL_DB_USER: ((brats-rds-postgres-external-db-user))
+          RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-rds-postgres-external-db-password))
+          RDS_POSTGRES_EXTERNAL_DB_NAME: ((brats-rds-postgres-external-db-name))
+          GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
+          GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
+          GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
+          GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
+          GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
+          GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
+          STEMCELL_OS: ubuntu-xenial
+      ensure:
+        do:
+        - task: cleanup-external-dbs
+          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          input_mapping:
+            database-metadata: brats-terraform
+          params: *brats-dbs-params
+        - put: brats-terraform
+          get_params: { action: destroy }
+          params:
+            env_name: brats-ubuntu-xenial-((branch_name))
+            terraform_source: bosh-src/ci/brats
+            action: destroy
+            vars:
+              rds_mysql_username: ((brats-rds-mysql-external-db-user))
+              rds_mysql_password: ((brats-rds-mysql-external-db-password))
+              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+              rds_postgres_username: ((brats-rds-postgres-external-db-user))
+              rds_postgres_password: ((brats-rds-postgres-external-db-password))
+              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+              aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+              aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+              gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
+              gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
+              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+              gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
+              gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
+              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            env:
+              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            action: destroy
+
+resource_types:
+- name: terraform
+  type: docker-image
+  source:
+    repository: ljfranklin/terraform-resource
+
+- name: gcs-resource
+  type: docker-image
+  source:
+    repository: frodenas/gcs-resource
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: wip-postgres-10
+
+  # - name: bosh-github-release
+  #   type: github-release
+  #   source:
+  #     owner: cloudfoundry
+  #     repository: bosh
+  #     drafts: true
+  #     access_token: ((github_token))
+
+  - name: version
+    type: semver
+    source:
+      bucket: wip-postgres-10-version
+      region_name: us-west-1
+      key: version
+      initial_version: "999.0.0"
+      access_key_id: ((postgres_access_key))
+      secret_access_key: ((postgres_secret_key))
+
+  - name: bosh-candidate-release-tarballs
+    type: s3
+    source:
+      bucket: wip-postgres-10-candidate-release-tarballs
+      region_name: us-west-1
+      access_key_id: ((postgres_access_key))
+      secret_access_key: ((postgres_secret_key))
+      versioned_file: "bosh-dev-release.tgz"
+
+  - name: bosh-compiled-candidate-xenial
+    type: s3
+    source:
+      bucket: "wip-postgres-10-compiled-release-tarballs"
+      region_name: us-west-1
+      access_key_id: ((postgres_access_key))
+      secret_access_key: ((postgres_secret_key))
+      regexp: "bosh-.*dev\\.(\\d+).*xenial.*.tgz"
+
+  # - name: bosh-compiled-candidate-trusty
+  #   type: s3
+  #   source:
+  #     bucket: "bosh-compiled-candidate-tarballs"
+  #     access_key_id: ((bosh-compiled-releases-aws-access-key-id))
+  #     secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+  #     regexp: "bosh-.*dev\\.(\\d+).*trusty.*.tgz"
+
+  # - name: bbr-sdk-release
+  #   type: bosh-io-release
+  #   source:
+  #     repository:  cloudfoundry-incubator/backup-and-restore-sdk-release
+
+  # - name: bbr-compiled-trusty
+  #   type: s3
+  #   source:
+  #     bucket: ((bbr_compiled_release_bucket))
+  #     access_key_id: ((candidate_release_access_key_id))
+  #     secret_access_key: ((candidate_release_secret_access_key))
+  #     regexp: "trusty/backup-and-restore-sdk-(.*).tgz"
+
+  # - name: bbr-compiled-xenial
+  #   type: s3
+  #   source:
+  #     bucket: ((bbr_compiled_release_bucket))
+  #     access_key_id: ((candidate_release_access_key_id))
+  #     secret_access_key: ((candidate_release_secret_access_key))
+  #     regexp: "xenial/backup-and-restore-sdk-(.*).tgz"
+
+  # - name: integration-tests-parallel-runtime
+  #   type: s3
+  #   source:
+  #     bucket: ((integration_runtime_bucket))
+  #     access_key_id: ((integration_runtime_access_key_id))
+  #     secret_access_key: ((integration_runtime_secret_access_key))
+  #     versioned_file: "parallel_runtime_rspec.log"
+
+  - name: brats-terraform
+    type: terraform
+    source:
+      storage:
+        bucket: wip-postgres-10-terraform
+        bucket_path: brats-ci/
+        region_name: us-west-1
+        access_key_id: ((postgres_access_key))
+        secret_access_key: ((postgres_secret_key))
+
+  # - name: acceptance-env-state
+  #   type: git
+  #   source:
+  #     branch: master
+  #     uri: git@github.com:cloudfoundry/bosh-bbl-ci-envs.git
+  #     private_key: ((bosh-bbl-ci-envs-private-key))
+
+  # - name: zookeeper-release
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cppforlife/zookeeper-release
+  #     branch: master
+
+  # - name: davcli
+  #   type: s3
+  #   source:
+  #     regexp: davcli-(.*)-linux-amd64
+  #     bucket: davcli
+  #     region_name: us-east-1
+
+  # - name: bosh-fuzz-tests
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
+  #     branch: master
+
+  # - name: bosh-master
+  #   type: git
+  #   source:
+  #     uri: ((bosh_src_url))
+  #     branch: master
+  #     private_key: ((github_deployment_key))
+
+  # - name: fuzz-interval-trigger
+  #   type: time
+  #   source:
+  #     interval: 15m
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: alpha-bosh-cli-(.*)-linux-amd64
+      bucket: ((bosh_cli_aws_s3_alpha_release_bucket))
+      region_name: ((bosh_cli_aws_s3_release_bucket_region))
+
+  - name: bosh-dns-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/bosh-dns-release
+
+  #
+  # BATS
+  #
+
+  # - name: bats
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
+  #     branch: master
+
+  # - name: bosh-deployment
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cloudfoundry/bosh-deployment
+  #     branch: master
+
+  # - name: environment
+  #   type: pool
+  #   source:
+  #     pool: vsphere
+  #     uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
+  #     branch: master
+  #     private_key: ((github_deployment_key__bosh-cpi-environments))
+
+  # - name: vsphere-esxi-ubuntu-trusty
+  #   type: bosh-io-stemcell
+  #   source:
+  #     name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
+
+  # - name: vsphere-esxi-ubuntu-xenial
+  #   type: bosh-io-stemcell
+  #   source:
+  #     name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
+
+  # - name: google-kvm-ubuntu-trusty
+  #   type: bosh-io-stemcell
+  #   source:
+  #     name: bosh-google-kvm-ubuntu-trusty-go_agent
+
+  # - name: aws-xen-hvm-ubuntu-trusty
+  #   type: bosh-io-stemcell
+  #   source:
+  #     name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+
+  # - name: warden-ubuntu-trusty
+  #   type: bosh-io-stemcell
+  #   source:
+  #     name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+
+  - name: warden-ubuntu-xenial
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-xenial-go_agent
+
+  # - name: vsphere-esxi-centos-7
+  #   type: bosh-io-stemcell
+  #   source:
+  #     name: bosh-vsphere-esxi-centos-7-go_agent
+
+  # - name: cpi-release
+  #   type: bosh-io-release
+  #   source:
+  #     repository: cloudfoundry-incubator/bosh-vsphere-cpi-release
+
+  # - name: bosh-agent
+  #   type: git
+  #   source:
+  #     uri: https://github.com/cloudfoundry/bosh-agent
+  #     branch: master
+
+  # - name: tracker-output
+  #   type: tracker
+  #   source:
+  #     token: ((tracker_api_token))
+  #     project_id: ((tracker_project_id))
+  #     tracker_url: https://www.pivotaltracker.com
+
+  # - name: bosh-main-mysql-5.5
+  #   type: docker-image
+  #   source:
+  #     repository: bosh/main-mysql-5.5
+
+  # - name: bosh-main-mysql-5.6
+  #   type: docker-image
+  #   source:
+  #     repository: bosh/main-mysql-5.6
+
+  # - name: bosh-main-mysql-5.7
+  #   type: docker-image
+  #   source:
+  #     repository: bosh/main-mysql-5.7
+
+  # - name: bosh-main-postgres-9.3
+  #   type: docker-image
+  #   source:
+  #     repository: bosh/main-postgres-9.3
+
+  # - name: bosh-main-postgres-9.4
+  #   type: docker-image
+  #   source:
+  #     repository: bosh/main-postgres-9.4
+
+  # - name: bosh-main-postgres-9.5
+  #   type: docker-image
+  #   source:
+  #     repository: bosh/main-postgres-9.5
+
+  # - name: bosh-main-postgres-9.6
+  #   type: docker-image
+  #   source:
+  #     repository: bosh/main-postgres-9.6
+
+  # - name: rds-pool
+  #   type: pool
+  #   source:
+  #     uri: git@github.com:cloudfoundry/bosh-ci-pools
+  #     branch: master
+  #     pool: unit-24-db-migrations-rds
+  #     private_key: ((bosh_ci_pools_deploy_key))
+
+  # - name: terraform
+  #   type: terraform
+  #   source:
+  #     storage:
+  #       access_key_id:     ((aws_access_key__primary))
+  #       secret_access_key: ((aws_secret_key__primary))
+  #       bucket:            ((terraform_bucket))
+  #       bucket_path:       terraform-state
+  #     vars:
+  #       access_key: ((aws_access_key__primary))
+  #       secret_key: ((aws_secret_key__primary))
+  #       region:     ((aws_region__primary))
+  #       ssh_public_key: ((aws_ssh_public_key))

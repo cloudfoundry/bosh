@@ -1,14 +1,12 @@
 ---
 name: ((deployment-name))
 instance_groups:
-- name: bosh
+- name: postgres
   azs: [z1]
   instances: 1
   jobs:
-  - name: postgres-9.4
-    release: bosh
-  - name: bpm
-    release: bpm
+  - {name: postgres-9.4, release: bosh}
+  - {name: bpm, release: bpm}
   vm_type: default
   stemcell: default
   persistent_disk_type: default

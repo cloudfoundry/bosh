@@ -5,7 +5,7 @@ instance_groups:
   azs: [z1]
   instances: 1
   jobs:
-  - name: postgres-9.4
+  - name: postgres-10
     release: bosh
   - name: bpm
     release: bpm
