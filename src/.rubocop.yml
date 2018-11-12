@@ -4,7 +4,6 @@ AllCops:
   - Rakefile
   Exclude:
   - tmp/**/*
-  - src/bosh_cpi/**/*.rb
 
 # Layout
 Layout/IndentHash:
