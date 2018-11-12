@@ -102,9 +102,15 @@ module Bosh::Director
     def merge_manifests(deployment_manifest, cloud_manifest, runtime_config_manifest)
       hash = deployment_manifest.merge(cloud_manifest || {})
       hash.merge(runtime_config_manifest || {}) do |key, old, new|
-        if (key == 'releases') || (key == 'variables')
+        if (key == 'releases') || (key == 'variables') || (key == 'addons')
           if old && new
             old.to_set.merge(new.to_set).to_a
+          else
+            old.nil? ? new : old
+          end
+        elsif key == 'tags'
+          if old && new
+            new.merge(old)
           else
             old.nil? ? new : old
           end

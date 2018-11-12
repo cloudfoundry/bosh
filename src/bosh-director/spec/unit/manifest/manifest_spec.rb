@@ -585,6 +585,107 @@ module Bosh::Director
                                                          })
       end
 
+      context 'when both deployment manifest and runtime config contain addons' do
+        before(:each) do
+          manifest_hash.merge!(
+            {'addons' => [{ 'name' => 'deployment_level_addon' }] }
+          )
+        end
+        it 'includes the merged addons' do
+          expect(manifest_object.to_hash['addons']).to match_array(
+            [{ 'name' => 'test', 'properties' => {'test2' => '((test2_placeholder))'} },
+             { 'name' => 'deployment_level_addon' }]
+          )
+        end
+      end
+
+      context 'when tags are set' do
+        before(:each) do
+          manifest_hash.merge!(
+            {'tags' => { 'tag_1' => 'deployment_level_tag' } }
+          )
+        end
+        context 'when deployment manifest contains tags' do
+            it 'includes the deployment level tag' do
+              expect(manifest_object.to_hash['tags']).to eq(
+                {
+                  'tag_1' => 'deployment_level_tag',
+                }
+              )
+            end
+        end
+        context 'when both deployment manifest and runtime config contain tags' do
+          context 'when the tags are different' do
+            before(:each) do
+              runtime_config_hash.merge!(
+                {'tags' => { 'tag_2' => 'runtime_level_tag'} }
+              )
+            end
+            it 'includes the merged tags' do
+              expect(manifest_object.to_hash['tags']).to eq(
+                {
+                  'tag_1' => 'deployment_level_tag',
+                  'tag_2' => 'runtime_level_tag',
+                }
+              )
+            end
+          end
+          context 'when the tags have the same key' do
+            before(:each) do
+              runtime_config_hash.merge!(
+                {'tags' =>
+                 {
+                   'tag_1' => 'runtime_level_tag',
+                 }
+              }
+              )
+            end
+            it 'includes the deployment level tag' do
+              expect(manifest_object.to_hash['tags']).to eq(
+                {
+                  'tag_1' => 'deployment_level_tag',
+                }
+              )
+            end
+          end
+          context 'when the runtime config tags are nil' do
+            before(:each) do
+              runtime_config_hash.merge!(
+                {'tags' => nil }
+              )
+            end
+            it 'includes the deployment level tag' do
+              expect(manifest_object.to_hash['tags']).to eq(
+                {
+                  'tag_1' => 'deployment_level_tag',
+                }
+              )
+            end
+          end
+          context 'when the deployment manifest tags are nil' do
+            before(:each) do
+              manifest_hash.merge!(
+                {'tags' => nil }
+              )
+              runtime_config_hash.merge!(
+                {'tags' =>
+                 {
+                   'tag_1' => 'runtime_level_tag',
+                 }
+              }
+              )
+            end
+            it 'includes the runtime level tag' do
+              expect(manifest_object.to_hash['tags']).to eq(
+                {
+                  'tag_1' => 'runtime_level_tag',
+                }
+              )
+            end
+          end
+        end
+      end
+
       context 'when runtime config contains same release/version or variables as deployment manifest' do
         let(:manifest_hash) do
           {
