@@ -42,13 +42,13 @@ module Bosh::Director
     end
 
     describe '.load_from_model' do
-      let(:deployment_model) {instance_double(Bosh::Director::Models::Deployment)}
-      let(:runtime_configs) { [ Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime') ] }
+      let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
+      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
       let(:manifest_hash) do
         { 'name' => 'a_deployment', 'name-1' => 'my-name-1' }
       end
       let(:manifest_text) do
-        %Q(---
+        %(---
          name: a_deployment
          name-1: my-name-1)
       end
@@ -144,7 +144,7 @@ module Bosh::Director
       end
       let(:cloud_config_hash) { cloud_config.raw_manifest }
       let(:manifest_text) do
-        %Q(---
+        %(---
         name: minimal
         releases:
         - name: simple
@@ -161,7 +161,7 @@ module Bosh::Director
 
       it 'creates a manifest object from a cloud config, a manifest text, and a runtime config' do
         expect(
-          Manifest.load_from_hash(manifest_hash, manifest_text, [cloud_config], runtime_configs).to_yaml
+          Manifest.load_from_hash(manifest_hash, manifest_text, [cloud_config], runtime_configs).to_yaml,
         ).to eq(manifest_object.to_yaml)
       end
 
@@ -222,8 +222,8 @@ module Bosh::Director
             {
               'releases' => [
                 { 'name' => 'simple', 'version' => 'latest' },
-                { 'name' => 'hard', 'version' => 'latest' }
-              ]
+                { 'name' => 'hard', 'version' => 'latest' },
+              ],
             }
           end
 
@@ -233,11 +233,11 @@ module Bosh::Director
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['releases']).to eq(
               [{ 'name' => 'simple', 'version' => '9' },
-               { 'name' => 'hard', 'version' => '1+dev.7' }]
+               { 'name' => 'hard', 'version' => '1+dev.7' }],
             )
             expect(manifest_object.manifest_hash['releases']).to eq(
               [{ 'name' => 'simple', 'version' => '9' },
-               { 'name' => 'hard', 'version' => '1+dev.7' }]
+               { 'name' => 'hard', 'version' => '1+dev.7' }],
             )
           end
         end
@@ -247,8 +247,8 @@ module Bosh::Director
             {
               'releases' => [
                 { 'name' => 'simple', 'version' => '9.latest' },
-                { 'name' => 'hard', 'version' => '1.latest' }
-              ]
+                { 'name' => 'hard', 'version' => '1.latest' },
+              ],
             }
           end
 
@@ -258,11 +258,11 @@ module Bosh::Director
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['releases']).to eq(
               [{ 'name' => 'simple', 'version' => '9' },
-               { 'name' => 'hard', 'version' => '1+dev.7' }]
+               { 'name' => 'hard', 'version' => '1+dev.7' }],
             )
             expect(manifest_object.manifest_hash['releases']).to eq(
               [{ 'name' => 'simple', 'version' => '9' },
-               { 'name' => 'hard', 'version' => '1+dev.7' }]
+               { 'name' => 'hard', 'version' => '1+dev.7' }],
             )
           end
         end
@@ -272,8 +272,8 @@ module Bosh::Director
             {
               'releases' => [
                 { 'name' => 'simple', 'version' => 9 },
-                { 'name' => 'hard', 'version' => '42' }
-              ]
+                { 'name' => 'hard', 'version' => '42' },
+              ],
             }
           end
 
@@ -283,11 +283,11 @@ module Bosh::Director
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['releases']).to eq(
               [{ 'name' => 'simple', 'version' => '9' },
-               { 'name' => 'hard', 'version' => '42' }]
+               { 'name' => 'hard', 'version' => '42' }],
             )
             expect(manifest_object.manifest_hash['releases']).to eq(
               [{ 'name' => 'simple', 'version' => '9' },
-               { 'name' => 'hard', 'version' => '42' }]
+               { 'name' => 'hard', 'version' => '42' }],
             )
           end
         end
@@ -295,7 +295,7 @@ module Bosh::Director
         context 'when manifest has uninterpolated releases property' do
           let(:manifest_hash) do
             {
-              'releases' => '((nope))'
+              'releases' => '((nope))',
             }
           end
 
@@ -310,8 +310,8 @@ module Bosh::Director
           let(:manifest_hash) do
             {
               'releases' => [
-                '((nope))'
-              ]
+                '((nope))',
+              ],
             }
           end
 
@@ -329,8 +329,8 @@ module Bosh::Director
             {
               'stemcells' => [
                 { 'name' => 'simple', 'version' => 'latest' },
-                { 'name' => 'hard', 'version' => 'latest' }
-              ]
+                { 'name' => 'hard', 'version' => 'latest' },
+              ],
             }
           end
 
@@ -338,7 +338,7 @@ module Bosh::Director
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(
               [{ 'name' => 'simple', 'version' => '3169' },
-               { 'name' => 'hard', 'version' => '3146.1' }]
+               { 'name' => 'hard', 'version' => '3146.1' }],
             )
           end
         end
@@ -348,8 +348,8 @@ module Bosh::Director
             {
               'stemcells' => [
                 { 'name' => 'simple', 'version' => '3169.latest' },
-                { 'name' => 'hard', 'version' => '3146.latest' }
-              ]
+                { 'name' => 'hard', 'version' => '3146.latest' },
+              ],
             }
           end
 
@@ -357,7 +357,7 @@ module Bosh::Director
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(
               [{ 'name' => 'simple', 'version' => '3169' },
-               { 'name' => 'hard', 'version' => '3146.1' }]
+               { 'name' => 'hard', 'version' => '3146.1' }],
             )
           end
         end
@@ -367,8 +367,8 @@ module Bosh::Director
             {
               'stemcells' => [
                 { 'name' => 'simple', 'version' => 42 },
-                { 'name' => 'hard', 'version' => 'latest' }
-              ]
+                { 'name' => 'hard', 'version' => 'latest' },
+              ],
             }
           end
 
@@ -376,7 +376,7 @@ module Bosh::Director
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(
               [{ 'name' => 'simple', 'version' => '42' },
-               { 'name' => 'hard', 'version' => '3146.1' }]
+               { 'name' => 'hard', 'version' => '3146.1' }],
             )
           end
         end
@@ -387,16 +387,16 @@ module Bosh::Director
               'resource_pools' => [
                 {
                   'name' => 'rp1',
-                  'stemcell' => { 'name' => 'simple', 'version' => 'latest' }
-                }
-              ]
+                  'stemcell' => { 'name' => 'simple', 'version' => 'latest' },
+                },
+              ],
             }
           end
 
           it 'replaces latest with the latest version number' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['resource_pools'].first['stemcell']).to eq(
-              'name' => 'simple', 'version' => '3169'
+              'name' => 'simple', 'version' => '3169',
             )
           end
         end
@@ -407,16 +407,16 @@ module Bosh::Director
               'resource_pools' => [
                 {
                   'name' => 'rp1',
-                  'stemcell' => { 'name' => 'simple', 'version' => '3169.latest' }
-                }
-              ]
+                  'stemcell' => { 'name' => 'simple', 'version' => '3169.latest' },
+                },
+              ],
             }
           end
 
           it 'replaces the correct version match' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['resource_pools'].first['stemcell']).to eq(
-              'name' => 'simple', 'version' => '3169'
+              'name' => 'simple', 'version' => '3169',
             )
           end
         end
@@ -424,7 +424,7 @@ module Bosh::Director
         context 'when manifest has uninterpolated stemcells property' do
           let(:manifest_hash) do
             {
-              'stemcells' => '((foo))'
+              'stemcells' => '((foo))',
             }
           end
 
@@ -437,7 +437,7 @@ module Bosh::Director
         context 'when manifest has uninterpolated stemcell items' do
           let(:manifest_hash) do
             {
-              'stemcells' => ['((foo))']
+              'stemcells' => ['((foo))'],
             }
           end
 
@@ -450,7 +450,7 @@ module Bosh::Director
         context 'when manifest has uninterpolated resource_pools property' do
           let(:cloud_config_hash) do
             {
-              'resource_pools' => '((bar))'
+              'resource_pools' => '((bar))',
             }
           end
 
@@ -463,7 +463,7 @@ module Bosh::Director
         context 'when manifest has uninterpolated resource_pool items' do
           let(:cloud_config_hash) do
             {
-              'resource_pools' => ['((bar))']
+              'resource_pools' => ['((bar))'],
             }
           end
 
@@ -488,16 +488,16 @@ module Bosh::Director
       let(:new_manifest_hash) do
         {
           'properties' => {
-            'something' => 'worth-redacting'
+            'something' => 'worth-redacting',
           },
           'jobs' => [
             {
               'name' => 'useful',
               'properties' => {
-                'inner' => 'secrets'
-              }
-            }
-          ]
+                'inner' => 'secrets',
+              },
+            },
+          ],
         }
       end
 
@@ -543,58 +543,58 @@ module Bosh::Director
       let(:manifest_hash) do
         {
           'releases' => [
-            { 'name' => 'simple', 'version' => '2' }
+            { 'name' => 'simple', 'version' => '2' },
           ],
           'properties' => {
-            'test' => '((test_placeholder))'
-          }
+            'test' => '((test_placeholder))',
+          },
         }
       end
 
       let(:runtime_config_hash) do
         {
           'releases' => [
-            { 'name' => 'runtime_release', 'version' => '2' }
+            { 'name' => 'runtime_release', 'version' => '2' },
           ],
           'addons' => [
             {
               'name' => 'test',
               'properties' => {
-                'test2' => '((test2_placeholder))'
-              }
-            }
-          ]
+                'test2' => '((test2_placeholder))',
+              },
+            },
+          ],
         }
       end
 
       it 'returns the merged hashes' do
         expect(manifest_object.to_hash).to eq('releases' => [
-                                                           { 'name' => 'simple', 'version' => '2' },
-                                                           { 'name' => 'runtime_release', 'version' => '2' }
-                                                         ],
-                                                         'addons' => [
-                                                           {
-                                                             'name' => 'test',
-                                                             'properties' => {
-                                                               'test2' => '((test2_placeholder))'
-                                                             }
-                                                           }
-                                                         ],
-                                                         'properties' => {
-                                                           'test' => '((test_placeholder))'
-                                                         })
+                                                { 'name' => 'simple', 'version' => '2' },
+                                                { 'name' => 'runtime_release', 'version' => '2' },
+                                              ],
+                                              'addons' => [
+                                                {
+                                                  'name' => 'test',
+                                                  'properties' => {
+                                                    'test2' => '((test2_placeholder))',
+                                                  },
+                                                },
+                                              ],
+                                              'properties' => {
+                                                'test' => '((test_placeholder))',
+                                              })
       end
 
       context 'when both deployment manifest and runtime config contain addons' do
         before(:each) do
           manifest_hash.merge!(
-            {'addons' => [{ 'name' => 'deployment_level_addon' }] }
+            'addons' => [{ 'name' => 'deployment_level_addon' }],
           )
         end
         it 'includes the merged addons' do
           expect(manifest_object.to_hash['addons']).to match_array(
-            [{ 'name' => 'test', 'properties' => {'test2' => '((test2_placeholder))'} },
-             { 'name' => 'deployment_level_addon' }]
+            [{ 'name' => 'test', 'properties' => { 'test2' => '((test2_placeholder))' } },
+             { 'name' => 'deployment_level_addon' }],
           )
         end
       end
@@ -602,84 +602,70 @@ module Bosh::Director
       context 'when tags are set' do
         before(:each) do
           manifest_hash.merge!(
-            {'tags' => { 'tag_1' => 'deployment_level_tag' } }
+            'tags' => { 'tag_1' => 'deployment_level_tag' },
           )
         end
         context 'when deployment manifest contains tags' do
-            it 'includes the deployment level tag' do
-              expect(manifest_object.to_hash['tags']).to eq(
-                {
-                  'tag_1' => 'deployment_level_tag',
-                }
-              )
-            end
+          it 'includes the deployment level tag' do
+            expect(manifest_object.to_hash['tags']).to eq(
+              'tag_1' => 'deployment_level_tag',
+            )
+          end
         end
         context 'when both deployment manifest and runtime config contain tags' do
           context 'when the tags are different' do
             before(:each) do
               runtime_config_hash.merge!(
-                {'tags' => { 'tag_2' => 'runtime_level_tag'} }
+                'tags' => { 'tag_2' => 'runtime_level_tag' },
               )
             end
             it 'includes the merged tags' do
               expect(manifest_object.to_hash['tags']).to eq(
-                {
-                  'tag_1' => 'deployment_level_tag',
-                  'tag_2' => 'runtime_level_tag',
-                }
+                'tag_1' => 'deployment_level_tag',
+                'tag_2' => 'runtime_level_tag',
               )
             end
           end
           context 'when the tags have the same key' do
             before(:each) do
               runtime_config_hash.merge!(
-                {'tags' =>
-                 {
-                   'tag_1' => 'runtime_level_tag',
-                 }
-              }
+                'tags' =>
+                {
+                  'tag_1' => 'runtime_level_tag',
+                },
               )
             end
             it 'includes the deployment level tag' do
               expect(manifest_object.to_hash['tags']).to eq(
-                {
-                  'tag_1' => 'deployment_level_tag',
-                }
+                'tag_1' => 'deployment_level_tag',
               )
             end
           end
           context 'when the runtime config tags are nil' do
             before(:each) do
               runtime_config_hash.merge!(
-                {'tags' => nil }
+                'tags' => nil,
               )
             end
             it 'includes the deployment level tag' do
               expect(manifest_object.to_hash['tags']).to eq(
-                {
-                  'tag_1' => 'deployment_level_tag',
-                }
+                'tag_1' => 'deployment_level_tag',
               )
             end
           end
           context 'when the deployment manifest tags are nil' do
             before(:each) do
-              manifest_hash.merge!(
-                {'tags' => nil }
-              )
+              manifest_hash['tags'] = nil
               runtime_config_hash.merge!(
-                {'tags' =>
-                 {
-                   'tag_1' => 'runtime_level_tag',
-                 }
-              }
+                'tags' =>
+                {
+                  'tag_1' => 'runtime_level_tag',
+                },
               )
             end
             it 'includes the runtime level tag' do
               expect(manifest_object.to_hash['tags']).to eq(
-                {
-                  'tag_1' => 'runtime_level_tag',
-                }
+                'tag_1' => 'runtime_level_tag',
               )
             end
           end
@@ -691,30 +677,30 @@ module Bosh::Director
           {
             'releases' => [
               { 'name' => 'simple', 'version' => '2' },
-              { 'name' => 'hard', 'version' => 'latest' }
+              { 'name' => 'hard', 'version' => 'latest' },
             ],
             'variables' => [
               { 'name' => 'variable', 'type' => 'password' },
-              { 'name' => 'another_variable', 'type' => 'smurfs' }
-            ]
+              { 'name' => 'another_variable', 'type' => 'smurfs' },
+            ],
           }
         end
 
         let(:runtime_config_hash) do
           {
             'releases' => [
-              { 'name' => 'simple', 'version' => '2' }
+              { 'name' => 'simple', 'version' => '2' },
             ],
             'variables' => [
-              { 'name' => 'variable', 'type' => 'password' }
-            ]
+              { 'name' => 'variable', 'type' => 'password' },
+            ],
           }
         end
 
         it 'includes only one copy of the release in to_hash output' do
           expect(manifest_object.to_hash['releases']).to eq(
             [{ 'name' => 'simple', 'version' => '2' },
-             { 'name' => 'hard', 'version' => 'latest' }]
+             { 'name' => 'hard', 'version' => 'latest' }],
           )
         end
 
