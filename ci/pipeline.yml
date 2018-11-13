@@ -208,6 +208,7 @@ jobs:
         - get: bosh-main-postgres-9.4
         - get: bosh-main-postgres-9.5
         - get: bosh-main-postgres-9.6
+        - get: bosh-main-postgres-10
       - aggregate:
         - task: test-postgres-9.3
           timeout: 2h
@@ -241,6 +242,14 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 9.6
+        - task: test-postgres-10
+          timeout: 2h
+          privileged: true
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: bosh-main-postgres-10
+          params:
+            DB: postgresql
+            DB_VERSION: 10
 
   - name: unit-2.4-db-migrations-rds
     serial: true
@@ -1619,6 +1628,11 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-postgres-9.6
+
+  - name: bosh-main-postgres-10
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-10
 
   - name: rds-pool
     type: pool
