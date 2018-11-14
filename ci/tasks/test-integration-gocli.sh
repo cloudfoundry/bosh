@@ -50,7 +50,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
     sleep 5
     ;;
   postgresql)
-    export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+    export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
     export DB_PASSWORD="smurf"
 
     mkdir /tmp/postgres
@@ -60,7 +60,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
     export PGDATA=/tmp/postgres/data
 
     su postgres -c '
-      export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+      export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
       export PGDATA=/tmp/postgres/data
       export PGLOGS=/tmp/log/postgres
       mkdir -p $PGDATA
@@ -87,7 +87,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
     fi
 
     su postgres -c '
-      export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+      export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
       export PGLOGS=/tmp/log/postgres
       pg_ctl start -l $PGLOGS/server.log -o "-N 400"
     '
