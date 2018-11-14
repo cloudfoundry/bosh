@@ -70,14 +70,14 @@ module Bosh::Director
 
           if use_existing && !!instance_plan.existing_instance.availability_zone
             factory = AZCloudFactory.create_from_deployment(deployment)
-            stemcell = instance_plan.instance.stemcell
-            cpi = factory.get_name_for_az(instance_plan.existing_instance.availability_zone)
-            stemcell_model = stemcell.models.find { |model| model.cpi == cpi }
-            [factory, stemcell_model]
+            az = instance_plan.existing_instance.availability_zone
           else
             factory = AZCloudFactory.create_with_latest_configs(deployment)
-            [factory, instance_plan.instance.stemcell_model]
+            az = instance_plan.instance.availability_zone_name
           end
+
+          stemcell_model = instance_plan.instance.stemcell.model_for_az(az, factory)
+          [factory, stemcell_model]
         end
 
         def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env, cloud_factory, stemcell_api_version)

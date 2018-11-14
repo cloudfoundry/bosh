@@ -7,84 +7,76 @@ module Bosh
       module Steps
         describe CreateVmStep do
           subject { CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing) }
+
           let(:use_existing) { false }
           let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
-          let(:agent_client) do
+          let(:disks) { [instance.model.managed_persistent_disk_cid].compact }
+          let(:cloud_factory) { instance_double(AZCloudFactory) }
+          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
+          let(:cpi_api_version) { 1 }
+          let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
+          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+          let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
+          let(:stemcell_model) { Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123') }
+          let(:event_manager) { Api::EventManager.new(true) }
+          let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+          let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+          let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
+          let(:env) { DeploymentPlan::Env.new({}) }
+          let(:dns_encoder) { instance_double(DnsEncoder) }
+          let(:create_vm_response) { ['new-vm-cid', {}, {}] }
+          let(:metadata_err) { 'metadata_err' }
+          let(:report) { Stages::Report.new }
+          let(:delete_vm_step) { instance_double(DeleteVmStep) }
+          let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
+          let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
+          let(:tags) { { 'mytag' => 'foobar' } }
+          let(:availability_zone) { BD::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
+          let(:cloud_properties) { { 'ram' => '2gb' } }
+          let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
+
+          let(:network_settings) do
+            BD::DeploymentPlan::NetworkSettings.new(
+              instance_group.name,
+              'deployment_name',
+              { 'gateway' => 'name' },
+              [reservation],
+              {},
+              availability_zone,
+              5,
+              'uuid-1',
+              'bosh',
+              false,
+            ).to_hash
+          end
+
+          let(:update_job) do
             instance_double(
-              AgentClient,
-              wait_until_ready: nil,
-              update_settings: nil,
-              apply: nil,
-              get_state: nil
+              Jobs::UpdateDeployment,
+              username: 'user',
+              task_id: task.id,
+              event_manager: event_manager,
             )
           end
+
+          let(:instance_model) do
+            Models::Instance.make(
+              uuid: SecureRandom.uuid,
+              index: 5,
+              job: 'fake-job',
+              deployment: deployment,
+              availability_zone: 'az1',
+            )
+          end
+
           let(:vm_deleter) do
             vm_deleter = VmDeleter.new(logger, false, false)
             allow(VmDeleter).to receive(:new).and_return(vm_deleter)
             vm_deleter
           end
-          let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
-          let(:cloud_factory) { instance_double(AZCloudFactory) }
-          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
-          let(:cpi_api_version) { 1 }
-          before {
-            allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
-          }
-          let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
-          let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
-          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+
           let(:deployment_plan) do
             instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
-          end
-          let(:availability_zone) do
-            BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
-          end
-          let(:cloud_properties) do
-            { 'ram' => '2gb' }
-          end
-          let(:network_cloud_properties) do
-            { 'bandwidth' => '5mbps' }
-          end
-          let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
-          let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
-          let(:stemcell) do
-            stemcell_model
-            stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
-            stemcell.add_stemcell_models
-            stemcell
-          end
-          let(:event_manager) { Api::EventManager.new(true)}
-          let(:update_job) {instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
-          let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-          let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-          let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
-          let(:env) { DeploymentPlan::Env.new({}) }
-          let(:dns_encoder) { instance_double(DnsEncoder) }
-          let(:instance) do
-            instance = DeploymentPlan::Instance.create_from_instance_group(
-              instance_group,
-              5,
-              'started',
-              deployment,
-              {},
-              nil,
-              logger,
-              nil
-            )
-            instance.bind_existing_instance_model(instance_model)
-            instance
-          end
-          let(:reservation) do
-            subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
-            network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
-            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
-            reservation
-          end
-
-          let(:instance_plan) do
-            desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)
-            network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-            BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan], variables_interpolator: nil)
           end
 
           let(:instance_group) do
@@ -98,18 +90,16 @@ module Bosh
             instance_group.stemcell = stemcell
             instance_group.env = env
             instance_group.jobs << job
-            instance_group.default_network = {'gateway' => 'name'}
-            instance_group.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+            instance_group.default_network = { 'gateway' => 'name' }
+            instance_group.update = BD::DeploymentPlan::UpdateConfig.new(
+              'canaries' => 1,
+              'max_in_flight' => 1,
+              'canary_watch_time' => '1000-2000',
+              'update_watch_time' => '1000-2000',
+            )
             instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
             instance_group.persistent_disk_collection.add_by_disk_size(1024)
             instance_group
-          end
-          let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
-
-          let(:tags) do
-            {
-              'mytag' => 'foobar'
-            }
           end
 
           let(:expected_groups) do
@@ -122,26 +112,73 @@ module Bosh
               'fake-director-name-deployment-name-fake-job',
             ]
           end
-          let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
-          let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
+
           let(:extra_ip) do
             {
               'a' => {
                 'ip' => '192.168.1.3',
                 'netmask' => '255.255.255.0',
                 'cloud_properties' => {},
-                'default' => ['dns', 'gateway'],
+                'default' => %w[dns gateway],
                 'dns' => ['192.168.1.1', '192.168.1.2'],
-                'gateway' => '192.168.1.1'
-              }}
+                'gateway' => '192.168.1.1',
+              },
+            }
           end
-          let(:metadata_err) { 'metadata_err' }
-          let(:report) { Stages::Report.new }
-          let(:delete_vm_step) { instance_double(DeleteVmStep) }
 
-          let(:create_vm_response) { ['new-vm-cid', {}, {}] }
+          let(:instance_plan) do
+            desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)
+            network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
+            BD::DeploymentPlan::InstancePlan.new(
+              existing_instance: instance_model,
+              desired_instance: desired_instance,
+              instance: instance,
+              network_plans: [network_plan],
+              variables_interpolator: nil,
+            )
+          end
+
+          let(:instance) do
+            instance = DeploymentPlan::Instance.create_from_instance_group(
+              instance_group,
+              5,
+              'started',
+              deployment,
+              {},
+              nil,
+              logger,
+              nil,
+            )
+            instance.bind_existing_instance_model(instance_model)
+            instance
+          end
+
+          let(:reservation) do
+            subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
+            network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
+            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+            reservation
+          end
+
+          let(:stemcell) do
+            stemcell_model
+            stemcell = DeploymentPlan::Stemcell.parse('name' => 'fake-stemcell', 'version' => '123')
+            stemcell.add_stemcell_models
+            stemcell
+          end
+
+          let(:agent_client) do
+            instance_double(
+              AgentClient,
+              wait_until_ready: nil,
+              update_settings: nil,
+              apply: nil,
+              get_state: nil,
+            )
+          end
 
           before do
+            allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
             allow(Config).to receive(:current_job).and_return(update_job)
             Config.name = 'fake-director-name'
             Config.max_vm_create_tries = 2
@@ -167,19 +204,24 @@ module Bosh
 
           context 'with existing cloud config' do
             let(:non_default_cloud_factory) { instance_double(AZCloudFactory) }
-            let(:stemcell_model_cpi) { Models::Stemcell.make(:cid => 'old-stemcell-id', name: 'fake-stemcell', version: '123', :cpi => 'cpi1') }
+            let(:use_existing) { true }
+
+            let(:stemcell_model_cpi) do
+              Models::Stemcell.make(cid: 'old-stemcell-id', name: 'fake-stemcell', version: '123', cpi: 'cpi1')
+            end
+
             let(:stemcell) do
               stemcell_model
               stemcell_model_cpi
-              stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
+              stemcell = DeploymentPlan::Stemcell.parse('name' => 'fake-stemcell', 'version' => '123')
               stemcell.add_stemcell_models
               stemcell
             end
-            let(:use_existing) { true }
 
             it 'uses the outdated cloud config from the existing deployment' do
               expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
               expect(non_default_cloud_factory).to receive(:get_name_for_az).with('az1').at_least(:once).and_return 'cpi1'
+              expect(non_default_cloud_factory).to receive(:get_cpi_aliases).with('cpi1').at_least(:once).and_return ['cpi1']
               expect(non_default_cloud_factory).to receive(:get).with('cpi1').and_return(cloud_wrapper)
               expect(non_default_cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud_wrapper)
               expect(cloud_wrapper).to receive(:create_vm).with(
@@ -195,6 +237,7 @@ module Bosh
 
               it 'uses any cloud config if availability zones are not used, even though requested' do
                 expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
+                expect(non_default_cloud_factory).to receive(:get_cpi_aliases).with('').at_least(:once).and_return ['']
                 expect(non_default_cloud_factory).to receive(:get).with('').and_return(cloud_wrapper)
                 expect(non_default_cloud_factory).to receive(:get).with('', nil).and_return(cloud_wrapper)
 
@@ -210,9 +253,14 @@ module Bosh
 
           it 'should create a vm' do
             expect(cloud_wrapper).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
-              'groups' => expected_groups
-            }}
+              kind_of(String),
+              'stemcell-id', { 'ram' => '2gb' },
+              network_settings,
+              disks,
+              'bosh' => {
+                'group' => expected_group,
+                'groups' => expected_groups,
+              }
             ).and_return(create_vm_response)
 
             expect(agent_client).to receive(:wait_until_ready)
@@ -223,21 +271,26 @@ module Bosh
 
           it 'should record events' do
             expect(cloud_wrapper).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
-              'groups' => expected_groups
-            }}
-
+              kind_of(String),
+              'stemcell-id', { 'ram' => '2gb' },
+              network_settings,
+              disks,
+              'bosh' => {
+                'group' => expected_group,
+                'groups' => expected_groups,
+              }
             ).and_return(create_vm_response)
-            expect {
+
+            expect do
               subject.perform(report)
-            }.to change { Models::Event.count }.from(0).to(2)
+            end.to change { Models::Event.count }.from(0).to(2)
 
             event1 = Models::Event.first
             expect(event1.user).to eq('user')
             expect(event1.action).to eq('create')
             expect(event1.object_type).to eq('vm')
             expect(event1.object_name).to eq(nil)
-            expect(event1.task).to eq("#{task.id}")
+            expect(event1.task).to eq(task.id.to_s)
             expect(event1.deployment).to eq(instance_model.deployment.name)
             expect(event1.instance).to eq(instance_model.name)
 
@@ -247,16 +300,16 @@ module Bosh
             expect(event2.action).to eq('create')
             expect(event2.object_type).to eq('vm')
             expect(event2.object_name).to eq('new-vm-cid')
-            expect(event2.task).to eq("#{task.id}")
+            expect(event2.task).to eq(task.id.to_s)
             expect(event2.deployment).to eq(instance_model.deployment.name)
             expect(event2.instance).to eq(instance_model.name)
           end
 
           it 'should record events about error' do
             expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
-            expect {
+            expect do
               subject.perform(report)
-            }.to raise_error Bosh::Clouds::VMCreationFailed
+            end.to raise_error Bosh::Clouds::VMCreationFailed
 
             event2 = Models::Event.order(:id)[2]
             expect(event2.error).to eq('Bosh::Clouds::VMCreationFailed')
@@ -266,18 +319,26 @@ module Bosh
             expect(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
             expect(Bosh::Director::Models::Vm).to receive(:create).and_raise('Bad DB. Bad.')
             expect(vm_deleter).to receive(:delete_vm_by_cid).with('new-vm-cid', nil)
-            expect {
+            expect do
               subject.perform(report)
-            }.to raise_error ('Bad DB. Bad.')
+            end.to raise_error 'Bad DB. Bad.'
           end
 
           it 'flushes the ARP cache' do
             allow(cloud_wrapper).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), disks, {'bosh' => {'group' => expected_group, 'groups' => expected_groups}}
+              kind_of(String),
+              'stemcell-id',
+              { 'ram' => '2gb' },
+              network_settings.merge(extra_ip),
+              disks,
+              'bosh' => {
+                'group' => expected_group,
+                'groups' => expected_groups,
+              },
             ).and_return(create_vm_response)
 
             allow(instance_plan).to receive(:network_settings_hash).and_return(
-              network_settings.merge(extra_ip)
+              network_settings.merge(extra_ip),
             )
 
             subject.perform(report)
@@ -288,29 +349,42 @@ module Bosh
             Config.flush_arp = false
 
             allow(cloud_wrapper).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings.merge(extra_ip), disks, {'bosh' => {'group' => expected_group, 'groups' => expected_groups}}
+              kind_of(String),
+              'stemcell-id',
+              { 'ram' => '2gb' },
+              network_settings.merge(extra_ip),
+              disks,
+              'bosh' => {
+                'group' => expected_group,
+                'groups' => expected_groups,
+              },
             ).and_return(create_vm_response)
 
             allow(instance_plan).to receive(:network_settings_hash).and_return(
-              network_settings.merge(extra_ip)
+              network_settings.merge(extra_ip),
             )
 
             subject.perform(report)
             expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(vm_model.cid, ['192.168.1.3'])
-
           end
 
           it 'sets vm metadata' do
             expect(cloud_wrapper).to receive(:create_vm).with(
-              kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, disks, {'bosh' => {'group' => expected_group,
-              'groups' => expected_groups
-            }}
+              kind_of(String),
+              'stemcell-id',
+              kind_of(Hash),
+              network_settings,
+              disks,
+              'bosh' => {
+                'group' => expected_group,
+                'groups' => expected_groups,
+              },
             ).and_return(create_vm_response)
 
             Timecop.freeze do
               expect(cloud_wrapper).to receive(:set_vm_metadata) do |vm_cid, metadata|
                 expect(vm_cid).to eq('new-vm-cid')
-                expect(metadata).to match({
+                expect(metadata).to match(
                   'deployment' => 'deployment_name',
                   'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
                   'job' => 'fake-job',
@@ -320,7 +394,7 @@ module Bosh
                   'id' => instance_model.uuid,
                   'name' => "fake-job/#{instance_model.uuid}",
                   'mytag' => 'foobar',
-                })
+                )
               end
 
               subject.perform(report)
@@ -341,7 +415,7 @@ module Bosh
             it 'should not retry creating a VM if it is told it is not a retryable error' do
               expect(cloud_wrapper).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
-              expect {subject.perform(report)}.to raise_error(Bosh::Clouds::VMCreationFailed)
+              expect { subject.perform(report) }.to raise_error(Bosh::Clouds::VMCreationFailed)
             end
 
             it 'should try exactly the configured number of times (max_vm_create_tries) when it is a retryable error' do
@@ -349,7 +423,7 @@ module Bosh
 
               expect(cloud_wrapper).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
-              expect {subject.perform(report)}.to raise_error(Bosh::Clouds::VMCreationFailed)
+              expect { subject.perform(report) }.to raise_error(Bosh::Clouds::VMCreationFailed)
             end
           end
 
@@ -397,20 +471,18 @@ module Bosh
                 expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id',
                   kind_of(Hash), network_settings, disks,
-                  {
-                    'bosh' => {
-                      'group' => kind_of(String),
-                      'groups' => kind_of(Array),
-                    },
+                  'bosh' => {
+                    'group' => kind_of(String),
+                    'groups' => kind_of(Array),
                   }
                 ).and_return(create_vm_response)
                 subject.perform(report)
               end
 
               context 'when ca is included' do
-                let(:cert_generator) {instance_double 'Bosh::Director::NatsClientCertGenerator'}
-                let(:cert) {instance_double 'OpenSSL::X509::Certificate'}
-                let(:private_key) {instance_double 'OpenSSL::PKey::RSA'}
+                let(:cert_generator) { instance_double 'Bosh::Director::NatsClientCertGenerator' }
+                let(:cert) { instance_double 'OpenSSL::X509::Certificate' }
+                let(:private_key) { instance_double 'OpenSSL::PKey::RSA' }
 
                 before do
                   director_config = SpecHelper.spec_get_director_config
@@ -422,27 +494,29 @@ module Bosh
                   allow(private_key).to receive(:to_pem).and_return('pkey begin\npkey content\npkey end\n')
                   allow(cert).to receive(:to_pem).and_return('certificate begin\ncertificate content\ncertificate end\n')
                   allow(NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
-                  expect(cert_generator).to receive(:generate_nats_client_certificate).with(/^([0-9a-f\-]*)\.agent\.bosh-internal/).and_return({
-                    :cert => cert,
-                    :key => private_key
-                  })
+
+                  expect(cert_generator).to receive(:generate_nats_client_certificate).with(
+                    /^([0-9a-f\-]*)\.agent\.bosh-internal/,
+                  ).and_return(
+                    cert: cert,
+                    key: private_key,
+                  )
+
                   allow(Config).to receive(:nats_server_ca).and_return('nats begin\nnats content\nnats end\n')
 
                   expect(cloud_wrapper).to receive(:create_vm).with(
                     kind_of(String), 'stemcell-id',
                     kind_of(Hash), network_settings, disks,
-                    {
-                      'bosh' => {
-                        'mbus' => {
-                          'cert' => {
-                            'ca' => 'nats begin\nnats content\nnats end\n',
-                            'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
-                            'private_key' => 'pkey begin\npkey content\npkey end\n',
-                          }
+                    'bosh' => {
+                      'mbus' => {
+                        'cert' => {
+                          'ca' => 'nats begin\nnats content\nnats end\n',
+                          'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
+                          'private_key' => 'pkey begin\npkey content\npkey end\n',
                         },
-                        'group' => kind_of(String),
-                        'groups' => kind_of(Array),
-                      }
+                      },
+                      'group' => kind_of(String),
+                      'groups' => kind_of(Array),
                     }
                   ).and_return(create_vm_response)
                   subject.perform(report)
@@ -458,11 +532,9 @@ module Bosh
                 expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id',
                   kind_of(Hash), network_settings, disks,
-                  {
-                    'bosh' => {
-                      'group' => kind_of(String),
-                      'groups' => kind_of(Array),
-                    }
+                  'bosh' => {
+                    'group' => kind_of(String),
+                    'groups' => kind_of(Array),
                   }
                 ).and_return(create_vm_response)
                 subject.perform(report)
@@ -488,7 +560,7 @@ module Bosh
             context 'password is specified' do
               let(:env) do
                 DeploymentPlan::Env.new(
-                  {'bosh' => {'password' => 'custom-password'}}
+                  'bosh' => { 'password' => 'custom-password' },
                 )
               end
               it 'should generate a random VM password' do
@@ -509,7 +581,7 @@ module Bosh
             context 'no password is specified' do
               it 'should generate a random VM password' do
                 expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
-                  expect(env['bosh']).to eq({'group' => expected_group, 'groups' => expected_groups})
+                  expect(env['bosh']).to eq('group' => expected_group, 'groups' => expected_groups)
                 end.and_return(create_vm_response)
 
                 subject.perform(report)
@@ -519,7 +591,7 @@ module Bosh
             context 'password is specified' do
               let(:env) do
                 DeploymentPlan::Env.new(
-                  {'bosh' => {'password' => 'custom-password'}}
+                  'bosh' => { 'password' => 'custom-password' },
                 )
               end
 
@@ -555,11 +627,11 @@ module Bosh
             end
 
             let(:network_cloud_properties) do
-              {'network-v1' => '((find-me))'}
+              { 'network-v1' => '((find-me))' }
             end
 
             let(:resolved_network_cloud_properties) do
-              {'network-v1' => 'resolved-name'}
+              { 'network-v1' => 'resolved-name' }
             end
 
             let(:unresolved_networks_settings) do
@@ -569,7 +641,7 @@ module Bosh
                   'cloud_properties' => network_cloud_properties,
                   'dns' => 'dns',
                   'default' => ['gateway'],
-                }
+                },
               }
             end
 
@@ -580,7 +652,7 @@ module Bosh
                   'cloud_properties' => resolved_network_cloud_properties,
                   'dns' => 'dns',
                   'default' => ['gateway'],
-                }
+                },
               }
             end
 
@@ -600,7 +672,7 @@ module Bosh
                     'value_7_key' => 'value_7_value',
                     'value_8_key' => 'value_8_value',
                   },
-                }
+                },
               }
             end
 
@@ -619,7 +691,7 @@ module Bosh
                 'a' => '12',
                 'b' => {
                   'c' => '34',
-                }
+                },
               }
             end
 
@@ -638,8 +710,8 @@ module Bosh
                   'value_6_key' => {
                     'value_7_key' => 'value_7_value',
                     'value_8_key' => 'value_8_value',
-                  }
-                }
+                  },
+                },
               }
             end
 
@@ -699,7 +771,9 @@ module Bosh
 
           context 'when stemcell has api_version' do
             let(:stemcell_api_version) { 25 }
-            let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version) }
+            let(:stemcell_model) do
+              Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
+            end
 
             before do
               expect(cloud_factory).to receive(:get).with('cpi1', stemcell_api_version).and_return(cloud_wrapper)
@@ -707,9 +781,15 @@ module Bosh
 
             it 'should create a cloud_wrapper associated with the stemcell api version' do
               expect(cloud_wrapper).to receive(:create_vm).with(
-                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
-                                                                                                       'groups' => expected_groups
-              }}
+                kind_of(String),
+                'stemcell-id',
+                { 'ram' => '2gb' },
+                network_settings,
+                disks,
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
               ).and_return(create_vm_response)
 
               expect(agent_client).to receive(:wait_until_ready)
@@ -720,9 +800,15 @@ module Bosh
 
             it 'should associate VM with stemcell api version' do
               expect(cloud_wrapper).to receive(:create_vm).with(
-                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, disks, {'bosh' => {'group' => expected_group,
-                                                                                                       'groups' => expected_groups
-              }}
+                kind_of(String),
+                'stemcell-id',
+                { 'ram' => '2gb' },
+                network_settings,
+                disks,
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
               ).and_return(create_vm_response)
 
               expect(agent_client).to receive(:wait_until_ready)
@@ -735,9 +821,9 @@ module Bosh
               expect(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
               expect(Bosh::Director::Models::Vm).to receive(:create).and_raise('Bad DB. Bad.')
               expect(vm_deleter).to receive(:delete_vm_by_cid).with('new-vm-cid', stemcell_api_version)
-              expect {
+              expect do
                 subject.perform(report)
-              }.to raise_error ('Bad DB. Bad.')
+              end.to raise_error 'Bad DB. Bad.'
             end
           end
         end
