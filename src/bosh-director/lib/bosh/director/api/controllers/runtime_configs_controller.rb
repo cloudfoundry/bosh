@@ -7,8 +7,8 @@ module Bosh::Director
         config_name = name_from_params(params)
         manifest_text = request.body.read
         begin
-          validate_manifest_yml(manifest_text, nil)
-
+          manifest_hash = validate_manifest_yml(manifest_text, nil)
+          manifest_text = ensure_release_version_is_string(manifest_hash)
           latest_runtime_config = Bosh::Director::Api::RuntimeConfigManager.new.list(1, config_name)
 
           if latest_runtime_config.empty? || latest_runtime_config.first[:content] != manifest_text

@@ -340,6 +340,40 @@ module Bosh::Director
           expect(event.error).to eq('Manifest should not be empty')
         end
 
+        context 'when version field is an integer' do
+          let(:runtime_config_version_int) do
+            config = Bosh::Spec::Deployments.simple_runtime_config
+            config['releases'].first['version'] = 2
+            YAML.dump(config)
+          end
+
+          it 'converts version field to a string' do
+            expect do
+              post '/', runtime_config_version_int, 'CONTENT_TYPE' => 'text/yaml'
+            end.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+
+            expect(last_response.status).to eq(201)
+            expect(Bosh::Director::Models::Config.first.content).to eq(YAML.dump(Bosh::Spec::Deployments.simple_runtime_config))
+          end
+        end
+
+        context 'when releases block does not contain version field' do
+          let(:invalid_runtime_config) do
+            config = Bosh::Spec::Deployments.simple_runtime_config
+            config['releases'].first.delete('version')
+            YAML.dump(config)
+          end
+
+          it 'saves runtime config without version field' do
+            expect do
+              post '/', invalid_runtime_config, 'CONTENT_TYPE' => 'text/yaml'
+            end.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+
+            expect(last_response.status).to eq(201)
+            expect(Bosh::Director::Models::Config.first.content).to eq(invalid_runtime_config)
+          end
+        end
+
         context 'when name is the empty string' do
           let(:path) { '/?name=' }
 

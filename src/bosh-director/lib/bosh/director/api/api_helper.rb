@@ -104,6 +104,15 @@ module Bosh::Director
 
         parsed
       end
+
+      def ensure_release_version_is_string(config_hash)
+        return nil unless config_hash
+
+        config_hash['releases']&.each do |rel|
+          rel['version'] = rel['version'].to_s if rel['version']
+        end
+        YAML.dump(config_hash)
+      end
     end
   end
 end

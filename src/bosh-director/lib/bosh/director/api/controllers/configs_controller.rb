@@ -25,7 +25,7 @@ module Bosh::Director
         begin
           config_hash = parse_request_body(request.body.read)
           validate_type_and_name(config_hash)
-          validate_config_content(config_hash['content'])
+          content_hash = validate_config_content(config_hash['content'])
 
           config_manager = Bosh::Director::Api::ConfigManager.new
           config = config_manager.current(config_hash['type'], config_hash['name'])
@@ -43,6 +43,7 @@ module Bosh::Director
 
           @permission_authorizer.granted_or_raise(config, :admin, token_scopes) unless config.nil?
 
+          config_hash['content'] = ensure_release_version_is_string(content_hash) if config_hash['type'] == 'runtime'
           if config.nil? || config[:content] != config_hash['content']
             config = create_config(config_hash)
             create_event(config_hash['type'], config_hash['name'])

@@ -396,6 +396,48 @@ module Bosh::Director
           expect(JSON.parse(last_response.body)['description']).to include('Invalid JSON request body: ')
         end
 
+        context 'when type is runtime' do
+          let(:request_body) do
+            JSON.generate('name' => 'my-name', 'type' => 'runtime', 'content' => config_data, 'expected_latest_id' => '0')
+          end
+
+          context 'when version field is an integer' do
+            let(:config_data) do
+              config = Bosh::Spec::Deployments.simple_runtime_config
+              config['releases'].first['version'] = 2
+              YAML.dump(config)
+            end
+
+            it 'converts version field to a string' do
+              expect do
+                post '/', request_body, 'CONTENT_TYPE' => 'application/json'
+              end.to change(Models::Config, :count).from(0).to(1)
+
+              expect(last_response.status).to eq(201)
+              expect(Models::Config.first.content).to eq(YAML.dump(Bosh::Spec::Deployments.simple_runtime_config))
+              expect(JSON.parse(last_response.body)['content']).to eq(YAML.dump(Bosh::Spec::Deployments.simple_runtime_config))
+            end
+          end
+
+          context 'when releases block does not contain version field' do
+            let(:config_data) do
+              config = Bosh::Spec::Deployments.simple_runtime_config
+              config['releases'].first.delete('version')
+              YAML.dump(config)
+            end
+
+            it 'saves runtime config without version field' do
+              expect do
+                post '/', request_body, 'CONTENT_TYPE' => 'application/json'
+              end.to change(Models::Config, :count).from(0).to(1)
+
+              expect(last_response.status).to eq(201)
+              expect(Models::Config.first.content).to eq(config_data)
+              expect(JSON.parse(last_response.body)['content']).to eq(config_data)
+            end
+          end
+        end
+
         context 'when content is not valid json' do
           it 'creates a new event and gives a nice error' do
             new_config = JSON.generate(
