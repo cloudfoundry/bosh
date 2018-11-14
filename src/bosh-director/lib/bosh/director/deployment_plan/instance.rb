@@ -137,10 +137,6 @@ module Bosh::Director
         @previous_variable_set = @model.variable_set
       end
 
-      def stemcell_model
-        @stemcell.model_for_az(availability_zone_name)
-      end
-
       def env
         @env.spec
       end
