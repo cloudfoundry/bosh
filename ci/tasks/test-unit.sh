@@ -39,10 +39,10 @@ case "$DB" in
       mkdir -p $PGLOGS
       initdb -U postgres -D $PGDATA
 
-      if ([ $DB_VERSION == "9.5" ] || [ $DB_VERSION == "9.6" ]); then
-          echo "checkpoint_timeout=1h" >> $PGDATA/postgresql.conf
-          echo "min_wal_size=300MB" >> $PGDATA/postgresql.conf
-          echo "max_wal_size=300MB" >> $PGDATA/postgresql.conf
+      if [[ $DB_VERSION != "9.3" ]] && [[ $DB_VERSION != "9.4" ]]; then
+        echo "checkpoint_timeout=1h" >> $PGDATA/postgresql.conf
+        echo "min_wal_size=300MB" >> $PGDATA/postgresql.conf
+        echo "max_wal_size=300MB" >> $PGDATA/postgresql.conf
       fi
 
       pg_ctl start -w -l $PGLOGS/server.log -o "-N 400"
