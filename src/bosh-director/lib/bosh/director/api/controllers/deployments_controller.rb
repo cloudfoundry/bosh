@@ -102,6 +102,7 @@ module Bosh::Director
           latest_runtime_configs,
           deployment,
           options,
+          @current_context_id,
         )
         redirect "/tasks/#{task.id}"
       end
@@ -146,6 +147,7 @@ module Bosh::Director
           latest_runtime_configs,
           deployment,
           options,
+          @current_context_id,
         )
         redirect "/tasks/#{task.id}"
       end
