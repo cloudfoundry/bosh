@@ -3,6 +3,7 @@ require 'securerandom'
 module Bosh::Director
   module Jobs
     class UpdateStemcell < BaseJob
+      include Bosh::Director::LockHelper
       include ValidationHelper
       include DownloadHelper
       @queue = :normal
@@ -75,58 +76,60 @@ module Bosh::Director
 
         stemcell = nil
         cloud_factory = CloudFactory.create
-        cloud_factory.all_names.each do |cpi|
-          cloud = cloud_factory.get(cpi)
-          cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
+        with_stemcell_lock(@name, @version, timeout: 900) do
+          cloud_factory.all_names.each do |cpi|
+            cloud = cloud_factory.get(cpi)
+            cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
 
-          unless is_supported?(cloud, cpi)
-            logger.info("#{cpi_suffix} cpi does not support stemcell format")
+            unless is_supported?(cloud, cpi)
+              logger.info("#{cpi_suffix} cpi does not support stemcell format")
+              Models::StemcellUpload.find_or_create(
+                name: @name,
+                cpi: cpi,
+                version: @version,
+              )
+              next
+            end
+
+            track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
+              begin
+                stemcell = @stemcell_manager.find_by_name_and_version_and_cpi(@name, @version, cpi)
+              rescue StemcellNotFound
+                stemcell = Models::Stemcell.new
+                stemcell.name = @name
+                stemcell.operating_system = @operating_system
+                stemcell.version = @version
+                stemcell.sha1 = @sha1
+                stemcell.cpi = cpi
+                stemcell.api_version = @api_version
+              end
+            end
+
+            needs_upload = @fix || !stemcell.cid
+            upload_suffix = ' (already exists, skipped)' unless needs_upload
+            track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
+              if needs_upload
+                stemcell.cid = cloud.create_stemcell(@stemcell_image, @cloud_properties)
+                logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
+              else
+                logger.info("Skipping stemcell upload, already exists#{cpi_suffix}")
+              end
+            end
+
+            track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}#{upload_suffix}") do
+              if needs_upload
+                stemcell.save
+              else
+                logger.info("Skipping stemcell save, already exists#{cpi_suffix}")
+              end
+            end
+
             Models::StemcellUpload.find_or_create(
               name: @name,
               cpi: cpi,
               version: @version,
             )
-            next
           end
-
-          track_and_log("Checking if this stemcell already exists#{cpi_suffix}") do
-            begin
-              stemcell = @stemcell_manager.find_by_name_and_version_and_cpi(@name, @version, cpi)
-            rescue StemcellNotFound
-              stemcell = Models::Stemcell.new
-              stemcell.name = @name
-              stemcell.operating_system = @operating_system
-              stemcell.version = @version
-              stemcell.sha1 = @sha1
-              stemcell.cpi = cpi
-              stemcell.api_version = @api_version
-            end
-          end
-
-          needs_upload = @fix || !stemcell.cid
-          upload_suffix = ' (already exists, skipped)' unless needs_upload
-          track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
-            if needs_upload
-              stemcell.cid = cloud.create_stemcell(@stemcell_image, @cloud_properties)
-              logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
-            else
-              logger.info("Skipping stemcell upload, already exists#{cpi_suffix}")
-            end
-          end
-
-          track_and_log("Save stemcell #{@name}/#{@version} (#{stemcell.cid})#{cpi_suffix}#{upload_suffix}") do
-            if needs_upload
-              stemcell.save
-            else
-              logger.info("Skipping stemcell save, already exists#{cpi_suffix}")
-            end
-          end
-
-          Models::StemcellUpload.find_or_create(
-            name: @name,
-            cpi: cpi,
-            version: @version,
-          )
         end
 
         if stemcell.nil?

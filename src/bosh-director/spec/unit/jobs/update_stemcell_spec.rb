@@ -15,6 +15,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   describe '#perform' do
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
+    let(:task) { Bosh::Director::Models::Task.make(state: 'processing') }
     let(:event_log) { Bosh::Director::EventLog::Log.new }
     let(:event_log_stage) { instance_double(Bosh::Director::EventLog::Stage) }
     let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 0) }
@@ -34,6 +35,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield [nil]
       allow(Open3).to receive(:capture3).and_return([nil, 'some error', verify_multidigest_exit_status])
+
+      allow(Bosh::Director::Config).to receive_message_chain(:current_job, :username).and_return(task.username)
+      allow(Bosh::Director::Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
     end
 
     context 'when the stemcell tarball is valid' do
@@ -67,6 +71,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
           update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+          expect(update_stemcell_job).to receive(:with_stemcell_lock).with('jeos', '5', timeout: 900).and_yield
           update_stemcell_job.perform
 
           stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
