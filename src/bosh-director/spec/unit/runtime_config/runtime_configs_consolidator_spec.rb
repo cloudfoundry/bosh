@@ -187,6 +187,27 @@ module Bosh::Director
         expect(consolidator.raw_manifest).to eq(consolidated_manifest)
       end
 
+      context 'when there are no addons and variables in runtime configs' do
+        let(:rc_model) { instance_double(Bosh::Director::Models::Config) }
+        let(:runtime_configs) { [rc_model] }
+        let(:runtime_config) do
+          {
+            'releases' => [
+              release_1,
+              release_2,
+            ],
+          }
+        end
+
+        before do
+          allow(rc_model).to receive(:raw_manifest).and_return(runtime_config)
+        end
+
+        it 'returns no empty arrays for addons and variables' do
+          expect(consolidator.raw_manifest.keys).to contain_exactly('releases')
+        end
+      end
+
       context 'when there are no models' do
         let(:runtime_configs) { []}
 

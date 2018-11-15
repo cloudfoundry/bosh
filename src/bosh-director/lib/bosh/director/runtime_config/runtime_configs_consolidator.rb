@@ -55,9 +55,9 @@ module Bosh::Director
           end
 
           result_hash['tags'] = tags unless tags.nil?
-
         end
 
+        result_hash.delete_if { |key, value| value.empty? if %w[addons variables].include? key }
         result_hash
       end
 
