@@ -444,6 +444,7 @@ module Bosh::Director
                   contain_exactly(runtime_config, dev_runtime_config),
                   deployment,
                   anything,
+                  anything,
                 ).and_return(Models::Task.make)
 
               put '/foo/jobs/*?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
@@ -458,6 +459,7 @@ module Bosh::Director
                   contain_exactly(cloud_config, dev_cloud_config),
                   contain_exactly(runtime_config, dev_runtime_config),
                   deployment,
+                  anything,
                   anything,
                 ).and_return(Models::Task.make)
 
@@ -487,9 +489,11 @@ module Bosh::Director
                 match { |actual| actual != unexpected }
               end
               manifest = spec_asset('test_conf.yaml')
-              expect_any_instance_of(DeploymentManager).to receive(:create_deployment).
-                  with(anything(), not_to_have_body(manifest), anything(), anything(), anything(), anything()).
-                  and_return(OpenStruct.new(:id => 'no_content_length'))
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything, not_to_have_body(manifest), anything, anything,
+                      anything, anything, anything)
+                .and_return(OpenStruct.new(id: 'no_content_length'))
               deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
               instance = Models::Instance.create(
                 deployment: deployment,
@@ -620,8 +624,9 @@ module Bosh::Director
               deployment
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                  .with(anything(), anything(), anything(), anything(), anything(), hash_including('canaries'=>'42') )
-                  .and_return(OpenStruct.new(:id => 1))
+                .with(anything, anything, anything, anything, anything,
+                      hash_including('canaries' => '42'), anything)
+                .and_return(OpenStruct.new(id: 1))
 
               put '/foo/jobs/dea?canaries=42', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -633,8 +638,9 @@ module Bosh::Director
               deployment
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                      .with(anything(), anything(), anything(), anything(), anything(), hash_including('max_in_flight'=>'42') )
-                      .and_return(OpenStruct.new(:id => 1))
+                .with(anything, anything, anything, anything, anything,
+                      hash_including('max_in_flight' => '42'), anything)
+                .and_return(OpenStruct.new(id: 1))
 
               put '/foo/jobs/dea?max_in_flight=42', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -646,8 +652,9 @@ module Bosh::Director
               deployment
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true))
-                .and_return(OpenStruct.new(:id => 1))
+                .with(anything, anything, anything, anything, anything,
+                      hash_including('fix' => true), anything)
+                .and_return(OpenStruct.new(id: 1))
 
               put '/foo/jobs/dea?fix=true', JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
@@ -655,6 +662,7 @@ module Bosh::Director
           end
 
           describe 'recreating' do
+            let(:context_id) { '' }
             shared_examples_for 'recreates with configs' do
               it 'recreates with the latest configs if you send a manifest' do
                 cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
@@ -675,9 +683,13 @@ module Bosh::Director
                   :variable_set => Models::VariableSet.create(deployment: deployment)
                 )
                 expect_any_instance_of(DeploymentManager)
-                    .to receive(:create_deployment)
-                            .with(anything(), anything(), [cc_new], [runtime_new], deployment, hash_including(options))
-                            .and_return(OpenStruct.new(:id => 1))
+                  .to receive(:create_deployment)
+                  .with(anything, anything, [cc_new], [runtime_new], deployment,
+                        hash_including(options), context_id)
+                  .and_return(OpenStruct.new(id: 1))
+
+                header('X-Bosh-Context-Id', context_id) unless context_id.empty?
+
                 put "#{path}", JSON.generate('value' => 'baz'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
               end
@@ -701,9 +713,12 @@ module Bosh::Director
                   :variable_set => Models::VariableSet.create(deployment: deployment)
                 )
                 expect_any_instance_of(DeploymentManager)
-                    .to receive(:create_deployment)
-                            .with(anything(), anything(), [cc_old], [runtime_old], deployment, hash_including(options))
-                            .and_return(OpenStruct.new(:id => 1))
+                  .to receive(:create_deployment)
+                  .with(anything, anything, [cc_old], [runtime_old], deployment,
+                        hash_including(options), context_id)
+                  .and_return(OpenStruct.new(id: 1))
+
+                header('X-Bosh-Context-Id', context_id) unless context_id.empty?
                 put "#{path}", '', {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
               end
@@ -720,6 +735,15 @@ module Bosh::Director
               let(:options) { {'job_states' => {'dea' => {'instance_states' => {2 => 'recreate'}}}} }
               it_behaves_like 'recreates with configs'
             end
+
+            context 'accepts a context ID header' do
+              let(:context_id) { 'example-context-id' }
+              let(:path) { '/foo/jobs/dea?state=recreate' }
+              let(:options) do
+                { 'job_states' => { 'dea' => { 'state' => 'recreate' } } }
+              end
+              it_behaves_like 'recreates with configs'
+            end
           end
 
           describe 'draining' do
@@ -732,9 +756,11 @@ module Bosh::Director
             shared_examples 'skip_drain' do
               it 'drains' do
                 expect_any_instance_of(DeploymentManager)
-                  .to receive(:create_deployment).twice
-                  .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'))
-                  .and_return(OpenStruct.new(:id => 1))
+                  .to receive(:create_deployment)
+                  .twice
+                  .with(anything, anything, anything, anything, anything,
+                        hash_excluding('skip_drain'), anything)
+                  .and_return(OpenStruct.new(id: 1))
 
                 put "#{path}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
@@ -746,7 +772,8 @@ module Bosh::Director
               it 'skips draining' do
                 expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                  .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => "#{drain_target}"))
+                  .with(anything, anything, anything, anything, anything,
+                        hash_including('skip_drain' => drain_target), anything)
                   .and_return(OpenStruct.new(:id => 1))
 
                 put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
