@@ -86,20 +86,19 @@ module Bosh::Director
         }
       end
 
-      def model_for_az(az)
+      def model_for_az(availability_zone, cloud_factory)
         raise 'please bind model first' if @models.nil?
         raise StemcellNotFound, 'No stemcell found' if @models.empty?
 
         # stemcell might have no AZ, pick default model then
-        return model_for_default_cpi if az.nil?
+        return model_for_default_cpi if availability_zone.nil?
 
-        cloud_factory = AZCloudFactory.create_with_latest_configs(@deployment_model)
-        cpi_name = cloud_factory.get_name_for_az(az)
+        cpi_name = cloud_factory.get_name_for_az(availability_zone)
 
         # stemcell might have AZ without cpi, pick default model then
         return model_for_default_cpi if cpi_name.nil?
 
-        return model_for_cpi(cloud_factory.get_cpi_aliases(cpi_name))
+        model_for_cpi(cloud_factory.get_cpi_aliases(cpi_name))
       end
 
       private
