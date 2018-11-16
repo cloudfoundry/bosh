@@ -172,6 +172,7 @@ module Bosh
             it 'uses the outdated cloud config from the existing deployment' do
               expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
               expect(non_default_cloud_factory).to receive(:get_name_for_az).with('az1').at_least(:once).and_return 'cpi1'
+              expect(non_default_cloud_factory).to receive(:get_cpi_aliases).with('cpi1').at_least(:once).and_return ['cpi1']
               expect(non_default_cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
               expect(non_default_cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud)
               expect(cloud).to receive(:create_vm).with(
@@ -187,6 +188,7 @@ module Bosh
 
               it 'uses any cloud config if availability zones are not used, even though requested' do
                 expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
+                expect(non_default_cloud_factory).to receive(:get_cpi_aliases).with('').at_least(:once).and_return ['']
                 expect(non_default_cloud_factory).to receive(:get).with('').and_return(cloud)
                 expect(non_default_cloud_factory).to receive(:get).with('', nil).and_return(cloud)
 
