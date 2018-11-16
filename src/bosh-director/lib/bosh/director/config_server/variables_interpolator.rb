@@ -2,7 +2,8 @@ module Bosh::Director::ConfigServer
   class VariablesInterpolator
 
     def initialize
-      @config_server_client = ClientFactory.create(Bosh::Director::Config.logger).create_client
+      @logger = Bosh::Director::Config.logger
+      @config_server_client = ClientFactory.create(@logger).create_client
     end
 
     # @param [Hash] template_spec_properties Hash to be interpolated
@@ -26,6 +27,7 @@ module Bosh::Director::ConfigServer
           interpolated_hash = @config_server_client.interpolate_with_versioning(job_properties, variable_set)
           result[job_name] = interpolated_hash
         rescue Exception => e
+          @logger.debug("Unable to render templates for job '#{job_name}'. Received error: #{e.inspect}")
           header = "- Unable to render templates for job '#{job_name}'. Errors are:"
           errors << Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, e.message.strip, {:indent_by => 2})
         end
