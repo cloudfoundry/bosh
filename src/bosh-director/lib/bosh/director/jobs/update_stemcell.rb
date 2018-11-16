@@ -76,7 +76,7 @@ module Bosh::Director
 
         stemcell = nil
         cloud_factory = CloudFactory.create
-        with_stemcell_lock(@name, @version, timeout: 900) do
+        with_stemcell_lock(@name, @version, timeout: 900 * cloud_factory.all_names.length) do
           cloud_factory.all_names.each do |cpi|
             cloud = cloud_factory.get(cpi)
             cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?

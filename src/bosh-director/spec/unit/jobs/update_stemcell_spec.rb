@@ -308,7 +308,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud2).to receive(:info).and_return('stemcell_formats' => ['dummy1'])
           expect(cloud3).to receive(:info).and_return('stemcell_formats' => ['dummy'])
 
-          expect(cloud_factory).to receive(:all_names).twice.and_return(%w[cloud1 cloud2 cloud3])
+          expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(%w[cloud1 cloud2 cloud3])
           expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
           expect(cloud_factory).to receive(:get).with('cloud2').and_return(cloud2)
           expect(cloud_factory).to receive(:get).with('cloud3').and_return(cloud3)
@@ -330,6 +330,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           end
           # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - step_messages.count - 3).times
+
+          expect(subject).to receive(:with_stemcell_lock).with('jeos', '5', timeout: 900 * 3).and_yield
 
           subject.perform
 
@@ -358,7 +360,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud1).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_raise('I am flaky')
           expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
-          expect(cloud_factory).to receive(:all_names).twice.and_return(['cloud1'])
+          expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(['cloud1'])
 
           expect { subject.perform }.to raise_error 'I am flaky'
 
@@ -372,7 +374,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           end
 
           it 'creates one stemcell and one stemcell match per cpi' do
-            expect(cloud_factory).to receive(:all_names).twice.and_return(%w[cloud1 cloud2 cloud3])
+            expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(%w[cloud1 cloud2 cloud3])
             expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
             expect(cloud_factory).to receive(:get).with('cloud2').and_return(cloud2)
             expect(cloud_factory).to receive(:get).with('cloud3').and_return(cloud3)
@@ -410,7 +412,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_return('stemcell-cid')
 
           expect(cloud_factory).to receive(:get_cpi_aliases).with('').and_return([''])
-          expect(cloud_factory).to receive(:all_names).twice.and_return([''])
+          expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return([''])
           expect(cloud_factory).to receive(:get).with('').and_return(cloud)
 
           expected_steps = 5

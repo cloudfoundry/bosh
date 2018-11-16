@@ -86,6 +86,8 @@ describe 'cli: events', type: :integration do
       {'action' => 'acquire', 'context' => '', 'deployment' => 'simple', 'error' => '', 'instance' => '', 'object_name' => 'lock:deployment:simple', 'object_type' => 'lock'},
       {'action' => 'release', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_name' => 'lock:release:bosh-release', 'object_type' => 'lock'},
       {'action' => 'acquire', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_name' => 'lock:release:bosh-release', 'object_type' => 'lock'},
+      {'action' => 'release', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_name' => 'lock:stemcells:ubuntu-stemcell:1', 'object_type' => 'lock'},
+      {'action' => 'acquire', 'context' => '', 'deployment' => '', 'error' => '', 'instance' => '', 'object_name' => 'lock:stemcells:ubuntu-stemcell:1', 'object_type' => 'lock'},
     )
 
     bosh_events_output
