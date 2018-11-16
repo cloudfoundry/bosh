@@ -13,12 +13,34 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   describe '#perform' do
-    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+    subject { Bosh::Director::Jobs::UpdateStemcell.new(stemcell_name, stemcell_options) }
 
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:task) { Bosh::Director::Models::Task.make(state: 'processing') }
     let(:event_log) { Bosh::Director::EventLog::Log.new }
     let(:event_log_stage) { instance_double(Bosh::Director::EventLog::Stage) }
     let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 0) }
+    let(:stemcell_uri) { "file://#{stemcell_file.path}" }
+    let(:stemcell_name) { stemcell_file.path }
+    let(:stemcell_options) { {} }
+
+    let(:manifest) do
+      {
+        'name' => 'jeos',
+        'version' => 5,
+        'operating_system' => 'jeos-5',
+        'stemcell_formats' => ['dummy'],
+        'cloud_properties' => { 'ram' => '2gb' },
+        'sha1' => 'shawone',
+      }
+    end
+
+    let(:stemcell_file) do
+      stemcell_contents = create_stemcell(manifest, 'image contents')
+      file = Tempfile.new('stemcell_contents')
+      File.open(file.path, 'w') { |f| f.write(stemcell_contents) }
+      file
+    end
 
     before do
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
@@ -40,23 +62,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       allow(Bosh::Director::Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
     end
 
-    context 'when the stemcell tarball is valid' do
-      before do
-        manifest = {
-          'name' => 'jeos',
-          'version' => 5,
-          'operating_system' => 'jeos-5',
-          'stemcell_formats' => ['dummy'],
-          'cloud_properties' => { 'ram' => '2gb' },
-          'sha1' => 'shawone',
-        }
-        stemcell_contents = create_stemcell(manifest, 'image contents')
-        @stemcell_file = Tempfile.new('stemcell_contents')
-        File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
-        @stemcell_url = "file://#{@stemcell_file.path}"
-      end
-      after { FileUtils.rm_rf(@stemcell_file.path) }
+    after { FileUtils.rm_rf(stemcell_file.path) }
 
+    context 'when the stemcell tarball is valid' do
       context 'uploading a local stemcell' do
         it 'should upload a local stemcell' do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
@@ -70,9 +78,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          expect(update_stemcell_job).to receive(:with_stemcell_lock).with('jeos', '5', timeout: 900).and_yield
-          update_stemcell_job.perform
+          expect(subject).to receive(:with_stemcell_lock).with('jeos', '5', timeout: 900).and_yield
+          subject.perform
 
           stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
           expect(stemcell).not_to be_nil
@@ -84,14 +91,18 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         context 'when provided an incorrect sha1' do
           let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 1) }
+          let(:stemcell_name) { stemcell_file.path }
+          let(:stemcell_options) { { 'sha1' => 'abcd1234' } }
 
           it 'fails to upload a stemcell' do
-            update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, 'sha1' => 'abcd1234')
-            expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellSha1DoesNotMatch)
+            expect { subject.perform }.to raise_exception(Bosh::Director::StemcellSha1DoesNotMatch)
           end
         end
 
         context 'when provided a correct sha1' do
+          let(:stemcell_name) { stemcell_file.path }
+          let(:stemcell_options) { { 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757' } }
+
           it 'should upload a local stemcell' do
             expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
             expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
@@ -104,11 +115,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
             expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-            update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(
-              @stemcell_file.path,
-              'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757',
-            )
-            update_stemcell_job.perform
+            subject.perform
 
             stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
             expect(stemcell).not_to be_nil
@@ -121,6 +128,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       end
 
       context 'uploading a remote stemcell' do
+        let(:stemcell_name) { 'fake-stemcell-url' }
+        let(:stemcell_options) { { 'remote' => true } }
+
         it 'should upload a remote stemcell' do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
@@ -133,13 +143,12 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new('fake-stemcell-url', 'remote' => true)
-          expect(update_stemcell_job).to receive(:download_remote_file) do |resource, url, path|
+          expect(subject).to receive(:download_remote_file) do |resource, url, path|
             expect(resource).to eq('stemcell')
             expect(url).to eq('fake-stemcell-url')
-            FileUtils.mv(@stemcell_file.path, path)
+            FileUtils.mv(stemcell_file.path, path)
           end
-          update_stemcell_job.perform
+          subject.perform
 
           stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
           expect(stemcell).not_to be_nil
@@ -150,24 +159,34 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         context 'when provided an incorrect sha1' do
           let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 1) }
-
-          it 'fails to upload a stemcell' do
-            update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(
-              'fake-stemcell-url',
+          let(:stemcell_name) { 'fake-stemcell-url' }
+          let(:stemcell_options) do
+            {
               'remote' => true,
               'sha1' => 'abcd1234',
-            )
-            expect(update_stemcell_job).to receive(:download_remote_file) do |resource, url, path|
+            }
+          end
+
+          it 'fails to upload a stemcell' do
+            expect(subject).to receive(:download_remote_file) do |resource, url, path|
               expect(resource).to eq('stemcell')
               expect(url).to eq('fake-stemcell-url')
-              FileUtils.mv(@stemcell_file.path, path)
+              FileUtils.mv(stemcell_file.path, path)
             end
 
-            expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellSha1DoesNotMatch)
+            expect { subject.perform }.to raise_exception(Bosh::Director::StemcellSha1DoesNotMatch)
           end
         end
 
         context 'when provided a correct sha1' do
+          let(:stemcell_name) { 'fake-stemcell-url' }
+          let(:stemcell_options) do
+            {
+              'remote' => true,
+              'sha1' => 'abcd1234',
+            }
+          end
+
           it 'should upload a remote stemcell' do
             expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
             expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
@@ -180,17 +199,12 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
             expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-            update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(
-              'fake-stemcell-url',
-              'remote' => true,
-              'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757',
-            )
-            expect(update_stemcell_job).to receive(:download_remote_file) do |resource, url, path|
+            expect(subject).to receive(:download_remote_file) do |resource, url, path|
               expect(resource).to eq('stemcell')
               expect(url).to eq('fake-stemcell-url')
-              FileUtils.mv(@stemcell_file.path, path)
+              FileUtils.mv(stemcell_file.path, path)
             end
-            update_stemcell_job.perform
+            subject.perform
 
             stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
             expect(stemcell).not_to be_nil
@@ -209,10 +223,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           'stemcell-cid'
         end
 
-        update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-        update_stemcell_job.perform
+        subject.perform
 
-        expect(File.exist?(@stemcell_file.path)).to be(false)
+        expect(File.exist?(stemcell_file.path)).to be(false)
       end
 
       context 'when stemcell already exists' do
@@ -226,37 +239,42 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          expect(update_stemcell_job.perform).to eq('/stemcells/jeos/5')
+          expect(subject.perform).to eq('/stemcells/jeos/5')
         end
 
-        it 'should quietly ignore duplicate remote uploads and not create a stemcell in the cloud' do
-          expected_steps = 6
-          expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
-          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+        context "when upload stemcell option 'remote' is true" do
+          let(:stemcell_options) { { 'remote' => true } }
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_url, 'remote' => true)
-          expect(update_stemcell_job).to receive(:download_remote_file) do |_, remote_file, local_file|
-            uri = URI.parse(remote_file)
-            FileUtils.cp(uri.path, local_file)
+          it 'should quietly ignore duplicate remote uploads and not create a stemcell in the cloud' do
+            expected_steps = 6
+            expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+            expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+            expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+
+            expect(subject).to receive(:download_remote_file) do |_, remote_file, local_file|
+              uri = URI.parse(remote_file)
+              FileUtils.cp(uri.path, local_file)
+            end
+            expect(subject.perform).to eq('/stemcells/jeos/5')
           end
-          expect(update_stemcell_job.perform).to eq('/stemcells/jeos/5')
         end
 
-        it 'should upload stemcell and update db with --fix option set' do
-          expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(cloud).to receive(:create_stemcell).and_return 'new-stemcell-cid'
-          expected_steps = 5
-          expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
-          expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
+        context "when upload stemcell option 'fix' is true" do
+          let(:stemcell_options) { { 'fix' => true } }
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path, 'fix' => true)
-          expect { update_stemcell_job.perform }.to_not raise_error
+          it 'should upload stemcell and update db with --fix option set' do
+            expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
+            expect(cloud).to receive(:create_stemcell).and_return 'new-stemcell-cid'
+            expected_steps = 5
+            expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
+            expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps).times
 
-          stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
-          expect(stemcell).not_to be_nil
-          expect(stemcell.cid).to eq('new-stemcell-cid')
+            expect { subject.perform }.to_not raise_error
+
+            stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
+            expect(stemcell).not_to be_nil
+            expect(stemcell.cid).to eq('new-stemcell-cid')
+          end
         end
       end
 
@@ -264,10 +282,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         result = Bosh::Exec::Result.new('cmd', 'output', 1)
         expect(Bosh::Exec).to receive(:sh).and_return(result)
 
-        update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-
         expect do
-          update_stemcell_job.perform
+          subject.perform
         end.to raise_exception(Bosh::Director::StemcellInvalidArchive)
       end
 
@@ -315,8 +331,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - step_messages.count - 3).times
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          update_stemcell_job.perform
+          subject.perform
 
           stemcells = Bosh::Director::Models::Stemcell.where(name: 'jeos', version: '5').all
 
@@ -345,8 +360,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
           expect(cloud_factory).to receive(:all_names).twice.and_return(['cloud1'])
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          expect { update_stemcell_job.perform }.to raise_error 'I am flaky'
+          expect { subject.perform }.to raise_error 'I am flaky'
 
           expect(BD::Models::StemcellUpload.all.count).to eq(0)
         end
@@ -372,8 +386,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(BD::Models::Stemcell.all.count).to eq(1)
             expect(BD::Models::StemcellUpload.all.count).to eq(1)
 
-            update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-            update_stemcell_job.perform
+            subject.perform
 
             expect(BD::Models::Stemcell.all.map do |s|
               { name: s.name, version: s.version, cpi: s.cpi }
@@ -408,8 +421,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           # seems that rspec already subtracts the expected messages above, so we have to subtract them from the expected overall count
           expect(event_log_stage).to receive(:advance_and_track).exactly(expected_steps - 3).times
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-          update_stemcell_job.perform
+          subject.perform
 
           stemcells = Bosh::Director::Models::Stemcell.where(name: 'jeos', version: '5').all
 
@@ -424,18 +436,17 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     end
 
     context 'when information about stemcell formats is not enough' do
+      let(:manifest) do
+        {
+          'name' => 'jeos',
+          'version' => 5,
+          'cloud_properties' => { 'ram' => '2gb' },
+          'sha1' => 'shawone',
+        }
+      end
+
       context 'when stemcell does not have stemcell formats' do
         it 'should not fail' do
-          manifest = {
-            'name' => 'jeos',
-            'version' => 5,
-            'cloud_properties' => { 'ram' => '2gb' },
-            'sha1' => 'shawone',
-          }
-          stemcell_contents = create_stemcell(manifest, 'image contents')
-          @stemcell_file = Tempfile.new('stemcell_contents')
-
-          File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
             contents = File.open(image, &:read)
@@ -443,24 +454,21 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             'stemcell-cid'
           end
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-
-          expect { update_stemcell_job.perform }.not_to raise_error
+          expect { subject.perform }.not_to raise_error
         end
       end
 
       context 'when cpi does not have stemcell formats' do
-        it 'should not fail' do
-          manifest = {
+        let(:manifest) do
+          {
             'name' => 'jeos',
             'version' => 5,
             'cloud_properties' => { 'ram' => '2gb' },
             'sha1' => 'shawone',
           }
-          stemcell_contents = create_stemcell(manifest, 'image contents')
-          @stemcell_file = Tempfile.new('stemcell_contents')
+        end
 
-          File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
+        it 'should not fail' do
           expect(cloud).to receive(:info).and_return({})
           expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
             contents = File.open(image, &:read)
@@ -468,24 +476,21 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             'stemcell-cid'
           end
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-
-          expect { update_stemcell_job.perform }.not_to raise_error
+          expect { subject.perform }.not_to raise_error
         end
       end
 
       context 'when cpi does not support stemcell formats' do
-        it 'should not fail' do
-          manifest = {
+        let(:manifest) do
+          {
             'name' => 'jeos',
             'version' => 5,
             'cloud_properties' => { 'ram' => '2gb' },
             'sha1' => 'shawone',
           }
-          stemcell_contents = create_stemcell(manifest, 'image contents')
-          @stemcell_file = Tempfile.new('stemcell_contents')
+        end
 
-          File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
+        it 'should not fail' do
           expect(cloud).to receive(:info).and_raise(Bosh::Clouds::NotImplemented)
           expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
             contents = File.open(image, &:read)
@@ -493,24 +498,19 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             'stemcell-cid'
           end
 
-          update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-
-          expect { update_stemcell_job.perform }.not_to raise_error
+          expect { subject.perform }.not_to raise_error
         end
       end
     end
 
     context 'when the stemcell metadata lacks a value for operating_system' do
-      before do
-        manifest = {
+      let(:manifest) do
+        {
           'name' => 'jeos',
           'version' => 5,
           'cloud_properties' => { 'ram' => '2gb' },
           'sha1' => 'shawone',
         }
-        stemcell_contents = create_stemcell(manifest, 'image contents')
-        @stemcell_file = Tempfile.new('stemcell_contents')
-        File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
       end
 
       it 'should not fail' do
@@ -521,15 +521,14 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           'stemcell-cid'
         end
 
-        update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
-
-        expect { update_stemcell_job.perform }.not_to raise_error
+        expect { subject.perform }.not_to raise_error
       end
     end
 
     context 'when api_version is provided' do
-      before do
-        manifest = {
+      let(:stemcell_options) { { 'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757' } }
+      let(:manifest) do
+        {
           'name' => 'jeos',
           'version' => 5,
           'operating_system' => 'jeos-5',
@@ -538,9 +537,6 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           'sha1' => 'shawone',
           'api_version' => 2,
         }
-        stemcell_contents = create_stemcell(manifest, 'image contents')
-        @stemcell_file = Tempfile.new('stemcell_contents')
-        File.open(@stemcell_file.path, 'w') { |f| f.write(stemcell_contents) }
       end
 
       it 'should update api_version' do
@@ -551,12 +547,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           'stemcell-cid'
         end
 
-
-        update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(
-          @stemcell_file.path,
-          'sha1' => 'eeaec4f77e2014966f7f01e949c636b9f9992757',
-        )
-        update_stemcell_job.perform
+        subject.perform
 
         stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
         expect(stemcell).not_to be_nil
