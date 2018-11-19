@@ -227,6 +227,7 @@ jobs:
       trigger: true
     - get: bosh-agent
     - get: integration-tests-parallel-runtime
+    - get: bosh-main-postgres-9.4
   - config:
       image_resource:
         source:
@@ -263,6 +264,7 @@ jobs:
         path: /bin/bash
     task: install-dependencies
   - file: bosh-src/ci/tasks/test-integration-gocli.yml
+    image: bosh-main-postgres-9.4
     params:
       DB: postgresql
       SHA2_MODE: true
@@ -344,6 +346,7 @@ jobs:
       trigger: true
     - get: bosh-agent
     - get: integration-tests-parallel-runtime
+    - get: bosh-main-postgres-9.4
   - config:
       image_resource:
         source:
@@ -380,6 +383,7 @@ jobs:
         path: /bin/bash
     task: install-dependencies
   - file: bosh-src/ci/tasks/test-integration-gocli.yml
+    image: bosh-main-postgres-9.4
     params:
       DB: postgresql
       DB_TLS: true
@@ -404,6 +408,7 @@ jobs:
       trigger: true
     - get: bosh-agent
     - get: integration-tests-parallel-runtime
+    - get: bosh-main-postgres-9.4
   - config:
       image_resource:
         source:
@@ -440,6 +445,7 @@ jobs:
         path: /bin/bash
     task: install-dependencies
   - file: bosh-src/ci/tasks/test-integration-gocli.yml
+    image: bosh-main-postgres-9.4
     params:
       DB: postgresql
       DB_TLS: true
@@ -539,8 +545,10 @@ jobs:
     - get: bosh-cli
       trigger: true
     - get: bosh-agent
+    - get: bosh-main-postgres-9.4
   - aggregate:
     - file: bosh-src/ci/tasks/test-upgrade.yml
+      image: bosh-main-postgres-9.4
       params:
         DB: postgresql
       privileged: true
