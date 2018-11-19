@@ -291,12 +291,14 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
+        - get: bosh-main-postgres-9.4
 
       - <<: *install-dependencies
 
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
+        image: bosh-main-postgres-9.4
         tags: ["bosh-integration-1"]
         params:
           DB:           postgresql
@@ -347,12 +349,14 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
+        - get: bosh-main-postgres-9.4
 
       - <<: *install-dependencies
 
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
+        image: bosh-main-postgres-9.4
         tags: ["bosh-integration-3"]
         params:
           DB:           postgresql
@@ -376,12 +380,14 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
+        - get: bosh-main-postgres-9.4
 
       - <<: *install-dependencies
 
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
+        image: bosh-main-postgres-9.4
         tags: ["bosh-integration-4"]
         params:
           DB:           postgresql
@@ -449,10 +455,12 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
+        - get: bosh-main-postgres-9.4
       - aggregate:
         - task: upgrade-with-postgres
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-6"]
           params:
             DB: postgresql
