@@ -304,10 +304,12 @@ jobs:
         - get: bosh-cli
         - get: bosh-agent
         - { get: every-sunday, trigger: true }
+        - get: bosh-main-postgres-9.4
       - aggregate:
         - task: test-group-1
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-1"]
           params:
             DB:           postgresql
@@ -319,6 +321,7 @@ jobs:
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-2"]
           params:
             DB:           postgresql
@@ -330,6 +333,7 @@ jobs:
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-3"]
           params:
             DB:           postgresql
@@ -388,10 +392,12 @@ jobs:
       - { get: bosh-src, trigger: true }
       - { get: bosh-agent, trigger: true }
       - { get: every-sunday, trigger: true }
+      - get: bosh-main-postgres-9.4
       - aggregate:
         - task: test-group-1
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-7"]
           params:
             DB:           postgresql
@@ -402,6 +408,7 @@ jobs:
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-8"]
           params:
             DB:           postgresql
@@ -412,6 +419,7 @@ jobs:
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-9"]
           params:
             DB:           postgresql
@@ -430,10 +438,12 @@ jobs:
         - get: bosh-cli
         - get: bosh-agent
         - { get: every-sunday, trigger: true }
+        - get: bosh-main-postgres-9.4
       - aggregate:
         - task: upgrade-with-postgres
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration"]
           params:
             DB: postgresql
@@ -804,3 +814,8 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
+
+  - name: bosh-main-postgres-9.4
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.4
