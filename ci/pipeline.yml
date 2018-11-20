@@ -310,10 +310,12 @@ jobs:
         - get: bosh-agent
         - get: every-sunday
           trigger: true
+        - get: bosh-main-postgres-9.4
       - aggregate:
         - task: test-group-1
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-7"]
           params:
             DB:           postgresql
@@ -325,6 +327,7 @@ jobs:
         - task: test-group-2
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-8"]
           params:
             DB:           postgresql
@@ -336,6 +339,7 @@ jobs:
         - task: test-group-3
           privileged: true
           file: bosh-src/ci/tasks/test-integration-gocli.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration-9"]
           params:
             DB:           postgresql
@@ -399,10 +403,12 @@ jobs:
         - get: bosh-agent
         - get: every-sunday
           trigger: true
+        - get: bosh-main-postgres-9.4
       - aggregate:
         - task: upgrade-with-postgres
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
+          image: bosh-main-postgres-9.4
           tags: ["bosh-integration"]
           params:
             DB: postgresql
@@ -764,3 +770,8 @@ resources:
       branch: master
       pool: unit-24-db-migrations-rds
       private_key: ((bosh_ci_pools_deploy_key))
+
+  - name: bosh-main-postgres-9.4
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.4
