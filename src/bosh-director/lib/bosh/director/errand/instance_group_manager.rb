@@ -46,7 +46,7 @@ module Bosh::Director
     def mark_new_vms
       bound_instance_plans.each do |instance_plan|
         instance = instance_plan.instance
-        @logger.info("Marking as new vm for instance #{instance.instance_group_name}/#{instance.uuid}")
+        @logger.info("Marking as new vm for instance #{instance.uuid} job #{instance.job_name}")
         spec = instance_plan.instance.model.spec
         spec['networks'] = {}
         instance_plan.instance.model.spec = spec
