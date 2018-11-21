@@ -15,6 +15,7 @@ module Bosh::Director
 
     def create_missing_vms
       @vm_creator.create_for_instance_plans(@instance_group.instance_plans_with_missing_vms, @deployment.ip_provider, @deployment.tags)
+      mark_new_vms
     end
 
     # Creates/updates all errand job instances
@@ -44,8 +45,20 @@ module Bosh::Director
 
     private
 
+    def mark_new_vms
+      bound_instance_plans.each do |instance_plan|
+        instance = instance_plan.instance
+        @logger.info("Marking as new vm for instance #{instance.instance_group_name}/#{instance.uuid}")
+        spec = instance_plan.instance.model.spec
+        spec['networks'] = {}
+        instance_plan.instance.model.spec = spec
+      end
+    end
+
     def bound_instance_plans
-      @instance_group.needed_instance_plans.reject { |instance_plan| instance_plan.instance.model.nil? }
+      @instance_group.needed_instance_plans.reject do |instance_plan|
+        instance_plan.instance.nil? || instance_plan.instance.model.nil?
+      end
     end
   end
 end
