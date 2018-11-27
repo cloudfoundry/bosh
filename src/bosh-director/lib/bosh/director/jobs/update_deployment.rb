@@ -35,7 +35,7 @@ module Bosh::Director
           @event_log.warn_deprecated(warning)
           cloud_config_models = nil
         else
-          cloud_config_models = Bosh::Director::Models::Config.where(id: [@cloud_config_ids]).to_a
+          cloud_config_models = Bosh::Director::Models::Config.where(id: @cloud_config_ids).to_a
           if cloud_config_models.empty?
             logger.debug('No cloud config uploaded yet.')
           else
@@ -43,7 +43,7 @@ module Bosh::Director
           end
         end
 
-        runtime_config_models = Bosh::Director::Models::Config.where(id: [@runtime_config_ids]).to_a
+        runtime_config_models = Bosh::Director::Models::Config.where(id: @runtime_config_ids).to_a
         if runtime_config_models.empty?
           logger.debug("No runtime config uploaded yet.")
         else
