@@ -330,14 +330,23 @@ module Bosh::Director
           end
 
           context 'when a cloud_config is passed in' do
-            let(:cloud_config_id) { Models::Config.make(:cloud).id }
+            let(:cloud_config)     { Models::Config.make(:cloud) }
+            let(:cloud_config_id)  { cloud_config.id }
+            let(:manifest_content) { YAML.dump ManifestHelper.default_deployment_manifest }
+
             it 'uses the cloud config' do
               expect(job.perform).to eq('/deployments/deployment-name')
+
+              expect(Manifest).to have_received(:load_from_hash)
+                .with(anything, anything, [cloud_config], anything)
+              expect(planner_factory).to have_received(:create_from_manifest)
+                .with(anything, [cloud_config], anything, anything)
             end
           end
 
           context 'when a runtime_config is passed in' do
-            let(:runtime_config_id) { Models::RuntimeConfig.make.id }
+            let(:runtime_config)     { Models::Config.make(:runtime) }
+            let(:runtime_config_ids) { [runtime_config.id] }
 
             before do
               allow(variables_interpolator).to receive(:interpolate_runtime_manifest)
@@ -345,6 +354,11 @@ module Bosh::Director
 
             it 'uses the runtime config' do
               expect(job.perform).to eq('/deployments/deployment-name')
+
+              expect(Manifest).to have_received(:load_from_hash)
+                .with(anything, anything, anything, [runtime_config])
+              expect(planner_factory).to have_received(:create_from_manifest)
+                .with(anything, anything, [runtime_config], anything)
             end
           end
 
