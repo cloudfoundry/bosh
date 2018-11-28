@@ -1,8 +1,8 @@
-package creds_test
+package certs_test
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/bosh-credentials-info/creds"
+	"github.com/cloudfoundry/bosh-credentials-info/certs"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -42,10 +42,10 @@ var _ = Describe("Creds", func() {
 	})
 
 	Context("GetCertificateExpiryDates", func(){
-		certExpirationInfo := creds.CertExpirationInfo {Expires: 1574372638, ErrorString: ""}
-		expected := map[string]creds.CertsInfo{
-			fmt.Sprintf("%s/blobstore/%s/%s", creds.BASE_JOB_DIR, creds.CONFIG_DIR, creds.CERTS_FILE_NAME): {
-				Certificates: map[string]creds.CertExpirationInfo{
+		certExpirationInfo := certs.CertExpirationInfo {Expires: 1574372638, ErrorString: ""}
+		expected := map[string]certs.CertsInfo{
+			fmt.Sprintf("%s/blobstore/%s/%s", certs.BASE_JOB_DIR, certs.CONFIG_DIR, certs.CERTS_FILE_NAME): {
+				Certificates: map[string]certs.CertExpirationInfo{
 					"director.db.tls.cert.ca":            certExpirationInfo,
 					"director.db.tls.cert.certificate":   certExpirationInfo,
 					"blobstore.tls.cert.ca":              certExpirationInfo,
@@ -57,8 +57,8 @@ var _ = Describe("Creds", func() {
 				},
 				ErrorString: "",
 			},
-			fmt.Sprintf("%s/db/%s/%s", creds.BASE_JOB_DIR, creds.CONFIG_DIR, creds.CERTS_FILE_NAME): {
-				Certificates: map[string]creds.CertExpirationInfo{
+			fmt.Sprintf("%s/db/%s/%s", certs.BASE_JOB_DIR, certs.CONFIG_DIR, certs.CERTS_FILE_NAME): {
+				Certificates: map[string]certs.CertExpirationInfo{
 					"director.db.tls.cert.ca":            certExpirationInfo,
 					"director.db.tls.cert.certificate":   certExpirationInfo,
 					"blobstore.tls.cert.ca":              certExpirationInfo,
@@ -70,8 +70,8 @@ var _ = Describe("Creds", func() {
 				},
 				ErrorString: "",
 			},
-			fmt.Sprintf("%s/director/%s/%s", creds.BASE_JOB_DIR, creds.CONFIG_DIR, creds.CERTS_FILE_NAME): {
-				Certificates: map[string]creds.CertExpirationInfo{
+			fmt.Sprintf("%s/director/%s/%s", certs.BASE_JOB_DIR, certs.CONFIG_DIR, certs.CERTS_FILE_NAME): {
+				Certificates: map[string]certs.CertExpirationInfo{
 					"director.db.tls.cert.ca":            certExpirationInfo,
 					"director.db.tls.cert.certificate":   certExpirationInfo,
 					"blobstore.tls.cert.ca":              certExpirationInfo,
@@ -83,8 +83,8 @@ var _ = Describe("Creds", func() {
 				},
 				ErrorString: "",
 			},
-			fmt.Sprintf("%s/nats/%s/%s", creds.BASE_JOB_DIR, creds.CONFIG_DIR, creds.CERTS_FILE_NAME): {
-				Certificates: map[string]creds.CertExpirationInfo{
+			fmt.Sprintf("%s/nats/%s/%s", certs.BASE_JOB_DIR, certs.CONFIG_DIR, certs.CERTS_FILE_NAME): {
+				Certificates: map[string]certs.CertExpirationInfo{
 					"director.db.tls.cert.ca":            certExpirationInfo,
 					"director.db.tls.cert.certificate":   certExpirationInfo,
 					"blobstore.tls.cert.ca":              certExpirationInfo,
@@ -111,18 +111,18 @@ var _ = Describe("Creds", func() {
 
 
 		It("Returns a list of Certificates and their expiration dates in Unix Epoch format", func(){
-			actual := creds.GetCertificateExpiryDates(fs)
+			actual := certs.GetCertificateExpiryDates(fs)
 			Expect(actual).To(Equal(expected))
 		})
 	})
 })
 
 func certFilePath(jobName string) string {
-	return fmt.Sprintf("%s/%s/%s", jobPath(jobName), creds.CONFIG_DIR, creds.CERTS_FILE_NAME)
+	return fmt.Sprintf("%s/%s/%s", jobPath(jobName), certs.CONFIG_DIR, certs.CERTS_FILE_NAME)
 }
 
 func jobPath(jobName string) string {
-	return fmt.Sprintf("%s/%s", creds.BASE_JOB_DIR, jobName)
+	return fmt.Sprintf("%s/%s", certs.BASE_JOB_DIR, jobName)
 }
 
 func fakeCert(propName string, valid bool) string {

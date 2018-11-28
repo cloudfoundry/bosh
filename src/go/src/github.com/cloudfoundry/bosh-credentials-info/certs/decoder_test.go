@@ -1,4 +1,4 @@
-package creds_test
+package certs_test
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-credentials-info/creds"
+	"github.com/cloudfoundry/bosh-credentials-info/certs"
 
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -75,14 +75,14 @@ var _ = Describe("Decoder", func() {
 		Describe("When file exists", func(){
 			Describe("When the file contents invalid yml", func(){
 				BeforeEach(func() {
-					certsFileContent := "creds.test : |\nTHIS NO WORK"
+					certsFileContent := "certs.test : |\nTHIS NO WORK"
 					err := fs.WriteFileString(certFilePath(DIRS[1]), certsFileContent)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("Returns an error", func(){
 					path := certFilePath(DIRS[1])
-					result, err := creds.GetJobCertificates(path, fs)
+					result, err := certs.GetJobCertificates(path, fs)
 					Expect(result).To(BeEmpty())
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("Unmarshaling yml for %s file failed", path)))
@@ -101,7 +101,7 @@ var _ = Describe("Decoder", func() {
 				})
 
 				It("Returns all the properties found in the file", func(){
-					result, err := creds.GetJobCertificates(certFilePath(DIRS[1]), fs)
+					result, err := certs.GetJobCertificates(certFilePath(DIRS[1]), fs)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(len(result)).To(Equal(8))
 
@@ -114,9 +114,9 @@ var _ = Describe("Decoder", func() {
 
 		Describe("When file doesn't exist", func(){
 			It("Retuns an error", func(){
-				filePath := fmt.Sprintf("%s/%s/%s/%s", creds.BASE_JOB_DIR, DIRS[3], creds.CONFIG_DIR, creds.CERTS_FILE_NAME)
+				filePath := fmt.Sprintf("%s/%s/%s/%s", certs.BASE_JOB_DIR, DIRS[3], certs.CONFIG_DIR, certs.CERTS_FILE_NAME)
 
-				results, err := creds.GetJobCertificates(filePath, fs)
+				results, err := certs.GetJobCertificates(filePath, fs)
 
 				Expect(results).To(BeEmpty())
 				Expect(err).To(HaveOccurred())
@@ -129,7 +129,7 @@ var _ = Describe("Decoder", func() {
 		Describe("when certificate can't be decoded", func(){
 			It("should show an error", func() {
 				cert := "anInvalidCert"
-				_, err := creds.GetCertExpiryDate(cert)
+				_, err := certs.GetCertExpiryDate(cert)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("failed to decode certificate"))
 			})
@@ -166,7 +166,7 @@ LYlDestroyAfXfZyfZs=
 -----END CERTIFICATE-----
 `
 
-				_, err := creds.GetCertExpiryDate(invalidCert)
+				_, err := certs.GetCertExpiryDate(invalidCert)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("failed to parse certificate"))
 			})
@@ -174,7 +174,7 @@ LYlDestroyAfXfZyfZs=
 
 		Describe("When certificate is valid", func(){
 			It("returns the certificate's expiry date in Unix Epoch format", func(){
-				result, err := creds.GetCertExpiryDate(validCert)
+				result, err := certs.GetCertExpiryDate(validCert)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).To(Equal(time.Date(2019, 11, 21, 21, 43, 58, 0, time.UTC).Unix()))

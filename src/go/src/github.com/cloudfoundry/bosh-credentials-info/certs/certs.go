@@ -1,4 +1,4 @@
-package creds
+package certs
 
 import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -23,7 +23,7 @@ const (
 func GetCertificateExpiryDates(fs boshsys.FileSystem) interface{} {
 	certsInfo := make(map[string]CertsInfo)
 
-	certificatePaths := GetCredsPaths(fs)
+	certificatePaths := GetCredsPaths(fs, BASE_JOB_DIR)
 
 	for _, path := range certificatePaths {
 		fileCerts := make(map[string]CertExpirationInfo)

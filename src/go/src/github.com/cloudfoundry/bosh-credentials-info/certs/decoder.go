@@ -1,4 +1,4 @@
-package creds
+package certs
 
 import (
 	"crypto/x509"

@@ -1,4 +1,4 @@
-package creds_test
+package certs_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestCreds(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Creds Suite")
+	RunSpecs(t, "Package 'Certs' test Suite")
 }
