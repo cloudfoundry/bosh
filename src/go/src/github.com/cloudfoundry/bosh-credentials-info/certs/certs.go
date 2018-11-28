@@ -2,6 +2,7 @@ package certs
 
 import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"time"
 )
 
 type CertExpirationInfo struct {
@@ -41,7 +42,7 @@ func GetCertificateExpiryDates(fs boshsys.FileSystem) interface{} {
 					certExpirationInfo.ErrorString = err.Error()
 				}
 
-				certExpirationInfo.Expires = expiryDate.Format("")
+				certExpirationInfo.Expires = expiryDate.Format(time.RFC1123)
 
 				fileCerts[propertyName] = certExpirationInfo
 			}

@@ -177,7 +177,7 @@ LYlDestroyAfXfZyfZs=
 				result, err := certs.GetCertExpiryDate(validCert)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result).To(Equal(time.Date(2019, 11, 21, 21, 43, 58, 0, time.UTC).Unix()))
+				Expect(result).To(Equal(time.Date(2019, 11, 21, 21, 43, 58, 0, time.UTC)))
 
 			})
 		})

@@ -3,6 +3,7 @@ package certs_test
 import (
 	"fmt"
 	"github.com/cloudfoundry/bosh-credentials-info/certs"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -42,7 +43,7 @@ var _ = Describe("Creds", func() {
 	})
 
 	Context("GetCertificateExpiryDates", func(){
-		certExpirationInfo := certs.CertExpirationInfo {Expires: 1574372638, ErrorString: ""}
+		certExpirationInfo := certs.CertExpirationInfo {Expires: time.Date(2019, 11, 21, 21, 43, 58, 0, time.UTC).Format(time.RFC1123), ErrorString: ""}
 		expected := map[string]certs.CertsInfo{
 			fmt.Sprintf("%s/blobstore/%s/%s", certs.BASE_JOB_DIR, certs.CONFIG_DIR, certs.CERTS_FILE_NAME): {
 				Certificates: map[string]certs.CertExpirationInfo{
