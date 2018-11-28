@@ -46,6 +46,9 @@ module Bosh::Director
       describe '#perform' do
         let(:compile_stage) { instance_double(DeploymentPlan::Stages::PackageCompileStage) }
         let(:update_stage) { instance_double(DeploymentPlan::Stages::UpdateStage) }
+        let(:create_network_stage) do
+          instance_double(DeploymentPlan::Stages::CreateNetworkStage, perform: true)
+        end
         let(:notifier) { instance_double(DeploymentPlan::Notifier) }
         let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
         let(:variables_interpolator) { instance_double(ConfigServer::VariablesInterpolator) }
@@ -79,6 +82,8 @@ module Bosh::Director
           allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
           allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).with(planner).and_return(compile_stage)
           allow(DeploymentPlan::Stages::UpdateStage).to receive(:new).and_return(update_stage)
+          allow(DeploymentPlan::Stages::CreateNetworkStage).to receive(:new)
+            .with(Config.logger, planner).and_return(create_network_stage)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
           allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
           allow(DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
@@ -152,8 +157,13 @@ module Bosh::Director
             end
 
             it 'should create a new variable set for the deployment and mark variable sets' do
-              expect(deployment_model).to receive(:add_variable_set).with({:created_at => fixed_time, :writable => true})
-              job.perform
+              expect(deployment_model).to receive(:add_variable_set).with(
+                created_at: fixed_time,
+                writable: true,
+              )
+              expect do
+                job.perform
+              end.to change { deployment_model.links_serial_id }.by(1)
             end
 
             it "should set the VariableSet's deployed_successfully field" do
@@ -216,10 +226,40 @@ module Bosh::Director
               job.perform
             end
 
+            it 'should not add a new variable set to the deployment model' do
+              expect(deployment_model).to_not receive(:add_variable_set)
+
+              expect do
+                job.perform
+              end.to_not(change { deployment_model.links_serial_id })
+            end
+
             it 'should NOT mark new variable set or remove unused variable sets' do
               expect(variable_set).to_not receive(:update).with(:deployed_successfully => true)
 
               job.perform
+            end
+
+            it 'should not clean up' do
+              expect(links_manager).to_not receive(:remove_unused_links)
+              expect(deployment_model).to_not receive(:cleanup_variable_sets)
+
+              job.perform
+            end
+
+            context 'even when network lifecycle is enabled' do
+              before do
+                allow(Config).to receive(:network_lifecycle_enabled?).and_return true
+
+                # This is terrible, but the network logic really does not belong on this class
+                allow(job).to receive(:mark_orphaned_networks) do
+                  raise 'Should not get here'
+                end
+              end
+
+              it 'should not clean up the orphaned networks' do
+                job.perform
+              end
             end
           end
 
@@ -240,6 +280,7 @@ module Bosh::Director
 
           before do
             expect(notifier).to receive(:send_start_event).ordered
+            expect(create_network_stage).to receive(:perform).ordered
             expect(compile_stage).to receive(:perform).ordered
             expect(update_stage).to receive(:perform).ordered
             expect(notifier).to receive(:send_end_event).ordered
@@ -632,6 +673,7 @@ Unable to render instance groups for deployment. Errors are:
           it 'should exit before trying to create vms' do
             expect(compile_stage).not_to receive(:perform)
             expect(update_stage).not_to receive(:perform)
+            expect(create_network_stage).not_to receive(:perform)
             expect(PostDeploymentScriptRunner).not_to receive(:run_post_deploys_after_deployment)
             expect(notifier).not_to receive(:send_start_event)
             expect(notifier).not_to receive(:send_end_event)
