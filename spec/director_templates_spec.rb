@@ -2,6 +2,7 @@ require 'rspec'
 require 'json'
 require 'bosh/template/test'
 require 'bosh/template/evaluation_context'
+require 'openssl'
 require_relative './template_example_group'
 
 describe 'director templates' do
@@ -268,5 +269,113 @@ describe 'director templates' do
         end
       end
     end
+
+    # rubocop:disable Metrics/MethodLength
+    describe 'certificate expiry template' do
+      before do
+        @key, @cert, @expiry = create_key_and_csr_cert
+      end
+      # rubocop:disable Metrics/BlockLength
+      it_should_behave_like 'a rendered file' do
+        let(:file_name) { '../jobs/director/templates/certificate_expiry.json.erb' }
+        # rubocop:disable Metrics/BlockLength
+        let(:properties) do
+          {
+            'properties' => {
+              'director' => {
+                'ssl' => {
+                  'cert' => @cert,
+                },
+                'db' => {
+                  'tls' => {
+                    'cert' => {
+                      'ca' => @cert,
+                      'certificate' => nil,
+                    },
+                  },
+                },
+                'config_server' => {
+                  'ca_cert' => nil,
+                  'uaa' => {
+                    'ca_cert' => @cert,
+                  },
+                },
+              },
+              'nats' => {
+                'tls' => {
+                  'ca' => nil,
+                  'client_ca' => {
+                    'certificate' => @cert,
+                  },
+                  'director' => {
+                    'certificate' => @cert,
+                  },
+                },
+              },
+              'blobstore' => {
+                'tls' => {
+                  'cert' => {
+                    'ca' => @cert,
+                  },
+                },
+              },
+            },
+          }
+        end
+
+        let(:expected_content) do
+          <<~JSON
+            {
+              "director.ssl.cert": "#{@expiry.utc.iso8601}",
+              "blobstore.tls.cert.ca": "#{@expiry.utc.iso8601}",
+              "director.config_server.ca_cert": "0",
+              "director.config_server.uaa.ca_cert": "#{@expiry.utc.iso8601}",
+              "nats.tls.ca": "0",
+              "nats.tls.client_ca.certificate": "#{@expiry.utc.iso8601}",
+              "nats.tls.director.certificate": "#{@expiry.utc.iso8601}",
+              "director.db.tls.cert.ca": "#{@expiry.utc.iso8601}",
+              "director.db.tls.cert.certificate": "0",
+            }
+          JSON
+        end
+      end
+      # rubocop:enable Metrics/BlockLength
+      # rubocop:enable Metrics/MethodLength
+    end
   end
+end
+
+def create_key_and_csr_cert
+  subject = OpenSSL::X509::Name.parse('/O=Cloud Foundry/CN=Sample Certificate')
+  key = OpenSSL::PKey::RSA.new(2048)
+  csr = new_csr(key, subject)
+  csr_cert = new_csr_certificate(key, csr)
+
+  [key.to_pem, csr_cert.to_pem, csr_cert.not_after]
+end
+
+def new_csr(key, subject)
+  csr = OpenSSL::X509::Request.new
+  csr.version = 0
+  csr.subject = subject
+  csr.public_key = key.public_key
+  csr.sign key, OpenSSL::Digest::SHA1.new
+
+  csr
+end
+
+def new_csr_certificate(key, csr)
+  csr_cert = OpenSSL::X509::Certificate.new
+  csr_cert.serial = 0
+  csr_cert.version = 2
+  csr_cert.not_before = Time.now - 60 * 60 * 24
+  csr_cert.not_after = Time.now + 94608000
+
+  csr_cert.subject = csr.subject
+  csr_cert.public_key = csr.public_key
+  csr_cert.issuer = csr.subject
+
+  csr_cert.sign key, OpenSSL::Digest::SHA1.new
+
+  csr_cert
 end

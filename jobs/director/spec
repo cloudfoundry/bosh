@@ -38,6 +38,7 @@ templates:
   console: bin/console
   env.erb: env
   trigger-one-time-sync-dns: bin/trigger-one-time-sync-dns
+  certificate_expiry.json.erb: config/certificate_expiry.json
 
 packages:
 - director
