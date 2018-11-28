@@ -328,6 +328,17 @@ module Bosh::Director
             end
           end
 
+          context 'when there is no cloud_config' do
+            it 'passes nil where cloud_config would be passed' do
+              expect(job.perform).to eq('/deployments/deployment-name')
+
+              expect(Manifest).to have_received(:load_from_hash)
+                .with(anything, anything, nil, anything)
+              expect(planner_factory).to have_received(:create_from_manifest)
+                .with(anything, nil, anything, anything)
+            end
+          end
+
           context 'when a cloud_config is passed in' do
             let(:cloud_config)     { Models::Config.make(:cloud) }
             let(:cloud_config_id)  { cloud_config.id }
