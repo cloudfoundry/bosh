@@ -12,11 +12,9 @@ func main() {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 	fs := system.NewOsFileSystem(logger)
 
-
-
 	output := certs.GetCertificateExpiryDates(fs)
 
-	marshalled, _ := json.Marshal(output)
+	marshaled, _ := json.Marshal(output)
 
-	fmt.Println(string(marshalled))
+	fmt.Println(string(marshaled))
 }

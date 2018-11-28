@@ -5,7 +5,7 @@ import (
 )
 
 type CertExpirationInfo struct {
-	Expires      int64  `json:"expires"`
+	Expires      string  `json:"expires"`
 	ErrorString  string `json:"error_string"`
 }
 
@@ -15,7 +15,7 @@ type CertsInfo struct {
 }
 
 const (
-	BASE_JOB_DIR = "var/vcap/jobs"
+	BASE_JOB_DIR = "/var/vcap/jobs"
 	CONFIG_DIR = "config"
 	CERTS_FILE_NAME = "validate_certificate.yml"
 )
@@ -41,7 +41,7 @@ func GetCertificateExpiryDates(fs boshsys.FileSystem) interface{} {
 					certExpirationInfo.ErrorString = err.Error()
 				}
 
-				certExpirationInfo.Expires = expiryDate
+				certExpirationInfo.Expires = expiryDate.Format("")
 
 				fileCerts[propertyName] = certExpirationInfo
 			}

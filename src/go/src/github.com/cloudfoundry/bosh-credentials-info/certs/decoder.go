@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -33,16 +34,16 @@ func GetJobCertificates(path string, fs boshsys.FileSystem) (map[string]string, 
 	return jobCerts, nil
 }
 
-func GetCertExpiryDate(cert string) (int64, error) {
+func GetCertExpiryDate(cert string) (time.Time, error) {
 	block, _ := pem.Decode([]byte(cert))
 	if block == nil {
-		return 0, errors.New("failed to decode certificate")
+		return time.Time{}, errors.New("failed to decode certificate")
 	}
 
 	parsedCert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return 0, bosherr.WrapError(err, "failed to parse certificate")
+		return time.Time{}, bosherr.WrapError(err, "failed to parse certificate")
 	}
 
-	return parsedCert.NotAfter.Unix(), nil
+	return parsedCert.NotAfter.UTC(), nil
 }
