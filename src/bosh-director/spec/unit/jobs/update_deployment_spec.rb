@@ -46,6 +46,9 @@ module Bosh::Director
       describe '#perform' do
         let(:compile_stage) { instance_double(DeploymentPlan::Stages::PackageCompileStage) }
         let(:update_stage) { instance_double(DeploymentPlan::Stages::UpdateStage) }
+        let(:create_network_stage) do
+          instance_double(DeploymentPlan::Stages::CreateNetworkStage, perform: true)
+        end
         let(:notifier) { instance_double(DeploymentPlan::Notifier) }
         let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
         let(:variables_interpolator) { instance_double(ConfigServer::VariablesInterpolator) }
@@ -79,6 +82,8 @@ module Bosh::Director
           allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
           allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).with(planner).and_return(compile_stage)
           allow(DeploymentPlan::Stages::UpdateStage).to receive(:new).and_return(update_stage)
+          allow(DeploymentPlan::Stages::CreateNetworkStage).to receive(:new)
+            .with(Config.logger, planner).and_return(create_network_stage)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
           allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
           allow(DeploymentPlan::PlannerFactory).to receive(:new).and_return(planner_factory)
@@ -90,7 +95,6 @@ module Bosh::Director
           allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
           allow(template_blob_cache).to receive(:clean_cache!)
           allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
-          allow(Bosh::Director::Models::Config).to receive(:find_by_ids).and_return([])
           allow(JobRenderer).to receive(:render_job_instances_with_cache).with(
             anything,
             template_blob_cache,
@@ -153,8 +157,13 @@ module Bosh::Director
             end
 
             it 'should create a new variable set for the deployment and mark variable sets' do
-              expect(deployment_model).to receive(:add_variable_set).with({:created_at => fixed_time, :writable => true})
-              job.perform
+              expect(deployment_model).to receive(:add_variable_set).with(
+                created_at: fixed_time,
+                writable: true,
+              )
+              expect do
+                job.perform
+              end.to change { deployment_model.links_serial_id }.by(1)
             end
 
             it "should set the VariableSet's deployed_successfully field" do
@@ -162,7 +171,7 @@ module Bosh::Director
               job.perform
             end
 
-            it "should perform links cleanup" do
+            it 'should perform links cleanup' do
               expect(links_manager).to receive(:remove_unused_links).with(deployment_model)
               job.perform
             end
@@ -173,6 +182,165 @@ module Bosh::Director
 
               expect(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set])
               job.perform
+            end
+
+            context 'when network lifecycle is enabled' do
+              before do
+                allow(Config).to receive(:network_lifecycle_enabled?).and_return true
+                allow(deployment_model).to receive(:networks).and_return [
+                  inuse,
+                  unmanaged,
+                  orphanable,
+                  unorphanable,
+                ]
+                allow(deployment_model).to receive(:remove_network)
+                allow(job).to receive(:with_network_lock) do |&block|
+                  block.call
+                end
+              end
+
+              let(:deployment_instance_group) do
+                dig = DeploymentPlan::InstanceGroup.new(logger)
+                allow(dig).to receive(:networks).and_return instance_group_networks
+                dig
+              end
+
+              let(:instance_group_networks) do
+                [
+                  inuse_managed_instance_group_network,
+                  unmanaged_instance_group_network,
+                ]
+              end
+
+              let(:inuse_managed_instance_group_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::JobNetwork,
+                  deployment_network: inuse_deployment_network,
+                )
+              end
+
+              let(:unmanaged_instance_group_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::JobNetwork,
+                  deployment_network: unmanaged_deployment_network,
+                )
+              end
+
+              let(:unmanaged_deployment_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: false,
+                  name: 'unmanaged',
+                )
+              end
+
+              let(:unmanaged) do
+                unmanaged = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'unmanaged',
+                  deployments: [],
+                )
+
+                allow(unmanaged).to receive(:orphaned=)
+                allow(unmanaged).to receive(:orphaned_at=)
+                allow(unmanaged).to receive(:save)
+
+                unmanaged
+              end
+
+              let(:inuse_deployment_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: true,
+                  name: 'inuse',
+                )
+              end
+
+              let(:inuse) do
+                inuse = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'inuse',
+                )
+
+                allow(inuse).to receive(:orphaned=)
+                allow(inuse).to receive(:orphaned_at=)
+                allow(inuse).to receive(:save)
+
+                inuse
+              end
+
+              let(:orphanable) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: true,
+                )
+              end
+
+              let(:orphanable) do
+                orphanable = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'orphanable',
+                  deployments: [],
+                )
+
+                allow(orphanable).to receive(:orphaned=)
+                allow(orphanable).to receive(:orphaned_at=)
+                allow(orphanable).to receive(:save)
+
+                orphanable
+              end
+
+              let(:unorphanable_deployment_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: true,
+                  name: 'unorphanable',
+                  deployments: [:something],
+                )
+              end
+
+              let(:unorphanable) do
+                unorphanable = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'unorphanable',
+                  deployments: [:something],
+                )
+
+                allow(unorphanable).to receive(:orphaned=)
+                allow(unorphanable).to receive(:orphaned_at=)
+                allow(unorphanable).to receive(:save)
+
+                unorphanable
+              end
+
+              it 'cleans up orphaned networks' do
+                job.perform
+
+                expect(job).to have_received(:with_network_lock).with('orphanable')
+                expect(job).to have_received(:with_network_lock).with('unorphanable')
+                expect(job).to have_received(:with_network_lock).with('unmanaged')
+                expect(job).to have_received(:with_network_lock).with('inuse')
+
+                expect(deployment_model).to have_received(:remove_network).with(orphanable)
+                expect(deployment_model).to have_received(:remove_network).with(unorphanable)
+                expect(deployment_model).to have_received(:remove_network).with(unmanaged)
+                expect(deployment_model).to_not have_received(:remove_network).with(inuse)
+
+                expect(orphanable).to have_received(:orphaned=).with(true)
+                expect(orphanable).to have_received(:orphaned_at=)
+                expect(orphanable).to have_received(:save)
+
+                expect(unmanaged).to have_received(:orphaned=)
+                expect(unmanaged).to have_received(:orphaned_at=)
+                expect(unmanaged).to have_received(:save)
+
+                expect(unorphanable).to_not have_received(:orphaned=)
+                expect(unorphanable).to_not have_received(:orphaned_at=)
+                expect(unorphanable).to_not have_received(:save)
+                expect(inuse).to_not have_received(:orphaned=)
+                expect(inuse).to_not have_received(:orphaned_at=)
+                expect(inuse).to_not have_received(:save)
+              end
             end
 
             it 'increments links_serial_id in deployment' do
@@ -217,10 +385,40 @@ module Bosh::Director
               job.perform
             end
 
+            it 'should not add a new variable set to the deployment model' do
+              expect(deployment_model).to_not receive(:add_variable_set)
+
+              expect do
+                job.perform
+              end.to_not(change { deployment_model.links_serial_id })
+            end
+
             it 'should NOT mark new variable set or remove unused variable sets' do
               expect(variable_set).to_not receive(:update).with(:deployed_successfully => true)
 
               job.perform
+            end
+
+            it 'should not clean up' do
+              expect(links_manager).to_not receive(:remove_unused_links)
+              expect(deployment_model).to_not receive(:cleanup_variable_sets)
+
+              job.perform
+            end
+
+            context 'even when network lifecycle is enabled' do
+              before do
+                allow(Config).to receive(:network_lifecycle_enabled?).and_return true
+
+                # This is terrible, but the network logic really does not belong on this class
+                allow(job).to receive(:mark_orphaned_networks) do
+                  raise 'Should not get here'
+                end
+              end
+
+              it 'should not clean up the orphaned networks' do
+                job.perform
+              end
             end
           end
 
@@ -241,6 +439,7 @@ module Bosh::Director
 
           before do
             expect(notifier).to receive(:send_start_event).ordered
+            expect(create_network_stage).to receive(:perform).ordered
             expect(compile_stage).to receive(:perform).ordered
             expect(update_stage).to receive(:perform).ordered
             expect(notifier).to receive(:send_end_event).ordered
@@ -329,15 +528,35 @@ module Bosh::Director
             end
           end
 
+          context 'when there is no cloud_config' do
+            it 'passes nil where cloud_config would be passed' do
+              expect(job.perform).to eq('/deployments/deployment-name')
+
+              expect(Manifest).to have_received(:load_from_hash)
+                .with(anything, anything, nil, anything)
+              expect(planner_factory).to have_received(:create_from_manifest)
+                .with(anything, nil, anything, anything)
+            end
+          end
+
           context 'when a cloud_config is passed in' do
-            let(:cloud_config_id) { Models::Config.make(:cloud).id }
+            let(:cloud_config)     { Models::Config.make(:cloud) }
+            let(:cloud_config_id)  { cloud_config.id }
+            let(:manifest_content) { YAML.dump ManifestHelper.default_deployment_manifest }
+
             it 'uses the cloud config' do
               expect(job.perform).to eq('/deployments/deployment-name')
+
+              expect(Manifest).to have_received(:load_from_hash)
+                .with(anything, anything, [cloud_config], anything)
+              expect(planner_factory).to have_received(:create_from_manifest)
+                .with(anything, [cloud_config], anything, anything)
             end
           end
 
           context 'when a runtime_config is passed in' do
-            let(:runtime_config_id) { Models::RuntimeConfig.make.id }
+            let(:runtime_config)     { Models::Config.make(:runtime) }
+            let(:runtime_config_ids) { [runtime_config.id] }
 
             before do
               allow(variables_interpolator).to receive(:interpolate_runtime_manifest)
@@ -345,6 +564,11 @@ module Bosh::Director
 
             it 'uses the runtime config' do
               expect(job.perform).to eq('/deployments/deployment-name')
+
+              expect(Manifest).to have_received(:load_from_hash)
+                .with(anything, anything, anything, [runtime_config])
+              expect(planner_factory).to have_received(:create_from_manifest)
+                .with(anything, anything, [runtime_config], anything)
             end
           end
 
@@ -608,6 +832,7 @@ Unable to render instance groups for deployment. Errors are:
           it 'should exit before trying to create vms' do
             expect(compile_stage).not_to receive(:perform)
             expect(update_stage).not_to receive(:perform)
+            expect(create_network_stage).not_to receive(:perform)
             expect(PostDeploymentScriptRunner).not_to receive(:run_post_deploys_after_deployment)
             expect(notifier).not_to receive(:send_start_event)
             expect(notifier).not_to receive(:send_end_event)
