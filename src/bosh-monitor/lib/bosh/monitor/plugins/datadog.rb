@@ -23,6 +23,10 @@ module Bosh::Monitor
         @dog_client = @pagerduty_service_name ? PagingDatadogClient.new(@pagerduty_service_name, client) : client
       end
 
+      def custom_tags
+        options['custom_tags'] || {}
+      end
+
       def process(event)
         case event
           when Bosh::Monitor::Events::Heartbeat
@@ -48,6 +52,7 @@ module Bosh::Monitor
         ]
 
         heartbeat.teams.each { |team| tags << "team:#{team}" }
+        custom_tags.each { |key, value| tags << "#{key}:#{value}" }
 
         dog_client.batch_metrics do
           heartbeat.metrics.each do |metric|

@@ -232,6 +232,7 @@ describe 'health_monitor.yml.erb' do
                 'api_key' => 'abcdef',
                 'application_key' => 'dog-key',
                 'pagerduty_service_name' => 'pager-name',
+                'custom_tags' => { 'env' => 'prod', 'region' => 'eu' },
               },
             })
         end
@@ -245,6 +246,7 @@ describe 'health_monitor.yml.erb' do
           expect(plugin['options']['api_key']).to eq('abcdef')
           expect(plugin['options']['application_key']).to eq('dog-key')
           expect(plugin['options']['pagerduty_service_name']).to eq('pager-name')
+          expect(plugin['options']['custom_tags']).to eq('env' => 'prod', 'region' => 'eu')
         end
       end
 

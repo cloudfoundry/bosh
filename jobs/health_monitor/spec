@@ -185,6 +185,11 @@ properties:
     description: Health Monitor Application Key for DataDog
   hm.datadog.pagerduty_service_name:
     description: Service name to alert in PagerDuty upon HM events
+  hm.datadog.custom_tags:
+    description: Tags, as key/value pairs, to add to all metrics sent to DataDog.  See https://docs.datadoghq.com/tagging/
+    example: |
+      env: prod
+      region: eu
 
   # Send metrics to Graphite
   hm.graphite_enabled:
