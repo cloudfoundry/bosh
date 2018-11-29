@@ -2,6 +2,7 @@
 groups:
   - name: bosh
     jobs:
+      - gate
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
@@ -149,12 +150,34 @@ shared:
     file: bosh-src/ci/bats/tasks/destroy-director.yml
 
 jobs:
+  - name: gate
+    serial_groups:
+      - blobstore-client-integration
+      - blobstore-performance
+      - fuzz-tests
+      - integration-db-tls-mysql
+      - integration-db-tls-postgres
+      - integration-db-tls-postgres-hotswap
+      - integration-mysql-gocli-sha1
+      - integration-postgres-gocli-sha2
+      - unit-2.4
+      - unit-2.4-db-migrations-rds
+      - unit-2.4-mysql
+      - unit-2.4-postgres
+      - upgrade-tests
+    plan:
+    - get: bosh-src
+      trigger: true
+
   - name: unit-2.4
     public: true
     serial: true
+    serial_groups: [unit-2.4]
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
 
       - task: test
         timeout: 2h
@@ -165,10 +188,12 @@ jobs:
   - name: unit-2.4-mysql
     public: true
     serial: true
+    serial_groups: [unit-2.4-mysql]
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
+          passed: [gate]
           trigger: true
         - get: bosh-main-mysql-5.5
         - get: bosh-main-mysql-5.6
@@ -198,11 +223,13 @@ jobs:
 
   - name: unit-2.4-postgres
     public: true
+    serial_groups: [unit-2.4-postgres]
     serial: true
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
+          passed: [gate]
           trigger: true
         - get: bosh-main-postgres-9.3
         - get: bosh-main-postgres-9.4
@@ -253,11 +280,14 @@ jobs:
 
   - name: unit-2.4-db-migrations-rds
     serial: true
+    serial_groups: [unit-2.4-db-migrations-rds]
     build_logs_to_retain: 250
     plan:
       - put: rds-pool
         params: {acquire: true}
-      - { get: bosh-src, trigger: true }
+      - get: bosh-src
+        passed: [gate]
+        trigger: true
       - aggregate:
         - task: test-mysql-rds
           timeout: 3h
@@ -287,9 +317,12 @@ jobs:
   - name: blobstore-client-integration
     public: true
     serial: true
+    serial_groups: [blobstore-client-integration]
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
+      - get: bosh-src
+        passed: [gate]
+        trigger: true
       - aggregate:
         - task: test-s3
           file: bosh-src/ci/tasks/test-s3-blobstore-client-integration.yml
@@ -312,10 +345,14 @@ jobs:
   - name: blobstore-performance
     public: true
     serial: true
+    serial_groups: [blobstore-performance]
     build_logs_to_retain: 250
     plan:
-      - { get: bosh-src, trigger: true }
-      - { get: davcli, trigger: true }
+      - get: bosh-src
+        passed: [gate]
+        trigger: true
+      - get: davcli
+        trigger: true
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
@@ -324,11 +361,13 @@ jobs:
   - name: integration-postgres-gocli-sha2
     public: true
     serial: true
+    serial_groups: [integration-postgres-gocli-sha2]
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
           trigger: true
+          passed: [gate]
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
@@ -352,10 +391,12 @@ jobs:
   - name: integration-mysql-gocli-sha1
     public: true
     serial: true
+    serial_groups: [integration-mysql-gocli-sha1]
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
+          passed: [gate]
           trigger: true
         - get: bosh-cli
           trigger: true
@@ -379,11 +420,13 @@ jobs:
   - name: integration-db-tls-postgres
     public: true
     serial: true
+    serial_groups: [integration-db-tls-postgres]
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
           trigger: true
+          passed: [gate]
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
@@ -408,11 +451,13 @@ jobs:
   - name: integration-db-tls-postgres-hotswap
     public: true
     serial: true
+    serial_groups: [integration-db-tls-postgres-hotswap]
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
           trigger: true
+          passed: [gate]
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
@@ -438,10 +483,12 @@ jobs:
   - name: integration-db-tls-mysql
     public: true
     serial: true
+    serial_groups: [integration-db-tls-mysql]
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
+          passed: [gate]
           trigger: true
         - get: bosh-cli
           trigger: true
@@ -482,10 +529,12 @@ jobs:
   - name: upgrade-tests
     public: true
     serial: true
+    serial_groups: [upgrade-tests]
     build_logs_to_retain: 250
     plan:
       - aggregate:
         - get: bosh-src
+          passed: [gate]
           trigger: true
         - get: bosh-cli
           trigger: true
@@ -508,10 +557,13 @@ jobs:
   - name: fuzz-tests
     public: true
     serial: true
+    serial_groups: [fuzz-tests]
     build_logs_to_retain: 2500
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true }
+    - get: bosh-src
+      passed: [gate]
+      trigger: true
     - { get: bosh-agent }
     - { get: bosh-fuzz-tests }
     - { get: bosh-cli }
