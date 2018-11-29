@@ -171,7 +171,7 @@ module Bosh::Director
               job.perform
             end
 
-            it "should perform links cleanup" do
+            it 'should perform links cleanup' do
               expect(links_manager).to receive(:remove_unused_links).with(deployment_model)
               job.perform
             end
@@ -182,6 +182,165 @@ module Bosh::Director
 
               expect(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set])
               job.perform
+            end
+
+            context 'when network lifecycle is enabled' do
+              before do
+                allow(Config).to receive(:network_lifecycle_enabled?).and_return true
+                allow(deployment_model).to receive(:networks).and_return [
+                  inuse,
+                  unmanaged,
+                  orphanable,
+                  unorphanable,
+                ]
+                allow(deployment_model).to receive(:remove_network)
+                allow(job).to receive(:with_network_lock) do |&block|
+                  block.call
+                end
+              end
+
+              let(:deployment_instance_group) do
+                dig = DeploymentPlan::InstanceGroup.new(logger)
+                allow(dig).to receive(:networks).and_return instance_group_networks
+                dig
+              end
+
+              let(:instance_group_networks) do
+                [
+                  inuse_managed_instance_group_network,
+                  unmanaged_instance_group_network,
+                ]
+              end
+
+              let(:inuse_managed_instance_group_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::JobNetwork,
+                  deployment_network: inuse_deployment_network,
+                )
+              end
+
+              let(:unmanaged_instance_group_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::JobNetwork,
+                  deployment_network: unmanaged_deployment_network,
+                )
+              end
+
+              let(:unmanaged_deployment_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: false,
+                  name: 'unmanaged',
+                )
+              end
+
+              let(:unmanaged) do
+                unmanaged = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'unmanaged',
+                  deployments: [],
+                )
+
+                allow(unmanaged).to receive(:orphaned=)
+                allow(unmanaged).to receive(:orphaned_at=)
+                allow(unmanaged).to receive(:save)
+
+                unmanaged
+              end
+
+              let(:inuse_deployment_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: true,
+                  name: 'inuse',
+                )
+              end
+
+              let(:inuse) do
+                inuse = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'inuse',
+                )
+
+                allow(inuse).to receive(:orphaned=)
+                allow(inuse).to receive(:orphaned_at=)
+                allow(inuse).to receive(:save)
+
+                inuse
+              end
+
+              let(:orphanable) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: true,
+                )
+              end
+
+              let(:orphanable) do
+                orphanable = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'orphanable',
+                  deployments: [],
+                )
+
+                allow(orphanable).to receive(:orphaned=)
+                allow(orphanable).to receive(:orphaned_at=)
+                allow(orphanable).to receive(:save)
+
+                orphanable
+              end
+
+              let(:unorphanable_deployment_network) do
+                instance_double(
+                  Bosh::Director::DeploymentPlan::Network,
+                  managed?: true,
+                  name: 'unorphanable',
+                  deployments: [:something],
+                )
+              end
+
+              let(:unorphanable) do
+                unorphanable = instance_double(
+                  Bosh::Director::Models::Network,
+                  name: 'unorphanable',
+                  deployments: [:something],
+                )
+
+                allow(unorphanable).to receive(:orphaned=)
+                allow(unorphanable).to receive(:orphaned_at=)
+                allow(unorphanable).to receive(:save)
+
+                unorphanable
+              end
+
+              it 'cleans up orphaned networks' do
+                job.perform
+
+                expect(job).to have_received(:with_network_lock).with('orphanable')
+                expect(job).to have_received(:with_network_lock).with('unorphanable')
+                expect(job).to have_received(:with_network_lock).with('unmanaged')
+                expect(job).to have_received(:with_network_lock).with('inuse')
+
+                expect(deployment_model).to have_received(:remove_network).with(orphanable)
+                expect(deployment_model).to have_received(:remove_network).with(unorphanable)
+                expect(deployment_model).to have_received(:remove_network).with(unmanaged)
+                expect(deployment_model).to_not have_received(:remove_network).with(inuse)
+
+                expect(orphanable).to have_received(:orphaned=).with(true)
+                expect(orphanable).to have_received(:orphaned_at=)
+                expect(orphanable).to have_received(:save)
+
+                expect(unmanaged).to have_received(:orphaned=)
+                expect(unmanaged).to have_received(:orphaned_at=)
+                expect(unmanaged).to have_received(:save)
+
+                expect(unorphanable).to_not have_received(:orphaned=)
+                expect(unorphanable).to_not have_received(:orphaned_at=)
+                expect(unorphanable).to_not have_received(:save)
+                expect(inuse).to_not have_received(:orphaned=)
+                expect(inuse).to_not have_received(:orphaned_at=)
+                expect(inuse).to_not have_received(:save)
+              end
             end
 
             it 'increments links_serial_id in deployment' do
