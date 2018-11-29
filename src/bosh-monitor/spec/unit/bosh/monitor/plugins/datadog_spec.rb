@@ -2,7 +2,10 @@ require 'spec_helper'
 
 describe Bhm::Plugins::DataDog do
   let(:options) do
-    { 'api_key' => 'api_key', 'application_key' => 'application_key', 'custom_tags' => { 'customkey' => 'customvalue', 'customkey2' => 'customvalue2' } }
+    {
+      'api_key' => 'api_key',
+      'application_key' => 'application_key',
+    }
   end
 
   subject { described_class.new(options) }
@@ -71,7 +74,6 @@ describe Bhm::Plugins::DataDog do
   end
 
   context 'processing metrics' do
-
     it "didn't freak out once timeout sending datadog metric" do
       expect(EM).to receive(:defer).and_yield
       heartbeat = make_heartbeat
@@ -90,18 +92,20 @@ describe Bhm::Plugins::DataDog do
 
     it 'batches metrics sent to datadog' do
       tags = %w[
-          job:mysql_node
-          index:0
-          id:instance_id_abc
-          deployment:oleg-cloud
-          agent:deadbeef
-          team:ateam
-          team:bteam
-          customkey:customvalue
-          customkey2:customvalue2
+        job:mysql_node
+        index:0
+        id:instance_id_abc
+        deployment:oleg-cloud
+        agent:deadbeef
+        team:ateam
+        team:bteam
       ]
       time = Time.now
-      expect(dog_client).to receive(:emit_points).with('bosh.healthmonitor.system.load.1m', [[Time.at(time.to_i) , 0.2]], tags: tags)
+      expect(dog_client).to receive(:emit_points).with(
+        'bosh.healthmonitor.system.load.1m',
+        [[Time.at(time.to_i), 0.2]],
+        tags: tags,
+      )
       expect(dog_client).to receive(:batch_metrics).and_yield
 
       expect(EM).to receive(:defer).and_yield
@@ -128,15 +132,48 @@ describe Bhm::Plugins::DataDog do
       subject.process(heartbeat)
     end
 
-    it "should do nothing if instance_id is missing" do
+    it 'should do nothing if instance_id is missing' do
       expect(EM).to_not receive(:defer)
-      heartbeat = make_heartbeat({ timestamp: Time.now.to_i, instance_id: nil })
+      heartbeat = make_heartbeat(timestamp: Time.now.to_i, instance_id: nil)
       subject.process(heartbeat)
+    end
+
+    context 'when custom tags are defined' do
+      let(:options) do
+        {
+          'api_key' => 'api_key',
+          'application_key' => 'application_key',
+          'custom_tags' => {
+            'customkey' => 'customvalue',
+            'customkey2' => 'customvalue2',
+          },
+        }
+      end
+
+      it 'includes the custom tags' do
+        custom_tags = %w[
+          customkey:customvalue
+          customkey2:customvalue2
+        ]
+
+        time = Time.now
+
+        expect(dog_client).to receive(:batch_metrics).and_yield
+        allow(dog_client).to receive(:emit_points)
+        expect(EM).to receive(:defer).and_yield
+        expect(dog_client).to receive(:emit_points).with(
+          anything,
+          anything,
+          tags: include(*custom_tags),
+        )
+
+        heartbeat = make_heartbeat(timestamp: time.to_i)
+        subject.process(heartbeat)
+      end
     end
   end
 
   context 'processing alerts' do
-
     it "didn't freak out once timeout sending datadog event" do
       expect(EM).to receive(:defer).and_yield
       make_heartbeat
