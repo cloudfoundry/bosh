@@ -4,23 +4,35 @@ require 'spec_helper'
 describe 'CPI and Agent:', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:manifest_hash) { Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1) }
-  fresh_deploy_invocations = []
-  old_vm_id = nil
-  disk_id = nil
-
-  before do
+  let(:manifest_hash) do
+    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
     manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
+    manifest_hash
+  end
+
+  let!(:fresh_deploy_invocations) do
     task_output = deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config.merge(
-        'disk_types' => [Bosh::Spec::NewDeployments::DISK_TYPE],
-      ),
+      cloud_config_hash: cloud_config_hash,
     )
 
-    fresh_deploy_invocations = get_invocations(task_output)
-    old_vm_id = fresh_deploy_invocations[1].response
-    disk_id = fresh_deploy_invocations[40].response
+    get_invocations(task_output)
+  end
+
+  let(:cloud_config_hash) do
+    Bosh::Spec::NewDeployments.simple_cloud_config.merge(
+      'disk_types' => [
+        Bosh::Spec::NewDeployments::DISK_TYPE,
+      ],
+    )
+  end
+
+  let(:old_vm_id) do
+    fresh_deploy_invocations.find_all { |i| i.method == 'create_vm' }.last.response
+  end
+
+  let(:disk_id) do
+    fresh_deploy_invocations.find { |i| i.method == 'create_disk' }.response
   end
 
   context 'on a fresh deploy with persistent disk' do
@@ -80,7 +92,13 @@ describe 'CPI and Agent:', type: :integration do
       create_disk = invocations.next
       expect(create_disk).to be_cpi_call('create_disk')
       expect(invocations.next).to be_cpi_call('info')
-      expect(invocations.next).to be_cpi_call('attach_disk', match([create_vm.response, create_disk.response]))
+      expect(invocations.next).to be_cpi_call(
+        'attach_disk',
+        match(
+          'vm_cid' => create_vm.response,
+          'disk_id' => create_disk.response,
+        ),
+      )
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('set_disk_metadata')
       expect(invocations.next).to be_agent_call('ping')
@@ -95,9 +113,15 @@ describe 'CPI and Agent:', type: :integration do
   end
 
   context 'on an update deployment with persistent disk' do
+    let(:updated_manifest_hash) do
+      updated_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      updated_manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
+      updated_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
+      updated_manifest_hash
+    end
+
     it 'requests between BOSH Director, CPI and Agent are sent in correct order', no_create_swap_delete: true do
-      manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
-      task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
+      task_output = deploy_simple_manifest(manifest_hash: updated_manifest_hash)
       invocations = Support::InvocationsHelper::InvocationIterator.new(get_invocations(task_output))
 
       expect(invocations.size).to eq(33)
@@ -113,9 +137,15 @@ describe 'CPI and Agent:', type: :integration do
       expect(invocations.next).to be_agent_call('unmount_disk')
       expect(invocations.next).to be_agent_call('remove_persistent_disk')
       expect(invocations.next).to be_cpi_call('info')
-      expect(invocations.next).to be_cpi_call('detach_disk', match([old_vm_id, disk_id]))
+      expect(invocations.next).to be_cpi_call(
+        'detach_disk',
+        match(
+          'vm_cid' => old_vm_id,
+          'disk_id' => disk_id,
+        ),
+      )
       expect(invocations.next).to be_cpi_call('info')
-      expect(invocations.next).to be_cpi_call('delete_vm', match([old_vm_id]))
+      expect(invocations.next).to be_cpi_call('delete_vm', match('vm_cid' => old_vm_id))
 
       # New VM
       expect(invocations.next).to be_cpi_call('info')
@@ -125,7 +155,13 @@ describe 'CPI and Agent:', type: :integration do
       expect(invocations.next).to be_cpi_call('set_vm_metadata')
       expect(invocations.next).to be_agent_call('ping')
       expect(invocations.next).to be_cpi_call('info')
-      expect(invocations.next).to be_cpi_call('attach_disk', match([create_vm.response, disk_id]))
+      expect(invocations.next).to be_cpi_call(
+        'attach_disk',
+        match(
+          'vm_cid' => create_vm.response,
+          'disk_id' => disk_id,
+        ),
+      )
       expect(invocations.next).to be_cpi_call('info')
       expect(invocations.next).to be_cpi_call('set_disk_metadata')
       expect(invocations.next).to be_agent_call('ping')
@@ -142,10 +178,12 @@ describe 'CPI and Agent:', type: :integration do
     end
 
     context 'when create-swap-delete is enabled', create_swap_delete: true do
-      it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
+      before do
         manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
         manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
+      end
 
+      it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
         task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
         invocations = Support::InvocationsHelper::InvocationIterator.new(get_invocations(task_output))
 
@@ -174,11 +212,23 @@ describe 'CPI and Agent:', type: :integration do
         expect(invocations.next).to be_agent_call('unmount_disk')
         expect(invocations.next).to be_agent_call('remove_persistent_disk', match([disk_id]))
         expect(invocations.next).to be_cpi_call('info')
-        expect(invocations.next).to be_cpi_call('detach_disk', match([old_vm_id, disk_id]))
+        expect(invocations.next).to be_cpi_call(
+          'detach_disk',
+          match(
+            'vm_cid' => old_vm_id,
+            'disk_id' => disk_id,
+          ),
+        )
 
         # new vm
         expect(invocations.next).to be_cpi_call('info')
-        expect(invocations.next).to be_cpi_call('attach_disk', match([new_create_vm.response, disk_id]))
+        expect(invocations.next).to be_cpi_call(
+          'attach_disk',
+          match(
+            'vm_cid' => new_create_vm.response,
+            'disk_id' => disk_id,
+          ),
+        )
         expect(invocations.next).to be_cpi_call('info')
         expect(invocations.next).to be_cpi_call('set_disk_metadata')
         expect(invocations.next).to be_agent_call('ping')

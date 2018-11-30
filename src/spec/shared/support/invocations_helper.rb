@@ -83,7 +83,7 @@ end
 RSpec::Matchers.define :be_cpi_call do |message_name, argument_matcher|
   match do |actual|
     matches = actual.target == Support::InvocationsHelper::CPI_TARGET && actual.method == message_name
-    matches && argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
+    matches &&= argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
     matches
   end
   failure_message do |actual|
@@ -100,7 +100,7 @@ end
 RSpec::Matchers.define :be_agent_call do |message_name, argument_matcher|
   match do |actual|
     matches = actual.target == Support::InvocationsHelper::AGENT_TARGET && actual.method == message_name
-    matches && argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
+    matches &&= argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
     matches
   end
   failure_message do |actual|
