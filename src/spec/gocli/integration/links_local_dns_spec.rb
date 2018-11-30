@@ -207,6 +207,15 @@ describe 'Links with local_dns enabled', type: :integration do
             expect(rendered_template['db_az_link']['address']).to match(/q-a1n\ds0.q-g3.bosh/)
           end
 
+          it 'instances use a link DNS name if manifest so indicates' do
+            manifest['features'] = {
+              'use_short_dns_addresses' => true,
+              'use_link_dns_names' => true,
+            }
+            deploy_simple_manifest(manifest_hash: manifest)
+            expect(rendered_template['databases']['main'][0]['address']).to match(/q-m2n\ds0.q-g3.bosh/)
+          end
+
           it 'respects address provided in a manual link' do
             manifest['instance_groups'] = [job_link_overrided_spec]
             deploy_simple_manifest(manifest_hash: manifest)

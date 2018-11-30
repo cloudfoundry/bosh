@@ -13,7 +13,9 @@ module Bosh::Director
                         availability_zones: [],
                         template_blob_cache: template_blob_cache,
                         ip_provider: ip_provider,
-                        use_short_dns_addresses?: false)
+                        use_short_dns_addresses?: false,
+                        use_link_dns_names?: false,
+        )
       end
       let(:task_result) { instance_double(TaskDBWriter) }
       let(:instance_manager) { Api::InstanceManager.new }

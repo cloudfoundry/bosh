@@ -17,6 +17,7 @@ module Bosh
                        recreate_persistent_disks: false,
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
+                       use_link_dns_addresses: false,
                        logger: Config.logger,
                        tags: {},
                        variables_interpolator:)
@@ -29,6 +30,7 @@ module Bosh
           @recreate_persistent_disks = recreate_persistent_disks
           @use_dns_addresses = use_dns_addresses
           @use_short_dns_addresses = use_short_dns_addresses
+          @use_link_dns_addresses = use_link_dns_addresses
           @logger = logger
           @tags = tags
           @powerdns_manager = PowerDnsManagerProvider.create
@@ -294,6 +296,7 @@ module Bosh
             @instance.uuid,
             root_domain,
             @use_short_dns_addresses,
+            @use_link_dns_addresses,
           )
         end
 
@@ -309,6 +312,14 @@ module Bosh
         # @return [Hash] A hash mapping network names to their associated address
         def network_addresses(prefer_dns_entry)
           network_settings.network_addresses(prefer_dns_entry)
+        end
+
+        def link_network_address(link_def)
+          network_settings.link_network_address(link_def, @use_dns_addresses)
+        end
+
+        def link_network_addresses(link_def, prefer_dns_entry)
+          network_settings.link_network_addresses(link_def, prefer_dns_entry)
         end
 
         def root_domain

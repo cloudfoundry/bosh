@@ -2734,7 +2734,7 @@ describe Bosh::Director::Links::LinksManager do
     end
   end
 
-  describe '#get_link_providers_for_deployment' do
+  describe '#get_link_provider_intents_for_deployment' do
     let(:provider1) do
       Bosh::Director::Models::Links::LinkProvider.create(
         deployment: deployment_model,
@@ -2804,7 +2804,7 @@ describe Bosh::Director::Links::LinksManager do
     end
 
     it 'returns all providers for current serial_id and selected deployment' do
-      result = subject.get_link_providers_for_deployment(deployment_model)
+      result = subject.get_link_provider_intents_for_deployment(deployment_model)
       expect(result).to contain_exactly(intent1, intent2, intent3)
     end
   end
@@ -3013,21 +3013,23 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'a' => '1' }, false, false, false).and_return(link_1)
+          .to receive(:new).with(deployment_model.name, 'link_name_1', 'link_type_1', instance_group, { 'a' => '1' }, false, false, false).and_return(link_1)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'b' => '2' }, false, false, false).and_return(link_2)
+          .to receive(:new).with(deployment_model.name, 'link_name_2', 'link_type_2', instance_group, { 'b' => '2' }, false, false, false).and_return(link_2)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false, false, false).and_return(link_3)
+          .to receive(:new).with(deployment_model.name, 'link_name_3', 'link_type_3', instance_group, { 'c' => '1' }, false, false, false).and_return(link_3)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'd' => '2' }, false, false, false).and_return(link_4)
+          .to receive(:new).with(deployment_model.name, 'link_name_4', 'link_type_4', instance_group, { 'd' => '2' }, false, false, false).and_return(link_4)
         allow(Bosh::Director::DeploymentPlan::Link)
-          .to receive(:new).with(deployment_model.name, instance_group, { 'e' => '5' }, false, false, false).and_return(link_5)
+          .to receive(:new).with(deployment_model.name, 'link_name_5', 'link_type_5', instance_group, { 'e' => '5' }, false, false, false).and_return(link_5)
       end
 
       context 'link provider intent contents' do
         before do
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
             deployment_model.name,
+            'link_name_1',
+            'link_type_1',
             instance_group,
             { 'a' => '1' },
             use_dns_addresses,
@@ -3036,6 +3038,8 @@ describe Bosh::Director::Links::LinksManager do
           ).and_return(link_1)
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
             deployment_model.name,
+            'link_name_2',
+            'link_type_2',
             instance_group,
             { 'b' => '2' },
             use_dns_addresses,
@@ -3044,6 +3048,8 @@ describe Bosh::Director::Links::LinksManager do
           ).and_return(link_2)
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
             deployment_model.name,
+            'link_name_4',
+            'link_type_4',
             instance_group,
             { 'd' => '2' },
             use_dns_addresses,
@@ -3086,9 +3092,6 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       it 'should not update any provider intents that do not have consumers' do
-        expect(Bosh::Director::DeploymentPlan::Link)
-          .to_not receive(:new).with(deployment_model.name, instance_group, { 'c' => '1' }, false, false)
-
         expect(provider_2_intent_1).to_not receive(:save)
 
         subject.update_provider_intents_contents(link_providers, deployment_plan)
@@ -3096,9 +3099,6 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       it 'should not update any provider intents whose serial id does not match' do
-        expect(Bosh::Director::DeploymentPlan::Link)
-          .to_not receive(:new).with(deployment_model.name, instance_group, { 'e' => '5' }, false, false)
-
         expect(provider_2_intent_3).to_not receive(:save)
         allow(provider_2).to receive(:intents).and_return([provider_2_intent_3])
 
@@ -3109,6 +3109,8 @@ describe Bosh::Director::Links::LinksManager do
       it 'updates all other valid providers' do
         expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
           deployment_model.name,
+          'link_name_1',
+          'link_type_1',
           instance_group,
           { 'a' => '1' },
           use_dns_addresses,
@@ -3117,6 +3119,8 @@ describe Bosh::Director::Links::LinksManager do
         ).and_return(link_1)
         expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
           deployment_model.name,
+          'link_name_2',
+          'link_type_2',
           instance_group,
           { 'b' => '2' },
           use_dns_addresses,
@@ -3125,6 +3129,8 @@ describe Bosh::Director::Links::LinksManager do
         ).and_return(link_2)
         expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
           deployment_model.name,
+          'link_name_4',
+          'link_type_4',
           instance_group,
           { 'd' => '2' },
           use_dns_addresses,

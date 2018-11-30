@@ -30,7 +30,7 @@ module Bosh::Director
             Bosh::Director::VmCreator.new(
               logger,
               deployment_plan.template_blob_cache,
-              LocalDnsEncoderManager.create_dns_encoder(deployment_plan.use_short_dns_addresses?),
+              LocalDnsEncoderManager.create_dns_encoder(deployment_plan.use_short_dns_addresses?, deployment_plan.use_link_dns_names?),
               AgentBroadcaster.new,
             ),
             logger,

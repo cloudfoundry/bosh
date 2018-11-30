@@ -47,6 +47,7 @@ module Bosh
               'uuid-1',
               'bosh',
               false,
+              false,
             ).to_hash
           end
 

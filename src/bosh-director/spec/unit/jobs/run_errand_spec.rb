@@ -106,6 +106,7 @@ module Bosh::Director
             instance_groups: [errand_instance_group],
             availability_zones: [],
             use_short_dns_addresses?: false,
+            use_link_dns_names?: false,
             instance_group: nil,
             model: deployment_model,
           )
@@ -186,6 +187,7 @@ module Bosh::Director
               instance_groups: [],
               availability_zones: [],
               use_short_dns_addresses?: false,
+              use_link_dns_names?: false,
               model: deployment_model,
             )
           end

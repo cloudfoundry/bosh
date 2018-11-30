@@ -1,17 +1,23 @@
 module Bosh::Director
   module DeploymentPlan
     class Link
-      attr_reader :name
+      attr_reader :provider_deployment_name
+      attr_reader :provider_name, :provider_type
+      attr_reader :source_instance_group
 
       def initialize(
-        deployment_name,
+        provider_deployment_name,
+        provider_name,
+        provider_type,
         source_instance_group,
         mapped_properties,
         use_dns_addresses,
         use_short_dns_addresses,
         use_link_dns_names
       )
-        @deployment_name = deployment_name # Provider Deployment Name
+        @provider_deployment_name = provider_deployment_name
+        @provider_name = provider_name
+        @provider_type = provider_type
         @source_instance_group = source_instance_group
         @mapped_properties = mapped_properties
         @use_dns_addresses = use_dns_addresses
@@ -21,7 +27,7 @@ module Bosh::Director
 
       def spec
         {
-          'deployment_name' => @deployment_name,
+          'deployment_name' => @provider_deployment_name,
           'domain' => Bosh::Director::Config.root_domain,
           'default_network' => @source_instance_group.default_network_name,
           'networks' => @source_instance_group.networks.map(&:name),
@@ -39,9 +45,9 @@ module Bosh::Director
               'index' => instance.index,
               'bootstrap' => instance.bootstrap?,
               'az' => availability_zone,
-              'address' => instance_plan.network_address,
-              'addresses' => instance_plan.network_addresses(false),
-              'dns_addresses' => instance_plan.network_addresses(true),
+              'address' => instance_plan.link_network_address(self),
+              'addresses' => instance_plan.link_network_addresses(self, false),
+              'dns_addresses' => instance_plan.link_network_addresses(self, true),
             }
           end,
         }

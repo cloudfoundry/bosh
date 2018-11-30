@@ -2,9 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DnsEncoder do
-    subject { described_class.new(service_groups, az_hash, short_dns_enabled) }
+    subject { described_class.new(service_groups, az_hash, short_dns_enabled, link_dns_enabled) }
     let(:az_hash) {}
     let(:short_dns_enabled) { false }
+    let(:link_dns_enabled) { false }
     let(:group_name) { 'potato-group' }
     let(:default_network) { 'potato-net' }
     let(:default_network_id) { 1 }
@@ -43,12 +44,54 @@ module Bosh::Director
           group_name: 'lemon-group',
           deployment:     'fake-deployment',
         } => 10,
+        {
+          group_type: Models::LocalDnsEncodedGroup::Types::LINK,
+          group_name: 'lemon-link-orange',
+          deployment: 'fake-deployment',
+        } => 12,
+        {
+          group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
+          group_name: 'lemon-instance',
+          deployment: 'fake-deployment',
+        } => 13,
       }
     end
 
     before(:each) do
       Models::LocalDnsEncodedNetwork.make(id: default_network_id, name: default_network)
       Models::Instance.make(id: 1, uuid: 'uuid-1')
+    end
+
+    describe '#encode_link' do
+      let(:short_dns_enabled) { true } # links can *only* be encoded with short dns; disabled here as a reminder
+      let(:link_dns_enabled) { true }
+      let(:link_instance_group) { instance_double(DeploymentPlan::InstanceGroup, name: 'lemon-instance')}
+      let(:link_def) do
+        instance_double(
+          DeploymentPlan::Link,
+          provider_deployment_name: 'fake-deployment',
+          provider_name: 'lemon-link',
+          provider_type: 'orange',
+          source_instance_group: link_instance_group,
+        )
+      end
+
+      context 'link_dns_enabled is disabled' do
+        let(:link_dns_enabled) { false }
+
+        it 'uses instance group dns' do
+          expect(subject.encode_link(link_def)).to eq('q-s0.q-g13.')
+        end
+      end
+
+      it 'uses link group dns' do
+        expect(subject.encode_link(link_def)).to eq('q-s0.q-g12.')
+      end
+
+      it 'accepts additional query criteria' do
+        expect(subject.encode_link(link_def, status: 'healthy', default_network: default_network, root_domain: 'bosh'))
+          .to eq("q-n#{default_network_id}s3.q-g12.bosh")
+      end
     end
 
     describe '#encode_query' do

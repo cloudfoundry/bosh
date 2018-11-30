@@ -1,9 +1,28 @@
 module Bosh::Director
   class DnsEncoder
-    def initialize(service_groups={}, az_hash={}, short_dns_enabled=false)
+    def initialize(service_groups = {}, az_hash = {}, short_dns_enabled = false, link_dns_enabled = false)
       @az_hash = az_hash
       @service_groups = service_groups
       @short_dns_enabled = short_dns_enabled
+      @link_dns_enabled = link_dns_enabled
+    end
+
+    def encode_link(link_def, criteria = {})
+      force_short_dns = nil
+      criteria = criteria.clone
+
+      criteria[:deployment_name] = link_def.provider_deployment_name
+
+      if @link_dns_enabled
+        criteria[:group_type] = Models::LocalDnsEncodedGroup::Types::LINK
+        criteria[:group_name] = link_def.provider_name + '-' + link_def.provider_type
+        force_short_dns = true
+      else
+        criteria[:group_type] = Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP
+        criteria[:group_name] = link_def.source_instance_group.name
+      end
+
+      encode_query(criteria, force_short_dns)
     end
 
     def encode_query(criteria, force_short_dns = nil)
@@ -113,10 +132,12 @@ module Bosh::Director
     end
 
     def encode_service_group(criteria)
-      "q-g#{id_for_group_tuple(
+      number = id_for_group_tuple(
         criteria[:group_type],
         criteria[:group_name],
-        criteria[:deployment_name])}"
+        criteria[:deployment_name]
+      )
+      "q-g#{number}"
     end
   end
 end

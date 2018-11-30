@@ -61,7 +61,7 @@ module Bosh::Director
       deployment_model = instance_model.deployment
       factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(@logger)
       planner = factory.create_from_model(deployment_model)
-      dns_encoder = LocalDnsEncoderManager.create_dns_encoder(planner.use_short_dns_addresses?)
+      dns_encoder = LocalDnsEncoderManager.create_dns_encoder(planner.use_short_dns_addresses?, planner.use_link_dns_names?)
 
       instance_plan_to_create = create_instance_plan(instance_model)
 

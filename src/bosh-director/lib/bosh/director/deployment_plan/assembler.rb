@@ -53,6 +53,7 @@ module Bosh::Director
         'recreate' => @deployment_plan.recreate,
         'use_dns_addresses' => @deployment_plan.use_dns_addresses?,
         'use_short_dns_addresses' => @deployment_plan.use_short_dns_addresses?,
+        'use_link_dns_addresses' => @deployment_plan.use_link_dns_names?,
         'recreate_persistent_disks' => @deployment_plan.recreate_persistent_disks?,
         'randomize_az_placement' => @deployment_plan.randomize_az_placement?,
         'tags' => tags,

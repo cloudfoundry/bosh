@@ -1,27 +1,38 @@
 module Bosh::Director
   class Errand::InstanceGroupManager
-    def initialize(deployment, instance_group, logger)
-      @deployment = deployment
+    def initialize(deployment_planner, instance_group, logger)
+      @deployment_planner = deployment_planner
       @instance_group = instance_group
       @logger = logger
       @disk_manager = DiskManager.new(logger)
-      @template_blob_cache = @deployment.template_blob_cache
+      @template_blob_cache = @deployment_planner.template_blob_cache
       agent_broadcaster = AgentBroadcaster.new
-      @dns_encoder = LocalDnsEncoderManager.create_dns_encoder(@deployment.use_short_dns_addresses?)
+      @dns_encoder = LocalDnsEncoderManager.create_dns_encoder(
+        @deployment_planner.use_short_dns_addresses?,
+        @deployment_planner.use_link_dns_names?,
+      )
       @powerdns_manager = PowerDnsManagerProvider.create
       @vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
       @vm_creator = VmCreator.new(logger, @template_blob_cache, @dns_encoder, agent_broadcaster)
     end
 
     def create_missing_vms
-      @vm_creator.create_for_instance_plans(@instance_group.instance_plans_with_missing_vms, @deployment.ip_provider, @deployment.tags)
+      @vm_creator.create_for_instance_plans(
+        @instance_group.instance_plans_with_missing_vms,
+        @deployment_planner.ip_provider, @deployment_planner.tags
+      )
       mark_new_vms
     end
 
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
-      instance_group_updater = InstanceGroupUpdater.new(@deployment.ip_provider, @instance_group, @disk_manager, @template_blob_cache, @dns_encoder)
+      instance_group_updater = InstanceGroupUpdater.new(
+        @deployment_planner.ip_provider,
+        @instance_group,
+        @disk_manager,
+        @template_blob_cache, @dns_encoder
+      )
       instance_group_updater.update
     end
 

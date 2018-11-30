@@ -59,7 +59,7 @@ module Bosh::Director
 
         use_short_dns_addresses = link_content.fetch('use_short_dns_addresses', false)
         use_link_dns_names = link_content.fetch('use_link_dns_names', false)
-        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses)
+        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses, use_link_dns_names)
 
         group_name, group_type = if use_link_dns_names
                                    [link.group_name, Models::LocalDnsEncodedGroup::Types::LINK]

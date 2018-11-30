@@ -1,5 +1,4 @@
 --color
---profile
 --format progress
 --tag ~nginx
 --tag ~general_s3

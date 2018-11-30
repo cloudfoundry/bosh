@@ -51,6 +51,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:deployment_wide_options).and_return({})
         allow(deployment_plan).to receive(:use_dns_addresses?).and_return(false)
         allow(deployment_plan).to receive(:use_short_dns_addresses?).and_return(false)
+        allow(deployment_plan).to receive(:use_link_dns_names?).and_return(false)
         allow(deployment_plan).to receive(:randomize_az_placement?).and_return(false)
         allow(deployment_plan).to receive(:recreate_persistent_disks?).and_return(false)
       end
@@ -116,6 +117,7 @@ module Bosh::Director
             'tags' => { 'key1' => 'value1' },
             'use_dns_addresses' => false,
             'use_short_dns_addresses' => false,
+            'use_link_dns_addresses' => false,
             'randomize_az_placement' => false,
           }
           expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
@@ -146,6 +148,7 @@ module Bosh::Director
               'use_dns_addresses' => true,
               'randomize_az_placement' => true,
               'use_short_dns_addresses' => false,
+              'use_link_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
               anything,
@@ -172,6 +175,7 @@ module Bosh::Director
                 'use_dns_addresses' => true,
                 'randomize_az_placement' => true,
                 'use_short_dns_addresses' => true,
+                'use_link_dns_addresses' => false,
               }
               expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
                 anything,
@@ -201,6 +205,7 @@ module Bosh::Director
               'use_dns_addresses' => false,
               'randomize_az_placement' => false,
               'use_short_dns_addresses' => false,
+              'use_link_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
               anything,

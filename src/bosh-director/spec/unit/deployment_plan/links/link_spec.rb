@@ -6,6 +6,8 @@ module Bosh::Director
       subject do
         described_class.new(
           deployment_name,
+          link_name,
+          link_type,
           source_instance_group,
           mapped_properties,
           use_dns_addresses,
@@ -16,6 +18,7 @@ module Bosh::Director
 
       let(:deployment_name) { 'smurf_deployment' }
       let(:link_name) { 'smurf_link' }
+      let(:link_type) { 'smurf_type' }
       let(:source_instance_group_name) { 'my_source_instance_group_name' }
       let(:source_instance_group) do
         instance_double(Bosh::Director::DeploymentPlan::InstanceGroup,
@@ -63,18 +66,18 @@ module Bosh::Director
             allow(source_instance_group).to receive(:needed_instance_plans).and_return([needed_instance_plan])
 
             allow(needed_instance_plan).to receive(:instance).and_return(needed_instance)
-            expect(needed_instance_plan).to receive(:network_addresses)
-              .with(true)
+            expect(needed_instance_plan).to receive(:link_network_addresses)
+              .with(subject, true)
               .and_return('network1' => 'my.address', 'network2' => 'my.other.address')
-            expect(needed_instance_plan).to receive(:network_addresses)
-              .with(false)
+            expect(needed_instance_plan).to receive(:link_network_addresses)
+              .with(subject, false)
               .and_return('network1' => '10.0.0.1', 'network2' => '10.0.0.2')
 
             allow(needed_instance).to receive(:index).and_return(0)
             allow(needed_instance).to receive(:uuid).and_return('instance-uuid')
             allow(needed_instance).to receive(:bootstrap?).and_return(true)
             allow(needed_instance).to receive_message_chain(:availability_zone, :name).and_return('my_az')
-            expect(needed_instance_plan).to receive(:network_address).and_return('my.address')
+            expect(needed_instance_plan).to receive(:link_network_address).with(subject).and_return('my.address')
           end
 
           it 'returns correct spec structure, with network name' do

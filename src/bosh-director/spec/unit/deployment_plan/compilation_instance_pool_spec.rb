@@ -92,6 +92,7 @@ module Bosh::Director
         recreate: false,
         template_blob_cache: template_blob_cache,
         use_short_dns_addresses?: false,
+        use_link_dns_names?: false,
         tags: tags,
         vm_resources_cache: vm_resources_cache,
       )

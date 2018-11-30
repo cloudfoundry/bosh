@@ -109,6 +109,7 @@ module Bosh::Director
         instance_double(Bosh::Director::DeploymentPlan::Planner,
                         name: 'new-deployment',
                         use_short_dns_addresses?: false,
+                        use_link_dns_names?: false,
                         availability_zones: [
                           instance_double(Bosh::Director::DeploymentPlan::AvailabilityZone, name: 'new-az'),
                         ],
@@ -129,7 +130,7 @@ module Bosh::Director
       let(:provider1) { instance_double(Bosh::Director::Models::Links::LinkProvider, name: 'provider1', type: 't1') }
       let(:provider2) { instance_double(Bosh::Director::Models::Links::LinkProvider, name: 'provider2', type: 't2') }
       let(:links_manager) do
-        instance_double(Bosh::Director::Links::LinksManager, get_link_providers_for_deployment: [provider1, provider2])
+        instance_double(Bosh::Director::Links::LinksManager, get_link_provider_intents_for_deployment: [provider1, provider2])
       end
 
       before do

@@ -186,7 +186,7 @@ module Bosh::Director::ConfigServer
         group_name = link.group_name
       end
 
-      dns_encoder = Bosh::Director::LocalDnsEncoderManager.create_dns_encoder(use_link_dns_names || use_short_dns_addresses)
+      dns_encoder = Bosh::Director::LocalDnsEncoderManager.create_dns_encoder(use_short_dns_addresses, use_link_dns_names)
       query_criteria = {
         group_type: group_type,
         group_name: group_name,

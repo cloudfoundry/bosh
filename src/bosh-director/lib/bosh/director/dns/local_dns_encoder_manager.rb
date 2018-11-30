@@ -12,7 +12,7 @@ module Bosh::Director
       end
     end
 
-    def self.create_dns_encoder(use_short_dns_names = false)
+    def self.create_dns_encoder(use_short_dns_names = false, use_link_dns_addresses = false)
       az_hash = Models::LocalDnsEncodedAz.as_hash(:name, :id)
 
       service_groups = {}
@@ -32,14 +32,14 @@ module Bosh::Director
         }] = join_row[:id].to_s
       end
 
-      Bosh::Director::DnsEncoder.new(service_groups, az_hash, use_short_dns_names)
+      Bosh::Director::DnsEncoder.new(service_groups, az_hash, use_short_dns_names, use_link_dns_addresses)
     end
 
     def self.new_encoder_with_updated_index(plan)
       persist_az_names(plan.availability_zones.map(&:name))
       persist_network_names(plan.networks.map(&:name))
       persist_service_groups(plan)
-      create_dns_encoder(plan.use_short_dns_addresses?)
+      create_dns_encoder(plan.use_short_dns_addresses?, plan.use_link_dns_names?)
     end
 
     class << self
@@ -87,7 +87,7 @@ module Bosh::Director
           encode_instance_group(ig.name, deployment_model)
         end
 
-        plan.links_manager.get_link_providers_for_deployment(deployment_model).each do |provider|
+        plan.links_manager.get_link_provider_intents_for_deployment(deployment_model).each do |provider|
           encode_link_provider(provider.name, provider.type, deployment_model)
         end
       end

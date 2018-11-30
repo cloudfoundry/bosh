@@ -6,6 +6,7 @@ module Bosh::Director
       instance_double(
         Bosh::Director::DeploymentPlan::Planner,
         use_short_dns_addresses?: false,
+        use_link_dns_names?: false,
         ip_provider: double(:ip_provider),
       )
     end

@@ -48,7 +48,7 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
-    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, ip_provider: ip_provider) }
+    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, use_link_dns_names?: false, ip_provider: ip_provider) }
     let(:ip_provider) { double(:ip_provider) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }

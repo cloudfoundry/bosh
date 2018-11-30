@@ -2,7 +2,14 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemHandlers::UnresponsiveAgent do
-    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, ip_provider: double(:ip_provider)) }
+    let(:planner) do
+      instance_double(
+        Bosh::Director::DeploymentPlan::Planner,
+        use_short_dns_addresses?: false,
+        use_link_dns_names?: false,
+        ip_provider: double(:ip_provider),
+      )
+    end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
 
     def make_handler(instance, cloud, _, data = {})

@@ -26,7 +26,7 @@ module Bosh::Director
 
       event_log_stage.advance_and_track('Preparing deployment') do
         deployment_planner = @deployment_planner_provider.get_by_name(deployment_name, instances)
-        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(deployment_planner.use_short_dns_addresses?)
+        dns_encoder = LocalDnsEncoderManager.create_dns_encoder(deployment_planner.use_short_dns_addresses?, deployment_planner.use_link_dns_names?)
         template_blob_cache = deployment_planner.template_blob_cache
 
         errand_is_job_name = true

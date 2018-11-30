@@ -11,6 +11,7 @@ module Bosh::Director
                                                template_blob_cache: template_blob_cache,
                                                skip_drain: skip_drain,
                                                use_short_dns_addresses?: false,
+                                               use_link_dns_names?: false,
                                                name: 'fake-deployment',
                                                availability_zones: [])
     end
@@ -44,7 +45,7 @@ module Bosh::Director
       fake_app
       allow(LocalDnsEncoderManager)
         .to receive(:create_dns_encoder)
-        .with(false)
+        .with(false, false)
         .and_return(dns_encoder)
       allow(VmCreator).to receive(:new)
         .with(
