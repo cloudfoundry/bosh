@@ -2245,6 +2245,137 @@ module Bosh::Director
             end
           end
         end
+
+        describe 'certificates rotation' do
+          before do
+            authorize 'admin', 'admin'
+            Bosh::Director::Models::VariableSet.make( deployment: deployment_model)
+          end
+
+          let(:manifest) do
+            {
+              'name' => 'deployment-name',
+              'variables' => [
+                {
+                  'name' => '/my_absolute_ca',
+                  'type' => 'certificate',
+                  'options' => {
+                    'is_ca' => true,
+                  }
+                },
+                {
+                  'name' => '/my_absolute_leaf',
+                  'type' => 'certificate',
+                  'options' => {
+                    'ca' => '/my_absolute_ca',
+                  },
+                },
+                {
+                  'name' => 'my_ca',
+                  'type' => 'certificate',
+                  'options' => {
+                    'is_ca' => true,
+                  },
+                },
+                {
+                  'name' => 'my_leaf',
+                  'type' => 'certificate',
+                  'options' => {
+                    'ca' => 'my_ca',
+                  },
+                },
+                {
+                  'name' => 'my_password',
+                  'type' => 'password',
+                },
+                {
+                  'name' => 'my_intermediate_ca',
+                  'type' => 'certificate',
+                  'options' => {
+                    'is_ca' => true,
+                    'ca' => 'my_ca',
+                  },
+                },
+                {
+                  'name' => 'my_intermediate_leaf',
+                  'type' => 'certificate',
+                  'options' => {
+                    'ca' => 'my_intermediate_ca',
+                  },
+                },
+                {
+                  'name' => '/my_absolute_intermediate_ca',
+                  'type' => 'certificate',
+                  'options' => {
+                    'is_ca' => true,
+                    'ca' => '/my_absolute_ca',
+                  },
+                },
+                {
+                  'name' => '/my_absolute_intermediate_leaf',
+                  'type' => 'certificate',
+                  'options' => {
+                    'ca' => '/my_absolute_intermediate_ca',
+                  },
+                },
+                {
+                  'name' => 'my_random_type',
+                  'type' => 'random_type',
+                },
+                {
+                  'name' => 'my_rsa_keys',
+                  'type' => 'rsa',
+                },
+              ],
+            }
+          end
+
+          let!(:deployment_model) do
+            Models::Deployment.make(
+              name: 'deployment-name',
+              manifest: manifest.to_yaml,
+            )
+          end
+
+          context 'action is plan' do
+            it 'should return a structure detailing which are the leaf certificates' do
+              response = get('/deployment-name/rotate_certificates', action: 'plan')
+              expect(response.status).to eq(200)
+              result = JSON.parse(response.body)
+
+              expect(result['leaf_certificates']).to match_array(
+                [
+                  {
+                    "variable" => {
+                      "name" => "/my_absolute_leaf"
+                    }
+                  },
+                  {
+                    "variable" => {
+                      "name" => "/Test Director/deployment-name/my_intermediate_leaf"
+                    }
+                  },
+                  {
+                    "variable" => {
+                      "name" => "/Test Director/deployment-name/my_leaf"
+                    }
+                  },
+                  {
+                    "variable" => {
+                      "name" => "/my_absolute_intermediate_leaf"
+                    }
+                  }
+                ]
+              )
+            end
+          end
+
+          context 'access with an unknown action' do
+            it 'should return 400 bad request' do
+              expect(get('/deployment-name/rotate_certificates', action: 'invalid_action').status).to eq(400)
+            end
+          end
+        end
       end
 
       describe 'authorization' do
