@@ -25,126 +25,70 @@ module Bosh::Director
       end
 
       def perform
-        logger.info('Reading deployment manifest')
-        manifest_hash = YAML.load(@manifest_text)
-        logger.debug("Manifest:\n#{@manifest_text}")
-
-        if ignore_cloud_config?(manifest_hash)
-          warning = "Ignoring cloud config. Manifest contains 'networks' section."
-          logger.debug(warning)
-          @event_log.warn_deprecated(warning)
-          cloud_config_models = nil
-        else
-          cloud_config_models = Bosh::Director::Models::Config.find_by_ids(@cloud_config_ids)
-          if cloud_config_models.empty?
-            logger.debug('No cloud config uploaded yet.')
-          else
-            logger.debug("Cloud config:\n#{Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_config_models).raw_manifest}")
-          end
-        end
-
-        runtime_config_models = Bosh::Director::Models::Config.find_by_ids(@runtime_config_ids)
-        if runtime_config_models.empty?
-          logger.debug("No runtime config uploaded yet.")
-        else
-          logger.debug("Runtime configs:\n#{Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_config_models).raw_manifest}")
-        end
-
-        @deployment_name = manifest_hash['name']
-
         previous_releases, previous_stemcells = get_stemcells_and_releases
+
         context = {}
-        parent_id = add_event
 
-        with_deployment_lock(@deployment_name) do
-          is_deploy_action = @options['deploy']
-          deployment_plan = nil
-          dns_encoder = nil
+        with_deployment_lock(deployment_name) do
+          add_variable_set
 
-          if is_deploy_action
-            deployment_model = Bosh::Director::Models::Deployment.find(name: @deployment_name)
+          notifier.send_start_event unless dry_run?
 
-            deployment_model.add_variable_set(:created_at => Time.now, :writable => true)
+          prepare_deployment
 
-            deployment_model.links_serial_id += 1
-            deployment_model.save
-          end
-
-          manifest_text = @options.fetch('manifest_text', @manifest_text)
-          deployment_manifest_object = Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
-
-          @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
-          @notifier.send_start_event unless dry_run?
-
-          event_log_stage = @event_log.begin_stage('Preparing deployment', 1)
-          event_log_stage.advance_and_track('Preparing deployment') do
-            planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-
-            # that's where the link path is created
-            deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
-            @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
-            create_network_stage(deployment_plan).perform unless dry_run?
-
-            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator)
-            dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
-
-            # that's where the links resolver is created
-            deployment_assembler.bind_models({is_deploy_action: is_deploy_action, should_bind_new_variable_set: is_deploy_action})
-          end
-
-          if deployment_plan.instance_models.any?(&:ignore)
-            @event_log.warn('You have ignored instances. They will not be changed.')
-          end
+          warn_if_any_ignored_instances
 
           next_releases, next_stemcells = get_stemcells_and_releases
+
           context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
 
-          begin
-            current_variable_set = deployment_plan.model.current_variable_set
+          deploy(context)
 
-            render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
-
-            return "/deployments/#{deployment_plan.name}" if dry_run?
-
-            compilation_step(deployment_plan).perform
-
-            update_stage(deployment_plan, dns_encoder).perform
-
-            PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan) if check_for_changes(deployment_plan)
-
-            # only in the case of a deploy should you be cleaning up
-            if is_deploy_action
-              @links_manager.remove_unused_links(deployment_plan.model)
-              current_variable_set.update(deployed_successfully: true)
-              remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
-              mark_orphaned_networks(deployment_plan)
-            end
-
-            @notifier.send_end_event
-            logger.info('Finished updating deployment')
-            add_event(context, parent_id)
-
-            "/deployments/#{deployment_plan.name}"
-          ensure
-            deployment_plan.template_blob_cache.clean_cache!
-          end
+          "/deployments/#{deployment_plan.name}"
         end
       rescue Exception => e
-        begin
-          @notifier.send_error_event e unless dry_run?
-        rescue Exception => e2
-          # ignore the second error
-        ensure
-          add_event(context, parent_id, e)
-          raise e
-        end
+        handle_toplevel_exception(e, context)
       ensure
-        current_deployment&.current_variable_set&.update(writable: false) if @options['deploy']
+        lock_variable_set
       end
 
       private
 
-      def mark_orphaned_networks(deployment_plan)
+      def deploy(context)
+        render_templates_and_snapshot_errand_variables
+
+        return if dry_run?
+
+        compilation_step.perform
+
+        update_stage.perform
+
+        run_post_deploys_after_deployment
+
+        persist_variable_set
+
+        cleanup
+
+        notify_deploy_finished(context)
+      ensure
+        deployment_plan.template_blob_cache.clean_cache!
+      end
+
+      def prepare_deployment
+        event_log_stage.advance_and_track('Preparing deployment') do
+          # that's where the link path is created
+          create_network_stage(deployment_plan).perform unless dry_run?
+
+          # that's where the links resolver is created
+          deployment_assembler.bind_models(
+            is_deploy_action: deploy_action?,
+            should_bind_new_variable_set: deploy_action?,
+          )
+        end
+      end
+
+      def mark_orphaned_networks
+        return unless deploy_action?
         return unless Config.network_lifecycle_enabled?
 
         deployment_model = deployment_plan.model
@@ -174,6 +118,8 @@ module Bosh::Director
       end
 
       def remove_unused_variable_sets(deployment, instance_groups)
+        return unless deploy_action?
+
         variable_sets_to_keep = []
         variable_sets_to_keep << deployment.current_variable_set
         instance_groups.each do |instance_group|
@@ -194,8 +140,8 @@ module Bosh::Director
           user: username,
           action: action,
           object_type: 'deployment',
-          object_name: @deployment_name,
-          deployment: @deployment_name,
+          object_name: deployment_name,
+          deployment: deployment_name,
           task: task_id,
           error: error,
           context: context,
@@ -212,7 +158,7 @@ module Bosh::Director
         false
       end
 
-      def compilation_step(deployment_plan)
+      def compilation_step
         DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
       end
 
@@ -220,7 +166,7 @@ module Bosh::Director
         DeploymentPlan::Stages::CreateNetworkStage.new(Config.logger, deployment_plan)
       end
 
-      def update_stage(deployment_plan, dns_encoder)
+      def update_stage
         DeploymentPlan::Stages::UpdateStage.new(
           self,
           deployment_plan,
@@ -237,7 +183,7 @@ module Bosh::Director
         end
       end
 
-      def render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
+      def render_templates_and_snapshot_errand_variables
         errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.template_blob_cache, dns_encoder)
         errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
 
@@ -276,7 +222,7 @@ module Bosh::Director
           instance_group_errors = []
 
           begin
-            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
+            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, deployment_name, current_variable_set)
             unless instance_group&.env&.spec.nil?
               @variables_interpolator.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
             end
@@ -284,8 +230,8 @@ module Bosh::Director
             instance_group_errors.push e
           end
 
-          deployment = Bosh::Director::Models::Deployment.where(name: @deployment_name).first
-          instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
+          deployment = Bosh::Director::Models::Deployment.where(name: deployment_name).first
+          instance_group_links = links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
             begin
               @variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
@@ -303,7 +249,7 @@ module Bosh::Director
 
           if errors.empty?
             instance_group.instances.each do |instance|
-              @links_manager.bind_links_to_instance(instance)
+              links_manager.bind_links_to_instance(instance)
             end
           end
         end
@@ -327,7 +273,7 @@ module Bosh::Director
       end
 
       def current_deployment
-        Models::Deployment[name: @deployment_name]
+        Models::Deployment[name: deployment_name]
       end
 
       def event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
@@ -343,6 +289,165 @@ module Bosh::Director
         context['before'] = before_objects
         context['after'] = after_objects
         context
+      end
+
+      def manifest_hash
+        return @manifest_hash if @manifest_hash
+
+        logger.info('Reading deployment manifest')
+        @manifest_hash = YAML.load(raw_manifest_text)
+        logger.debug("Manifest:\n#{raw_manifest_text}")
+        @manifest_hash
+      end
+
+      def cloud_config_models
+        return @cloud_config_models if @cloud_config_models
+
+        if ignore_cloud_config?(manifest_hash)
+          warning = "Ignoring cloud config. Manifest contains 'networks' section."
+          logger.debug(warning)
+          @event_log.warn_deprecated(warning)
+          @cloud_config_models = nil
+        else
+          @cloud_config_models = Bosh::Director::Models::Config.find_by_ids(@cloud_config_ids)
+          if cloud_config_models.empty?
+            logger.debug('No cloud config uploaded yet.')
+          else
+            logger.debug("Cloud config:\n#{Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_config_models).raw_manifest}")
+          end
+        end
+
+        @cloud_config_models
+      end
+
+      def runtime_config_models
+        return @runtime_config_models if @runtime_config_models
+
+        @runtime_config_models = Bosh::Director::Models::Config.find_by_ids(@runtime_config_ids)
+        if runtime_config_models.empty?
+          logger.debug("No runtime config uploaded yet.")
+        else
+          logger.debug("Runtime configs:\n#{Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_config_models).raw_manifest}")
+        end
+        @runtime_config_models
+      end
+
+      def deployment_name
+        manifest_hash['name']
+      end
+
+      def deploy_action?
+        @options['deploy']
+      end
+
+      def deployment_model
+        @deployment_model ||= Bosh::Director::Models::Deployment.find(name: deployment_name)
+      end
+
+      def manifest_text
+        @options.fetch('manifest_text', @manifest_text)
+      end
+
+      def raw_manifest_text
+        @manifest_text
+      end
+
+      def deployment_manifest_object
+        @deployment_manifest_object ||= Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
+      end
+
+      def notifier
+        @notifier ||= DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
+      end
+
+      def planner_factory
+        @planner_factory ||= DeploymentPlan::PlannerFactory.create(logger)
+      end
+
+      def deployment_plan
+        @deployment_plan ||= planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
+      end
+
+      def links_manager
+        @links_manager ||= Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
+      end
+
+      def deployment_assembler
+        @deployment_assembler ||= DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator)
+      end
+
+      def dns_encoder
+        @dns_encoder ||= LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
+      end
+
+      def event_log_stage
+        @event_log_stage ||= @event_log.begin_stage('Preparing deployment', 1)
+      end
+
+      def current_variable_set
+        @current_variable_set ||= deployment_plan.model.current_variable_set
+      end
+
+      def run_post_deploys_after_deployment
+        return unless check_for_changes(deployment_plan)
+
+        PostDeploymentScriptRunner.run_post_deploys_after_deployment(deployment_plan)
+      end
+
+      def parent_id
+        @parent_id ||= add_event
+      end
+
+      def notify_deploy_finished(context)
+        notifier.send_end_event
+        logger.info('Finished updating deployment')
+        add_event(context, parent_id)
+      end
+
+      def add_variable_set
+        return unless deploy_action?
+
+        deployment_model.add_variable_set(:created_at => Time.now, :writable => true)
+
+        deployment_model.links_serial_id += 1
+        deployment_model.save
+      end
+
+      def persist_variable_set
+        return unless deploy_action?
+
+        current_variable_set.update(deployed_successfully: true)
+      end
+
+      def cleanup
+        remove_unused_links
+        remove_unused_variable_sets(deployment_plan.model, deployment_plan.instance_groups)
+        mark_orphaned_networks
+      end
+
+      def remove_unused_links
+        return unless deploy_action?
+
+        links_manager.remove_unused_links(deployment_plan.model)
+      end
+
+      def warn_if_any_ignored_instances
+        return unless deployment_plan.instance_models.any?(&:ignore)
+
+        @event_log.warn('You have ignored instances. They will not be changed.')
+      end
+
+      def handle_toplevel_exception(e, context)
+        @notifier.send_error_event e unless dry_run?
+      rescue Exception => e2
+        # ignore the second error
+      ensure
+        add_event(context, parent_id, e)
+        raise e
+      end
+
+      def lock_variable_set
+        current_deployment&.current_variable_set&.update(writable: false) if deploy_action?
       end
     end
   end
