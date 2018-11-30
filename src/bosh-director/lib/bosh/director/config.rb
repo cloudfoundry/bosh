@@ -60,6 +60,7 @@ module Bosh::Director
         :director_ips,
         :enable_nats_delivered_templates,
         :ignore_missing_gateway,
+        :director_certificate_expiry_json_path,
         :nats_client_ca_certificate_path,
         :nats_client_ca_private_key_path,
         :nats_client_certificate_path,
@@ -143,6 +144,8 @@ module Bosh::Director
         @nats_client_ca_certificate_path = config['nats']['client_ca_certificate_path']
         @nats_client_ca_private_key_path = config['nats']['client_ca_private_key_path']
         @nats_server_ca = File.read(@nats_server_ca_path)
+
+        @director_certificate_expiry_json_path = config['director_certificate_expiry_json_path']
 
         @default_ssh_options = config['default_ssh_options']
 

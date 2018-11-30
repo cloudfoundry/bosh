@@ -334,7 +334,7 @@ describe 'director templates' do
               "nats.tls.client_ca.certificate": "#{@expiry.utc.iso8601}",
               "nats.tls.director.certificate": "#{@expiry.utc.iso8601}",
               "director.db.tls.cert.ca": "#{@expiry.utc.iso8601}",
-              "director.db.tls.cert.certificate": "0",
+              "director.db.tls.cert.certificate": "0"
             }
           JSON
         end

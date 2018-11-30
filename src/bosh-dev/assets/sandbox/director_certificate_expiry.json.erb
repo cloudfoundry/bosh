@@ -1,0 +1,12 @@
+{<%
+require 'openssl'
+require 'time'
+
+    oldtime = (Time.now - 7 * 24 * 60 * 60).utc.iso8601
+    currenttime = (Time.now + 24 * 60 * 60).utc.iso8601
+    futuretime = (Time.now + 14 * 24 * 60 * 60).utc.iso8601
+%>
+  "director.abc.certificate": "<%= oldtime %>",
+  "director.abc.ca": "<%= futuretime %>",
+  "director.def.certificate": "<%= currenttime %>"
+}

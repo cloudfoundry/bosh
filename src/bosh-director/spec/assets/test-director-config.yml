@@ -6,6 +6,7 @@ logging:
   level: ERROR
 
 dir: /tmp/boshdir
+director_certificate_expiry_json_path: /tmp/boshdir/certificate_expiry.json
 db:
   adapter: sqlite
   database: '/:memory:'

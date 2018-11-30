@@ -13,6 +13,7 @@ params = {
     'level' => p('director.log_level'),
   },
   'mbus' => "nats://#{p('nats.address')}:#{p('nats.port')}",
+  'director_certificate_expiry_json_path' => '/var/vcap/jobs/director/config/certificate_expiry.json',
   'nats' => {
     'server_ca_path' => '/var/vcap/jobs/director/config/nats_server_ca.pem',
     'client_ca_certificate_path' => '/var/vcap/jobs/director/config/nats_client_ca_certificate.pem',

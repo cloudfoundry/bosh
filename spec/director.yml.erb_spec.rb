@@ -530,6 +530,12 @@ describe 'director.yml.erb' do
       it 'should contain the audit log path' do
         expect(parsed_yaml['audit_log_path']).to eq('/var/vcap/sys/log/director')
       end
+
+      it 'should contain the director certificate expiry path' do
+        expect(parsed_yaml['director_certificate_expiry_json_path']).to(
+          eq('/var/vcap/jobs/director/config/certificate_expiry.json'),
+        )
+      end
     end
 
     describe 'ignore_missing_gateway property' do

@@ -25,6 +25,7 @@ module Bosh::Dev::Sandbox
                 :external_cpi_config,
                 :generate_vm_passwords,
                 :local_dns,
+                :director_certificate_expiry_json_path,
                 :nats_client_ca_certificate_path,
                 :nats_client_ca_private_key_path,
                 :nats_director_tls,
@@ -87,6 +88,7 @@ module Bosh::Dev::Sandbox
       @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
       @director_ips = attrs.fetch(:director_ips, [])
+      @director_certificate_expiry_json_path = attrs.fetch(:director_certificate_expiry_json_path)
       @nats_server_ca_path = attrs.fetch(:nats_server_ca_path)
       @nats_client_ca_private_key_path = attrs.fetch(:nats_client_ca_private_key_path)
       @nats_client_ca_certificate_path = attrs.fetch(:nats_client_ca_certificate_path)

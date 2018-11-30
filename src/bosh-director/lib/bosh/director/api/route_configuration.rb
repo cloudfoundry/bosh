@@ -19,6 +19,7 @@ module Bosh
           controllers['/deployments'] = Bosh::Director::Api::Controllers::DeploymentsController.new(@config)
           controllers['/deployment_configs'] = Bosh::Director::Api::Controllers::DeploymentConfigsController.new(@config)
           controllers['/disks'] = Bosh::Director::Api::Controllers::DisksController.new(@config)
+          controllers['/director'] = Bosh::Director::Api::Controllers::DirectorController.new(@config)
           controllers['/networks'] = Bosh::Director::Api::Controllers::NetworksController.new(@config)
           controllers['/orphan_disks'] = Bosh::Director::Api::Controllers::OrphanDisksController.new(@config)
           controllers['/orphaned_vms'] = Bosh::Director::Api::Controllers::OrphanedVmsController.new(@config)

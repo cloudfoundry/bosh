@@ -30,6 +30,9 @@ module Bosh::Dev::Sandbox
     NATS_CONFIG = 'nats.conf'
     DEFAULT_NATS_CONF_TEMPLATE_NAME = 'nats.conf.erb'
 
+    DIRECTOR_CERTIFICATE_EXPIRY_JSON_CONFIG = 'director_certificate_expiry.json'.freeze
+    DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME = 'director_certificate_expiry.json.erb'.freeze
+
     EXTERNAL_CPI = 'cpi'
     EXTERNAL_CPI_TEMPLATE = File.join(SANDBOX_ASSETS_DIR, 'cpi.erb')
 
@@ -220,6 +223,7 @@ module Bosh::Dev::Sandbox
         local_dns: @local_dns,
         nats_client_ca_certificate_path: get_nats_client_ca_certificate_path,
         nats_client_ca_private_key_path: get_nats_client_ca_private_key_path,
+        director_certificate_expiry_json_path: director_certificate_expiry_json_path,
         nats_director_tls: nats_certificate_paths['clients']['director'],
         nats_server_ca_path: get_nats_server_ca_path,
         networks: @networks,
@@ -496,6 +500,8 @@ module Bosh::Dev::Sandbox
       write_in_sandbox(HM_CONFIG, load_config_template(hm_template_path))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
       write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
+      expiry_template_path = File.join(SANDBOX_ASSETS_DIR, DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME)
+      write_in_sandbox(DIRECTOR_CERTIFICATE_EXPIRY_JSON_CONFIG, load_config_template(expiry_template_path))
       nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
       write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
@@ -565,6 +571,10 @@ module Bosh::Dev::Sandbox
       else
         File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
       end
+    end
+
+    def director_certificate_expiry_json_path
+      sandbox_path('director_certificate_expiry.json')
     end
 
     def get_nats_client_ca_certificate_path
