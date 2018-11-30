@@ -12,7 +12,6 @@ DATA_DIR_OLD=$STORE_DIR/postgres-9.4
 
 USER='<%= p("postgres.user") %>'
 
-
 sysctl -w "kernel.shmmax=67108864"
 
 if [[ -d /var/vcap/store/postgres ]]; then
@@ -29,6 +28,8 @@ if [ ! -d $DATA_DIR ] || [ ! -f $DATA_DIR/postgresql.conf ]; then
   # initdb creates data directories
   su - vcap -c "$PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
 
+  touch /var/vcap/store/postgres-10/fresh
+
   if [ $? != 0 ]; then
     echo "ERROR: Unable to Initialize Postgres DB"
     exit 1
@@ -40,11 +41,15 @@ if [ ! -d $DATA_DIR ] || [ ! -f $DATA_DIR/postgresql.conf ]; then
   chown vcap:vcap $DATA_DIR/pg_log
 fi
 
-if [[ -d /var/vcap/store/postgres-9.4 ]] && [[ ! -d /var/vcap/store/postgres-10 ]] ; then
-  echo "Copying contents of postgres-9.4 to postgres-10 for postgres upgrade"
-  su - vcap -c "/var/vcap/packages/postgres-10/bin/pg_upgrade \
-    --old-bindir=$PACKAGE_DIR_OLD/bin \
-    --new-bindir=$PACKAGE_DIR/bin \
-    --old-datadir=$DATA_DIR_OLD \
-    --new-datadir=$DATA_DIR"
+if [[ -f /var/vcap/store/postgres-10/fresh ]] ; then
+  if [[ -d /var/vcap/store/postgres-9.4 ]] ; then
+    echo "Copying contents of postgres-9.4 to postgres-10 for postgres upgrade"
+    su - vcap -c "/var/vcap/packages/postgres-10/bin/pg_upgrade \
+      --old-bindir=$PACKAGE_DIR_OLD/bin \
+      --new-bindir=$PACKAGE_DIR/bin \
+      --old-datadir=$DATA_DIR_OLD \
+      --new-datadir=$DATA_DIR"
+  fi
+
+  rm /var/vcap/store/postgres-10/fresh
 fi
