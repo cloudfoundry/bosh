@@ -262,6 +262,11 @@ module Bosh::Director
         end
       end
 
+      get '/:deployment/certificate_expiry', authorization: :read do
+        deployment_certificate_provider = Api::DeploymentCertificateProvider.new
+        JSON.generate(deployment_certificate_provider.list_certificates_with_expiry(deployment))
+      end
+
       delete '/:deployment' do
         options = {}
         options['force'] = true if params['force'] == 'true'

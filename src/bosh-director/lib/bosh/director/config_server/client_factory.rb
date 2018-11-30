@@ -18,6 +18,10 @@ module Bosh::Director::ConfigServer
       @logger = logger
     end
 
+    def self.create_default_client
+      create(Bosh::Director::Config.logger).create_client
+    end
+
     def create_client
       if @config_server_enabled
         auth_http_client = AuthHTTPClient.new

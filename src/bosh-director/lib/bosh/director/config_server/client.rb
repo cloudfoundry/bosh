@@ -108,6 +108,13 @@ module Bosh::Director::ConfigServer
       end
     end
 
+    def get_variable_value_by_id(name, id)
+      name_root = get_name_root(name)
+      fetched_variable = get_by_id(id, name_root)
+
+      extract_variable_value(name, fetched_variable['value'])
+    end
+
     private
 
     def generate_ca(variable, deployment_name)
@@ -321,13 +328,6 @@ module Bosh::Director::ConfigServer
       end
 
       config_values
-    end
-
-    def get_variable_value_by_id(name, id)
-      name_root = get_name_root(name)
-      fetched_variable = get_by_id(id, name_root)
-
-      extract_variable_value(name, fetched_variable['value'])
     end
 
     def extract_variable_value(name, raw_value)

@@ -1599,6 +1599,64 @@ module Bosh::Director
           end
         end
 
+        describe 'getting deployment certificates expiry' do
+          let(:deployment_cert_provider) { instance_double(Bosh::Director::Api::DeploymentCertificateProvider) }
+          let(:certificate_list) do
+            [
+              {
+                'name' => '/director/test_deployment/broker_cert',
+                'id' => 1,
+                'expiry_date' => /.*/,
+                'days_left' => 29,
+              },
+              {
+                'name' => '/director/test_deployment/master_root_ca',
+                'id' => 2,
+                'expiry_date' => /.*/,
+                'days_left' => 0,
+              },
+              {
+                'name' => '/director/test_deployment/server_cert',
+                'id' => 3,
+                'expiry_date' => /.*/,
+                'days_left' => -2,
+              },
+            ]
+          end
+
+          before(:each) do
+            Models::Deployment.make(name: 'test_deployment', manifest: '----')
+            allow(Bosh::Director::Api::DeploymentCertificateProvider).to receive(:new).and_return(deployment_cert_provider)
+            allow(deployment_cert_provider).to receive(:list_certificates_with_expiry).and_return(certificate_list)
+          end
+
+          it 'returns the certificate path and expiry for a deployment' do
+            get 'test_deployment/certificate_expiry'
+
+            expect(last_response.status).to eq(200)
+            body = JSON.parse(last_response.body)
+
+            expect(body.size).to eq(3)
+            expect(body).to include('name' => '/director/test_deployment/broker_cert',
+                                    'id' => 1, 'expiry_date' => /.*/, 'days_left' => 29)
+            expect(body).to include('name' => '/director/test_deployment/master_root_ca',
+                                    'id' => 2, 'expiry_date' => /.*/, 'days_left' => 0)
+            expect(body).to include('name' => '/director/test_deployment/server_cert',
+                                    'id' => 3, 'expiry_date' => /.*/, 'days_left' => -2)
+          end
+
+          context 'if no certificates are associated with deployment' do
+            let(:certificate_list) { [] }
+            it 'returns 0 items if there are no certificates' do
+              get 'test_deployment/certificate_expiry'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(0)
+            end
+          end
+        end
+
         describe 'property management' do
 
           it 'REST API for creating, updating, getting and deleting ' +
