@@ -80,9 +80,9 @@ RSpec.configure do |config|
   config.include(Support::InvocationsHelper)
 end
 
-RSpec::Matchers.define :be_cpi_call do |message_name, argument_matcher|
+RSpec::Matchers.define :be_cpi_call do |message:, argument_matcher: nil|
   match do |actual|
-    matches = actual.target == Support::InvocationsHelper::CPI_TARGET && actual.method == message_name
+    matches = actual.target == Support::InvocationsHelper::CPI_TARGET && actual.method == message
     matches &&= argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
     matches
   end
@@ -92,15 +92,16 @@ RSpec::Matchers.define :be_cpi_call do |message_name, argument_matcher|
       with_args_matching = " with arguments matching '#{argument_matcher.expected}'"
     end
 
-    "expected cpi to receive message '#{message_name}'#{with_args_matching} "\
+    "expected cpi to receive message '#{message}'#{with_args_matching} "\
       "but #{actual.target} received message '#{actual.method}'#{with_args}"
   end
 end
 
-RSpec::Matchers.define :be_agent_call do |message_name, argument_matcher|
+RSpec::Matchers.define :be_agent_call do |message:, argument_matcher: nil, agent_id: nil|
   match do |actual|
-    matches = actual.target == Support::InvocationsHelper::AGENT_TARGET && actual.method == message_name
+    matches = actual.target == Support::InvocationsHelper::AGENT_TARGET && actual.method == message
     matches &&= argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
+    matches &&= actual.agent_id == agent_id unless agent_id.nil?
     matches
   end
   failure_message do |actual|
@@ -109,7 +110,7 @@ RSpec::Matchers.define :be_agent_call do |message_name, argument_matcher|
       with_args_matching = " with arguments matching '#{argument_matcher.expected}'"
     end
 
-    "expected agent to receive message '#{message_name}'#{with_args_matching} "\
+    "expected agent to receive message '#{message}'#{with_args_matching} "\
       "but #{actual.target} received message '#{actual.method}'#{with_args}"
   end
 end
