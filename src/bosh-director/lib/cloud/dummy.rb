@@ -119,9 +119,10 @@ module Bosh
             env: env,
             mbus: @options['nats'],
           })
-
         agent_pid = spawn_agent_process(agent_id, cloud_properties['legacy_agent_path'])
         vm = VM.new(agent_pid.to_s, agent_id, cloud_properties, ips)
+
+        kill_process(agent_pid) if commands.create_vm_unresponsive_agent
 
         @vm_repo.save(vm)
 
@@ -175,6 +176,9 @@ module Bosh
       ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
       def attach_disk(vm_cid, disk_id)
         validate_and_record_inputs(ATTACH_DISK_SCHEMA, __method__, vm_cid, disk_id)
+
+        raise Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotImplemented' if commands.raise_attach_disk_not_implemented
+
         if disk_attached?(disk_id)
           raise "#{disk_id} is already attached to an instance"
         end
@@ -334,13 +338,15 @@ module Bosh
 
       def kill_agents
         vm_cids.each do |agent_pid|
-          begin
-            Process.kill('KILL', agent_pid.to_i)
-              # rubocop:disable HandleExceptions
-          rescue Errno::ESRCH
-            # rubocop:enable HandleExceptions
-          end
+          kill_process(agent_pid)
         end
+      end
+
+      def kill_process(agent_pid)
+        Process.kill('KILL', agent_pid.to_i)
+        # rubocop:disable HandleExceptions
+      rescue Errno::ESRCH
+        # rubocop:enable HandleExceptions
       end
 
       def agent_log_path(agent_id)
@@ -699,6 +705,38 @@ module Bosh
           FileUtils.touch(raise_detach_disk_not_implemented_path)
         end
 
+        def make_create_vm_have_unresponsive_agent
+          @logger.info('Making create_vm method create with an unresponsive agent')
+          FileUtils.mkdir_p(File.dirname(create_vm_unresponsive_agent_path))
+          FileUtils.touch(create_vm_unresponsive_agent_path)
+        end
+
+        def allow_create_vm_to_have_responsive_agent
+          @logger.info('Making create_vm method create with an unresponsive agent')
+          FileUtils.rm(create_vm_unresponsive_agent_path)
+        end
+
+        def allow_attach_disk_to_succeed
+          @logger.debug('Allowing attach_disk method to succeed (removing any mandatory failures)')
+          FileUtils.rm(raise_attach_disk_not_implemented_path)
+        end
+
+        def make_attach_disk_to_raise_not_implemented
+          @logger.info('Making attach_disk method to raise NotImplemented exception')
+          FileUtils.mkdir_p(File.dirname(raise_attach_disk_not_implemented_path))
+          FileUtils.touch(raise_attach_disk_not_implemented_path)
+        end
+
+        def raise_attach_disk_not_implemented
+          @logger.info('Reading attach_disk_not_implemented')
+          File.exist?(raise_attach_disk_not_implemented_path)
+        end
+
+        def create_vm_unresponsive_agent
+          @logger.info('Reading create_vm_unresponsive_agent')
+          File.exist?(create_vm_unresponsive_agent_path)
+        end
+
         def make_resize_disk_to_raise_not_implemented
           @logger.info('Making resize_disk method to raise NotImplemented exception')
           FileUtils.mkdir_p(File.dirname(raise_resize_disk_not_implemented_path))
@@ -739,6 +777,14 @@ module Bosh
 
         def raise_detach_disk_not_implemented_path
           File.join(@cpi_commands, 'detach_disk', 'not_implemented')
+        end
+
+        def raise_attach_disk_not_implemented_path
+          File.join(@cpi_commands, 'attach_disk', 'not_implemented')
+        end
+
+        def create_vm_unresponsive_agent_path
+          File.join(@cpi_commands, 'create_vm', 'unresponsive_agent')
         end
 
         def raise_resize_disk_not_implemented_path
