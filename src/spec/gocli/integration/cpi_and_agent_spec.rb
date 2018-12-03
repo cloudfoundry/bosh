@@ -619,7 +619,7 @@ describe 'CPI and Agent:', type: :integration do
           failing_task_output = deploy_simple_manifest(manifest_hash: failing_manifest_hash, failure_expected: true)
           failing_invocations = get_invocations(failing_task_output)
 
-          reuseable_failing_vm_agent_id = failing_invocations.find { |i| i.method == 'create_vm' }.first.arguments['agent_id']
+          reuseable_failing_vm_agent_id = failing_invocations.find { |i| i.method == 'create_vm' }.arguments['agent_id']
 
           task_output = deploy_simple_manifest(manifest_hash: succeeding_manifest_hash)
 
