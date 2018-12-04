@@ -76,10 +76,8 @@ module Bosh::Director
 
       def prepare_deployment
         event_log_stage.advance_and_track('Preparing deployment') do
-          # that's where the link path is created
           create_network_stage(deployment_plan).perform unless dry_run?
 
-          # that's where the links resolver is created
           deployment_assembler.bind_models(
             is_deploy_action: deploy_action?,
             should_bind_new_variable_set: deploy_action?,
