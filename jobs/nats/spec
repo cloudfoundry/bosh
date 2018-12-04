@@ -19,6 +19,9 @@ properties:
   nats.port:
     description: TCP port nats mbus listens on
     default: 4222
+  nats.enable_metrics_endpoint:
+    description: Expose basic nats metrics on localhost:8222 endpoint.
+    default: false
   nats.ping_interval:
     description: Time interval (in seconds) pings from server
     default: 5

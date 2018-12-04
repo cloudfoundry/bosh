@@ -1,6 +1,8 @@
 net: <%= p("nats.listen_address") %>
 port: <%= p("nats.port") %>
-
+<% if p('nats.enable_metrics_endpoint') %>
+http: localhost:8222
+<% end %>
 logtime: true
 
 log_file: /var/vcap/sys/log/nats/nats.log
