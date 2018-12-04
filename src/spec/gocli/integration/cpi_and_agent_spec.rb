@@ -604,6 +604,7 @@ describe 'CPI and Agent:', type: :integration do
               },
             },
           ]
+          manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
           manifest_hash['instance_groups'].first['instances'] = 1
           manifest_hash
         end
