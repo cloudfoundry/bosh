@@ -49,9 +49,12 @@ module Bosh::Director
               'as' => 'well',
               'stemcell' => { 'name' => 'ubuntu', 'version' => '1' },
               'vm_type' => { 'cloud_properties' => { 'a' => 'b' } },
+              'update' => update_spec,
               'env' => { 'env' => 'json' },
             )
           end
+
+          let(:update_spec) { double(:update_spec) }
 
           it 'applies limited fields from given spec to correct agent' do
             expect(agent_client).to receive(:apply).with(
@@ -70,6 +73,7 @@ module Bosh::Director
               'id' => 'my-id',
               'stemcell' => { 'name' => 'ubuntu', 'version' => '1' },
               'vm_type' => { 'cloud_properties' => { 'a' => 'b' } },
+              'update' => update_spec,
               'env' => { 'env' => 'json' },
             )
 

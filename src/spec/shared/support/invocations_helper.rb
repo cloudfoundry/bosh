@@ -110,7 +110,7 @@ RSpec::Matchers.define :be_agent_call do |message:, argument_matcher: nil, agent
       with_args_matching = " with arguments matching '#{argument_matcher.expected}'"
     end
 
-    "expected agent to receive message '#{message}'#{with_args_matching} "\
-      "but #{actual.target} received message '#{actual.method}'#{with_args}"
+    "expected agent (#{agent_id || 'not specified'}) to receive message '#{message}'#{with_args_matching} "\
+      "but #{actual.target} (#{actual.agent_id}) received message '#{actual.method}'#{with_args}"
   end
 end
