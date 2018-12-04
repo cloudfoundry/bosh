@@ -1,6 +1,8 @@
 net: <%= p("nats.listen_address") %>
 port: <%= p("nats.port") %>
 
+http: <%= p("nats.monitoring_endpoint") %>
+
 logtime: true
 
 log_file: /var/vcap/sys/log/nats/nats.log

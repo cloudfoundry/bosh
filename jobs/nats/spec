@@ -19,6 +19,9 @@ properties:
   nats.port:
     description: TCP port nats mbus listens on
     default: 4222
+  nats.monitoring_endpoint:
+    description: Endpoint to access monitoring
+    default: 127.0.0.1:8080
   nats.ping_interval:
     description: Time interval (in seconds) pings from server
     default: 5

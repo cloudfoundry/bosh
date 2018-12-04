@@ -16,6 +16,7 @@ describe 'nats.cfg.erb' do
               'port' => 4222,
               'ping_interval' => 7,
               'ping_max_outstanding' => 10,
+              'monitoring_endpoint' => '127.0.0.1:8888',
               'user' => 'my-user',
               'password' => 'my-password',
               'auth_timeout' => 10,
@@ -31,6 +32,8 @@ describe 'nats.cfg.erb' do
         <<~HEREDOC
           net: 1.2.3.4
           port: 4222
+
+          http: 127.0.0.1:8888
 
           logtime: true
 
@@ -103,6 +106,7 @@ describe 'nats.cfg.erb' do
             'nats' => {
               'listen_address' => '1.2.3.4',
               'port' => 4222,
+              'monitoring_endpoint' => '127.0.0.1:8888',
               'ping_interval' => 7,
               'ping_max_outstanding' => 10,
               'auth_timeout' => 10,
@@ -118,6 +122,8 @@ describe 'nats.cfg.erb' do
         <<~HEREDOC
           net: 1.2.3.4
           port: 4222
+
+          http: 127.0.0.1:8888
 
           logtime: true
 
