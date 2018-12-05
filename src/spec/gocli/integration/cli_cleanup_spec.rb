@@ -1,4 +1,5 @@
 require_relative '../spec_helper'
+require 'fileutils'
 
 describe 'cli: cleanup', type: :integration do
   with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false})
@@ -103,6 +104,34 @@ describe 'cli: cleanup', type: :integration do
 
     context 'when there are compiled releases in the blobstore' do
       include_examples 'removing an exported release'
+    end
+
+    context 'when errands that ran have changing jobs' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NewDeployments.manifest_with_errand
+        manifest['releases'].first['version'] = 'latest'
+        manifest
+      end
+      let(:deployment_name) { manifest['name'] }
+
+      before do
+        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+        bosh_runner.run('run-errand errand1', deployment_name: deployment_name)
+
+        Dir.chdir(ClientSandbox.test_release_dir) do
+          open('jobs/errand1/templates/run', 'a') { |f| f.puts 'echo "bye"' }
+          bosh_runner.run_in_current_dir('create-release --force --timestamp-version')
+          bosh_runner.run_in_current_dir('upload-release')
+        end
+
+        deploy_simple_manifest(manifest_hash: manifest)
+      end
+
+      it 'should clean up compiled exported releases of compiled releases' do
+        output = bosh_runner.run(clean_command)
+        expect(output).to include('Deleting jobs: errand1')
+        expect(output).to include('Succeeded')
+      end
     end
   end
 

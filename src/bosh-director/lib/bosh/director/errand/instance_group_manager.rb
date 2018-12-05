@@ -40,6 +40,7 @@ module Bosh::Director
         end
 
         @vm_deleter.delete_for_instance(instance_model)
+        instance_model.remove_all_templates
       end
     end
 
