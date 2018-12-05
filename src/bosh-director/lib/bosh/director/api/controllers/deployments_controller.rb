@@ -189,26 +189,28 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/:deployment/rotate_certificates' do
+      get '/:deployment/rotate' do
         deployment_name = params[:deployment]
         action = params[:action]
         model = @deployment_manager.find_by_name(deployment_name)
         manifest = Manifest.load_from_model(model)
 
-        leaf_certificates = []
-
-        manifest.manifest_hash['variables'].each do |variable|
-          options = variable['options'] || {}
-          variable_name = Bosh::Director::ConfigServer::ConfigServerHelper.add_prefix_if_not_absolute(
-            variable['name'],
-            Bosh::Director::Config.name, deployment_name
-          )
-          leaf_certificates << { 'variable': { name: variable_name } } if !options['is_ca'] && variable['type'] == 'certificate'
-        end
+        variable_rotation_manager = Bosh::Director::Api::VariableRotationManager.new(
+          manifest.manifest_hash['variables'],
+          deployment_name,
+        )
 
         case action
         when 'plan'
-          { leaf_certificates: leaf_certificates }.to_json
+          { 'leaf_certificates' => variable_rotation_manager.deployment_leaf_certificates }.to_json
+        when 'generate'
+          case params[:type]
+          when 'leaf'
+            regenerated_leaf_certs = variable_rotation_manager.regenerate_leaf_certificates
+            { 'regenerated_leaf_certificates' => regenerated_leaf_certs }.to_json
+          else
+            status(400)
+          end
         else
           status(400)
         end

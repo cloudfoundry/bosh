@@ -2249,7 +2249,7 @@ module Bosh::Director
         describe 'certificates rotation' do
           before do
             authorize 'admin', 'admin'
-            Bosh::Director::Models::VariableSet.make( deployment: deployment_model)
+            Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
           end
 
           let(:manifest) do
@@ -2337,42 +2337,83 @@ module Bosh::Director
             )
           end
 
-          context 'action is plan' do
+          context 'with action "plan"' do
             it 'should return a structure detailing which are the leaf certificates' do
-              response = get('/deployment-name/rotate_certificates', action: 'plan')
+              response = get('/deployment-name/rotate', action: 'plan')
               expect(response.status).to eq(200)
               result = JSON.parse(response.body)
 
               expect(result['leaf_certificates']).to match_array(
                 [
                   {
-                    "variable" => {
-                      "name" => "/my_absolute_leaf"
-                    }
+                    'type' => 'variable',
+                    'name' => '/my_absolute_leaf',
                   },
                   {
-                    "variable" => {
-                      "name" => "/Test Director/deployment-name/my_intermediate_leaf"
-                    }
+                    'name' => '/Test Director/deployment-name/my_intermediate_leaf',
+                    'type' => 'variable',
                   },
                   {
-                    "variable" => {
-                      "name" => "/Test Director/deployment-name/my_leaf"
-                    }
+                    'name' => '/Test Director/deployment-name/my_leaf',
+                    'type' => 'variable',
                   },
                   {
-                    "variable" => {
-                      "name" => "/my_absolute_intermediate_leaf"
-                    }
-                  }
-                ]
+                    'type' => 'variable',
+                    'name' => '/my_absolute_intermediate_leaf',
+                  },
+                ],
               )
             end
           end
 
-          context 'access with an unknown action' do
-            it 'should return 400 bad request' do
-              expect(get('/deployment-name/rotate_certificates', action: 'invalid_action').status).to eq(400)
+          context 'with action "generate"' do
+            let(:config_server) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+
+            before(:each) do
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create_default_client).and_return(config_server)
+              allow(config_server).to receive(:force_regenerate_value)
+            end
+
+            context 'and for type "leaf"' do
+              it 'should call credhub to generate updated leaf certificates' do
+                response = get('/deployment-name/rotate', action: 'generate', type: 'leaf')
+                expect(response.status).to eq(200)
+
+                result = JSON.parse(response.body)
+                expect(result['regenerated_leaf_certificates']).to match_array(
+                  [
+                    {
+                      'type' => 'variable',
+                      'name' => '/my_absolute_leaf',
+                    },
+                    {
+                      'name' => '/Test Director/deployment-name/my_intermediate_leaf',
+                      'type' => 'variable',
+                    },
+                    {
+                      'name' => '/Test Director/deployment-name/my_leaf',
+                      'type' => 'variable',
+                    },
+                    {
+                      'type' => 'variable',
+                      'name' => '/my_absolute_intermediate_leaf',
+                    },
+                  ],
+                )
+              end
+            end
+
+            context 'with unsupported type' do
+              it 'should return a "bad request" error' do
+                response = get('/deployment-name/rotate', action: 'generate', type: 'unknown_type')
+                expect(response.status).to eq(400)
+              end
+            end
+          end
+
+          context 'with an unsupported action' do
+            it 'should return a "bad request" error' do
+              expect(get('/deployment-name/rotate', action: 'invalid_action').status).to eq(400)
             end
           end
         end
