@@ -20,6 +20,7 @@ module Bosh::Director
           name: 'fake-deployment',
           networks: [network],
           releases: {},
+          use_tmpfs_job_config?: false,
         )
       end
       let(:deployment_model) { Models::Deployment.make }
@@ -1792,6 +1793,30 @@ module Bosh::Director
 
             it 'should set the instance_group strategy as create-swap-delete' do
               expect(parsed_instance_group.update.vm_strategy).to eq('create-swap-delete')
+            end
+          end
+        end
+
+        describe 'use_tmpfs_job_config' do
+          let(:resource_pool_env) { {} }
+
+          before do
+            allow(deployment_plan).to receive(:use_tmpfs_job_config?).and_return(true)
+          end
+
+          it 'sets the bosh.job_dir.tmpfs property to true on the env' do
+            instance_group = parsed_instance_group
+            expect(instance_group.env.spec['bosh']['job_dir']['tmpfs']).to eq(true)
+          end
+
+          context 'when the env explicitly disables bosh.job_dir.tmpfs' do
+            before do
+              instance_group_spec['env'] = { 'bosh' => { 'job_dir' => { 'tmpfs' => false } } }
+            end
+
+            it 'sets the bosh.job_dir.tmpfs property to false on the env' do
+              instance_group = parsed_instance_group
+              expect(instance_group.env.spec['bosh']['job_dir']['tmpfs']).to eq(false)
             end
           end
         end

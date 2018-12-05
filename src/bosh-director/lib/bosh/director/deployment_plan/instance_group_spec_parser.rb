@@ -38,7 +38,7 @@ module Bosh::Director
         parse_disks
 
         parse_resource_pool
-        check_remove_dev_tools
+        update_env_from_features
 
         parse_options = {}
         parse_options['canaries'] = options['canaries'] if options['canaries']
@@ -487,11 +487,20 @@ module Bosh::Director
         end
       end
 
-      def check_remove_dev_tools
+      def update_env_from_features
         if Config.remove_dev_tools
           @instance_group.env.spec['bosh'] ||= {}
           unless @instance_group.env.spec['bosh'].has_key?('remove_dev_tools')
             @instance_group.env.spec['bosh']['remove_dev_tools'] = Config.remove_dev_tools
+          end
+        end
+
+        if @deployment.use_tmpfs_job_config?
+          @instance_group.env.spec['bosh'] ||= {}
+          @instance_group.env.spec['bosh']['job_dir'] ||= {}
+
+          unless @instance_group.env.spec['bosh']['job_dir'].key?('tmpfs')
+            @instance_group.env.spec['bosh']['job_dir']['tmpfs'] = true
           end
         end
       end
