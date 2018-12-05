@@ -2,24 +2,25 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceGroup do
   subject(:instance_group) { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
-  let(:parse_options) do
-    {}
-  end
+  let(:parse_options) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
-
   let(:deployment) { Bosh::Director::Models::Deployment.make }
   let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider, reserve: nil, reserve_existing_ips: nil) }
-  let(:plan) do
-    instance_double('Bosh::Director::DeploymentPlan::Planner',
-                    model: deployment,
-                    name: deployment.name,
-                    ip_provider: fake_ip_provider,
-                    releases: {})
-  end
   let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new('name' => 'dea') }
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+
+  let(:plan) do
+    instance_double(
+      'Bosh::Director::DeploymentPlan::Planner',
+      model: deployment,
+      name: deployment.name,
+      ip_provider: fake_ip_provider,
+      releases: {},
+      use_tmpfs_job_config?: false,
+    )
+  end
 
   let(:network) do
     instance_double(
@@ -110,7 +111,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'stemcell' => 'dea',
         'env' => { 'key' => 'value' },
         'instances' => 1,
-        'networks'  => [{ 'name' => 'fake-network-name' }],
+        'networks' => [{ 'name' => 'fake-network-name' }],
         'properties' => props,
         'template' => %w[foo bar],
         'update' => update,
@@ -173,7 +174,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'stemcell' => 'dea',
         'env' => { 'key' => 'value' },
         'instances' => 1,
-        'networks'  => [
+        'networks' => [
           { 'name' => 'fake-network-name', 'default' => %w[dns gateway] },
           { 'name' => 'fake-network-name2' },
         ],
