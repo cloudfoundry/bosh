@@ -16,7 +16,7 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 		)
 	})
 
-	FIt("returns metrics when curling nats monitoring endpoint", func() {
+	It("returns metrics when curling nats monitoring endpoint", func() {
 		session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "curl -v http://localhost:8222")
 		Eventually(session, time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("HTTP/1.1 200 OK"))
