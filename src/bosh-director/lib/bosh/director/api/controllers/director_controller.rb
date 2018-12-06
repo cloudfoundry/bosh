@@ -1,3 +1,5 @@
+require 'sys/filesystem'
+
 module Bosh::Director
   module Api::Controllers
     class DirectorController < BaseController
@@ -26,6 +28,25 @@ module Bosh::Director
           }
         end
         json_encode(cert_expiration_info)
+      end
+
+      get '/disks', scope: :read do
+        disks = [
+          { name: 'system', path: '/' },
+          { name: 'ephemeral', path: '/var/vcap/data' },
+          { name: 'persistent', path: '/var/vcap/store' },
+        ]
+
+        disks.map do |disk|
+          stats = Sys::Filesystem.stat(disk[:path])
+
+          {
+            'name': disk[:name],
+            'size': stats.bytes_total,
+            'available': stats.bytes_free,
+            'used': stats.percent_used.round(4),
+          }
+        end.to_json
       end
     end
   end
