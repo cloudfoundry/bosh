@@ -409,11 +409,6 @@ module Bosh::Director
             context 'even when network lifecycle is enabled' do
               before do
                 allow(Config).to receive(:network_lifecycle_enabled?).and_return true
-
-                # This is terrible, but the network logic really does not belong on this class
-                allow(job).to receive(:mark_orphaned_networks) do
-                  raise 'Should not get here'
-                end
               end
 
               it 'should not clean up the orphaned networks' do
