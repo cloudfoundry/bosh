@@ -127,8 +127,13 @@ module Bosh::Director
                         ])
       end
 
-      let(:provider1) { instance_double(Bosh::Director::Models::Links::LinkProvider, name: 'provider1', type: 't1') }
-      let(:provider2) { instance_double(Bosh::Director::Models::Links::LinkProvider, name: 'provider2', type: 't2') }
+      let(:provider1) do
+        instance_double(Bosh::Director::Models::Links::LinkProviderIntent, original_name: 'provider1', type: 't1')
+      end
+      let(:provider2) do
+        instance_double(Bosh::Director::Models::Links::LinkProviderIntent, original_name: 'provider2', type: 't2')
+      end
+
       let(:links_manager) do
         instance_double(Bosh::Director::Links::LinksManager, get_link_provider_intents_for_deployment: [provider1, provider2])
       end
