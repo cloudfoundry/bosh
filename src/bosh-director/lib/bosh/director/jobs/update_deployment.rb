@@ -76,7 +76,11 @@ module Bosh::Director
 
       def prepare_deployment
         event_log_stage.advance_and_track('Preparing deployment') do
-          create_network_stage(deployment_plan).perform unless dry_run?
+          create_network_stage.perform unless dry_run?
+
+          # This is a _temporary_ bandaid to fix integration test failures that depend on
+          # the DNS encoder having an updated index before bind_models is called
+          dns_encoder # TODO(ja): unit test that new_encoder_with_updated_index is called before bind_models
 
           deployment_assembler.bind_models(
             is_deploy_action: deploy_action?,
@@ -160,7 +164,7 @@ module Bosh::Director
         DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
       end
 
-      def create_network_stage(deployment_plan)
+      def create_network_stage
         DeploymentPlan::Stages::CreateNetworkStage.new(Config.logger, deployment_plan)
       end
 
