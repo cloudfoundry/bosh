@@ -3012,67 +3012,23 @@ describe Bosh::Director::Links::LinksManager do
           serial_id: serial_id, # different from current deployment links_serial_id
         )
 
-        allow(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
-          deployment_model.name,
-          'link_original_name_1',
-          'link_type_1',
-          instance_group,
-          { 'a' => '1' },
-          false,
-          false,
-          false,
-        ).and_return(link_1)
-
-        allow(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
-          deployment_model.name,
-          'link_original_name_2',
-          'link_type_2',
-          instance_group,
-          { 'b' => '2' },
-          false,
-          false,
-          false,
-        ).and_return(link_2)
-
-        allow(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
-          deployment_model.name,
-          'link_original_name_3',
-          'link_type_3',
-          instance_group,
-          { 'c' => '1' },
-          false,
-          false,
-          false,
-        ).and_return(link_3)
-
-        allow(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
-          deployment_model.name,
-          'link_original_name_4',
-          'link_type_4',
-          instance_group,
-          { 'd' => '2' },
-          false,
-          false,
-          false,
-        ).and_return(link_4)
-
-        allow(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
-          deployment_model.name,
-          'link_original_name_5',
-          'link_type_5',
-          instance_group,
-          { 'e' => '5' },
-          false,
-          false,
-          false,
-        ).and_return(link_5)
+        allow(Bosh::Director::DeploymentPlan::Link)
+          .to receive(:new).with(deployment_model.name, 'link_name_1', 'link_type_1', instance_group, { 'a' => '1' }, false, false, false).and_return(link_1)
+        allow(Bosh::Director::DeploymentPlan::Link)
+          .to receive(:new).with(deployment_model.name, 'link_name_2', 'link_type_2', instance_group, { 'b' => '2' }, false, false, false).and_return(link_2)
+        allow(Bosh::Director::DeploymentPlan::Link)
+          .to receive(:new).with(deployment_model.name, 'link_name_3', 'link_type_3', instance_group, { 'c' => '1' }, false, false, false).and_return(link_3)
+        allow(Bosh::Director::DeploymentPlan::Link)
+          .to receive(:new).with(deployment_model.name, 'link_name_4', 'link_type_4', instance_group, { 'd' => '2' }, false, false, false).and_return(link_4)
+        allow(Bosh::Director::DeploymentPlan::Link)
+          .to receive(:new).with(deployment_model.name, 'link_name_5', 'link_type_5', instance_group, { 'e' => '5' }, false, false, false).and_return(link_5)
       end
 
       context 'link provider intent contents' do
         before do
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
             deployment_model.name,
-            'link_original_name_1',
+            'link_name_1',
             'link_type_1',
             instance_group,
             { 'a' => '1' },
@@ -3082,7 +3038,7 @@ describe Bosh::Director::Links::LinksManager do
           ).and_return(link_1)
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
             deployment_model.name,
-            'link_original_name_2',
+            'link_name_2',
             'link_type_2',
             instance_group,
             { 'b' => '2' },
@@ -3092,7 +3048,7 @@ describe Bosh::Director::Links::LinksManager do
           ).and_return(link_2)
           expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
             deployment_model.name,
-            'link_original_name_4',
+            'link_name_4',
             'link_type_4',
             instance_group,
             { 'd' => '2' },
@@ -3153,7 +3109,7 @@ describe Bosh::Director::Links::LinksManager do
       it 'updates all other valid providers' do
         expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
           deployment_model.name,
-          'link_original_name_1',
+          'link_name_1',
           'link_type_1',
           instance_group,
           { 'a' => '1' },
@@ -3163,7 +3119,7 @@ describe Bosh::Director::Links::LinksManager do
         ).and_return(link_1)
         expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
           deployment_model.name,
-          'link_original_name_2',
+          'link_name_2',
           'link_type_2',
           instance_group,
           { 'b' => '2' },
@@ -3173,7 +3129,7 @@ describe Bosh::Director::Links::LinksManager do
         ).and_return(link_2)
         expect(Bosh::Director::DeploymentPlan::Link).to receive(:new).with(
           deployment_model.name,
-          'link_original_name_4',
+          'link_name_4',
           'link_type_4',
           instance_group,
           { 'd' => '2' },

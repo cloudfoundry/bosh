@@ -208,7 +208,7 @@ module Bosh::Director::Links
     end
 
     def get_link_provider_intents_for_deployment(deployment)
-      Bosh::Director::Models::Links::LinkProviderIntent.where(
+      Bosh::Director::Models::Links::LinkProviderIntent .where(
         serial_id: deployment.links_serial_id,
         link_provider: Bosh::Director::Models::Links::LinkProvider.where(deployment: deployment),
       ).all
@@ -308,7 +308,7 @@ module Bosh::Director::Links
 
           content = Bosh::Director::DeploymentPlan::Link.new(
             provider.deployment.name,
-            provider_intent.original_name,
+            provider_intent.name,
             provider_intent.type,
             instance_group,
             properties,
