@@ -38,15 +38,19 @@ module Bosh::Director
         ]
 
         disks.map do |disk|
-          stats = Sys::Filesystem.stat(disk[:path])
+          begin
+            stats = Sys::Filesystem.stat(disk[:path])
+          rescue Sys::Filesystem::Error
+            next
+          end
 
           {
             'name': disk[:name],
             'size': stats.bytes_total,
             'available': stats.bytes_free,
-            'used': stats.percent_used.round(4),
+            'used': stats.percent_used.round(3),
           }
-        end.to_json
+        end.compact.to_json
       end
     end
   end
