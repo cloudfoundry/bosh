@@ -87,8 +87,8 @@ module Bosh::Director
           encode_instance_group(ig.name, deployment_model)
         end
 
-        plan.links_manager.get_link_provider_intents_for_deployment(deployment_model).each do |provider_intent|
-          encode_link_provider(provider_intent.original_name, provider_intent.type, deployment_model)
+        plan.links_manager.get_link_provider_intents_for_deployment(deployment_model).each do |provider|
+          encode_link_provider(provider.name, provider.type, deployment_model)
         end
       end
     end
