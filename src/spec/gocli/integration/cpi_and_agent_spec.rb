@@ -70,7 +70,6 @@ describe 'CPI and Agent:', type: :integration do
     [
       *create_vm_sequence(vm_cid, agent_id),
       *update_settings_sequence(agent_id),
-      { target: 'agent', method: 'get_state', agent_id: agent_id },
       { target: 'cpi', method: 'set_vm_metadata', vm_cid: vm_cid },
       { target: 'agent', method: 'compile_package', agent_id: agent_id },
       { target: 'cpi', method: 'delete_vm', vm_cid: vm_cid },
@@ -79,7 +78,6 @@ describe 'CPI and Agent:', type: :integration do
 
   def prepare_sequence(agent_id)
     [
-      { target: 'agent', method: 'get_state', agent_id: agent_id },
       { target: 'agent', method: 'prepare', agent_id: agent_id },
     ]
   end
@@ -118,7 +116,6 @@ describe 'CPI and Agent:', type: :integration do
     [
       { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['pre-start', {}]) },
       { target: 'agent', method: 'start', agent_id: agent_id },
-      { target: 'agent', method: 'get_state', agent_id: agent_id },
       { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['post-start', {}]) },
     ]
   end
@@ -135,7 +132,6 @@ describe 'CPI and Agent:', type: :integration do
 
   def hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id)
     [
-      { target: 'agent', method: 'get_state', agent_id: old_vm_agent_id },
       *create_vm_sequence(hotswap_vm_id, hotswap_vm_agent_id),
       *update_settings_sequence(hotswap_vm_agent_id),
       *prepare_sequence(hotswap_vm_agent_id),
@@ -148,23 +144,66 @@ describe 'CPI and Agent:', type: :integration do
     ]
   end
 
+  def update_sequence(old_vm_id, old_vm_agent_id, updated_vm_id, updated_vm_agent_id, disk_id)
+    [
+      *stop_jobs_sequence(old_vm_agent_id),
+      *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
+      { target: 'cpi', method: 'delete_vm', vm_cid: old_vm_id },
+      *create_vm_sequence(updated_vm_id, updated_vm_agent_id),
+      *attach_disk_sequence(updated_vm_id, updated_vm_agent_id, disk_id),
+      *update_settings_sequence(updated_vm_agent_id),
+      { target: 'agent', method: 'list_disk', agent_id: updated_vm_agent_id },
+      { target: 'agent', method: 'apply', agent_id: updated_vm_agent_id },
+      *start_jobs_sequence(updated_vm_agent_id),
+    ]
+  end
+
+  let(:vm_creation_calls) { fresh_deploy_invocations.find_all { |i| i.method == 'create_vm' } }
+
+  let(:compilation_vm1_create_vm) { vm_creation_calls[0] }
+  let(:compilation_vm2_create_vm) { vm_creation_calls[1] }
+  let(:deployed_vm_create_vm) { vm_creation_calls[2] }
+
+  let(:compilation_vm1_cid) { cid_and_agent(compilation_vm1_create_vm).first }
+  let(:compilation_vm1_agent_id) { cid_and_agent(compilation_vm1_create_vm).last }
+
+  let(:compilation_vm2_cid) { cid_and_agent(compilation_vm2_create_vm).first }
+  let(:compilation_vm2_agent_id) { cid_and_agent(compilation_vm2_create_vm).last }
+
+  let(:deployed_vm_cid) { cid_and_agent(deployed_vm_create_vm).first }
+  let(:deployed_vm_agent_id) { cid_and_agent(deployed_vm_create_vm).last }
+
+  let(:reference) do
+    {
+      compilation_vm1_cid => 'compilation_vm1_cid',
+      compilation_vm1_agent_id => 'compilation_vm1_agent_id',
+      compilation_vm2_cid => 'compilation_vm2_cid',
+      compilation_vm2_agent_id => 'compilation_vm2_agent_id',
+      deployed_vm_cid => 'deployed_vm_cid',
+      deployed_vm_agent_id => 'deployed_vm_agent_id',
+      disk_id => 'disk_id',
+    }
+  end
+
   context 'on a fresh deploy with persistent disk' do
     it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
-      invocations = fresh_deploy_invocations.dup
-
-      vm_creation_calls = invocations.find_all { |i| i.method == 'create_vm' }
-
-      compilation_vm1_cid, compilation_vm1_agent_id = cid_and_agent(vm_creation_calls.shift)
-      compilation_vm2_cid, compilation_vm2_agent_id = cid_and_agent(vm_creation_calls.shift)
-      deployed_vm_cid,     deployed_vm_agent_id     = cid_and_agent(vm_creation_calls.shift)
-
       compilation_vm1_calls = compilation_vm_sequence(compilation_vm1_cid, compilation_vm1_agent_id)
       compilation_vm2_calls = compilation_vm_sequence(compilation_vm2_cid, compilation_vm2_agent_id)
       deployed_vm_calls = create_vm_with_persistent_disk_calls(deployed_vm_cid, deployed_vm_agent_id, disk_id)
 
-      expect(invocations.shift(compilation_vm1_calls.length)).to be_sequence_of_calls(*compilation_vm1_calls)
-      expect(invocations.shift(compilation_vm2_calls.length)).to be_sequence_of_calls(*compilation_vm2_calls)
-      expect(invocations).to be_sequence_of_calls(*deployed_vm_calls)
+      invocations = fresh_deploy_invocations.dup
+      expect(invocations.shift(compilation_vm1_calls.length)).to be_sequence_of_calls(
+        calls: compilation_vm1_calls,
+        reference: reference,
+      )
+      expect(invocations.shift(compilation_vm2_calls.length)).to be_sequence_of_calls(
+        calls: compilation_vm2_calls,
+        reference: reference,
+      )
+      expect(invocations).to be_sequence_of_calls(
+        calls: deployed_vm_calls,
+        reference: reference,
+      )
     end
   end
 
@@ -176,144 +215,170 @@ describe 'CPI and Agent:', type: :integration do
       updated_manifest_hash
     end
 
-    it 'requests between BOSH Director, CPI and Agent are sent in correct order', no_create_swap_delete: true do
+    let(:update_invocations) do
       task_output = deploy_simple_manifest(manifest_hash: updated_manifest_hash)
-      raw_invocations = get_invocations(task_output)
+      get_invocations(task_output)
+    end
 
-      create_vm_calls = raw_invocations.find_all { |i| i.method == 'create_vm' }
+    let(:updated_create_vm_call) do
+      create_vm_calls = update_invocations.find_all { |i| i.method == 'create_vm' }
       expect(create_vm_calls.length).to eq(1)
-      updated_vm_id, updated_vm_agent_id = cid_and_agent(create_vm_calls.first)
+      create_vm_calls.first
+    end
 
-      expect(raw_invocations).to be_sequence_of_calls(
-        { target: 'agent', method: 'get_state', agent_id: old_vm_agent_id },
-        *stop_jobs_sequence(old_vm_agent_id),
-        *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
-        { target: 'cpi', method: 'delete_vm', vm_cid: old_vm_id },
-        *create_vm_sequence(updated_vm_id, updated_vm_agent_id),
-        *attach_disk_sequence(updated_vm_id, updated_vm_agent_id, disk_id),
-        *update_settings_sequence(updated_vm_agent_id),
-        { target: 'agent', method: 'get_state', agent_id: updated_vm_agent_id },
-        { target: 'agent', method: 'list_disk', agent_id: updated_vm_agent_id },
-        { target: 'agent', method: 'apply', agent_id: updated_vm_agent_id },
-        *start_jobs_sequence(updated_vm_agent_id),
+    let(:updated_vm_id) { cid_and_agent(updated_create_vm_call).first }
+    let(:updated_vm_agent_id) { cid_and_agent(updated_create_vm_call).last }
+
+    before do
+      reference.merge!(
+        updated_vm_id => 'updated_vm_id',
+        updated_vm_agent_id => 'updated_vm_agent_id',
+      )
+    end
+
+    it 'requests between BOSH Director, CPI and Agent are sent in correct order', no_create_swap_delete: true do
+      expect(update_invocations).to be_sequence_of_calls(
+        calls: update_sequence(old_vm_id, old_vm_agent_id, updated_vm_id, updated_vm_agent_id, disk_id),
+        reference: reference,
       )
     end
 
     context 'when create-swap-delete is enabled', create_swap_delete: true do
       context 'with a simple manifest' do
-        before do
-          manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
-          manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
-        end
-
         context 'when the deploy succeeds' do
+          let(:update_invocations) do
+            updated_manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
+            updated_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
+
+            task_output = deploy_simple_manifest(manifest_hash: updated_manifest_hash)
+            get_invocations(task_output)
+          end
+
           it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
-            task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
-            raw_invocations = get_invocations(task_output)
-            create_vm_calls = raw_invocations.find_all { |i| i.method == 'create_vm' }
-            expect(create_vm_calls.length).to eq(1)
-            hotswap_vm_id, hotswap_vm_agent_id = cid_and_agent(create_vm_calls.first)
-
-            expect(raw_invocations).to be_sequence_of_calls(
-              *hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id),
+            expect(update_invocations).to be_sequence_of_calls(
+              calls: hotswap_update_sequence(old_vm_id, old_vm_agent_id, updated_vm_id, updated_vm_agent_id, disk_id),
+              reference: reference,
             )
           end
         end
 
-        context 'when the first deploy results in an unresponsive agent' do
-          it 'updates the correct vms' do
-            current_sandbox.cpi.commands.make_create_vm_have_unresponsive_agent
-
-            failing_task_output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
-            failing_invocations = get_invocations(failing_task_output)
-
-            create_vm_calls = failing_invocations.find_all { |i| i.method == 'create_vm' }
+        context 'when something fails' do
+          let(:failing_create_vm_call) do
+            create_vm_calls = update_invocations.find_all { |i| i.method == 'create_vm' }
             expect(create_vm_calls.length).to eq(1)
-            failing_vm_id, failing_vm_agent_id = cid_and_agent(create_vm_calls.first)
+            create_vm_calls.first
+          end
 
-            expect(failing_invocations).to be_sequence_of_calls(
-              { target: 'agent', method: 'get_state', agent_id: old_vm_agent_id },
-              *create_vm_sequence(failing_vm_id, failing_vm_agent_id),
-              { target: 'cpi', method: 'delete_vm', argument_matcher: include('vm_cid' => failing_vm_id) },
-            )
+          let(:failing_vm_id) { cid_and_agent(failing_create_vm_call).first }
+          let(:failing_vm_agent_id) { cid_and_agent(failing_create_vm_call).last }
 
-            current_sandbox.cpi.commands.allow_create_vm_to_have_responsive_agent
+          let(:final_invocations) do
+            manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
+            manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
+
             task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
+            get_invocations(task_output)
+          end
 
-            raw_invocations = get_invocations(task_output)
-            create_vm_calls = raw_invocations.find_all { |i| i.method == 'create_vm' }
-            expect(create_vm_calls.length).to eq(1)
-            hotswap_vm_id, hotswap_vm_agent_id = cid_and_agent(create_vm_calls.first)
+          let(:final_create_vm_call) do
+            create_vm_calls = final_invocations.find_all { |i| i.method == 'create_vm' }
+            create_vm_calls.first
+          end
 
-            expect(raw_invocations).to be_sequence_of_calls(
-              *hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id),
+          let(:final_vm_id) { final_create_vm_call && cid_and_agent(final_create_vm_call).first }
+          let(:final_vm_agent_id) { final_create_vm_call && cid_and_agent(final_create_vm_call).last }
+
+          before do
+            reference.merge!(
+              final_vm_id => 'final_vm_id',
+              final_vm_agent_id => 'final_vm_agent_id',
             )
           end
-        end
-      end
 
-      context 'when the first deploy fails with a reusable VM' do
-        let(:failing_manifest_hash) do
-          manifest_hash['releases'] = [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }]
-          manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
-          manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
-          manifest_hash['instance_groups'].first['jobs'] = [
-            {
-              'name' => 'job_with_bad_template',
-              'properties' => {
-                'gargamel' => {
-                  'color' => 'chartreuse',
+          context 'when the first deploy results in an unresponsive agent' do
+            let(:update_invocations) do
+              updated_manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
+              updated_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
+
+              current_sandbox.cpi.commands.make_create_vm_have_unresponsive_agent
+              task_output = deploy_simple_manifest(manifest_hash: updated_manifest_hash, failure_expected: true)
+              failing_invocations = get_invocations(task_output)
+              current_sandbox.cpi.commands.allow_create_vm_to_have_responsive_agent
+              failing_invocations
+            end
+
+            it 'updates the correct vms' do
+              expect(update_invocations).to be_sequence_of_calls(
+                calls: [
+                  *create_vm_sequence(failing_vm_id, failing_vm_agent_id),
+                  { target: 'cpi', method: 'delete_vm', argument_matcher: include('vm_cid' => failing_vm_id) },
+                ],
+                reference: reference,
+              )
+
+              expect(final_invocations).to be_sequence_of_calls(
+                calls: hotswap_update_sequence(old_vm_id, old_vm_agent_id, final_vm_id, final_vm_agent_id, disk_id),
+                reference: reference,
+              )
+            end
+          end
+
+          context 'when the first deploy fails with a reusable VM' do
+            let(:failing_manifest_hash) do
+              failing_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+              failing_manifest_hash['releases'] = [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }]
+              failing_manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
+              failing_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
+              failing_manifest_hash['instance_groups'].first['jobs'] = [
+                {
+                  'name' => 'job_with_bad_template',
+                  'properties' => {
+                    'gargamel' => {
+                      'color' => 'chartreuse',
+                    },
+                    'fail_on_job_start' => true,
+                    'fail_instance_index' => 0,
+                  },
                 },
-                'fail_on_job_start' => true,
-                'fail_instance_index' => 0,
-              },
-            },
-          ]
-          manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
-          manifest_hash['instance_groups'].first['instances'] = 1
-          manifest_hash
-        end
+              ]
+              failing_manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
+              failing_manifest_hash['instance_groups'].first['instances'] = 1
+              failing_manifest_hash
+            end
 
-        let(:succeeding_manifest_hash) do
-          succeeding_manifest_hash = Bosh::Common::DeepCopy.copy(failing_manifest_hash)
-          succeeding_manifest_hash['instance_groups'].first['jobs'] = []
-          succeeding_manifest_hash['instance_groups'].first['instances'] = 1
-          succeeding_manifest_hash
-        end
+            let(:update_invocations) do
+              task_output = deploy_simple_manifest(manifest_hash: failing_manifest_hash, failure_expected: true)
+              failing_invocations = get_invocations(task_output)
+              failing_invocations
+            end
 
-        it 'makes CPI and agent calls in the correct order in the subsequent deploy to reuse the VM' do
-          failing_task_output = deploy_simple_manifest(manifest_hash: failing_manifest_hash, failure_expected: true)
-          failing_invocations = get_invocations(failing_task_output)
+            it 'makes CPI and agent calls in the correct order in the subsequent deploy to reuse the VM' do
+              up_to_pre_start = hotswap_update_sequence(
+                old_vm_id,
+                old_vm_agent_id,
+                updated_vm_id,
+                updated_vm_agent_id,
+                disk_id,
+              ).take(21)
 
-          create_vm_calls = failing_invocations.find_all { |i| i.method == 'create_vm' }
-          expect(create_vm_calls.length).to eq(1)
+              expect(update_invocations).to be_sequence_of_calls(
+                calls: up_to_pre_start,
+                reference: reference,
+              )
 
-          reusable_failing_vm_id, reusable_failing_vm_agent_id = cid_and_agent(create_vm_calls.first)
-
-          up_to_pre_start = hotswap_update_sequence(
-            old_vm_id,
-            old_vm_agent_id,
-            reusable_failing_vm_id,
-            reusable_failing_vm_agent_id,
-            disk_id,
-          ).take(23)
-
-          expect(failing_invocations).to be_sequence_of_calls(
-            *up_to_pre_start,
-          )
-
-          task_output = deploy_simple_manifest(manifest_hash: succeeding_manifest_hash)
-
-          raw_invocations = get_invocations(task_output)
-          expect(raw_invocations).to be_sequence_of_calls(
-            { target: 'agent', method: 'get_state', agent_id: reusable_failing_vm_agent_id },
-            { target: 'agent', method: 'prepare', agent_id: reusable_failing_vm_agent_id },
-            *stop_jobs_sequence(reusable_failing_vm_agent_id),
-            { target: 'cpi', method: 'snapshot_disk', disk_id: disk_id },
-            { target: 'agent', method: 'list_disk', agent_id: reusable_failing_vm_agent_id },
-            *update_settings_sequence(reusable_failing_vm_agent_id),
-            *start_jobs_sequence(reusable_failing_vm_agent_id),
-          )
+              expect(final_invocations).to be_sequence_of_calls(
+                calls: [
+                  { target: 'agent', method: 'prepare', agent_id: updated_vm_agent_id },
+                  *stop_jobs_sequence(updated_vm_agent_id),
+                  { target: 'cpi', method: 'snapshot_disk', disk_id: disk_id },
+                  { target: 'agent', method: 'list_disk', agent_id: updated_vm_agent_id },
+                  *update_settings_sequence(updated_vm_agent_id),
+                  *start_jobs_sequence(updated_vm_agent_id),
+                ],
+                reference: reference,
+              )
+            end
+          end
         end
       end
     end

@@ -7,11 +7,12 @@ module Support
       [vm_creation_call.response, vm_creation_call.arguments['agent_id']]
     end
 
-    def filter_invocations(invocations, agent_ids: [], vm_cids: [])
+    def filter_invocations(invocations, agent_ids: [], vm_cids: [], disk_ids: [])
       invocations.select do |i|
         (i.target == 'agent' && agent_ids.include?(i.agent_id)) ||
-          (i.target == 'cpi' && agent_ids.include?(i.arguments.try(:[], 'agent_id'))) ||
-          (i.target == 'cpi' && vm_cids.include?(i.arguments.try(:[], 'vm_cid')))
+          (i.target == 'cpi' && agent_ids.include?(i.agent_id)) ||
+          (i.target == 'cpi' && vm_cids.include?(i.vm_cid)) ||
+          (i.target == 'cpi' && disk_ids.include?(i.disk_id))
       end
     end
 
@@ -36,6 +37,7 @@ module Support
         elsif match[3] == AGENT_TARGET
           agent_message = JSON.parse(match[5])
           next if agent_message['method'] == 'get_task'
+          next if agent_message['method'] == 'get_state'
 
           invocations << AgentInvocation.new(match[4], agent_message)
         end
@@ -63,6 +65,10 @@ module Support
       def agent_id
         ''
       end
+
+      def convert_reference(label, reference)
+        reference.fetch(label, label)
+      end
     end
 
     class CPIInvocation < Invocation
@@ -82,16 +88,22 @@ module Support
       end
 
       def disk_id
-        arguments&.fetch('disk_id', '')
+        if arguments.is_a?(Hash)
+          arguments.fetch('disk_id', '')
+        elsif arguments.is_a?(Array) && method =~ /disk/
+          arguments.first
+        else
+          ''
+        end
       end
 
-      def to_hash(show_arguments = false)
+      def to_hash(show_arguments = false, reference = {})
         {
           target: target,
           method: method,
-          agent_id: agent_id,
-          vm_cid: vm_cid,
-          disk_id: disk_id,
+          agent_id: convert_reference(agent_id, reference),
+          vm_cid: convert_reference(vm_cid, reference),
+          disk_id: convert_reference(disk_id, reference),
           arguments: get_arguments(show_arguments),
           response: response,
         }
@@ -106,11 +118,11 @@ module Support
         @agent_id = agent_id
       end
 
-      def to_hash(show_arguments = false)
+      def to_hash(show_arguments = false, reference = {})
         {
           target: target,
           method: method,
-          agent_id: agent_id,
+          agent_id: convert_reference(agent_id, reference),
           arguments: get_arguments(show_arguments),
         }
       end
@@ -141,12 +153,12 @@ RSpec.configure do |config|
   config.include(Support::InvocationsHelper)
 end
 
-RSpec::Matchers.define :be_sequence_of_calls do |*original_calls|
+RSpec::Matchers.define :be_sequence_of_calls do |calls:, reference: {}|
   next_actual_call = {}
   next_expected_call = {}
-  calls = original_calls.dup
   index = 0
   did_fail_match = false
+  sequence_length = calls.length
 
   match do |original_actual|
     actual = original_actual.dup
@@ -195,12 +207,12 @@ RSpec::Matchers.define :be_sequence_of_calls do |*original_calls|
   failure_message do |actual|
     if did_fail_match
       "expected at index #{index} call did not match:\n" \
-        "  expected:\n    #{next_expected_call.inspect}\n  actual:\n    #{next_actual_call.to_hash(true).inspect}\n\n"  \
-        "  actual calls:\n    #{actual.map(&:to_hash).map(&:inspect).join("\n    ")}"
+        "  expected:\n    #{next_expected_call.inspect}\n  actual:\n    #{next_actual_call.to_hash(true, reference).inspect}\n\n"  \
+        "  actual calls:\n    #{actual.map { |i| i.to_hash(false, reference).inspect }.join("\n    ")}"
     else
-      "expected a sequence of length #{original_calls.length}#{calls.any? { |i| i[:can_repeat] } ? '+' : ''} " \
+      "expected a sequence of length #{sequence_length}#{calls.any? { |i| i[:can_repeat] } ? '+' : ''} " \
         "but got a differing sequence of length #{actual.length}: \n" \
-        "#{actual.map(&:to_hash).map(&:inspect).join("\n")}"
+        "#{actual.map { |i| i.to_hash(false, reference).inspect }.join("\n")}"
     end
   end
 end
