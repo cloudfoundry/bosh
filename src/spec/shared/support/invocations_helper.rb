@@ -89,7 +89,7 @@ module Support
 
       def disk_id
         if arguments.is_a?(Hash)
-          arguments.fetch('disk_id', '')
+          arguments.fetch('disk_cid', arguments.fetch('disk_id', ''))
         elsif arguments.is_a?(Array) && method =~ /disk/
           arguments.first
         else
