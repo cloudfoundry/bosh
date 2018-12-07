@@ -3,6 +3,18 @@ module Support
     CPI_TARGET = 'cpi'.freeze
     AGENT_TARGET = 'agent'.freeze
 
+    def cid_and_agent(vm_creation_call)
+      [vm_creation_call.response, vm_creation_call.arguments['agent_id']]
+    end
+
+    def filter_invocations(invocations, agent_ids: [], vm_cids: [])
+      invocations.select do |i|
+        (i.target == 'agent' && agent_ids.include?(i.agent_id)) ||
+          (i.target == 'cpi' && agent_ids.include?(i.arguments.try(:[], 'agent_id'))) ||
+          (i.target == 'cpi' && vm_cids.include?(i.arguments.try(:[], 'vm_cid')))
+      end
+    end
+
     def get_invocations(task_output)
       cpi_invocation_lookup = current_sandbox.cpi.invocations.map { |i| [i.context['request_id'], i] }.to_h
       task_id = task_output.match(/^Task (\d+)$/)[1]
@@ -14,13 +26,17 @@ module Support
           request_id = match[1]
 
           response_match = task_debug.match(/DirectorJobRunner: \[external-cpi\] \[cpi-#{request_id}\] response: ({.*}).*/)
+          cpi_invocation = cpi_invocation_lookup[JSON.parse(match[2])['context']['request_id']]
+          next if cpi_invocation.method_name == 'info'
+
           invocations << CPIInvocation.new(
-            cpi_invocation_lookup[JSON.parse(match[2])['context']['request_id']],
+            cpi_invocation,
             JSON.parse(response_match.captures[0])['result'],
           )
         elsif match[3] == AGENT_TARGET
           agent_message = JSON.parse(match[5])
           next if agent_message['method'] == 'get_task'
+
           invocations << AgentInvocation.new(match[4], agent_message)
         end
       end
@@ -35,6 +51,18 @@ module Support
         @method = method
         @arguments = arguments
       end
+
+      def get_arguments(show_arguments)
+        show_arguments ? arguments : 'HIDDEN'
+      end
+
+      def vm_cid
+        ''
+      end
+
+      def agent_id
+        ''
+      end
     end
 
     class CPIInvocation < Invocation
@@ -44,6 +72,30 @@ module Support
         super(CPI_TARGET, cpi_call.method_name, cpi_call.inputs)
         @response = response
       end
+
+      def agent_id
+        arguments&.fetch('agent_id', '')
+      end
+
+      def vm_cid
+        arguments&.fetch('vm_cid', '')
+      end
+
+      def disk_id
+        arguments&.fetch('disk_id', '')
+      end
+
+      def to_hash(show_arguments = false)
+        {
+          target: target,
+          method: method,
+          agent_id: agent_id,
+          vm_cid: vm_cid,
+          disk_id: disk_id,
+          arguments: get_arguments(show_arguments),
+          response: response,
+        }
+      end
     end
 
     class AgentInvocation < Invocation
@@ -52,6 +104,15 @@ module Support
       def initialize(agent_id, agent_call)
         super(AGENT_TARGET, agent_call['method'], agent_call['arguments'])
         @agent_id = agent_id
+      end
+
+      def to_hash(show_arguments = false)
+        {
+          target: target,
+          method: method,
+          agent_id: agent_id,
+          arguments: get_arguments(show_arguments),
+        }
       end
     end
 
@@ -80,37 +141,66 @@ RSpec.configure do |config|
   config.include(Support::InvocationsHelper)
 end
 
-RSpec::Matchers.define :be_cpi_call do |message:, argument_matcher: nil|
-  match do |actual|
-    matches = actual.target == Support::InvocationsHelper::CPI_TARGET && actual.method == message
-    matches &&= argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
-    matches
-  end
-  failure_message do |actual|
-    unless argument_matcher.nil?
-      with_args = " with '#{actual.arguments.inspect}'"
-      with_args_matching = " with arguments matching '#{argument_matcher.expected}'"
+RSpec::Matchers.define :be_sequence_of_calls do |*original_calls|
+  next_actual_call = {}
+  next_expected_call = {}
+  calls = original_calls.dup
+  index = 0
+  did_fail_match = false
+
+  match do |original_actual|
+    actual = original_actual.dup
+    matches = true
+
+    until calls.empty?
+      if actual.empty?
+        matches = false
+        break
+      end
+      next_actual_call = actual.shift
+      next_expected_call = calls.shift
+      matches &&= next_actual_call.target == next_expected_call[:target]
+      matches &&= next_actual_call.method == next_expected_call[:method]
+
+      if next_expected_call.key? :argument_matcher
+        matches &&= next_expected_call[:argument_matcher].matches?(next_actual_call.arguments)
+      end
+
+      if next_expected_call.key? :response_matcher
+        matches &&= next_expected_call[:response_matcher].matches?(next_actual_call.response)
+      end
+
+      if next_expected_call.key? :agent_id
+        matches &&= next_actual_call.agent_id == next_expected_call[:agent_id]
+      end
+
+      if next_expected_call.key? :vm_cid
+        matches &&= next_actual_call.vm_cid == next_expected_call[:vm_cid]
+      end
+
+      unless matches
+        did_fail_match = true
+        break
+      end
+
+      if next_expected_call[:can_repeat]
+        actual = actual.drop_while { |i| i.to_hash == next_actual_call.to_hash }
+      end
+
+      index += 1
     end
-
-    "expected cpi to receive message '#{message}'#{with_args_matching} "\
-      "but #{actual.target} received message '#{actual.method}'#{with_args}"
+    matches && actual.empty?
   end
-end
 
-RSpec::Matchers.define :be_agent_call do |message:, argument_matcher: nil, agent_id: nil|
-  match do |actual|
-    matches = actual.target == Support::InvocationsHelper::AGENT_TARGET && actual.method == message
-    matches &&= argument_matcher.matches?(actual.arguments) unless argument_matcher.nil?
-    matches &&= actual.agent_id == agent_id unless agent_id.nil?
-    matches
-  end
   failure_message do |actual|
-    unless argument_matcher.nil?
-      with_args = " with '#{actual.arguments.inspect}'"
-      with_args_matching = " with arguments matching '#{argument_matcher.expected}'"
+    if did_fail_match
+      "expected at index #{index} call did not match:\n" \
+        "  expected:\n    #{next_expected_call.inspect}\n  actual:\n    #{next_actual_call.to_hash(true).inspect}\n\n"  \
+        "  actual calls:\n    #{actual.map(&:to_hash).map(&:inspect).join("\n    ")}"
+    else
+      "expected a sequence of length #{original_calls.length}#{calls.any? { |i| i[:can_repeat] } ? '+' : ''} " \
+        "but got a differing sequence of length #{actual.length}: \n" \
+        "#{actual.map(&:to_hash).map(&:inspect).join("\n")}"
     end
-
-    "expected agent (#{agent_id || 'not specified'}) to receive message '#{message}'#{with_args_matching} "\
-      "but #{actual.target} (#{actual.agent_id}) received message '#{actual.method}'#{with_args}"
   end
 end

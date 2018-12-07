@@ -4,8 +4,9 @@ require 'spec_helper'
 describe 'CPI and Agent:', type: :integration do
   with_reset_sandbox_before_each(agent_wait_timeout: 3)
 
+  let(:instances) { 1 }
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: instances)
     manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
     manifest_hash
   end
@@ -40,173 +41,130 @@ describe 'CPI and Agent:', type: :integration do
   end
 
   let(:disk_id) do
-    fresh_deploy_invocations.find { |i| i.method == 'create_disk' }.response
+    create_disk_invocations = fresh_deploy_invocations.find_all { |i| i.method == 'create_disk' }
+    expect(create_disk_invocations.length).to eq(1)
+    create_disk_invocations.first.response
+  end
+
+  def create_vm_sequence(vm_cid, agent_id)
+    [
+      {
+        target: 'cpi',
+        method: 'create_vm',
+        agent_id: agent_id,
+        response_matcher: be(vm_cid),
+      },
+      { target: 'cpi', method: 'set_vm_metadata', vm_cid: vm_cid },
+      { target: 'agent', method: 'ping', agent_id: agent_id, can_repeat: true },
+    ]
+  end
+
+  def update_settings_sequence(agent_id)
+    [
+      { target: 'agent', method: 'update_settings', agent_id: agent_id },
+      { target: 'agent', method: 'apply', agent_id: agent_id },
+    ]
+  end
+
+  def compilation_vm_sequence(vm_cid, agent_id)
+    [
+      *create_vm_sequence(vm_cid, agent_id),
+      *update_settings_sequence(agent_id),
+      { target: 'agent', method: 'get_state', agent_id: agent_id },
+      { target: 'cpi', method: 'set_vm_metadata', vm_cid: vm_cid },
+      { target: 'agent', method: 'compile_package', agent_id: agent_id },
+      { target: 'cpi', method: 'delete_vm', vm_cid: vm_cid },
+    ]
+  end
+
+  def prepare_sequence(agent_id)
+    [
+      { target: 'agent', method: 'get_state', agent_id: agent_id },
+      { target: 'agent', method: 'prepare', agent_id: agent_id },
+    ]
+  end
+
+  def create_vm_with_persistent_disk_calls(vm_cid, agent_id, disk_cid)
+    [
+      *create_vm_sequence(vm_cid, agent_id),
+      *update_settings_sequence(agent_id),
+      *prepare_sequence(agent_id),
+      *stop_jobs_sequence(agent_id),
+      { target: 'cpi', method: 'create_disk', response_matcher: be(disk_cid) },
+      *attach_disk_sequence(vm_cid, agent_id, disk_cid),
+      *update_settings_sequence(agent_id),
+      *start_jobs_sequence(agent_id),
+    ]
+  end
+
+  def attach_disk_sequence(vm_cid, agent_id, disk_cid)
+    [
+      { target: 'cpi', method: 'attach_disk', vm_cid: vm_cid, argument_matcher: include('disk_id' => disk_cid) },
+      { target: 'cpi', method: 'set_disk_metadata', argument_matcher: include('disk_cid' => disk_cid) },
+      { target: 'agent', method: 'ping', agent_id: agent_id, can_repeat: true },
+      { target: 'agent', method: 'mount_disk', agent_id: agent_id, argument_matcher: match([disk_cid]) },
+    ]
+  end
+
+  def stop_jobs_sequence(agent_id)
+    [
+      { target: 'agent', method: 'drain', agent_id: agent_id },
+      { target: 'agent', method: 'stop', agent_id: agent_id },
+      { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['post-stop', {}]) },
+    ]
+  end
+
+  def start_jobs_sequence(agent_id)
+    [
+      { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['pre-start', {}]) },
+      { target: 'agent', method: 'start', agent_id: agent_id },
+      { target: 'agent', method: 'get_state', agent_id: agent_id },
+      { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['post-start', {}]) },
+    ]
+  end
+
+  def detach_disk_sequence(vm_cid, agent_id, disk_id)
+    [
+      { target: 'cpi', method: 'snapshot_disk', disk_id: disk_id },
+      { target: 'agent', method: 'list_disk', agent_id: agent_id },
+      { target: 'agent', method: 'unmount_disk', agent_id: agent_id, argument_matcher: match([disk_id]) },
+      { target: 'agent', method: 'remove_persistent_disk', agent_id: agent_id, argument_matcher: match([disk_id]) },
+      { target: 'cpi', method: 'detach_disk', vm_cid: vm_cid, disk_id: disk_id },
+    ]
+  end
+
+  def hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id)
+    [
+      { target: 'agent', method: 'get_state', agent_id: old_vm_agent_id },
+      *create_vm_sequence(hotswap_vm_id, hotswap_vm_agent_id),
+      *update_settings_sequence(hotswap_vm_agent_id),
+      *prepare_sequence(hotswap_vm_agent_id),
+      *stop_jobs_sequence(old_vm_agent_id),
+      *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
+      *attach_disk_sequence(hotswap_vm_id, hotswap_vm_agent_id, disk_id),
+      { target: 'agent', method: 'list_disk', agent_id: hotswap_vm_agent_id },
+      { target: 'agent', method: 'apply', agent_id: hotswap_vm_agent_id },
+      *start_jobs_sequence(hotswap_vm_agent_id),
+    ]
   end
 
   context 'on a fresh deploy with persistent disk' do
     it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
-      invocations = Support::InvocationsHelper::InvocationIterator.new(fresh_deploy_invocations)
+      invocations = fresh_deploy_invocations.dup
 
-      expect(fresh_deploy_invocations.find_all { |i| i.target == 'cpi' }.size).to eq(27)
+      vm_creation_calls = invocations.find_all { |i| i.method == 'create_vm' }
 
-      # Compilation VM
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      create_compilation_vm1 = invocations.next
-      compilation_vm1_agent_id = create_compilation_vm1.arguments['agent_id']
-      expect(create_compilation_vm1).to be_cpi_call(message: 'create_vm')
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'ping',
-        agent_id: compilation_vm1_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'update_settings',
-        agent_id: compilation_vm1_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'apply',
-        agent_id: compilation_vm1_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'get_state',
-        agent_id: compilation_vm1_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'compile_package',
-        agent_id: compilation_vm1_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(
-        message: 'delete_vm',
-        argument_matcher: match('vm_cid' => create_compilation_vm1.response),
-      )
+      compilation_vm1_cid, compilation_vm1_agent_id = cid_and_agent(vm_creation_calls.shift)
+      compilation_vm2_cid, compilation_vm2_agent_id = cid_and_agent(vm_creation_calls.shift)
+      deployed_vm_cid,     deployed_vm_agent_id     = cid_and_agent(vm_creation_calls.shift)
 
-      # Compilation VM
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      create_compilation_vm2 = invocations.next
-      compilation_vm2_agent_id = create_compilation_vm2.arguments['agent_id']
-      expect(create_compilation_vm2).to be_cpi_call(message: 'create_vm')
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'ping',
-        agent_id: compilation_vm2_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'update_settings',
-        agent_id: compilation_vm2_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'apply',
-        agent_id: compilation_vm2_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'get_state',
-        agent_id: compilation_vm2_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'compile_package',
-        agent_id: compilation_vm2_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(
-        message: 'delete_vm',
-        argument_matcher: match('vm_cid' => create_compilation_vm2.response),
-      )
+      compilation_vm1_calls = compilation_vm_sequence(compilation_vm1_cid, compilation_vm1_agent_id)
+      compilation_vm2_calls = compilation_vm_sequence(compilation_vm2_cid, compilation_vm2_agent_id)
+      deployed_vm_calls = create_vm_with_persistent_disk_calls(deployed_vm_cid, deployed_vm_agent_id, disk_id)
 
-      # VM
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      create_vm = invocations.next
-      deployed_vm_agent_id = create_vm.arguments['agent_id']
-      expect(create_vm).to be_cpi_call(message: 'create_vm')
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'ping',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'update_settings',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'apply',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'get_state',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'prepare',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'drain',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'stop',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'run_script',
-        argument_matcher: match(['post-stop', {}]),
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      create_disk = invocations.next
-      expect(create_disk).to be_cpi_call(message: 'create_disk')
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(
-        message: 'attach_disk',
-        argument_matcher: match(
-          'vm_cid' => create_vm.response,
-          'disk_id' => create_disk.response,
-        ),
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_disk_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'ping',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'mount_disk',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'update_settings',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'apply',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'run_script',
-        argument_matcher: match(['pre-start', {}]),
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'start',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'get_state',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'run_script',
-        argument_matcher: match(['post-start', {}]),
-        agent_id: deployed_vm_agent_id,
-      )
+      expect(invocations.shift(compilation_vm1_calls.length)).to be_sequence_of_calls(*compilation_vm1_calls)
+      expect(invocations.shift(compilation_vm2_calls.length)).to be_sequence_of_calls(*compilation_vm2_calls)
+      expect(invocations).to be_sequence_of_calls(*deployed_vm_calls)
     end
   end
 
@@ -221,119 +179,23 @@ describe 'CPI and Agent:', type: :integration do
     it 'requests between BOSH Director, CPI and Agent are sent in correct order', no_create_swap_delete: true do
       task_output = deploy_simple_manifest(manifest_hash: updated_manifest_hash)
       raw_invocations = get_invocations(task_output)
-      invocations = Support::InvocationsHelper::InvocationIterator.new(raw_invocations)
 
-      expect(raw_invocations.find_all { |i| i.target == 'cpi' }.size).to eq(14)
+      create_vm_calls = raw_invocations.find_all { |i| i.method == 'create_vm' }
+      expect(create_vm_calls.length).to eq(1)
+      updated_vm_id, updated_vm_agent_id = cid_and_agent(create_vm_calls.first)
 
-      # Old VM
-      expect(invocations.next).to be_agent_call(
-        message: 'get_state',
-        agent_id: old_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'drain',
-        agent_id: old_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'stop',
-        agent_id: old_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'run_script',
-        argument_matcher: match(['post-stop', {}]),
-        agent_id: old_vm_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'snapshot_disk')
-      expect(invocations.next).to be_agent_call(
-        message: 'list_disk',
-        agent_id: old_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'unmount_disk',
-        agent_id: old_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'remove_persistent_disk',
-        agent_id: old_vm_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(
-        message: 'detach_disk',
-        argument_matcher: match(
-          'vm_cid' => old_vm_id,
-          'disk_id' => disk_id,
-        ),
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'delete_vm', argument_matcher: match('vm_cid' => old_vm_id))
-
-      # New VM
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      create_vm = invocations.next
-      deployed_vm_agent_id = create_vm.arguments['agent_id']
-      expect(create_vm).to be_cpi_call(message: 'create_vm')
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'ping',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(
-        message: 'attach_disk',
-        argument_matcher: match(
-          'vm_cid' => create_vm.response,
-          'disk_id' => disk_id,
-        ),
-      )
-      expect(invocations.next).to be_cpi_call(message: 'info')
-      expect(invocations.next).to be_cpi_call(message: 'set_disk_metadata')
-      expect(invocations.next).to be_agent_call(
-        message: 'ping',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'mount_disk',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'update_settings',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'apply',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'get_state',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'list_disk',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'apply',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'run_script',
-        agent_id: deployed_vm_agent_id,
-        argument_matcher: match(['pre-start', {}]),
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'start',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'get_state',
-        agent_id: deployed_vm_agent_id,
-      )
-      expect(invocations.next).to be_agent_call(
-        message: 'run_script',
-        argument_matcher: match(['post-start', {}]),
-        agent_id: deployed_vm_agent_id,
+      expect(raw_invocations).to be_sequence_of_calls(
+        { target: 'agent', method: 'get_state', agent_id: old_vm_agent_id },
+        *stop_jobs_sequence(old_vm_agent_id),
+        *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
+        { target: 'cpi', method: 'delete_vm', vm_cid: old_vm_id },
+        *create_vm_sequence(updated_vm_id, updated_vm_agent_id),
+        *attach_disk_sequence(updated_vm_id, updated_vm_agent_id, disk_id),
+        *update_settings_sequence(updated_vm_agent_id),
+        { target: 'agent', method: 'get_state', agent_id: updated_vm_agent_id },
+        { target: 'agent', method: 'list_disk', agent_id: updated_vm_agent_id },
+        { target: 'agent', method: 'apply', agent_id: updated_vm_agent_id },
+        *start_jobs_sequence(updated_vm_agent_id),
       )
     end
 
@@ -348,126 +210,12 @@ describe 'CPI and Agent:', type: :integration do
           it 'requests between BOSH Director, CPI and Agent are sent in correct order' do
             task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
             raw_invocations = get_invocations(task_output)
-            invocations = Support::InvocationsHelper::InvocationIterator.new(raw_invocations)
+            create_vm_calls = raw_invocations.find_all { |i| i.method == 'create_vm' }
+            expect(create_vm_calls.length).to eq(1)
+            hotswap_vm_id, hotswap_vm_agent_id = cid_and_agent(create_vm_calls.first)
 
-            expect(raw_invocations.find_all { |i| i.target == 'cpi' }.size).to eq(12)
-
-            # old vm
-            expect(invocations.next).to be_agent_call(
-              message: 'get_state',
-              agent_id: old_vm_agent_id,
-            )
-
-            # new vm
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            new_create_vm = invocations.next
-            newly_created_vm_id = new_create_vm.arguments['agent_id']
-            expect(new_create_vm).to be_cpi_call(message: 'create_vm')
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-            expect(invocations.next).to be_agent_call(
-              message: 'ping',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'update_settings',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'apply',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'get_state',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'prepare',
-              agent_id: newly_created_vm_id,
-            )
-
-            # old vm
-            expect(invocations.next).to be_agent_call(
-              message: 'drain',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'stop',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'run_script',
-              argument_matcher: match(['post-stop', {}]),
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'snapshot_disk')
-            expect(invocations.next).to be_agent_call(
-              message: 'list_disk',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'unmount_disk',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'remove_persistent_disk',
-              argument_matcher: match([disk_id]),
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(
-              message: 'detach_disk',
-              argument_matcher: match(
-                'vm_cid' => old_vm_id,
-                'disk_id' => disk_id,
-              ),
-            )
-
-            # new vm
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(
-              message: 'attach_disk',
-              argument_matcher: match(
-                'vm_cid' => new_create_vm.response,
-                'disk_id' => disk_id,
-              ),
-            )
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'set_disk_metadata')
-            expect(invocations.next).to be_agent_call(
-              message: 'ping',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'mount_disk',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'list_disk',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'apply',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'run_script',
-              agent_id: newly_created_vm_id,
-              argument_matcher: match(['pre-start', {}]),
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'start',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'get_state',
-              agent_id: newly_created_vm_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'run_script',
-              argument_matcher: match(['post-start', {}]),
-              agent_id: newly_created_vm_id,
+            expect(raw_invocations).to be_sequence_of_calls(
+              *hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id),
             )
           end
         end
@@ -477,112 +225,29 @@ describe 'CPI and Agent:', type: :integration do
             current_sandbox.cpi.commands.make_create_vm_have_unresponsive_agent
 
             failing_task_output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
-            get_invocations(failing_task_output)
+            failing_invocations = get_invocations(failing_task_output)
+
+            create_vm_calls = failing_invocations.find_all { |i| i.method == 'create_vm' }
+            expect(create_vm_calls.length).to eq(1)
+            failing_vm_id, failing_vm_agent_id = cid_and_agent(create_vm_calls.first)
+
+            expect(failing_invocations).to be_sequence_of_calls(
+              { target: 'agent', method: 'get_state', agent_id: old_vm_agent_id },
+              *create_vm_sequence(failing_vm_id, failing_vm_agent_id),
+              { target: 'cpi', method: 'delete_vm', argument_matcher: include('vm_cid' => failing_vm_id) },
+            )
 
             current_sandbox.cpi.commands.allow_create_vm_to_have_responsive_agent
             task_output = deploy_simple_manifest(manifest_hash: manifest_hash)
 
             raw_invocations = get_invocations(task_output)
-            invocations = Support::InvocationsHelper::InvocationIterator.new(raw_invocations)
+            create_vm_calls = raw_invocations.find_all { |i| i.method == 'create_vm' }
+            expect(create_vm_calls.length).to eq(1)
+            hotswap_vm_id, hotswap_vm_agent_id = cid_and_agent(create_vm_calls.first)
 
-            expect(invocations.next).to be_agent_call(
-              message: 'get_state',
-              agent_id: old_vm_agent_id,
+            expect(raw_invocations).to be_sequence_of_calls(
+              *hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id),
             )
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            create_vm_call = invocations.next
-            new_vm_agent_id = create_vm_call.arguments['agent_id']
-            expect(create_vm_call).to be_cpi_call(message: 'create_vm')
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'set_vm_metadata')
-            expect(invocations.next).to be_agent_call(
-              message: 'ping',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'update_settings',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'apply',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'get_state',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'prepare',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'drain',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'stop',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'run_script',
-              agent_id: old_vm_agent_id,
-              argument_matcher: match(['post-stop', {}]),
-            )
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'snapshot_disk')
-            expect(invocations.next).to be_agent_call(
-              message: 'list_disk',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'unmount_disk',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'remove_persistent_disk',
-              agent_id: old_vm_agent_id,
-            )
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'detach_disk')
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'attach_disk')
-            expect(invocations.next).to be_cpi_call(message: 'info')
-            expect(invocations.next).to be_cpi_call(message: 'set_disk_metadata')
-            expect(invocations.next).to be_agent_call(
-              message: 'ping',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'mount_disk',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'list_disk',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'apply',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'run_script',
-              agent_id: new_vm_agent_id,
-              argument_matcher: match(['pre-start', {}]),
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'start',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'get_state',
-              agent_id: new_vm_agent_id,
-            )
-            expect(invocations.next).to be_agent_call(
-              message: 'run_script',
-              agent_id: new_vm_agent_id,
-              argument_matcher: match(['post-start', {}]),
-            )
-            expect(invocations.next).to be_nil
           end
         end
       end
@@ -620,67 +285,35 @@ describe 'CPI and Agent:', type: :integration do
           failing_task_output = deploy_simple_manifest(manifest_hash: failing_manifest_hash, failure_expected: true)
           failing_invocations = get_invocations(failing_task_output)
 
-          reuseable_failing_vm_agent_id = failing_invocations.find { |i| i.method == 'create_vm' }.arguments['agent_id']
+          create_vm_calls = failing_invocations.find_all { |i| i.method == 'create_vm' }
+          expect(create_vm_calls.length).to eq(1)
+
+          reusable_failing_vm_id, reusable_failing_vm_agent_id = cid_and_agent(create_vm_calls.first)
+
+          up_to_pre_start = hotswap_update_sequence(
+            old_vm_id,
+            old_vm_agent_id,
+            reusable_failing_vm_id,
+            reusable_failing_vm_agent_id,
+            disk_id,
+          ).take(23)
+
+          expect(failing_invocations).to be_sequence_of_calls(
+            *up_to_pre_start,
+          )
 
           task_output = deploy_simple_manifest(manifest_hash: succeeding_manifest_hash)
 
           raw_invocations = get_invocations(task_output)
-          invocations = Support::InvocationsHelper::InvocationIterator.new(raw_invocations)
-
-          expect(invocations.next).to be_agent_call(
-            message: 'get_state',
-            agent_id: reuseable_failing_vm_agent_id,
+          expect(raw_invocations).to be_sequence_of_calls(
+            { target: 'agent', method: 'get_state', agent_id: reusable_failing_vm_agent_id },
+            { target: 'agent', method: 'prepare', agent_id: reusable_failing_vm_agent_id },
+            *stop_jobs_sequence(reusable_failing_vm_agent_id),
+            { target: 'cpi', method: 'snapshot_disk', disk_id: disk_id },
+            { target: 'agent', method: 'list_disk', agent_id: reusable_failing_vm_agent_id },
+            *update_settings_sequence(reusable_failing_vm_agent_id),
+            *start_jobs_sequence(reusable_failing_vm_agent_id),
           )
-          expect(invocations.next).to be_agent_call(
-            message: 'prepare',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'drain',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'stop',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'run_script',
-            agent_id: reuseable_failing_vm_agent_id,
-            argument_matcher: match(['post-stop', {}]),
-          )
-          expect(invocations.next).to be_cpi_call(message: 'info')
-          expect(invocations.next).to be_cpi_call(message: 'snapshot_disk')
-          expect(invocations.next).to be_agent_call(
-            message: 'list_disk',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'update_settings',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'apply',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'run_script',
-            agent_id: reuseable_failing_vm_agent_id,
-            argument_matcher: match(['pre-start', {}]),
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'start',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'get_state',
-            agent_id: reuseable_failing_vm_agent_id,
-          )
-          expect(invocations.next).to be_agent_call(
-            message: 'run_script',
-            agent_id: reuseable_failing_vm_agent_id,
-            argument_matcher: match(['post-start', {}]),
-          )
-          expect(invocations.next).to be_nil
         end
       end
     end
