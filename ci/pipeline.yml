@@ -296,7 +296,7 @@ jobs:
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
         image: bosh-main-postgres-9.4
-        tags: ["bosh-integration-3"]
+        tags: ["bosh-integration-1"]
         params:
           DB:           postgresql
           SHA2_MODE:    true
@@ -327,7 +327,7 @@ jobs:
         privileged: true
         file: bosh-src/ci/tasks/test-integration-gocli.yml
         image: bosh-main-postgres-9.4
-        tags: ["bosh-integration-4"]
+        tags: ["bosh-integration-2"]
         params:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
@@ -357,7 +357,7 @@ jobs:
 
       - task: tests
         privileged: true
-        tags: ["bosh-integration-5"]
+        tags: ["bosh-integration-3"]
         config:
           platform: linux
           image_resource:
@@ -400,14 +400,14 @@ jobs:
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
           image: bosh-main-postgres-9.4
-          tags: ["bosh-integration-6"]
+          tags: ["bosh-integration-4"]
           params:
             DB: postgresql
 
         - task: upgrade-with-mysql
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
-          tags: ["bosh-integration-7"]
+          tags: ["bosh-integration-5"]
           params:
             DB: mysql
 
@@ -425,7 +425,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration-8"]
+      tags: ["bosh-integration-6"]
       params:
         BOSH_SRC_PATH: bosh-src/src
         RUBY_VERSION: 2.4.4
