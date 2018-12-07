@@ -268,7 +268,7 @@ jobs:
       SHA2_MODE: true
     privileged: true
     tags:
-    - bosh-integration-3
+    - bosh-integration-1
     task: tests
   - params:
       acl: public-read
@@ -331,7 +331,7 @@ jobs:
       SHA2_MODE: true
     privileged: true
     tags:
-    - bosh-integration-4
+    - bosh-integration-2
     task: tests
   - params:
       acl: public-read
@@ -406,7 +406,7 @@ jobs:
         path: bosh-src/ci/tasks/test-integration-gocli.sh
     privileged: true
     tags:
-    - bosh-integration-5
+    - bosh-integration-3
     task: tests
   - params:
       acl: public-read
@@ -431,14 +431,14 @@ jobs:
         DB: postgresql
       privileged: true
       tags:
-      - bosh-integration-6
+      - bosh-integration-4
       task: upgrade-with-postgres
     - file: bosh-src/ci/tasks/test-upgrade.yml
       params:
         DB: mysql
       privileged: true
       tags:
-      - bosh-integration-7
+      - bosh-integration-5
       task: upgrade-with-mysql
   public: true
   serial: true
@@ -458,7 +458,7 @@ jobs:
       RUBY_VERSION: 2.4.4
     privileged: true
     tags:
-    - bosh-integration-8
+    - bosh-integration-6
     task: test
   public: true
   serial: true
