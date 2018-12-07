@@ -20,7 +20,7 @@ Metrics/AbcSize:
 
 Metrics/BlockLength:
   Max: 25
-  ExcludedMethods: [describe, context, let, it]
+  ExcludedMethods: [describe, context, let, it, chdir]
 
 Metrics/ClassLength:
   Max: 200
