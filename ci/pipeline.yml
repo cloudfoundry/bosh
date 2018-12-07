@@ -548,6 +548,7 @@ jobs:
     plan:
     - aggregate:
       - get: bosh-src
+        passed: [candidate-release]
       - get: release
         resource: bosh-candidate-release-tarballs
         passed: [candidate-release]
