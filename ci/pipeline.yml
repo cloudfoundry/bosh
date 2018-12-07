@@ -7,8 +7,6 @@ groups:
       - unit-2.4-postgres
       - unit-2.4-db-migrations-rds
       - blobstore-client-integration
-      - integration-postgres-gocli-sha2
-      - integration-mysql-gocli-sha1
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
@@ -27,7 +25,6 @@ groups:
     jobs:
       - unit-2.4-mysql
       - unit-2.4-db-migrations-rds
-      - integration-mysql-gocli-sha1
 
   - name: postgres
     jobs:
@@ -279,64 +276,6 @@ jobs:
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
 
-  - name: integration-postgres-gocli-sha2
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - aggregate:
-        - get: bosh-src
-          trigger: true
-        - get: bosh-cli
-          trigger: true
-        - get: bosh-agent
-        - get: integration-tests-parallel-runtime
-        - get: bosh-main-postgres-9.4
-
-      - <<: *install-dependencies
-
-      - task: tests
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration-gocli.yml
-        image: bosh-main-postgres-9.4
-        tags: ["bosh-integration-1"]
-        params:
-          DB:           postgresql
-          SHA2_MODE:    true
-
-      - put: integration-tests-parallel-runtime
-        params:
-          file: parallel-runtime-log/parallel_runtime_rspec.log
-          acl: public-read
-
-  - name: integration-mysql-gocli-sha1
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - aggregate:
-        - get: bosh-src
-          trigger: true
-        - get: bosh-cli
-          trigger: true
-        - get: bosh-agent
-        - get: integration-tests-parallel-runtime
-
-      - <<: *install-dependencies
-
-      - task: tests
-        privileged: true
-        file: bosh-src/ci/tasks/test-integration-gocli.yml
-        tags: ["bosh-integration-2"]
-        params:
-          DB:           mysql
-
-      - put: integration-tests-parallel-runtime
-        params:
-          file: parallel-runtime-log/parallel_runtime_rspec.log
-          acl: public-read
-
-
   - name: integration-db-tls-postgres
     public: true
     serial: true
@@ -500,8 +439,6 @@ jobs:
       - unit-2.4-mysql
       - unit-2.4-postgres
       - unit-2.4-db-migrations-rds
-      - integration-mysql-gocli-sha1
-      - integration-postgres-gocli-sha2
       - blobstore-client-integration
       - fuzz-tests
       - upgrade-tests
