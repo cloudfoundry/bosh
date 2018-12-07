@@ -953,10 +953,7 @@ jobs:
     plan:
       - aggregate:
         - get: bosh-src
-          passed:
-            - bats-centos
-            - bats-ubuntu-trusty
-            - bats-ubuntu-xenial
+          passed: [deploy-acceptance-env]
         - get: bosh-src-latest
           resource: bosh-src
         - get: bosh-cli
