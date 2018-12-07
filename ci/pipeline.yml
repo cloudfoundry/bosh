@@ -7,8 +7,6 @@ groups:
       - unit-2.4-postgres
       - unit-2.4-db-migrations-rds
       - blobstore-client-integration
-      - integration-postgres-gocli-sha2
-      - integration-mysql-gocli-sha1
       # - load-tests-postgres
       # - load-tests-mysql
       # - legacy-load-tests-postgres
@@ -27,7 +25,6 @@ groups:
     jobs:
       - unit-2.4-mysql
       - unit-2.4-db-migrations-rds
-      - integration-mysql-gocli-sha1
 
   - name: postgres
     jobs:
@@ -298,99 +295,6 @@ jobs:
         privileged: true
         file: bosh-src/ci/tasks/test-blobstore-load.yml
 
-  - name: integration-postgres-gocli-sha2
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - aggregate:
-        - get: bosh-src
-          trigger: true
-        - get: bosh-cli
-        - get: bosh-agent
-        - get: every-sunday
-          trigger: true
-        - get: bosh-main-postgres-9.4
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          image: bosh-main-postgres-9.4
-          tags: ["bosh-integration-7"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.4
-            NUM_GROUPS:   24
-            GROUP:        1,4,7,10,13,16,19,22
-            SHA2_MODE:    true
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          image: bosh-main-postgres-9.4
-          tags: ["bosh-integration-8"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.4
-            NUM_GROUPS:   24
-            GROUP:        2,5,8,11,14,17,20,23
-            SHA2_MODE:    true
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          image: bosh-main-postgres-9.4
-          tags: ["bosh-integration-9"]
-          params:
-            DB:           postgresql
-            RUBY_VERSION: 2.4.4
-            NUM_GROUPS:   24
-            GROUP:        3,6,9,12,15,18,21,24
-            SHA2_MODE:    true
-
-  - name: integration-mysql-gocli-sha1
-    public: true
-    serial: true
-    build_logs_to_retain: 250
-    plan:
-      - aggregate:
-        - get: bosh-src
-          trigger: true
-        - get: bosh-cli
-        - get: bosh-agent
-        - get: every-sunday
-          trigger: true
-      - aggregate:
-        - task: test-group-1
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-4"]
-          params:
-            DB:           mysql
-            RUBY_VERSION: 2.4.4
-            NUM_GROUPS: 24
-            GROUP:      1,4,7,10,13,16,19,22
-
-        - task: test-group-2
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-5"]
-          params:
-            DB:           mysql
-            RUBY_VERSION: 2.4.4
-            NUM_GROUPS: 24
-            GROUP:      2,5,8,11,14,17,20,23
-
-        - task: test-group-3
-          privileged: true
-          file: bosh-src/ci/tasks/test-integration-gocli.yml
-          tags: ["bosh-integration-6"]
-          params:
-            DB:           mysql
-            RUBY_VERSION: 2.4.4
-            NUM_GROUPS: 24
-            GROUP:      3,6,9,12,15,18,21,24
-
   - name: upgrade-tests
     public: true
     serial: true
@@ -449,8 +353,6 @@ jobs:
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
-      - integration-mysql-gocli-sha1
-      - integration-postgres-gocli-sha2
       - blobstore-client-integration
       - fuzz-tests
       - upgrade-tests
