@@ -18,6 +18,16 @@ describe 'upload release', type: :integration do
     expect(table_output.length).to eq(1)
   end
 
+  it 'can upload a sha1 release' do
+    release_filename = spec_asset('sha1_release.tgz')
+
+    bosh_runner.run("upload-release #{release_filename}")
+
+    table_output = table(bosh_runner.run('releases', json: true))
+    expect(table_output).to include('name' => 'test_release', 'version' => '1', 'commit_hash' => String)
+    expect(table_output.length).to eq(1)
+  end
+
   context 'when release tarball contents are not sorted' do
     it 'updates job successfully' do
       bosh_runner.run("upload-release #{spec_asset('unsorted-release-0+dev.1.tgz')}")
@@ -179,7 +189,6 @@ describe 'upload release', type: :integration do
   end
 
   describe 'when the release is remote' do
-
     let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
     let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 

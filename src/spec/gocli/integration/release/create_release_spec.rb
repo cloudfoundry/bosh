@@ -4,7 +4,6 @@ require_relative '../../spec_helper'
 describe 'create-release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
-  SHA1_REGEXP = /^[0-9a-f]{40}$/
   SHA2_REGEXP = /^[0-9a-f]{64}$/
   SHA2_PREFIXED_REGEXP = /^sha256:[0-9a-f]{64}$/
 
@@ -19,7 +18,13 @@ describe 'create-release', type: :integration do
   let!(:release_file) { Tempfile.new('release.tgz') }
   after { release_file.delete }
 
-  shared_examples :generates_tarball do
+  describe 'release creation' do
+    before do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        bosh_runner.run_in_current_dir("create-release --final --tarball=#{release_file.path}")
+      end
+    end
+
     it 'stashes release artifacts in a tarball' do
       actual = list_tar_files(release_file.path)
       expected = [
@@ -69,21 +74,11 @@ describe 'create-release', type: :integration do
         'packages/foo_9.tgz',
         'packages/foo_10.tgz',
         'release.MF',
-        'license.tgz'
+        'license.tgz',
       ]
 
       expect(actual).to contain_exactly(*expected)
     end
-  end
-
-  shared_examples_for :release_creation do
-    before do
-      Dir.chdir(ClientSandbox.test_release_dir) do
-        bosh_runner.run_in_current_dir("create-release --final --tarball=#{release_file.path}")
-      end
-    end
-
-    it_behaves_like :generates_tarball
 
     it 'updates the .final_builds index for each job, package and license' do
       Dir.chdir(ClientSandbox.test_release_dir) do
@@ -95,7 +90,7 @@ describe 'create-release', type: :integration do
           'c' => ['./packaging', './c/run.sh'],
           'errand1' => ['./packaging', './errand1/file.sh'],
           'fails_with_too_much_output' => ['./packaging', './foo'],
-          'foo' => ['./packaging', './foo']
+          'foo' => ['./packaging', './foo'],
         }
 
         package_files.each do |package_name, files|
@@ -115,7 +110,12 @@ describe 'create-release', type: :integration do
           'id_job' => ['./monit', './templates/config.yml.erb', './job.MF'],
           'job_1_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_1_ctl'],
           'job_2_with_post_deploy_script' => ['./monit', './job.MF', './templates/post-deploy.erb', './templates/job_2_ctl'],
-          'job_3_with_broken_post_deploy_script' => ['./monit', './job.MF', './templates/broken-post-deploy.erb', './templates/job_3_ctl'],
+          'job_3_with_broken_post_deploy_script' => [
+            './monit',
+            './job.MF',
+            './templates/broken-post-deploy.erb',
+            './templates/job_3_ctl',
+          ],
           'local_dns_records_json' => ['./monit', './job.MF', './templates/pre-start.erb'],
         }
 
@@ -136,54 +136,54 @@ describe 'create-release', type: :integration do
         expect(release_manifest['version']).to eq('1')
 
         expect(release_manifest['packages']).to match(a_collection_containing_exactly(
-          package_desc('a', ['b']),
-          package_desc('b', ['c']),
-          package_desc('bar', ['foo']),
-          package_desc('blocking_package', []),
-          package_desc('c', []),
-          package_desc('errand1', []),
-          package_desc('fails_with_too_much_output', []),
-          package_desc('foo', []),
-          package_desc('foo_1', []),
-          package_desc('foo_2', []),
-          package_desc('foo_3', []),
-          package_desc('foo_4', []),
-          package_desc('foo_5', []),
-          package_desc('foo_6', []),
-          package_desc('foo_7', []),
-          package_desc('foo_8', []),
-          package_desc('foo_9', []),
-          package_desc('foo_10', []),
-        ))
+                                                        package_desc('a', ['b']),
+                                                        package_desc('b', ['c']),
+                                                        package_desc('bar', ['foo']),
+                                                        package_desc('blocking_package', []),
+                                                        package_desc('c', []),
+                                                        package_desc('errand1', []),
+                                                        package_desc('fails_with_too_much_output', []),
+                                                        package_desc('foo', []),
+                                                        package_desc('foo_1', []),
+                                                        package_desc('foo_2', []),
+                                                        package_desc('foo_3', []),
+                                                        package_desc('foo_4', []),
+                                                        package_desc('foo_5', []),
+                                                        package_desc('foo_6', []),
+                                                        package_desc('foo_7', []),
+                                                        package_desc('foo_8', []),
+                                                        package_desc('foo_9', []),
+                                                        package_desc('foo_10', []),
+                                                      ))
 
         expect(release_manifest['jobs']).to match(a_collection_containing_exactly(
-          job_desc('emoji-errand'),
-          job_desc('errand1'),
-          job_desc('errand_without_package'),
-          job_desc('fails_with_too_much_output'),
-          job_desc('foobar'),
-          job_desc('foobar_with_bad_properties'),
-          job_desc('foobar_with_bad_properties_2'),
-          job_desc('foobar_without_packages'),
-          job_desc('job_with_many_packages'),
-          job_desc('has_drain_script'),
-          job_desc('job_with_blocking_compilation'),
-          job_desc('job_1_with_pre_start_script'),
-          job_desc('job_2_with_pre_start_script'),
-          job_desc('job_1_with_post_deploy_script'),
-          job_desc('job_2_with_post_deploy_script'),
-          job_desc('job_3_with_broken_post_deploy_script'),
-          job_desc('job_that_modifies_properties'),
-          job_desc('job_1_with_many_properties'),
-          job_desc('job_2_with_many_properties'),
-          job_desc('job_3_with_many_properties'),
-          job_desc('job_with_property_types'),
-          job_desc('job_with_post_start_script'),
-          job_desc('transitive_deps'),
-          job_desc('id_job'),
-          job_desc('job_with_bad_template'),
-          job_desc('local_dns_records_json')
-        ))
+                                                    job_desc('emoji-errand'),
+                                                    job_desc('errand1'),
+                                                    job_desc('errand_without_package'),
+                                                    job_desc('fails_with_too_much_output'),
+                                                    job_desc('foobar'),
+                                                    job_desc('foobar_with_bad_properties'),
+                                                    job_desc('foobar_with_bad_properties_2'),
+                                                    job_desc('foobar_without_packages'),
+                                                    job_desc('job_with_many_packages'),
+                                                    job_desc('has_drain_script'),
+                                                    job_desc('job_with_blocking_compilation'),
+                                                    job_desc('job_1_with_pre_start_script'),
+                                                    job_desc('job_2_with_pre_start_script'),
+                                                    job_desc('job_1_with_post_deploy_script'),
+                                                    job_desc('job_2_with_post_deploy_script'),
+                                                    job_desc('job_3_with_broken_post_deploy_script'),
+                                                    job_desc('job_that_modifies_properties'),
+                                                    job_desc('job_1_with_many_properties'),
+                                                    job_desc('job_2_with_many_properties'),
+                                                    job_desc('job_3_with_many_properties'),
+                                                    job_desc('job_with_property_types'),
+                                                    job_desc('job_with_post_start_script'),
+                                                    job_desc('transitive_deps'),
+                                                    job_desc('id_job'),
+                                                    job_desc('job_with_bad_template'),
+                                                    job_desc('local_dns_records_json'),
+                                                  ))
 
         expect(release_manifest['uncommitted_changes']).to eq(false)
       end
@@ -193,29 +193,15 @@ describe 'create-release', type: :integration do
       Dir.chdir(ClientSandbox.test_release_dir) do
         index = YAML.load_file('releases/bosh-release/index.yml')
         builds = index['builds']
-        uuid, _ = builds.first
+        uuid, = builds.first
         expect(index).to eq(
           'builds' => {
-            uuid => {'version' => '1'}
+            uuid => { 'version' => '1' },
           },
           'format-version' => '2',
         )
       end
     end
-  end
-
-  describe 'release creation in sha1 mode', sha1: true do
-    let(:sha_regex) {SHA1_REGEXP}
-    let(:sha_regex_prefixed) {SHA1_REGEXP}
-    let(:digest_algorithms) { [Bosh::Director::BoshDigest::MultiDigest::SHA1] }
-    it_behaves_like :release_creation
-  end
-
-  describe 'release creation in sha2 mode', sha2: true do
-    let(:sha_regex) {SHA2_REGEXP}
-    let(:sha_regex_prefixed) {SHA2_PREFIXED_REGEXP}
-    let(:digest_algorithms) { [Bosh::Director::BoshDigest::MultiDigest::SHA256] }
-    it_behaves_like :release_creation
   end
 
   describe 'release creation from manifest' do
@@ -227,7 +213,60 @@ describe 'create-release', type: :integration do
       end
     end
 
-    it_behaves_like :generates_tarball
+    it 'stashes release artifacts in a tarball' do
+      actual = list_tar_files(release_file.path)
+      expected = [
+        'LICENSE',
+        'jobs/emoji-errand.tgz',
+        'jobs/errand1.tgz',
+        'jobs/errand_without_package.tgz',
+        'jobs/fails_with_too_much_output.tgz',
+        'jobs/foobar.tgz',
+        'jobs/foobar_with_bad_properties.tgz',
+        'jobs/foobar_with_bad_properties_2.tgz',
+        'jobs/job_with_many_packages.tgz',
+        'jobs/foobar_without_packages.tgz',
+        'jobs/has_drain_script.tgz',
+        'jobs/job_with_blocking_compilation.tgz',
+        'jobs/job_1_with_pre_start_script.tgz',
+        'jobs/job_1_with_post_deploy_script.tgz',
+        'jobs/job_2_with_pre_start_script.tgz',
+        'jobs/job_2_with_post_deploy_script.tgz',
+        'jobs/job_1_with_many_properties.tgz',
+        'jobs/job_2_with_many_properties.tgz',
+        'jobs/job_3_with_many_properties.tgz',
+        'jobs/job_with_property_types.tgz',
+        'jobs/job_with_post_start_script.tgz',
+        'jobs/job_3_with_broken_post_deploy_script.tgz',
+        'jobs/job_that_modifies_properties.tgz',
+        'jobs/transitive_deps.tgz',
+        'jobs/id_job.tgz',
+        'jobs/job_with_bad_template.tgz',
+        'jobs/local_dns_records_json.tgz',
+        'packages/a.tgz',
+        'packages/b.tgz',
+        'packages/bar.tgz',
+        'packages/blocking_package.tgz',
+        'packages/c.tgz',
+        'packages/errand1.tgz',
+        'packages/fails_with_too_much_output.tgz',
+        'packages/foo.tgz',
+        'packages/foo_1.tgz',
+        'packages/foo_2.tgz',
+        'packages/foo_3.tgz',
+        'packages/foo_4.tgz',
+        'packages/foo_5.tgz',
+        'packages/foo_6.tgz',
+        'packages/foo_7.tgz',
+        'packages/foo_8.tgz',
+        'packages/foo_9.tgz',
+        'packages/foo_10.tgz',
+        'release.MF',
+        'license.tgz',
+      ]
+
+      expect(actual).to contain_exactly(*expected)
+    end
   end
 
   it 'allows creation of new final releases with the same content as the latest final release' do
@@ -362,20 +401,19 @@ describe 'create-release', type: :integration do
     Dir.chdir(ClientSandbox.test_release_dir) do
       File.open('config/final.yml', 'w') do |final|
         final.puts YAML.dump(
-            'final_name' => 'bosh-release',
-            'blobstore' => {
-                'provider' => 'local',
-                'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
-            },
-
+          'final_name' => 'bosh-release',
+          'blobstore' => {
+            'provider' => 'local',
+            'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
+          },
         )
       end
       File.open('config/private.yml', 'w') do |final|
         final.puts YAML.dump(
-            'blobstore_secret' => 'something',
-            'blobstore' => {
-                'local' => {},
-            },
+          'blobstore_secret' => 'something',
+          'blobstore' => {
+            'local' => {},
+          },
         )
       end
 
@@ -383,8 +421,8 @@ describe 'create-release', type: :integration do
 
       out = bosh_runner.run_in_current_dir('create-release --final --force')
       expect(parse_release_version(out)).to eq('1')
-      manifest_1 = File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-1.yml')
-      expect(File).to exist(manifest_1)
+      manifest1 = File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-1.yml')
+      expect(File).to exist(manifest1)
 
       # modify a release file to force a new version
       `echo ' ' >> #{File.join(ClientSandbox.test_release_dir, 'jobs', 'foobar', 'templates', 'foobar_ctl')}`
@@ -392,8 +430,8 @@ describe 'create-release', type: :integration do
 
       out = bosh_runner.run_in_current_dir('create-release --final --force')
       expect(parse_release_version(out)).to eq('2')
-      manifest_2 = File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-2.yml')
-      expect(File).to exist(manifest_2)
+      manifest2 = File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-2.yml')
+      expect(File).to exist(manifest2)
     end
   end
 
@@ -444,66 +482,64 @@ describe 'create-release', type: :integration do
     end
   end
 
-   def package_desc(name, dependencies)
-    match({
+  def package_desc(name, dependencies)
+    match(
       'name' => name,
-      'version' => sha_regex,
-      'fingerprint' => sha_regex,
+      'version' => SHA2_REGEXP,
+      'fingerprint' => SHA2_REGEXP,
       'dependencies' => dependencies,
-      'sha1' => sha_regex_prefixed
-    })
+      'sha1' => SHA2_PREFIXED_REGEXP,
+    )
   end
 
   def job_desc(name)
-    match({
+    match(
       'name' => name,
-      'version' => sha_regex,
-      'fingerprint' => sha_regex,
-      'sha1' => sha_regex_prefixed
-    })
+      'version' => SHA2_REGEXP,
+      'fingerprint' => SHA2_REGEXP,
+      'sha1' => SHA2_PREFIXED_REGEXP,
+    )
   end
 
   def license_desc
-    match({
-      'version' => sha_regex,
-      'fingerprint' => sha_regex,
-      'sha1' => sha_regex_prefixed
-    })
+    match(
+      'version' => SHA2_REGEXP,
+      'fingerprint' => SHA2_REGEXP,
+      'sha1' => SHA2_PREFIXED_REGEXP,
+    )
   end
 
   def latest_release_manifest
-    Dir['releases/bosh-release/bosh-release-*.yml'].sort_by { |x| File.mtime(x) }.last
+    Dir['releases/bosh-release/bosh-release-*.yml'].max_by { |x| File.mtime(x) }
   end
 
-  def it_creates_artifact(artifact_path, expected_files=[])
+  def it_creates_artifact(artifact_path, expected_files = [])
     index = YAML.load_file(".final_builds/#{artifact_path}/index.yml")
     fingerprint = index['builds'].keys.first
     expect(index).to match(
       'builds' => {
         fingerprint => {
           'version' => fingerprint,
-          'sha1' => sha_regex_prefixed,
+          'sha1' => SHA2_PREFIXED_REGEXP,
           'blobstore_id' => kind_of(String),
-        }
+        },
       },
-      'format-version' => '2'
+      'format-version' => '2',
     )
 
-    sha1 = index['builds'][fingerprint]['sha1']
-    artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', sha1)
+    checksum = index['builds'][fingerprint]['sha1']
+    artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', checksum)
     expect(File.exist?(artifact_tarball)).to eq(true)
 
     tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
     expect(File.exist?(tarblob)).to eq(true)
-    actual_digest = sha_generator.create(digest_algorithms, tarblob)
-    expect(actual_digest).to eq(sha1)
+    actual_digest = sha_generator.create([Bosh::Director::BoshDigest::MultiDigest::SHA256], tarblob)
+    expect(actual_digest).to eq(checksum)
 
-    unless expected_files.empty?
-      expect(list_tar_files(tarblob)).to match_array(expected_files)
-    end
+    expect(list_tar_files(tarblob)).to match_array(expected_files) unless expected_files.empty?
   end
 
   def list_tar_files(tarball_path)
-    `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject {|f| f =~ /\/$/ }
+    `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject { |f| f =~ %r{/$} }
   end
 end
