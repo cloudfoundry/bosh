@@ -479,9 +479,9 @@ describe 'upload release', type: :integration do
       json = JSON.parse(json_output)
       result = []
       json['Tables'].each do |table|
-        blobIdColIdx = table['Header'].index('blobstore_id')
+        blob_id_col_idx = table['Header'].key('blobstore_id')
         table['Rows'].each do |row|
-          blob_id = row[blobIdColIdx]
+          blob_id = row[blob_id_col_idx]
           result << blob_id if blob_id != ''
         end
       end
