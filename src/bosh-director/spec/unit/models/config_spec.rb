@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::Models
-  describe Config, truncation: true do
+  describe Config do
     let(:config_model) { Config.make(content: "---\n{key : value}") }
 
     describe '#raw_manifest' do
@@ -184,7 +184,7 @@ module Bosh::Director::Models
             [global_cloud_config.id, red_team_cloud_config.id, blue_team_runtime_config.id],
             red_team,
           )
-        end.to raise_error(Sequel::NoMatchingRow, /Failed to find ID: 6/)
+        end.to raise_error(Sequel::NoMatchingRow, /Failed to find ID: #{blue_team_runtime_config.id}/)
       end
     end
 
