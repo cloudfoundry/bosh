@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'bosh/director/job_queue'
 
 module Bosh::Director
-  describe JobQueue, truncation: true do
+  describe JobQueue do
     class FakeJob < Jobs::BaseJob
       def self.job_type
         :snow
@@ -37,16 +37,13 @@ module Bosh::Director
 
     describe '#enqueue' do
       it 'enqueues a job' do
-        expect(Jobs::DBJob).to receive(:new).with(job_class, 1, ['foo', 'bar']).and_return(Jobs::DBJob.new(job_class, 1,  ['foo', 'bar']))
         expect(Delayed::Job.count).to eq(0)
         retval = subject.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment)
-        expect(retval.id).to eq(1)
         expect(Delayed::Job.count).to eq(1)
         expect(Delayed::Job.first[:queue]).to eq('sample')
       end
 
       it 'enqueues a job with a context id' do
-        expect(Jobs::DBJob).to receive(:new).with(job_class, 1, ['foo', 'bar']).and_return(Jobs::DBJob.new(job_class, 1,  ['foo', 'bar']))
         expect(Delayed::Job.count).to eq(0)
         context_id = 'example-context-id'
         retval = subject.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment, context_id)
@@ -67,8 +64,9 @@ module Bosh::Director
         end
 
         subject.enqueue('whoami', job_class, description, [], deployment)
+        task_id = Bosh::Director::Models::Task.last.id
 
-        expect(File.open("#{tmpdir}/tasks/1/debug").read).not_to match('STALE LOG')
+        expect(File.open("#{tmpdir}/tasks/#{task_id}/debug").read).not_to match('STALE LOG')
       end
 
       it 'should create the task debug output file' do

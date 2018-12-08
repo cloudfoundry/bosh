@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Bosh::Director::DiskManager, truncation: true do
+  describe Bosh::Director::DiskManager do
     subject(:disk_manager) { DiskManager.new(logger) }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -344,8 +344,8 @@ module Bosh::Director
           expect(event1.deployment).to eq(instance_model.deployment.name)
           expect(event1.instance).to eq(instance_model.name)
 
-          event2 = Bosh::Director::Models::Event.order(:id)[2]
-          expect(event2.parent_id).to eq(1)
+          event2 = Bosh::Director::Models::Event.order(:id).all[1]
+          expect(event2.parent_id).to eq(event1.id)
           expect(event2.user).to eq('user')
           expect(event2.action).to eq('create')
           expect(event2.object_type).to eq('disk')
@@ -361,7 +361,7 @@ module Bosh::Director
             disk_manager.update_persistent_disk(instance_plan)
           end.to raise_error Exception, 'error'
 
-          event2 = Bosh::Director::Models::Event.order(:id)[2]
+          event2 = Bosh::Director::Models::Event.order(:id).all[1]
           expect(event2.error).to eq('error')
         end
 

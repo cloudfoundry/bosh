@@ -150,7 +150,7 @@ module Bosh::Director
           expect(event1.instance).to eq('fake-job-name/my-uuid-1')
 
           event2 = Bosh::Director::Models::Event.order(:id).last
-          expect(event2.parent_id).to eq(1)
+          expect(event2.parent_id).to eq(event1.id)
           expect(event2.user).to eq(task.username)
           expect(event2.action).to eq('delete')
           expect(event2.object_type).to eq('instance')
