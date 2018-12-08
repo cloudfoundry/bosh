@@ -1,7 +1,7 @@
-$: << File.expand_path('..', __FILE__)
+$LOAD_PATH << File.expand_path(__dir__)
 
-require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
-require File.expand_path('../../../spec/support/new_deployments.rb', __FILE__)
+require File.expand_path('../../spec/shared/spec_helper', __dir__)
+require File.expand_path('../../spec/support/new_deployments.rb', __dir__)
 
 require 'digest/sha1'
 require 'fileutils'
@@ -17,10 +17,10 @@ require 'machinist/sequel'
 require 'sham'
 require 'support/buffered_logger'
 
-Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
+Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 
-DIRECTOR_TEST_CERTS="these\nare\nthe\ncerts"
-DIRECTOR_TEST_CERTS_SHA1=::Digest::SHA1.hexdigest DIRECTOR_TEST_CERTS
+DIRECTOR_TEST_CERTS = "these\nare\nthe\ncerts".freeze
+DIRECTOR_TEST_CERTS_SHA1 = ::Digest::SHA1.hexdigest DIRECTOR_TEST_CERTS
 
 RSpec.configure do |config|
   config.include Bosh::Director::Test::TaskHelpers
@@ -47,15 +47,15 @@ module SpecHelper
     # init_logger is only used before the tests start.
     # Inside each test BufferedLogger will be used.
     def configure_init_logger
-      file_path = File.expand_path('/tmp/spec.log', __FILE__)
+      file_path = File.expand_path('/tmp/spec.log', __dir__)
 
       @init_logger = Logging::Logger.new('TestLogger')
       @init_logger.add_appenders(
         Logging.appenders.file(
           'TestLogFile',
           filename: file_path,
-          layout: ThreadFormatter.layout
-        )
+          layout: ThreadFormatter.layout,
+        ),
       )
       @init_logger.level = :debug
     end
@@ -68,8 +68,14 @@ module SpecHelper
       config = YAML.load_file(File.expand_path('assets/test-director-config.yml', File.dirname(__FILE__)))
 
       config['nats']['server_ca_path'] = File.expand_path('assets/nats/nats_ca.pem', File.dirname(__FILE__))
-      config['nats']['client_ca_certificate_path'] = File.expand_path('assets/nats/nats_ca_certificate.pem', File.dirname(__FILE__))
-      config['nats']['client_ca_private_key_path'] = File.expand_path('assets/nats/nats_ca_private_key.pem', File.dirname(__FILE__))
+      config['nats']['client_ca_certificate_path'] = File.expand_path(
+        'assets/nats/nats_ca_certificate.pem',
+        File.dirname(__FILE__),
+      )
+      config['nats']['client_ca_private_key_path'] = File.expand_path(
+        'assets/nats/nats_ca_private_key.pem',
+        File.dirname(__FILE__),
+      )
       config['db']['adapter'] = @director_db_helper.adapter
       config['db']['host'] = @director_db_helper.host
       config['db']['database'] = @director_db_helper.db_name
@@ -81,40 +87,62 @@ module SpecHelper
     end
 
     def init_database
-      @db_name = SecureRandom.uuid.gsub('-', '')
+      @db_name = SecureRandom.uuid.delete('-')
+      connection_string = ENV['DB_URI']
+      db_options = {}
 
-      db_options = {
-        username: ENV['DB_USER'],
-        password: ENV['DB_PASSWORD'],
-        host: ENV['DB_HOST'] || '127.0.0.1',
-      }.compact
+      if !connection_string
+        db_options.merge!({
+          username: ENV['DB_USER'],
+          password: ENV['DB_PASSWORD'],
+          host: ENV['DB_HOST'] || '127.0.0.1',
+        }.compact)
+      else
+        uri = URI.parse(connection_string)
+        db_options.merge!({
+          username: uri.user,
+          password: uri.password,
+          host: uri.host,
+          port: uri.port,
+        }.compact)
+      end
 
       case ENV.fetch('DB', 'sqlite')
-        when 'postgresql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
-          db_options[:port] = 5432
+      when 'postgresql'
+        require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
+        db_options[:port] ||= 5432
 
-          @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", Bosh::Core::Shell.new, @init_logger, db_options)
-          @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
-        when 'mysql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-          db_options[:port] = 3306
+        @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new(
+          "#{@db_name}_director",
+          Bosh::Core::Shell.new,
+          @init_logger,
+          db_options,
+        )
+        @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
+      when 'mysql'
+        require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
+        db_options[:port] = 3306
 
-          @director_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director",  Bosh::Core::Shell.new, @init_logger, db_options)
-          @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns",  Bosh::Core::Shell.new, @init_logger, db_options)
-        when 'sqlite'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
-          @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
-          @dns_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_dns.sqlite"), @init_logger)
-        else
-          raise "Unsupported DB value: #{ENV['DB']}"
+        @director_db_helper = Bosh::Dev::Sandbox::Mysql.new(
+          "#{@db_name}_director",
+          Bosh::Core::Shell.new,
+          @init_logger,
+          db_options,
+        )
+        @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
+      when 'sqlite'
+        require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
+        @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
+        @dns_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_dns.sqlite"), @init_logger)
+      else
+        raise "Unsupported DB value: #{ENV['DB']}"
       end
 
       @director_db_helper.create_db
       @dns_db_helper.create_db
 
-      @dns_migrations = File.expand_path('../../db/migrations/dns', __FILE__)
-      @director_migrations = File.expand_path('../../db/migrations/director', __FILE__)
+      @dns_migrations = File.expand_path('../db/migrations/dns', __dir__)
+      @director_migrations = File.expand_path('../db/migrations/director', __dir__)
       Sequel.extension :migration
 
       connect_database
@@ -127,7 +155,7 @@ module SpecHelper
     end
 
     def connect_database
-      db_opts = {:max_connections => 32, :pool_timeout => 10}
+      db_opts = { max_connections: 32, pool_timeout: 10 }
 
       Sequel.default_timezone = :utc
       @director_db = Sequel.connect(@director_db_helper.connection_string, db_opts)
@@ -174,17 +202,17 @@ module SpecHelper
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
-        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Delayed::Backend::Sequel.constants.each do |e|
         c = Delayed::Backend::Sequel.const_get(e)
-        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Bosh::Director::Models::Dns.constants.each do |e|
         c = Bosh::Director::Models::Dns.const_get(e)
-        c.dataset = @dns_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @dns_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
       end
     end
 
@@ -192,23 +220,17 @@ module SpecHelper
       if example.metadata[:truncation]
         example.run
       else
-        Sequel.transaction([@director_db, @dns_db], :rollback=>:always, :auto_savepoint=>true) do
+        Sequel.transaction([@director_db, @dns_db], rollback: :always, auto_savepoint: true) do
           example.run
         end
       end
 
-      if Bosh::Director::Config.db != nil; then
-        Bosh::Director::Config.db.disconnect
-      end
+      Bosh::Director::Config.db&.disconnect
+
+      return unless example.metadata[:truncation]
 
       @director_db_helper.truncate_db
-
-      # when truncating, we must be sure to trash the dns db. for everything else,
-      # leaving this commented doesn't seem to impact our tests and
-      # has the benefit of avoiding the extra time for shelling out
-      if example.metadata[:truncation]
-        @dns_db_helper.truncate_db
-      end
+      @dns_db_helper.truncate_db
     end
   end
 end
@@ -256,15 +278,13 @@ def gzip(string)
 end
 
 def check_event_log(task_id)
-  unless Bosh::Director::Models::Task.first(id: task_id).event_output.nil?
-    events = Bosh::Director::Models::Task.first(id: task_id).event_output.split("\n").map do |line|
-      JSON.parse(line)
-    end
+  return if Bosh::Director::Models::Task.first(id: task_id).event_output.nil?
 
-    yield events
-  else
-    nil
+  events = Bosh::Director::Models::Task.first(id: task_id).event_output.split("\n").map do |line|
+    JSON.parse(line)
   end
+
+  yield events
 end
 
 def linted_rack_app(app)
@@ -290,17 +310,17 @@ module ManifestHelper
     end
 
     def default_legacy_manifest(overrides = {})
-      (default_deployment_manifest.merge(default_iaas_manifest)).merge(overrides)
+      default_deployment_manifest.merge(default_iaas_manifest).merge(overrides)
     end
 
     def default_iaas_manifest(overrides = {})
       {
-      'networks' => [ManifestHelper::network],
-      'resource_pools' => [ManifestHelper::resource_pool],
-      'compilation' => {
-        'workers' => 1,
-        'network'=>'network-name',
-        'cloud_properties' => {},
+        'networks' => [ManifestHelper.network],
+        'resource_pools' => [ManifestHelper.resource_pool],
+        'compilation' => {
+          'workers' => 1,
+          'network' => 'network-name',
+          'cloud_properties' => {},
         },
       }.merge(overrides)
     end
@@ -311,10 +331,10 @@ module ManifestHelper
         'releases' => [release],
         'jobs' => [job],
         'update' => {
-            'max_in_flight' => 10,
-            'canaries' => 2,
-            'canary_watch_time' => 1000,
-            'update_watch_time' => 1000,
+          'max_in_flight' => 10,
+          'canaries' => 2,
+          'canary_watch_time' => 1000,
+          'update_watch_time' => 1000,
         },
       }.merge(overrides)
     end
@@ -331,17 +351,17 @@ module ManifestHelper
     end
 
     def manual_network(overrides = {})
-      ManifestHelper::network({
-          'type' => 'manual',
-          'subnets' => [{
-              'range' => '10.0.0.1/24',
-              'gateway' => '10.0.0.1'
-            }]
-        }).merge(overrides)
+      ManifestHelper.network(
+        'type' => 'manual',
+        'subnets' => [{
+          'range' => '10.0.0.1/24',
+          'gateway' => '10.0.0.1',
+        }],
+      ).merge(overrides)
     end
 
-    def disk_pool(name='dp-name')
-      {'name' => name, 'disk_size' => 10000}
+    def disk_pool(name = 'dp-name')
+      { 'name' => name, 'disk_size' => 10000 }
     end
 
     def job(overrides = {})
@@ -349,17 +369,17 @@ module ManifestHelper
         'name' => 'job-name',
         'resource_pool' => 'rp-name',
         'instances' => 1,
-        'networks' => [{'name' => 'network-name'}],
-        'templates' => [{'name' => 'template-name', 'release' => 'release-name'}]
+        'networks' => [{ 'name' => 'network-name' }],
+        'templates' => [{ 'name' => 'template-name', 'release' => 'release-name' }],
       }.merge(overrides)
     end
 
     def resource_pool(overrides = {})
       {
         'name' => 'rp-name',
-        'network'=>'network-name',
-        'stemcell'=> {'name' => 'default','version'=>'1'},
-        'cloud_properties'=>{}
+        'network' => 'network-name',
+        'stemcell' => { 'name' => 'default', 'version' => '1' },
+        'cloud_properties' => {},
       }.merge(overrides)
     end
   end
