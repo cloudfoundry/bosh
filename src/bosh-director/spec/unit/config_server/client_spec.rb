@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
-  describe ConfigServerClient, truncation: true do
+  describe ConfigServerClient do
     subject(:client) { ConfigServerClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }
@@ -1472,35 +1472,35 @@ module Bosh::Director::ConfigServer
               client.generate_values(variables_obj, deployment_name)
             end.to change { Bosh::Director::Models::Event.count }.from(0).to(3)
 
-            event_1 = Bosh::Director::Models::Event.first
-            expect(event_1.user).to eq('user')
-            expect(event_1.action).to eq('create')
-            expect(event_1.object_type).to eq('variable')
-            expect(event_1.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
-            expect(event_1.task).to eq(task_id.to_s)
-            expect(event_1.deployment).to eq(deployment_name)
-            expect(event_1.instance).to eq(nil)
-            expect(event_1.context).to eq('id' => 1, 'name' => '/smurf_director_name/deployment_name/placeholder_a')
+            event1 = Bosh::Director::Models::Event.order(:id).first
+            expect(event1.user).to eq('user')
+            expect(event1.action).to eq('create')
+            expect(event1.object_type).to eq('variable')
+            expect(event1.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
+            expect(event1.task).to eq(task_id.to_s)
+            expect(event1.deployment).to eq(deployment_name)
+            expect(event1.instance).to eq(nil)
+            expect(event1.context).to eq('id' => 1, 'name' => '/smurf_director_name/deployment_name/placeholder_a')
 
-            event_2 = Bosh::Director::Models::Event.order(:id)[2]
-            expect(event_2.user).to eq('user')
-            expect(event_2.action).to eq('create')
-            expect(event_2.object_type).to eq('variable')
-            expect(event_2.object_name).to eq('/smurf_director_name/deployment_name/placeholder_b')
-            expect(event_2.task).to eq(task_id.to_s)
-            expect(event_2.deployment).to eq(deployment_name)
-            expect(event_2.instance).to eq(nil)
-            expect(event_2.context).to eq('id' => 2, 'name' => '/smurf_director_name/deployment_name/placeholder_b')
+            event2 = Bosh::Director::Models::Event.order(:id).all[1]
+            expect(event2.user).to eq('user')
+            expect(event2.action).to eq('create')
+            expect(event2.object_type).to eq('variable')
+            expect(event2.object_name).to eq('/smurf_director_name/deployment_name/placeholder_b')
+            expect(event2.task).to eq(task_id.to_s)
+            expect(event2.deployment).to eq(deployment_name)
+            expect(event2.instance).to eq(nil)
+            expect(event2.context).to eq('id' => 2, 'name' => '/smurf_director_name/deployment_name/placeholder_b')
 
-            event_3 = Bosh::Director::Models::Event.order(:id)[3]
-            expect(event_3.user).to eq('user')
-            expect(event_3.action).to eq('create')
-            expect(event_3.object_type).to eq('variable')
-            expect(event_3.object_name).to eq('/placeholder_c')
-            expect(event_3.task).to eq(task_id.to_s)
-            expect(event_3.deployment).to eq(deployment_name)
-            expect(event_3.instance).to eq(nil)
-            expect(event_3.context).to eq('id' => 3, 'name' => '/placeholder_c')
+            event3 = Bosh::Director::Models::Event.order(:id).all[2]
+            expect(event3.user).to eq('user')
+            expect(event3.action).to eq('create')
+            expect(event3.object_type).to eq('variable')
+            expect(event3.object_name).to eq('/placeholder_c')
+            expect(event3.task).to eq(task_id.to_s)
+            expect(event3.deployment).to eq(deployment_name)
+            expect(event3.instance).to eq(nil)
+            expect(event3.context).to eq('id' => 3, 'name' => '/placeholder_c')
           end
 
           context 'when variable options contains a CA key' do
