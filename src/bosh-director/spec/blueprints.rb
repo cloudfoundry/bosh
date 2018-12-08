@@ -98,17 +98,17 @@ module Bosh::Director::Models
   end
 
   Instance.blueprint do
-    deployment  { Deployment.make }
+    deployment
     job         { Sham.job }
     index       { Sham.index }
     state       { 'started' }
     uuid        { Sham.uuid }
-    variable_set { VariableSet.make }
+    variable_set
   end
 
   IpAddress.blueprint do
     address_str { NetAddr::CIDR.create(Sham.ip).to_i.to_s }
-    instance { Instance.make }
+    instance
     static { false }
     network_name { Sham.name }
     task_id { Sham.name }
@@ -129,11 +129,7 @@ module Bosh::Director::Models
   PersistentDisk.blueprint do
     active      { true }
     disk_cid    { Sham.disk_cid }
-    instance    do
-      is = Instance.make
-      vm = Vm.make(instance_id: is.id)
-      is.active_vm = vm
-    end
+    instance    { Vm.make(:active).instance }
   end
 
   Network.blueprint do
@@ -301,6 +297,10 @@ module Bosh::Director::Models
     cid      { Sham.vm_cid }
     agent_id { Sham.agent_id }
     created_at { Time.now }
+  end
+
+  Vm.blueprint(:active) do
+    active { true }
   end
 
   module Links
