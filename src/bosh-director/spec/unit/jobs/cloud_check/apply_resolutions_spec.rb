@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::CloudCheck::ApplyResolutions, truncation: true do
+  describe Jobs::CloudCheck::ApplyResolutions do
     before do
       Models::Deployment.make(name: 'deployment')
       allow(ProblemResolver).to receive_messages(new: resolver)
@@ -21,7 +21,7 @@ module Bosh::Director
     end
     let(:job) { described_class.new('deployment', resolutions) }
     let(:resolver) { instance_double('Bosh::Director::ProblemResolver') }
-    let(:deployment) { Models::Deployment[1] }
+    let(:deployment) { Models::Deployment.first }
 
     describe '#perform' do
       context 'when resolution succeeds' do

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::CloudCheck::ScanAndFix, truncation: true do
+  describe Jobs::CloudCheck::ScanAndFix do
     let!(:deployment) { Models::Deployment.make(name: 'deployment') }
     let(:jobs) { [%w[job1 job1index0], %w[job1 job1index1], %w[job2 job2index0]] }
     let(:resolutions) do
@@ -177,7 +177,7 @@ module Bosh::Director
     describe '#resolutions' do
       it 'only lists resolutions for jobs whose state is either "unresponsive_agent" or "missing_vm"' do
         res = scan_and_fix.resolutions(jobs)
-        expect(res).to eq('1' => :recreate_vm, '2' => :recreate_vm)
+        expect(res).to eq(resolutions)
       end
 
       context 'when a VM is ignored' do
@@ -185,7 +185,7 @@ module Bosh::Director
 
         it 'should not list it as a resolution' do
           res = scan_and_fix.resolutions(jobs)
-          expect(res).to eq('1' => :recreate_vm)
+          expect(res).to eq(Models::DeploymentProblem.all[0].id.to_s => :recreate_vm)
         end
       end
     end

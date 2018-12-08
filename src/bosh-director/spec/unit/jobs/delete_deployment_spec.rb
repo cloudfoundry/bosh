@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::DeleteDeployment, truncation: true do
+  describe Jobs::DeleteDeployment do
     include Support::FakeLocks
     before { fake_locks }
 
@@ -59,7 +59,7 @@ module Bosh::Director
       expect(event1.timestamp).to eq(Time.now)
 
       event2 = Bosh::Director::Models::Event.order(:id).last
-      expect(event2.parent_id).to eq(1)
+      expect(event2.parent_id).to eq(event1.id)
       expect(event2.user).to eq(task.username)
       expect(event2.action).to eq('delete')
       expect(event2.object_type).to eq('deployment')

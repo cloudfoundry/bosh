@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   module Jobs
-    describe UpdateDeployment, truncation: true do
+    describe UpdateDeployment do
       subject(:job) do
         UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options).tap do |obj|
           allow(obj).to receive(:task_id).and_return(task.id)
@@ -618,7 +618,7 @@ module Bosh::Director
             expect(event_1.timestamp).to eq(Time.now)
 
             event_2 = Models::Event.order(:id).last
-            expect(event_2.parent_id).to eq(1)
+            expect(event_2.parent_id).to eq(event_1.id)
             expect(event_2.user).to eq(task.username)
             expect(event_2.object_type).to eq('deployment')
             expect(event_2.deployment).to eq('deployment-name')
