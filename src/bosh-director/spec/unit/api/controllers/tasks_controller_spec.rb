@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::TasksController, truncation: true do
+    describe Controllers::TasksController do
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
@@ -330,7 +330,7 @@ module Bosh::Director
               get "/#{task.id}"
               expect(last_response.status).to eq(200)
               task_json = JSON.parse(last_response.body)
-              expect(task_json['id']).to eq(1)
+              expect(task_json['id']).to eq(task.id)
               expect(task_json['state']).to eq('processed')
               expect(task_json['description']).to eq('fake-description')
             end

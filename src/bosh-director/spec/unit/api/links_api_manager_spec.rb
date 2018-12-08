@@ -1,9 +1,11 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Api::LinksApiManager, truncation: true do
-    let(:link_serial_id) { 42 }
-    let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id) }
+  describe Api::LinksApiManager do
+    let(:link_serial_id) { 7654321 }
+    let(:deployment) do
+      Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id)
+    end
     let(:instance_group) { 'instance_group' }
     let(:networks) { %w[neta netb] }
     let(:provider_json_content) do
@@ -82,13 +84,20 @@ module Bosh::Director
 
           desired_address_from_payload = payload_json['network']
           default_instance_ip = provider_json_content[:instances][0][:addresses][provider_json_content[:default_network]&.to_sym]
-          expected_instance_ip = provider_json_content[:instances][0][:addresses][desired_address_from_payload&.to_sym] || default_instance_ip
-          expect(JSON.parse(external_link.link_content)).to match('default_network' => String, 'networks' => %w[neta netb], 'instances' => [{ 'address' => expected_instance_ip }])
+          expected_instance_ip =
+            provider_json_content[:instances][0][:addresses][desired_address_from_payload&.to_sym] || default_instance_ip
+
+          expect(JSON.parse(external_link.link_content))
+            .to match(
+              'default_network' => String,
+              'networks' => %w[neta netb],
+              'instances' => [{ 'address' => expected_instance_ip }],
+            )
         end
       end
 
       context 'when link_provider_id is invalid' do
-        let(:provider_id) { '42' }
+        let(:provider_id) { '7654321' }
         it 'return error' do
           expect { subject.create_link(payload_json) }.to raise_error(
             Bosh::Director::LinkProviderLookupError,
@@ -125,7 +134,7 @@ module Bosh::Director
               original_name: 'provider_name_1',
               content: provider_json_content.to_json,
               serial_id: link_serial_id,
-              )
+            )
           end
           it 'return error' do
             expect { subject.create_link(payload_json) }.to raise_error(
@@ -177,7 +186,7 @@ module Bosh::Director
                 'link_consumer' => {
                   'owner_object' => {
                     'name' => '',
-                    'type' => 'external'
+                    'type' => 'external',
                   },
                 },
               }
@@ -197,7 +206,7 @@ module Bosh::Director
                 'link_consumer' => {
                   'owner_object' => {
                     'name' => 'test_owner_name',
-                    'type' => 'test_owner_type'
+                    'type' => 'test_owner_type',
                   },
                 },
               }
@@ -262,7 +271,7 @@ module Bosh::Director
 
             it 'return error' do
               expect { subject.create_link(payload_json) }.to raise_error(
-                /Can't resolve network: `invalid_network_name` in provider id: 1 for `external_consumer_1`/,
+                /Can't resolve network: `invalid_network_name` in provider id: #{provider_id} for `external_consumer_1`/,
               )
             end
           end
@@ -313,7 +322,7 @@ module Bosh::Director
         end
 
         context 'when link_id is non-existing' do
-          let(:link_id) { 42 + not_external_link_1.id }
+          let(:link_id) { 7654321 + not_external_link_1.id }
           it 'return error' do
             expect { subject.delete_link(link_id) }.to raise_error(
               LinkLookupError,
@@ -506,49 +515,47 @@ module Bosh::Director
         end
 
         context 'and an az parameter is specified' do
-          before do
-            Models::LocalDnsEncodedAz.create(name: 'z1')
-            Models::LocalDnsEncodedAz.create(name: 'z2')
-          end
+          let!(:az1) { Models::LocalDnsEncodedAz.create(name: 'z1') }
+          let!(:az2) { Models::LocalDnsEncodedAz.create(name: 'z2') }
 
           it 'should return the address of the link' do
-            link_address = subject.link_address(link.id, {azs: ['z1']})
-            expect(link_address).to eq('q-a1s0.ig-bar.baz.dep-foo.bosh')
+            link_address = subject.link_address(link.id, azs: ['z1'])
+            expect(link_address).to eq("q-a#{az1.id}s0.ig-bar.baz.dep-foo.bosh")
           end
         end
 
         context 'and the status parameter is specified' do
           context 'and the status is "healthy"' do
             it 'should return the address of the link' do
-              link_address = subject.link_address(link.id, {status: 'healthy'})
+              link_address = subject.link_address(link.id, status: 'healthy')
               expect(link_address).to eq('q-s3.ig-bar.baz.dep-foo.bosh')
             end
           end
 
           context 'and the status is "unhealthy"' do
             it 'should return the address of the link' do
-              link_address = subject.link_address(link.id, {status: 'unhealthy'})
+              link_address = subject.link_address(link.id, status: 'unhealthy')
               expect(link_address).to eq('q-s1.ig-bar.baz.dep-foo.bosh')
             end
           end
 
           context 'and the status is "all"' do
             it 'should return the address of the link' do
-              link_address = subject.link_address(link.id, {status: 'all'})
+              link_address = subject.link_address(link.id, status: 'all')
               expect(link_address).to eq('q-s4.ig-bar.baz.dep-foo.bosh')
             end
           end
 
           context 'and the status is "default"' do
             it 'should return the address of the link' do
-              link_address = subject.link_address(link.id, {status: 'default'})
+              link_address = subject.link_address(link.id, status: 'default')
               expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
             end
           end
 
           context 'and the status is invalid' do
             it 'should return the address of the link' do
-              link_address = subject.link_address(link.id, {status: 'foobar'})
+              link_address = subject.link_address(link.id, status: 'foobar')
               expect(link_address).to eq('q-s0.ig-bar.baz.dep-foo.bosh')
             end
           end
@@ -578,14 +585,15 @@ module Bosh::Director
           end
 
           it 'should return the short DNS address of the link' do
-            Bosh::Director::Models::LocalDnsEncodedGroup.create(
+            group = Bosh::Director::Models::LocalDnsEncodedGroup.create(
               name: 'ig_bar',
-              deployment_id: 1,
+              deployment_id: deployment.id,
               type: Bosh::Director::Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             )
+            network = Bosh::Director::Models::LocalDnsEncodedNetwork.last
 
             link_address = subject.link_address(link.id)
-            expect(link_address).to eq('q-n2s0.q-g1.bosh')
+            expect(link_address).to eq("q-n#{network.id}s0.q-g#{group.id}.bosh")
           end
         end
 
@@ -640,14 +648,15 @@ module Bosh::Director
           end
 
           it 'should return the short DNS address of the link' do
-            Bosh::Director::Models::LocalDnsEncodedGroup.create(
+            group = Bosh::Director::Models::LocalDnsEncodedGroup.create(
               name: 'link_name_1-job',
-              deployment_id: 1,
+              deployment_id: deployment.id,
               type: Bosh::Director::Models::LocalDnsEncodedGroup::Types::LINK,
             )
+            network = Bosh::Director::Models::LocalDnsEncodedNetwork.last
 
             link_address = subject.link_address(link.id)
-            expect(link_address).to eq('q-n2s0.q-g1.bosh')
+            expect(link_address).to eq("q-n#{network.id}s0.q-g#{group.id}.bosh")
           end
         end
 
@@ -659,7 +668,7 @@ module Bosh::Director
               name: 'manual_provider_name',
               type: 'manual',
               serial_id: link_serial_id,
-              )
+            )
           end
 
           let(:provider_intent) do
@@ -681,12 +690,12 @@ module Bosh::Director
               link_consumer_intent: consumer_intent,
               link_content: link_content.to_json,
               name: link_name,
-              )
+            )
           end
 
           let(:link_content) do
             {
-              'address' => '192.168.1.254'
+              'address' => '192.168.1.254',
             }
           end
 

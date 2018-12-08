@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::ReleasesController, truncation: true do
+    describe Controllers::ReleasesController do
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
@@ -26,8 +26,7 @@ module Bosh::Director
         expect(last_response.headers['Date']).not_to be_nil
       end
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-             "test purposes (even though user doesn't exist)" do
+      it "allows Basic HTTP Auth with admin/admin credentials for test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
         expect(last_response.status).to eq(200)
@@ -35,29 +34,31 @@ module Bosh::Director
 
       describe 'POST', '/' do
         context 'when user has admin access' do
-
           before { authorize 'admin', 'admin' }
           it 'allows json body with remote release location' do
-            post '/', JSON.generate('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', JSON.generate('location' => 'http://release_url'), 'CONTENT_TYPE' => 'application/json'
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'allow form parameters with a release local file path' do
             allow(File).to receive(:exists?).with('/path/to/release.tgz').and_return(true)
 
-            post '/', { 'nginx_upload_path' => '/path/to/release.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+            post '/', { 'nginx_upload_path' => '/path/to/release.tgz' }, { 'CONTENT_TYPE' => 'multipart/form-data' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'only consumes application/json and multipart/form-data' do
-            post '/', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
+            post '/', 'fake-data', 'CONTENT_TYPE' => 'application/octet-stream'
             expect(last_response.status).to eq(404)
           end
 
           context 'sha1s' do
             context 'sha1 is provided as both a query param and a body content' do
               it 'returns an error' do
-                post '/?sha1=0xABAD1DEA', JSON.generate('location' => 'http://release_url', 'sha1' => '0xABAD1DEA'), { 'CONTENT_TYPE' => 'application/json' }
+                post '/?sha1=0xABAD1DEA', JSON.generate(
+                  'location' => 'http://release_url',
+                  'sha1' => '0xABAD1DEA',
+                ), 'CONTENT_TYPE' => 'application/json'
                 expect(last_response.status).to eq(400)
               end
             end
@@ -69,7 +70,7 @@ module Bosh::Director
             before { authorize 'reader', 'reader' }
 
             it 'returns 401' do
-              post '/', JSON.generate('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+              post '/', JSON.generate('location' => 'http://release_url'), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(401)
             end
           end
@@ -79,7 +80,7 @@ module Bosh::Director
           before { authorize 'dev-team-member', 'dev-team-member' }
 
           it 'returns 401' do
-            post '/', JSON.generate('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', JSON.generate('location' => 'http://release_url'), 'CONTENT_TYPE' => 'application/json'
             expect(last_response.status).to eq(401)
           end
         end
@@ -91,23 +92,53 @@ module Bosh::Director
 
           it 'has API call that returns a list of releases in JSON' do
             release1 = Models::Release.create(name: 'release-1')
-            Models::ReleaseVersion.
-                create(release: release1, version: 1)
+            Models::ReleaseVersion
+              .create(release: release1, version: 1)
             deployment1 = Models::Deployment.create(name: 'deployment-1')
-            release1 = deployment1.add_release_version(release1.versions.first) # release-1 is now currently_deployed
+            deployment1.add_release_version(release1.versions.first) # release-1 is now currently_deployed
             release2 = Models::Release.create(name: 'release-2')
-            Models::ReleaseVersion.
-                create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
+            Models::ReleaseVersion
+              .create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
 
             get '/', {}, {}
             expect(last_response.status).to eq(200)
             body = last_response.body
 
             expected_collection = [
-                {'name' => 'release-1',
-                 'release_versions' => [Hash['version', '1', 'commit_hash', 'unknown', 'uncommitted_changes', false, 'currently_deployed', true, 'job_names', []]]},
-                {'name' => 'release-2',
-                 'release_versions' => [Hash['version', '2', 'commit_hash', '0b2c3d', 'uncommitted_changes', true, 'currently_deployed', false, 'job_names', []]]}
+              {
+                'name' => 'release-1',
+                'release_versions' => [
+                  Hash[
+                    'version',
+                    '1',
+                    'commit_hash',
+                    'unknown',
+                    'uncommitted_changes',
+                    false,
+                    'currently_deployed',
+                    true,
+                    'job_names',
+                    [],
+                  ],
+                ],
+              },
+              {
+                'name' => 'release-2',
+                'release_versions' => [
+                  Hash[
+                    'version',
+                    '2',
+                    'commit_hash',
+                    '0b2c3d',
+                    'uncommitted_changes',
+                    true,
+                    'currently_deployed',
+                    false,
+                    'job_names',
+                    [],
+                  ],
+                ],
+              },
             ]
 
             expect(body).to eq(JSON.generate(expected_collection))
@@ -161,7 +192,7 @@ module Bosh::Director
         end
 
         def perform
-          post '/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
+          post '/export', JSON.dump(params), 'CONTENT_TYPE' => 'application/json'
         end
 
         context 'when the request does NOT contains the sha2 flag' do
@@ -169,8 +200,18 @@ module Bosh::Director
 
           it 'authenticated access redirect to the created task' do
             expected_sha2_param = nil
-            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param, {:jobs => nil}]
-            expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
+            expected_params = [
+              nil,
+              'release-name-value',
+              'release-version-value',
+              'bosh-stemcell-os-value',
+              'bosh-stemcell-version-value',
+              expected_sha2_param,
+              jobs: nil,
+            ]
+            expect(Jobs::DBJob).to receive(:new)
+              .with(Jobs::ExportRelease, kind_of(Numeric), expected_params)
+              .and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
             perform
           end
         end
@@ -182,7 +223,7 @@ module Bosh::Director
               release_version:     'release-version-value',
               stemcell_os:         'bosh-stemcell-os-value',
               stemcell_version:    'bosh-stemcell-version-value',
-              sha2:                 'true'
+              sha2:                 'true',
             }
           end
 
@@ -190,8 +231,18 @@ module Bosh::Director
 
           it 'authenticated access redirect to the created task' do
             expected_sha2_param = 'true'
-            expected_params = [nil, 'release-name-value', 'release-version-value', 'bosh-stemcell-os-value', 'bosh-stemcell-version-value', expected_sha2_param, {:jobs => nil}]
-            expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
+            expected_params = [
+              nil,
+              'release-name-value',
+              'release-version-value',
+              'bosh-stemcell-os-value',
+              'bosh-stemcell-version-value',
+              expected_sha2_param,
+              jobs: nil,
+            ]
+            expect(Jobs::DBJob).to receive(:new)
+              .with(Jobs::ExportRelease, kind_of(Numeric), expected_params)
+              .and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
             perform
           end
         end
@@ -233,8 +284,8 @@ module Bosh::Director
               stemcell_os:    'bosh-stemcell-os-value',
               stemcell_version:    'bosh-stemcell-version-value',
               jobs: [
-                {name: 'foo'},
-                {name: 'bar'},
+                { name: 'foo' },
+                { name: 'bar' },
               ],
             }
           end
@@ -245,14 +296,24 @@ module Bosh::Director
             allow(ReleaseManager).to receive(:new).and_return(mock_release_manager)
 
             expected_options = {
-              :jobs => [
-                {'name' => 'foo'},
-                {'name' => 'bar'},
-              ]
+              jobs: [
+                { 'name' => 'foo' },
+                { 'name' => 'bar' },
+              ],
             }
 
-            expected_params = [nil, params[:release_name], params[:release_version], params[:stemcell_os], params[:stemcell_version], nil, expected_options]
-            expect(Jobs::DBJob).to receive(:new).with(Jobs::ExportRelease, 1, expected_params).and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
+            expected_params = [
+              nil,
+              params[:release_name],
+              params[:release_version],
+              params[:stemcell_os],
+              params[:stemcell_version],
+              nil,
+              expected_options,
+            ]
+            expect(Jobs::DBJob).to receive(:new)
+              .with(Jobs::ExportRelease, kind_of(Numeric), expected_params)
+              .and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
             perform
           end
         end
@@ -260,8 +321,8 @@ module Bosh::Director
 
       describe 'DELETE', '/<id>' do
         before do
-          release = Models::Release.create(:name => 'test_release')
-          release.add_version(Models::ReleaseVersion.make(:version => '1'))
+          release = Models::Release.create(name: 'test_release')
+          release.add_version(Models::ReleaseVersion.make(version: '1'))
           release.save
         end
 
@@ -302,9 +363,9 @@ module Bosh::Director
 
       describe 'GET', '<id>' do
         let!(:release) do
-          release = Models::Release.create(:name => 'test_release')
+          release = Models::Release.create(name: 'test_release')
           (1..10).map do |i|
-            release.add_version(Models::ReleaseVersion.make(:version => i))
+            release.add_version(Models::ReleaseVersion.make(version: i))
           end
           release.save
         end
@@ -317,11 +378,11 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
             body = JSON.parse(last_response.body)
 
-            expect(body['versions'].sort).to eq((1..10).map { |i| i.to_s }.sort)
+            expect(body['versions'].sort).to eq((1..10).map(&:to_s).sort)
           end
 
           it 'satisfies inspect release calls' do
-            release_version = Models::ReleaseVersion.find(:version => '1')
+            release_version = Models::ReleaseVersion.find(version: '1')
 
             dummy_template = Models::Template.make(
               release_id: 1,
@@ -330,8 +391,8 @@ module Bosh::Director
               blobstore_id: '123',
               sha1: '12a',
               spec: {
-                consumes: {'link-consumed' => 'consumed'},
-                provides: {'link-provided' => 'provided'},
+                consumes: { 'link-consumed' => 'consumed' },
+                provides: { 'link-provided' => 'provided' },
               },
             )
 

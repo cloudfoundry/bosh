@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::LinksController, truncation: true do
+    describe Controllers::LinksController do
       include Rack::Test::Methods
 
       subject(:app) {described_class.new(config)}
@@ -13,7 +13,7 @@ module Bosh::Director
         allow(config).to receive(:identity_provider).and_return(identity_provider)
         config
       end
-      let(:link_serial_id) {42}
+      let(:link_serial_id) { 987654321 }
       let(:deployment) {Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id)}
 
       context 'when checking links' do
@@ -164,7 +164,7 @@ module Bosh::Director
           end
 
           context 'when link_provider_id and link_consumer are provided' do
-            let(:provider_id) {'42'}
+            let(:provider_id) { '987654321' }
             let!(:payload_json) do
               {
                 'link_provider_id' => provider_id,
@@ -180,7 +180,7 @@ module Bosh::Director
             it 'raise error for non-existing provider_id' do
               post '/', JSON.generate(payload_json), 'CONTENT_TYPE' => 'application/json'
               expect(last_response.status).to eq(400)
-              expect(last_response.body).to eq('{"code":810002,"description":"Invalid link_provider_id: 42"}')
+              expect(last_response.body).to eq('{"code":810002,"description":"Invalid link_provider_id: 987654321"}')
             end
 
             context 'when a valid link_provider_id is provided' do
@@ -193,7 +193,7 @@ module Bosh::Director
                   name: 'provider_name_1',
                   type: 'job',
                   serial_id: link_serial_id,
-                  )
+                )
               end
               let(:provider_1_intent_1) do
                 Bosh::Director::Models::Links::LinkProviderIntent.create(
@@ -205,9 +205,9 @@ module Bosh::Director
                   original_name: 'provider_name_1',
                   content: provider_json_content,
                   serial_id: link_serial_id,
-                  )
+                )
               end
-              let(:provider_id) {provider_1_intent_1.id.to_s}
+              let(:provider_id) { provider_1_intent_1.id.to_s }
 
               shared_examples 'creates consumer and link' do
                 it 'returns links' do
@@ -219,14 +219,14 @@ module Bosh::Director
                     instance_group: '',
                     name: 'external_consumer_1',
                     type: 'external',
-                    )
+                  )
                   expect(new_external_consumer).to_not be_nil
                   expect(new_external_consumer.name).to eq(payload_json['link_consumer']['owner_object']['name'])
 
                   new_external_link = Bosh::Director::Models::Links::Link.find(
                     link_provider_intent_id: provider_1_intent_1 && provider_1_intent_1[:id],
                     link_consumer_intent_id: new_external_consumer && new_external_consumer[:id],
-                    )
+                  )
                   expect(new_external_link).to_not be_nil
                   expect(JSON.parse(last_response.body)).to eq(generate_link_hash(new_external_link))
                 end
@@ -284,8 +284,12 @@ module Bosh::Director
                     post '/', JSON.generate(payload_json), 'CONTENT_TYPE' => 'application/json'
                     expect(last_response.status).to eq(400)
 
-                    error_string = '{"code":810003,"description":"Can\'t resolve network: `invalid-network-name` in provider id: 1 for `external_consumer_1`"}'
-                    expect(last_response.body).to eq(error_string)
+                    expect(last_response.body).to match(
+                      Regexp.new(
+                        '{"code":810003,"description":' \
+                        '"Can\'t resolve network: `invalid-network-name` in provider id: \d+ for `external_consumer_1`"}',
+                      ),
+                    )
                   end
                 end
               end
@@ -301,7 +305,7 @@ module Bosh::Director
                     original_name: 'provider_name_1',
                     content: provider_json_content,
                     serial_id: link_serial_id,
-                    )
+                  )
                 end
 
                 it 'raise error' do

@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::LinkAddressController, truncation: true do
+    describe Controllers::LinkAddressController do
       include Rack::Test::Methods
 
       subject(:app) { described_class.new(config) }
@@ -75,16 +75,14 @@ module Bosh::Director
           end
 
           context 'when a single az is specified' do
-            before do
-              Models::LocalDnsEncodedAz.create(name: 'z1')
-              Models::LocalDnsEncodedAz.create(name: 'z2')
-            end
+            let!(:az1) { Models::LocalDnsEncodedAz.create(name: 'z1') }
+            let!(:az2) { Models::LocalDnsEncodedAz.create(name: 'z2') }
 
             it 'should return the address with the az information' do
               get "/?link_id=#{link.id}&azs[]=z1"
               expect(last_response.status).to eq(200)
               response = JSON.parse(last_response.body)
-              expect(response).to eq('address' => 'q-a1s0.ig-bar.baz.dep-foo.bosh')
+              expect(response).to eq('address' => "q-a#{az1.id}s0.ig-bar.baz.dep-foo.bosh")
             end
 
             context 'when the az is specified as not an array' do
@@ -98,16 +96,14 @@ module Bosh::Director
           end
 
           context 'when multiple azs are specified' do
-            before do
-              Models::LocalDnsEncodedAz.create(name: 'z1')
-              Models::LocalDnsEncodedAz.create(name: 'z2')
-            end
+            let!(:az1) { Models::LocalDnsEncodedAz.create(name: 'z1') }
+            let!(:az2) { Models::LocalDnsEncodedAz.create(name: 'z2') }
 
             it 'should return the address with the az information' do
               get "/?link_id=#{link.id}&azs[]=z1&azs[]=z2"
               expect(last_response.status).to eq(200)
               response = JSON.parse(last_response.body)
-              expect(response).to eq('address' => 'q-a1a2s0.ig-bar.baz.dep-foo.bosh')
+              expect(response).to eq('address' => "q-a#{az1.id}a#{az2.id}s0.ig-bar.baz.dep-foo.bosh")
             end
           end
 

@@ -5,7 +5,7 @@ require 'bosh/director/api/controllers/events_controller'
 
 module Bosh::Director
   module Api
-    describe Controllers::EventsController, truncation: true do
+    describe Controllers::EventsController do
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
@@ -28,22 +28,25 @@ module Bosh::Director
 
         def make_events(count)
           (1..count).each do |i|
-            Models::Event.make(:timestamp => timestamp + (i * 1.second))
+            Models::Event.make(timestamp: timestamp + (i * 1.second))
           end
         end
 
         context 'events' do
-          before do
+          let!(:event1) do
             Models::Event.make(
               'timestamp' => timestamp,
               'user' => 'test',
               'action' => 'create',
               'object_type' => 'deployment',
               'object_name' => 'depl1',
-              'task' => '1'
+              'task' => '1',
             )
+          end
+
+          let!(:event2) do
             Models::Event.make(
-              'parent_id' => 1,
+              'parent_id' => event1.id,
               'timestamp' => timestamp,
               'user' => 'test',
               'action' => 'create',
@@ -58,7 +61,6 @@ module Bosh::Director
             expect(last_response.status).to eq(401)
           end
 
-
           it 'returns a list of events' do
             basic_authorize 'admin', 'admin'
             get '/'
@@ -69,26 +71,27 @@ module Bosh::Director
             expect(body.size).to eq(2)
 
             expected = [
-              {'id' => '2',
-                'parent_id' => '1',
+              {
+                'id' => event2.id.to_s,
+                'parent_id' => event1.id.to_s,
                 'timestamp' => timestamp.to_i,
                 'user' => 'test',
                 'action' => 'create',
                 'object_type' => 'deployment',
                 'object_name' => 'depl1',
                 'task' => '2',
-                'context' => {}
+                'context' => {},
               },
               {
-                'id' => '1',
+                'id' => event1.id.to_s,
                 'timestamp' => timestamp.to_i,
                 'user' => 'test',
                 'action' => 'create',
                 'object_type' => 'deployment',
                 'object_name' => 'depl1',
                 'task' => '1',
-                'context' => {}
-              }
+                'context' => {},
+              },
             ]
             expect(JSON.parse(last_response.body)).to eq(expected)
           end
@@ -102,23 +105,28 @@ module Bosh::Director
 
             expect(body.size).to eq(200)
             response_ids = body.map { |e| e['id'].to_i }
-            expected_ids = *(53..252)
+            min_id = event2.id + 51
+            max_id = min_id + 199
+            expected_ids = *(min_id..max_id)
             expect(response_ids).to eq(expected_ids.reverse)
           end
         end
 
         context 'event' do
-          before do
+          let!(:event1) do
             Models::Event.make(
               'timestamp' => timestamp,
               'user' => 'test',
               'action' => 'create',
               'object_type' => 'deployment',
               'object_name' => 'depl1',
-              'task' => '1'
+              'task' => '1',
             )
+          end
+
+          let!(:event2) do
             Models::Event.make(
-              'parent_id' => 1,
+              'parent_id' => event1.id,
               'timestamp' => timestamp,
               'user' => 'test',
               'action' => 'create',
@@ -131,19 +139,19 @@ module Bosh::Director
           it 'returns event' do
             basic_authorize 'admin', 'admin'
 
-            get '/2'
+            get "/#{event2.id}"
 
             expect(JSON.parse(last_response.body)).to eq(
-              {'id' => '2',
-                'parent_id' => '1',
-                'timestamp' => timestamp.to_i,
-                'user' => 'test',
-                'action' => 'create',
-                'object_type' => 'deployment',
-                'object_name' => 'depl1',
-                'task' => '2',
-                'context' => {}
-              })
+              'id' => event2.id.to_s,
+              'parent_id' => event1.id.to_s,
+              'timestamp' => timestamp.to_i,
+              'user' => 'test',
+              'action' => 'create',
+              'object_type' => 'deployment',
+              'object_name' => 'depl1',
+              'task' => '2',
+              'context' => {},
+            )
           end
 
           it 'returns an error' do
@@ -261,22 +269,19 @@ module Bosh::Director
           end
         end
 
-
         context 'when several filters are specified' do
           before do
             basic_authorize 'admin', 'admin'
           end
 
           context 'when before_id, instance, deployment and task are specified' do
-            before do
-              Models::Event.make('instance' => 'job/4')
-              Models::Event.make('instance' => 'job/5', 'task' => 4, 'deployment' => 'name')
-              Models::Event.make('task' => 5)
-              Models::Event.make('deployment' => 'not the droid we are looking for')
-            end
+            let!(:event1) { Models::Event.make('instance' => 'job/4') }
+            let!(:event2) { Models::Event.make('instance' => 'job/5', 'task' => 4, 'deployment' => 'name') }
+            let!(:event3) { Models::Event.make('task' => 5) }
+            let!(:event4) { Models::Event.make('deployment' => 'not the droid we are looking for') }
 
             it 'returns the anded results' do
-              get '?instance=job/5&task=4&deployment=name&before_id=3'
+              get "?instance=job/5&task=4&deployment=name&before_id=#{event2.id + 1}"
               events = JSON.parse(last_response.body)
               expect(events.size).to eq(1)
               expect(events[0]['instance']).to eq('job/5')
@@ -305,17 +310,21 @@ module Bosh::Director
             end
           end
 
-
           context 'when before and after are specified' do
             before do
               make_events(20)
             end
 
             it 'returns the correct results' do
-              get "?before_time=#{URI.encode(Models::Event.order(:timestamp).all[16].timestamp.to_s)}&after_time=#{URI.encode(Models::Event.order(:timestamp).all[14].timestamp.to_s)}"
+              before_event = Models::Event.order(:timestamp).all[16]
+              after_event = Models::Event.order(:timestamp).all[14]
+              before_time = CGI.escape(before_event.timestamp.to_s)
+              after_time = CGI.escape(after_event.timestamp.to_s)
+
+              get "?before_time=#{before_time}&after_time=#{after_time}"
               events = JSON.parse(last_response.body)
               expect(events.size).to eq(1)
-              expect(events.first['id']).to eq('16')
+              expect(events.first['id']).to eq(Models::Event.order(:timestamp).all[15].id.to_s)
             end
           end
 
@@ -325,10 +334,12 @@ module Bosh::Director
             end
 
             it 'returns the correct result' do
-              get "?before_id=15&after_time=#{URI.encode(Models::Event.order(:timestamp).all[12].timestamp.to_s)}"
+              before_id = Models::Event.order(:id).all[14].id
+              after_time = CGI.escape(Models::Event.order(:timestamp).all[12].timestamp.to_s)
+              get "?before_id=#{before_id}&after_time=#{after_time}"
               events = JSON.parse(last_response.body)
               expect(events.size).to eq(1)
-              expect(events.first['id']).to eq('14')
+              expect(events.first['id']).to eq((before_id - 1).to_s)
             end
           end
         end
@@ -339,7 +350,7 @@ module Bosh::Director
           end
 
           it 'returns STATUS 400 if before has wrong format' do
-            get "?before_time=Wrong"
+            get '?before_time=Wrong'
             expect(last_response.status).to eq(400)
             expect(last_response.body).to eq("Invalid before parameter: 'Wrong' ")
           end
@@ -348,12 +359,15 @@ module Bosh::Director
             make_events(210)
             expect(Models::Event.count).to eq(210)
 
-            get "?before_time=#{URI.encode(Models::Event.order(:timestamp).all[201].timestamp.to_s)}"
+            before_event = Models::Event.order(:timestamp).all[201]
+            before_time = CGI.escape(before_event.timestamp.to_s)
+            get "?before_time=#{before_time}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(200) # 200 limit
             response_ids = events.map { |e| e['id'].to_i }
-            expected_ids = *(2..201) # exclusive
+            max_id = before_event.id - 1
+            expected_ids = *((max_id - 199)..max_id) # exclusive
             expect(response_ids).to eq(expected_ids.reverse)
           end
 
@@ -363,16 +377,17 @@ module Bosh::Director
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)
-            expect(events.first['id']).to eq('1')
+            expect(events.first['id']).to eq(Models::Event.order(:timestamp).all[0].id.to_s)
           end
 
           it 'supports date as specified in the event table' do
             make_events(10)
-            get "?before_time=#{URI.encode(Models::Event.order(:timestamp).all[1].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
+            before_time = CGI.escape(Models::Event.order(:timestamp).all[1].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))
+            get "?before_time=#{before_time}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)
-            expect(events.first['id']).to eq('1')
+            expect(events.first['id']).to eq(Models::Event.order(:timestamp).all[0].id.to_s)
           end
         end
 
@@ -382,7 +397,7 @@ module Bosh::Director
           end
 
           it 'returns STATUS 400 if after has wrong format' do
-            get "?after_time=Wrong"
+            get '?after_time=Wrong'
             expect(last_response.status).to eq(400)
             expect(last_response.body).to eq("Invalid after parameter: 'Wrong' ")
           end
@@ -391,12 +406,15 @@ module Bosh::Director
             make_events(210)
             expect(Models::Event.count).to eq(210)
 
-            get "?after_time=#{URI.encode(Models::Event.order(:timestamp).all[9].timestamp.to_s)}"
+            after_event = Models::Event.order(:timestamp).all[9]
+            after_time = CGI.escape(after_event.timestamp.to_s)
+            get "?after_time=#{after_time}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(200)
             response_ids = events.map { |e| e['id'].to_i }
-            expected_ids = *(11..210)
+            min_id = after_event.id + 1
+            expected_ids = *(min_id..(min_id + 199))
             expect(response_ids).to eq(expected_ids.reverse)
           end
 
@@ -406,16 +424,17 @@ module Bosh::Director
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)
-            expect(events.first['id']).to eq('10')
+            expect(events.first['id']).to eq(Models::Event.order(:timestamp).all[9].id.to_s)
           end
 
           it 'supports date as specified in the event table' do
             make_events(10)
-            get "?after_time=#{URI.encode(Models::Event.order(:timestamp).all[8].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))}"
+            after_time = CGI.escape(Models::Event.order(:timestamp).all[8].timestamp.utc.strftime('%a %b %d %H:%M:%S %Z %Y'))
+            get "?after_time=#{after_time}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(1)
-            expect(events.first['id']).to eq('10')
+            expect(events.first['id']).to eq(Models::Event.order(:timestamp).all[9].id.to_s)
           end
         end
 
@@ -427,34 +446,40 @@ module Bosh::Director
           it 'returns a list of events' do
             make_events(250)
 
-            get '?before_id=230'
+            before_event = Models::Event.order(:id).all[229]
+            get "?before_id=#{before_event.id}"
             events = JSON.parse(last_response.body)
 
             expect(events.size).to eq(200)
             response_ids = events.map { |e| e['id'].to_i }
-            expected_ids = *(30..229)
+            max_id = before_event.id - 1
+            min_id = max_id - 199
+            expected_ids = *(min_id..max_id)
             expect(response_ids).to eq(expected_ids.reverse)
           end
 
           it 'returns correct number of events' do
             make_events(250)
-            Models::Event.filter(Sequel.lit("id > ?", 200)).delete
+            delete_after = Models::Event.order(:id).all[199]
+            Models::Event.filter(Sequel.lit('id > ?', delete_after.id)).delete
 
             make_events(50)
 
-            get '?before_id=270'
+            before_event = Models::Event.order(:id).all[219]
+            get "?before_id=#{before_event.id}"
             body = JSON.parse(last_response.body)
 
             expect(body.size).to eq(200)
             response_ids = body.map { |e| e['id'].to_i }
-            expected_ids = [*20..200, *251..269]
+            events = Models::Event.order(:id).all
+            expected_ids = [*events[19..218].map(&:id)]
             expect(response_ids).to eq(expected_ids.reverse)
           end
 
           context 'when number of returned events is less than EVENT_LIMIT' do
             it 'returns empty list if before_id < minimal id' do
               make_events(10)
-              Models::Event.filter(Sequel.lit("id <  ?", 5)).delete
+              Models::Event.filter(Sequel.lit('id <  ?', 5)).delete
               get '?before_id=4'
               body = JSON.parse(last_response.body)
 
@@ -464,14 +489,15 @@ module Bosh::Director
 
             it 'returns a list of events before_id' do
               make_events(10)
-              get '?before_id=3'
+              before_event = Models::Event.order(:id).all[2]
+              get "?before_id=#{before_event.id}"
 
               body = JSON.parse(last_response.body)
               response_ids = body.map { |e| e['id'] }
 
               expect(last_response.status).to eq(200)
               expect(body.size).to eq(2)
-              expect(response_ids).to eq(['2', '1'])
+              expect(response_ids).to eq([before_event.id - 1, before_event.id - 2].map(&:to_s))
             end
           end
         end
@@ -496,8 +522,8 @@ module Bosh::Director
 
         def perform
           post '/',
-            JSON.generate(payload),
-            {'CONTENT_TYPE' => 'application/json'}
+               JSON.generate(payload),
+               'CONTENT_TYPE' => 'application/json'
         end
 
         context 'authenticated access' do
@@ -508,7 +534,6 @@ module Bosh::Director
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq('')
             event = Models::Event.first
-            expect(event.id).to eq(1)
             expect(event.parent_id).to eq(nil)
             expect(event.user).to eq('admin')
             expect(event.action).to eq('create')
@@ -517,7 +542,7 @@ module Bosh::Director
             expect(event.task).to eq(nil)
             expect(event.instance).to eq('new_instance')
             expect(event.error).to eq('some error')
-            expect(event.context).to eq({'information' => 'blah blah'})
+            expect(event.context).to eq('information' => 'blah blah')
           end
 
           context 'when timestamp is specified' do
@@ -556,7 +581,7 @@ module Bosh::Director
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)).to eq(
                 'code' => 40000,
-                'description' => 'Context must be a hash'
+                'description' => 'Context must be a hash',
               )
             end
           end
