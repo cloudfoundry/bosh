@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe LocalDnsRepo, truncation: true do
+  describe LocalDnsRepo do
     subject(:local_dns_repo) { LocalDnsRepo.new(logger, root_domain) }
     let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
     let(:root_domain) { 'bosh1.tld' }
@@ -167,7 +167,7 @@ module Bosh::Director
           expect(diff.obsolete).to be_empty
           expect(diff.missing).to eq([{
             ip: '9876',
-            instance_id: 1,
+            instance_id: instance_model.id,
             az: 'az1',
             network: 'net-name-2',
             deployment: 'bosh.1',
@@ -420,7 +420,7 @@ module Bosh::Director
           expect do
             local_dns_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
-          expect(Models::LocalDnsRecord.all.map(&:id)).to contain_exactly(1, 2, 3)
+          expect(Models::LocalDnsRecord.count).to eq(3)
         end
 
         it 'inserts a record for the new network and ip' do

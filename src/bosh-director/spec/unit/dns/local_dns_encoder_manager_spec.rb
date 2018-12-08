@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe LocalDnsEncoderManager, truncation: true do
+  describe LocalDnsEncoderManager do
     subject { described_class }
 
     describe '.persist_az_names' do
@@ -9,9 +9,7 @@ module Bosh::Director
         subject.persist_az_names(%w[zone1 zone2])
         expect(Models::LocalDnsEncodedAz.all.count).to eq 2
         expect(Models::LocalDnsEncodedAz.all[0].name).to eq 'zone1'
-        expect(Models::LocalDnsEncodedAz.all[0].id).to eq 1
         expect(Models::LocalDnsEncodedAz.all[1].name).to eq 'zone2'
-        expect(Models::LocalDnsEncodedAz.all[1].id).to eq 2
       end
 
       it 'saves new AZs only if unique' do
@@ -21,9 +19,7 @@ module Bosh::Director
 
         expect(Models::LocalDnsEncodedAz.all.count).to eq 2
         expect(Models::LocalDnsEncodedAz.all[0].name).to eq 'zone1'
-        expect(Models::LocalDnsEncodedAz.all[0].id).to eq 1
         expect(Models::LocalDnsEncodedAz.all[1].name).to eq 'zone2'
-        expect(Models::LocalDnsEncodedAz.all[1].id).to eq 2
       end
     end
 
@@ -32,9 +28,7 @@ module Bosh::Director
         subject.persist_network_names(%w[nw1 nw2])
         expect(Models::LocalDnsEncodedNetwork.all.count).to eq 2
         expect(Models::LocalDnsEncodedNetwork.all[0].name).to eq 'nw1'
-        expect(Models::LocalDnsEncodedNetwork.all[0].id).to eq 1
         expect(Models::LocalDnsEncodedNetwork.all[1].name).to eq 'nw2'
-        expect(Models::LocalDnsEncodedNetwork.all[1].id).to eq 2
       end
 
       it 'saves new Networks only if unique' do
@@ -44,9 +38,7 @@ module Bosh::Director
 
         expect(Models::LocalDnsEncodedNetwork.all.count).to eq 2
         expect(Models::LocalDnsEncodedNetwork.all[0].name).to eq 'nw1'
-        expect(Models::LocalDnsEncodedNetwork.all[0].id).to eq 1
         expect(Models::LocalDnsEncodedNetwork.all[1].name).to eq 'nw2'
-        expect(Models::LocalDnsEncodedNetwork.all[1].id).to eq 2
       end
     end
 
@@ -63,7 +55,7 @@ module Bosh::Director
           type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
         )
         Models::LocalDnsEncodedNetwork.create(name: 'my-network')
-        Models::Instance.make(deployment: deployment, id: 42, uuid: 'my-uuid')
+        Models::Instance.make(deployment: deployment, id: 7654321, uuid: 'my-uuid')
 
         # ensure we are efficiently loading deployments in the same query, not later queries
         expect(Bosh::Director::Models::LocalDnsEncodedGroup).to receive(:inner_join).at_least(:once).and_call_original
@@ -71,15 +63,15 @@ module Bosh::Director
       end
 
       it 'should create a dns encoder that uses the current index' do
-        expect(encoder.id_for_az('az1')).to eq('1')
+        expect(encoder.id_for_az('az1')).to eq(Models::LocalDnsEncodedAz.last.id.to_s)
         expect(
           encoder.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             'some-ig',
             'a-deployment',
           ),
-        ).to eq('1')
-        expect(encoder.num_for_uuid('my-uuid')).to eq('42')
+        ).to eq(Models::LocalDnsEncodedGroup.last.id.to_s)
+        expect(encoder.num_for_uuid('my-uuid')).to eq('7654321')
       end
 
       it 'respects the option for short names as default' do
@@ -100,7 +92,7 @@ module Bosh::Director
             deployment_name: 'a-deployment',
             root_domain: 'super-bosh',
           ),
-        ).to eq 'q-n1s0.q-g1.super-bosh'
+        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.last.id}s0.q-g#{Models::LocalDnsEncodedGroup.last.id}.super-bosh"
       end
     end
 
@@ -149,12 +141,12 @@ module Bosh::Director
 
       it 'returns a dns encoder that includes the provided azs' do
         encoder = subject.new_encoder_with_updated_index(plan)
-        expect(encoder.id_for_az('new-az')).to eq('2')
+        expect(encoder.id_for_az('new-az')).to eq(Models::LocalDnsEncodedAz.last.id.to_s)
       end
 
       it 'returns a dns encoder that includes the provided networks' do
         encoder = subject.new_encoder_with_updated_index(plan)
-        expect(encoder.id_for_network('nw2')).to eq('2')
+        expect(encoder.id_for_network('nw2')).to eq(Models::LocalDnsEncodedNetwork.last.id.to_s)
       end
 
       it 'returns an encoder that includes the provided groups' do
@@ -165,7 +157,7 @@ module Bosh::Director
             'some-ig',
             'new-deployment',
           ),
-        ).to eq '2'
+        ).to eq Models::LocalDnsEncodedGroup.order(:id).all[1].id.to_s
 
         expect(
           encoder.id_for_group_tuple(
@@ -173,21 +165,21 @@ module Bosh::Director
             'some-ig',
             'old-deployment',
           ),
-        ).to eq '1'
+        ).to eq Models::LocalDnsEncodedGroup.order(:id).all[0].id.to_s
         expect(
           encoder.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::LINK,
             'provider1-t1',
             'new-deployment',
           ),
-        ).to eq '3'
+        ).to eq Models::LocalDnsEncodedGroup.order(:id).all[2].id.to_s
         expect(
           encoder.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::LINK,
             'provider2-t2',
             'new-deployment',
           ),
-        ).to eq '4'
+        ).to eq Models::LocalDnsEncodedGroup.order(:id).all[3].id.to_s
       end
 
       it 'makes long dns names in the plan' do
@@ -232,7 +224,7 @@ module Bosh::Director
             default_network: 'my-network',
             root_domain: 'sub.bosh',
           ),
-        ).to eq 'q-n1s0.q-g2.sub.bosh'
+        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[1].id}.sub.bosh"
 
         expect(
           encoder.encode_query(
@@ -242,7 +234,7 @@ module Bosh::Director
             default_network: 'my-network',
             root_domain: 'sub.bosh',
           ),
-        ).to eq 'q-n1s0.q-g3.sub.bosh'
+        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[2].id}.sub.bosh"
 
         expect(
           encoder.encode_query(
@@ -252,7 +244,7 @@ module Bosh::Director
             default_network: 'my-network',
             root_domain: 'sub.bosh',
           ),
-        ).to eq 'q-n1s0.q-g4.sub.bosh'
+        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[3].id}.sub.bosh"
       end
     end
   end

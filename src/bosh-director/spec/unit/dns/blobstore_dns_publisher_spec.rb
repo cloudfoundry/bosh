@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe BlobstoreDnsPublisher, truncation: true do
+  describe BlobstoreDnsPublisher do
     include IpUtil
 
     subject(:dns) { BlobstoreDnsPublisher.new(-> { blobstore }, domain_name, agent_broadcaster, logger) }
@@ -58,6 +58,12 @@ module Bosh::Director
 
     describe 'publish and broadcast' do
       let!(:original_local_dns_blob) { Models::LocalDnsBlob.make }
+      let(:instance2) do
+        Models::Instance.make(
+          uuid: 'uuid2',
+          index: 2,
+        )
+      end
 
       before do
         Bosh::Director::Models::LocalDnsRecord.make(
@@ -82,10 +88,6 @@ module Bosh::Director
           domain: 'fake-domain-name',
         )
 
-        instance2 = Models::Instance.make(
-          uuid: 'uuid2',
-          index: 2,
-        )
         Bosh::Director::Models::LocalDnsRecord.make(
           instance_id: instance2.id,
           ip: '192.0.2.102',
@@ -120,19 +122,20 @@ module Bosh::Director
         end
 
         it 'puts a blob containing the records into the blobstore' do
-          expected_records = JSON.dump(
+          previous_version = Bosh::Director::Models::LocalDnsBlob.last.version
+          expected_records = {
             'records' => [
               ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
               ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
               ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
             ],
-            'version' => 4,
+            'version' => be > previous_version,
             'record_keys' =>
                   %w[id num_id instance_group group_ids az az_id network network_id deployment ip domain agent_id instance_index],
             'record_infos' => [
               [
                 'uuid1',
-                '1',
+                instance1.id.to_s,
                 'instance1',
                 ['1'],
                 'az1',
@@ -147,7 +150,7 @@ module Bosh::Director
               ],
               [
                 'uuid1',
-                '1',
+                instance1.id.to_s,
                 'instance1',
                 ['1'],
                 'az1',
@@ -162,7 +165,7 @@ module Bosh::Director
               ],
               [
                 'uuid2',
-                '2',
+                instance2.id.to_s,
                 'instance2',
                 %w[2 10],
                 'az2',
@@ -176,30 +179,43 @@ module Bosh::Director
                 2,
               ],
             ],
-          )
-          expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+          }
+          expect(blobstore).to receive(:create) do |actual_records_json|
+            actual_records = JSON.parse(actual_records_json)
+            version_matcher = expected_records.delete('version')
+            actual_version = actual_records.delete('version')
+            expect(actual_records).to eq(expected_records)
+            expect(actual_version).to version_matcher
+            'blob_id_1'
+          end
           dns.publish_and_broadcast
         end
 
         it 'creates a model representing the blob' do
+          previous_version = Bosh::Director::Models::LocalDnsBlob.last.version
           dns.publish_and_broadcast
           local_dns_blob = Bosh::Director::Models::LocalDnsBlob.last
           expect(local_dns_blob.blob.blobstore_id).to eq('blob_id_1')
-          expect(local_dns_blob.version).to eq(4)
+          expect(local_dns_blob.version).to be > previous_version
         end
 
         it 'broadcasts the blob to the agents' do
+          previous_version = Bosh::Director::Models::LocalDnsBlob.last.version
+          dns.publish_and_broadcast
           expect(agent_broadcaster).to receive(:filter_instances).with(nil).and_return([])
-          expect(agent_broadcaster).to receive(:sync_dns).with([], 'blob_id_1', 'a7a7f1e24dec2634c2919e7a7bb0ef211598de81', 4)
+          expect(agent_broadcaster).to receive(:sync_dns).with([], 'blob_id_1', /[a-z0-9]{40}/, be > previous_version)
           dns.publish_and_broadcast
         end
 
         context 'when the root_domain is empty' do
-          before do
-            instance3 = Models::Instance.make(
+          let!(:instance3) do
+            Models::Instance.make(
               uuid: 'uuid3',
               index: 3,
             )
+          end
+
+          before do
             Bosh::Director::Models::LocalDnsRecord.make(
               instance_id: instance3.id,
               ip: '192.0.2.104',
@@ -212,20 +228,21 @@ module Bosh::Director
           end
 
           it 'backfills the current root_domain' do
-            expected_records = JSON.dump(
+            previous_version = Bosh::Director::Models::LocalDnsBlob.last.version
+            expected_records = {
               'records' => [
                 ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
                 ['192.0.3.101', 'uuid1.instance1.net-name3.test-deployment.fake-domain-name'],
                 ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
                 ['192.0.2.104', 'uuid3.instance4.net-name2.test-deployment.fake-domain-name'],
               ],
-              'version' => 5,
+              'version' => be > previous_version,
               'record_keys' =>
                 %w[id num_id instance_group group_ids az az_id network network_id deployment ip domain agent_id instance_index],
               'record_infos' => [
                 [
                   'uuid1',
-                  '1',
+                  instance1.id.to_s,
                   'instance1',
                   ['1'],
                   'az1',
@@ -240,7 +257,7 @@ module Bosh::Director
                 ],
                 [
                   'uuid1',
-                  '1',
+                  instance1.id.to_s,
                   'instance1',
                   ['1'],
                   'az1',
@@ -255,7 +272,7 @@ module Bosh::Director
                 ],
                 [
                   'uuid2',
-                  '2',
+                  instance2.id.to_s,
                   'instance2',
                   %w[2 10],
                   'az2',
@@ -270,7 +287,7 @@ module Bosh::Director
                 ],
                 [
                   'uuid3',
-                  '3',
+                  instance3.id.to_s,
                   'instance4',
                   ['4'],
                   'az2',
@@ -284,8 +301,16 @@ module Bosh::Director
                   3,
                 ],
               ],
-            )
-            expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+            }
+
+            expect(blobstore).to receive(:create) do |actual_records_json|
+              actual_records = JSON.parse(actual_records_json)
+              version_matcher = expected_records.delete('version')
+              actual_version = actual_records.delete('version')
+              expect(actual_records).to eq(expected_records)
+              expect(actual_version).to version_matcher
+              'blob_id_1'
+            end
             dns.publish_and_broadcast
           end
         end
@@ -313,7 +338,8 @@ module Bosh::Director
           end
 
           it 'should include index records too' do
-            expected_records = JSON.dump(
+            previous_version = Bosh::Director::Models::LocalDnsBlob.last.version
+            expected_records = {
               'records' => [
                 ['192.0.2.101', 'uuid1.instance1.net-name1.test-deployment.fake-domain-name'],
                 ['192.0.2.101', '1.instance1.net-name1.test-deployment.fake-domain-name'],
@@ -322,7 +348,7 @@ module Bosh::Director
                 ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
                 ['192.0.2.102', '2.instance2.net-name2.test-deployment.fake-domain-name'],
               ],
-              'version' => 4,
+              'version' => be > previous_version,
               'record_keys' =>
               %w[
                 id
@@ -342,7 +368,7 @@ module Bosh::Director
               'record_infos' => [
                 [
                   'uuid1',
-                  '1',
+                  instance1.id.to_s,
                   'instance1',
                   ['1'],
                   'az1',
@@ -357,7 +383,7 @@ module Bosh::Director
                 ],
                 [
                   'uuid1',
-                  '1',
+                  instance1.id.to_s,
                   'instance1',
                   ['1'],
                   'az1',
@@ -372,7 +398,7 @@ module Bosh::Director
                 ],
                 [
                   'uuid2',
-                  '2',
+                  instance2.id.to_s,
                   'instance2',
                   %w[2 10],
                   'az2',
@@ -386,9 +412,16 @@ module Bosh::Director
                   2,
                 ],
               ],
-            )
+            }
 
-            expect(blobstore).to receive(:create).with(expected_records).and_return('blob_id_1')
+            expect(blobstore).to receive(:create) do |actual_records_json|
+              actual_records = JSON.parse(actual_records_json)
+              version_matcher = expected_records.delete('version')
+              actual_version = actual_records.delete('version')
+              expect(actual_records).to eq(expected_records)
+              expect(actual_version).to version_matcher
+              'blob_id_1'
+            end
             dns.publish_and_broadcast
           end
         end
