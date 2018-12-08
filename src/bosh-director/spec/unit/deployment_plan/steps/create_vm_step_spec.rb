@@ -5,7 +5,7 @@ module Bosh
   module Director
     module DeploymentPlan
       module Steps
-        describe CreateVmStep, truncation: true do
+        describe CreateVmStep do
           subject { CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing) }
 
           let(:use_existing) { false }
@@ -295,8 +295,8 @@ module Bosh
             expect(event1.deployment).to eq(instance_model.deployment.name)
             expect(event1.instance).to eq(instance_model.name)
 
-            event2 = Models::Event.order(:id)[2]
-            expect(event2.parent_id).to eq(1)
+            event2 = Models::Event.order(:id).all[1]
+            expect(event2.parent_id).to eq(event1.id)
             expect(event2.user).to eq('user')
             expect(event2.action).to eq('create')
             expect(event2.object_type).to eq('vm')
@@ -312,7 +312,7 @@ module Bosh
               subject.perform(report)
             end.to raise_error Bosh::Clouds::VMCreationFailed
 
-            event2 = Models::Event.order(:id)[2]
+            event2 = Models::Event.order(:id).all[1]
             expect(event2.error).to eq('Bosh::Clouds::VMCreationFailed')
           end
 

@@ -37,7 +37,7 @@ RSpec::Matchers.define :log_persistent_disk_change do |expected|
 end
 
 module Bosh::Director::DeploymentPlan
-  describe InstancePlan, truncation: true do
+  describe InstancePlan do
     subject(:instance_plan) do
       InstancePlan.new(
         existing_instance: existing_instance,
@@ -1360,6 +1360,7 @@ module Bosh::Director::DeploymentPlan
           instance_group_spec['persistent_disk_pool'] = 'disk_a'
           instance_group_spec
         end
+
         before do
           persistent_disk = BD::Models::PersistentDisk.make(size: 42, cloud_properties: { 'new' => 'properties' })
           instance_plan.instance.model.add_persistent_disk(persistent_disk)
@@ -1723,7 +1724,7 @@ module Bosh::Director::DeploymentPlan
             )
             expect(logger).to log_dns_change(from: [], to: [{
               ip: '192.168.1.3',
-              instance_id: 4,
+              instance_id: instance_model.id,
               az: nil,
               network: 'a',
               deployment: 'simple',
@@ -1757,14 +1758,14 @@ module Bosh::Director::DeploymentPlan
                 instance_group: nil,
                 network: nil,
                 deployment: nil,
-                instance_id: 4,
+                instance_id: instance_model.id,
                 agent_id: nil,
                 domain: nil,
                 links: [],
               }],
               to: [{
                 ip: '192.168.1.3',
-                instance_id: 4,
+                instance_id: instance_model.id,
                 az: nil,
                 network: 'a',
                 deployment: 'simple',
@@ -1858,7 +1859,7 @@ module Bosh::Director::DeploymentPlan
         it 'enumerates instance group properties and link properties' do
           properties = subject.instance_group_properties
           expect(properties).to eq(
-            instance_id: 4,
+            instance_id: instance_model.id,
             az: nil,
             deployment: 'simple',
             agent_id: 'active-vm-agent-id',
@@ -1904,7 +1905,7 @@ module Bosh::Director::DeploymentPlan
           properties = subject.instance_group_properties
 
           expect(properties).to eq(
-            instance_id: 4,
+            instance_id: instance_model.id,
             az:  nil,
             deployment: 'simple',
             agent_id: 'active-vm-agent-id',
