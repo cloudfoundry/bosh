@@ -80,7 +80,6 @@ describe 'CPI and Agent:', type: :integration do
 
   def detach_disk_sequence(vm_cid, agent_id, disk_id)
     [
-      *snapshot_disk_sequence(agent_id, disk_id),
       { target: 'agent', method: 'unmount_disk', agent_id: agent_id, argument_matcher: match([disk_id]) },
       { target: 'agent', method: 'remove_persistent_disk', agent_id: agent_id, argument_matcher: match([disk_id]) },
       { target: 'cpi', method: 'detach_disk', vm_cid: vm_cid, disk_id: disk_id },
@@ -113,13 +112,20 @@ describe 'CPI and Agent:', type: :integration do
     ]
   end
 
-  def hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id)
+  def hotswap_detach_disk_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id)
     [
       *create_vm_sequence(hotswap_vm_id, hotswap_vm_agent_id),
       *update_settings_sequence(hotswap_vm_agent_id),
       *prepare_sequence(hotswap_vm_agent_id),
       *stop_jobs_sequence(old_vm_agent_id),
+      *snapshot_disk_sequence(old_vm_agent_id, disk_id),
       *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
+    ]
+  end
+
+  def hotswap_update_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id)
+    [
+      *hotswap_detach_disk_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id),
       *attach_disk_sequence(hotswap_vm_id, hotswap_vm_agent_id, disk_id),
       *list_disk_apply_sequence(hotswap_vm_agent_id),
     ]
@@ -128,8 +134,9 @@ describe 'CPI and Agent:', type: :integration do
   def update_sequence(old_vm_id, old_vm_agent_id, updated_vm_id, updated_vm_agent_id, disk_id)
     [
       *stop_jobs_sequence(old_vm_agent_id),
+      *snapshot_disk_sequence(old_vm_agent_id, disk_id),
       *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
-      { target: 'cpi', method: 'delete_vm', vm_cid: old_vm_id },
+      *delete_vm_sequence(old_vm_id),
       *create_vm_sequence(updated_vm_id, updated_vm_agent_id),
       *attach_disk_sequence(updated_vm_id, updated_vm_agent_id, disk_id),
       *update_settings_sequence(updated_vm_agent_id),
@@ -273,6 +280,7 @@ describe 'CPI and Agent:', type: :integration do
         expect(update_invocations).to be_sequence_of_calls(
           calls: [
             *stop_jobs_sequence(old_vm_agent_id),
+            *snapshot_disk_sequence(old_vm_agent_id, disk_id),
             *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
             *delete_vm_sequence(old_vm_id),
 
@@ -403,17 +411,19 @@ describe 'CPI and Agent:', type: :integration do
               end
 
               it 'makes CPI and agent calls in the correct order in the subsequent deploy to reuse the VM' do
-                expect(update_invocations).to be_sequence_of_calls(
+                expect(
+                  [
+                    *update_invocations,
+                    *final_invocations,
+                  ],
+                ).to be_sequence_of_calls(
                   calls: [
+                    # update deploy
                     *hotswap_update_sequence(old_vm_id, old_vm_agent_id, updated_vm_id, updated_vm_agent_id, disk_id),
                     { target: 'agent', method: 'run_script', agent_id: updated_vm_agent_id,
                       argument_matcher: match(['pre-start', {}]) },
-                  ],
-                  reference: reference,
-                )
 
-                expect(final_invocations).to be_sequence_of_calls(
-                  calls: [
+                    # final deploy
                     *prepare_sequence(updated_vm_agent_id),
                     *stop_jobs_sequence(updated_vm_agent_id),
                     *snapshot_disk_sequence(updated_vm_agent_id, disk_id),
