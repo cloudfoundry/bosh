@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   module Jobs
-    describe UpdateDeployment do
+    describe UpdateDeployment, truncation: true do
       subject(:job) do
         UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options).tap do |obj|
           allow(obj).to receive(:task_id).and_return(task.id)

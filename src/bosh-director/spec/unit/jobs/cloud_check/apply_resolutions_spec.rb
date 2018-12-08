@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::CloudCheck::ApplyResolutions do
+  describe Jobs::CloudCheck::ApplyResolutions, truncation: true do
     before do
       Models::Deployment.make(name: 'deployment')
       allow(ProblemResolver).to receive_messages(new: resolver)

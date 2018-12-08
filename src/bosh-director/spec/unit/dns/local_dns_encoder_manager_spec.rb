@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe LocalDnsEncoderManager do
+  describe LocalDnsEncoderManager, truncation: true do
     subject { described_class }
 
     describe '.persist_az_names' do

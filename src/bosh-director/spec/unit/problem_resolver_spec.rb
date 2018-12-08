@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe ProblemResolver do
+  describe ProblemResolver, truncation: true do
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true)}
     let(:job) {instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: task.id, event_manager: event_manager)}
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }

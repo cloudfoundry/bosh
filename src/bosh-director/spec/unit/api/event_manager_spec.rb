@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Director::Api::EventManager do
+describe Bosh::Director::Api::EventManager, truncation: true do
   let(:manager) { described_class.new(true) }
 
   describe '#create_event' do

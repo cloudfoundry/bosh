@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::ConfigServer
-  describe ConfigServerClient do
+  describe ConfigServerClient, truncation: true do
     subject(:client) { ConfigServerClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }

@@ -178,13 +178,13 @@ module SpecHelper
         @director_db_helper = nil
       end
 
-      if @dns_db
-        @dns_db.disconnect
-        @dns_db_helper.drop_db
+      return unless @dns_db
 
-        @dns_db = nil
-        @dns_db_helper = nil
-      end
+      @dns_db.disconnect
+      @dns_db_helper.drop_db
+
+      @dns_db = nil
+      @dns_db_helper = nil
     end
 
     def run_migrations

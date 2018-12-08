@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'timecop'
 
-describe Bosh::Director::EventLog::Log do
+describe Bosh::Director::EventLog::Log, truncation: true do
   subject(:event_log) { described_class.new(task_db_writer) }
 
   let(:task_db_writer) { Bosh::Director::TaskDBWriter.new(column_name, task.id) }

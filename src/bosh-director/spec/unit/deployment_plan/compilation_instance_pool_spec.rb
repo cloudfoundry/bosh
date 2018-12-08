@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 module Bosh::Director
-  describe DeploymentPlan::CompilationInstancePool do
+  describe DeploymentPlan::CompilationInstancePool, truncation: true do
     subject(:compilation_instance_pool) do
       DeploymentPlan::CompilationInstancePool.new(
         instance_reuser,

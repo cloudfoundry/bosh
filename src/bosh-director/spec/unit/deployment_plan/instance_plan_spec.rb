@@ -37,7 +37,7 @@ RSpec::Matchers.define :log_persistent_disk_change do |expected|
 end
 
 module Bosh::Director::DeploymentPlan
-  describe InstancePlan do
+  describe InstancePlan, truncation: true do
     subject(:instance_plan) do
       InstancePlan.new(
         existing_instance: existing_instance,

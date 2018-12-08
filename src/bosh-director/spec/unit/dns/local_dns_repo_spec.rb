@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe LocalDnsRepo do
+  describe LocalDnsRepo, truncation: true do
     subject(:local_dns_repo) { LocalDnsRepo.new(logger, root_domain) }
     let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
     let(:root_domain) { 'bosh1.tld' }

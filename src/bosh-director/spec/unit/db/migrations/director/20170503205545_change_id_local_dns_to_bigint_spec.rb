@@ -1,7 +1,7 @@
 require_relative '../../../../db_spec_helper'
 
 module Bosh::Director
-  describe 'change id from int to bigint on local_dns_blob' do
+  describe 'change id from int to bigint on local_dns_blob', truncation: true do
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20170503205545_change_id_local_dns_to_bigint.rb' }
 

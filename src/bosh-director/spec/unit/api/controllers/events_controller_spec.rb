@@ -5,7 +5,7 @@ require 'bosh/director/api/controllers/events_controller'
 
 module Bosh::Director
   module Api
-    describe Controllers::EventsController do
+    describe Controllers::EventsController, truncation: true do
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }

@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::ReleasesController do
+    describe Controllers::ReleasesController, truncation: true do
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }

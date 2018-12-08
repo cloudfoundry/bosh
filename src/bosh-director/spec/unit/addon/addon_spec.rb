@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   module Addon
-    describe Addon do
+    describe Addon, truncation: true do
       subject(:addon) { Addon.new(addon_name, jobs, properties, includes, excludes) }
       let(:addon_name) { 'addon-name' }
       let(:jobs) do

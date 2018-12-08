@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::BaseJob do
-    let(:task_id) { 1 }
+  describe Jobs::BaseJob, truncation: true do
     let(:tasks_dir) { Dir.mktmpdir }
     let(:task_dir) { File.join(tasks_dir, 'tasks', task_id.to_s) }
     before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }

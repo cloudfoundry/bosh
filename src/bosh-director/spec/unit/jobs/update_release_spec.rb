@@ -3,7 +3,7 @@ require 'support/release_helper'
 require 'digest'
 
 module Bosh::Director
-  describe Jobs::UpdateRelease do
+  describe Jobs::UpdateRelease, truncation: true do
     before do
       allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)

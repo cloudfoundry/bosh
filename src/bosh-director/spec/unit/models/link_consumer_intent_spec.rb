@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'bosh/director/models/variable'
 
 module Bosh::Director::Models::Links
-  describe LinkConsumerIntent do
+  describe LinkConsumerIntent, truncation: true do
     let(:consumer) { LinkConsumer.create(deployment: deployment, name: 'test', type: 'job') }
     let(:deployment) { Bosh::Director::Models::Deployment.create(name: 'test') }
     let(:subject) { LinkConsumerIntent.create(link_consumer: consumer, original_name: 'test', type: 'db') }

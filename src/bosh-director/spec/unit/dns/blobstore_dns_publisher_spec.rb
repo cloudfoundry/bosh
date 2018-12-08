@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe BlobstoreDnsPublisher do
+  describe BlobstoreDnsPublisher, truncation: true do
     include IpUtil
 
     subject(:dns) { BlobstoreDnsPublisher.new(-> { blobstore }, domain_name, agent_broadcaster, logger) }

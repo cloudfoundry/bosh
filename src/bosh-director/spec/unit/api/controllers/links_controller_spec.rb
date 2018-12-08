@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   module Api
-    describe Controllers::LinksController do
+    describe Controllers::LinksController, truncation: true do
       include Rack::Test::Methods
 
       subject(:app) {described_class.new(config)}

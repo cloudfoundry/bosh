@@ -5,7 +5,7 @@ module Bosh
   module Director
     module DeploymentPlan
       module Steps
-        describe CreateVmStep do
+        describe CreateVmStep, truncation: true do
           subject { CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing) }
 
           let(:use_existing) { false }

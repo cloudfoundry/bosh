@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::Models
-  describe PersistentDisk do
+  describe PersistentDisk, truncation: true do
     subject(:persistent_disk) { described_class.make }
 
     describe 'cloud_properties' do

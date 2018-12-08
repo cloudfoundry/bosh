@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'bosh/director/job_queue'
 
 module Bosh::Director
-  describe JobQueue do
+  describe JobQueue, truncation: true do
     class FakeJob < Jobs::BaseJob
       def self.job_type
         :snow

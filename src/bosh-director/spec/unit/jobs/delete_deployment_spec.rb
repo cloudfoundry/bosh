@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::DeleteDeployment do
+  describe Jobs::DeleteDeployment, truncation: true do
     include Support::FakeLocks
     before { fake_locks }
 

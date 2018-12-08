@@ -3,7 +3,7 @@ require 'fakefs/spec_helpers'
 require 'bosh/director/api/task_remover'
 
 module Bosh::Director::Api
-  describe TaskRemover do
+  describe TaskRemover, truncation: true do
     include FakeFS::SpecHelpers
 
     def make_n_tasks(num_tasks, type = default_type)

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Api::LinksApiManager do
+  describe Api::LinksApiManager, truncation: true do
     let(:link_serial_id) { 42 }
     let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump('foo' => 'bar'), links_serial_id: link_serial_id) }
     let(:instance_group) { 'instance_group' }

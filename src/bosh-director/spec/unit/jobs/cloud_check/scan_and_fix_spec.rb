@@ -1,10 +1,16 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Jobs::CloudCheck::ScanAndFix do
-    before do
-      deployment = Models::Deployment.make(name: 'deployment')
+  describe Jobs::CloudCheck::ScanAndFix, truncation: true do
+    let!(:deployment) { Models::Deployment.make(name: 'deployment') }
+    let(:jobs) { [%w[job1 job1index0], %w[job1 job1index1], %w[job2 job2index0]] }
+    let(:resolutions) do
+      { Models::DeploymentProblem.all[0].id.to_s => :recreate_vm, Models::DeploymentProblem.all[1].id.to_s => :recreate_vm }
+    end
+    let(:fix_stateful_jobs) { true }
+    let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
 
+    before do
       instance = Models::Instance.make(deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
 
@@ -22,14 +28,6 @@ module Bosh::Director
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
     end
 
-    let(:deployment) { Models::Deployment[1] }
-    let(:jobs) { [['job1', 'job1index0'], ['job1', 'job1index1'], ['job2', 'job2index0']] }
-    let(:resolutions) do
-      { '1' => :recreate_vm, '2' => :recreate_vm }
-    end
-    let(:fix_stateful_jobs) { true }
-    let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
-
     describe 'DJ job class expectations' do
       let(:job_type) { :cck_scan_and_fix }
       let(:queue) { :normal }
@@ -39,14 +37,14 @@ module Bosh::Director
     context 'using uuid for each instance' do
       context 'when we do not want to recreate jobs with persistent disks' do
         let(:fix_stateful_jobs) { false }
-        let(:jobs) { [['job1', 'job1index0'], ['job1', 'job1index1'], ['job2', 'job2index1']] }
+        let(:jobs) { [%w[job1 job1index0], %w[job1 job1index1], %w[job2 job2index1]] }
 
         it 'filters out jobs with persistent disks' do
-          expect(scan_and_fix.filtered_jobs).to eq([['job1', 'job1index0'], ['job1', 'job1index1']])
+          expect(scan_and_fix.filtered_jobs).to eq([%w[job1 job1index0], %w[job1 job1index1]])
         end
 
         it 'should call the problem scanner with the filtered list of jobs' do
-          filtered_jobs = [['job1', 'job1index0'], ['job1', 'job1index1']]
+          filtered_jobs = [%w[job1 job1index0], %w[job1 job1index1]]
           resolver = instance_double('Bosh::Director::ProblemResolver').as_null_object
           expect(ProblemResolver).to receive(:new).with(deployment).and_return(resolver)
           allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
@@ -127,7 +125,10 @@ module Bosh::Director
         allow(ProblemResolver).to receive(:new).and_return(resolver)
         allow(resolver).to receive(:apply_resolutions).and_raise(Lock::TimeoutError, 'this original error message will change')
 
-        expect{scan_and_fix.perform}.to raise_error(RuntimeError, /Unable to get deployment lock, maybe a deployment is in progress. Try again later./)
+        expect { scan_and_fix.perform }.to raise_error(
+          RuntimeError,
+          /Unable to get deployment lock, maybe a deployment is in progress. Try again later./,
+        )
         expect(PostDeploymentScriptRunner).to_not receive(:run_post_deploys_after_resurrection)
       end
 
@@ -137,7 +138,7 @@ module Bosh::Director
         allow(ProblemResolver).to receive(:new).and_return(resolver)
         allow(resolver).to receive(:apply_resolutions).and_raise(error)
 
-        expect{scan_and_fix.perform}.to raise_error(error)
+        expect { scan_and_fix.perform }.to raise_error(error)
         expect(PostDeploymentScriptRunner).to_not receive(:run_post_deploys_after_resurrection)
       end
     end
@@ -151,12 +152,12 @@ module Bosh::Director
 
           resolver = instance_double('Bosh::Director::ProblemResolver')
           expect(ProblemResolver).to receive(:new).and_return(resolver)
-          expect(resolver).to receive(:apply_resolutions).and_return([1, "error message"])
+          expect(resolver).to receive(:apply_resolutions).and_return([1, 'error message'])
           expect(PostDeploymentScriptRunner).to receive(:run_post_deploys_after_resurrection)
 
-          expect{
+          expect do
             scan_and_fix.perform
-          }.to raise_error(Bosh::Director::ProblemHandlerError)
+          end.to raise_error(Bosh::Director::ProblemHandlerError)
         end
       end
     end
@@ -176,15 +177,15 @@ module Bosh::Director
     describe '#resolutions' do
       it 'only lists resolutions for jobs whose state is either "unresponsive_agent" or "missing_vm"' do
         res = scan_and_fix.resolutions(jobs)
-        expect(res).to eq({'1' => :recreate_vm, '2' => :recreate_vm})
+        expect(res).to eq('1' => :recreate_vm, '2' => :recreate_vm)
       end
 
       context 'when a VM is ignored' do
-        let(:jobs) { [['job1', 'job1index0'], ['job2', 'job2index2']] }
+        let(:jobs) { [%w[job1 job1index0], %w[job2 job2index2]] }
 
         it 'should not list it as a resolution' do
           res = scan_and_fix.resolutions(jobs)
-          expect(res).to eq({"1"=>:recreate_vm})
+          expect(res).to eq('1' => :recreate_vm)
         end
       end
     end

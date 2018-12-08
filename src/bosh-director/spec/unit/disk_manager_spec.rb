@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Bosh::Director::DiskManager do
+  describe Bosh::Director::DiskManager, truncation: true do
     subject(:disk_manager) { DiskManager.new(logger) }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }

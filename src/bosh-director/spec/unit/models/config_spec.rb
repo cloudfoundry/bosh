@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::Models
-  describe Config do
+  describe Config, truncation: true do
     let(:config_model) { Config.make(content: "---\n{key : value}") }
 
     describe '#raw_manifest' do
