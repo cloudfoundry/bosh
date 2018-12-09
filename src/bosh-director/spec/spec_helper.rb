@@ -192,14 +192,7 @@ module SpecHelper
       Sequel::Migrator.apply(@director_db, @director_migrations, nil)
     end
 
-    def reset(logger)
-      Bosh::Director::Config.clear
-      Bosh::Director::Config.db = @director_db
-      Bosh::Director::Config.dns_db = @dns_db
-      Bosh::Director::Config.logger = logger
-      Bosh::Director::Config.trusted_certs = ''
-      Bosh::Director::Config.max_threads = 1
-
+    def setup_datasets
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
         c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
@@ -216,6 +209,15 @@ module SpecHelper
       end
     end
 
+    def reset(logger)
+      Bosh::Director::Config.clear
+      Bosh::Director::Config.db = @director_db
+      Bosh::Director::Config.dns_db = @dns_db
+      Bosh::Director::Config.logger = logger
+      Bosh::Director::Config.trusted_certs = ''
+      Bosh::Director::Config.max_threads = 1
+    end
+
     def reset_database(example)
       if example.metadata[:truncation] && ENV.fetch('DB', 'sqlite') != 'sqlite'
         example.run
@@ -227,7 +229,7 @@ module SpecHelper
 
       Bosh::Director::Config.db&.disconnect
 
-      return unless example.metadata[:truncation] || ENV.fetch('DB', 'sqlite') == 'sqlite'
+      return unless example.metadata[:truncation]
 
       @director_db_helper.truncate_db
       @dns_db_helper.truncate_db
@@ -262,6 +264,10 @@ RSpec.configure do |rspec|
   end
 
   rspec.after(:each) { Timecop.return }
+
+  rspec.before(:suite) do
+    SpecHelper.setup_datasets
+  end
 
   rspec.after(:suite) do
     SpecHelper.disconnect_database
