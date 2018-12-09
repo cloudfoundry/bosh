@@ -217,7 +217,7 @@ module SpecHelper
     end
 
     def reset_database(example)
-      if example.metadata[:truncation]
+      if example.metadata[:truncation] && ENV.fetch('DB', 'sqlite') != 'sqlite'
         example.run
       else
         Sequel.transaction([@director_db, @dns_db], rollback: :always, auto_savepoint: true) do
@@ -227,7 +227,7 @@ module SpecHelper
 
       Bosh::Director::Config.db&.disconnect
 
-      return unless example.metadata[:truncation]
+      return unless example.metadata[:truncation] || ENV.fetch('DB', 'sqlite') == 'sqlite'
 
       @director_db_helper.truncate_db
       @dns_db_helper.truncate_db
