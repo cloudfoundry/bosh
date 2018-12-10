@@ -3,6 +3,7 @@
 set -eu
 
 mv director-state/.bosh $HOME/
+mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
 
 state_path() { bosh-cli int director-state/director.yml --path="$1" ; }
 
