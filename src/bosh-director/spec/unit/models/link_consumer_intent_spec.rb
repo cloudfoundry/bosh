@@ -15,10 +15,9 @@ module Bosh::Director::Models::Links
     end
 
     context '#target_link_id' do
-      before do
-        Link.create(name: 'link', link_consumer_intent: subject, link_content: '{}')
-        Link.create(name: 'link', link_consumer_intent: subject, link_content: '{}')
-      end
+      let!(:link1) { Link.create(name: 'link', link_consumer_intent: subject, link_content: '{}') }
+      let!(:link2) { Link.create(name: 'link', link_consumer_intent: subject, link_content: '{}') }
+
       it 'should return the target link id defined in the metadata' do
         subject.metadata = { explicit_link: true, target_link_id: 5 }.to_json
         subject.save
@@ -27,7 +26,7 @@ module Bosh::Director::Models::Links
 
       context 'when there is no metadata' do
         it 'should return fallback link id' do
-          expect(subject.target_link_id).to eq(2)
+          expect(subject.target_link_id).to eq(link2.id)
         end
       end
 
@@ -35,7 +34,7 @@ module Bosh::Director::Models::Links
         it 'should return fallback link id' do
           subject.metadata = { explicit_link: true }.to_json
           subject.save
-          expect(subject.target_link_id).to eq(2)
+          expect(subject.target_link_id).to eq(link2.id)
         end
       end
     end

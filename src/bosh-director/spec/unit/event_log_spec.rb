@@ -22,15 +22,16 @@ describe Bosh::Director::EventLog::Log do
     expect(events.map { |e| e['state'] }).to eq(['started', 'started', 'finished', 'finished'])
   end
 
-  it 'supports tracking parallel events without being thread safe' +
-     '(since stages can start in the middle of other stages)', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
+  it 'supports tracking parallel events without being thread safe' \
+     '(since stages can start in the middle of other stages)',
+     truncation: true, if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
     stage = event_log.begin_stage(:prepare, 5)
     threads = []
 
     5.times do |i|
       threads << Thread.new do
-        sleep(rand()/5)
-        stage.advance_and_track(i) { sleep(rand()/5) }
+        sleep(rand / 5)
+        stage.advance_and_track(i) { sleep(rand / 5) }
       end
     end
 

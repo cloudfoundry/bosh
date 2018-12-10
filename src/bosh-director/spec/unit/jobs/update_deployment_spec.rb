@@ -618,7 +618,7 @@ module Bosh::Director
             expect(event_1.timestamp).to eq(Time.now)
 
             event_2 = Models::Event.order(:id).last
-            expect(event_2.parent_id).to eq(1)
+            expect(event_2.parent_id).to eq(event_1.id)
             expect(event_2.user).to eq(task.username)
             expect(event_2.object_type).to eq('deployment')
             expect(event_2.deployment).to eq('deployment-name')

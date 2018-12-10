@@ -21,7 +21,7 @@ module Bosh::Director
     end
     let(:job) { described_class.new('deployment', resolutions) }
     let(:resolver) { instance_double('Bosh::Director::ProblemResolver') }
-    let(:deployment) { Models::Deployment[1] }
+    let(:deployment) { Models::Deployment.first }
 
     describe '#perform' do
       context 'when resolution succeeds' do

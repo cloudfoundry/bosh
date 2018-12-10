@@ -6,9 +6,7 @@ module Bosh::Director::Models
 
     describe 'cloud_properties' do
       let(:disk_cloud_properties) do
-        {
-          'fake-cloud-property-key' => 'fake-cloud-property-value'
-        }
+        { 'fake-cloud-property-key' => 'fake-cloud-property-value' }
       end
 
       it 'updates cloud_properties' do

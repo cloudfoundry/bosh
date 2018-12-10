@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::Models
-  describe Event do
+  describe Event, truncation: true do
     it 'should save bigint ids' do
       expect {
         Event.make('id' => 9223372036854775807, 'parent_id' => 9223372036854775806)

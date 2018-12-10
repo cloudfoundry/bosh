@@ -330,7 +330,7 @@ module Bosh::Director
               get "/#{task.id}"
               expect(last_response.status).to eq(200)
               task_json = JSON.parse(last_response.body)
-              expect(task_json['id']).to eq(1)
+              expect(task_json['id']).to eq(task.id)
               expect(task_json['state']).to eq('processed')
               expect(task_json['description']).to eq('fake-description')
             end

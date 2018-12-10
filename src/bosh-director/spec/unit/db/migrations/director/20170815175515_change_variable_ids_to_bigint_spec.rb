@@ -1,7 +1,7 @@
 require_relative '../../../../db_spec_helper'
 
 module Bosh::Director
-  describe 'change id from int to bigint variable_sets & variables' do
+  describe 'change id from int to bigint variable_sets & variables', truncation: true do
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20170815175515_change_variable_ids_to_bigint.rb' }
     let(:some_time) do
