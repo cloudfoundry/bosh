@@ -12,7 +12,7 @@ namespace :fly do
   # bundle exec rake fly:integration
   desc 'Fly integration gocli specs'
   task :integration do
-    execute('test-integration-gocli', '-p --inputs-from bosh/integration-postgres-gocli-sha2',
+    execute('test-integration-gocli', '-p --inputs-from bosh/integration-db-tls-postgres',
             DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil))
   end
 
