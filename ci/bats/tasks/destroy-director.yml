@@ -9,6 +9,7 @@ image_resource:
 inputs:
   - name: director-state
   - name: bosh-src
+  - name: bosh-cli
 
 run:
   path: bosh-src/ci/bats/tasks/destroy-director.sh
