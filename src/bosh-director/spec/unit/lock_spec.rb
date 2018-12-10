@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Lock, truncation: true, if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
-    let!(:task) { Models::Task.make(state: 'processing') }
+    let!(:task) { Models::Task.make(state: 'processing', description: 'fake-description') }
     before do
       allow(Config).to receive_message_chain(:current_job, :username).and_return('current-user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
@@ -47,7 +47,8 @@ module Bosh::Director
         lock_a_block_run = true
         expect do
           lock_b.lock { lock_b_block_run = true }
-        end.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Locking task id is 1/)
+        end.to raise_exception(Lock::TimeoutError,
+                               /Failed to acquire lock for foo uid: .* Locking task id is 1, description: 'fake-description'/)
       end
 
       expect(lock_a_block_run).to be(true)
@@ -61,7 +62,10 @@ module Bosh::Director
       ran_once = false
       lock_a.lock do
         ran_once = true
-        expect { lock_b.lock {} }.to raise_exception(Lock::TimeoutError, /Failed to acquire lock for foo uid: .* Locking task id is 1/)
+        expect do
+          lock_b.lock {}
+        end.to raise_exception(Lock::TimeoutError,
+                               /Failed to acquire lock for foo uid: .* Locking task id is 1, description: 'fake-description'/)
       end
 
       expect(ran_once).to be(true)

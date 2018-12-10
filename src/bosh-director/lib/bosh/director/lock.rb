@@ -130,10 +130,7 @@ module Bosh::Director
 
         unless acquired
           if Time.now - started > @timeout
-            lock_message = ""
-            current_lock.tap do |lock|
-              lock_message = lock ? "Locking task id is #{lock.task_id}" : "Lock is gone"
-            end
+            lock_message = lock_failed_message(current_lock)
             raise TimeoutError, "Failed to acquire lock for #{@name} uid: #{@uid}. #{lock_message}"
           end
           sleep(0.5)
@@ -154,6 +151,15 @@ module Bosh::Director
           deployment: @deployment_name,
         }
       )
+    end
+
+    def lock_failed_message(lock)
+      if lock
+        task_description = Models::Task.first(id: lock.task_id).description
+        "Locking task id is #{lock.task_id}, description: '#{task_description}'"
+      else
+        'Lock is gone'
+      end
     end
 
     def delete
