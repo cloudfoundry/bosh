@@ -31,26 +31,7 @@ module Bosh::Director
       end
 
       get '/disks', scope: :read do
-        disks = [
-          { name: 'system', path: '/' },
-          { name: 'ephemeral', path: '/var/vcap/data' },
-          { name: 'persistent', path: '/var/vcap/store' },
-        ]
-
-        disks.map do |disk|
-          begin
-            stats = Sys::Filesystem.stat(disk[:path])
-          rescue Sys::Filesystem::Error
-            next
-          end
-
-          {
-            'name': disk[:name],
-            'size': stats.bytes_total,
-            'available': stats.bytes_free,
-            'used': stats.percent_used.round(3),
-          }
-        end.compact.to_json
+        Bosh::Director::Api::DirectorVMInfo.get_disks_info(`df -h`).to_json
       end
     end
   end

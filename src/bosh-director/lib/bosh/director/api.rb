@@ -33,3 +33,5 @@ require 'bosh/director/api/deployment_lookup'
 
 require 'bosh/director/api/deployment_certificate_provider'
 require 'bosh/director/api/variable_rotation_manager'
+
+require 'bosh/director/api/director_vm_info'

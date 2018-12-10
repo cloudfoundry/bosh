@@ -107,97 +107,52 @@ module Bosh::Director
 
         context 'when asked for for the director disk information' do
           context 'when queried as admin' do
-            let(:disks_config) do
+            let(:df_info) do
               [
                 {
-                  path: '/',
-                  block_size: 4096,
-                  blocks: 757736,
-                  blocks_available: 342280,
-                  blocks_free: 385173,
+                  'size' => '13G',
+                  'available' => '9.1G',
+                  'used' => '22%',
+                  'name' => 'ephemeral',
                 },
                 {
-                  path: '/var/vcap/store',
-                  block_size: 4096,
-                  blocks: 16480703,
-                  blocks_available: 15604971,
-                  blocks_free: 16447902,
-                },
-                {
-                  path: '/var/vcap/data',
-                  block_size: 4096,
-                  blocks: 3192100,
-                  blocks_available: 2442883,
-                  blocks_free: 2610793,
+                  'size' => '63G',
+                  'available' => '60G',
+                  'used' => '1%',
+                  'name' => 'persistent',
                 },
               ]
             end
 
             before do
               authorize('admin', 'admin')
-
-              disks_config.each do |c|
-                disk_obj = Sys::Filesystem::Stat.new
-                c.each do |k, v|
-                  disk_obj.instance_variable_set("@#{k}".to_sym, v)
-                end
-
-                allow(disk_obj).to receive(:bytes_total).and_return(c[:block_size] * c[:blocks])
-                allow(disk_obj).to receive(:bytes_free).and_return(c[:block_size] * c[:blocks_available])
-                allow(Sys::Filesystem).to receive(:stat).with(c[:path]).and_return(disk_obj)
-              end
+              allow(Bosh::Director::Api::DirectorVMInfo).to receive(:get_disks_info).and_return(df_info)
             end
 
             it 'responds with the available disk space for all disks' do
 
               get '/disks'
-              expected = [
-                {
-                  name:       'system',
-                  size:       3103686656,
-                  available:  1401978880,
-                  used:       54.829,
-                },
-                {
-                  name:       'ephemeral',
-                  size:       13074841600,
-                  available:  10006048768,
-                  used:       23.471,
-                },
-                {
-                  name:       'persistent',
-                  size:       67504959488,
-                  available:  63917961216,
-                  used:       5.314,
-                },
-              ]
 
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq(expected.to_json)
+              expect(last_response.body).to eq(df_info.to_json)
             end
 
             it 'still returns disk space for other volumes if one is unreachable' do
-              allow(Sys::Filesystem).to receive(:stat).with('/var/vcap/store').and_raise(Sys::Filesystem::Error)
-
-              get '/disks'
-
-              expected = [
+              reduced_df_info = [
                 {
-                  name:       'system',
-                  size:       3103686656,
-                  available:  1401978880,
-                  used:       54.829,
-                },
-                {
-                  name:       'ephemeral',
-                  size:       13074841600,
-                  available:  10006048768,
-                  used:       23.471,
+                  'size' => '13G',
+                  'available' => '9.1G',
+                  'used' => '22%',
+                  'name' => 'ephemeral',
                 },
               ]
 
+              allow(Bosh::Director::Api::DirectorVMInfo).to receive(:get_disks_info).and_return(reduced_df_info)
+
+              get '/disks'
+
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq(expected.to_json)
+              expect(last_response.body).to eq(reduced_df_info.to_json)
             end
           end
         end
