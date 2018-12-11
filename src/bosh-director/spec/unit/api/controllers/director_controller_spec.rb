@@ -96,67 +96,6 @@ module Bosh::Director
           end
         end
       end
-
-      context 'director/disks' do
-        context 'when a non-authorized user asks for the disks information' do
-          it 'requires auth' do
-            get '/disks'
-            expect(last_response.status).to eq(401)
-          end
-        end
-
-        context 'when asked for for the director disk information' do
-          context 'when queried as admin' do
-            let(:df_info) do
-              [
-                {
-                  'size' => '13G',
-                  'available' => '9.1G',
-                  'used' => '22%',
-                  'name' => 'ephemeral',
-                },
-                {
-                  'size' => '63G',
-                  'available' => '60G',
-                  'used' => '1%',
-                  'name' => 'persistent',
-                },
-              ]
-            end
-
-            before do
-              authorize('admin', 'admin')
-              allow(Bosh::Director::Api::DirectorVMInfo).to receive(:get_disks_info).and_return(df_info)
-            end
-
-            it 'responds with the available disk space for all disks' do
-
-              get '/disks'
-
-              expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq(df_info.to_json)
-            end
-
-            it 'still returns disk space for other volumes if one is unreachable' do
-              reduced_df_info = [
-                {
-                  'size' => '13G',
-                  'available' => '9.1G',
-                  'used' => '22%',
-                  'name' => 'ephemeral',
-                },
-              ]
-
-              allow(Bosh::Director::Api::DirectorVMInfo).to receive(:get_disks_info).and_return(reduced_df_info)
-
-              get '/disks'
-
-              expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq(reduced_df_info.to_json)
-            end
-          end
-        end
-      end
     end
   end
 end

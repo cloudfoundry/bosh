@@ -29,10 +29,6 @@ module Bosh::Director
         end
         json_encode(cert_expiration_info)
       end
-
-      get '/disks', scope: :read do
-        Bosh::Director::Api::DirectorVMInfo.get_disks_info(`df -h`).to_json
-      end
     end
   end
 end
