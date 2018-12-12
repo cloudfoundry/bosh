@@ -1,8 +1,6 @@
 require 'spec_helper'
 
 describe 'env values in instance groups and resource pools', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
-
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
       'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
@@ -35,6 +33,8 @@ describe 'env values in instance groups and resource pools', type: :integration 
   end
 
   context 'when instance groups env is using variables' do
+    with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
+
     let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
 
     let(:env_hash) do
@@ -114,6 +114,8 @@ describe 'env values in instance groups and resource pools', type: :integration 
   end
 
   context 'when resource pool env is using variables (legacy manifest)' do
+    with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
+
     let(:env_hash) do
       {
         'env1' => '((env1_placeholder))',
@@ -234,6 +236,25 @@ describe 'env values in instance groups and resource pools', type: :integration 
 
       invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(invocations.size).to eq(3) # no vms should have been deleted/created
+    end
+  end
+
+  context 'when use_tmpfs_job_config key exist' do
+    with_reset_sandbox_before_each
+
+    let(:simple_manifest) do
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['features'] = { 'use_tmpfs_job_config' => true }
+      manifest_hash
+    end
+
+    let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
+
+    it 'should send the flag to the agent with interpolated values' do
+      deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config)
+
+      invocations = current_sandbox.cpi.invocations_for_method('create_vm')
+      expect(invocations[2].inputs['env']['bosh']).to include('job_dir' => { 'tmpfs' => true })
     end
   end
 end

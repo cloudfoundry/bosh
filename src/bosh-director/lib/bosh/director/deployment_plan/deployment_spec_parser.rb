@@ -33,9 +33,9 @@ module Bosh::Director
         parse_properties
         parse_releases
         parse_update(parse_options)
-        parse_instance_groups(parse_options)
         parse_variables
         parse_features
+        parse_instance_groups(parse_options)
         parse_addons
 
         @deployment
