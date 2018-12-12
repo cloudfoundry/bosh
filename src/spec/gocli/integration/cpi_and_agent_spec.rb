@@ -127,6 +127,7 @@ describe 'CPI and Agent:', type: :integration do
     [
       *hotswap_detach_disk_sequence(old_vm_id, old_vm_agent_id, hotswap_vm_id, hotswap_vm_agent_id, disk_id),
       *attach_disk_sequence(hotswap_vm_id, hotswap_vm_agent_id, disk_id),
+      { target: 'agent', method: 'update_settings', agent_id: hotswap_vm_agent_id },
       *list_disk_apply_sequence(hotswap_vm_agent_id),
     ]
   end
@@ -374,6 +375,42 @@ describe 'CPI and Agent:', type: :integration do
                   calls: [
                     *hotswap_update_sequence(old_vm_id, old_vm_agent_id, final_vm_id, final_vm_agent_id, disk_id),
                     *start_jobs_sequence(final_vm_agent_id),
+                  ],
+                  reference: reference,
+                )
+              end
+            end
+
+            context 'when the first deploy fails to detach the disk' do
+              let(:update_invocations) do
+                updated_manifest_hash['update'] = manifest_hash['update'].merge('vm_strategy' => 'create-swap-delete')
+                updated_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
+
+                current_sandbox.cpi.commands.make_detach_disk_to_raise_not_implemented
+                task_output = deploy_simple_manifest(manifest_hash: updated_manifest_hash, failure_expected: true)
+                failing_invocations = get_invocations(task_output)
+                current_sandbox.cpi.commands.allow_detach_disk_to_succeed
+                failing_invocations
+              end
+
+              it 'updates the correct vms' do
+                expect(update_invocations).to be_sequence_of_calls(
+                  calls: hotswap_detach_disk_sequence(old_vm_id, old_vm_agent_id, failing_vm_id, failing_vm_agent_id, disk_id),
+                  reference: reference,
+                )
+
+                expect(final_invocations).to be_sequence_of_calls(
+                  calls: [
+                    *prepare_sequence(old_vm_agent_id),
+                    *stop_jobs_sequence(old_vm_agent_id),
+                    *snapshot_disk_sequence(old_vm_agent_id, disk_id),
+                    *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
+
+                    *attach_disk_sequence(updated_vm_id, updated_vm_agent_id, disk_id),
+                    { target: 'agent', method: 'update_settings', agent_id: updated_vm_agent_id },
+                    *list_disk_apply_sequence(updated_vm_agent_id),
+
+                    *start_jobs_sequence(updated_vm_agent_id),
                   ],
                   reference: reference,
                 )

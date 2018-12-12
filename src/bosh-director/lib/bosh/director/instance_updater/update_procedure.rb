@@ -129,7 +129,7 @@ module Bosh::Director
       def converge_vm
         recreate = needs_recreate? || (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
 
-        RecreateHandler.new(@logger, @vm_creator, @ip_provider, instance_plan, instance_report).perform if recreate
+        RecreateHandler.new(@logger, @vm_creator, @ip_provider, instance_plan, instance_report, instance).perform if recreate
 
         instance_report.vm = instance_plan.instance.model.active_vm
         @disk_manager.update_persistent_disk(instance_plan)

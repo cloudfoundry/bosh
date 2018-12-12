@@ -1,8 +1,8 @@
 module Bosh::Director
   class InstanceUpdater
     class RecreateHandler
-      attr_reader :instance_plan, :instance_report, :new_vm, :instance_model, :deleted_vm, :deleted_vm_id
-      def initialize(logger, vm_creator, ip_provider, instance_plan, instance_report)
+      attr_reader :instance, :instance_plan, :instance_report, :new_vm, :instance_model, :deleted_vm, :deleted_vm_id
+      def initialize(logger, vm_creator, ip_provider, instance_plan, instance_report, instance)
         @logger = logger
         @vm_creator = vm_creator
         @ip_provider = ip_provider
@@ -12,6 +12,7 @@ module Bosh::Director
         @deleted_vm_id = -1
         @instance_model = instance_plan.instance.model
         @new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
+        @instance = instance
       end
 
       def perform
@@ -28,6 +29,8 @@ module Bosh::Director
           orphan_inactive_vms
 
           attach_disks if instance_plan.needs_disk?
+
+          instance.update_instance_settings
         else
           delete_vm unless did_delete_vm?
 

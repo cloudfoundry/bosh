@@ -1,0 +1,102 @@
+require 'spec_helper'
+
+module Bosh::Director
+  module DeploymentPlan
+    describe InstanceUpdater::RecreateHandler do
+      describe '#perform' do
+        let(:ip_address) { Sham.ip }
+        let(:active_vm) do
+          double(
+            Models::Vm,
+            id: 1,
+            ip_addresses: [
+              double(Models::IpAddress, address_str: ip_address),
+            ],
+          )
+        end
+        let(:inactive_vm) { nil }
+
+        let(:vms) { [active_vm, inactive_vm] }
+        let(:instance_model) do
+          double(
+            Models::Instance,
+            most_recent_inactive_vm: inactive_vm,
+            active_vm: active_vm,
+            vms: vms,
+          )
+        end
+
+        let(:agent_unresponsive?) { false }
+
+        let(:instance) do
+          double(
+            Instance,
+            model: instance_model,
+            update_instance_settings: true,
+          )
+        end
+
+        let(:logger) { double(Logging::Logger, debug: 'ok') }
+        let(:vm_creator) { nil }
+        let(:ip_provider) { nil }
+        let(:needs_disk?) { false }
+        let(:instance_plan) do
+          double(
+            InstancePlan,
+            instance: instance,
+            unresponsive_agent?: agent_unresponsive?,
+            should_create_swap_delete?: true,
+            remove_obsolete_network_plans_for_ips: nil,
+            needs_disk?: needs_disk?,
+          )
+        end
+        let(:instance_report) do
+          double(Stages::Report, :vm= => nil)
+        end
+
+        let(:disk_step) { double(Steps::UnmountInstanceDisksStep, perform: nil) }
+        let(:elect_step) { double(Steps::ElectActiveVmStep, perform: nil) }
+        let(:detach_instance_disks_step) { double(Steps::DetachInstanceDisksStep, perform: nil) }
+        let(:orphan_step) { double(Steps::OrphanVmStep, perform: nil) }
+
+        before do
+          allow(Steps::UnmountInstanceDisksStep).to receive(:new)
+            .with(instance_model)
+            .and_return(disk_step)
+
+          allow(Steps::ElectActiveVmStep).to receive(:new)
+            .and_return(elect_step)
+
+          allow(Steps::DetachInstanceDisksStep).to receive(:new)
+            .with(instance_model)
+            .and_return(detach_instance_disks_step)
+
+          allow(Steps::OrphanVmStep).to receive(:new)
+            .with(active_vm)
+            .and_return(orphan_step)
+        end
+
+        subject(:recreate_handler) do
+          InstanceUpdater::RecreateHandler.new(
+            logger,
+            vm_creator,
+            ip_provider,
+            instance_plan,
+            instance_report,
+            instance,
+          )
+        end
+
+        context 'when reusing a VM' do
+          let(:inactive_vm) { double(Models::Vm, id: 2) }
+
+          it 'updates instance settings' do
+            recreate_handler.perform
+
+            expect(instance).to have_received(:update_instance_settings)
+          end
+        end
+      end
+    end
+  end
+end
