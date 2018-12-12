@@ -983,6 +983,9 @@ jobs:
         params:
           name: bosh-master-with-final/tag-name
           tag: bosh-master-with-final/tag-name
+      - put: version
+        params:
+          file: version/version
 
   - name: export-final-release
     serial: true
