@@ -8,7 +8,6 @@ module Bosh::Director
         @ip_provider = ip_provider
         @instance_plan = instance_plan
         @instance_report = instance_report
-        @did_delete_vm = false
         @deleted_vm_id = -1
         @instance_model = instance_plan.instance.model
         @new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
@@ -17,28 +16,33 @@ module Bosh::Director
 
       def perform
         @logger.debug('Failed to update in place. Recreating VM')
+
         if instance_plan.unresponsive_agent?
-          delete_unresponsive_vm
+          @deleted_vm_id = instance_report.vm.id
+          delete_vm
         else
           detach_disks
+          @delete_vm_first = true
         end
 
-        if any_create_swap_delete_vms?
-          elect_active_vm
-
-          orphan_inactive_vms
-
-          attach_disks if instance_plan.needs_disk?
-
-          instance.update_instance_settings
-        else
-          delete_vm unless did_delete_vm?
-
-          create_vm
-        end
+        any_create_swap_delete_vms? ? create_swap_delete : delete_create
       end
 
       private
+
+      def create_swap_delete
+        elect_active_vm
+        orphan_inactive_vms
+
+        attach_disks if instance_plan.needs_disk?
+
+        instance.update_instance_settings
+      end
+
+      def delete_create
+        delete_vm if @delete_vm_first
+        create_vm
+      end
 
       def delete_vm
         DeploymentPlan::Steps::DeleteVmStep
@@ -87,17 +91,6 @@ module Bosh::Director
           active_persistent_disk_cids,
           instance_plan.tags,
         )
-      end
-
-      def did_delete_vm?
-        @did_delete_vm
-      end
-
-      def delete_unresponsive_vm
-        @deleted_vm_id = instance_report.vm.id
-        @did_delete_vm = true
-
-        delete_vm
       end
 
       def any_create_swap_delete_vms?

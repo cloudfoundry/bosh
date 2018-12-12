@@ -98,9 +98,20 @@ module Bosh::Director
           context 'when it does create swap delete' do
             let(:inactive_vm) { double(Models::Vm, id: 2) }
 
-            it 'updates instance settings' do
+            before do
               recreate_handler.perform
+            end
 
+            it 'elects new vm' do
+              expect(elect_step).to have_received(:perform).with(instance_report)
+            end
+
+            it 'orphans' do
+              expect(orphan_step).to have_received(:perform).with(instance_report)
+              expect(instance_plan).to have_received(:remove_obsolete_network_plans_for_ips).with([ip_address])
+            end
+
+            it 'updates instance settings' do
               expect(instance).to have_received(:update_instance_settings)
             end
 
@@ -108,8 +119,6 @@ module Bosh::Director
               let(:needs_disk?) { true }
 
               it 'attaches and detaches' do
-                recreate_handler.perform
-
                 expect(attach_instance_disks_step).to have_received(:perform).with(instance_report)
                 expect(mount_instance_disks_step).to have_received(:perform).with(instance_report)
               end
@@ -119,8 +128,6 @@ module Bosh::Director
               let(:needs_disk?) { false }
 
               it 'does not' do
-                recreate_handler.perform
-
                 expect(attach_instance_disks_step).to_not have_received(:perform).with(instance_report)
                 expect(mount_instance_disks_step).to_not have_received(:perform).with(instance_report)
               end
