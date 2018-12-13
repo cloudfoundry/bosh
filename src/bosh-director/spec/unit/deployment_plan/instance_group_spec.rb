@@ -61,6 +61,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'abc123')
   end
 
+  let(:release1_package1_model2) do
+    Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'c68y74')
+  end
+
   let(:release1) do
     Bosh::Director::DeploymentPlan::ReleaseVersion.new(
       deployment,
@@ -71,6 +75,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   let(:release1_model) { Bosh::Director::Models::Release.make(name: 'release1') }
   let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
+  let(:release1_version2_model) { Bosh::Director::Models::ReleaseVersion.make(version: '2', release: release1_model) }
   let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
   let(:links_serial_id) { 7 }
   subject { described_class.new(logger) }
@@ -88,6 +93,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     allow(release1).to receive(:get_or_create_template).with('foo').and_return(release1_foo_job)
     allow(release1).to receive(:get_or_create_template).with('bar').and_return(release1_bar_job)
+    allow(release1).to receive(:model).and_return(release1_model)
 
     allow(release1_foo_job).to receive(:properties)
     allow(release1_bar_job).to receive(:properties)
@@ -98,7 +104,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     release1_version_model.add_template(release1_foo_job_model)
     release1_version_model.add_template(release1_bar_job_model)
+
+    release1_version2_model.add_template(release1_foo_job_model)
+    release1_version2_model.add_template(release1_bar_job_model)
+
     release1_version_model.add_package(release1_package1_model)
+    release1_version2_model.add_package(release1_package1_model2)
     subject.update = update_config
   end
 
@@ -295,14 +306,21 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
                                                            'name' => 'release2',
                                                            'version' => '1')
       end
+      let(:release2_foo_job) do
+        r = Bosh::Director::DeploymentPlan::Job.new(release2, 'foo', 'story-152729032')
+        r.bind_existing_model(release2_foo_job_model)
+        r
+      end
       let(:release2_bar_job) do
         r = Bosh::Director::DeploymentPlan::Job.new(release2, 'bar', 'story-152729032')
         r.bind_existing_model(release2_bar_job_model)
         r
       end
+      let(:release2_foo_job_model) { Bosh::Director::Models::Template.make(name: 'foo', release: release2_model) }
       let(:release2_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release2_model) }
       let(:release2_model) { Bosh::Director::Models::Release.make(name: 'release2') }
       let(:release2_version_model) { Bosh::Director::Models::ReleaseVersion.make(release: release2_model, version: 1) }
+      let(:release2_version2_model) { Bosh::Director::Models::ReleaseVersion.make(release: release2_model, version: 2) }
       let(:release2_package1_model) do
         Bosh::Director::Models::Package.make(
           name: release2_package1_name,
@@ -311,23 +329,41 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
           dependency_set_json: JSON.dump(release2_package1_dependencies),
         )
       end
+      let(:release2_package1_model2) do
+        Bosh::Director::Models::Package.make(
+          name: release2_package1_name,
+          release: release2_model,
+          fingerprint: release2_package1_fingerprint2,
+          dependency_set_json: JSON.dump(release2_package1_dependencies),
+        )
+      end
       let(:release2_package1_fingerprint) { '987asd' }
+      let(:release2_package1_fingerprint2) { 'c68y74' }
       let(:release2_package1_name) { 'another-name' }
       let(:release2_package1_dependencies) { [] }
 
       before do
+        release2_version_model.add_template(release2_foo_job_model)
         release2_version_model.add_template(release2_bar_job_model)
-        release2_version_model.add_package(release2_package1_model)
 
-        release1_foo_job_model.package_names = [release1_package1_model.name]
+        release2_version2_model.add_template(release2_foo_job_model)
+        release2_version2_model.add_template(release2_bar_job_model)
+
+        release2_version_model.add_package(release2_package1_model)
+        release2_version2_model.add_package(release2_package1_model2)
+
+        release1_foo_job_model.package_names = [release1_package1_model.name, release1_package1_model2.name]
         release1_foo_job_model.save
-        release2_bar_job_model.package_names = [release2_package1_model.name]
+        release2_bar_job_model.package_names = [release2_package1_model.name, release2_package1_model2.name]
         release2_bar_job_model.save
 
         allow(plan).to receive(:releases).with(no_args).and_return([release1, release2])
+        allow(plan).to receive(:release).with('release1').and_return(release1)
         allow(plan).to receive(:release).with('release2').and_return(release2)
 
+        allow(release2).to receive(:get_or_create_template).with('foo').and_return(release2_foo_job)
         allow(release2).to receive(:get_or_create_template).with('bar').and_return(release2_bar_job)
+        allow(release2).to receive(:model).and_return(release2_model)
       end
 
       let(:spec) do
@@ -369,7 +405,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
               Bosh::Director::JobPackageCollision,
               "Package name collision detected in instance group 'foobar': "\
               "job 'release1/foo' depends on package 'release1/same-name',"\
-              " job 'release2/bar' depends on 'release2/same-name'. "\
+              " job 'release2/bar' depends on package 'release2/same-name'. "\
               'BOSH cannot currently collocate two packages with identical names from separate releases.',
             )
           end
@@ -380,7 +416,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
           context 'when dependencies are the same' do
             it 'does not raise an exception' do
-              instance_group.validate_package_names_do_not_collide!
+              expect { instance_group.validate_package_names_do_not_collide! }.to_not raise_error
             end
           end
 
@@ -394,7 +430,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
                 Bosh::Director::JobPackageCollision,
                 "Package name collision detected in instance group 'foobar': "\
                 "job 'release1/foo' depends on package 'release1/same-name',"\
-                " job 'release2/bar' depends on 'release2/same-name'. "\
+                " job 'release2/bar' depends on package 'release2/same-name'. "\
                 'BOSH cannot currently collocate two packages with identical names from separate releases.',
               )
             end

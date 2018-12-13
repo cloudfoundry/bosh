@@ -297,7 +297,7 @@ module Bosh::Director
 
         jobs.each do |job|
           job.model.package_names.each do |package_name|
-            package = job.model.release.packages.find { |p| p.name == package_name }
+            package = job.release.model.packages.find { |p| p.name == package_name }
 
             releases_by_package_names[package_name] ||= {
               usages: [],
@@ -323,7 +323,7 @@ module Bosh::Director
                     "job '#{release1jobs[0][:release]}/#{release1jobs[0][:job]}' " \
                     "depends on package '#{release1jobs[0][:release]}/#{package_name}', " \
                     "job '#{release2jobs[0][:release]}/#{release2jobs[0][:job]}' " \
-                    "depends on '#{release2jobs[0][:release]}/#{package_name}'. " \
+                    "depends on package '#{release2jobs[0][:release]}/#{package_name}'. " \
                 'BOSH cannot currently collocate two packages with identical names from separate releases.'
         end
       end
