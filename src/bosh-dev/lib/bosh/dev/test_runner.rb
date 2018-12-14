@@ -11,7 +11,7 @@ module Bosh::Dev
       Bosh::ThreadPool.new(max_threads: max_threads, logger: null_logger).wrap do |pool|
         unit_builds.each do |build|
           pool.process do
-            unit_exec(build, "#{log_dir}/#{build}.log")
+            unit_exec(build, log_file: "#{log_dir}/#{build}.log")
           end
         end
 
@@ -19,8 +19,8 @@ module Bosh::Dev
       end
     end
 
-    def unit_exec(build, log_file = nil)
-      command = unit_cmd(log_file)
+    def unit_exec(build, log_file: nil, parallel: false)
+      command = parallel ? unit_parallel(log_file) : unit_cmd(log_file)
 
       # inject command name so coverage results for each component don't clobber others
       if Kernel.system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}")
@@ -40,6 +40,12 @@ module Bosh::Dev
         cmd << 'rspec --tty --backtrace -c -f p spec'
         cmd << " > #{log_file} 2>&1" if log_file
       end
+    end
+
+    def unit_parallel(log_file = nil)
+      cmd = 'parallel_test --type rspec --runtime-log /tmp/bosh_director_parallel_runtime_rspec.log spec'
+      cmd << " > #{log_file} 2>&1" if log_file
+      cmd
     end
 
     def unit_builds

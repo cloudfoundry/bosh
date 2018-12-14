@@ -21,7 +21,7 @@ module Bosh::Dev
     describe '#unit_builds' do
       it 'returns all subprojects with unit tests alphabetilcally sorted' do
         expect(runner.unit_builds.size).to eq 3
-        expect(runner.unit_builds).to eq %w(one-with-specs two-with-specs with-specs_cpi)
+        expect(runner.unit_builds).to eq %w[one-with-specs two-with-specs with-specs_cpi]
       end
     end
 
@@ -32,6 +32,20 @@ module Bosh::Dev
 
       it 'redirects output if logfile passed' do
         expect(runner.unit_cmd('potato.log')).to eq 'rspec --tty --backtrace -c -f p spec > potato.log 2>&1'
+      end
+    end
+
+    describe '#unit_parallel' do
+      it 'builds an parallel_test command' do
+        expect(runner.unit_parallel).to eq(
+          'parallel_test --type rspec --runtime-log /tmp/bosh_director_parallel_runtime_rspec.log spec',
+        )
+      end
+
+      it 'redirects output if logfile passed' do
+        expect(runner.unit_parallel('potato.log')).to eq(
+          'parallel_test --type rspec --runtime-log /tmp/bosh_director_parallel_runtime_rspec.log spec > potato.log 2>&1',
+        )
       end
     end
 

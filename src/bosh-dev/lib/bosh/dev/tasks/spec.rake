@@ -148,6 +148,14 @@ namespace :spec do
         trap('INT') { exit }
         runner.unit_exec(build)
       end
+
+      namespace build.sub(/^bosh[_-]/, '').intern do
+      desc "Run parallel unit tests for the #{build} component"
+        task :parallel do
+          trap('INT') { exit }
+          runner.unit_exec(build, parallel: true)
+        end
+      end
     end
 
     desc 'Run all migrations tests'
