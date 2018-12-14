@@ -10,7 +10,7 @@ module Bosh::Director
                      needs_recreate,
                      instance_report,
                      disk_manager,
-                     rendered_templates_persistor,
+                     rendered_templates_persister,
                      vm_creator,
                      links_manager,
                      ip_provider,
@@ -23,7 +23,7 @@ module Bosh::Director
         @needs_recreate = needs_recreate
         @instance_report = instance_report
         @disk_manager = disk_manager
-        @rendered_templates_persistor = rendered_templates_persistor
+        @rendered_templates_persister = rendered_templates_persister
         @vm_creator = vm_creator
         @links_manager = links_manager
         @ip_provider = ip_provider
@@ -43,7 +43,7 @@ module Bosh::Director
         # Optimization to only update DNS if nothing else changed.
         if dns_change_only?
           @logger.debug('Only change is DNS configuration')
-          update_dns
+          update_dns_if_changed
           return
         end
 
@@ -57,24 +57,20 @@ module Bosh::Director
             return
           end
 
-          handle_detached_instance
+          handle_detached_instance_if_detached
         end
 
         converge_vm if instance.state != 'detached'
         update_instance
-        update_dns
+        update_dns_if_changed
 
         return if instance.state == 'detached'
 
-        @rendered_templates_persistor.persist(instance_plan)
+        @rendered_templates_persister.persist(instance_plan)
         apply_state
       end
 
       private
-
-      def needs_recreate?
-        @needs_recreate
-      end
 
       def apply_state
         state_applier = InstanceUpdater::StateApplier.new(
@@ -90,8 +86,8 @@ module Bosh::Director
       def handle_not_detached_instance_plan
         # Rendered templates are persisted here, in the case where a vm is already soft stopped
         # It will update the rendered templates on the VM
-        unless Config.enable_nats_delivered_templates && needs_recreate?
-          @rendered_templates_persistor.persist(instance_plan)
+        unless Config.enable_nats_delivered_templates && @needs_recreate
+          @rendered_templates_persister.persist(instance_plan)
           @links_manager.bind_links_to_instance(instance)
           instance.update_variable_set
           @instance_variable_and_links_updated = true
@@ -108,8 +104,8 @@ module Bosh::Director
         end
       end
 
-      def handle_detached_instance
-        return if instance.state != 'detached'
+      def handle_detached_instance_if_detached
+        return unless instance.state == 'detached'
 
         # Command issued: `bosh stop --hard`
         @logger.info("Detaching instance #{instance}")
@@ -127,7 +123,7 @@ module Bosh::Director
       end
 
       def converge_vm
-        recreate = needs_recreate? || (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
+        recreate = @needs_recreate || (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
 
         RecreateHandler.new(@logger, @vm_creator, @ip_provider, instance_plan, instance_report, instance).perform if recreate
 
@@ -163,7 +159,7 @@ module Bosh::Director
 
         return 'create' if instance_plan.new?
 
-        needs_recreate? ? 'recreate' : 'update'
+        @needs_recreate ? 'recreate' : 'update'
       end
 
       def restarting?
@@ -176,6 +172,7 @@ module Bosh::Director
 
       def calculate_context
         return {} if restarting?
+
         context = {}
         context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
         unless instance_plan.new?
@@ -184,7 +181,7 @@ module Bosh::Director
         context
       end
 
-      def update_dns
+      def update_dns_if_changed
         return unless instance_plan.dns_changed?
 
         @dns_state_updater.update_dns_for_instance(instance_plan, instance_plan.network_settings.dns_record_info)
