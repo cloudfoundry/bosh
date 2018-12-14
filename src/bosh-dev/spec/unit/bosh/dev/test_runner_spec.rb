@@ -37,14 +37,14 @@ module Bosh::Dev
 
     describe '#unit_parallel' do
       it 'builds an parallel_test command' do
-        expect(runner.unit_parallel).to eq(
-          'parallel_test --type rspec --runtime-log /tmp/bosh_director_parallel_runtime_rspec.log spec',
+        expect(runner.unit_parallel('rocket')).to eq(
+          'parallel_test --type rspec --runtime-log /tmp/bosh_rocket_parallel_runtime_rspec.log spec',
         )
       end
 
       it 'redirects output if logfile passed' do
-        expect(runner.unit_parallel('potato.log')).to eq(
-          'parallel_test --type rspec --runtime-log /tmp/bosh_director_parallel_runtime_rspec.log spec > potato.log 2>&1',
+        expect(runner.unit_parallel('pumpkin', 'potato.log')).to eq(
+          'parallel_test --type rspec --runtime-log /tmp/bosh_pumpkin_parallel_runtime_rspec.log spec > potato.log 2>&1',
         )
       end
     end
@@ -57,16 +57,14 @@ module Bosh::Dev
       end
 
       it 'changes directory to the build and shells out to #unit_cmd' do
-        expect(Kernel).to receive(:system).with({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{runner.unit_cmd}")
+        expect(Kernel).to receive(:system).with({ 'BOSH_BUILD_NAME' => build }, "cd #{build} && #{runner.unit_cmd}")
         runner.unit_exec(build)
       end
 
       it 'raises an error if the command fails' do
         allow(Kernel).to receive(:system).and_return(false)
 
-        expect {
-          runner.unit_exec(build)
-        }.to raise_error /#{build} failed to build unit tests/
+        expect { runner.unit_exec(build) }.to raise_error(/#{build} failed to build unit tests/)
       end
     end
 

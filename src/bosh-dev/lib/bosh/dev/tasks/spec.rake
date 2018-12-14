@@ -142,6 +142,12 @@ namespace :spec do
       runner.ruby
     end
 
+    desc 'Run all unit tests for ruby components in parallel'
+    task :ruby_parallel do
+      trap('INT') { exit }
+      runner.ruby(parallel: true)
+    end
+
     runner.unit_builds.each do |build|
       desc "Run unit tests for the #{build} component"
       task build.sub(/^bosh[_-]/, '').intern do
@@ -164,6 +170,9 @@ namespace :spec do
       cmd = 'rspec --tty --backtrace -c -f p ./spec/unit/db/migrations/'
       sh("cd bosh-director && #{cmd}")
     end
+
+    desc 'Run all unit tests in parallel'
+    task parallel: %w[spec:release_unit spec:unit:ruby_parallel spec:template_test_unit]
   end
 
   desc 'Run all unit tests'
