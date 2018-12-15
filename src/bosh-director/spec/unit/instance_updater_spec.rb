@@ -13,6 +13,7 @@ module Bosh::Director
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:instance_plan_changed) { false }
     let(:needs_shutting_down) { false }
+    let(:event) { Models::Event.make }
 
     let(:instance_plan) do
       instance_double(
@@ -44,7 +45,7 @@ module Bosh::Director
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
       allow(InstanceUpdater::InstanceState).to receive(:with_instance_update_and_event_creation)
-      allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(Api::EventManager.new({}))
+      allow(Config).to receive_message_chain(:current_job, :event_manager, :create_event).and_return(event)
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('task-1', 'task-2')
     end
@@ -79,7 +80,7 @@ module Bosh::Director
             .to have_received(:with_instance_update_and_event_creation)
             .with(
               instance_model,
-              1,
+              event.id,
               deployment_model.name,
               'action',
             )
