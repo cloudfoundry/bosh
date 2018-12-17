@@ -14,7 +14,7 @@ RSpec::Matchers.define :be_create_swap_deleted do |old_vm|
 end
 
 describe 'deploy with create-swap-delete', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_each(agent_wait_timeout: 3)
 
   let(:manifest) do
     manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])
@@ -316,6 +316,76 @@ describe 'deploy with create-swap-delete', type: :integration do
           expect(task_log).to match(/Skipping create-swap-delete for static ip enabled instance #{instance_slug_regex}/)
         end
       end
+    end
+  end
+
+  context 'when a create-swap-delete deployment fails with unresponsive agent on a provider VM' do
+    it 'updates IP addresses on dependent consumer VMs' do
+      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: false)
+      bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
+      bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
+
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
+      consumer_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_api',
+        jobs: [
+          {
+            'name' => 'api_server',
+            'consumes' => {
+              'db' => {
+                'from' => 'mysql_link',
+                'ip_addresses' => true,
+              },
+            },
+          },
+        ],
+        instances: 1,
+      )
+      consumer_spec['azs'] = ['z1']
+      provider_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'mysql',
+        jobs: [
+          {
+            'name' => 'database',
+            'provides' => {
+              'db' => {
+                'as' => 'mysql_link',
+              },
+            },
+          },
+        ],
+        instances: 1,
+      )
+      provider_spec['azs'] = ['z1']
+      manifest['instance_groups'] = [consumer_spec, provider_spec]
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs
+
+      upload_cloud_config(cloud_config_hash: cloud_config)
+      upload_stemcell
+      deploy_simple_manifest(manifest_hash: manifest)
+
+      api_instance = director.instance('my_api', '0')
+      template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+      addresses = template['databases']['main'].map do |elem|
+        elem['address']
+      end
+      expect(addresses).to eq(director.instance('mysql', '0').ips)
+
+      current_sandbox.cpi.reset_count('create_vm')
+      current_sandbox.cpi.commands.make_create_vm_have_unresponsive_agent_for_call(1)
+
+      deploy_simple_manifest(manifest_hash: manifest, recreate: true, failure_expected: true)
+
+      current_sandbox.cpi.commands.allow_create_vm_to_have_responsive_agent
+      deploy_simple_manifest(manifest_hash: manifest)
+
+      template = YAML.load(api_instance.read_job_template('api_server', 'config.yml'))
+      addresses = template['databases']['main'].map do |elem|
+        elem['address']
+      end
+
+      expect(addresses).to eq(director.instance('mysql', '0').ips)
     end
   end
 

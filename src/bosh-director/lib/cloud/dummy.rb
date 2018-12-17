@@ -77,7 +77,8 @@ module Bosh
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
         # rubocop:enable ParameterLists
-        @logger.debug('Dummy: create_vm')
+        bump_count(__method__)
+        @logger.debug("Dummy: create_vm (count: #{current_count(__method__)})")
         validate_and_record_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
         ips = []
@@ -122,7 +123,9 @@ module Bosh
         agent_pid = spawn_agent_process(agent_id, cloud_properties['legacy_agent_path'])
         vm = VM.new(agent_pid.to_s, agent_id, cloud_properties, ips)
 
-        kill_process(agent_pid) if commands.create_vm_unresponsive_agent
+        if commands.create_vm_unresponsive_agent || current_count(__method__) == commands.unresponsive_agent_index
+          kill_process(agent_pid)
+        end
 
         @vm_repo.save(vm)
 
@@ -311,6 +314,21 @@ module Bosh
       end
 
       # Additional Dummy test helpers
+
+      def reset_count(method_name)
+        file_path = File.join(@base_dir, "#{method_name}_call_count")
+        File.write(file_path, 0)
+      end
+
+      def bump_count(method_name)
+        file_path = File.join(@base_dir, "#{method_name}_call_count")
+        File.write(file_path, current_count(method_name) + 1)
+      end
+
+      def current_count(method_name)
+        file_path = File.join(@base_dir, "#{method_name}_call_count")
+        File.exist?(file_path) ? File.read(file_path).to_i : 0
+      end
 
       def prepare
         FileUtils.mkdir_p(@base_dir)
@@ -705,6 +723,12 @@ module Bosh
           FileUtils.touch(raise_detach_disk_not_implemented_path)
         end
 
+        def make_create_vm_have_unresponsive_agent_for_call(index)
+          @logger.info('Making create_vm method create with an unresponsive agent')
+          FileUtils.mkdir_p(File.dirname(create_vm_unresponsive_agent_index_path))
+          File.write(create_vm_unresponsive_agent_index_path, index.to_s)
+        end
+
         def make_create_vm_have_unresponsive_agent
           @logger.info('Making create_vm method create with an unresponsive agent')
           FileUtils.mkdir_p(File.dirname(create_vm_unresponsive_agent_path))
@@ -713,7 +737,8 @@ module Bosh
 
         def allow_create_vm_to_have_responsive_agent
           @logger.info('Making create_vm method create with an unresponsive agent')
-          FileUtils.rm(create_vm_unresponsive_agent_path)
+          FileUtils.rm_f(create_vm_unresponsive_agent_index_path)
+          FileUtils.rm_f(create_vm_unresponsive_agent_path)
         end
 
         def allow_attach_disk_to_succeed
@@ -735,6 +760,11 @@ module Bosh
         def create_vm_unresponsive_agent
           @logger.info('Reading create_vm_unresponsive_agent')
           File.exist?(create_vm_unresponsive_agent_path)
+        end
+
+        def unresponsive_agent_index
+          @logger.info('Reading create_vm_unresponsive_agent_index')
+          File.read(create_vm_unresponsive_agent_index_path).to_i rescue false
         end
 
         def make_resize_disk_to_raise_not_implemented
@@ -785,6 +815,10 @@ module Bosh
 
         def create_vm_unresponsive_agent_path
           File.join(@cpi_commands, 'create_vm', 'unresponsive_agent')
+        end
+
+        def create_vm_unresponsive_agent_index_path
+          File.join(@cpi_commands, 'create_vm', 'unresponsive_agent_index')
         end
 
         def raise_resize_disk_not_implemented_path
