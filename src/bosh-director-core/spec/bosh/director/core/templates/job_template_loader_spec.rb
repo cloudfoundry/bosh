@@ -6,6 +6,7 @@ require 'archive/tar/minitar'
 require 'stringio'
 require 'yaml'
 require 'zlib'
+require 'tempfile'
 
 # prevent using ASCII on ppc64le platform
 Encoding.default_external = "UTF-8"
@@ -112,13 +113,13 @@ module Bosh::Director::Core::Templates
         ).and_return(job_template_erb)
 
         expect(JobTemplateRenderer).to receive(:new).with(
-          job,
-          'release-job-name',
-          monit_erb,
-          [job_template_erb],
-          logger,
-          link_provider_intents,
-          dns_encoder,
+          job_template: job,
+          template_name: 'release-job-name',
+          monit_erb: monit_erb,
+          source_erbs: [job_template_erb],
+          logger: logger,
+          link_provider_intents: link_provider_intents,
+          dns_encoder: dns_encoder,
         ).and_return fake_renderer
 
         generated_renderer = job_template_loader.process(job)
@@ -147,13 +148,13 @@ module Bosh::Director::Core::Templates
         ).and_return(monit_erb)
 
         expect(JobTemplateRenderer).to receive(:new).with(
-          job,
-          'release-job-no-templates',
-          monit_erb,
-          [],
-          logger,
-          link_provider_intents,
-          dns_encoder,
+          job_template: job,
+          template_name: 'release-job-no-templates',
+          monit_erb: monit_erb,
+          source_erbs: [],
+          logger: logger,
+          link_provider_intents: link_provider_intents,
+          dns_encoder: dns_encoder,
         ).and_return fake_renderer
 
         generated_renderer = job_template_loader.process(job)

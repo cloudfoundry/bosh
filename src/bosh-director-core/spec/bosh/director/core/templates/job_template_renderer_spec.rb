@@ -124,7 +124,15 @@ module Bosh::Director::Core::Templates
 
         context 'rendering templates returns errors' do
           let(:job_template_renderer) do
-            JobTemplateRenderer.new(job_template, 'template-name', monit_erb, [source_erb, source_erb], logger, dns_encoder)
+            JobTemplateRenderer.new(
+              job_template: job_template,
+              template_name: 'template-name',
+              monit_erb: monit_erb,
+              source_erbs: [source_erb, source_erb],
+              logger: logger,
+              link_provider_intents: link_provider_intents,
+              dns_encoder: dns_encoder,
+            )
           end
 
           before do
