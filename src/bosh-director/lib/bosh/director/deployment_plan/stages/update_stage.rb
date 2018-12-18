@@ -2,12 +2,13 @@ module Bosh::Director
   module DeploymentPlan
     module Stages
       class UpdateStage
-        def initialize(base_job, deployment_plan, multi_instance_group_updater, dns_encoder)
+        def initialize(base_job, deployment_plan, multi_instance_group_updater, dns_encoder, link_provider_intents)
           @base_job = base_job
           @logger = base_job.logger
           @deployment_plan = deployment_plan
           @multi_instance_group_updater = multi_instance_group_updater
           @dns_encoder = dns_encoder
+          @link_provider_intents = link_provider_intents
         end
 
         def perform
@@ -33,7 +34,13 @@ module Bosh::Director
           template_blob_cache = @deployment_plan.template_blob_cache
           agent_broadcaster = AgentBroadcaster.new
           vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-          @vm_creator = Bosh::Director::VmCreator.new(@logger, template_blob_cache, @dns_encoder, agent_broadcaster)
+          @vm_creator = Bosh::Director::VmCreator.new(
+            @logger,
+            template_blob_cache,
+            @dns_encoder,
+            agent_broadcaster,
+            @link_provider_intents,
+          )
         end
 
         def setup_stage

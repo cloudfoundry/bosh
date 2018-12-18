@@ -55,7 +55,7 @@ module Bosh::Director
           if errand_instance_group.errand?
             errand_instance_group.bind_instances(deployment_planner.ip_provider)
 
-            render_templates(errand_instance_group, template_blob_cache, dns_encoder)
+            render_templates(errand_instance_group, template_blob_cache, dns_encoder, deployment_planner.link_provider_intents)
             target_instance = errand_instance_group.instances.first
             compile_step(deployment_planner).perform
 
@@ -111,9 +111,15 @@ module Bosh::Director
       errand_instance_group
     end
 
-    def render_templates(errand_instance_group, template_blob_cache, dns_encoder)
+    def render_templates(errand_instance_group, template_blob_cache, dns_encoder, link_provider_intents)
       needed_instance_plans = errand_instance_group.needed_instance_plans
-      JobRenderer.render_job_instances_with_cache(needed_instance_plans, template_blob_cache, dns_encoder, @logger)
+      JobRenderer.render_job_instances_with_cache(
+        @logger,
+        needed_instance_plans,
+        template_blob_cache,
+        dns_encoder,
+        link_provider_intents,
+      )
       needed_instance_plans
     end
 

@@ -9,12 +9,14 @@ module Bosh::Director
     describe '#get' do
       let(:deployment_planner_provider) { instance_double(Errand::DeploymentPlannerProvider) }
       let(:deployment_planner) do
-        instance_double(DeploymentPlan::Planner,
-                        availability_zones: [],
-                        template_blob_cache: template_blob_cache,
-                        ip_provider: ip_provider,
-                        use_short_dns_addresses?: false,
-                        use_link_dns_names?: false,
+        instance_double(
+          DeploymentPlan::Planner,
+          availability_zones: [],
+          template_blob_cache: template_blob_cache,
+          ip_provider: ip_provider,
+          use_short_dns_addresses?: false,
+          use_link_dns_names?: false,
+          link_provider_intents: [],
         )
       end
       let(:task_result) { instance_double(TaskDBWriter) }
@@ -437,10 +439,11 @@ module Bosh::Director
             expect(package_compile_step).to receive(:perform)
             expect(instance_group).to receive(:bind_instances).with(ip_provider)
             expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
+              logger,
               needed_instance_plans,
               template_blob_cache,
               an_instance_of(DnsEncoder),
-              logger,
+              deployment_planner.link_provider_intents,
             )
             expect(Errand::Runner).to receive(:new)
               .with(ig_name, false, task_result, instance_manager, logs_fetcher)
@@ -460,10 +463,11 @@ module Bosh::Director
               expect(package_compile_step).to receive(:perform)
               expect(instance_group).to receive(:bind_instances).with(ip_provider)
               expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
+                logger,
                 needed_instance_plans,
                 template_blob_cache,
                 an_instance_of(DnsEncoder),
-                logger,
+                deployment_planner.link_provider_intents,
               )
               expect(Errand::Runner).to receive(:new)
                 .with(ig_name, true, task_result, instance_manager, logs_fetcher)

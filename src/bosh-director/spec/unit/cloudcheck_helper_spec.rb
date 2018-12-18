@@ -40,7 +40,15 @@ module Bosh::Director
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder(false) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
-    let(:vm_creator) { Bosh::Director::VmCreator.new(logger, template_cache, dns_encoder, agent_broadcaster) }
+    let(:vm_creator) do
+      Bosh::Director::VmCreator.new(
+        logger,
+        template_cache,
+        dns_encoder,
+        agent_broadcaster,
+        planner.link_provider_intents,
+      )
+    end
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
     let(:template_cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
     let(:agent_client) { instance_double(AgentClient) }
@@ -48,7 +56,15 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
-    let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, use_link_dns_names?: false, ip_provider: ip_provider) }
+    let(:planner) do
+      instance_double(
+        Bosh::Director::DeploymentPlan::Planner,
+        use_short_dns_addresses?: false,
+        use_link_dns_names?: false,
+        ip_provider: ip_provider,
+        link_provider_intents: [],
+      )
+    end
     let(:ip_provider) { double(:ip_provider) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }

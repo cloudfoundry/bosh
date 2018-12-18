@@ -19,10 +19,7 @@ module Bosh::Director::Models::Links
     def group_name
       return '' if link_provider_intent.nil?
 
-      link_name = link_provider_intent.name || link_provider_intent.original_name
-      link_type = link_provider_intent.type
-
-      "#{link_name}-#{link_type}"
+      link_provider_intent.group_name
     end
   end
 end

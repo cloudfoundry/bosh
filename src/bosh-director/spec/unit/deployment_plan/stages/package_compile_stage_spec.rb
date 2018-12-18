@@ -9,7 +9,9 @@ module Bosh::Director
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:agent_broadcaster) { AgentBroadcaster.new }
     let(:dns_encoder) { instance_double(DnsEncoder) }
-    let(:vm_creator) { VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster) }
+    let(:vm_creator) do
+      VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster, plan.link_provider_intents)
+    end
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:release_version_model) { Models::ReleaseVersion.make(version: 'new') }
     let(:reuse_compilation_vms) { false }
@@ -27,13 +29,15 @@ module Bosh::Director
     end
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
     let(:plan) do
-      instance_double('Bosh::Director::DeploymentPlan::Planner',
+      instance_double(
+        'Bosh::Director::DeploymentPlan::Planner',
         compilation: compilation_config,
         model: deployment,
         name: 'mycloud',
         ip_provider: ip_provider,
         recreate: false,
-        tags: {}
+        tags: {},
+        link_provider_intents: [],
       )
     end
     let(:instance_reuser) { InstanceReuser.new }
@@ -577,7 +581,9 @@ module Bosh::Director
       let(:reuse_compilation_vms) { true }
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
-      let(:vm_creator) { Bosh::Director::VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster) }
+      let(:vm_creator) do
+        Bosh::Director::VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, plan.link_provider_intents)
+      end
 
       it 'reuses compilation VMs' do
         prepare_samples
@@ -754,7 +760,8 @@ module Bosh::Director
           model: deployment_model,
           name: 'fake-deployment',
           ip_provider: ip_provider,
-          tags: {}
+          tags: {},
+          link_provider_intents: [],
         )
       end
       let(:stemcell) { make_stemcell(cid: 'stemcell-cid') }

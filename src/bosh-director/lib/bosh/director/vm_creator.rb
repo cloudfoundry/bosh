@@ -6,11 +6,12 @@ module Bosh::Director
   class VmCreator
     include PasswordHelper
 
-    def initialize(logger, template_blob_cache, dns_encoder, agent_broadcaster)
+    def initialize(logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents)
       @logger = logger
       @template_blob_cache = template_blob_cache
       @dns_encoder = dns_encoder
       @agent_broadcaster = agent_broadcaster
+      @link_provider_intents = link_provider_intents
 
       @config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
     end
@@ -83,6 +84,7 @@ module Bosh::Director
         instance_plan,
         @template_blob_cache,
         @dns_encoder,
+        @link_provider_intents,
       )
 
       agenda

@@ -13,7 +13,13 @@ module Bosh::Director
       )
       @powerdns_manager = PowerDnsManagerProvider.create
       @vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
-      @vm_creator = VmCreator.new(logger, @template_blob_cache, @dns_encoder, agent_broadcaster)
+      @vm_creator = VmCreator.new(
+        logger,
+        @template_blob_cache,
+        @dns_encoder,
+        agent_broadcaster,
+        @deployment_planner.link_provider_intents,
+      )
     end
 
     def create_missing_vms
@@ -28,10 +34,12 @@ module Bosh::Director
     # @return [void]
     def update_instances
       instance_group_updater = InstanceGroupUpdater.new(
-        @deployment_planner.ip_provider,
-        @instance_group,
-        @disk_manager,
-        @template_blob_cache, @dns_encoder
+        ip_provider: @deployment_planner.ip_provider,
+        instance_group: @instance_group,
+        disk_manager: @disk_manager,
+        template_blob_cache: @template_blob_cache,
+        dns_encoder: @dns_encoder,
+        link_provider_intents: @deployment_planner.link_provider_intents,
       )
       instance_group_updater.update
     end

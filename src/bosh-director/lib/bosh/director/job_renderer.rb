@@ -4,10 +4,11 @@ require 'bosh/director/core/templates/template_blob_cache'
 
 module Bosh::Director
   class JobRenderer
-    def self.render_job_instances_with_cache(instance_plans, cache, dns_encoder, logger)
+    def self.render_job_instances_with_cache(logger, instance_plans, cache, dns_encoder, link_provider_intents)
       job_template_loader = Core::Templates::JobTemplateLoader.new(
         logger,
         cache,
+        link_provider_intents,
         dns_encoder,
       )
 

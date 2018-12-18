@@ -160,6 +160,10 @@ module Bosh::Director
         false
       end
 
+      def link_provider_intents
+        deployment_plan.link_provider_intents
+      end
+
       def compilation_step
         DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
       end
@@ -173,16 +177,22 @@ module Bosh::Director
           self,
           deployment_plan,
           multi_instance_group_updater(deployment_plan, dns_encoder),
-          dns_encoder
+          dns_encoder,
+          link_provider_intents,
         )
       end
 
       # Job dependencies
 
       def multi_instance_group_updater(deployment_plan, dns_encoder)
-        @multi_instance_group_updater ||= begin
-          DeploymentPlan::BatchMultiInstanceGroupUpdater.new(InstanceGroupUpdaterFactory.new(logger, deployment_plan.template_blob_cache, dns_encoder))
-        end
+        @multi_instance_group_updater ||= DeploymentPlan::BatchMultiInstanceGroupUpdater.new(
+          InstanceGroupUpdaterFactory.new(
+            logger,
+            deployment_plan.template_blob_cache,
+            dns_encoder,
+            link_provider_intents,
+          ),
+        )
       end
 
       def render_templates_and_snapshot_errand_variables
@@ -205,10 +215,11 @@ module Bosh::Director
         instance_groups.each do |instance_group|
           begin
             JobRenderer.render_job_instances_with_cache(
+              logger,
               instance_group.unignored_instance_plans,
               template_blob_cache,
               dns_encoder,
-              logger,
+              link_provider_intents,
             )
           rescue Exception => e
             errors.push e

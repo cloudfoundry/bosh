@@ -324,6 +324,10 @@ module Bosh::Director
       def is_deploy?
         @is_deploy_action
       end
+
+      def link_provider_intents
+        model.link_providers.flat_map(&:intents)
+      end
     end
   end
 end

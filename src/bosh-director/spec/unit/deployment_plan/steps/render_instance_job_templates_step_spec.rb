@@ -4,8 +4,9 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       describe RenderInstanceJobTemplatesStep do
-        subject(:step) { RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache, dns_encoder) }
+        subject(:step) { RenderInstanceJobTemplatesStep.new(instance_plan, blob_cache, dns_encoder, link_provider_intents) }
 
+        let(:link_provider_intents) { [] }
         let(:blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
         let(:dns_encoder) { instance_double(DnsEncoder) }
         let(:deployment_instance) { instance_double(Instance, compilation?: false) }
@@ -19,7 +20,7 @@ module Bosh::Director
               expect(logger).to receive(:debug)
                 .with('Re-rendering templates with updated dynamic networks: template-spec')
               expect(JobRenderer).to receive(:render_job_instances_with_cache)
-                .with([instance_plan], blob_cache, dns_encoder, logger)
+                .with(logger, [instance_plan], blob_cache, dns_encoder, link_provider_intents)
 
               step.perform(report)
             end

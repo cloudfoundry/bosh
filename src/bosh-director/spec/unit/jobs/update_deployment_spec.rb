@@ -68,7 +68,8 @@ module Bosh::Director
             errand_instance_groups: [errand_instance_group],
             template_blob_cache: template_blob_cache,
             availability_zones: availability_zones,
-            model: deployment_model
+            model: deployment_model,
+            link_provider_intents: [],
           )
         end
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
@@ -97,9 +98,10 @@ module Bosh::Director
           allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
           allow(JobRenderer).to receive(:render_job_instances_with_cache).with(
             anything,
+            anything,
             template_blob_cache,
             dns_encoder,
-            anything
+            planner.link_provider_intents,
           )
           allow(job).to receive(:with_deployment_lock).and_yield.ordered
         end
@@ -145,14 +147,14 @@ module Bosh::Director
               allow(deployment_instance_group).to receive(:unignored_instance_plans).and_return(instance_plans)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([])
 
-              allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
               allow(instance_plan1).to receive(:instance).and_return(instance1)
               allow(instance_plan2).to receive(:instance).and_return(instance2)
               allow(JobRenderer).to receive(:render_job_instances_with_cache).with(
-                  deployment_instance_group.unignored_instance_plans,
-                  template_blob_cache,
-                  dns_encoder,
-                  anything
+                anything, # logger
+                deployment_instance_group.unignored_instance_plans,
+                template_blob_cache,
+                dns_encoder,
+                planner.link_provider_intents,
               )
             end
 
@@ -438,7 +440,8 @@ module Bosh::Director
             expect(compile_stage).to receive(:perform).ordered
             expect(update_stage).to receive(:perform).ordered
             expect(notifier).to receive(:send_end_event).ordered
-            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything, logger)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache)
+              .with(logger, anything, template_blob_cache, anything, planner.link_provider_intents)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
@@ -449,10 +452,12 @@ module Bosh::Director
           it 'binds models, renders templates, compiles packages, runs post-deploy scripts, marks variable_sets' do
             expect(assembler).to receive(:bind_models)
             expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
+              anything,
               deployment_instance_group.unignored_instance_plans,
               template_blob_cache,
               anything,
-              anything)
+              planner.link_provider_intents,
+            )
 
             job.perform
           end

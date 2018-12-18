@@ -12,6 +12,7 @@ module Bosh::Director
                                                skip_drain: skip_drain,
                                                use_short_dns_addresses?: false,
                                                use_link_dns_names?: false,
+                                               link_provider_intents: [],
                                                name: 'fake-deployment',
                                                availability_zones: [])
     end
@@ -53,6 +54,7 @@ module Bosh::Director
           template_blob_cache,
           dns_encoder,
           an_instance_of(Bosh::Director::AgentBroadcaster),
+          deployment.link_provider_intents,
         )
         .and_return vm_creator
       allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])
@@ -74,11 +76,12 @@ module Bosh::Director
       it 'binds vms to instances, creates jobs configurations and updates dns' do
         instance_group_updater = instance_double(InstanceGroupUpdater)
         expect(InstanceGroupUpdater).to receive(:new).with(
-          ip_provider,
-          job,
-          an_instance_of(DiskManager),
-          template_blob_cache,
-          dns_encoder,
+          ip_provider: ip_provider,
+          instance_group: job,
+          disk_manager: an_instance_of(DiskManager),
+          template_blob_cache: template_blob_cache,
+          dns_encoder: dns_encoder,
+          link_provider_intents: deployment.link_provider_intents,
         ).and_return(instance_group_updater)
         expect(instance_group_updater).to receive(:update).with(no_args)
 

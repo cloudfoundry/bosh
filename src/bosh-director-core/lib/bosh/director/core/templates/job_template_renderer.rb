@@ -11,7 +11,13 @@ module Bosh::Director::Core::Templates
 
     attr_reader :monit_erb, :source_erbs
 
-    def initialize(job_template, template_name, monit_erb, source_erbs, logger, dns_encoder = nil)
+    def initialize(job_template:,
+                   template_name:,
+                   monit_erb:,
+                   source_erbs:,
+                   logger:,
+                   link_provider_intents:,
+                   dns_encoder: nil)
       @links_provided = job_template.model.provides
       @name = job_template.name
       @release = job_template.release
@@ -19,6 +25,7 @@ module Bosh::Director::Core::Templates
       @monit_erb = monit_erb
       @source_erbs = source_erbs
       @logger = logger
+      @link_provider_intents = link_provider_intents
       @dns_encoder = dns_encoder
     end
 
@@ -67,9 +74,7 @@ module Bosh::Director::Core::Templates
     private
 
     def namespace_links_to_current_job(spec)
-      if spec.nil?
-        return nil
-      end
+      return nil if spec.nil?
 
       modified_spec = Bosh::Common::DeepCopy.copy(spec)
 
@@ -85,9 +90,7 @@ module Bosh::Director::Core::Templates
     end
 
     def remove_unused_properties(spec)
-      if spec.nil?
-        return nil
-      end
+      return nil if spec.nil?
 
       modified_spec = Bosh::Common::DeepCopy.copy(spec)
 
@@ -102,13 +105,13 @@ module Bosh::Director::Core::Templates
     end
 
     def links_data(spec)
-      data = @links_provided.map do |provide|
+      data = @link_provider_intents.map do |provider_intent|
         {
-          'name' => provide['name'],
-          'type' => provide['type'],
+          'name' => provider_intent.canonical_name,
+          'type' => provider_intent.type,
           'group' => @dns_encoder.id_for_group_tuple(
             'link',
-            "#{provide['name']}-#{provide['type']}",
+            provider_intent.group_name,
             spec['deployment'],
           ),
         }

@@ -32,6 +32,7 @@ module Bosh::Director
               deployment_plan.template_blob_cache,
               LocalDnsEncoderManager.create_dns_encoder(deployment_plan.use_short_dns_addresses?, deployment_plan.use_link_dns_names?),
               AgentBroadcaster.new,
+              deployment_plan.link_provider_intents,
             ),
             logger,
           )

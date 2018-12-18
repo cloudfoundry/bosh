@@ -38,9 +38,18 @@ module Bosh::Director::Core::Templates
       end
       let(:logger) { instance_double('Logger', debug: nil) }
       let(:dns_encoder) { double('some DNS encoder') }
+      let(:link_provider_intents) { [] }
 
       subject(:job_template_renderer) do
-        JobTemplateRenderer.new(job_template, 'template-name', monit_erb, [source_erb], logger, dns_encoder)
+        JobTemplateRenderer.new(
+          job_template: job_template,
+          template_name: 'template-name',
+          monit_erb: monit_erb,
+          source_erbs: [source_erb],
+          logger: logger,
+          link_provider_intents: link_provider_intents,
+          dns_encoder: dns_encoder,
+        )
       end
 
       context 'when templates do not contain local properties' do
@@ -179,12 +188,14 @@ module Bosh::Director::Core::Templates
           }
         end
 
+        let(:provider_intent) do
+          double('provider_intent', canonical_name: 'my-link', type: 'type1', group_name: 'my-link-type1')
+        end
+
+        let(:link_provider_intents) { [provider_intent] }
+
         before do
           allow(Bosh::Template::EvaluationContext).to receive(:new)
-          allow(job_template_model).to receive(:provides).and_return([{
-            'name' => 'LINKNAME',
-            'type' => 'LINKTYPE',
-          }])
           allow(dns_encoder).to receive(:id_for_group_tuple).and_return('group_id')
         end
 
@@ -197,7 +208,7 @@ module Bosh::Director::Core::Templates
           rendered_files = job_template_renderer.render(raw_spec).templates
           expect(dns_encoder).to have_received(:id_for_group_tuple).with(
             'link',
-            'LINKNAME-LINKTYPE',
+            provider_intent.group_name,
             nil,
           )
 
@@ -206,8 +217,8 @@ module Bosh::Director::Core::Templates
           expect(rendered_links_file.dest_name).to(eq('.bosh/links.json'))
 
           expect(JSON.parse(rendered_links_file.contents)).to(eq([{
-            'name' => 'LINKNAME',
-            'type' => 'LINKTYPE',
+            'name' => provider_intent.canonical_name,
+            'type' => provider_intent.type,
             'group' => 'group_id',
           }]))
         end

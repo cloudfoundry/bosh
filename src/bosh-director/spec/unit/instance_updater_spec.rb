@@ -14,6 +14,21 @@ module Bosh::Director
     let(:instance_plan_changed) { false }
     let(:needs_shutting_down) { false }
     let(:event) { Models::Event.make }
+    let(:link_provider_intents) { [] }
+    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder, link_provider_intents) }
+    let(:vm_creator) { instance_double(VmCreator) }
+    let(:agent_client) { instance_double(AgentClient) }
+    let(:credentials) do
+      { 'user' => 'secret' }
+    end
+    let(:credentials_json) { JSON.generate(credentials) }
+    let(:persistent_disk_model) { instance_double(Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid') }
+    let(:disk_collection_model) do
+      instance_double(DeploymentPlan::PersistentDiskCollection::ModelPersistentDisk, model: persistent_disk_model)
+    end
+    let(:active_persistent_disks) do
+      instance_double(DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model])
+    end
 
     let(:instance_plan) do
       instance_double(

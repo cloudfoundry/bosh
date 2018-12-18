@@ -26,6 +26,7 @@ module Bosh::Director
 
     let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+    let(:link_provider_intents) { [] }
 
     before do
       job_tgz_path = asset('dummy_job_with_single_template.tgz')
@@ -35,7 +36,7 @@ module Bosh::Director
 
     describe '#render_job_instances_with_cache' do
       def perform
-        JobRenderer.render_job_instances_with_cache([instance_plan], cache, encoder, logger)
+        JobRenderer.render_job_instances_with_cache(logger, [instance_plan], cache, encoder, link_provider_intents)
       end
 
       before do

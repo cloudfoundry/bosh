@@ -8,6 +8,7 @@ module Bosh::Director
         use_short_dns_addresses?: false,
         use_link_dns_names?: false,
         ip_provider: double(:ip_provider),
+        link_provider_intents: [],
       )
     end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }

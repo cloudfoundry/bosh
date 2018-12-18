@@ -66,11 +66,11 @@ module Bosh::Director
         end
       end
 
-      def encode_link_provider(name, type, deployment_model)
+      def encode_link_provider(group_name, deployment_model)
         with_skip_dupes do
           Models::LocalDnsEncodedGroup.find_or_create(
             type: Models::LocalDnsEncodedGroup::Types::LINK,
-            name: "#{name}-#{type}",
+            name: group_name,
             deployment: deployment_model,
           )
         end
@@ -87,8 +87,8 @@ module Bosh::Director
           encode_instance_group(ig.name, deployment_model)
         end
 
-        plan.links_manager.get_link_provider_intents_for_deployment(deployment_model).each do |provider|
-          encode_link_provider(provider.name, provider.type, deployment_model)
+        plan.links_manager.get_link_provider_intents_for_deployment(deployment_model).each do |provider_intent|
+          encode_link_provider(provider_intent.group_name, deployment_model)
         end
       end
     end

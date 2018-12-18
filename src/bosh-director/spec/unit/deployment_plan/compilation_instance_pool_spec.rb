@@ -37,7 +37,9 @@ module Bosh::Director
     let(:task_id) { 42 }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:trusted_certs) { "Trust me. I know what I'm doing." }
-    let(:vm_creator) { VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster) }
+    let(:vm_creator) do
+      VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster, deployment_plan.link_provider_intents)
+    end
     let(:vm_deleter) { VmDeleter.new(Config.logger, false, false) }
     let(:vm_resources_cache) { instance_double(Bosh::Director::DeploymentPlan::VmResourcesCache) }
 
@@ -95,6 +97,7 @@ module Bosh::Director
         use_link_dns_names?: false,
         tags: tags,
         vm_resources_cache: vm_resources_cache,
+        link_provider_intents: [],
       )
     end
 
@@ -389,7 +392,8 @@ module Bosh::Director
           end
 
           allow(VmCreator).to receive(:new)
-            .with(logger, vm_deleter, template_blob_cache, agent_broadcaster).and_return(vm_creator)
+            .with(logger, vm_deleter, template_blob_cache, agent_broadcaster, deployment_plan.link_provider_intents)
+            .and_return(vm_creator)
         end
 
         it 'spins up vm in the az' do
@@ -578,7 +582,9 @@ module Bosh::Director
         allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
         allow(InstanceReuser).to receive(:new).and_return(instance_reuser)
         allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
-        allow(VmCreator).to receive(:new).with(logger, template_blob_cache, anything, agent_broadcaster).and_return(vm_creator)
+        allow(VmCreator).to receive(:new)
+          .with(logger, template_blob_cache, anything, agent_broadcaster, deployment_plan.link_provider_intents)
+          .and_return(vm_creator)
         allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
 
         allow(DeploymentPlan::InstanceProvider).to receive(:new)

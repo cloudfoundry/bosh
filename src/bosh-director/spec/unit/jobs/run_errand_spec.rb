@@ -24,7 +24,6 @@ module Bosh::Director
       allow(Config).to receive(:result).and_return(task_result)
       allow(Config).to receive(:current_job).and_return(job)
       allow(Bosh::ThreadPool).to receive(:new).and_return(thread_pool)
-      allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything, logger)
       allow(template_blob_cache).to receive(:clean_cache!)
 
       allow(thread_pool).to receive(:wrap) do |&blk|
@@ -93,6 +92,8 @@ module Bosh::Director
 
           allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variable_interpolator)
           allow(DeploymentPlan::Assembler).to receive(:create).with(planner, variable_interpolator).and_return(assembler)
+          allow(JobRenderer).to receive(:render_job_instances_with_cache)
+            .with(logger, anything, template_blob_cache, anything, planner.link_provider_intents)
         end
 
         let(:planner) do
@@ -109,6 +110,7 @@ module Bosh::Director
             use_link_dns_names?: false,
             instance_group: nil,
             model: deployment_model,
+            link_provider_intents: [],
           )
         end
 
@@ -172,6 +174,8 @@ module Bosh::Director
             allow(job).to receive(:task_id).and_return(task.id)
 
             allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache)
+              .with(logger, anything, template_blob_cache, anything, planner.link_provider_intents)
           end
 
           let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
@@ -189,6 +193,7 @@ module Bosh::Director
               use_short_dns_addresses?: false,
               use_link_dns_names?: false,
               model: deployment_model,
+              link_provider_intents: [],
             )
           end
           let(:compile_packages_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage, perform: nil) }

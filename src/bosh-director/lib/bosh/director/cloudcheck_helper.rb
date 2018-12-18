@@ -66,13 +66,14 @@ module Bosh::Director
       instance_plan_to_create = create_instance_plan(instance_model)
 
       Bosh::Director::Core::Templates::TemplateBlobCache.with_fresh_cache do |template_cache|
-        vm_creator(template_cache, dns_encoder).create_for_instance_plan(
-          instance_plan_to_create,
-          planner.ip_provider,
-          Array(instance_model.managed_persistent_disk_cid),
-          instance_plan_to_create.tags,
-          true,
-        )
+        vm_creator(template_cache, dns_encoder, planner.link_provider_intents)
+          .create_for_instance_plan(
+            instance_plan_to_create,
+            planner.ip_provider,
+            Array(instance_model.managed_persistent_disk_cid),
+            instance_plan_to_create.tags,
+            true,
+          )
 
         powerdns_manager = PowerDnsManagerProvider.create
         local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
@@ -197,9 +198,9 @@ module Bosh::Director
       @vm_deleter ||= VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
     end
 
-    def vm_creator(template_cache, dns_encoder)
+    def vm_creator(template_cache, dns_encoder, link_provider_intents)
       agent_broadcaster = AgentBroadcaster.new
-      @vm_creator ||= VmCreator.new(@logger, template_cache, dns_encoder, agent_broadcaster)
+      @vm_creator ||= VmCreator.new(@logger, template_cache, dns_encoder, agent_broadcaster, link_provider_intents)
     end
 
     def validate_spec(spec)

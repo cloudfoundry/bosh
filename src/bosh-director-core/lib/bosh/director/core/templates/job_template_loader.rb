@@ -8,9 +8,10 @@ module Bosh::Director
 
   module Core::Templates
     class JobTemplateLoader
-      def initialize(logger, template_blob_cache, dns_encoder)
+      def initialize(logger, template_blob_cache, link_provider_intents, dns_encoder)
         @logger = logger
         @template_blob_cache = template_blob_cache
+        @link_provider_intents = link_provider_intents
         @dns_encoder = dns_encoder
       end
 
@@ -30,7 +31,13 @@ module Bosh::Director
           source_erbs << SourceErb.new(src_name, dest_name, erb_file, job_template.name)
         end
 
-        JobTemplateRenderer.new(job_template, template_name, monit_source_erb, source_erbs, @logger, @dns_encoder)
+        JobTemplateRenderer.new(job_template: job_template,
+                                template_name: template_name,
+                                monit_erb: monit_source_erb,
+                                source_erbs: source_erbs,
+                                logger: @logger,
+                                link_provider_intents: @link_provider_intents,
+                                dns_encoder: @dns_encoder)
       ensure
         FileUtils.rm_rf(template_dir) if template_dir
       end

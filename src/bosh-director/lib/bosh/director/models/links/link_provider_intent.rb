@@ -10,5 +10,16 @@ module Bosh::Director::Models::Links
                            :type
                          ]
     end
+
+    def canonical_name
+      name || original_name
+    end
+
+    def group_name
+      link_name = canonical_name
+      link_type = type
+
+      "#{link_name}-#{link_type}"
+    end
   end
 end

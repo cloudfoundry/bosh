@@ -4,8 +4,9 @@ require 'timecop'
 module Bosh
   module Director
     describe VmCreator do
-      subject(:vm_creator) { VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster) }
+      subject(:vm_creator) { VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents) }
 
+      let(:link_provider_intents) { [] }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
@@ -114,7 +115,7 @@ module Bosh
           .and_return(elect_active_vm_step)
         allow(DeploymentPlan::Steps::ApplyVmSpecStep).to receive(:new).and_return(spec_apply_step)
         allow(DeploymentPlan::Steps::RenderInstanceJobTemplatesStep).to receive(:new)
-          .with(instance_plan, template_blob_cache, dns_encoder).and_return(render_step)
+          .with(instance_plan, template_blob_cache, dns_encoder, link_provider_intents).and_return(render_step)
         allow(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)
           .with(instance_model, tags).and_return(attach_instance_disks_step)
         allow(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new)

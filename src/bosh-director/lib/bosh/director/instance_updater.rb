@@ -4,35 +4,30 @@ module Bosh::Director
   class InstanceUpdater
     MAX_RECREATE_ATTEMPTS = 3
 
-    def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder)
+    def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder, link_provider_intents)
       logger = Config.logger
-      disk_manager = DiskManager.new(logger)
       agent_broadcaster = AgentBroadcaster.new
-      vm_deleter = VmDeleter.new(false, Config.enable_virtual_delete_vms)
-      dns_state_updater = DirectorDnsStateUpdater.new
-      vm_creator = VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster)
       blobstore_client = App.instance.blobstores.blobstore
-      rendered_templates_persistor = RenderedTemplatesPersister.new(blobstore_client, logger)
       new(
-        logger,
-        ip_provider,
-        blobstore_client,
-        dns_state_updater,
-        vm_deleter,
-        vm_creator,
-        disk_manager,
-        rendered_templates_persistor
+        logger: logger,
+        ip_provider: ip_provider,
+        blobstore: blobstore_client,
+        dns_state_updater: DirectorDnsStateUpdater.new,
+        vm_deleter: VmDeleter.new(false, Config.enable_virtual_delete_vms),
+        vm_creator: VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents),
+        disk_manager: DiskManager.new(logger),
+        rendered_templates_persistor: RenderedTemplatesPersister.new(blobstore_client, logger),
       )
     end
 
-    def initialize(logger,
-                   ip_provider,
-                   blobstore,
-                   dns_state_updater,
-                   vm_deleter,
-                   vm_creator,
-                   disk_manager,
-                   rendered_templates_persistor)
+    def initialize(logger:,
+                   ip_provider:,
+                   blobstore:,
+                   dns_state_updater:,
+                   vm_deleter:,
+                   vm_creator:,
+                   disk_manager:,
+                   rendered_templates_persistor:)
       @logger = logger
       @blobstore = blobstore
       @dns_state_updater = dns_state_updater

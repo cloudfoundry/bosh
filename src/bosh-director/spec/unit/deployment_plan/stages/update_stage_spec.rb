@@ -5,7 +5,8 @@ require 'bosh/director/instance_group_updater'
 module Bosh::Director
   module DeploymentPlan::Stages
     describe UpdateStage do
-      subject { UpdateStage.new(base_job, deployment_plan, multi_instance_group_updater, dns_encoder) }
+      subject { UpdateStage.new(base_job, deployment_plan, multi_instance_group_updater, dns_encoder, link_provider_intents) }
+      let(:link_provider_intents) { [] }
       let(:dns_encoder) { Bosh::Director::DnsEncoder.new }
       let(:base_job) { Jobs::BaseJob.new }
       let(:pre_cleanup) { instance_double('Bosh::Director::DeploymentPlan::Stages::PreCleanupStage') }
@@ -32,10 +33,12 @@ module Bosh::Director
         allow(UpdateActiveVmCpisStage).to receive(:new).with(base_job.logger, deployment_plan).and_return(update_active_vm_cpis)
         allow(SetupStage).to receive(:new).with(base_job, deployment_plan, vm_creator, anything, anything).and_return(setup)
         allow(DownloadPackagesStage).to receive(:new).with(base_job, deployment_plan).and_return(download_packages_step)
-        allow(UpdateInstanceGroupsStage).to receive(:new).with(base_job, deployment_plan, multi_instance_group_updater).and_return(update_instance_groups)
+        allow(UpdateInstanceGroupsStage).to receive(:new)
+          .with(base_job, deployment_plan, multi_instance_group_updater).and_return(update_instance_groups)
         allow(UpdateErrandsStage).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
         allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
-        allow(VmCreator).to receive(:new).with(logger, anything, dns_encoder, anything).and_return(vm_creator)
+        allow(VmCreator).to receive(:new)
+          .with(logger, anything, dns_encoder, anything, link_provider_intents).and_return(vm_creator)
         allow(CleanupStemcellReferencesStage).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
         allow(PersistDeploymentStage).to receive(:new).with(deployment_plan).and_return(persist_deployment)
       end

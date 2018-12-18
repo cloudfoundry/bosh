@@ -37,23 +37,12 @@ module Bosh::Director::Models::Links
 
       context 'when provider intent has a name and a type' do
         before do
-          link.link_provider_intent = LinkProviderIntent.make(name: 'name', type: 'type')
+          link.link_provider_intent = LinkProviderIntent.make(name: 'test-name', type: 'test-type')
           link.save
         end
 
         it 'returns a combination of provider name and link type' do
-          expect(link.group_name).to eq('name-type')
-        end
-      end
-
-      context 'when provider intent does not have a name' do
-        before do
-          link.link_provider_intent = LinkProviderIntent.make(name: nil, original_name: 'original_name', type: 'type')
-          link.save
-        end
-
-        it 'returns a combination of provider original name and link type' do
-          expect(link.group_name).to eq('original_name-type')
+          expect(link.group_name).to eq('test-name-test-type')
         end
       end
 

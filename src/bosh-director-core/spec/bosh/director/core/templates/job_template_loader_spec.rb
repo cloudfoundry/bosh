@@ -68,10 +68,11 @@ module Bosh::Director::Core::Templates
   describe JobTemplateLoader do
     describe '#process' do
       subject(:job_template_loader) do
-        JobTemplateLoader.new(logger, TemplateBlobCache.new, dns_encoder)
+        JobTemplateLoader.new(logger, TemplateBlobCache.new, link_provider_intents, dns_encoder)
       end
 
       let(:logger) { double('Logger', debug: nil) }
+      let(:link_provider_intents) { [] }
       let(:dns_encoder) { double('fake dns encoder') }
       let(:release) {double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version:'0.1')}
 
@@ -116,7 +117,8 @@ module Bosh::Director::Core::Templates
           monit_erb,
           [job_template_erb],
           logger,
-          dns_encoder
+          link_provider_intents,
+          dns_encoder,
         ).and_return fake_renderer
 
         generated_renderer = job_template_loader.process(job)
@@ -150,7 +152,8 @@ module Bosh::Director::Core::Templates
           monit_erb,
           [],
           logger,
-          dns_encoder
+          link_provider_intents,
+          dns_encoder,
         ).and_return fake_renderer
 
         generated_renderer = job_template_loader.process(job)

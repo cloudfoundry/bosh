@@ -2,7 +2,15 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceGroupUpdater do
-    subject(:instance_group_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
+    subject(:instance_group_updater) do
+      described_class.new(ip_provider: ip_provider,
+                          instance_group: job,
+                          disk_manager: disk_manager,
+                          template_blob_cache: template_blob_cache,
+                          dns_encoder: dns_encoder,
+                          link_provider_intents: link_provider_intents)
+    end
+    let(:link_provider_intents) { [] }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:disk_manager) { DiskManager.new(logger) }
 
@@ -17,18 +25,17 @@ module Bosh::Director
 
     before do
       allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-                                                  .with(ip_provider, template_blob_cache, dns_encoder)
-                                                  .and_return(canary_updater, changed_updater, unchanged_updater)
+        .with(ip_provider, template_blob_cache, dns_encoder, link_provider_intents)
+        .and_return(canary_updater, changed_updater, unchanged_updater)
     end
 
     let(:job) do
-      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-        name: 'job_name',
-        update: update_config,
-        unneeded_instances: [],
-        obsolete_instance_plans: [],
-        lifecycle: 'service',
-      })
+      instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+                      name: 'job_name',
+                      update: update_config,
+                      unneeded_instances: [],
+                      obsolete_instance_plans: [],
+                      lifecycle: 'service')
     end
 
     let(:update_config) do
@@ -51,9 +58,9 @@ module Bosh::Director
 
       let(:update_error) { RuntimeError.new('update failed') }
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
-      let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-      let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-      let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+      let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+      let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+      let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
       context 'when job is up to date' do
         let(:serial_id) { 64 }
@@ -80,7 +87,7 @@ module Bosh::Director
           end
         end
 
-        let(:instance_model) { Bosh::Director::Models::Instance.make() }
+        let(:instance_model) { Bosh::Director::Models::Instance.make }
 
         before do
           allow(needed_instance).to receive(:instance_group_name).and_return('instance-group-name')
@@ -104,17 +111,23 @@ module Bosh::Director
       end
 
       context 'when instance plans are errands' do
-        subject(:instance_group_updater) { described_class.new(ip_provider, job, disk_manager, template_blob_cache, dns_encoder) }
+        subject(:instance_group_updater) do
+          described_class.new(ip_provider: ip_provider,
+                              instance_group: job,
+                              disk_manager: disk_manager,
+                              template_blob_cache: template_blob_cache,
+                              dns_encoder: dns_encoder,
+                              link_provider_intents: link_provider_intents)
+        end
         let(:job) do
-          instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', {
-            name: 'job_name',
-            update: update_config,
-            instances: [needed_instance],
-            unneeded_instances: [],
-            needed_instance_plans: needed_instance_plans,
-            obsolete_instance_plans: [],
-            lifecycle: 'errand',
-          })
+          instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
+                          name: 'job_name',
+                          update: update_config,
+                          instances: [needed_instance],
+                          unneeded_instances: [],
+                          needed_instance_plans: needed_instance_plans,
+                          obsolete_instance_plans: [],
+                          lifecycle: 'errand')
         end
 
         let(:vm_created) { false }
@@ -407,8 +420,8 @@ module Bosh::Director
 
         before do
           allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-                                                      .with(ip_provider, template_blob_cache, dns_encoder )
-                                                      .and_return(canary_updater, changed_updater)
+            .with(ip_provider, template_blob_cache, dns_encoder, link_provider_intents)
+            .and_return(canary_updater, changed_updater)
         end
 
         it 'should finish the max_in_flight for an AZ before beginning the next AZ' do
