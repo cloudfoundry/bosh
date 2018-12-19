@@ -196,17 +196,19 @@ module Bosh::Director
       end
 
       def render_templates_and_snapshot_errand_variables
-        errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.template_blob_cache, dns_encoder)
-        errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
+        event_log_stage.advance_and_track('Rendering templates') do
+          errors = render_instance_groups_templates(deployment_plan.instance_groups_starting_on_deploy, deployment_plan.template_blob_cache, dns_encoder)
+          errors += snapshot_errands_variables_versions(deployment_plan.errand_instance_groups, current_variable_set)
 
-        unless errors.empty?
-          message = errors.map { |error| error.message.strip }.join("\n")
-          header = 'Unable to render instance groups for deployment. Errors are:'
-          raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(
-            header,
-            message,
-            indent_by: 2,
-          )
+          unless errors.empty?
+            message = errors.map { |error| error.message.strip }.join("\n")
+            header = 'Unable to render instance groups for deployment. Errors are:'
+            raise Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(
+              header,
+              message,
+              indent_by: 2,
+            )
+          end
         end
       end
 

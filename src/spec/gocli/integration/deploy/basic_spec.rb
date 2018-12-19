@@ -86,6 +86,7 @@ describe 'basic functionality', type: :integration do
     # order for creating missing vms is not guaranteed (running in parallel)
     expect(output).to match(strip_heredoc(<<~OUT))
       #{date_regex} | Preparing deployment: Preparing deployment (#{duration_regex})
+      #{date_regex} | Preparing deployment: Rendering templates (#{duration_regex})
       #{date_regex} | Preparing package compilation: Finding packages to compile (#{duration_regex})
       #{date_regex} | Compiling packages: foo/0ee95716c58cf7aab3ef7301ff907118552c2dda (#{duration_regex})
       #{date_regex} | Compiling packages: bar/f1267e1d4e06b60c91ef648fb9242e33ddcffa73 (#{duration_regex})
