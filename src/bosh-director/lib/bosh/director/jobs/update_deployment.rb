@@ -223,6 +223,14 @@ module Bosh::Director
               dns_encoder,
               link_provider_intents,
             )
+
+            if instance_group.desired_instances.empty?
+              @variables_interpolator.interpolate_template_spec_properties(
+                instance_group.properties,
+                deployment_name,
+                current_variable_set,
+              )
+            end
           rescue Exception => e
             errors.push e
           end
