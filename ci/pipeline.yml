@@ -14,7 +14,6 @@ groups:
       - fuzz-tests
       - candidate-release
       - compile-bosh-dev-release-xenial
-      - bats-centos
       - bats-ubuntu-xenial
       - bats-ubuntu-xenial-aws
       - brats-ubuntu-xenial
@@ -37,7 +36,6 @@ groups:
 
   - name: bats
     jobs:
-      - bats-centos
       - bats-ubuntu-xenial
       - bats-ubuntu-xenial-aws
 
@@ -563,41 +561,6 @@ jobs:
       params:
         file: "compiled-release/*.tgz"
 
-  - name: bats-centos
-    serial: true
-    plan:
-    - do:
-      - aggregate:
-        - get: bosh-candidate-release-tarballs
-          passed: [compile-bosh-dev-release-xenial]
-        - get: bosh-release
-          resource: bosh-compiled-candidate-xenial
-          trigger: true
-          passed: [compile-bosh-dev-release-xenial]
-        - get: cpi-release
-        - get: stemcell
-          resource: vsphere-esxi-centos-7
-        - get: bosh-cli
-        - get: bats
-        - get: bosh-deployment
-        - get: bosh-src
-          passed: [compile-bosh-dev-release-xenial]
-      - put: environment
-        params:
-          acquire: true
-      - do:
-        - <<: *deploy-director
-        - <<: *prepare-bats-config
-          params:
-            STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
-        - <<: *run-bats
-        ensure:
-          do:
-            - <<: *teardown
-      ensure:
-        do:
-        - {put: environment, params: {release: environment}}
-
   - name: bats-ubuntu-xenial
     serial: true
     plan:
@@ -910,7 +873,6 @@ jobs:
         - get: bosh-src
           passed:
           - bats-ubuntu-xenial
-          - bats-centos
           - brats-ubuntu-xenial
           - bbr-ubuntu-xenial
         - get: candidate-release
@@ -918,7 +880,6 @@ jobs:
           trigger: true
           passed:
           - bats-ubuntu-xenial
-          - bats-centos
           - brats-ubuntu-xenial
           - bbr-ubuntu-xenial
       - task: deploy-env
@@ -941,7 +902,6 @@ jobs:
           trigger: true
           passed:
           - bats-ubuntu-xenial
-          - bats-centos
           - brats-ubuntu-xenial
           - bbr-ubuntu-xenial
       - put: tracker-output
@@ -1218,11 +1178,6 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-xenial-go_agent
-
-  - name: vsphere-esxi-centos-7
-    type: bosh-io-stemcell
-    source:
-      name: bosh-vsphere-esxi-centos-7-go_agent
 
   - name: cpi-release
     type: bosh-io-release
