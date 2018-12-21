@@ -161,7 +161,7 @@ describe 'using director with config server and deployments having variables', t
       end
     end
 
-    context 'when certificate is specified as absolute path' do
+    context 'when certificate is specified as absolute path (from different deployment)' do
       let(:my_instance_group_2) do
         instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'my_instance_group',
@@ -185,6 +185,9 @@ describe 'using director with config server and deployments having variables', t
         deploy_2_manifest['name'] = deployment_name_2
         deploy_2_manifest['instance_groups'] = [my_instance_group_2]
         deploy_2_manifest.delete('variables')
+
+        deploy_simple_manifest(manifest_hash: manifest, cloud_config_hash: cloud_config,
+                               include_credentials: false, env: client_env)
       end
 
       it 'should update the certificate expiry list for deployment' do

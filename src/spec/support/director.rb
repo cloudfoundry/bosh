@@ -57,8 +57,8 @@ module Bosh::Spec
     end
 
     # vm always returns a vm
-    def instance(job_name, index_or_id, options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
-      find_instance(instances(options), job_name, index_or_id)
+    def instance(instance_group_name, index_or_id, options = { deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME })
+      find_instance(instances(options), instance_group_name, index_or_id)
     end
 
     def find_instance(instances, instance_group_name, index_or_id)

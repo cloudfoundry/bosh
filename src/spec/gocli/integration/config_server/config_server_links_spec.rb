@@ -707,4 +707,220 @@ describe 'using director with config server and deployments having links', type:
       end
     end
   end
+
+  context 'when provider instance count is zero' do
+    let(:manifest) do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['instance_groups'] = [consumer_instance_group, provider_instance_group]
+      manifest
+    end
+
+    let(:consumer_instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'consumer_instance_group',
+        jobs: [
+          { 'name' => 'consumer' },
+        ],
+        instances: 1,
+      )
+      spec['azs'] = ['z1']
+      spec
+    end
+
+    let(:provider_instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'provider_instance_group',
+        jobs: [
+          {
+            'name' => 'provider',
+            'provides' => { 'provider' => { 'shared' => true } },
+            'properties' => {
+              'b' => '((random_password_b))',
+              'c' => '((random_password_c))',
+            },
+
+          },
+        ],
+        instances: 0,
+      )
+      spec['azs'] = ['z1']
+      spec
+    end
+
+    let(:variables) do
+      [
+        {
+          'name' => 'random_password_c',
+          'type' => 'password',
+        },
+        {
+          'name' => 'random_password_b',
+          'type' => 'password',
+        },
+      ]
+    end
+
+    context 'when consumer in different deployment (cross-deployment link)' do
+      let(:consumer_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'consumer_instance_group',
+          jobs: [
+            {
+              'name' => 'consumer_no_instance_address',
+              'consumes' => {
+                'provider' => { 'from' => 'provider', 'deployment' => 'simple' },
+              },
+            },
+          ],
+          instances: 1,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      before do
+        manifest['variables'] = variables
+        manifest['instance_groups'] = [provider_instance_group]
+        deploy_simple_manifest(manifest_hash: manifest, include_credentials: false, env: client_env)
+      end
+
+      it 'should successfully populate the template' do
+        manifest['name'] = 'simple-consumer'
+        manifest.delete('variables')
+        manifest['instance_groups'] = [consumer_instance_group]
+
+        deploy_simple_manifest(manifest_hash: manifest, include_credentials: false, env: client_env)
+
+        link_instance = director.instance(
+          'consumer_instance_group',
+          '0',
+          deployment_name: 'simple-consumer',
+          env: client_env,
+          include_credentials: false,
+        )
+
+        template = YAML.safe_load(link_instance.read_job_template('consumer_no_instance_address', 'config_without_address.yml'))
+
+        expect(template['a']).to eq('default_a')
+        expect(template['b']).to match(/[a-z0-9]+/)
+        expect(template['c']).to match(/[a-z0-9]+/)
+      end
+    end
+
+    context 'when variables are specified using an absolute path' do
+      let(:consumer_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'consumer_instance_group',
+          jobs: [
+            {
+              'name' => 'consumer_no_instance_address',
+              'consumes' => {
+                'provider' => { 'from' => 'provider', 'deployment' => 'simple' },
+              },
+            },
+          ],
+          instances: 1,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      let(:provider_instance_group) do
+        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          name: 'provider_instance_group',
+          jobs: [
+            {
+              'name' => 'provider',
+              'provides' => { 'provider' => { 'shared' => true } },
+              'properties' => {
+                'b' => '((/random_password_b))',
+                'c' => '((/random_password_c))',
+              },
+
+            },
+          ],
+          instances: 0,
+        )
+        spec['azs'] = ['z1']
+        spec
+      end
+
+      before do
+        config_server_helper.post('/random_password_b', 'password')
+        config_server_helper.post('/random_password_c', 'password')
+        manifest['instance_groups'] = [provider_instance_group]
+        manifest.delete('variables')
+        deploy_simple_manifest(manifest_hash: manifest, include_credentials: false, env: client_env)
+      end
+
+      it 'should successfully populate the template' do
+        manifest['name'] = 'simple-consumer'
+        manifest.delete('variables')
+        manifest['instance_groups'] = [consumer_instance_group]
+
+        deploy_simple_manifest(manifest_hash: manifest, include_credentials: false, env: client_env)
+
+        link_instance = director.instance(
+          'consumer_instance_group',
+          '0',
+          deployment_name: 'simple-consumer',
+          env: client_env,
+          include_credentials: false,
+        )
+
+        template = YAML.safe_load(link_instance.read_job_template('consumer_no_instance_address', 'config_without_address.yml'))
+
+        expect(template['a']).to eq('default_a')
+        expect(template['b']).to match(/[a-z0-9]+/)
+        expect(template['c']).to match(/[a-z0-9]+/)
+      end
+    end
+
+    context 'when consumer is different instance_group' do
+      before do
+        manifest['variables'] = variables
+      end
+
+      it 'should error when link query contain instances index' do
+        deployment_output = deploy_simple_manifest(
+          manifest_hash: manifest,
+          failure_expected: true,
+          include_credentials: false,
+          env: client_env,
+        )
+        expect(deployment_output).to include("Error filling in template 'config.yml.erb'")
+      end
+
+      context 'when consumer is not using provider link instance address' do
+        let(:consumer_instance_group) do
+          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            name: 'consumer_instance_group',
+            jobs: [
+              { 'name' => 'consumer_no_instance_address' },
+            ],
+            instances: 1,
+          )
+          spec['azs'] = ['z1']
+          spec
+        end
+
+        it 'should create links and populate variables when rendering' do
+          deploy_simple_manifest(manifest_hash: manifest, failure_expected: false, include_credentials: false, env: client_env)
+
+          link_instance = director.instance(
+            'consumer_instance_group',
+            '0',
+            deployment_name: 'simple',
+            env: client_env,
+            include_credentials: false,
+          )
+
+          template = YAML.safe_load(link_instance.read_job_template('consumer_no_instance_address', 'config_without_address.yml'))
+          expect(template['a']).to eq('default_a')
+          expect(template['b']).to match(/[a-z0-9]+/)
+          expect(template['c']).to match(/[a-z0-9]+/)
+        end
+      end
+    end
+  end
 end
