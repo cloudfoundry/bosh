@@ -18,7 +18,24 @@ module Bosh::Director
           limit: limit,
         ).select { |config| @permission_authorizer.is_granted?(config, :read, token_scopes) }
 
-        json_encode(configs.map { |config| sql_to_hash(config) })
+        decorate = ->(config) { decorate_config(config, latest_configs_by_type_and_name(configs)) }
+        json_encode(configs.map(&decorate))
+      end
+
+      def decorate_config(config, config_mapping)
+        hash = sql_to_hash(config)
+        current = config_mapping[type: config.type, name: config.name]
+        hash.merge('current' => config == current)
+      end
+
+      def latest_configs_by_type_and_name(configs)
+        grouped_configs = configs.group_by { |c| { type: c.type, name: c.name } }
+        grouped_configs.each_with_object({}) do |(key, _), acc|
+          type = key[:type]
+          name = key[:name]
+          latest = Bosh::Director::Models::Config.where(type: type, name: name).last
+          acc[key] = latest
+        end
       end
 
       post '/', scope: :update_configs, consumes: :json do

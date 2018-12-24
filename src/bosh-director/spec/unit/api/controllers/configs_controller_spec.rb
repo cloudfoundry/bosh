@@ -163,6 +163,7 @@ module Bosh::Director
                 'name' => config1.name,
                 'created_at' => config1.created_at.to_s,
                 'team' => nil,
+                'current' => false,
               )
             end
           end
@@ -221,24 +222,38 @@ module Bosh::Director
         end
 
         context 'when limit is greater one' do
-          it 'returns the history of all matching configs' do
-            config1 = Models::Config.make
-            Models::Config.make
+          let!(:config1) { Models::Config.make(type: 'my-type', name: 'bob') }
+          let!(:config2) { Models::Config.make(type: 'my-type', name: 'bob') }
 
+          let(:result) { JSON.parse(last_response.body) }
+
+          before do
             get '/?type=my-type&limit=2'
+          end
 
+          it 'returns the history of all matching configs' do
             expect(last_response.status).to eq(200)
-
-            result = JSON.parse(last_response.body)
-            expect(result.class).to be(Array)
-            expect(result.size).to eq(2)
-            expect(result).to include(
-              'content' => config1.content,
-              'id' => config1.id.to_s,
-              'type' => config1.type,
-              'name' => config1.name,
-              'created_at' => config1.created_at.to_s,
-              'team' => nil,
+            expect(result).to eq(
+              [
+                {
+                  'content' => config2.content,
+                  'id' => config2.id.to_s,
+                  'type' => config2.type,
+                  'name' => config2.name,
+                  'created_at' => config2.created_at.to_s,
+                  'team' => nil,
+                  'current' => true,
+                },
+                {
+                  'content' => config1.content,
+                  'id' => config1.id.to_s,
+                  'type' => config1.type,
+                  'name' => config1.name,
+                  'created_at' => config1.created_at.to_s,
+                  'team' => nil,
+                  'current' => false,
+                },
+              ],
             )
           end
         end
@@ -1229,7 +1244,14 @@ module Bosh::Director
           get('/123')
 
           expect(last_response.status).to eq(200)
-          expect(JSON.parse(last_response.body)).to eq('id' => '123', 'type' => 'my-type', 'name' => 'default', 'content' => '1', 'created_at' => config_example.created_at.to_s, 'team' => nil)
+          expect(JSON.parse(last_response.body)).to eq(
+            'id' => '123',
+            'type' => 'my-type',
+            'name' => 'default',
+            'content' => '1',
+            'created_at' => config_example.created_at.to_s,
+            'team' => nil,
+          )
         end
 
         context 'when no config is found' do
