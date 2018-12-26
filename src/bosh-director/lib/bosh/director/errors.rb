@@ -285,6 +285,7 @@ module Bosh::Director
   BadConfigRequest = err(440010)
   BadConfig = err(440011)
   ConfigNotFound = err(440012, NOT_FOUND)
+  BadExpectedConfigID = err(440013)
 
   # RPC
   RpcRemoteException = err(450001)

@@ -284,6 +284,7 @@ module Bosh::Director
             'content' => 'a: 1',
             'created_at' => config.created_at.to_s,
             'team' => nil,
+            'current' => true,
           )
         end
 
@@ -1251,6 +1252,7 @@ module Bosh::Director
             'content' => '1',
             'created_at' => config_example.created_at.to_s,
             'team' => nil,
+            'current' => true,
           )
         end
 

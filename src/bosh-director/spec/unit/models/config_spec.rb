@@ -87,6 +87,35 @@ module Bosh::Director::Models
       end
     end
 
+    describe '#current?' do
+      let!(:config1) { Config.make(type: 'cloud', name: 'bob') }
+      let!(:config2) { Config.make(type: 'cloud', name: 'bob') }
+
+      it 'knows whether it is the highest-id config for its type and name' do
+        expect(config1.current?).to be false
+        expect(config2.current?).to be true
+      end
+    end
+
+    describe '#to_hash' do
+      let(:red_team) { Team.make(name: 'red') }
+      let(:red_team_cloud_config) do
+        Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id, content: 'foo')
+      end
+
+      it 'serializes to a hash' do
+        expect(red_team_cloud_config.to_hash).to match(
+          content: 'foo',
+          id: red_team_cloud_config.id.to_s,
+          type: 'cloud',
+          name: 'red-cloud-config',
+          created_at: anything,
+          team: 'red',
+          current: true,
+        )
+      end
+    end
+
     describe '#latest_set_for_teams' do
       let!(:red_team) { Bosh::Director::Models::Team.make(name: 'red') }
       let!(:blue_team) { Bosh::Director::Models::Team.make(name: 'blue') }

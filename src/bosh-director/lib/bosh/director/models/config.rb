@@ -44,6 +44,25 @@ module Bosh
           YAML.safe_load(content, [Symbol], [], true)
         end
 
+        def current?
+          self_id = id
+          self.class.where(type: type, name: name) do
+            id > self_id
+          end.none?
+        end
+
+        def to_hash
+          {
+            content: content,
+            id: id.to_s, # id should be opaque to clients (may not be an int)
+            type: type,
+            name: name,
+            team: team&.name,
+            created_at: created_at.to_s,
+            current: current?,
+          }
+        end
+
         def team
           return nil if team_id.nil?
           Team.where(id: team_id).first

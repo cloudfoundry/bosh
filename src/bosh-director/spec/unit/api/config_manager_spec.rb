@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::Api::ConfigManager do
-  subject(:manager) { Bosh::Director::Api::ConfigManager.new }
+  subject(:manager) { Bosh::Director::Api::ConfigManager }
 
   describe '#create' do
     let(:type) { 'my-type' }
