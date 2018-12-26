@@ -54,7 +54,7 @@ describe 'cli configs', type: :integration do
       expect(bosh_runner.run("update-config --type=my-type --name=default #{config.path}")).to include('Succeeded')
       id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
 
-      output = bosh_runner.run("update-config --expected-latest-id=#{id} --type=my-type --name=default #{config.path}")
+      output = bosh_runner.run("update-config --expected-latest-id=#{id.to_i} --type=my-type --name=default #{config.path}")
       expect(output).to include('Succeeded')
     end
 
@@ -74,7 +74,7 @@ describe 'cli configs', type: :integration do
     it 'by id' do
       bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
       id = JSON.parse(bosh_runner.run('configs --recent=99 --json')).dig('Tables', 0, 'Rows', 0, 'id')
-      expect(bosh_runner.run("config #{id}")).to include('Succeeded')
+      expect(bosh_runner.run("config #{id.to_i}")).to include('Succeeded')
     end
   end
 
@@ -218,7 +218,8 @@ describe 'cli configs', type: :integration do
 
       output = bosh_runner.run('configs --recent=99 --json')
       from, to = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }
-      expect(bosh_runner.run("diff-config --from-id #{from} --to-id #{to}")).to include('- vm_types:', '+ releases:', 'Succeeded')
+      result = bosh_runner.run("diff-config --from-id #{from.to_i} --to-id #{to.to_i}")
+      expect(result).to include('- vm_types:', '+ releases:', 'Succeeded')
     end
 
     it 'diffs one saved and one local config' do
@@ -226,7 +227,8 @@ describe 'cli configs', type: :integration do
 
       output = bosh_runner.run('configs --recent=99 --json')
       from = JSON.parse(output)['Tables'][0]['Rows'].map { |row| row['id'] }.first
-      expect(bosh_runner.run("diff-config --from-id #{from} --to-content #{other_config.path}")).to include('- vm_types:', '+ releases:', 'Succeeded')
+      result = bosh_runner.run("diff-config --from-id #{from.to_i} --to-content #{other_config.path}")
+      expect(result).to include('- vm_types:', '+ releases:', 'Succeeded')
     end
 
     it 'diffs two local configs' do
