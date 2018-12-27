@@ -499,6 +499,58 @@ module Bosh::Director
           end
         end
 
+        context 'when the addon only excludes' do
+          context 'when excluding both job and deployment' do
+            let(:exclude_spec) do
+              {
+                'deployments' => [excluded_deployment_name],
+                'jobs' => [{ 'name' => 'excluded_job', 'release' => 'excluded_job_release' }],
+              }
+            end
+
+            let(:included_instance_group) do
+              double(Bosh::Director::DeploymentPlan, has_job?: false)
+            end
+
+            let(:excluded_instance_group) do
+              excluded = double(Bosh::Director::DeploymentPlan)
+              allow(excluded).to receive(:has_job?)
+                .with('excluded_job', 'excluded_job_release')
+                .and_return(true)
+              excluded
+            end
+
+            let(:deployment_teams) { [] }
+
+            let(:excluded_deployment_name) { 'excluded_deployment' }
+            let(:included_deployment_name) { 'included_deployment' }
+
+            it 'excludes based on deployment or job' do
+              expect(
+                addon.applies?(
+                  excluded_deployment_name,
+                  deployment_teams,
+                  included_instance_group,
+                ),
+              ).to eq(true)
+              expect(
+                addon.applies?(
+                  included_deployment_name,
+                  deployment_teams,
+                  excluded_instance_group,
+                ),
+              ).to eq(true)
+              expect(
+                addon.applies?(
+                  excluded_deployment_name,
+                  deployment_teams,
+                  excluded_instance_group,
+                ),
+              ).to eq(false)
+            end
+          end
+        end
+
         context 'when the addon has include and exclude' do
           let(:include_spec) do
             { 'deployments' => [deployment_name] }
@@ -517,7 +569,7 @@ module Bosh::Director
             end
           end
 
-          context 'when include is for deployment and exlude is for job' do
+          context 'when include is for deployment and exclude is for job' do
             let(:exclude_spec) do
               { 'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy' }] }
             end
@@ -558,7 +610,7 @@ module Bosh::Director
               deployment.add_instance_group(instance_group2)
             end
 
-            it 'exludes specified job only' do
+            it 'excludes specified job only' do
               expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar'))).to eq(false)
               expect(addon.applies?(deployment_name, [], deployment.instance_group('foobar1'))).to eq(true)
             end
