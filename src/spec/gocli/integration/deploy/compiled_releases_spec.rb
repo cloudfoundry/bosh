@@ -4,6 +4,64 @@ require 'fileutils'
 describe 'compiled releases', type: :integration do
   with_reset_sandbox_before_each
 
+  context 'when only selected jobs are compiled' do
+    context 'when only the compiled job is referenced in the deployment' do
+      let(:manifest_hash) do
+        {
+          'name' => 'minimal',
+          'director_uuid' => 'deadbeef',
+
+          'releases' => [{
+            'name' => 'test_release',
+            'version' => 'latest',
+          }],
+
+          'update' => {
+            'canaries' => 2,
+            'canary_watch_time' => 4000,
+            'max_in_flight' => 1,
+            'update_watch_time' => 20,
+          },
+          'stemcells' => [{
+            'alias' => 'default',
+            'os' => 'centos-7',
+            'version' => 'latest',
+          }],
+        }
+      end
+      let(:deployment_name) { manifest_hash['name'] }
+      let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
+
+      before do
+        compiled_job_pkg1 = 'compiled_releases/test_release-4+dev.1-centos-7-3001-job_using_pkg_1-20181224-150940-167574.tgz'
+        compiled_job_pkg23 = 'compiled_releases/test_release-4+dev.1-centos-7-3002-job_using_pkg_2_3-20181227-113108-45819.tgz'
+
+        upload_cloud_config(cloud_config_hash: cloud_config)
+        bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
+
+        bosh_runner.run("upload-release #{spec_asset(compiled_job_pkg1)}")
+        bosh_runner.run("upload-release #{spec_asset(compiled_job_pkg23)}")
+
+        manifest_hash['instance_groups'] = [
+          Bosh::Spec::NewDeployments.simple_instance_group(
+            jobs: [
+              { 'name' => 'job_using_pkg_2', 'release' => 'test_release' },
+            ],
+            instances: 1,
+            stemcell: 'default',
+          ),
+        ]
+      end
+      it 'should not error' do
+        out = deploy(manifest_hash: manifest_hash)
+
+        expect(out).to_not include('Compiling packages: pkg_1/b0fe23fce97e2dc8fd9da1035dc637ecd8fc0a0f')
+        expect(out).to_not include('Compiling packages: pkg_2/')
+        expect(out).to_not include('Compiling packages: pkg_3_depends_on_2/')
+      end
+    end
+  end
+
   context 'release and stemcell have been uploaded' do
     before do
       bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")

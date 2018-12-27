@@ -141,9 +141,10 @@ module Bosh::Director
           @jobs_to_compile.each do |instance_group|
             instance_group.jobs.each do |job|
               release_model = release_manager.find_by_name(job.release.name)
+              job_packages = job.package_models.map(&:name)
               release_version_model = release_manager.find_version(release_model, job.release.version)
 
-              validator.validate(release_version_model, instance_group.stemcell)
+              validator.validate(release_version_model, instance_group.stemcell, job_packages)
             end
           end
           validator.handle_faults

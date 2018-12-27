@@ -6,11 +6,12 @@ module Bosh::Director
         @logger = logger
       end
 
-      def validate(release_version_model, stemcell)
+      def validate(release_version_model, stemcell, job_packages)
         release_desc = "#{release_version_model.release.name}/#{release_version_model.version}"
 
         @logger.debug("Validating packages for release '#{release_desc}'")
-        release_version_model.packages.each do |package|
+        filtered_job_pakcages = release_version_model.packages.select { |p| job_packages.include?(p.name) }
+        filtered_job_pakcages.each do |package|
           packages_list = Bosh::Director::PackageDependenciesManager.new(release_version_model).transitive_dependencies(package)
           packages_list << package
           packages_list.each do |needed_package|

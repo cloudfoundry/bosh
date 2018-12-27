@@ -415,6 +415,11 @@ module Bosh::Director
 
         release_version_model.add_package(invalid_package)
 
+        @t_dea = instance_double(
+          'Bosh::Director::DeploymentPlan::Job',
+          release: @release, package_models: [@p_dea, @p_nginx, @p_syslog, invalid_package], name: 'dea',
+        )
+
         @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
           name: 'dea',
           release: @release,
