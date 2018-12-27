@@ -42,7 +42,6 @@ Among the included plugins are:
 - Resurrector - Restarts VMs that have stopped heartbeating
 - PagerDuty - Sends various events to PagerDuty.com using their API
 - DataDog - Sends various events to DataDog.com using their API
-- AWS CloudWatch - Sends various events to Amazon's CloudWatch using their API
 - Emailer - Sends configurable Emails on events reciept
 - Consul Event Forwarder - Sends heartbeats as events and TTL checks to a consul cluster
 - EventLogger - Stores events in Director DB

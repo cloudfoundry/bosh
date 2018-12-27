@@ -33,7 +33,6 @@ describe 'health_monitor.yml.erb' do
           # plugins
           'email_notifications' => false,
           'tsdb_enabled' => false,
-          'cloud_watch_enabled' => false,
           'resurrector_enabled' => false,
           'pagerduty_enabled' => false,
           'datadog_enabled' => false,
@@ -154,26 +153,6 @@ describe 'health_monitor.yml.erb' do
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['host']).to eq('127.0.0.91')
           expect(plugin['options']['port']).to eq(4223)
-        end
-      end
-
-      context 'cloud_watch' do
-        before do
-          deployment_manifest_fragment['properties']['hm']['cloud_watch_enabled'] = true
-          deployment_manifest_fragment['properties']['aws'] = {
-            'access_key_id' => 'my-key',
-            'secret_access_key' => 'my-secret',
-          }
-        end
-
-        it 'should render' do
-          expect(parsed_yaml['plugins'].length).to eq(4)
-
-          plugin = parsed_yaml['plugins'][3]
-          expect(plugin['name']).to eq('cloud_watch')
-          expect(plugin['events']).to be_a(Array)
-          expect(plugin['options']['access_key_id']).to eq('my-key')
-          expect(plugin['options']['secret_access_key']).to eq('my-secret')
         end
       end
 
