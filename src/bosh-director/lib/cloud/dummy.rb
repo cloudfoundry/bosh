@@ -122,7 +122,10 @@ module Bosh
         agent_pid = spawn_agent_process(agent_id, cloud_properties['legacy_agent_path'])
         vm = VM.new(agent_pid.to_s, agent_id, cloud_properties, ips)
 
-        kill_process(agent_pid) if commands.create_vm_unresponsive_agent
+        if commands.create_vm_unresponsive_agent ||
+           agent_id == commands.unresponsive_agent_agent_id
+          kill_process(agent_pid)
+        end
 
         @vm_repo.save(vm)
 
@@ -705,6 +708,12 @@ module Bosh
           FileUtils.touch(raise_detach_disk_not_implemented_path)
         end
 
+        def make_create_vm_have_unresponsive_agent_for_agent_id(agent_id)
+          @logger.info("Making create_vm method create with an unresponsive agent for agent_id #{agent_id}")
+          FileUtils.mkdir_p(File.dirname(create_vm_unresponsive_agent_agent_id_path))
+          File.write(create_vm_unresponsive_agent_agent_id_path, agent_id)
+        end
+
         def make_create_vm_have_unresponsive_agent
           @logger.info('Making create_vm method create with an unresponsive agent')
           FileUtils.mkdir_p(File.dirname(create_vm_unresponsive_agent_path))
@@ -713,7 +722,8 @@ module Bosh
 
         def allow_create_vm_to_have_responsive_agent
           @logger.info('Making create_vm method create with an unresponsive agent')
-          FileUtils.rm(create_vm_unresponsive_agent_path)
+          FileUtils.rm_f(create_vm_unresponsive_agent_agent_id_path)
+          FileUtils.rm_f(create_vm_unresponsive_agent_path)
         end
 
         def allow_attach_disk_to_succeed
@@ -735,6 +745,13 @@ module Bosh
         def create_vm_unresponsive_agent
           @logger.info('Reading create_vm_unresponsive_agent')
           File.exist?(create_vm_unresponsive_agent_path)
+        end
+
+        def unresponsive_agent_agent_id
+          @logger.info('Reading create_vm_unresponsive_agent_agent_id')
+          File.read(create_vm_unresponsive_agent_agent_id_path)
+        rescue StandardError
+          false
         end
 
         def make_resize_disk_to_raise_not_implemented
@@ -787,10 +804,13 @@ module Bosh
           File.join(@cpi_commands, 'create_vm', 'unresponsive_agent')
         end
 
+        def create_vm_unresponsive_agent_agent_id_path
+          File.join(@cpi_commands, 'create_vm', 'unresponsive_agent_agent_id')
+        end
+
         def raise_resize_disk_not_implemented_path
           File.join(@cpi_commands, 'resize_disk', 'not_implemented')
         end
-
       end
 
       class ConfigureNetworksCommand < Struct.new(:not_supported); end

@@ -14,7 +14,14 @@ RSpec::Matchers.define :be_create_swap_deleted do |old_vm|
 end
 
 describe 'deploy with create-swap-delete', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_each(
+    local_dns: {
+      'enabled' => true,
+      'include_index' => false,
+      'use_dns_addresses' => true,
+    },
+    agent_wait_timeout: 3,
+  )
 
   let(:manifest) do
     manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])
@@ -316,6 +323,100 @@ describe 'deploy with create-swap-delete', type: :integration do
           expect(task_log).to match(/Skipping create-swap-delete for static ip enabled instance #{instance_slug_regex}/)
         end
       end
+    end
+  end
+
+  context 'when a create-swap-delete deployment fails with unresponsive agent on a link provider VM' do
+    before do
+      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: false)
+      bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
+      bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs
+
+      upload_cloud_config(cloud_config_hash: cloud_config)
+      upload_stemcell
+    end
+
+    let(:manifest) do
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
+      manifest['features'] = { 'use_dns_addresses' => true }
+      consumer_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'my_api',
+        jobs: [
+          {
+            'name' => 'api_server',
+            'consumes' => {
+              'db' => {
+                'from' => 'mysql_link',
+              },
+            },
+          },
+        ],
+        instances: 1,
+      )
+      consumer_spec['azs'] = ['z1']
+      provider_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'mysql',
+        jobs: [
+          {
+            'name' => 'database',
+            'provides' => {
+              'db' => {
+                'as' => 'mysql_link',
+              },
+            },
+          },
+        ],
+        instances: 1,
+      )
+      provider_spec['azs'] = ['z1']
+      manifest['instance_groups'] = [consumer_spec, provider_spec]
+      manifest
+    end
+
+    def consumer_instance
+      director.instance('my_api', '0')
+    end
+
+    def consumer_template_addresses
+      template = YAML.safe_load(consumer_instance.read_job_template('api_server', 'config.yml'))
+      template['databases']['main'].map do |elem|
+        elem['address']
+      end
+    end
+
+    def provider_instance
+      director.instance('mysql', '0')
+    end
+
+    def provider_dns_records
+      provider_instance.dns_records['records'].map(&:last)
+    end
+
+    def expect_consumer_template_address_to_match_provider_address
+      addresses = consumer_template_addresses
+      expect(addresses.length).to eq(1)
+      templated_address = addresses.first
+      expect(provider_dns_records.find { |r| r == templated_address }).to_not be_empty
+    end
+
+    def expect_dns_records_to_be_consistent
+      expect(provider_instance.dns_records['records']).to eq(consumer_instance.dns_records['records'])
+    end
+
+    it 'updates DNS addresses on dependent consumer VMs' do
+      deploy_simple_manifest(manifest_hash: manifest)
+      expect_consumer_template_address_to_match_provider_address
+      expect_dns_records_to_be_consistent
+
+      current_sandbox.cpi.commands.make_create_vm_have_unresponsive_agent_for_agent_id(provider_instance.agent_id)
+      deploy_simple_manifest(manifest_hash: manifest, recreate: true, failure_expected: true)
+      current_sandbox.cpi.commands.allow_create_vm_to_have_responsive_agent
+
+      deploy_simple_manifest(manifest_hash: manifest)
+      expect_consumer_template_address_to_match_provider_address
+      expect_dns_records_to_be_consistent
     end
   end
 
