@@ -39,6 +39,48 @@ describe 'cli cloud config', type: :integration do
     end
   end
 
+  context 'multiple cpi in the cloud config' do
+    before do
+      @cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis
+    end
+
+    context 'when default CPI is provided for all AZs' do
+      it 'should update the cloud config' do
+        cloud_config_manifest = yaml_file('cloud_manifest', @cloud_config)
+        expect(bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")).to include('Succeeded')
+      end
+    end
+
+    context 'when CPI is not provided for any of AZs' do
+      before do
+        @cloud_config['azs'][0]['cpi'] = ''
+        @cloud_config['azs'][1]['cpi'] = ''
+
+        @cloud_config_manifest = yaml_file('cloud_manifest', @cloud_config)
+      end
+
+      it 'assumes the CPI being used will be the default and returns the diff' do
+        expect(bosh_runner.run("update-cloud-config #{@cloud_config_manifest.path}")).to include('Succeeded')
+      end
+    end
+
+    context 'when cloud config does not specify default CPI for all AZs' do
+      it 'Shows an error message when cpi is empty string' do
+        @cloud_config['azs'][0]['cpi'] = ''
+        cloud_config_manifest = yaml_file('cloud_manifest', @cloud_config)
+        result = bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", failure_expected: true)
+        expect(result).to include('Either all or no AZ must declare CPI')
+      end
+
+      it 'Shows an error message when cpi is not even defined' do
+        @cloud_config['azs'][0].delete('cpi')
+        cloud_config_manifest = yaml_file('cloud_manifest', @cloud_config)
+        result = bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", failure_expected: true)
+        expect(result).to include('Either all or no AZ must declare CPI')
+      end
+    end
+  end
+
   context 'when an az is removed' do
     let(:initial_cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs }
 

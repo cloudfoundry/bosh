@@ -1,6 +1,8 @@
 module Bosh::Director
   class Changeset
 
+    attr_reader :merged
+
     def initialize(before, after, redacted_before = nil, redacted_after = nil)
       redactor = Redactor.new
       @redacted_before = redacted_before.nil? ? redactor.redact_properties!(Bosh::Common::DeepCopy.copy(before)) : redacted_before
