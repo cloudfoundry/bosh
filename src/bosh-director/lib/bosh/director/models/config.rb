@@ -13,11 +13,11 @@ module Bosh
         end
 
         def self.dataset_for_teams(*teams)
-          dataset.where(Sequel.|({team_id: teams.map(&:id)}, {team_id: nil}))
+          dataset.where(Sequel.|({ team_id: teams.map(&:id) }, { team_id: nil }))
         end
 
         def self.latest_set_for_teams(type, *teams)
-          latest_config_ids_by_name = dataset_for_teams(*teams).select{ max(:id) }.where({type: type}).group_by(:name)
+          latest_config_ids_by_name = dataset_for_teams(*teams).select { max(:id) }.where(type: type).group_by(:name)
           find_by_ids(latest_config_ids_by_name).reject(&:deleted)
         end
 
@@ -27,8 +27,10 @@ module Bosh
 
         def self.find_by_ids_for_teams(ids, *teams)
           return [] unless ids
+
           found = dataset_for_teams(*teams).where(id: ids).all
           raise Sequel::NoMatchingRow, "Failed to find ID: #{(ids - found.map(&:id)).join(', ')}" if found.length != ids.length
+
           found
         end
 
@@ -45,8 +47,10 @@ module Bosh
         end
 
         def current?
+          return false if deleted
+
           self_id = id
-          self.class.where(type: type, name: name) do
+          self.class.where(type: type, name: name, deleted: false) do
             id > self_id
           end.none?
         end
@@ -65,6 +69,7 @@ module Bosh
 
         def team
           return nil if team_id.nil?
+
           Team.where(id: team_id).first
         end
       end

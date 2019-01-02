@@ -90,10 +90,12 @@ module Bosh::Director::Models
     describe '#current?' do
       let!(:config1) { Config.make(type: 'cloud', name: 'bob') }
       let!(:config2) { Config.make(type: 'cloud', name: 'bob') }
+      let!(:config3) { Config.make(type: 'cloud', name: 'bob', deleted: true) }
 
       it 'knows whether it is the highest-id config for its type and name' do
         expect(config1.current?).to be false
         expect(config2.current?).to be true
+        expect(config3.current?).to be false
       end
     end
 
