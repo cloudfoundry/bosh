@@ -87,10 +87,14 @@ module Bosh::Director::Models
       return {} unless manifest
 
       tags = YAML.load(manifest)['tags']
+
+      consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
+
       return {} if tags.nil? || tags.empty?
 
       variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
-      variables_interpolator.interpolate_with_versioning(tags, current_variable_set)
+      tags = variables_interpolator.interpolate_with_versioning(tags, current_variable_set)
+      consolidated_runtime_config.tags(name).merge(tags)
     end
 
     def current_variable_set
