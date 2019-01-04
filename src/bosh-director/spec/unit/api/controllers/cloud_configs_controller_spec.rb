@@ -21,7 +21,7 @@ module Bosh::Director
         it 'creates a new cloud config' do
           content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
           expect {
-            post '/', content, { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Models::Config, :count).from(0).to(1)
 
           expect(Models::Config.first.content).to eq(content)
@@ -32,7 +32,7 @@ module Bosh::Director
           Models::Config.make(:cloud, content: content+"123")
 
           expect {
-            post '/', content, { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
@@ -43,14 +43,14 @@ module Bosh::Director
           Models::Config.make(:cloud, content: content)
 
           expect {
-            post '/', content, { 'CONTENT_TYPE' => 'text/yaml' },
+            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           }.to_not change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
         end
 
         it 'gives a nice error when request body is not a valid yml' do
-          post '/', "}}}i'm not really yaml, hah!", { 'CONTENT_TYPE' => 'text/yaml' }
+          post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)['code']).to eq(440001)
@@ -58,7 +58,7 @@ module Bosh::Director
         end
 
         it 'gives a nice error when request body is empty' do
-          post '/', '', { 'CONTENT_TYPE' => 'text/yaml' },
+          post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)).to eq(
@@ -72,7 +72,7 @@ module Bosh::Director
         before { basic_authorize('reader', 'reader') }
 
         it 'forbids access' do
-          expect(post('/', '', { 'CONTENT_TYPE' => 'text/yaml' } ).status).to eq(401)
+          expect(post('/', '', {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
         end
       end
 
@@ -80,7 +80,7 @@ module Bosh::Director
         before { basic_authorize('dev-team-member', 'dev-team-member') }
 
         it 'forbid access' do
-          expect(post('/', '', 'CONTENT_TYPE' => 'text/yaml', ).status).to eq(401)
+          expect(post('/', '', {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
         end
       end
 
@@ -95,7 +95,7 @@ module Bosh::Director
 
         content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
         expect {
-          post '/', content, 'CONTENT_TYPE' => 'text/yaml', 
+          post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
         }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
         event = Bosh::Director::Models::Event.first
         expect(event.object_type).to eq('cloud-config')
@@ -107,9 +107,7 @@ module Bosh::Director
       it 'creates a new event with error' do
         authorize('admin', 'admin')
         expect {
-          post '/',
-               {},
-               'CONTENT_TYPE' => 'text/yaml',
+          post '/', {}, {'CONTENT_TYPE' => 'text/yaml'}
         }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
         event = Bosh::Director::Models::Event.first
         expect(event.object_type).to eq('cloud-config')
@@ -205,23 +203,6 @@ module Bosh::Director
         }
       end
 
-      let(:cloud_config_hash_with_two_azs_and_cpis) do
-        {
-          'azs' => [
-            {
-              'name' => 'az1',
-              'cpi' => 'cpi1',
-              'cloud_properties' => {},
-            },
-            {
-              'name' => 'az2',
-              'cpi' => 'cpi2',
-              'cloud_properties' => {},
-            },
-          ],
-        }
-      end
-
       context 'authenticated access' do
 
         before { authorize 'admin', 'admin' }
@@ -236,7 +217,7 @@ module Bosh::Director
               post(
                 '/diff',
                 "--- \n {}",
-                'CONTENT_TYPE' => 'text/yaml', 
+                { 'CONTENT_TYPE' => 'text/yaml' }
               )
               expect(last_response.status).to eq(200)
               expect(last_response.body).to eq('{"diff":[["azs:","removed"],["- name: az1","removed"],["  cloud_properties: {}","removed"],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
@@ -248,7 +229,7 @@ module Bosh::Director
               post(
                   '/diff',
                   YAML.dump(cloud_config_hash_with_two_azs),
-                  'CONTENT_TYPE' => 'text/yaml', 
+                  {'CONTENT_TYPE' => 'text/yaml'}
               )
               expect(last_response.body).to eq('{"diff":[]}')
             end
@@ -259,7 +240,7 @@ module Bosh::Director
               post(
                   '/diff',
                   YAML.dump(cloud_config_hash_with_one_az),
-                  'CONTENT_TYPE' => 'text/yaml', 
+                  {'CONTENT_TYPE' => 'text/yaml'}
               )
               expect(last_response.status).to eq(200)
               expect(last_response.body).to eq('{"diff":[["azs:",null],["- name: az2","removed"],["  cloud_properties: {}","removed"]]}')
@@ -267,7 +248,7 @@ module Bosh::Director
           end
 
           it 'gives a nice error when request body is not a valid yml' do
-            post '/diff', "}}}i'm not really yaml, hah!", { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440001)
@@ -275,7 +256,7 @@ module Bosh::Director
           end
 
           it 'gives a nice error when request body is empty' do
-            post '/diff', '', { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/diff', '', {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)).to eq(
@@ -287,7 +268,7 @@ module Bosh::Director
           it 'returns 200 with an empty diff and an error message if the diffing fails' do
             allow_any_instance_of(Bosh::Director::Changeset).to receive(:diff).and_raise('Oooooh crap')
 
-            post '/diff', {}.to_yaml, { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
 
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)['diff']).to eq([])
@@ -305,7 +286,7 @@ module Bosh::Director
             post(
                 '/diff',
                 YAML.dump(cloud_config_hash_with_two_azs),
-                'CONTENT_TYPE' => 'text/yaml', 
+                {'CONTENT_TYPE' => 'text/yaml'}
             )
             expect(last_response.body).to eq('{"diff":[]}')
           end
@@ -316,7 +297,7 @@ module Bosh::Director
             post(
                 '/diff',
                 YAML.dump(cloud_config_hash_with_one_az),
-                'CONTENT_TYPE' => 'text/yaml', 
+                {'CONTENT_TYPE' => 'text/yaml'}
             )
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
@@ -331,7 +312,7 @@ module Bosh::Director
               post(
                 '/diff',
                 YAML.dump(cloud_config_hash_with_one_az),
-                'CONTENT_TYPE' => 'text/yaml', 
+                {'CONTENT_TYPE' => 'text/yaml'}
               )
               expect(last_response.status).to eq(200)
               expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cloud_properties: {}","added"]]}')
@@ -344,58 +325,8 @@ module Bosh::Director
         before { authorize 'invalid-user', 'invalid-password' }
 
         it 'returns 401' do
-          post '/diff', {}.to_yaml, 'CONTENT_TYPE' => 'text/yaml', 
+          post '/diff', {}.to_yaml, {'CONTENT_TYPE' => 'text/yaml'}
           expect(last_response.status).to eq(401)
-        end
-      end
-
-      context 'when specifing multiple AZs' do
-        before { authorize 'admin', 'admin' }
-
-        it 'returns the diff if all AZs have CPI defined' do
-          post(
-            '/diff',
-            YAML.dump(cloud_config_hash_with_two_azs_and_cpis),
-            'CONTENT_TYPE' => 'text/yaml', 
-          )
-          expect(last_response.status).to eq(200)
-          expect(last_response.body).to eq('{"diff":[["azs:","added"],["- name: az1","added"],["  cpi: cpi1","added"],["  cloud_properties: {}","added"],["- name: az2","added"],["  cpi: cpi2","added"],["  cloud_properties: {}","added"]]}')
-        end
-
-        it 'returns an error if one of the AZs have no CPI defined' do
-          cloud_config = cloud_config_hash_with_two_azs_and_cpis
-          cloud_config['azs'][0].delete('cpi')
-          post(
-            '/diff',
-            YAML.dump(cloud_config),
-            'CONTENT_TYPE' => 'text/yaml', 
-          )
-          expect(last_response.status).to eq(400)
-          expect(last_response.body).to eq('{"diff":[],"error":"Either all or no AZ must declare CPI"}')
-        end
-
-        it 'returns the diff even when the AZs block is empty' do
-          cloud_config = cloud_config_hash_with_two_azs_and_cpis
-          cloud_config['azs'] = []
-          post(
-            '/diff',
-            YAML.dump(cloud_config),
-            'CONTENT_TYPE' => 'text/yaml', 
-          )
-          expect(last_response.status).to eq(200)
-          expect(last_response.body).to eq('{"diff":[["azs: []","added"]]}')
-        end
-
-        it 'returns the diff even when the AZs block is not present' do
-          cloud_config = cloud_config_hash_with_two_azs_and_cpis
-          cloud_config['azs'] = nil
-          post(
-            '/diff',
-            YAML.dump(cloud_config),
-            'CONTENT_TYPE' => 'text/yaml', 
-          )
-          expect(last_response.status).to eq(200)
-          expect(last_response.body).to eq('{"diff":[]}')
         end
       end
     end

@@ -31,20 +31,12 @@ module Bosh::Director
         new_config_hash = validate_manifest_yml(request.body.read, nil) || {}
 
         result = {}
-        changeset = {}
         begin
-          changeset = Changeset.new(old_config_hash, new_config_hash)
-          diff = changeset.diff(false).order
+          diff = Changeset.new(old_config_hash, new_config_hash).diff(false).order
           result['diff'] = diff.map { |l| [l.to_s, l.status] }
         rescue => error
           result['diff'] = []
           result['error'] = "Unable to diff cloud-config: #{error.inspect}\n#{error.backtrace.join("\n")}"
-        end
-
-        unless valid_changeset?(changeset)
-          status(400)
-          result['diff'] = []
-          result['error'] = 'Either all or no AZ must declare CPI'
         end
 
         json_encode(result)
@@ -91,15 +83,6 @@ module Bosh::Director
             object_name: 'default',
             error:       error
         })
-      end
-
-      def valid_changeset?(changeset)
-        return true if changeset.merged.nil? || changeset.merged['azs'].nil?
-
-        azs = changeset.merged['azs']
-        number_of_non_empty_cpis = azs.select { |az| az['cpi'] && !az['cpi'].empty? }.size
-
-        number_of_non_empty_cpis == azs.size || number_of_non_empty_cpis.zero?
       end
     end
   end
