@@ -4,10 +4,14 @@ require 'rack/test'
 module Bosh::Director
   describe Api::LocalIdentityProvider do
     subject(:identity_provider) { Api::LocalIdentityProvider.new({'users' => users}) }
-    let(:users) { [{'name' => 'admin', 'password' => 'admin'}] }
+    let(:users) { [
+      {'name' => 'admin', 'password' => 'admin'},
+      {'name' => 'readonly', 'password' => 'readonly', 'scopes' => ['bosh.read']},
+    ] }
     let(:credentials) do
       {
         :admin => 'Basic YWRtaW46YWRtaW4=',
+        :readonly => 'Basic cmVhZG9ubHk6cmVhZG9ubHk=',
         :bogus => 'Basic YWRtaW46Ym9ndXM='
       }
     end
@@ -21,7 +25,7 @@ module Bosh::Director
       end
     end
 
-    context 'given valid HTTP basic authentication credentials' do
+    context 'given valid HTTP basic authentication credentials for user with default scopes' do
       let(:request_env) do
         { 'HTTP_AUTHORIZATION' => credentials[:admin] }
       end
@@ -29,6 +33,19 @@ module Bosh::Director
       it 'returns the username of the authenticated user' do
         local_user = identity_provider.get_user(request_env, {})
         expect(local_user.username).to eq('admin')
+        expect(local_user.scopes).to contain_exactly('bosh.admin')
+      end
+    end
+
+    context 'given valid HTTP basic authentication credentials for user with custom scopes' do
+      let(:request_env) do
+        { 'HTTP_AUTHORIZATION' => credentials[:readonly] }
+      end
+
+      it 'returns the username of the authenticated user' do
+        local_user = identity_provider.get_user(request_env, {})
+        expect(local_user.username).to eq('readonly')
+        expect(local_user.scopes).to contain_exactly('bosh.read')
       end
     end
 

@@ -18,6 +18,12 @@ module Bosh::Director
         user['password'] == password
       end
 
+      def user_scopes(username)
+        user = @users.find { |u| u['name'] == username }
+        raise "User #{user} not found in ConfigUserManager" if user.nil?
+        return user.fetch('scopes', ['bosh.admin'])
+      end
+
       def delete_user(_)
         raise NotSupported
       end
