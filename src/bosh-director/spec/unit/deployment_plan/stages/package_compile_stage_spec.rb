@@ -98,10 +98,6 @@ module Bosh::Director
 
       allow(instance_deleter).to receive(:delete_instance_plan)
 
-      @director_job = instance_double('Bosh::Director::Jobs::BaseJob')
-      allow(@director_job).to receive(:task_cancelled?).and_return(false)
-      allow(Config).to receive(:current_job).and_return(@director_job)
-
       allow(plan).to receive(:network).with('default').and_return(network)
 
       allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
@@ -249,7 +245,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          nil
         )
 
         compiler.perform
@@ -276,7 +271,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          @director_job
         )
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
@@ -305,8 +299,6 @@ module Bosh::Director
         expect(@j_router).to receive(:use_compiled_package).exactly(5).times
 
         expect(instance_deleter).to receive(:delete_instance_plan).exactly(11).times
-
-        expect(@director_job).to receive(:task_checkpoint).once
 
         compiler.perform
         expect(compiler.compilations_performed).to eq(11)
@@ -343,7 +335,6 @@ module Bosh::Director
             compilation_config,
             compilation_instance_pool,
             logger,
-            @director_job
           )
 
           @package_set_a.each do |package|
@@ -362,8 +353,6 @@ module Bosh::Director
           expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
             compile_package_stub(args)
           end
-
-          expect(@director_job).to receive(:task_checkpoint).once
 
           compiler.perform
           # For @stemcell_b we need to compile:
@@ -384,7 +373,6 @@ module Bosh::Director
             compilation_config,
             compilation_instance_pool,
             logger,
-            @director_job
           )
 
           @package_set_a.each do |package|
@@ -437,7 +425,6 @@ module Bosh::Director
             compilation_config,
             compilation_instance_pool,
             logger,
-            @director_job
           )
 
           expect {compiler.perform}.to raise_error PackageMissingSourceCode
@@ -447,7 +434,15 @@ module Bosh::Director
 
     context 'compiling packages with transitive dependencies' do
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
-      let(:compiler) { DeploymentPlan::Stages::PackageCompileStage.new(deployment.name, [@j_deps_ruby], compilation_config, compilation_instance_pool, logger, @director_job) }
+      let(:compiler) do
+        DeploymentPlan::Stages::PackageCompileStage.new(
+          deployment.name,
+          [@j_deps_ruby],
+          compilation_config,
+          compilation_instance_pool,
+          logger,
+        )
+      end
       let(:vm_cid) { 'vm-cid-0' }
 
       before do
@@ -478,7 +473,6 @@ module Bosh::Director
           }
         end
 
-        allow(@director_job).to receive(:task_checkpoint)
         allow(compiler).to receive(:with_compile_lock).and_yield
         allow(vm_creator).to receive(:create_for_instance_plan)
       end
@@ -513,11 +507,9 @@ module Bosh::Director
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
       it 'cancels the compilation' do
         vm_cid = 'vm-cid-1'
-        director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: false)
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
         allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
 
-        network = double('network', name: 'network_name')
         release_version_model = Models::ReleaseVersion.make
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model, version: release_version_model.version)
         release = Models::Release.make(name: release_version.name)
@@ -528,9 +520,13 @@ module Bosh::Director
         job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(instance_group).to receive_messages(jobs: [job])
 
-        compiler = DeploymentPlan::Stages::PackageCompileStage.new(deployment.name, [instance_group], compilation_config, compilation_instance_pool, logger, director_job)
-        expect(director_job).to receive(:task_cancelled?).ordered.and_return(false)
-        expect(director_job).to receive(:task_cancelled?).ordered.and_return(false)
+        compiler = DeploymentPlan::Stages::PackageCompileStage.new(
+          deployment.name,
+          [instance_group],
+          compilation_config,
+          compilation_instance_pool,
+          logger,
+        )
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).once.ordered.
@@ -545,9 +541,9 @@ module Bosh::Director
         expect(agent).to receive(:get_state).and_return({'agent-state' => 'yes'}).ordered
         expect(agent).to receive(:compile_package).and_raise(TaskCancelled).ordered
 
-        expect {
+        expect do
           compiler.perform
-        }.to raise_error(TaskCancelled)
+        end.to raise_error(TaskCancelled)
       end
 
       # this can happen when the cancellation comes in when there is a package to be compiled,
@@ -558,11 +554,10 @@ module Bosh::Director
         let(:reuse_compilation_vms) { true }
         let(:number_of_workers) { 1 }
         it 'cancels the compilation' do
-          director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: true)
+          allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled)
           event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
           allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
 
-          network = double('network', name: 'network_name')
           release_version_model = Models::ReleaseVersion.make
           release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model, version: release_version_model.version)
           release = Models::Release.make(name: release_version.name)
@@ -573,11 +568,17 @@ module Bosh::Director
           job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
           allow(instance_group).to receive_messages(jobs: [job])
 
-          compiler = DeploymentPlan::Stages::PackageCompileStage.new(deployment.name, [instance_group], compilation_config, compilation_instance_pool, logger, director_job)
+          compiler = DeploymentPlan::Stages::PackageCompileStage.new(
+            deployment.name,
+            [instance_group],
+            compilation_config,
+            compilation_instance_pool,
+            logger,
+          )
 
-          expect {
+          expect do
             compiler.perform
-          }.not_to raise_error
+          end.not_to raise_error
         end
       end
     end
@@ -624,15 +625,12 @@ module Bosh::Director
 
         expect(instance_deleter).to receive(:delete_instance_plan)
 
-        expect(@director_job).to receive(:task_checkpoint).once
-
         compiler = DeploymentPlan::Stages::PackageCompileStage.new(
           deployment.name,
           [@j_dea],
           compilation_config,
           compilation_instance_pool,
           logger,
-          @director_job
         )
 
         @package_set_a.each do |package|
@@ -671,7 +669,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          @director_job
         )
         allow(compiler).to receive(:with_compile_lock).and_yield
 
@@ -687,7 +684,13 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
-      compiler = DeploymentPlan::Stages::PackageCompileStage.new(deployment.name, [], compilation_config, compilation_instance_pool, logger, nil)
+      compiler = DeploymentPlan::Stages::PackageCompileStage.new(
+        deployment.name,
+        [],
+        compilation_config,
+        compilation_instance_pool,
+        logger,
+      )
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
@@ -701,7 +704,15 @@ module Bosh::Director
       let(:package) { Models::Package.make }
       let(:stemcell) { make_stemcell }
       let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
-      let(:compiler) { DeploymentPlan::Stages::PackageCompileStage.new(deployment.name, [], compilation_config, compilation_instance_pool, logger, nil) }
+      let(:compiler) do
+        DeploymentPlan::Stages::PackageCompileStage.new(
+          deployment.name,
+          [],
+          compilation_config,
+          compilation_instance_pool,
+          logger,
+        )
+      end
       let(:cache_key) { 'cache key' }
 
       before do
@@ -783,7 +794,7 @@ module Bosh::Director
         end
 
         it 'should clean up the compilation vm if it failed' do
-          compiler = described_class.new(deployment.name, [], compilation_config, compilation_instance_pool, logger, @director_job)
+          compiler = described_class.new(deployment.name, [], compilation_config, compilation_instance_pool, logger)
 
           allow(vm_creator).to receive(:create_for_instance_plan).and_raise(RpcTimeout)
 
@@ -806,7 +817,7 @@ module Bosh::Director
       end
 
       describe 'trusted certificate handling' do
-        let(:compiler) { described_class.new(deployment.name, [], compilation_config, compilation_instance_pool, logger, @director_job) }
+        let(:compiler) { described_class.new(deployment.name, [], compilation_config, compilation_instance_pool, logger) }
         let(:client) { instance_double('Bosh::Director::AgentClient') }
 
         before do
@@ -871,7 +882,6 @@ module Bosh::Director
           compilation_config,
           compilation_instance_pool,
           logger,
-          nil,
         ).and_call_original
 
         DeploymentPlan::Stages::PackageCompileStage.create(plan)
