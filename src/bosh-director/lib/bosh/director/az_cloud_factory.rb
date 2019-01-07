@@ -51,7 +51,13 @@ module Bosh::Director
       az = @azs[az_name]
       raise "AZ '#{az_name}' not found in cloud config" if az.nil?
 
-      az.cpi.nil? ? '' : az.cpi
+      cpi = az.cpi.nil? ? '' : az.cpi
+
+      if uses_cpi_config? && cpi == ''
+        raise Bosh::Director::CpiNotFound, "AZ '#{az_name}' must specify a CPI when CPI config is defined."
+      end
+
+      cpi
     end
   end
 end

@@ -326,6 +326,7 @@ module Bosh::Director
 
   # CPI config
   CpiDuplicateName = err(550000)
+  CpiNotFound = err(550001)
 
   # Spec Parser
   VariablesInvalidFormat = err(560000)

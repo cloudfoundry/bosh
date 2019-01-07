@@ -4,7 +4,7 @@ module Bosh::Director
   describe AZCloudFactory do
     subject(:az_cloud_factory) { described_class.new(parsed_cpi_config, azs) }
     let(:default_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
+    let(:parsed_cpi_config) { nil }
     let(:cpis) { [] }
     let(:azs) do
       { 'some-az' => az }
@@ -97,16 +97,65 @@ module Bosh::Director
       end
     end
 
-    shared_examples_for 'lookup for clouds' do
-      context 'when asking for the cloud of an existing AZ without cpi' do
-        let(:az) { DeploymentPlan::AvailabilityZone.new('some-az', {}, nil) }
+    context 'when using cpi config' do
+      let(:config_error_hint) { '' }
+      let(:az_without_cpi) { DeploymentPlan::AvailabilityZone.new('az-without-cpi', {}, nil) }
+      let(:azs) do
+        {
+          'some-az' => az,
+          'az-without-cpi' => az_without_cpi,
+        }
+      end
+      let(:cpis) do
+        [
+          CpiConfig::Cpi.new('name1', 'type1', nil, { 'prop1' => 'val1' }, {}),
+          CpiConfig::Cpi.new('name2', 'type2', nil, { 'prop2' => 'val2' }, {}),
+          CpiConfig::Cpi.new('name3', 'type3', nil, { 'prop3' => 'val3' }, {}),
+        ]
+      end
+      let(:az) { DeploymentPlan::AvailabilityZone.new('some-az', {}, cpis[0].name) }
+      let(:clouds) do
+        [
+          instance_double(Bosh::Clouds::ExternalCpi),
+          instance_double(Bosh::Clouds::ExternalCpi),
+          instance_double(Bosh::Clouds::ExternalCpi),
+        ]
+      end
+      let(:parsed_cpi_config) { CpiConfig::ParsedCpiConfig.new(cpis) }
 
-        it 'returns the default cloud from director config' do
-          cloud_wrapper = instance_double(Bosh::Clouds::ExternalCpiResponseWrapper)
-          expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(default_cloud, anything).and_return(cloud_wrapper)
+      before do
+        expect(az_cloud_factory.uses_cpi_config?).to be_truthy
+        clouds.each do |cloud|
+          allow(cloud).to receive(:info)
+          allow(cloud).to receive(:request_cpi_api_version=)
+        end
+      end
 
-          cloud = az_cloud_factory.get_for_az('some-az')
-          expect(cloud).to eq(cloud_wrapper)
+      it 'returns the cloud from cpi config when asking for a AZ with this cpi' do
+        cloud_wrapper = instance_double(Bosh::Clouds::ExternalCpiResponseWrapper)
+
+        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path,
+                                                                Config.uuid,
+                                                                instance_of(Logging::Logger),
+                                                                properties_from_cpi_config: cpis[0].properties,
+                                                                stemcell_api_version: nil).and_return(clouds[0])
+        expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[0], anything)
+                                                                         .and_return(cloud_wrapper)
+
+        cloud = az_cloud_factory.get_for_az('some-az')
+        expect(cloud).to eq(cloud_wrapper)
+      end
+
+      describe '#get_name_for_az' do
+        it 'returns a cpi name when asking for an existing AZ' do
+          cpi = az_cloud_factory.get_name_for_az('some-az')
+          expect(cpi).to eq('name1')
+        end
+
+        it 'raises an error if the AZ does not define a CPI' do
+          expect do
+            az_cloud_factory.get_name_for_az('az-without-cpi')
+          end.to raise_error("AZ 'az-without-cpi' must specify a CPI when CPI config is defined.")
         end
       end
 
@@ -138,59 +187,6 @@ module Bosh::Director
 
         expect(cloud).to eq(cloud_wrapper)
       end
-    end
-
-    context 'when using cpi config' do
-      let(:config_error_hint) { '' }
-      let(:az) { DeploymentPlan::AvailabilityZone.new('some-az', {}, cpis[0].name) }
-
-      let(:cpis) do
-        [
-          CpiConfig::Cpi.new('name1', 'type1', nil, { 'prop1' => 'val1' }, {}),
-          CpiConfig::Cpi.new('name2', 'type2', nil, { 'prop2' => 'val2' }, {}),
-          CpiConfig::Cpi.new('name3', 'type3', nil, { 'prop3' => 'val3' }, {}),
-        ]
-      end
-
-      let(:clouds) do
-        [
-          instance_double(Bosh::Clouds::ExternalCpi),
-          instance_double(Bosh::Clouds::ExternalCpi),
-          instance_double(Bosh::Clouds::ExternalCpi),
-        ]
-      end
-
-      before do
-        expect(az_cloud_factory.uses_cpi_config?).to be_truthy
-        clouds.each do |cloud|
-          allow(cloud).to receive(:info)
-          allow(cloud).to receive(:request_cpi_api_version=)
-        end
-      end
-
-      it 'returns the cloud from cpi config when asking for a AZ with this cpi' do
-        cloud_wrapper = instance_double(Bosh::Clouds::ExternalCpiResponseWrapper)
-
-        expect(Bosh::Clouds::ExternalCpi).to receive(:new).with(cpis[0].exec_path,
-                                                                Config.uuid,
-                                                                instance_of(Logging::Logger),
-                                                                properties_from_cpi_config: cpis[0].properties,
-                                                                stemcell_api_version: nil).and_return(clouds[0])
-        expect(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(clouds[0], anything)
-                                                                         .and_return(cloud_wrapper)
-
-        cloud = az_cloud_factory.get_for_az('some-az')
-        expect(cloud).to eq(cloud_wrapper)
-      end
-
-      describe '#get_name_for_az' do
-        it 'returns a cpi name when asking for an existing AZ' do
-          cpi = az_cloud_factory.get_name_for_az('some-az')
-          expect(cpi).to eq('name1')
-        end
-      end
-
-      it_behaves_like 'lookup for clouds'
     end
 
     describe '#get_name_for_az' do
