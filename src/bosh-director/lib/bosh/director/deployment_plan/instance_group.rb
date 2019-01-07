@@ -321,10 +321,12 @@ module Bosh::Director
           raise JobPackageCollision,
                 "Package name collision detected in instance group '#{@name}': " \
                     "job '#{release1jobs[0][:release]}/#{release1jobs[0][:job]}' " \
-                    "depends on package '#{release1jobs[0][:release]}/#{package_name}', " \
+                    "depends on package '#{release1jobs[0][:release]}/#{package_name}' " \
+                        "with fingerprint '#{release1jobs[0][:fingerprint]}', " \
                     "job '#{release2jobs[0][:release]}/#{release2jobs[0][:job]}' " \
-                    "depends on package '#{release2jobs[0][:release]}/#{package_name}'. " \
-                'BOSH cannot currently collocate two packages with identical names from separate releases.'
+                    "depends on package '#{release2jobs[0][:release]}/#{package_name}' " \
+                        "with fingerprint '#{release2jobs[0][:fingerprint]}'. " \
+                'BOSH cannot currently collocate two packages with identical names and different fingerprints or dependencies.'
         end
       end
 

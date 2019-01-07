@@ -404,9 +404,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
             end.to raise_error(
               Bosh::Director::JobPackageCollision,
               "Package name collision detected in instance group 'foobar': "\
-              "job 'release1/foo' depends on package 'release1/same-name',"\
-              " job 'release2/bar' depends on package 'release2/same-name'. "\
-              'BOSH cannot currently collocate two packages with identical names from separate releases.',
+              "job 'release1/foo' depends on package 'release1/same-name' with fingerprint 'abc123',"\
+              " job 'release2/bar' depends on package 'release2/same-name' with fingerprint '987asd'. "\
+              'BOSH cannot currently collocate two packages with identical names and different fingerprints or dependencies.',
             )
           end
         end
@@ -429,9 +429,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
               end.to raise_error(
                 Bosh::Director::JobPackageCollision,
                 "Package name collision detected in instance group 'foobar': "\
-                "job 'release1/foo' depends on package 'release1/same-name',"\
-                " job 'release2/bar' depends on package 'release2/same-name'. "\
-                'BOSH cannot currently collocate two packages with identical names from separate releases.',
+                "job 'release1/foo' depends on package 'release1/same-name' with fingerprint 'abc123',"\
+                " job 'release2/bar' depends on package 'release2/same-name' with fingerprint 'abc123'. "\
+                'BOSH cannot currently collocate two packages with identical names and different fingerprints or dependencies.',
               )
             end
           end

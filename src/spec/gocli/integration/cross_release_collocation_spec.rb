@@ -155,7 +155,7 @@ describe 'collocating templates from multiple releases', type: :integration do
           failure_expected: true
         )
 
-        expect(output).to match(%r[Package name collision detected in instance group 'foobar': job 'test_release/job_using_pkg_1_and_2' depends on package 'test_release/pkg_1',])
+        expect(output).to match(%r{ Package name collision detected in instance group 'foobar': job 'test_release/job_using_pkg_1_and_2' depends on package 'test_release/pkg_1' with fingerprint '16b4c8ef1574b3f98303307caad40227c208371f', })
       end
     end
   end
