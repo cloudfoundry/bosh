@@ -36,6 +36,7 @@ module Bosh::Director
         end
       end
       let(:deployment_name) { 'deployment-name'}
+      let(:network_name) { 'network-name'}
 
       before do
         App.new(config)
@@ -59,6 +60,7 @@ module Bosh::Director
           )
         end
         let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: deployment_name, manifest: '{}') }
+        let(:network_model) { Bosh::Director::Models::Network.make(name: network_name) }
         let(:planner) do
           instance_double(
             DeploymentPlan::Planner,
@@ -138,6 +140,7 @@ module Bosh::Director
               allow(config_server_client).to receive(:generate_values)
 
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
+
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
               allow(links_manager).to receive(:remove_unused_links)
@@ -196,6 +199,7 @@ module Bosh::Director
                   unorphanable,
                 ]
                 allow(deployment_model).to receive(:remove_network)
+                allow(job).to receive(:remove_unused_subnets)
                 allow(job).to receive(:with_network_lock) do |&block|
                   block.call
                 end
@@ -410,6 +414,7 @@ module Bosh::Director
 
             context 'even when network lifecycle is enabled' do
               before do
+                allow(job).to receive(:remove_unused_subnets)
                 allow(Config).to receive(:network_lifecycle_enabled?).and_return true
               end
 

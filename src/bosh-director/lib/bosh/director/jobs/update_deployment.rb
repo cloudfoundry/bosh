@@ -132,9 +132,6 @@ module Bosh::Director
 
             with_network_lock(network.name) do
               db_network = Bosh::Director::Models::Network.first(name: network.name)
-              # To actually remove the subnets, two conditions have to be met:
-              # 1) all deployments are upgraded to the latest cloud config
-              # 2) There are subnets in the database for that network that don't exist anymore in the manifest
               if db_network.deployments.all? { |deployment| used_cloud_config_state(deployment) == 'latest' }
                 unused_subnets(network.subnets, db_network.subnets).each do |subnet|
                   cloud_factory = AZCloudFactory.create_with_latest_configs(deployment_model)
