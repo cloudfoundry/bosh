@@ -366,7 +366,7 @@ func Bosh(args ...string) *gexec.Session {
 
 func UploadStemcell(stemcellURL string) {
 	session := Bosh("-n", "upload-stemcell", stemcellURL)
-	Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
 func UploadRelease(releaseURL string) {
