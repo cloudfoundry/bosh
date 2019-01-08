@@ -6,7 +6,7 @@ namespace :fly do
   task :unit do
     execute('test-unit', '-p',
             DB: (ENV['DB'] || 'postgresql'),
-            DB_VERSION: (ENV['DB_VERSION'] || '9.4'))
+            DB_VERSION: (ENV['DB_VERSION'] || '10'))
   end
 
   # bundle exec rake fly:integration
