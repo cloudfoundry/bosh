@@ -40,7 +40,7 @@ describe 'deploy instance_groups job', type: :integration do
     expect(template).to include("spec.address=#{instance.id}.foobar.a.simple.bosh")
 
     # Force VM recreation
-    cloud_config_hash['vm_types'].first['cloud_properties'] = {'changed' => true}
+    cloud_config_hash['vm_types'].first['cloud_properties'] = { 'changed' => true }
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
     current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
@@ -54,35 +54,36 @@ describe 'deploy instance_groups job', type: :integration do
   end
 
   it 'does not redeploy if the order of properties get changed' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'].first['jobs'].first['properties'] = {
-        'test_property' =>
-        {
-            'q2GB' => 'foo',
-            'q4GB' => 'foo',
-            'q8GB' => 'foo',
-            'q46GB' => 'foo',
-            'q82GB' => 'foo',
-            'q64GB' => 'foo',
-            'q428GB' => 'foo',
-        }
-      }
-      manifest_hash['instance_groups'].first['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'].first['jobs'].first['properties'] = {
+      'test_property' =>
+      {
+        'q2GB' => 'foo',
+        'q4GB' => 'foo',
+        'q8GB' => 'foo',
+        'q46GB' => 'foo',
+        'q82GB' => 'foo',
+        'q64GB' => 'foo',
+        'q428GB' => 'foo',
+      },
+    }
+    manifest_hash['instance_groups'].first['instances'] = 1
 
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-      expect(director.instances.count).to eq(1)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    expect(director.instances.count).to eq(1)
 
-      instance = director.instance('foobar', '0')
-      template = instance.read_job_template('foobar', 'bin/foobar_ctl')
-      expected_rendered_template = '"test_property={"q2GB"=>"foo", "q428GB"=>"foo", "q46GB"=>"foo", "q4GB"=>"foo", "q64GB"=>"foo", "q82GB"=>"foo", "q8GB"=>"foo"}"'
-      expect(template).to include(expected_rendered_template)
+    instance = director.instance('foobar', '0')
+    template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+    expected_rendered_template = '"test_property={"q2GB"=>"foo", "q428GB"=>"foo", ' \
+      '"q46GB"=>"foo", "q4GB"=>"foo", "q64GB"=>"foo", "q82GB"=>"foo", "q8GB"=>"foo"}"'
+    expect(template).to include(expected_rendered_template)
 
-      output = deploy(manifest_hash: manifest_hash)
-      expect(output).to_not match(/Updating instance foobar/)
+    output = deploy(manifest_hash: manifest_hash)
+    expect(output).to_not match(/Updating instance foobar/)
 
-      instance = director.instance('foobar', '0')
-      template = instance.read_job_template('foobar', 'bin/foobar_ctl')
-      expect(template).to include(expected_rendered_template)
+    instance = director.instance('foobar', '0')
+    template = instance.read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include(expected_rendered_template)
   end
 
   context 'health monitor', hm: true do

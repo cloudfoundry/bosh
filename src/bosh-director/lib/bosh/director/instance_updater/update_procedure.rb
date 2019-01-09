@@ -98,10 +98,10 @@ module Bosh::Director
         end
 
         # current state
-        if instance.model.state != 'stopped'
-          stop
-          take_snapshot
-        end
+        return unless instance.model.state != 'stopped'
+
+        stop
+        take_snapshot
       end
 
       def handle_detached_instance_if_detached
@@ -118,6 +118,7 @@ module Bosh::Director
         instance_plan.release_obsolete_network_plans(@ip_provider)
         instance.update_state
         return if @instance_variable_and_links_updated
+
         @links_manager.bind_links_to_instance(instance)
         instance.update_variable_set
       end
