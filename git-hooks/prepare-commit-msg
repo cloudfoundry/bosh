@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec git duet-prepare-commit-msg "$@"
