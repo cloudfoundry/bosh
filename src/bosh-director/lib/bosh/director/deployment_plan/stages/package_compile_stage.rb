@@ -20,7 +20,7 @@ module Bosh::Director
           )
         end
 
-        def initialize(deployment_name, jobs_to_compile, compilation_config, compilation_instance_pool, logger)
+        def initialize(deployment_name, instance_groups_to_compile, compilation_config, compilation_instance_pool, logger)
           @event_log_stage = nil
           @logger = logger
 
@@ -31,7 +31,7 @@ module Bosh::Director
           @compile_tasks = {}
           @ready_tasks = []
           @compilations_performed = 0
-          @jobs_to_compile = jobs_to_compile
+          @instance_groups_to_compile = instance_groups_to_compile
           @compilation_config = compilation_config
           @deployment_name = deployment_name
         end
@@ -75,8 +75,7 @@ module Bosh::Director
               build = Models::CompiledPackage.generate_build_number(package, stemcell.os, stemcell.version)
               task_result = nil
 
-              prepare_vm(stemcell) do |instance|
-                metadata_updater.update_vm_metadata(instance.model, instance.model.active_vm, compiling: package.name)
+              prepare_vm(stemcell, package) do |instance|
                 agent_task =
                   instance.agent_client.compile_package(
                     package.blobstore_id,
@@ -117,16 +116,11 @@ module Bosh::Director
           end
         end
 
-        # This method will create a VM for each stemcell in the stemcells array
-        # passed in.  The VMs are yielded and their destruction is ensured.
-        # @param [Models::Stemcell] stemcell The stemcells that need to have
-        #     compilation VMs created.
-        # @yield [DeploymentPlan::Instance] Yields an instance that should be used for compilation.  This may be a reused VM or a
-        def prepare_vm(stemcell)
+        def prepare_vm(stemcell, package)
           if @compilation_config.reuse_compilation_vms
-            @compilation_instance_pool.with_reused_vm(stemcell, &Proc.new)
+            @compilation_instance_pool.with_reused_vm(stemcell, package, &Proc.new)
           else
-            @compilation_instance_pool.with_single_use_vm(stemcell, &Proc.new)
+            @compilation_instance_pool.with_single_use_vm(stemcell, package, &Proc.new)
           end
         end
 
@@ -135,7 +129,7 @@ module Bosh::Director
         def validate_packages
           release_manager = Bosh::Director::Api::ReleaseManager.new
           validator = DeploymentPlan::PackageValidator.new(@logger)
-          @jobs_to_compile.each do |instance_group|
+          @instance_groups_to_compile.each do |instance_group|
             instance_group.jobs.each do |job|
               release_model = release_manager.find_by_name(job.release.name)
               job_packages = job.package_models.map(&:name)
@@ -152,7 +146,7 @@ module Bosh::Director
           @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log_stage)
 
           @event_log_stage.advance_and_track('Finding packages to compile') do
-            @jobs_to_compile.each do |instance_group|
+            @instance_groups_to_compile.each do |instance_group|
               stemcell = instance_group.stemcell
 
               job_descs = instance_group.jobs.map do |job|
@@ -246,10 +240,6 @@ module Bosh::Director
             counter += 1 unless task.compiled?
           end
           counter
-        end
-
-        def metadata_updater
-          @metadata_updater ||= MetadataUpdater.build
         end
       end
     end

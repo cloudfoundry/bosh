@@ -265,6 +265,12 @@ module Bosh::Director
       it 'compiles all packages' do
         prepare_samples
 
+        metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
+
+        allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, compiling: 'common')
+        expect(metadata_updater).to receive(:update_vm_metadata)
+          .with(anything, anything, hash_including(:compiling)).exactly(10).times
         compiler = DeploymentPlan::Stages::PackageCompileStage.new(
           deployment.name,
           [@j_dea, @j_router],
@@ -274,12 +280,6 @@ module Bosh::Director
         )
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
-
-        metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
-
-        allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, {compiling: 'common'})
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, hash_including(:compiling)).exactly(10).times
 
         agent_client = instance_double('Bosh::Director::AgentClient')
         allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
@@ -766,6 +766,7 @@ module Bosh::Director
     end
 
     describe '#prepare_vm' do
+      let(:package) { Models::Package.make }
       let(:number_of_workers) { 2 }
       let(:plan) do
         deployment_model = Models::Deployment.make
@@ -809,7 +810,7 @@ module Bosh::Director
           allow(ip_provider).to receive(:release)
 
           expect {
-            compiler.prepare_vm(stemcell) do
+            compiler.prepare_vm(stemcell, package) do
               # nothing
             end
           }.to raise_error RpcTimeout
@@ -837,7 +838,7 @@ module Bosh::Director
             expect(client).to receive(method).and_raise(exception)
 
             begin
-              compiler.prepare_vm(stemcell, &Proc.new {})
+              compiler.prepare_vm(stemcell, package) {}
             rescue exception
               #
             end
@@ -848,7 +849,7 @@ module Bosh::Director
 
         it 'should update the database with the new VM' 's trusted certs' do
           expect {
-            compiler.prepare_vm(stemcell, &Proc.new {})
+            compiler.prepare_vm(stemcell, package) {}
           }.to change {
             matching_vm = Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)
             matching_vm.nil? ? 0 : Models::Instance.all.select { |i| i.active_vm == matching_vm }.count
