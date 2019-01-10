@@ -2364,6 +2364,21 @@ module Bosh::Director
                 ],
               )
             end
+
+            context 'variables are not defined in manifest' do
+              let(:manifest) do
+                {
+                  'name' => 'deployment-name',
+                }
+              end
+
+              it 'should produce no certificates' do
+                response = get('/deployment-name/rotate', action: 'plan')
+                expect(response.status).to eq(200)
+                result = JSON.parse(response.body)
+                expect(result['leaf_certificates']).to be_empty
+              end
+            end
           end
 
           context 'with action "generate"' do

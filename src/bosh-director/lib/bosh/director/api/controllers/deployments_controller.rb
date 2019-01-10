@@ -195,8 +195,10 @@ module Bosh::Director
         model = @deployment_manager.find_by_name(deployment_name)
         manifest = Manifest.load_from_model(model)
 
+        variables = manifest.manifest_hash.fetch('variables', [])
+
         variable_rotation_manager = Bosh::Director::Api::VariableRotationManager.new(
-          manifest.manifest_hash['variables'],
+          variables,
           deployment_name,
         )
 
