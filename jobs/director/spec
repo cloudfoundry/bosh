@@ -19,8 +19,9 @@ templates:
   mime.types: config/mime.types
   config_server_ca.cert.erb: config/config_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
-  bbr_backup: bin/bbr/backup
-  bbr_restore: bin/bbr/restore
+  sync_dns_ctl.erb: bin/sync_dns_ctl
+  bbr_backup.erb: bin/bbr/backup
+  bbr_restore.erb: bin/bbr/restore
   nats_server_ca.pem.erb: config/nats_server_ca.pem
   nats_client_certificate.pem.erb: config/nats_client_certificate.pem
   nats_client_private_key.erb: config/nats_client_private_key
