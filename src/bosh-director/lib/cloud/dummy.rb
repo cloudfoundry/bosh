@@ -721,7 +721,7 @@ module Bosh
         end
 
         def allow_create_vm_to_have_responsive_agent
-          @logger.info('Making create_vm method create with an unresponsive agent')
+          @logger.info('Making create_vm method create with a responsive agent')
           FileUtils.rm_f(create_vm_unresponsive_agent_agent_id_path)
           FileUtils.rm_f(create_vm_unresponsive_agent_path)
         end
