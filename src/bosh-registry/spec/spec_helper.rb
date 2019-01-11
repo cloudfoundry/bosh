@@ -104,7 +104,7 @@ def valid_config
         'max_connections' => 433,
         'pool_timeout' => 227,
       },
-      'database' => '/:memory:',
+      'database' => ':memory:',
       'adapter' => 'sqlite'
     },
     'cloud' => {

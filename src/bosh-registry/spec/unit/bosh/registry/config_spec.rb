@@ -71,7 +71,7 @@ describe Bosh::Registry do
 
       db = Bosh::Registry.db
       expect(db).to be_kind_of(Sequel::SQLite::Database)
-      expect(db.opts[:database]).to eq('/:memory:')
+      expect(db.opts[:database]).to eq(':memory:')
       expect(db.opts[:max_connections]).to eq(433)
       expect(db.opts[:pool_timeout]).to eq(227)
 
@@ -145,7 +145,7 @@ describe Bosh::Registry do
 
       db = Bosh::Registry.db
       expect(db).to be_kind_of(Sequel::SQLite::Database)
-      expect(db.opts[:database]).to eq('/:memory:')
+      expect(db.opts[:database]).to eq(':memory:')
       expect(db.opts[:max_connections]).to eq(433)
       expect(db.opts[:pool_timeout]).to eq(227)
 
@@ -173,7 +173,7 @@ describe Bosh::Registry do
 
       db = Bosh::Registry.db
       expect(db).to be_kind_of(Sequel::SQLite::Database)
-      expect(db.opts[:database]).to eq('/:memory:')
+      expect(db.opts[:database]).to eq(':memory:')
       expect(db.opts[:max_connections]).to eq(433)
       expect(db.opts[:pool_timeout]).to eq(227)
 

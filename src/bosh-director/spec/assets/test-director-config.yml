@@ -9,7 +9,7 @@ dir: /tmp/boshdir
 director_certificate_expiry_json_path: /tmp/boshdir/certificate_expiry.json
 db:
   adapter: sqlite
-  database: '/:memory:'
+  database: ':memory:'
   connection_options:
     max_connections: 32
     pool_timeout: 10

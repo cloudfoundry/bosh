@@ -15,7 +15,7 @@ module Bosh::Director
           'password' => 'fake-password',
           'host' => 'fake-host',
           'adapter' => 'sqlite',
-          'database' => '/:memory:'
+          'database' => ':memory:'
         })
         config
       end

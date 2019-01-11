@@ -98,7 +98,7 @@ This is a sample of an Bosh Registry configuration file:
       password: admin
 
     db:
-      database: "sqlite:///:memory:"
+      database: "sqlite://:memory:"
       max_connections: 32
       pool_timeout: 10
 

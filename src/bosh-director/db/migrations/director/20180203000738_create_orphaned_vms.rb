@@ -6,18 +6,18 @@ Sequel.migration do
       add_column :orphaned_vm_id, Integer
     end
 
-    create_table :orphaned_vms do |table|
+    create_table :orphaned_vms do
       primary_key :id
-      table.String :cid, null: false
-      table.Integer :instance_id, null: false
-      table.String :availability_zone
+      String :cid, null: false
+      Integer :instance_id, null: false
+      String :availability_zone
       if %i[mysql2 mysql].include?(adapter_scheme)
-        table.longtext :cloud_properties
+        longtext :cloud_properties
       else
-        table.text :cloud_properties
+        text :cloud_properties
       end
-      table.String :cpi
-      table.Time :orphaned_at, null: false
+      String :cpi
+      Time :orphaned_at, null: false
     end
   end
 end
