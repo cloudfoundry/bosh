@@ -4,7 +4,6 @@ groups:
   - unit-2.4-mysql
   - unit-2.4-postgres
   - unit-2.4-db-migrations-rds
-  - blobstore-client-integration
   - integration-db-tls-postgres
   - integration-db-tls-postgres-hotswap
   - integration-db-tls-mysql
@@ -176,31 +175,6 @@ jobs:
       params:
         release: rds-pool
       put: rds-pool
-  serial: true
-- build_logs_to_retain: 250
-  name: blobstore-client-integration
-  plan:
-  - get: bosh-src
-    trigger: true
-  - aggregate:
-    - file: bosh-src/ci/tasks/test-s3-blobstore-client-integration.yml
-      params:
-        access_key_id: ((blobstore_client_aws_access_key_id))
-        run_aws_tests: Not null
-        s3_host: ((blobstore_client_aws_s3_host))
-        s3_region: ((blobstore_client_aws_s3_region))
-        secret_access_key: ((blobstore_client_aws_secret_access_key))
-      task: test-s3
-    - file: bosh-src/ci/tasks/test-local-blobstore-client-integration.yml
-      task: test-local
-    - file: bosh-src/ci/tasks/test-dav-blobstore-client-integration.yml
-      task: test-dav
-    - file: bosh-src/ci/tasks/test-gcs-blobstore-client-integration.yml
-      params:
-        google_json_key_data: ((blobstore_client_google_json_key_data))
-        google_project: ((blobstore_client_google_project))
-      task: test-gcs
-  public: true
   serial: true
 - build_logs_to_retain: 250
   name: blobstore-performance
@@ -502,7 +476,6 @@ jobs:
     - unit-2.4-mysql
     - unit-2.4-postgres
     - unit-2.4-db-migrations-rds
-    - blobstore-client-integration
     - fuzz-tests
     - upgrade-tests
     - blobstore-performance
