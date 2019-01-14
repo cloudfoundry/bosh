@@ -2,7 +2,7 @@
 
 set -eu
 
-<% if p('director.db.host').include? "127.0.0.1" %>
+<% if p('director.db.host') == "127.0.0.1" or p('director.db.host') == "localhost" or p('director.db.host') == "::1" %>
 if [ -z "$ARTIFACT_DIRECTORY" ]; then
   echo "\$ARTIFACT_DIRECTORY should not be empty! Refusing to back up." >&2
   exit 1

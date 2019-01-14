@@ -2,7 +2,7 @@
 
 set -e
 
-<% if p('director.db.host').include? "127.0.0.1" %>
+<% if p('director.db.host') == "127.0.0.1" or p('director.db.host') == "localhost" or p('director.db.host') == "::1" %>
 source /var/vcap/packages/ruby-2.4-r4/bosh/runtime.env
 PATH=$PATH:/var/vcap/jobs/director/bin
 
