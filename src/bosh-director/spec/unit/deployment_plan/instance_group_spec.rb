@@ -1029,27 +1029,58 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe 'use_compiled_package' do
-    let(:package) { Bosh::Director::Models::Package.make }
-    let(:compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: package) }
+    let(:compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
+    let(:registered_release_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_version_model) }
+    let(:deployment_plan_job) { Bosh::Director::DeploymentPlan::Job.new(release1, 'foo', 'foo-deployment') }
+    let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
 
-    it 'adds the package to the instance groups packages by name' do
-      subject.use_compiled_package(compiled_package)
-      expect(subject.packages[compiled_package.name].model).to equal(compiled_package)
+    before(:each) do
+      allow(registered_release_job_model).to receive(:package_names).and_return(['same-name'])
+      allow(release1).to receive(:get_template_model_by_name).with('foo').and_return registered_release_job_model
+      allow(release1).to receive(:get_package_model_by_name).with('same-name').and_return release1_package1_model
+      deployment_plan_job.bind_models
+      subject.add_job(deployment_plan_job)
     end
 
-    context 'when the package is already registered' do
-      let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: package) }
-
-      before do
+    context 'when the fingerprint is the same' do
+      it 'adds the package to the instance groups packages by name' do
         subject.use_compiled_package(compiled_package)
+        expect(subject.packages[compiled_package.name].model).to equal(compiled_package)
       end
 
-      it 'replaces the package if the package id is greater than the registered package' do
-        subject.use_compiled_package(new_compiled_package)
-        expect(subject.packages[new_compiled_package.name].model).to equal(new_compiled_package)
+      context 'when the package is already registered' do
+        before do
+          subject.use_compiled_package(compiled_package)
+        end
 
-        subject.use_compiled_package(compiled_package)
-        expect(subject.packages[new_compiled_package.name].model).to equal(new_compiled_package)
+        it 'replaces the package if the package id is greater than the registered package, but not if the package ID is less' do
+          subject.use_compiled_package(new_compiled_package)
+          expect(subject.package_spec).to eq(
+            'same-name' => BD::DeploymentPlan::CompiledPackage.new(new_compiled_package).spec,
+          )
+
+          subject.use_compiled_package(compiled_package)
+          expect(subject.package_spec).to eq(
+            'same-name' => BD::DeploymentPlan::CompiledPackage.new(new_compiled_package).spec,
+          )
+        end
+      end
+
+      context 'when the new package is only compile-time dependency' do
+        let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
+        let(:compile_time_package) { Bosh::Director::Models::Package.make(name: 'same-name', fingerprint: 'b') }
+        let(:compiled_package_model) { Bosh::Director::Models::CompiledPackage.make(package: compile_time_package) }
+
+        before do
+          subject.use_compiled_package(compiled_package)
+        end
+
+        it 'does not override the existing package' do
+          subject.use_compiled_package(compiled_package_model)
+          expect(subject.package_spec).to eq(
+            'same-name' => BD::DeploymentPlan::CompiledPackage.new(compiled_package).spec,
+          )
+        end
       end
     end
   end

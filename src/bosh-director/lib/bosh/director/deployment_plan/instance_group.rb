@@ -269,8 +269,8 @@ module Bosh::Director
       def use_compiled_package(compiled_package_model)
         compiled_package = CompiledPackage.new(compiled_package_model)
 
-        return unless !@packages[compiled_package.name] ||
-                      @packages[compiled_package.name].model.id < compiled_package.model.id
+        return unless run_time_packages.include?(compiled_package_model.package)
+        return if newer_package_known_than(compiled_package)
 
         @packages[compiled_package.name] = compiled_package
       end
@@ -406,7 +406,11 @@ module Bosh::Director
       private
 
       def run_time_dependencies
-        jobs.flat_map(&:package_models).uniq.map(&:name)
+        run_time_packages.map(&:name)
+      end
+
+      def run_time_packages
+        jobs.flat_map(&:package_models).uniq
       end
 
       def get_dns_record_names
@@ -415,6 +419,10 @@ module Bosh::Director
           result << DnsNameGenerator.dns_record_name('*', @name, network_name, @deployment_name, Config.root_domain)
         end
         result.sort
+      end
+
+      def newer_package_known_than(package)
+        @packages[package.name]&.model&.id.to_i >= package.model.id
       end
     end
   end
