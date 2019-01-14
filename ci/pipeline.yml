@@ -913,8 +913,7 @@ jobs:
       - task: finalize-release
         file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
         params:
-          BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
-          BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
+          RELEASE_PRIVATE_YML: ((bosh_release_private_yml))
       - put: bosh-master
         params:
           repository: bosh-master-with-final
