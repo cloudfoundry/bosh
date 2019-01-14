@@ -81,9 +81,10 @@ module Bosh::Director::Api
           make_n_tasks(13)
         end
 
-        it 'removes 2 tasks older than the latest max_tasks of the given type' do
-          expect(remover).to receive(:remove_task).with(tasks[10])
-          expect(remover).to receive(:remove_task).with(tasks[9])
+        it 'removes 10 tasks older than the latest max_tasks of the given type' do
+          10.downto(1).each do |index|
+            expect(remover).to receive(:remove_task).with(tasks[index])
+          end
 
           remover.remove(default_type)
         end
