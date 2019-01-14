@@ -1272,8 +1272,7 @@ jobs:
         bump: minor
   - file: bosh-src/ci/tasks/finalize-bosh-release.yml
     params:
-      BLOBSTORE_ACCESS_KEY_ID: ((bosh_release_access_key_id))
-      BLOBSTORE_SECRET_ACCESS_KEY: ((bosh_release_secret_access_key))
+      RELEASE_PRIVATE_YML: ((bosh_release_private_yml))
     task: promote-release
   - params:
       file: bumped-candidate-version/version
