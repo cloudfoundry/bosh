@@ -20,13 +20,7 @@ git clone ./bosh-master $PROMOTED_MASTER
 pushd $PROMOTED_MASTER
   git status
 
-  cat >> config/private.yml <<EOF
----
-blobstore:
-  provider: s3
-  options:
-    access_key_id: "$BLOBSTORE_ACCESS_KEY_ID"
-    secret_access_key: "$BLOBSTORE_SECRET_ACCESS_KEY"
+  echo "$RELEASE_PRIVATE_YML" >> "config/private.yml"
 EOF
 
   $GO_CLI_PATH finalize-release --version $FULL_VERSION $DEV_RELEASE_PATH
