@@ -8,3 +8,7 @@
   path: /instance_groups/name=bosh/properties/director/nginx?
   value:
     enable_metrics_endpoint: true
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/nats/enable_metrics_endpoint?
+  value: true
