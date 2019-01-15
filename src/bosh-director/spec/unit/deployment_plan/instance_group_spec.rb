@@ -1030,7 +1030,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   describe 'use_compiled_package' do
     let(:compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
-    let(:registered_release_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_version_model) }
+    let(:registered_release_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_model) }
     let(:deployment_plan_job) { Bosh::Director::DeploymentPlan::Job.new(release1, 'foo', 'foo-deployment') }
     let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
 
