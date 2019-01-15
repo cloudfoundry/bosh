@@ -33,10 +33,12 @@ var _ = Describe("Director external database TLS connections", func() {
 			dbConfig.CACertPath = realCACertPath
 		} else {
 			bratsutils.StartInnerBosh(startInnerBoshArgs...)
-			defer bratsutils.StopInnerBosh()
-			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 		}
 	}
+
+	AfterEach(func() {
+		bratsutils.StopInnerBosh()
+	})
 
 	Context("RDS", func() {
 		var mutualTLSEnabled = false
