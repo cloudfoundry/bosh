@@ -145,5 +145,6 @@
   "20180411165035_migrate_update_strategy_to_vm_strategy": "116a03febc41f331316bb0d14385093ed941bc68",
   "20180427184448_add_historical_metadata_to_orphaned_vms": "405597203ab69f062481a9896a667617bc3207f7",
   "20180515204145_add_vm_metadata_spec": "3a094f32feef551247aeb82432cb551d4804ac16",
-  "20180613190204_links_api_longtext_support": "555ab4f70cc81a7a5889429f8ddadb08dcd432f0"
+  "20180613190204_links_api_longtext_support": "555ab4f70cc81a7a5889429f8ddadb08dcd432f0",
+  "20190114153103_add_index_to_tasks": "50f68f6f1b0ce5765af6417a8b9bc0e1ffd5bb04"
 }
