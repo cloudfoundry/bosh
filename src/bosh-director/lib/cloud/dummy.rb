@@ -119,13 +119,15 @@ module Bosh
             env: env,
             mbus: @options['nats'],
           })
-        agent_pid = spawn_agent_process(agent_id, cloud_properties['legacy_agent_path'])
-        vm = VM.new(agent_pid.to_s, agent_id, cloud_properties, ips)
 
+        agent_process_agent_id = agent_id
         if commands.create_vm_unresponsive_agent ||
            agent_id == commands.unresponsive_agent_agent_id
-          kill_process(agent_pid)
+          agent_process_agent_id = 'unresponsive-agent-fake-id-' + SecureRandom.uuid
         end
+
+        agent_pid = spawn_agent_process(agent_process_agent_id, cloud_properties['legacy_agent_path'])
+        vm = VM.new(agent_pid.to_s, agent_id, cloud_properties, ips)
 
         @vm_repo.save(vm)
 
