@@ -2,6 +2,7 @@ package bratsutils
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -275,10 +276,18 @@ func AssetPath(filename string) string {
 }
 
 func ExecCommand(binaryPath string, args ...string) *gexec.Session {
+	return execCommand(GinkgoWriter, GinkgoWriter, binaryPath, args...)
+}
+
+func ExecCommandQuiet(binaryPath string, args ...string) *gexec.Session {
+	return execCommand(ioutil.Discard, ioutil.Discard, binaryPath, args...)
+}
+
+func execCommand(stdout, stderr io.Writer, binaryPath string, args ...string) *gexec.Session {
 	session, err := gexec.Start(
 		exec.Command(binaryPath, args...),
-		GinkgoWriter,
-		GinkgoWriter,
+		stdout,
+		stderr,
 	)
 
 	Expect(err).ToNot(HaveOccurred())
@@ -358,6 +367,10 @@ func BoshDeploymentAssetPath(assetPath string) string {
 
 func OuterBosh(args ...string) *gexec.Session {
 	return ExecCommand(outerBoshBinaryPath, args...)
+}
+
+func OuterBoshQuiet(args ...string) *gexec.Session {
+	return ExecCommandQuiet(outerBoshBinaryPath, args...)
 }
 
 func Bosh(args ...string) *gexec.Session {

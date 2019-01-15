@@ -34,10 +34,10 @@ var _ = Describe("logging", func() {
 		Expect(string(content)).To(ContainSubstring(redactable))
 
 		session := bratsutils.Bosh("-n", "update-config", "--type", "cpi", "--name", cpiConfigName, configPath)
-		Eventually(session, 15*time.Second).Should(gexec.Exit(0))
+		Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
 
-		session = bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "sudo cat /var/vcap/sys/log/director/*")
-		Eventually(session, time.Minute).Should(gexec.Exit(0))
+		session = bratsutils.OuterBoshQuiet("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "sudo cat /var/vcap/sys/log/director/*")
+		Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("INSERT INTO \"configs\" <redacted>"))
 		Expect(string(session.Out.Contents())).NotTo(ContainSubstring(redactable))
 	})
