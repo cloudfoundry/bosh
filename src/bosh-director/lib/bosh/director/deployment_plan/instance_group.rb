@@ -244,12 +244,9 @@ module Bosh::Director
       # name. To be used by all instances to populate agent state.
       # @return [Hash<String, Hash>] All package specs indexed by package name
       def package_spec
-        result = {}
-        @packages.each do |name, package|
-          result[name] = package.spec
-        end
-
-        result.select { |name, _| run_time_dependencies.include? name }
+        @packages.each_with_object({}) do |(name, package), acc|
+          acc[name] = package.spec
+        end.select { |name, _| run_time_dependencies.include? name }
       end
 
       def instance(index)
@@ -280,15 +277,13 @@ module Bosh::Director
       # before 'bind_properties' is being called (as we persist instance group template
       # property definitions in DB).
       def bind_properties
-        @properties = {}
-
         options = {
-          dns_record_names: get_dns_record_names,
+          dns_record_names: dns_record_names,
         }
 
-        @jobs.each do |job|
+        @properties = @jobs.each_with_object({}) do |job, acc|
           job.bind_properties(@name, @deployment_name, options)
-          @properties[job.name] = job.properties[@name]
+          acc[job.name] = job.properties[@name]
         end
       end
 
@@ -316,6 +311,7 @@ module Bosh::Director
           releases = packages[:usages].group_by { |u| u[:fingerprint] + u[:dependency_set_json] }
 
           next unless releases.size > 1
+
           release1jobs, release2jobs = releases.values[0..1]
 
           raise JobPackageCollision,
@@ -343,9 +339,8 @@ module Bosh::Director
           .reject(&:obsolete?)
           .reject(&:existing?)
           .each do |network_plan|
-          reservation = network_plan.reservation
-          ip_provider.reserve(reservation)
-        end
+            ip_provider.reserve(network_plan.reservation)
+          end
       end
 
       def bind_new_variable_set(new_variable_set)
@@ -413,12 +408,10 @@ module Bosh::Director
         jobs.flat_map(&:package_models).uniq
       end
 
-      def get_dns_record_names
-        result = []
-        networks.map(&:name).each do |network_name|
-          result << DnsNameGenerator.dns_record_name('*', @name, network_name, @deployment_name, Config.root_domain)
-        end
-        result.sort
+      def dns_record_names
+        networks.map do |network|
+          DnsNameGenerator.dns_record_name('*', @name, network.name, @deployment_name, Config.root_domain)
+        end.sort
       end
 
       def newer_package_known_than(package)
