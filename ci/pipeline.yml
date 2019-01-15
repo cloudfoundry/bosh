@@ -1071,7 +1071,7 @@ resources:
   - name: fuzz-interval-trigger
     type: time
     source:
-      interval: 15m
+      interval: 1h
 
   - name: bosh-cli
     type: s3
