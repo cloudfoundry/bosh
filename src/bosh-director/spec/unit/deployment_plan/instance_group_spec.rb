@@ -18,7 +18,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       name: deployment.name,
       ip_provider: fake_ip_provider,
       releases: {},
-      use_tmpfs_config?: false,
+      use_tmpfs_config: false,
     )
   end
 

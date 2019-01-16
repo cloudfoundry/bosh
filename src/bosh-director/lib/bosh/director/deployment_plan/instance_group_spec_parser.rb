@@ -495,18 +495,20 @@ module Bosh::Director
           end
         end
 
-        if @deployment.use_tmpfs_config?
-          @instance_group.env.spec['bosh'] ||= {}
-          @instance_group.env.spec['bosh']['job_dir'] ||= {}
-          unless @instance_group.env.spec['bosh']['job_dir'].key?('tmpfs')
-            @instance_group.env.spec['bosh']['job_dir']['tmpfs'] = true
-          end
+        update_tmpfs_properties(@deployment.use_tmpfs_config) unless @deployment.use_tmpfs_config.nil?
+      end
 
-          @instance_group.env.spec['bosh']['agent'] ||= {}
-          @instance_group.env.spec['bosh']['agent']['settings'] ||= {}
-          unless @instance_group.env.spec['bosh']['agent']['settings'].key?('tmpfs')
-            @instance_group.env.spec['bosh']['agent']['settings']['tmpfs'] = true
-          end
+      def update_tmpfs_properties(value)
+        @instance_group.env.spec['bosh'] ||= {}
+        @instance_group.env.spec['bosh']['job_dir'] ||= {}
+        unless @instance_group.env.spec['bosh']['job_dir'].key?('tmpfs')
+          @instance_group.env.spec['bosh']['job_dir']['tmpfs'] = value
+        end
+
+        @instance_group.env.spec['bosh']['agent'] ||= {}
+        @instance_group.env.spec['bosh']['agent']['settings'] ||= {}
+        unless @instance_group.env.spec['bosh']['agent']['settings'].key?('tmpfs')
+          @instance_group.env.spec['bosh']['agent']['settings']['tmpfs'] = value
         end
       end
     end

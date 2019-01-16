@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
         spec['randomize_az_placement'],
         spec.fetch('converge_variables', false),
         spec['use_link_dns_names'],
-        spec.fetch('use_tmpfs_config', false),
+        spec.fetch('use_tmpfs_config', nil),
       )
     end
 

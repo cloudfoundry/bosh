@@ -230,9 +230,9 @@ module Bosh::Director
             end
 
             context 'when use_tmpfs_config is not present' do
-              it 'should default to false' do
+              it 'should default to nil' do
                 features = deployment_features_parser.parse({})
-                expect(features.use_tmpfs_config).to eq(false)
+                expect(features.use_tmpfs_config).to eq(nil)
               end
             end
 

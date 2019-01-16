@@ -239,7 +239,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
   end
 
-  context 'when use_tmpfs_config key exist' do
+  context 'when use_tmpfs_config key exists' do
     with_reset_sandbox_before_each
 
     let(:simple_manifest) do

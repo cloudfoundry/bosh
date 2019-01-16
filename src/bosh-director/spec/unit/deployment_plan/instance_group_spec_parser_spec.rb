@@ -20,7 +20,7 @@ module Bosh::Director
           name: 'fake-deployment',
           networks: [network],
           releases: {},
-          use_tmpfs_config?: false,
+          use_tmpfs_config: nil,
         )
       end
       let(:deployment_model) { Models::Deployment.make }
@@ -1801,13 +1801,36 @@ module Bosh::Director
           let(:resource_pool_env) { {} }
 
           before do
-            allow(deployment_plan).to receive(:use_tmpfs_config?).and_return(true)
+            allow(deployment_plan).to receive(:use_tmpfs_config).and_return(true)
           end
 
           it 'sets the appropriate tmpfs properties to true on the env' do
             instance_group = parsed_instance_group
             expect(instance_group.env.spec['bosh']['job_dir']['tmpfs']).to eq(true)
             expect(instance_group.env.spec['bosh']['agent']['settings']['tmpfs']).to eq(true)
+          end
+
+          context 'when use_tmpfs_config is explicitly disabled' do
+            before do
+              allow(deployment_plan).to receive(:use_tmpfs_config).and_return(false)
+            end
+
+            it 'sets the appropriate tmpfs properties to true on the env' do
+              instance_group = parsed_instance_group
+              expect(instance_group.env.spec['bosh']['job_dir']['tmpfs']).to eq(false)
+              expect(instance_group.env.spec['bosh']['agent']['settings']['tmpfs']).to eq(false)
+            end
+          end
+
+          context 'when use_tmpfs_config is not specified' do
+            before do
+              allow(deployment_plan).to receive(:use_tmpfs_config).and_return(nil)
+            end
+
+            it 'sets the appropriate tmpfs properties to true on the env' do
+              instance_group = parsed_instance_group
+              expect(instance_group.env.spec).to_not have_key('bosh')
+            end
           end
 
           context 'when the env explicitly disables bosh.job_dir.tmpfs' do

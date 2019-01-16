@@ -14,7 +14,7 @@ module Bosh::Director
         randomize_az_placement = nil,
         converge_variables = false,
         use_link_dns_names = false,
-        use_tmpfs_config = false
+        use_tmpfs_config = nil
       )
         @use_dns_addresses = use_dns_addresses
         @use_link_dns_names = use_link_dns_names
