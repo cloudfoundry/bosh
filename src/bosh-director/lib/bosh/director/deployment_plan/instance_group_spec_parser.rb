@@ -498,9 +498,14 @@ module Bosh::Director
         if @deployment.use_tmpfs_config?
           @instance_group.env.spec['bosh'] ||= {}
           @instance_group.env.spec['bosh']['job_dir'] ||= {}
-
           unless @instance_group.env.spec['bosh']['job_dir'].key?('tmpfs')
             @instance_group.env.spec['bosh']['job_dir']['tmpfs'] = true
+          end
+
+          @instance_group.env.spec['bosh']['agent'] ||= {}
+          @instance_group.env.spec['bosh']['agent']['settings'] ||= {}
+          unless @instance_group.env.spec['bosh']['agent']['settings'].key?('tmpfs')
+            @instance_group.env.spec['bosh']['agent']['settings']['tmpfs'] = true
           end
         end
       end

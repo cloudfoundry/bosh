@@ -255,6 +255,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
 
       invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(invocations[2].inputs['env']['bosh']).to include('job_dir' => { 'tmpfs' => true })
+      expect(invocations[2].inputs['env']['bosh']).to include('agent' => { 'settings' => { 'tmpfs' => true } })
     end
   end
 end

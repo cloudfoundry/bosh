@@ -1804,19 +1804,32 @@ module Bosh::Director
             allow(deployment_plan).to receive(:use_tmpfs_config?).and_return(true)
           end
 
-          it 'sets the bosh.job_dir.tmpfs property to true on the env' do
+          it 'sets the appropriate tmpfs properties to true on the env' do
             instance_group = parsed_instance_group
             expect(instance_group.env.spec['bosh']['job_dir']['tmpfs']).to eq(true)
+            expect(instance_group.env.spec['bosh']['agent']['settings']['tmpfs']).to eq(true)
           end
 
           context 'when the env explicitly disables bosh.job_dir.tmpfs' do
             before do
-              instance_group_spec['env'] = { 'bosh' => { 'job_dir' => { 'tmpfs' => false } } }
+              instance_group_spec['env'] = {
+                'bosh' => {
+                  'agent' => {
+                    'settings' => {
+                      'tmpfs' => false,
+                    },
+                  },
+                  'job_dir' => {
+                    'tmpfs' => false,
+                  },
+                },
+              }
             end
 
-            it 'sets the bosh.job_dir.tmpfs property to false on the env' do
+            it 'sets the appropriate tmpfs properties to false on the env' do
               instance_group = parsed_instance_group
               expect(instance_group.env.spec['bosh']['job_dir']['tmpfs']).to eq(false)
+              expect(instance_group.env.spec['bosh']['agent']['settings']['tmpfs']).to eq(false)
             end
           end
         end
