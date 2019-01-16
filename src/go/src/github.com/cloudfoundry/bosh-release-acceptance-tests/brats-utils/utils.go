@@ -384,7 +384,7 @@ func UploadStemcell(stemcellURL string) {
 
 func UploadRelease(releaseURL string) {
 	session := Bosh("-n", "upload-release", releaseURL)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+	Eventually(session, 4*time.Minute).Should(gexec.Exit(0))
 }
 
 func InnerBoshDirectorName() string {
