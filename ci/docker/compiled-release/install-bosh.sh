@@ -23,4 +23,4 @@ echo "533342d7663c3e5dc731769e157608c74dd9eccb  /bin/bosh-cli" | sha1sum -c -
 chmod +x /bin/bosh-cli
 
 # Install BOSH CLI
-gem install bosh_cli --no-ri --no-rdoc
+gem install bosh_cli --no-document
