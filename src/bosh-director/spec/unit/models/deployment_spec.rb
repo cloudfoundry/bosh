@@ -8,6 +8,8 @@ module Bosh::Director::Models
     let(:deadlock_exception) { Sequel::DatabaseError.new('Mysql2::Error: Deadlock found when trying to get lock') }
 
     describe '#tags' do
+      before { VariableSet.make(deployed_successfully: true, deployment: deployment) }
+
       context 'when manifest is nil' do
         let(:manifest) { nil }
 
@@ -80,7 +82,6 @@ module Bosh::Director::Models
             let(:options) { {} }
 
             before do
-              VariableSet.make(id: 1, deployment: deployment)
               allow(mock_client).to receive(:interpolate_with_versioning)
                 .with(tags, anything, anything)
                 .and_return(interpolated_tags)
@@ -118,10 +119,38 @@ module Bosh::Director::Models
         end
 
         context 'when tags are NOT present' do
+          let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+          let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
           let(:manifest) { '--- {}' }
+
+          before do
+            allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+            allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+            allow(mock_client).to receive(:interpolate_with_versioning).and_return({})
+          end
 
           it 'returns empty list' do
             expect(deployment.tags).to eq({})
+          end
+
+          context 'runtime configs provide tags' do
+            before do
+              runtime_config = Config.make(
+                type: 'runtime',
+                name: 'default',
+                content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
+              )
+              deployment.add_runtime_config(runtime_config)
+              allow(mock_client).to receive(:interpolate_with_versioning)
+                .with(runtime_config.raw_manifest, anything, anything)
+                .and_return(runtime_config.raw_manifest)
+            end
+
+            it 'includes runtime config tags' do
+              expect(deployment.tags).to eq(
+                'runtime-key' => 'runtime-value',
+              )
+            end
           end
         end
       end
