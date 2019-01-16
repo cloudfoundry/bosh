@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update
 
-RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 5072E1F5 && \
+RUN apt-key adv --keyserver keyserver.ubuntu.com -keyservers.net --recv-keys 5072E1F5 && \
     echo "deb http://repo.mysql.com/apt/ubuntu/ trusty mysql-5.7" | tee -a /etc/apt/sources.list.d/mysql.list
 
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections
