@@ -13,6 +13,10 @@ module Bosh::Director::Api
       end
     end
 
+    def tasks
+      Bosh::Director::Models::Task.order { Sequel.asc(:id) }.all
+    end
+
     subject(:remover) { described_class.new(3) }
     let(:default_type) { 'type' }
     let(:second_type) { 'type1' }
