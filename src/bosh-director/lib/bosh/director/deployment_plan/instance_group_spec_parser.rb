@@ -495,7 +495,7 @@ module Bosh::Director
           end
         end
 
-        if @deployment.use_tmpfs_job_config?
+        if @deployment.use_tmpfs_config?
           @instance_group.env.spec['bosh'] ||= {}
           @instance_group.env.spec['bosh']['job_dir'] ||= {}
 

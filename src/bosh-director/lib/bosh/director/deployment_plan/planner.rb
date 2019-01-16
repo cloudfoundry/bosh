@@ -305,8 +305,8 @@ module Bosh::Director
         @features.randomize_az_placement.nil? ? false : @features.randomize_az_placement
       end
 
-      def use_tmpfs_job_config?
-        @features.use_tmpfs_job_config
+      def use_tmpfs_config?
+        @features.use_tmpfs_config
       end
 
       def recreate_persistent_disks?

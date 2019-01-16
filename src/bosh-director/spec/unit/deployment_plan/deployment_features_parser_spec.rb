@@ -217,32 +217,32 @@ module Bosh::Director
             end
           end
 
-          describe 'use_tmpfs_job_config' do
-            context 'when use_tmpfs_job_config is not a boolean' do
+          describe 'use_tmpfs_config' do
+            context 'when use_tmpfs_config is not a boolean' do
               it 'raises an error' do
                 expect do
-                  deployment_features_parser.parse('use_tmpfs_job_config' => 'vroom')
+                  deployment_features_parser.parse('use_tmpfs_config' => 'vroom')
                 end.to raise_error(
                   FeaturesInvalidFormat,
-                  "Key 'use_tmpfs_job_config' in 'features' expected to be a boolean, but received 'String'",
+                  "Key 'use_tmpfs_config' in 'features' expected to be a boolean, but received 'String'",
                 )
               end
             end
 
-            context 'when use_tmpfs_job_config is not present' do
+            context 'when use_tmpfs_config is not present' do
               it 'should default to false' do
                 features = deployment_features_parser.parse({})
-                expect(features.use_tmpfs_job_config).to eq(false)
+                expect(features.use_tmpfs_config).to eq(false)
               end
             end
 
-            context 'when use_tmpfs_job_config is set' do
+            context 'when use_tmpfs_config is set' do
               it 'should reflect the set value' do
-                features = deployment_features_parser.parse('use_tmpfs_job_config' => true)
-                expect(features.use_tmpfs_job_config).to eq(true)
+                features = deployment_features_parser.parse('use_tmpfs_config' => true)
+                expect(features.use_tmpfs_config).to eq(true)
 
-                features = deployment_features_parser.parse('use_tmpfs_job_config' => false)
-                expect(features.use_tmpfs_job_config).to eq(false)
+                features = deployment_features_parser.parse('use_tmpfs_config' => false)
+                expect(features.use_tmpfs_config).to eq(false)
               end
             end
           end

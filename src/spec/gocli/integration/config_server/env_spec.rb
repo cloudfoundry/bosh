@@ -239,12 +239,12 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
   end
 
-  context 'when use_tmpfs_job_config key exist' do
+  context 'when use_tmpfs_config key exist' do
     with_reset_sandbox_before_each
 
     let(:simple_manifest) do
       manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['features'] = { 'use_tmpfs_job_config' => true }
+      manifest_hash['features'] = { 'use_tmpfs_config' => true }
       manifest_hash
     end
 

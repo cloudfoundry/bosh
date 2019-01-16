@@ -20,7 +20,7 @@ module Bosh::Director
           name: 'fake-deployment',
           networks: [network],
           releases: {},
-          use_tmpfs_job_config?: false,
+          use_tmpfs_config?: false,
         )
       end
       let(:deployment_model) { Models::Deployment.make }
@@ -1797,11 +1797,11 @@ module Bosh::Director
           end
         end
 
-        describe 'use_tmpfs_job_config' do
+        describe 'use_tmpfs_config' do
           let(:resource_pool_env) { {} }
 
           before do
-            allow(deployment_plan).to receive(:use_tmpfs_job_config?).and_return(true)
+            allow(deployment_plan).to receive(:use_tmpfs_config?).and_return(true)
           end
 
           it 'sets the bosh.job_dir.tmpfs property to true on the env' do

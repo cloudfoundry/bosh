@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
         spec['randomize_az_placement'],
         spec.fetch('converge_variables', false),
         spec['use_link_dns_names'],
-        spec.fetch('use_tmpfs_job_config', false),
+        spec.fetch('use_tmpfs_config', false),
       )
     end
 
@@ -32,7 +32,7 @@ module Bosh::Director::DeploymentPlan
 
       validate_use_dns_addresses(spec)
       validate_bool_or_nil(spec, 'converge_variables')
-      validate_bool_or_nil(spec, 'use_tmpfs_job_config')
+      validate_bool_or_nil(spec, 'use_tmpfs_config')
       validate_dns_consistency(spec)
     end
 
