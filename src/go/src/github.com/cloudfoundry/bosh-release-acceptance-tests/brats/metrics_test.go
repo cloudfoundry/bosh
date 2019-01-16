@@ -22,12 +22,12 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 		Expect(string(session.Out.Contents())).To(ContainSubstring("HTTP/1.1 200 OK"))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("server accepts handled requests"))
 
-		session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "curl -vk https://127.0.0.1:25250/stats")
+		session = bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "curl -vk https://127.0.0.1:25250/stats")
 		Eventually(session, time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("HTTP/1.1 200 OK"))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("server accepts handled requests"))
 
-		session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "curl -v http://localhost:8222")
+		session = bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "curl -v http://localhost:8222")
 		Eventually(session, time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("HTTP/1.1 200 OK"))
 	})
