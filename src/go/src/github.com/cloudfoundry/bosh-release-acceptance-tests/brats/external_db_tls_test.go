@@ -32,13 +32,10 @@ var _ = Describe("Director external database TLS connections", func() {
 			bratsutils.StartInnerBoshWithExpectation(true, "Error: 'bosh/[0-9a-f]{8}-[0-9a-f-]{27} \\(0\\)' is not running after update", startInnerBoshArgs...)
 			dbConfig.CACertPath = realCACertPath
 		} else {
+			defer bratsutils.StopInnerBosh()
 			bratsutils.StartInnerBosh(startInnerBoshArgs...)
 		}
 	}
-
-	AfterEach(func() {
-		bratsutils.StopInnerBosh()
-	})
 
 	Context("RDS", func() {
 		var mutualTLSEnabled = false
