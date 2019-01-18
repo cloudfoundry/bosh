@@ -21,7 +21,6 @@ pushd $PROMOTED_MASTER
   git status
 
   echo "$RELEASE_PRIVATE_YML" >> "config/private.yml"
-EOF
 
   $GO_CLI_PATH finalize-release --version $FULL_VERSION $DEV_RELEASE_PATH
 
