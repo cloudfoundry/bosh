@@ -304,7 +304,7 @@ jobs:
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
           image: bosh-main-postgres-9.4
-          tags: ["bosh-integration-7"]
+          tags: ["bosh-integration-1"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.7
@@ -315,7 +315,7 @@ jobs:
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
           image: bosh-main-postgres-9.4
-          tags: ["bosh-integration-8"]
+          tags: ["bosh-integration-2"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.7
@@ -326,7 +326,7 @@ jobs:
           privileged: true
           file: bosh-src/ci/tasks/test-integration.yml
           image: bosh-main-postgres-9.4
-          tags: ["bosh-integration-9"]
+          tags: ["bosh-integration-3"]
           params:
             DB:           postgresql
             RUBY_VERSION: 2.3.7
@@ -350,7 +350,7 @@ jobs:
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
           image: bosh-main-postgres-9.4
-          tags: ["bosh-integration"]
+          tags: ["bosh-integration-4"]
           params:
             DB: postgresql
             RUBY_VERSION: 2.3.7
@@ -358,7 +358,7 @@ jobs:
         - task: upgrade-with-mysql
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
-          tags: ["bosh-integration"]
+          tags: ["bosh-integration-5"]
           params:
             DB: mysql
             RUBY_VERSION: 2.3.7
