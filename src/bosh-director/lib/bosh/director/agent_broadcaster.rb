@@ -14,12 +14,12 @@ module Bosh::Director
       @logger.info("deleting arp entries for the following ip addresses: #{ip_addresses}")
       instances = filter_instances(vm_cid_to_exclude)
       instances.each do |instance|
-        agent_client(instance.agent_id, instance.name).delete_arp_entries(ips: ip_addresses)
+        agent_client(instance[:fetched_agent_id], "#{instance[:job]}/#{instance[:uuid]}").delete_arp_entries(ips: ip_addresses)
       end
     end
 
     def sync_dns(instances, blobstore_id, sha1, version)
-      @logger.info("agent_broadcaster: sync_dns: sending to #{instances.length} agents #{instances.map(&:agent_id)}")
+      @logger.info("agent_broadcaster: sync_dns: sending to #{instances.length} agents #{instances.map { |i| i[:fetched_agent_id]}}")
 
       lock = Mutex.new
 
@@ -33,18 +33,19 @@ module Bosh::Director
 
       instances.each do |instance|
         pending.add(instance)
-        instance_to_request_id[instance] = agent_client(instance.agent_id,
-                                                        instance.name).sync_dns(blobstore_id, sha1, version) do |response|
+        agent_id = instance[:fetched_agent_id]
+        instance_to_request_id[instance] = agent_client(agent_id,
+                                                        "#{instance[:job]}/#{instance[:uuid]}").sync_dns(blobstore_id, sha1, version) do |response|
           valid_response = (response['value'] == VALID_SYNC_DNS_RESPONSE)
 
           if valid_response
-            updated_rows = Models::AgentDnsVersion.where(agent_id: instance.agent_id).update(dns_version: version)
+            updated_rows = Models::AgentDnsVersion.where(agent_id: agent_id).update(dns_version: version)
 
             if updated_rows == 0
               begin
-                Models::AgentDnsVersion.create(agent_id: instance.agent_id, dns_version: version)
+                Models::AgentDnsVersion.create(agent_id: agent_id, dns_version: version)
               rescue Sequel::UniqueConstraintViolation
-                Models::AgentDnsVersion.where(agent_id: instance.agent_id).update(dns_version: version)
+                Models::AgentDnsVersion.where(agent_id: agent_id).update(dns_version: version)
               end
             end
           end
@@ -54,7 +55,7 @@ module Bosh::Director
               num_successful += 1
             else
               num_failed += 1
-              @logger.error("agent_broadcaster: sync_dns[#{instance.agent_id}]: received unexpected response #{response}")
+              @logger.error("agent_broadcaster: sync_dns[#{agent_id}]: received unexpected response #{response}")
             end
             pending.delete(instance)
           end
@@ -81,14 +82,15 @@ module Bosh::Director
 
         unresponsive_agents = []
         pending_clone.each do |instance|
-          agent_client = agent_client(instance.agent_id, instance.name)
+          agent_id = instance[:fetched_agent_id]
+          agent_client = agent_client(agent_id, "#{instance[:job]}/#{instance[:uuid]}")
           agent_client.cancel_sync_dns(instance_to_request_id[instance])
 
           lock.synchronize do
             num_unresponsive += 1
           end
 
-          unresponsive_agents << instance.agent_id
+          unresponsive_agents << agent_id
         end
         if num_unresponsive > 0
           @logger.warn("agent_broadcaster: sync_dns: no response received for #{num_unresponsive} agent(s): [#{unresponsive_agents.join(', ')}]")
@@ -102,9 +104,10 @@ module Bosh::Director
     end
 
     def filter_instances(vm_cid_to_exclude)
-      Models::Instance
+      Config.db[:instances]
         .inner_join(:vms, Sequel.qualify('vms', 'instance_id') => Sequel.qualify('instances','id'))
         .select_append(Sequel.expr(Sequel.qualify('instances','id')).as(:id))
+        .select_append(Sequel.expr(Sequel.qualify('vms','agent_id')).as(:fetched_agent_id))
         .where { Sequel.expr(Sequel.qualify('vms','active') => true) }
         .exclude { Sequel.expr(Sequel.qualify('vms','cid') => vm_cid_to_exclude) }
         .where(compilation: false)

@@ -67,7 +67,7 @@ module Bosh::Director
         agent_broadcast = AgentBroadcaster.new
         instances = agent_broadcast.filter_instances(vm_being_created_cid)
 
-        expect(instances.map(&:id)).to eq [instance.id]
+        expect(instances.map {|i| i[:id]}).to eq [instance[:id]]
       end
     end
 
@@ -124,7 +124,7 @@ module Bosh::Director
             blk.call({'value' => 'synced'})
           end.and_return('instance-2-req-id')
 
-          agent_broadcast.sync_dns([instance1, instance2], 'fake-blob-id', 'fake-sha1', 1)
+          agent_broadcast.sync_dns(agent_broadcast.filter_instances(nil), 'fake-blob-id', 'fake-sha1', 1)
 
           expect(Models::AgentDnsVersion.all.length).to eq(2)
         end
@@ -156,7 +156,7 @@ module Bosh::Director
               agent
             end
 
-            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 1)
+            agent_broadcast.sync_dns(agent_broadcast.filter_instances(nil), 'fake-blob-id', 'fake-sha1', 1)
 
             expect(Models::AgentDnsVersion.all.length).to eq(1)
           end
@@ -178,7 +178,7 @@ module Bosh::Director
 
         context 'when there are no prior existing records for the instances' do
           it 'will create new records for the instances' do
-            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 42)
+            agent_broadcast.sync_dns(agent_broadcast.filter_instances(nil), 'fake-blob-id', 'fake-sha1', 42)
 
             expect(Models::AgentDnsVersion.all.length).to eq(1)
             expect(Models::AgentDnsVersion.all[0].dns_version).to equal(42)
@@ -191,7 +191,7 @@ module Bosh::Director
           end
 
           it 'will update records for the instances' do
-            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 42)
+            agent_broadcast.sync_dns(agent_broadcast.filter_instances(nil), 'fake-blob-id', 'fake-sha1', 42)
 
             expect(Models::AgentDnsVersion.all.length).to eq(1)
             expect(Models::AgentDnsVersion.all[0].dns_version).to equal(42)
@@ -213,7 +213,7 @@ module Bosh::Director
           end
 
           it 'will still be able to update the AgentDnsVersion records' do
-            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 42)
+            agent_broadcast.sync_dns(agent_broadcast.filter_instances(nil), 'fake-blob-id', 'fake-sha1', 42)
 
             expect(Models::AgentDnsVersion.all[0].dns_version).to equal(42)
           end
@@ -250,7 +250,7 @@ module Bosh::Director
               agent
             end.once
 
-            agent_broadcast.sync_dns(instances, 'fake-blob-id', 'fake-sha1', 1)
+            agent_broadcast.sync_dns(agent_broadcast.filter_instances(nil), 'fake-blob-id', 'fake-sha1', 1)
 
             expect(Models::AgentDnsVersion.all.length).to eq(1)
           end
@@ -274,7 +274,7 @@ module Bosh::Director
             agent
           end
 
-          agent_broadcast.sync_dns([instance1], 'fake-blob-id', 'fake-sha1', 1)
+          agent_broadcast.sync_dns(agent_broadcast.filter_instances('id-2'), 'fake-blob-id', 'fake-sha1', 1)
         end
       end
     end

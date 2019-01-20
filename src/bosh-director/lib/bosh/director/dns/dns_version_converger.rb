@@ -3,9 +3,9 @@ module Bosh::Director
 
     ONLY_OUT_OF_DATE_SELECTOR = lambda do |current_version, logger|
       logger.info('Selected strategy: ONLY_OUT_OF_DATE_SELECTOR')
-      Models::Instance.inner_join(:vms, Sequel.qualify('vms', 'instance_id') => Sequel.qualify('instances', 'id'))
+      Config.db[:instances].inner_join(:vms, Sequel.qualify('vms', 'instance_id') => Sequel.qualify('instances', 'id'))
         .left_outer_join(:agent_dns_versions, Sequel.qualify('agent_dns_versions', 'agent_id') => Sequel.qualify('vms', 'agent_id'))
-        .select_append(Sequel.expr(Sequel.qualify('vms','agent_id')).as(:agent_id))
+        .select_append(Sequel.expr(Sequel.qualify('vms','agent_id')).as(:fetched_agent_id))
         .select_append(Sequel.expr(Sequel.qualify('instances','id')).as(:id))
         .where { Sequel.expr(Sequel.qualify('vms','active') => true) }
         .where { Sequel.expr(Sequel.qualify('instances','compilation') => false) }
@@ -14,8 +14,9 @@ module Bosh::Director
 
     ALL_INSTANCES_WITH_VMS_SELECTOR = lambda do |_, logger|
       logger.info('Selected strategy: ALL_INSTANCES_WITH_VMS_SELECTOR')
-      Models::Instance.inner_join(:vms, Sequel.qualify('vms', 'instance_id') => Sequel.qualify('instances', 'id'))
+      Config.db[:instances].inner_join(:vms, Sequel.qualify('vms', 'instance_id') => Sequel.qualify('instances', 'id'))
         .select_append(Sequel.expr(Sequel.qualify('instances','id')).as(:id))
+        .select_append(Sequel.expr(Sequel.qualify('vms','agent_id')).as(:fetched_agent_id))
         .where { Sequel.expr(Sequel.qualify('vms', 'active') => true) }
         .where { Sequel.expr(Sequel.qualify('instances', 'compilation') => false) }
     end
