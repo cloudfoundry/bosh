@@ -29,6 +29,16 @@ describe 'optional links', type: :integration do
     cloud_config_hash
   end
 
+  let(:api_instance_group_with_optional_db_link) do
+    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      name: 'my_api',
+      jobs: [{ 'name' => 'api_server_with_optional_db_link', 'consumes' => links }],
+      instances: 1,
+    )
+    spec['azs'] = ['z1']
+    spec
+  end
+
   let(:api_instance_group_with_optional_links_spec_1) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'my_api',
@@ -155,6 +165,149 @@ describe 'optional links', type: :integration do
         template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_links_1', 'config.yml'))
 
         expect(template['optional_key']).to eq(nil)
+      end
+    end
+
+    context 'when the link is optional and transitions from implicit to blocked' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [
+          api_instance_group_with_optional_links_spec_2,
+          mysql_instance_group_spec,
+        ]
+        manifest
+      end
+
+      let(:links) do
+        {
+          'db' => { 'from' => 'db' },
+        }
+      end
+
+      let(:links2) do
+        {
+          'db' => { 'from' => 'db' },
+          'backup_db' => 'nil',
+        }
+      end
+
+      it 'should not render link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+        expect(template['databases']['backup']).to_not eq(nil)
+
+        manifest['instance_groups'][0]['jobs'][0]['consumes'] = links2
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+        expect(template['databases']['backup']).to eq(nil)
+      end
+    end
+
+    context 'when the link is optional and transitions from explicit to blocked' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [
+          api_instance_group_with_optional_links_spec_2,
+          mysql_instance_group_spec,
+        ]
+        manifest
+      end
+
+      let(:links) do
+        {
+          'db' => { 'from' => 'db' },
+          'backup_db' => { 'from' => 'db' },
+        }
+      end
+
+      let(:links2) do
+        {
+          'db' => { 'from' => 'db' },
+          'backup_db' => 'nil',
+        }
+      end
+
+      it 'should not render link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+        expect(template['databases']['backup']).to_not eq(nil)
+
+        manifest['instance_groups'][0]['jobs'][0]['consumes'] = links2
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_links_2', 'config.yml'))
+        expect(template['databases']['backup']).to eq(nil)
+      end
+    end
+
+    context 'when the link is optional and transitions from implicit to not consumable' do
+      let(:links) do
+        {
+        }
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [
+          api_instance_group_with_optional_db_link,
+          mysql_instance_group_spec,
+        ]
+        manifest
+      end
+
+      it 'should not render link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_db_link', 'config.yml'))
+        expect(template['databases']['optional_key']).to_not eq(nil)
+
+        manifest['instance_groups'][1]['jobs'][0]['provides'] = { 'db' => 'nil' }
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_db_link', 'config.yml'))
+        expect(template['databases']['optional_key']).to eq(nil)
+      end
+    end
+
+    context 'when the link is optional and transitions from explicit to not consumable and implicit' do
+      let(:links) do
+        {
+          'db' => { 'from' => 'db' },
+        }
+      end
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['instance_groups'] = [
+          api_instance_group_with_optional_db_link,
+          mysql_instance_group_spec,
+        ]
+        manifest
+      end
+
+      it 'should not render link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_db_link', 'config.yml'))
+        expect(template['databases']['optional_key']).to_not eq(nil)
+
+        manifest['instance_groups'][1]['jobs'][0]['provides'] = { 'db' => 'nil' }
+        manifest['instance_groups'][0]['jobs'][0]['consumes'] = {}
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_instance = director.instance('my_api', '0')
+        template = YAML.safe_load(link_instance.read_job_template('api_server_with_optional_db_link', 'config.yml'))
+        expect(template['databases']['optional_key']).to eq(nil)
       end
     end
 

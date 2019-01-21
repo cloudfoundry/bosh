@@ -2366,6 +2366,123 @@ describe Bosh::Director::Links::LinksManager do
           expect(instance_link.first.serial_id).to eq(serial_id - 1)
         end
       end
+
+      context 'when consumer_intent is blocked' do
+        let(:consumer) do
+          Bosh::Director::Models::Links::LinkConsumer.find(
+            deployment: deployment_model,
+            instance_group: 'instance-group-name',
+            name: 'job-1',
+            type: 'job',
+            serial_id: serial_id,
+          )
+        end
+
+        let(:consumer_intent2) do
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'foo2',
+            type: 'bar2',
+            name: 'foo-alias2',
+            blocked: true,
+            serial_id: serial_id,
+          )
+        end
+
+        before do
+          @link2 = Bosh::Director::Models::Links::Link.create(
+            link_consumer_intent: consumer_intent2,
+            name: 'foo',
+            link_content: '{}',
+          )
+
+          instance_model.add_link(@link2)
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(
+            instance_id: instance.model.id,
+            link_id: @link2.id,
+          ).first
+          instance_link.serial_id = serial_id - 1 # different from current deployment links_serial_id
+          instance_link.save
+        end
+
+        it 'should not update links which has a blocked consumer_intent' do
+          subject.bind_links_to_instance(instance)
+          expect(instance_model.links.size).to eq(2)
+
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link2.id)
+          expect(instance_link.first.serial_id).to eq(serial_id - 1)
+        end
+      end
+
+      context 'when provider is not consumable' do
+        let(:consumer) do
+          Bosh::Director::Models::Links::LinkConsumer.find(
+            deployment: deployment_model,
+            instance_group: 'instance-group-name',
+            name: 'job-1',
+            type: 'job',
+            serial_id: serial_id,
+          )
+        end
+
+        let(:consumer_intent_2) do
+          Bosh::Director::Models::Links::LinkConsumerIntent.create(
+            link_consumer: consumer,
+            original_name: 'foo2',
+            type: 'bar2',
+            name: 'foo-alias2',
+            serial_id: serial_id,
+          )
+        end
+
+        let(:link_provider) do
+          Bosh::Director::Models::Links::LinkProvider.create(
+            deployment: deployment_model,
+            name: 'test_deployment',
+            type: 'test_deployment_type',
+            instance_group: 'test_instance_group',
+            serial_id: serial_id,
+          )
+        end
+
+        let(:provider_intent) do
+          Bosh::Director::Models::Links::LinkProviderIntent.create(
+            link_provider: link_provider,
+            original_name: 'test_original_link_name',
+            type: 'test_link_type',
+            name: 'test_link_alias',
+            content: 'test_link_content',
+            shared: false,
+            consumable: false,
+            serial_id: serial_id,
+          )
+        end
+
+        before do
+          @link2 = Bosh::Director::Models::Links::Link.create(
+            link_provider_intent: provider_intent,
+            link_consumer_intent: consumer_intent_2,
+            name: 'foo',
+            link_content: '{}',
+          )
+
+          instance_model.add_link(@link2)
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(
+            instance_id: instance.model.id,
+            link_id: @link2.id,
+          ).first
+          instance_link.serial_id = serial_id - 1 # different from current deployment links_serial_id
+          instance_link.save
+        end
+
+        it 'should not update links which has a non-consumable provider_intent' do
+          subject.bind_links_to_instance(instance)
+          expect(instance_model.links.size).to eq(2)
+
+          instance_link = Bosh::Director::Models::Links::InstancesLink.where(instance_id: instance.model.id, link_id: @link2.id)
+          expect(instance_link.first.serial_id).to eq(serial_id - 1)
+        end
+      end
     end
   end
 
@@ -2483,6 +2600,67 @@ describe Bosh::Director::Links::LinksManager do
             end
 
             it 'should not return the link whose consumer intent serial id did not match' do
+              links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
+              expect(links.size).to eq(1)
+              expect(links['job-1'].size).to eq(1)
+              expect(links['job-1']['meow']).to eq(
+                'properties' => { 'snoopy' => 'dog' },
+                'group_name' => '',
+              )
+            end
+          end
+
+          context 'when the consumer intent is blocked' do
+            before do
+              consumer_intent.blocked = true
+              consumer_intent.save
+            end
+
+            it 'should not return the link whose consumer intent is blocked' do
+              links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
+              expect(links.size).to eq(1)
+              expect(links['job-1'].size).to eq(1)
+              expect(links['job-1']['meow']).to eq(
+                'properties' => { 'snoopy' => 'dog' },
+                'group_name' => '',
+              )
+            end
+          end
+
+          context 'when the provider intent is not consumable' do
+            let(:link_provider) do
+              Bosh::Director::Models::Links::LinkProvider.create(
+                deployment: deployment_model,
+                name: 'test_deployment',
+                type: 'test_deployment_type',
+                instance_group: 'test_instance_group',
+                serial_id: serial_id,
+              )
+            end
+
+            let(:provider_intent) do
+              Bosh::Director::Models::Links::LinkProviderIntent.create(
+                link_provider: link_provider,
+                original_name: 'test_original_link_name',
+                type: 'test_link_type',
+                name: 'test_link_alias',
+                content: 'test_link_content',
+                shared: false,
+                consumable: false,
+                serial_id: serial_id,
+              )
+            end
+
+            let!(:link) do
+              Bosh::Director::Models::Links::Link.create(
+                link_consumer_intent: consumer_intent,
+                link_provider_intent: provider_intent,
+                name: 'foo',
+                link_content: '{"properties": {"fizz": "buzz"}}',
+              )
+            end
+
+            it 'should not return the link whose provider intent is not consumable' do
               links = subject.get_links_for_instance_group(deployment_model, 'instance-group-name')
               expect(links.size).to eq(1)
               expect(links['job-1'].size).to eq(1)
