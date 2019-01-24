@@ -200,11 +200,19 @@ module Bosh::Director::Core::Templates
           double('provider_intent', canonical_name: 'my-link', type: 'type1', group_name: 'my-link-type1')
         end
 
-        let(:link_provider_intents) { [provider_intent] }
+        let(:another_provider_intent) do
+          double('provider_intent', canonical_name: 'another-link', type: 'type2', group_name: 'another-link-type2')
+        end
+
+        let(:yet_another_provider_intent) do
+          double('provider_intent', canonical_name: 'yet-another-link', type: 'type3', group_name: 'yet-another-link-type3')
+        end
+
+        let(:link_provider_intents) { [provider_intent, another_provider_intent, yet_another_provider_intent] }
 
         before do
           allow(Bosh::Template::EvaluationContext).to receive(:new)
-          allow(dns_encoder).to receive(:id_for_group_tuple).and_return('group_id')
+          allow(dns_encoder).to receive(:id_for_group_tuple).and_return('10', '1', '-1')
         end
 
         it 'should have EvaluationContext called with correct spec' do
@@ -212,11 +220,22 @@ module Bosh::Director::Core::Templates
           expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).at_least(2).times
         end
 
-        it 'appends a rendered template with link dns data' do
+        it 'appends a rendered template with deterministic link dns data' do
           rendered_files = job_template_renderer.render(raw_spec).templates
+
           expect(dns_encoder).to have_received(:id_for_group_tuple).with(
             'link',
             provider_intent.group_name,
+            nil,
+          )
+          expect(dns_encoder).to have_received(:id_for_group_tuple).with(
+            'link',
+            another_provider_intent.group_name,
+            nil,
+          )
+          expect(dns_encoder).to have_received(:id_for_group_tuple).with(
+            'link',
+            yet_another_provider_intent.group_name,
             nil,
           )
 
@@ -224,11 +243,25 @@ module Bosh::Director::Core::Templates
           expect(rendered_links_file.src_name).to(eq('.bosh/links.json'))
           expect(rendered_links_file.dest_name).to(eq('.bosh/links.json'))
 
-          expect(JSON.parse(rendered_links_file.contents)).to(eq([{
-            'name' => provider_intent.canonical_name,
-            'type' => provider_intent.type,
-            'group' => 'group_id',
-          }]))
+          expect(JSON.parse(rendered_links_file.contents)).to eq(
+            [
+              {
+                'name' => yet_another_provider_intent.canonical_name,
+                'type' => yet_another_provider_intent.type,
+                'group' => '-1',
+              },
+              {
+                'name' => another_provider_intent.canonical_name,
+                'type' => another_provider_intent.type,
+                'group' => '1',
+              },
+              {
+                'name' => provider_intent.canonical_name,
+                'type' => provider_intent.type,
+                'group' => '10',
+              },
+            ],
+          )
         end
       end
     end
