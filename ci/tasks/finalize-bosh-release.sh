@@ -18,7 +18,9 @@ pushd $PROMOTED_MASTER
   git pull origin master
   git status
 
+  set +x
   echo "$RELEASE_PRIVATE_YML" >> "config/private.yml"
+  set -x
 
   $GO_CLI_PATH finalize-release --version $FULL_VERSION $TARBALL_DIR/tarball.tgz
 
