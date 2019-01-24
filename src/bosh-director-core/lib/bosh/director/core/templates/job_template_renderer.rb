@@ -117,7 +117,7 @@ module Bosh::Director::Core::Templates
         }
       end
 
-      JSON.pretty_generate(data) + "\n"
+      JSON.pretty_generate(data.sort_by{|e| [e['name'], e['type'], e['group']]}) + "\n"
     end
   end
 end
