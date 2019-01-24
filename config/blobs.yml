@@ -2,10 +2,10 @@ bosh-gcscli/bosh-gcscli-0.0.3-linux-amd64:
   size: 12777526
   object_id: e561b18d-0d52-4579-7bd5-9823bdbe7aba
   sha: a6ca3153856b40c1af6d79da8f11efdde0899b7d
-davcli/davcli-0.0.26-linux-amd64:
-  size: 6179207
-  object_id: 2095711c-8498-4100-42c1-e12eec8d6070
-  sha: cd75e886b4f5d27ce41841d5cc902fe64bab7b78
+davcli/davcli-0.0.33-linux-amd64:
+  size: 7650033
+  object_id: 332c86ac-1f03-47a1-6b70-27b981c80734
+  sha: sha256:16869bcdced5bb8221293ded97b9294f2639c5442b1b4ceb844c4e04d6a1f98b
 gnatsd/gnatsd-0.9.6-bosh.13-linux-amd64:
   size: 9513901
   object_id: 6f71e068-e47d-4840-463c-47d313e1a5bd
@@ -50,10 +50,10 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-s3cli/s3cli-0.0.78-linux-amd64:
-  size: 12816270
-  object_id: 1045caf3-776d-4ce8-646d-45a8ed176089
-  sha: a3542cc6683d97a008224c5f8074e272d9d1c3ae
+s3cli/s3cli-0.0.80-linux-amd64:
+  size: 12102238
+  object_id: 45ee9a15-fef2-4dfb-417b-934de60a795c
+  sha: sha256:811dfe3f0dfc6b51d12aa3910069c6c90a15354e9823243a75c5f3762b4a9e3a
 verify-multidigest/verify-multidigest-0.0.121-linux-amd64:
   size: 4077590
   object_id: 60542f17-db12-474d-66ae-36af797de24d
