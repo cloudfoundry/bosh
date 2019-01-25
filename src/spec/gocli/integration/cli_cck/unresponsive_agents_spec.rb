@@ -15,6 +15,8 @@ describe 'cli: cloudcheck', type: :integration do
 
     before do
       manifest['instance_groups'][0]['persistent_disk'] = 100
+      manifest['tags'] = { 'deployment-tag' => 'deployment-value' }
+      upload_runtime_config(runtime_config_hash: { 'tags' => { 'runtime-tag' => 'runtime-value' } })
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
@@ -29,6 +31,17 @@ describe 'cli: cloudcheck', type: :integration do
         recreate_vm_without_waiting_for_process = 3
         bosh_run_cck_with_resolution(3, recreate_vm_without_waiting_for_process)
         expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
+
+        invocations = current_sandbox.cpi.invocations
+        set_vm_metadata_invocations = invocations.select { |i| i.method_name == 'set_vm_metadata' }
+        expect(set_vm_metadata_invocations.length).to eq 10
+        expect(set_vm_metadata_invocations.map { |i| i.inputs['metadata'] }).to all(
+          include(
+            'runtime-tag' => 'runtime-value',
+            'deployment-tag' => 'deployment-value',
+            'deployment' => 'simple',
+          ),
+        )
       end
     end
   end

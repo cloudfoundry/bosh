@@ -661,7 +661,9 @@ describe 'CPI calls', type: :integration do
             'index' => '0',
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'compiling' => 'foo'
+            'compiling' => 'foo',
+            'tag1' => 'value1',
+            'tag2' => 'value2',
           }
         })
 
@@ -716,7 +718,9 @@ describe 'CPI calls', type: :integration do
             'index' => '0',
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             'name' => /compilation-[0-9a-f]{8}-[0-9a-f-]{27}\/[0-9a-f]{8}-[0-9a-f-]{27}/,
-            'compiling' => 'bar'
+            'compiling' => 'bar',
+            'tag1' => 'value1',
+            'tag2' => 'value2',
           }
         })
 

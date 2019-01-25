@@ -5,9 +5,10 @@ module Bosh::Director::Models
   describe Deployment do
     subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
     let(:db_is_mysql) { ENV['DB'] == 'mysql' }
-    let(:deadlock_exception) { Sequel::DatabaseError.new("Mysql2::Error: Deadlock found when trying to get lock") }
+    let(:deadlock_exception) { Sequel::DatabaseError.new('Mysql2::Error: Deadlock found when trying to get lock') }
 
     describe '#tags' do
+      before { VariableSet.make(deployed_successfully: true, deployment: deployment) }
 
       context 'when manifest is nil' do
         let(:manifest) { nil }
@@ -18,11 +19,12 @@ module Bosh::Director::Models
       end
 
       context 'when manifest is not nil' do
-
         context 'when tags are present' do
-
           let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
           let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+          let(:tags) do
+            {}
+          end
 
           before do
             allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
@@ -42,15 +44,15 @@ module Bosh::Director::Models
             let(:interpolated_tags) do
               {
                 'tag1' => 'value1',
-                'tag2' => 'value2'
+                'tag2' => 'value2',
               }
             end
 
             it 'returns the tags in deployment manifest' do
-              expect(deployment.tags).to eq({
+              expect(deployment.tags).to eq(
                 'tag1' => 'value1',
                 'tag2' => 'value2',
-              })
+              )
             end
           end
 
@@ -66,33 +68,87 @@ module Bosh::Director::Models
             let(:tags) do
               {
                 'tagA' => '((tag-var1))',
-                'tagO'=> '((/tag-var2))'
+                'tagO' => '((/tag-var2))',
               }
             end
 
             let(:interpolated_tags) do
               {
                 'tagA' => 'apples',
-                'tagO' => 'oranges'
+                'tagO' => 'oranges',
               }
             end
 
             before do
-              VariableSet.make(id: 1, deployment: deployment)
+              allow(mock_client).to receive(:interpolate_with_versioning)
+                .with(tags, anything)
+                .and_return(interpolated_tags)
             end
 
             it 'substitutes the variables in the tags section' do
-              expect(mock_client).to receive(:interpolate_with_versioning).with(tags, deployment.current_variable_set).and_return(interpolated_tags)
+              expect(mock_client).to receive(:interpolate_with_versioning)
+                .with(tags, deployment.current_variable_set)
+                .and_return(interpolated_tags)
               expect(deployment.tags).to eq(interpolated_tags)
+            end
+
+            context 'runtime configs provide tags' do
+              before do
+                runtime_config = Config.make(
+                  type: 'runtime',
+                  name: 'default',
+                  content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
+                )
+                deployment.add_runtime_config(runtime_config)
+                allow(mock_client).to receive(:interpolate_with_versioning)
+                  .with(runtime_config.raw_manifest, anything, anything)
+                  .and_return(runtime_config.raw_manifest)
+              end
+
+              it 'includes runtime config tags' do
+                expect(deployment.tags).to eq(
+                  'tagA' => 'apples',
+                  'tagO' => 'oranges',
+                  'runtime-key' => 'runtime-value',
+                )
+              end
             end
           end
         end
 
         context 'when tags are NOT present' do
-          let(:manifest) { '---{}' }
+          let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+          let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+          let(:manifest) { '--- {}' }
+
+          before do
+            allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+            allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+            allow(mock_client).to receive(:interpolate_with_versioning).and_return({})
+          end
 
           it 'returns empty list' do
             expect(deployment.tags).to eq({})
+          end
+
+          context 'runtime configs provide tags' do
+            before do
+              runtime_config = Config.make(
+                type: 'runtime',
+                name: 'default',
+                content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
+              )
+              deployment.add_runtime_config(runtime_config)
+              allow(mock_client).to receive(:interpolate_with_versioning)
+                .with(runtime_config.raw_manifest, anything, anything)
+                .and_return(runtime_config.raw_manifest)
+            end
+
+            it 'includes runtime config tags' do
+              expect(deployment.tags).to eq(
+                'runtime-key' => 'runtime-value',
+              )
+            end
           end
         end
       end
@@ -385,18 +441,18 @@ module Bosh::Director::Models
         rc1 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc1-prop', name: 'rc1')
         rc2 = Bosh::Director::Models::Config.create(type: 'runtime', content: 'rc2-prop', name: 'rc2')
 
-        team1 = Bosh::Director::Models::Team.new( name: 'team1')
-        team2 = Bosh::Director::Models::Team.new( name: 'team2')
+        team1 = Bosh::Director::Models::Team.new(name: 'team1')
+        team2 = Bosh::Director::Models::Team.new(name: 'team2')
 
         attr = {
-          :name => 'some-deploy',
-          :teams => [team1, team2],
-          :runtime_configs => [rc1, rc2]
+          name: 'some-deploy',
+          teams: [team1, team2],
+          runtime_configs: [rc1, rc2],
         }
 
-        deployment =  Bosh::Director::Models::Deployment.create_with_teams(attr)
+        deployment = Bosh::Director::Models::Deployment.create_with_teams(attr)
 
-        saved_deployment = Bosh::Director::Models::Deployment[id: deployment.id ]
+        saved_deployment = Bosh::Director::Models::Deployment[id: deployment.id]
         expect(saved_deployment).to eq(deployment)
         expect(saved_deployment.teams).to contain_exactly(team1, team2)
         expect(saved_deployment.runtime_configs).to contain_exactly(rc1, rc2)

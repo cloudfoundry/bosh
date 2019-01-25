@@ -6,7 +6,10 @@ module Bosh::Director
 
     let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+    let(:package) { instance_double(Models::Package, name: 'fake-package') }
+    let(:package2) { instance_double(Models::Package, name: 'fake-package2') }
 
+    let(:metadata_updater) { instance_double(MetadataUpdater) }
     let(:instance_provider) { DeploymentPlan::InstanceProvider.new(deployment_plan, vm_creator, logger) }
     let(:stemcell) do
       model = Models::Stemcell.make(cid: 'stemcell-cid', name: 'stemcell-name')
@@ -105,6 +108,7 @@ module Bosh::Director
     before do
       allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
       allow(cloud).to receive(:create_vm)
+      allow(cloud).to receive(:set_vm_metadata)
       allow(cloud).to receive(:info).and_return({})
       allow(cloud).to receive(:request_cpi_api_version=).with(1)
       allow(cloud).to receive(:request_cpi_api_version).and_return(1)
@@ -126,6 +130,8 @@ module Bosh::Director
       allow(instance_deleter).to receive(:delete_instance_plan)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(deployment_model).to receive(:current_variable_set).and_return(Models::VariableSet.make)
+      allow(MetadataUpdater).to receive(:new).and_return(metadata_updater)
+      allow(metadata_updater).to receive(:update_vm_metadata)
     end
     let(:availability_zone) { nil }
 
@@ -172,7 +178,7 @@ module Bosh::Director
       end
 
       it 'passes tags to vm' do
-        expect_any_instance_of(MetadataUpdater).to receive(:update_vm_metadata).with(anything, anything, tags, anything)
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, tags.merge(compiling: package.name))
         action
       end
 
@@ -264,21 +270,21 @@ module Bosh::Director
 
     describe 'with_reused_vm' do
       it_behaves_like 'a compilation vm pool' do
-        let(:action) { compilation_instance_pool.with_reused_vm(stemcell) {} }
+        let(:action) { compilation_instance_pool.with_reused_vm(stemcell, package) {} }
         let(:action_that_raises) do
           allow(vm_creator).to receive(:create_for_instance_plan).and_raise(create_instance_error)
-          compilation_instance_pool.with_reused_vm(stemcell)
+          compilation_instance_pool.with_reused_vm(stemcell, package)
         end
       end
 
       context 'when the the pool is full' do
         context 'and there are no available instances for the given stemcell' do
           it 'destroys the idle instance made for a different stemcell' do
-            compilation_instance_pool.with_reused_vm(stemcell) {|i| }
+            compilation_instance_pool.with_reused_vm(stemcell, package) { |i| }
             expect(instance_deleter).to_not have_received(:delete_instance_plan)
             expect(instance_reuser.get_num_instances(stemcell)).to eq(1)
 
-            compilation_instance_pool.with_reused_vm(different_stemcell) {|i| }
+            compilation_instance_pool.with_reused_vm(different_stemcell, package) { |i| }
 
             expect(instance_reuser.get_num_instances(stemcell)).to eq(0)
             expect(instance_reuser.get_num_instances(different_stemcell)).to eq(1)
@@ -290,11 +296,22 @@ module Bosh::Director
       context 'after a vm is created' do
         it 'is reused' do
           original = nil
-          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
+          expect(metadata_updater).to receive(:update_vm_metadata).with(
+            anything,
+            anything,
+            tags.merge(compiling: package.name),
+          )
+          compilation_instance_pool.with_reused_vm(stemcell, package) do |instance|
             original = instance
           end
+
           reused = nil
-          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
+          expect(metadata_updater).to receive(:update_vm_metadata).with(
+            anything,
+            anything,
+            tags.merge(compiling: package2.name),
+          )
+          compilation_instance_pool.with_reused_vm(stemcell, package2) do |instance|
             reused = instance
           end
           expect(reused).to be(original)
@@ -356,7 +373,7 @@ module Bosh::Director
 
         it 'spins up vm in the az' do
           vm_instance = nil
-          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
+          compilation_instance_pool.with_reused_vm(stemcell, package) do |instance|
             vm_instance = instance
           end
           expect(vm_instance.availability_zone_name).to eq('foo-az')
@@ -364,7 +381,7 @@ module Bosh::Director
 
         it 'saves az name in database' do
           allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1')
-          compilation_instance_pool.with_reused_vm(stemcell) {}
+          compilation_instance_pool.with_reused_vm(stemcell, package) {}
 
           expect(Models::Instance.find(uuid: 'instance-uuid-1').availability_zone).to eq('foo-az')
         end
@@ -398,16 +415,16 @@ module Bosh::Director
               anything
             )
 
-          compilation_instance_pool.with_reused_vm(stemcell) {}
+          compilation_instance_pool.with_reused_vm(stemcell, package) {}
         end
       end
 
       context 'when vm raises an Rpc timeout error' do
         it 'removes the vm from the reuser' do
           expect(instance_reuser).to receive(:remove_instance)
-          expect {
-            compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
-          }.to raise_error(create_instance_error)
+          expect do
+            compilation_instance_pool.with_reused_vm(stemcell, package) { raise create_instance_error }
+          end.to raise_error(create_instance_error)
         end
 
         context 'when keep_unreachable_vms is set' do
@@ -415,9 +432,9 @@ module Bosh::Director
 
           it 'removes the vm from the reuser so that it is not cleaned up later when reuser deletes all instances' do
             expect(instance_reuser).to receive(:remove_instance)
-            expect {
-              compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
-            }.to raise_error(create_instance_error)
+            expect do
+              compilation_instance_pool.with_reused_vm(stemcell, package) { raise create_instance_error }
+            end.to raise_error(create_instance_error)
           end
         end
       end
@@ -425,16 +442,16 @@ module Bosh::Director
       context 'when vm raises an Rpc timeout error' do
         it 'no longer offers that vm for reuse' do
           original = nil
-          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
+          compilation_instance_pool.with_reused_vm(stemcell, package) do |instance|
             original = instance
           end
 
-          expect {
-            compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
-          }.to raise_error(create_instance_error)
+          expect do
+            compilation_instance_pool.with_reused_vm(stemcell, package) { raise create_instance_error }
+          end.to raise_error(create_instance_error)
 
           different = nil
-          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
+          compilation_instance_pool.with_reused_vm(stemcell, package) do |instance|
             different = instance
           end
           expect(different).to_not eq(original)
@@ -445,8 +462,8 @@ module Bosh::Director
         let(:max_instance_count) { 2 }
 
         before do
-          compilation_instance_pool.with_reused_vm(stemcell) {}
-          compilation_instance_pool.with_reused_vm(another_stemcell) {}
+          compilation_instance_pool.with_reused_vm(stemcell, package) {}
+          compilation_instance_pool.with_reused_vm(another_stemcell, package) {}
         end
 
         it 'removes the vm from the reuser' do
@@ -464,10 +481,11 @@ module Bosh::Director
 
     describe 'with_single_use_vm' do
       it_behaves_like 'a compilation vm pool' do
-        let(:action) { compilation_instance_pool.with_single_use_vm(stemcell) {} }
+        let(:action) { compilation_instance_pool.with_single_use_vm(stemcell, package) {} }
+
         let(:action_that_raises) do
           allow(vm_creator).to receive(:create_for_instance_plan).and_raise(create_instance_error)
-          compilation_instance_pool.with_single_use_vm(stemcell)
+          compilation_instance_pool.with_single_use_vm(stemcell, package)
         end
       end
     end

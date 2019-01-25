@@ -17,14 +17,12 @@ module Bosh::Director
             deployment_plan.compilation,
             compilation_pool,
             Config.logger,
-            nil,
           )
         end
 
-        def initialize(deployment_name, jobs_to_compile, compilation_config, compilation_instance_pool, logger, director_job)
+        def initialize(deployment_name, instance_groups_to_compile, compilation_config, compilation_instance_pool, logger)
           @event_log_stage = nil
           @logger = logger
-          @director_job = director_job
 
           @tasks_mutex = Mutex.new
           @counter_mutex = Mutex.new
@@ -33,7 +31,7 @@ module Bosh::Director
           @compile_tasks = {}
           @ready_tasks = []
           @compilations_performed = 0
-          @jobs_to_compile = jobs_to_compile
+          @instance_groups_to_compile = instance_groups_to_compile
           @compilation_config = compilation_config
           @deployment_name = deployment_name
         end
@@ -55,7 +53,6 @@ module Bosh::Director
             @logger.info('All packages are already compiled')
           else
             compile_packages
-            director_job_checkpoint
           end
         end
 
@@ -78,15 +75,14 @@ module Bosh::Director
               build = Models::CompiledPackage.generate_build_number(package, stemcell.os, stemcell.version)
               task_result = nil
 
-              prepare_vm(stemcell) do |instance|
-                metadata_updater.update_vm_metadata(instance.model, instance.model.active_vm, :compiling => package.name)
+              prepare_vm(stemcell, package) do |instance|
                 agent_task =
                   instance.agent_client.compile_package(
                     package.blobstore_id,
                     package.sha1,
                     package.name,
                     "#{package.version}.#{build}",
-                    task.dependency_spec
+                    task.dependency_spec,
                   ) { Config.job_cancelled? }
 
                 task_result = agent_task['result']
@@ -120,16 +116,11 @@ module Bosh::Director
           end
         end
 
-        # This method will create a VM for each stemcell in the stemcells array
-        # passed in.  The VMs are yielded and their destruction is ensured.
-        # @param [Models::Stemcell] stemcell The stemcells that need to have
-        #     compilation VMs created.
-        # @yield [DeploymentPlan::Instance] Yields an instance that should be used for compilation.  This may be a reused VM or a
-        def prepare_vm(stemcell)
+        def prepare_vm(stemcell, package)
           if @compilation_config.reuse_compilation_vms
-            @compilation_instance_pool.with_reused_vm(stemcell, &Proc.new)
+            @compilation_instance_pool.with_reused_vm(stemcell, package, &Proc.new)
           else
-            @compilation_instance_pool.with_single_use_vm(stemcell, &Proc.new)
+            @compilation_instance_pool.with_single_use_vm(stemcell, package, &Proc.new)
           end
         end
 
@@ -138,7 +129,7 @@ module Bosh::Director
         def validate_packages
           release_manager = Bosh::Director::Api::ReleaseManager.new
           validator = DeploymentPlan::PackageValidator.new(@logger)
-          @jobs_to_compile.each do |instance_group|
+          @instance_groups_to_compile.each do |instance_group|
             instance_group.jobs.each do |job|
               release_model = release_manager.find_by_name(job.release.name)
               release_version_model = release_manager.find_version(release_model, job.release.version)
@@ -154,7 +145,7 @@ module Bosh::Director
           @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log_stage)
 
           @event_log_stage.advance_and_track('Finding packages to compile') do
-            @jobs_to_compile.each do |instance_group|
+            @instance_groups_to_compile.each do |instance_group|
               stemcell = instance_group.stemcell
 
               job_descs = instance_group.jobs.map do |job|
@@ -176,22 +167,30 @@ module Bosh::Director
           end
         end
 
+        def cancelled?
+          Config.job_cancelled?
+          false
+        rescue TaskCancelled
+          true
+        end
+
         def compile_packages
           @event_log_stage = Config.event_log.begin_stage('Compiling packages', compilation_count)
+          return if cancelled?
 
           begin
             ThreadPool.new(:max_threads => @compilation_config.workers).wrap do |pool|
               loop do
                 # process as many tasks without waiting
                 loop do
-                  break if director_job_cancelled?
                   task = @tasks_mutex.synchronize { @ready_tasks.pop }
                   break if task.nil?
 
                   pool.process { process_task(task) }
                 end
 
-                break if !pool.working? && (director_job_cancelled? || @ready_tasks.empty?)
+                break if !pool.working? && @ready_tasks.empty?
+
                 sleep(0.1)
               end
             end
@@ -225,25 +224,13 @@ module Bosh::Director
           task_desc = "package '#{package_desc}' for stemcell '#{stemcell_desc}'"
 
           with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
-            if director_job_cancelled?
-              @logger.info("Cancelled compiling #{task_desc}")
-            else
-              @event_log_stage.advance_and_track(package_desc) do
-                @logger.info("Compiling #{task_desc}")
-                compile_package(task)
-                @logger.info("Finished compiling #{task_desc}")
-                enqueue_unblocked_tasks(task)
-              end
+            @event_log_stage.advance_and_track(package_desc) do
+              @logger.info("Compiling #{task_desc}")
+              compile_package(task)
+              @logger.info("Finished compiling #{task_desc}")
+              enqueue_unblocked_tasks(task)
             end
           end
-        end
-
-        def director_job_cancelled?
-          @director_job && @director_job.task_cancelled?
-        end
-
-        def director_job_checkpoint
-          @director_job.task_checkpoint if @director_job
         end
 
         def compilation_count
@@ -252,10 +239,6 @@ module Bosh::Director
             counter += 1 unless task.compiled?
           end
           counter
-        end
-
-        def metadata_updater
-          @metadata_updater ||= MetadataUpdater.build
         end
       end
     end
