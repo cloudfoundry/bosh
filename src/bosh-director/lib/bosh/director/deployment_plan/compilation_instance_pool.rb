@@ -47,8 +47,9 @@ module Bosh::Director
         @mutex = Mutex.new
       end
 
-      def with_reused_vm(stemcell)
+      def with_reused_vm(stemcell, package)
         instance_memo = obtain_instance_memo(stemcell)
+        @instance_provider.update_instance_compilation_metadata(instance_memo.instance, package)
         yield instance_memo.instance
         release_instance(instance_memo)
       rescue StandardError => e
@@ -63,9 +64,10 @@ module Bosh::Director
         raise e
       end
 
-      def with_single_use_vm(stemcell)
+      def with_single_use_vm(stemcell, package)
         keep_failing_vm = false
         instance_memo = InstanceMemo.new(@instance_provider, stemcell)
+        @instance_provider.update_instance_compilation_metadata(instance_memo.instance, package)
         yield instance_memo.instance
       rescue StandardError => e
         @logger.info('Keeping single-use compilation VM for debugging')
@@ -137,7 +139,10 @@ module Bosh::Director
       def initialize(deployment_plan, vm_creator, logger)
         @deployment_plan = deployment_plan
         @vm_creator = vm_creator
+        @tags = deployment_plan.tags
         @logger = logger
+        @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+        @metadata_updater = MetadataUpdater.build
       end
 
       def create_instance_plan(stemcell)
@@ -190,7 +195,7 @@ module Bosh::Director
           instance: instance,
           desired_instance: desired_instance,
           network_plans: [DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)],
-          tags: @deployment_plan.tags,
+          tags: @tags,
         )
 
         compile_instance_group.add_instance_plans([instance_plan])
@@ -207,6 +212,14 @@ module Bosh::Director
         raise e
       ensure
         add_event(instance_model.deployment.name, instance_model.name, parent_id, e)
+      end
+
+      def update_instance_compilation_metadata(instance, package)
+        @metadata_updater.update_vm_metadata(
+          instance.model,
+          instance.model.active_vm,
+          @tags.merge(compiling: package.name),
+        )
       end
 
       private
