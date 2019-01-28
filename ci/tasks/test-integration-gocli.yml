@@ -20,7 +20,7 @@ run:
   path: bosh-src/ci/tasks/test-integration-gocli.sh
 
 params:
-  RUBY_VERSION:            2.4.4
+  RUBY_VERSION:            2.4.5
   DB:                      replace-me
   LOG_LEVEL:               ERROR
   SPEC_PATH:               ~

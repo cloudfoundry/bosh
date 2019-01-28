@@ -13,7 +13,7 @@ run:
   path: bosh-src/ci/tasks/test-unit-remote-db.sh
 
 params:
-  RUBY_VERSION: 2.4.4
+  RUBY_VERSION: 2.4.5
   DB:           replace-me
   DB_HOST:      remote-db-host
   DB_USER:      remote-db-user
