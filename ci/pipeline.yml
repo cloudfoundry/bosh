@@ -76,7 +76,7 @@ shared:
       outputs:
       - name: bosh-src
       params:
-        RUBY_VERSION: 2.4.4
+        RUBY_VERSION: 2.4.5
       run:
         path: /bin/bash
         args:
@@ -392,7 +392,7 @@ jobs:
           run:
             path: bosh-src/ci/tasks/test-integration-gocli.sh
           params:
-            RUBY_VERSION: 2.4.4
+            RUBY_VERSION: 2.4.5
             DB:           mysql
             DB_TLS:       true
 
@@ -449,7 +449,7 @@ jobs:
       tags: ["bosh-integration-6"]
       params:
         BOSH_SRC_PATH: bosh-src/src
-        RUBY_VERSION: 2.4.4
+        RUBY_VERSION: 2.4.5
 
   - name: compile-bbr-xenial
     plan:
