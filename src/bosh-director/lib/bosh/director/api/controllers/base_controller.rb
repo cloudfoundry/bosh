@@ -12,7 +12,6 @@ module Bosh::Director
           @audit_logger = AuditLogger.instance
           @identity_provider = config.identity_provider
           @permission_authorizer = PermissionAuthorizer.new(config.get_uuid_provider)
-          @restore_manager = RestoreManager.new
           @resurrector_manager = ResurrectorManager.new
           @release_manager = ReleaseManager.new
           @snapshot_manager = SnapshotManager.new
@@ -29,7 +28,7 @@ module Bosh::Director
         mime_type :tgz,       'application/x-compressed'
         mime_type :multipart, 'multipart/form-data'
 
-        ROUTES_WITH_EXTENDED_TIMEOUT = ['/stemcells', '/releases', '/restore']
+        ROUTES_WITH_EXTENDED_TIMEOUT = ['/stemcells', '/releases'].freeze
 
         attr_reader :identity_provider
 
