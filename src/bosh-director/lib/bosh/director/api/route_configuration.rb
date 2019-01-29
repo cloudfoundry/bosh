@@ -10,6 +10,7 @@ module Bosh
           director_app = Bosh::Director::App.new(@config)
           controllers = {}
           controllers['/cleanup'] = Bosh::Director::Api::Controllers::CleanupController.new(@config)
+          controllers['/restore'] = Bosh::Director::Api::Controllers::RestoreController.new(@config)
           controllers['/cloud_configs'] = Bosh::Director::Api::Controllers::CloudConfigsController.new(@config)
           controllers['/runtime_configs'] = Bosh::Director::Api::Controllers::RuntimeConfigsController.new(@config)
           controllers['/cpi_configs'] = Bosh::Director::Api::Controllers::CpiConfigsController.new(@config)
