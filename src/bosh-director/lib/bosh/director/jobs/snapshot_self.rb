@@ -8,7 +8,7 @@ module Bosh::Director
       end
 
       def initialize(options={})
-        @cloud = options.fetch(:cloud) { Config.cloud }
+        @cloud = options.fetch(:cloud) { Bosh::Director::CloudFactory.create.get(nil) }
         @director_uuid = options.fetch(:director_uuid) { Config.uuid }
         @director_name = options.fetch(:director_name) { Config.name }
         @enable_snapshots = options.fetch(:enable_snapshots) { Config.enable_snapshots }
