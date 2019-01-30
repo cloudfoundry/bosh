@@ -33,6 +33,13 @@ describe Bosh::Director::Jobs::SnapshotSelf do
       }
     end
 
+    before do
+      allow(cloud).to receive(:current_vm_id).and_return(vm_id)
+      allow(cloud).to receive(:get_disks).with(vm_id).and_return(disks)
+      allow(cloud).to receive(:snapshot_disk).with(disks[0], metadata)
+      allow(cloud).to receive(:snapshot_disk).with(disks[1], metadata)
+    end
+
     it 'should snapshot all of my disks' do
       expect(cloud).to receive(:current_vm_id).and_return(vm_id)
       expect(cloud).to receive(:get_disks).with(vm_id).and_return(disks)
@@ -60,6 +67,20 @@ describe Bosh::Director::Jobs::SnapshotSelf do
     context 'with a CPI that does not support snapshots' do
       it 'does nothing' do
         expect(cloud).to receive(:current_vm_id).and_raise(Bosh::Clouds::NotImplemented)
+
+        expect { subject.perform }.to_not raise_error
+      end
+    end
+
+    context 'when no cloud provided' do
+      let(:subject) do
+        described_class.new(director_uuid: director_uuid,
+                            director_name: director_name,
+                            enable_snapshots: enable_snapshots)
+      end
+
+      it 'chooses default cloud' do
+        expect(Bosh::Director::CloudFactory).to receive_message_chain(:create, :get).and_return(cloud)
 
         expect { subject.perform }.to_not raise_error
       end
