@@ -15,7 +15,7 @@ module Bosh
               manifest['jobs'].each do |job|
                 if job.has_key?('migrated_from')
                   raise Bosh::Director::DeploymentInvalidProperty,
-                    "Deployment manifest instance groups contain 'migrated_from', but it can only be used with cloud-config enabled on your bosh director."
+                    "Deployment manifest instance groups contain 'migrated_from', but it can only be used with cloud-config."
                 end
               end
             end
@@ -37,7 +37,7 @@ module Bosh
         def raise_if_has_key(manifest, property)
           if manifest.has_key?(property)
             raise Bosh::Director::DeploymentInvalidProperty,
-              "Deployment manifest contains '#{property}' section, but it can only be used with cloud-config enabled on your bosh director."
+              "Deployment manifest contains '#{property}' section, but it can only be used in cloud-config."
           end
         end
       end
