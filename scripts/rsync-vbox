@@ -8,6 +8,15 @@ do-rsync() {
     "jumpbox@192.168.50.6:/var/vcap/packages/director/gem_home/ruby/*/gems/$1-0.0.0/"
 }
 
+version() {
+  sha="$(git rev-parse --short HEAD)"
+  if ! git diff --quiet; then
+    sha="${sha}+dev"
+  fi
+
+  echo -n "${sha}"
+}
+
 main() {
   local key_dir
   key_dir=$(mktemp -d)
@@ -23,6 +32,11 @@ main() {
   do-rsync bosh-director-core lib
   do-rsync bosh-template bin
   do-rsync bosh-template lib
+
+  echo "Replacing Director Version to $(version)"
+
+  ssh -i "${key_path}" jumpbox@192.168.50.6 \
+    "sudo bash -c 'sed -i \"s/\\\"version\\\":\\\"[^\\\"]*\\\"/\\\"version\\\":\\\"$(version)\\\"/\" /var/vcap/jobs/director/config/director.yml'"
 
   monit_cmd="/var/vcap/bosh/bin/monit"
   ssh -i "${key_path}" jumpbox@192.168.50.6 \
