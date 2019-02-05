@@ -19,6 +19,7 @@ groups:
       - bbr-ubuntu-xenial
       - upgrade-tests
       - blobstore-performance
+      - upload-compiled-staging-tarball
       - deploy-acceptance-env
       - delivery
 
@@ -845,6 +846,19 @@ jobs:
             repository: updated-bbl-state
             rebase: true
 
+  - name: upload-compiled-staging-tarball
+    plan:
+    - get: compiled-release
+      resource: bosh-compiled-candidate-xenial
+      trigger: true
+      passed:
+      - bats-ubuntu-xenial
+      - brats-ubuntu-xenial
+      - bbr-ubuntu-xenial
+    - put: bosh-compiled-staging-tarballs
+      params:
+        file: "compiled-release/*.tgz"
+
   - name: delivery
     plan:
       - aggregate:
@@ -1000,6 +1014,14 @@ resources:
     type: s3
     source:
       bucket: "bosh-compiled-candidate-tarballs"
+      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
+      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+      regexp: "bosh-.*dev\\.(\\d+).*xenial.*.tgz"
+
+  - name: bosh-compiled-staging-tarballs
+    type: s3
+    source:
+      bucket: "bosh-compiled-staging-tarballs"
       access_key_id: ((bosh-compiled-releases-aws-access-key-id))
       secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
       regexp: "bosh-.*dev\\.(\\d+).*xenial.*.tgz"
