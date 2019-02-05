@@ -14,6 +14,7 @@ module Bosh::Director
       else
         delete_vms(instance_model, store_event)
       end
+      instance_model.clear_vms_cache
     end
 
     def delete_vm_by_cid(cid, stemcell_api_version, cpi_name = nil)

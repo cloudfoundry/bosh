@@ -143,16 +143,23 @@ module Bosh::Director::Models
       spec['env'] || {}
     end
 
-    def active_vm
-      Vm.first(instance_id: id, active: true)
+    def active_vm(vm_opts = {})
+      vms(vm_opts).find(&:active)
     end
 
     def active_vm=(new_active_vm)
-      old_active_vm = active_vm
+      old_active_vm = active_vm(reload: true)
       Bosh::Director::Config.db.transaction do
         old_active_vm&.update(active: false)
         new_active_vm&.update(active: true)
       end
+    ensure
+      clear_vms_cache
+    end
+
+    def clear_vms_cache
+      # This removes the in-memory Sequel cache of the VMs association
+      associations.delete(:vms)
     end
 
     def agent_id
