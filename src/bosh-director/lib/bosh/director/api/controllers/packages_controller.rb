@@ -16,7 +16,13 @@ module Bosh::Director
           fingerprint_list << package['fingerprint'] if package['fingerprint']
         end
 
-        matching_packages = Models::Package.where(fingerprint: fingerprint_list).where(Sequel.~(:sha1 => nil)).where(Sequel.~(:blobstore_id => nil)).all
+        matching_packages = []
+
+        unless existing_release_version_dirty?(manifest)
+          matching_packages = Models::Package.where(fingerprint: fingerprint_list)
+                                             .where(Sequel.~(sha1: nil))
+                                             .where(Sequel.~(blobstore_id: nil)).all
+        end
 
         json_encode(matching_packages.map(&:fingerprint).compact.uniq)
       end
@@ -33,18 +39,24 @@ module Bosh::Director
           fingerprint_list << package['fingerprint'] if package['fingerprint']
         end
 
-        matching_packages = Models::Package.join('compiled_packages', :package_id=>:id)
-                              .select(Sequel.qualify('packages', 'name'),
-                                      Sequel.qualify('packages', 'fingerprint'),
-                                      Sequel.qualify('compiled_packages', 'dependency_key'),
-                                      :stemcell_os,
-                                      :stemcell_version
-                              ).where(fingerprint: fingerprint_list).all
+        matching_packages = []
 
-        matching_packages = filter_matching_packages(matching_packages, manifest)
+        unless existing_release_version_dirty?(manifest)
+          matching_packages = Models::Package.join('compiled_packages', package_id: :id)
+                                             .select(Sequel.qualify('packages', 'name'),
+                                                     Sequel.qualify('packages', 'fingerprint'),
+                                                     Sequel.qualify('compiled_packages', 'dependency_key'),
+                                                     :stemcell_os,
+                                                     :stemcell_version)
+                                             .where(fingerprint: fingerprint_list).all
+
+          matching_packages = filter_matching_packages(matching_packages, manifest)
+        end
 
         json_encode(matching_packages.map(&:fingerprint).compact.uniq)
       end
+
+      private
 
       # dependencies & stemcell should also match
       def filter_matching_packages(matching_packages, manifest)
@@ -56,6 +68,13 @@ module Bosh::Director
           end
         end
         filtered_packages
+      end
+
+      def existing_release_version_dirty?(manifest)
+        release = Models::Release.first(name: manifest['name'])
+        release_version = Models::ReleaseVersion.first(release_id: release&.id, version: manifest['version'])
+
+        release_version && !release_version.update_completed
       end
     end
   end

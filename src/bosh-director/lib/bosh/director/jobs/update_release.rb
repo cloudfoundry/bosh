@@ -13,7 +13,7 @@ module Bosh::Director
       @compiled_release = false
 
       attr_accessor :release_model
-      attr_reader :release_path, :release_url, :sha1
+      attr_reader :release_path, :release_url, :sha1, :fix
 
       def self.job_type
         :update_release
@@ -148,6 +148,10 @@ module Bosh::Director
           raise ReleaseVersionCommitHashMismatch,
                 "release '#{@name}/#{@version}' has already been uploaded with commit_hash as " \
                 "'#{@release_version_model.commit_hash}' and uncommitted_changes as '#{@uncommitted_changes}'"
+        else
+          @fix = true if @release_version_model.update_completed == false
+          @release_version_model.update_completed = false
+          @release_version_model.save
         end
 
         single_step_stage("Resolving package dependencies") do
@@ -159,6 +163,9 @@ module Bosh::Director
 
         event_log_stage = Config.event_log.begin_stage(@compiled_release ? "Compiled Release has been created" : "Release has been created", 1)
         event_log_stage.advance_and_track("#{@name}/#{@version}") {}
+
+        @release_version_model.update_completed = true
+        @release_version_model.save
       end
 
       # Normalizes release manifest, so all names, versions, and checksums are Strings.

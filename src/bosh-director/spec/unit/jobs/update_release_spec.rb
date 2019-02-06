@@ -259,11 +259,11 @@ module Bosh::Director
         end
       end
 
-      it 'saves release version' do
+      it 'saves release version and sets update_completed flag' do
         job.perform
 
         rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
-        expect(rv).to_not be_nil
+        expect(rv.update_completed).to be(true)
       end
 
       it 'resolves package dependencies' do
@@ -526,10 +526,17 @@ module Bosh::Director
         end
 
         it 'process packages should include all packages from the manifest in the packages array, even previously existing ones' do
-          pkg_foo = Models::Package.make(release: release, name: 'foo', version: '2.33-dev', fingerprint: 'package-fingerprint-1', sha1: 'packagesha11', blobstore_id: 'bs1')
-          pkg_bar = Models::Package.make(release: release, name: 'bar', version: '3.14-dev', fingerprint: 'package-fingerprint-2', sha1: 'packagesha12', blobstore_id: 'bs2')
-          pkg_zbb = Models::Package.make(release: release, name: 'zbb', version: '333', fingerprint: 'package-fingerprint-3', sha1: 'packagesha13', blobstore_id: 'bs3')
-          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
+          pkg_foo = Models::Package.make(release: release, name: 'foo', version: '2.33-dev',
+                                         fingerprint: 'package-fingerprint-1', sha1: 'packagesha11',
+                                         blobstore_id: 'bs1')
+          pkg_bar = Models::Package.make(release: release, name: 'bar', version: '3.14-dev',
+                                         fingerprint: 'package-fingerprint-2', sha1: 'packagesha12',
+                                         blobstore_id: 'bs2')
+          pkg_zbb = Models::Package.make(release: release, name: 'zbb', version: '333',
+                                         fingerprint: 'package-fingerprint-3', sha1: 'packagesha13',
+                                         blobstore_id: 'bs3')
+          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678',
+                                                        uncommitted_changes: true, update_completed: true)
           release_version.add_package(pkg_foo)
           release_version.add_package(pkg_bar)
           release_version.add_package(pkg_zbb)
@@ -1050,7 +1057,7 @@ module Bosh::Director
             expect(BlobUtil).to receive(:create_blob).with(
               File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz')
             ).and_return('new-compiled-blobstore-id-after-fix')
-            expect{
+            expect {
               job.perform
             }.to change { compiled_package.reload.blobstore_id }.from('fake-compiled-blobstore-id-1').to('new-compiled-blobstore-id-after-fix')
           end
@@ -1279,6 +1286,71 @@ module Bosh::Director
           {'name' => 'B', 'dependencies' => ['A']}
         ]
         expect { @job.resolve_package_dependencies(packages) }.to raise_exception
+      end
+    end
+
+    describe 'process_release' do
+      subject(:job) { Jobs::UpdateRelease.new(release_path) }
+      let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
+      let(:release_path) { File.join(release_dir, 'release.tgz') }
+      let(:manifest) do
+        {
+          'name' => 'appcloud',
+          'version' => release_version,
+          'commit_hash' => '12345678',
+          'uncommitted_changes' => false,
+          'jobs' => manifest_jobs,
+          'packages' => manifest_packages,
+        }
+      end
+      let(:release_version) { '42+dev.6' }
+      let(:release) { Models::Release.make(name: 'appcloud') }
+      let(:manifest_packages) { nil }
+      let(:manifest_jobs) { nil }
+      let(:extracted_release_dir) { job.extract_release }
+
+      before do
+        allow(Dir).to receive(:mktmpdir).and_return(release_dir)
+        job.verify_manifest(extracted_release_dir)
+      end
+
+      context 'when upload release fails' do
+        shared_examples_for 'failed release update' do
+          it 'flags release as uncompleted' do
+            allow(job).to receive(:process_jobs).and_raise('Intentional error')
+
+            expect { job.process_release(extracted_release_dir) }.to raise_error('Intentional error')
+
+            rv = Models::ReleaseVersion.filter(version: release_version).first
+            expect(rv.update_completed).to be(false)
+          end
+        end
+
+        context 'on a new release' do
+          include_examples 'failed release update'
+        end
+
+        context 'on an already uploaded release' do
+          before do
+            Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678',
+                                        update_completed: true)
+          end
+
+          include_examples 'failed release update'
+        end
+
+        context 'on an already uploaded but uncompleted release' do
+          it 'fixes the release' do
+            Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678',
+                                        update_completed: false)
+
+            job.process_release(extracted_release_dir)
+
+            expect(job.fix).to be(true)
+            rv = Models::ReleaseVersion.filter(version: release_version).first
+            expect(rv.update_completed).to be(true)
+          end
+        end
       end
     end
   end
