@@ -2,6 +2,7 @@
 
 set -eu
 
+<% if p('director.db.host') == "127.0.0.1" || p('director.db.host') == "localhost" || p('director.db.host') == "::1" %>
 if [ -z "$ARTIFACT_DIRECTORY" ]; then
   echo "\$ARTIFACT_DIRECTORY should not be empty! Refusing to back up." >&2
   exit 1
@@ -30,3 +31,6 @@ export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
 export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 
 /var/vcap/packages/director/bin/bosh-backup
+<% else %>
+echo "Skipping director backup because an external database is configured."
+<% end %>
