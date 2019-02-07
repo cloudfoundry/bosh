@@ -31,4 +31,6 @@ export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
 export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 
 /var/vcap/packages/director/bin/bosh-backup
+<% else %>
+echo "Skipping director backup because an external database is configured."
 <% end %>

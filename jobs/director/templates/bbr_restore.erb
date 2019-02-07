@@ -24,4 +24,6 @@ export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.4.0
 
 # BBR does not clean out the backup directory
 rm -rf $ARTIFACT_DIRECTORY/*
+<% else %>
+echo "Skipping director restore because an external database is configured."
 <% end %>
