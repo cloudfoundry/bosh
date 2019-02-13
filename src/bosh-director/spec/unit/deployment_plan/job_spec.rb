@@ -7,7 +7,7 @@ module Bosh
         let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
         let(:deployment_name) { 'deployment_name' }
 
-        subject { Job.new(release_version, 'foo', deployment_name) }
+        subject { Job.new(release_version, 'foo') }
 
         describe '#bind_properties' do
           let(:template_model) { instance_double('Bosh::Director::Models::Template') }
@@ -69,7 +69,7 @@ module Bosh
           end
 
           it 'should drop user provided properties not specified in the release job spec properties' do
-            subject.bind_properties('instance_group_name', deployment_name)
+            subject.bind_properties('instance_group_name')
 
             expect(subject.properties).to eq(
               'instance_group_name' => {
@@ -89,7 +89,7 @@ module Bosh
 
           it 'should include properties that are in the release job spec but not provided by a user' do
             user_defined_prop.delete('dea_max_memory')
-            subject.bind_properties('instance_group_name', deployment_name)
+            subject.bind_properties('instance_group_name')
 
             expect(subject.properties).to eq(
               'instance_group_name' => {
@@ -108,7 +108,7 @@ module Bosh
           end
 
           it 'should not override user provided properties with release job spec defaults' do
-            subject.bind_properties('instance_group_name', deployment_name)
+            subject.bind_properties('instance_group_name')
             expect(subject.properties['instance_group_name']['cc_url']).to eq('www.cc.com')
           end
 
@@ -119,7 +119,7 @@ module Bosh
 
             it 'raises an exception explaining which property is the wrong type' do
               expect do
-                subject.bind_properties('instance_group_name', deployment_name, {})
+                subject.bind_properties('instance_group_name')
               end.to raise_error(
                 Bosh::Template::InvalidPropertyType,
                 "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'",

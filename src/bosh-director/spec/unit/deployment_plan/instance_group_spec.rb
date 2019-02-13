@@ -44,14 +44,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   let(:release1_foo_job) do
-    r = Bosh::Director::DeploymentPlan::Job.new(release1, 'foo', 'story-152729032')
+    r = Bosh::Director::DeploymentPlan::Job.new(release1, 'foo')
     r.bind_existing_model(release1_foo_job_model)
     r
   end
   let(:release1_foo_job_model) { Bosh::Director::Models::Template.make(name: 'foo', release: release1_model) }
 
   let(:release1_bar_job) do
-    r = Bosh::Director::DeploymentPlan::Job.new(release1, 'bar', 'story-152729032')
+    r = Bosh::Director::DeploymentPlan::Job.new(release1, 'bar')
     r.bind_existing_model(release1_bar_job_model)
     r
   end
@@ -242,8 +242,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     it 'binds all job properties with correct parameters' do
-      expect(release1_foo_job).to receive(:bind_properties).with('foobar', deployment.name, options)
-      expect(release1_bar_job).to receive(:bind_properties).with('foobar', deployment.name, options)
+      expect(release1_foo_job).to receive(:bind_properties).with('foobar')
+      expect(release1_bar_job).to receive(:bind_properties).with('foobar')
 
       instance_group.bind_properties
 
@@ -307,12 +307,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
                                                            'version' => '1')
       end
       let(:release2_foo_job) do
-        r = Bosh::Director::DeploymentPlan::Job.new(release2, 'foo', 'story-152729032')
+        r = Bosh::Director::DeploymentPlan::Job.new(release2, 'foo')
         r.bind_existing_model(release2_foo_job_model)
         r
       end
       let(:release2_bar_job) do
-        r = Bosh::Director::DeploymentPlan::Job.new(release2, 'bar', 'story-152729032')
+        r = Bosh::Director::DeploymentPlan::Job.new(release2, 'bar')
         r.bind_existing_model(release2_bar_job_model)
         r
       end
@@ -1031,7 +1031,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   describe 'use_compiled_package' do
     let(:compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
     let(:registered_release_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_model) }
-    let(:deployment_plan_job) { Bosh::Director::DeploymentPlan::Job.new(release1, 'foo', 'foo-deployment') }
+    let(:deployment_plan_job) { Bosh::Director::DeploymentPlan::Job.new(release1, 'foo') }
     let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
 
     before(:each) do
