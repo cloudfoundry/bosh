@@ -888,20 +888,20 @@ jobs:
             bump: final
       - task: prepare-release
         file: bosh-src/ci/tasks/prepare-release.yml
-      - put: bosh-src
-        params:
-          repository: bosh-src-latest-with-release-commit
-          rebase: true
       - get: bosh-master
       - task: finalize-release
         file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
         params:
           RELEASE_PRIVATE_YML: ((bosh_release_private_yml))
+      - put: bosh-src
+        params:
+          repository: bosh-src-latest-with-release-commit
+          tag: bosh-master-with-final/tag-name
+          annotate: bosh-master-with-final/annotate-msg
+          rebase: true
       - put: bosh-master
         params:
           repository: bosh-master-with-final
-          tag: bosh-master-with-final/tag-name
-          annotate: bosh-master-with-final/annotate-msg
           rebase: true
       - put: bosh-github-release
         params:
