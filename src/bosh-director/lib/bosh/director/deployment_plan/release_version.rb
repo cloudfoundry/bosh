@@ -95,7 +95,7 @@ module Bosh::Director
       # current deployment
       # @param [String] options Template name
       def get_or_create_template(name)
-        @templates[name] ||= Job.new(self, name, @deployment_model.name)
+        @templates[name] ||= Job.new(self, name)
       end
 
       # @param [String] name Job name

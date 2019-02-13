@@ -17,8 +17,7 @@ module Bosh::Director
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
-      # @param [String] deployment_name The name of the deployment
-      def initialize(release, name, deployment_name)
+      def initialize(release, name)
         @release = release
         @name = name
         @model = nil
@@ -102,7 +101,7 @@ module Bosh::Director
         @properties[instance_group_name] = properties
       end
 
-      def bind_properties(instance_group_name, deployment_name, options = {})
+      def bind_properties(instance_group_name)
         bound_properties = {}
         @properties[instance_group_name] ||= {}
 

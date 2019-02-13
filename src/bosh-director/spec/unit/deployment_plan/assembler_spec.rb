@@ -229,7 +229,7 @@ module Bosh::Director
           template_model = Models::Template.make(name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion)
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)
-          job = DeploymentPlan::Job.new(release_version, template_name, deployment_plan.name)
+          job = DeploymentPlan::Job.new(release_version, template_name)
           job.bind_models
           instance_group.jobs = [job]
           allow(instance_group).to receive(:validate_package_names_do_not_collide!)

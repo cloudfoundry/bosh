@@ -277,12 +277,8 @@ module Bosh::Director
       # before 'bind_properties' is being called (as we persist instance group template
       # property definitions in DB).
       def bind_properties
-        options = {
-          dns_record_names: dns_record_names,
-        }
-
         @properties = @jobs.each_with_object({}) do |job, acc|
-          job.bind_properties(@name, @deployment_name, options)
+          job.bind_properties(@name)
           acc[job.name] = job.properties[@name]
         end
       end

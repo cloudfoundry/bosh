@@ -491,7 +491,7 @@ module Bosh
             release_spec = { 'name' => model_release_version.release.name, 'version' => model_release_version.version }
             job_release_version = ReleaseVersion.new(@instance.model.deployment, release_spec)
             job_release_version.bind_model
-            template = Job.new(job_release_version, template_model.name, @instance.model.deployment.name)
+            template = Job.new(job_release_version, template_model.name)
             template.bind_existing_model(template_model)
             template
           end
