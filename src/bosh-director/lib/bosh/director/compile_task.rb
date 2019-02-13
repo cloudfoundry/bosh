@@ -45,7 +45,7 @@ module Bosh::Director
 
     # @return [Boolean]
     def all_dependencies_compiled?
-      @dependencies.all? { |task| task.compiled? }
+      @dependencies.all?(&:compiled?)
     end
 
     # @return [Boolean]
@@ -70,12 +70,13 @@ module Bosh::Director
     # @return [void]
     def add_job(job)
       return if @jobs.include?(job)
+
       @jobs << job
-      if @compiled_package
-        # If package is already compiled we can make it available to job
-        # immediately, otherwise it will be done by #use_compiled_package
-        job.use_compiled_package(@compiled_package)
-      end
+      return unless @compiled_package
+
+      # If package is already compiled we can make it available to job
+      # immediately, otherwise it will be done by #use_compiled_package
+      job.use_compiled_package(@compiled_package)
     end
 
     # Adds a compilation task to the list of dependencies
@@ -83,11 +84,9 @@ module Bosh::Director
     # @param [CompileTask] task Compilation task
     # @param [Boolean] reciprocate If true, add self as dependent task to other
     # @return [void]
-    def add_dependency(task, reciprocate=true)
+    def add_dependency(task, reciprocate = true)
       @dependencies << task
-      if reciprocate
-        task.add_dependent_task(self, false)
-      end
+      task.add_dependent_task(self, false) if reciprocate
     end
 
     # Adds a compilation task to the list of dependent tasks
@@ -95,11 +94,9 @@ module Bosh::Director
     # @param [CompileTask] task Compilation task
     # @param [Boolean] reciprocate If true, add self as dependency to to other
     # @return [void]
-    def add_dependent_task(task, reciprocate=true)
+    def add_dependent_task(task, reciprocate = true)
       @dependent_tasks << task
-      if reciprocate
-        task.add_dependency(self, false)
-      end
+      task.add_dependency(self, false) if reciprocate
     end
 
     # This call only makes sense if all dependencies have already been compiled,
@@ -113,18 +110,18 @@ module Bosh::Director
       @dependencies.each do |dep_task|
         unless dep_task.compiled?
           raise DirectorError,
-                "Cannot generate package dependency spec " +
-                "for '#{@package.name}', " +
+                'Cannot generate package dependency spec ' \
+                "for '#{@package.name}', " \
                 "'#{dep_task.package.name}' hasn't been compiled yet"
         end
 
         compiled_package = dep_task.compiled_package
 
         spec[compiled_package.name] = {
-          "name" => compiled_package.name,
-          "version" => "#{compiled_package.version}.#{compiled_package.build}",
-          "sha1" => compiled_package.sha1,
-          "blobstore_id" => compiled_package.blobstore_id
+          'name' => compiled_package.name,
+          'version' => "#{compiled_package.version}.#{compiled_package.build}",
+          'sha1' => compiled_package.sha1,
+          'blobstore_id' => compiled_package.blobstore_id,
         }
       end
 
@@ -139,58 +136,59 @@ module Bosh::Director
 
       package_already_compiled = !@package.blobstore_id.nil?
 
-      if package_already_compiled
-        compiled_package = Models::CompiledPackage[
-          :package_id => package.id,
-          :stemcell_os => stemcell.os,
-          :stemcell_version => stemcell.version,
-          :dependency_key => dependency_key
-        ]
-      else
-        compiled_package = find_best_compiled_package_by_version
-      end
-
+      compiled_package = package_already_compiled ? compiled_package_for_exact_stemcell : find_best_compiled_package_by_version
       if compiled_package
         logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}'")
-      else
-        compiled_package = fetch_from_global_cache(logger, event_log_stage)
+        return compiled_package
       end
 
-      logger.info("Package '#{package.desc}' needs to be compiled on '#{stemcell.desc}'") if compiled_package.nil?
+      cached_package = fetch_from_global_cache(logger, event_log_stage)
+      return cached_package if cached_package
 
-      compiled_package
+      logger.info("Package '#{package.desc}' needs to be compiled on '#{stemcell.desc}'")
+      nil
     end
 
     private
 
+    def compiled_package_for_exact_stemcell
+      Models::CompiledPackage[
+        package_id: package.id,
+        stemcell_os: stemcell.os,
+        stemcell_version: stemcell.version,
+        dependency_key: dependency_key
+      ]
+    end
+
     def find_best_compiled_package_by_version
-      compiled_package_list = Models::CompiledPackage.where(
-        :package_id => package.id,
-        :stemcell_os => stemcell.os,
-        :dependency_key => dependency_key
+      compiled_packages_for_stemcell_os = Models::CompiledPackage.where(
+        package_id: package.id,
+        stemcell_os: stemcell.os,
+        dependency_key: dependency_key,
       ).all
 
-      compiled_package = compiled_package_list.select do |compiled_package_model|
+      compiled_package_exact_match = compiled_packages_for_stemcell_os.find do |compiled_package_model|
         compiled_package_model.stemcell_version == stemcell.version
-      end.first
-
-      unless compiled_package
-        compiled_package = compiled_package_list.select do |compiled_package_model|
-          Bosh::Common::Version::StemcellVersion.match(compiled_package_model.stemcell_version, stemcell.version)
-        end.sort_by do |compiled_package_model|
-          SemiSemantic::Version.parse(compiled_package_model.stemcell_version).release.components[1] || 0
-        end.last
       end
-      compiled_package
+
+      return compiled_package_exact_match if compiled_package_exact_match
+
+      compiled_package_fuzzy_matches = compiled_packages_for_stemcell_os.select do |compiled_package_model|
+        Bosh::Common::Version::StemcellVersion.match(compiled_package_model.stemcell_version, stemcell.version)
+      end
+
+      compiled_package_fuzzy_matches.max_by do |compiled_package_model|
+        SemiSemantic::Version.parse(compiled_package_model.stemcell_version).release.components[1] || 0
+      end
     end
 
     def fetch_from_global_cache(logger, event_log_stage)
-      if Config.use_compiled_package_cache? && BlobUtil.exists_in_global_cache?(package, cache_key)
-        event_log_stage.advance_and_track("Downloading '#{package.desc}' from global cache") do
-          # has side effect of putting CompiledPackage model in db
-          logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}' in global cache")
-          return BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
-        end
+      return unless Config.use_compiled_package_cache? && BlobUtil.exists_in_global_cache?(package, cache_key)
+
+      event_log_stage.advance_and_track("Downloading '#{package.desc}' from global cache") do
+        # has side effect of putting CompiledPackage model in db
+        logger.info("Found compiled version of package '#{package.desc}' for stemcell '#{stemcell.desc}' in global cache")
+        return BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
       end
     end
   end
