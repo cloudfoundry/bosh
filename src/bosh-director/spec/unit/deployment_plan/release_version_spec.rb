@@ -157,7 +157,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       release.get_or_create_template('dea')
 
       release.bind_model
-      release.bind_templates
+      release.bind_jobs
 
       expect(release.template('dea').model).to eq(t_dea)
       expect(release.template('dea').package_models).to match_array([p_ruby, p_node])
@@ -198,7 +198,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       end
 
       release.bind_model
-      release.bind_templates
+      release.bind_jobs
 
       expect(template.version).to eq('522')
       expect(template.blobstore_id).to eq('deadbeef')

@@ -135,7 +135,7 @@ module Bosh
             allow(release_version).to receive(:get_template_model_by_name).with('foo').and_return(template_model)
             allow(template_model).to receive(:package_names).and_return([])
             expect(release_version).to receive(:bind_model)
-            expect(release_version).to receive(:bind_templates)
+            expect(release_version).to receive(:bind_jobs)
 
             subject.bind_models
           end

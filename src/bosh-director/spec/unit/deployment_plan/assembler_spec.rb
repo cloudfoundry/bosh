@@ -65,8 +65,8 @@ module Bosh::Director
         expect(r1).to receive(:bind_model)
         expect(r2).to receive(:bind_model)
 
-        expect(r1).to receive(:bind_templates)
-        expect(r2).to receive(:bind_templates)
+        expect(r1).to receive(:bind_jobs)
+        expect(r2).to receive(:bind_jobs)
 
         expect(assembler).to receive(:with_release_locks).with(['r1', 'r2']).and_yield
         assembler.bind_models
