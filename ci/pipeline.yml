@@ -1232,6 +1232,7 @@ jobs:
       - bats-centos
       - bats-ubuntu-trusty
       - bats-ubuntu-xenial
+      - delivery
     - get: bosh-master
     - get: bosh-dev-release
       passed:
