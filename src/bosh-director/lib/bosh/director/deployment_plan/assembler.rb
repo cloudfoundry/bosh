@@ -190,9 +190,7 @@ module Bosh::Director
         release.bind_jobs
       end
 
-      @deployment_plan.instance_groups.each do |job|
-        job.validate_package_names_do_not_collide!
-      end
+      @deployment_plan.instance_groups.each(&:validate_package_names_do_not_collide!)
     end
 
     # Binds properties for all templates in the deployment
