@@ -879,7 +879,7 @@ jobs:
     plan:
       - aggregate:
         - get: bosh-src
-          passed: [deploy-acceptance-env]
+          passed: [deploy-acceptance-env, delivery]
         - get: bosh-src-latest
           resource: bosh-src
         - get: bosh-cli
