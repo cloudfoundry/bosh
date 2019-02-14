@@ -162,6 +162,8 @@ module Bosh::Director
 
               instance_group.jobs.each do |job|
                 job.package_models.each do |package|
+                  # maybe don't make compile tasks for packages selected with by compile_targets
+                  # if we do make compile tasks here, we need to add to instance_group.use_compiled_package
                   compile_task_generator.generate!(compile_tasks, instance_group, job, package, stemcell)
                 end
               end

@@ -269,6 +269,8 @@ module Bosh::Director
         return unless run_time_packages.include?(compiled_package_model.package)
         return if newer_package_known_than(compiled_package)
 
+        # maybe return if this would replace a package with a compilation target
+
         @packages[compiled_package.name] = compiled_package
       end
 
@@ -280,6 +282,24 @@ module Bosh::Director
         @properties = @jobs.each_with_object({}) do |job, acc|
           job.bind_properties(@name)
           acc[job.name] = job.properties[@name]
+        end
+      end
+
+      def bind_compilation_target_releases
+        jobs.each do |job|
+          compilation_target = job.release.compilation_target
+          next unless compilation_target
+
+          job.package_models.each do |package_model|
+            dependency_key = KeyGenerator.new.dependency_key_from_models(package_model, job.release)
+            compiled_package = Models::CompiledPackage[
+              package_id: package_model.id,
+              stemcell_os: compilation_target['os'],
+              stemcell_version: compilation_target['version'],
+              dependency_key: dependency_key
+            ]
+            use_compiled_package(compiled_package)
+          end
         end
       end
 

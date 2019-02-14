@@ -9,6 +9,7 @@ module Bosh::Director
       attr_reader :version
       # @return [Models::ReleaseVersion] Release version model
       attr_reader :model
+      attr_reader :compilation_target
 
       # @param [DeploymentPlan] deployment_plan Deployment plan
       # @param [Hash] spec Raw release spec from the deployment
@@ -16,8 +17,9 @@ module Bosh::Director
       def initialize(deployment_model, spec)
         @deployment_model = deployment_model
 
-        @name = safe_property(spec, 'name', :class => String)
-        @version = safe_property(spec, 'version', :class => String)
+        @name = safe_property(spec, 'name', class: String)
+        @version = safe_property(spec, 'version', class: String)
+        @compilation_target = safe_property(spec, 'compilation_target', class: Hash, optional: true)
 
         @model = nil
         @jobs = {}
