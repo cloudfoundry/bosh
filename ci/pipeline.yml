@@ -585,6 +585,7 @@ jobs:
           passed:
             - bats-centos
             - bats-ubuntu
+            - delivery
         - get: bosh-master
         - get: bosh-dev-release
           resource: bosh-candidate-release-tarballs
