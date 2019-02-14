@@ -89,7 +89,7 @@ module Bosh::Director
       instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(desired_instance_groups, @deployment_plan.existing_instances)
       @deployment_plan.mark_instance_plans_for_deletion(instance_plans_for_obsolete_instance_groups)
 
-      bind_templates
+      bind_jobs
       bind_properties if should_bind_properties
       bind_new_variable_set if should_bind_new_variable_set # should_bind_new is true when doing deploy action
       bind_instance_networks
@@ -185,9 +185,9 @@ module Bosh::Director
 
     # Binds template models for each release spec in the deployment plan
     # @return [void]
-    def bind_templates
+    def bind_jobs
       @deployment_plan.releases.each do |release|
-        release.bind_templates
+        release.bind_jobs
       end
 
       @deployment_plan.instance_groups.each do |job|

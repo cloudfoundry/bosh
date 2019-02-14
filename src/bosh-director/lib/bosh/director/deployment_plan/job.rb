@@ -93,7 +93,7 @@ module Bosh::Director
 
       def runs_as_errand?
         @release.bind_model
-        @release.bind_templates
+        @release.bind_jobs
         !@model.nil? && @model.runs_as_errand?
       end
 
