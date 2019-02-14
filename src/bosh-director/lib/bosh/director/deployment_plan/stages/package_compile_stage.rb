@@ -37,10 +37,10 @@ module Bosh::Director
         end
 
         def perform
-          validate_packages
+          validate_packages(@instance_groups_to_compile)
 
           @logger.info('Generating a list of compile tasks')
-          prepare_tasks
+          prepare_tasks(@instance_groups_to_compile, @compile_tasks)
 
           @compile_tasks.each_value do |task|
             if task.ready_to_compile?
@@ -126,10 +126,10 @@ module Bosh::Director
 
         private
 
-        def validate_packages
+        def validate_packages(instance_groups_to_compile)
           release_manager = Bosh::Director::Api::ReleaseManager.new
           validator = DeploymentPlan::PackageValidator.new(@logger)
-          @instance_groups_to_compile.each do |instance_group|
+          instance_groups_to_compile.each do |instance_group|
             instance_group.jobs.each do |job|
               release_model = release_manager.find_by_name(job.release.name)
               job_packages = job.package_models.map(&:name)
@@ -141,12 +141,13 @@ module Bosh::Director
           validator.handle_faults
         end
 
-        def prepare_tasks
-          @event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
-          @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log_stage)
+        def prepare_tasks(instance_groups_to_compile, compile_tasks)
+          event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
 
-          @event_log_stage.advance_and_track('Finding packages to compile') do
-            @instance_groups_to_compile.each do |instance_group|
+          event_log_stage.advance_and_track('Finding packages to compile') do
+            compile_task_generator = CompileTaskGenerator.new(@logger, event_log_stage)
+
+            instance_groups_to_compile.each do |instance_group|
               stemcell = instance_group.stemcell
 
               job_descs = instance_group.jobs.map do |job|
@@ -161,7 +162,7 @@ module Bosh::Director
 
               instance_group.jobs.each do |job|
                 job.package_models.each do |package|
-                  @compile_task_generator.generate!(@compile_tasks, instance_group, job, package, stemcell)
+                  compile_task_generator.generate!(compile_tasks, instance_group, job, package, stemcell)
                 end
               end
             end
