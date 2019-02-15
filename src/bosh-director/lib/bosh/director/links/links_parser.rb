@@ -190,7 +190,11 @@ module Bosh::Director::Links
         provider_intent.name = provider_intent_params['alias']
         provider_intent.shared = provider_intent_params['shared']
         is_custom = are_custom_definitions || false
-        provider_intent.metadata = { mapped_properties: mapped_properties, custom: is_custom }.to_json
+        provider_intent.metadata = {
+          mapped_properties: mapped_properties,
+          custom: is_custom,
+          dns_aliases: provider_intent_params['dns_aliases'],
+        }.to_json
         provider_intent.consumable = provider_intent_params['consumable']
         provider_intent.save
       end
@@ -535,6 +539,7 @@ module Bosh::Director::Links
         else
           provider_intent_params['alias'] = manifest_source['as'] if manifest_source.key?('as')
           provider_intent_params['shared'] = double_negate_value(manifest_source['shared'])
+          provider_intent_params['dns_aliases'] = manifest_source['aliases'] if manifest_source.key?('aliases')
         end
         provider_intent_params
       end

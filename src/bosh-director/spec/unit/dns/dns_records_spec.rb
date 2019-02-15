@@ -99,6 +99,7 @@ module Bosh::Director
               ['ip-addr3', 'uuid3.group-name2.net-name2.dep-name2.bosh1.tld'],
             ],
             'version' => 2,
+            'aliases' => {},
             'record_keys' => %w[
               id num_id instance_group group_ids az az_id network network_id
               deployment ip domain agent_id instance_index
@@ -155,7 +156,7 @@ module Bosh::Director
         end
 
         it 'returns the shasum' do
-          expect(dns_records.shasum).to eq('649a0e98855a9c730d4a8f68aaec88a379c645f2')
+          expect(dns_records.shasum).to eq('eae702fcc07e1d22100472f7b349f8affdb93bd6')
         end
 
         context 'when index records are enabled' do
@@ -176,6 +177,7 @@ module Bosh::Director
                 id num_id instance_group group_ids az az_id network network_id
                 deployment ip domain agent_id instance_index
               ],
+              'aliases' => {},
               'record_infos' => [
                 [
                   'uuid1',
@@ -256,6 +258,7 @@ module Bosh::Director
                 ['ip-addr4', 'uuid4.group-name3.net-name3.dep-name3.bosh3.tld'],
               ],
               'version' => 2,
+              'aliases' => {},
               'record_keys' =>
                 %w[id num_id instance_group group_ids az az_id network network_id deployment ip domain agent_id instance_index],
               'record_infos' => [
@@ -326,10 +329,65 @@ module Bosh::Director
         end
       end
 
-      context 'when have 0 records' do
+      context 'with aliases' do
+        before do
+          dns_records.add_alias('my-service.my-domain', 'some-fqdn')
+          dns_records.add_alias('my-service.my-domain', 'another-fqdn')
+          dns_records.add_alias('another.another-domain', 'some-fqdn')
+        end
+
+        it 'returns json' do
+          expected_records = {
+            'records' => [],
+            'version' => 2,
+            'aliases' => {
+              'my-service.my-domain' => ['some-fqdn', 'another-fqdn'],
+              'another.another-domain' => ['some-fqdn'],
+            },
+            'record_infos' => [],
+            'record_keys' => %w[
+              id
+              num_id
+              instance_group
+              group_ids
+              az
+              az_id
+              network
+              network_id
+              deployment
+              ip
+              domain
+              agent_id
+              instance_index
+            ],
+          }
+          expect(JSON.parse(dns_records.to_json)).to eq(expected_records)
+        end
+      end
+
+      context 'when there are 0 records' do
         it 'returns empty json' do
-          expect(dns_records.to_json).to eq('{"records":[],"version":2,"record_keys":["id","num_id","instance_group","group_ids","az","az_id","network","network_id","deployment","ip","domain","agent_id","instance_index"],"record_infos":[]}')
-          expect(dns_records.to_json).to eq('{"records":[],"version":2,"record_keys":["id","num_id","instance_group","group_ids","az","az_id","network","network_id","deployment","ip","domain","agent_id","instance_index"],"record_infos":[]}')
+          expect(JSON.parse(dns_records.to_json)).to match({
+            records: [],
+            version: 2,
+            record_keys: %w[
+              id
+              num_id
+              instance_group
+              group_ids
+              az
+              az_id
+              network
+              network_id
+              deployment
+              ip
+              domain
+              agent_id
+              instance_index
+            ],
+            record_infos: [],
+            aliases: {},
+          }.stringify_keys)
         end
       end
     end

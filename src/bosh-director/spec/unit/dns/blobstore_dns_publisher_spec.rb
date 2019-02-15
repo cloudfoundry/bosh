@@ -29,6 +29,11 @@ module Bosh::Director
             group_name: 'link-1',
             deployment: 'test-deployment',
           } => '10',
+          {
+            group_type: Models::LocalDnsEncodedGroup::Types::LINK,
+            group_name: 'fooname-bartype',
+            deployment: 'test-deployment',
+          } => '11',
         },
         {
           'az1' => '1',
@@ -121,6 +126,42 @@ module Bosh::Director
           allow(blobstore).to receive(:create).and_return('blob_id_1')
         end
 
+        context 'and there are aliases in the link providers' do
+          before do
+            deployment = Models::Deployment.create(name: 'test-deployment')
+            provider = Models::Links::LinkProvider.create(
+              deployment: deployment,
+              instance_group: 'luan',
+              name: 'fooname',
+              type: 'bartype',
+            )
+            Models::Links::LinkProviderIntent.create(
+              link_provider: provider,
+              name: 'fooname',
+              type: 'bartype',
+              original_name: 'foooriginalname',
+              metadata: {
+                'dns_aliases' => [{
+                  'domain' => 'my-link-provider.domain',
+                }],
+              }.to_json,
+            )
+          end
+
+          it 'adds the aliases to the record output' do
+            expected_records = {
+              'aliases' => {
+                'my-link-provider.domain' => ['q-s0.q-g11.fake-domain-name'],
+              },
+            }
+            expect(blobstore).to receive(:create) do |actual_records_json|
+              actual_records = JSON.parse(actual_records_json)
+              expect(actual_records).to include(expected_records)
+            end
+            dns.publish_and_broadcast
+          end
+        end
+
         it 'puts a blob containing the records into the blobstore' do
           previous_version = Bosh::Director::Models::LocalDnsBlob.last.version
           expected_records = {
@@ -130,6 +171,7 @@ module Bosh::Director
               ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
             ],
             'version' => be > previous_version,
+            'aliases' => {},
             'record_keys' =>
                   %w[id num_id instance_group group_ids az az_id network network_id deployment ip domain agent_id instance_index],
             'record_infos' => [
@@ -236,6 +278,7 @@ module Bosh::Director
                 ['192.0.2.102', 'uuid2.instance2.net-name2.test-deployment.fake-domain-name'],
                 ['192.0.2.104', 'uuid3.instance4.net-name2.test-deployment.fake-domain-name'],
               ],
+              'aliases' => {},
               'version' => be > previous_version,
               'record_keys' =>
                 %w[id num_id instance_group group_ids az az_id network network_id deployment ip domain agent_id instance_index],
@@ -349,6 +392,7 @@ module Bosh::Director
                 ['192.0.2.102', '2.instance2.net-name2.test-deployment.fake-domain-name'],
               ],
               'version' => be > previous_version,
+              'aliases' => {},
               'record_keys' =>
               %w[
                 id

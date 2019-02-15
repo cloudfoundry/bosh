@@ -525,7 +525,11 @@ describe Bosh::Director::Links::LinksParser do
             }
 
             expect(provider_intent).to receive(:name=).with('link_1_name')
-            expect(provider_intent).to receive(:metadata=).with({ mapped_properties: mapped_properties, custom: false }.to_json)
+            expect(provider_intent).to receive(:metadata=).with({
+              mapped_properties: mapped_properties,
+              custom: false,
+              dns_aliases: nil,
+            }.to_json)
             expect(provider_intent).to receive(:consumable=).with(true)
             expect(provider_intent).to receive(:shared=).with(false)
             expect(provider_intent).to receive(:save)
@@ -574,7 +578,11 @@ describe Bosh::Director::Links::LinksParser do
             }
 
             expect(provider_intent).to receive(:name=).with('link_1_name')
-            expect(provider_intent).to receive(:metadata=).with({ mapped_properties: mapped_properties, custom: false }.to_json)
+            expect(provider_intent).to receive(:metadata=).with({
+              mapped_properties: mapped_properties,
+              custom: false,
+              dns_aliases: nil,
+            }.to_json)
             expect(provider_intent).to receive(:consumable=).with(true)
             expect(provider_intent).to receive(:shared=).with(false)
             expect(provider_intent).to receive(:save)
@@ -668,7 +676,11 @@ describe Bosh::Director::Links::LinksParser do
             .and_return(provider_intent)
 
           expect(provider_intent).to receive(:name=).with('link_1_name')
-          expect(provider_intent).to receive(:metadata=).with({ mapped_properties: {}, custom: false }.to_json)
+          expect(provider_intent).to receive(:metadata=).with({
+            mapped_properties: {},
+            custom: false,
+            dns_aliases: nil,
+          }.to_json)
           expect(provider_intent).to receive(:consumable=).with(true)
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
@@ -691,6 +703,7 @@ describe Bosh::Director::Links::LinksParser do
             'provides' => {
               'link_1_name' => {
                 'as' => 'link_1_name_alias',
+                'aliases' => [{ domain: 'alias_configuration' }],
                 'shared' => true,
               },
             },
@@ -723,7 +736,11 @@ describe Bosh::Director::Links::LinksParser do
             .and_return(provider_intent)
 
           expect(provider_intent).to receive(:name=).with('link_1_name_alias')
-          expect(provider_intent).to receive(:metadata=).with({ mapped_properties: {}, custom: false }.to_json)
+          expect(provider_intent).to receive(:metadata=).with({
+            mapped_properties: {},
+            custom: false,
+            dns_aliases: [{ domain: 'alias_configuration' }],
+          }.to_json)
           expect(provider_intent).to receive(:consumable=).with(true)
           expect(provider_intent).to receive(:shared=).with(true)
           expect(provider_intent).to receive(:save)
@@ -768,7 +785,11 @@ describe Bosh::Director::Links::LinksParser do
             .and_return(provider_intent)
 
           expect(provider_intent).to receive(:name=).with('link_1_name')
-          expect(provider_intent).to receive(:metadata=).with({ mapped_properties: {}, custom: false }.to_json)
+          expect(provider_intent).to receive(:metadata=).with({
+            mapped_properties: {},
+            custom: false,
+            dns_aliases: nil,
+          }.to_json)
           expect(provider_intent).to receive(:consumable=).with(false)
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
@@ -906,7 +927,11 @@ describe Bosh::Director::Links::LinksParser do
 
           expect(provider_intent).to receive(:name=).with('link_1_name')
           expect(provider_intent).to receive(:consumable=).with(true)
-          expect(provider_intent).to receive(:metadata=).with({ mapped_properties: {}, custom: false }.to_json)
+          expect(provider_intent).to receive(:metadata=).with({
+            mapped_properties: {},
+            custom: false,
+            dns_aliases: nil,
+          }.to_json)
           expect(provider_intent).to receive(:shared=).with(false)
           expect(provider_intent).to receive(:save)
           expect(logger).to receive(:warn).with("Manifest defines unknown providers:\n"\

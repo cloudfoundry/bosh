@@ -10,6 +10,7 @@ module Bosh::Director
       ]
       @record_infos = []
       @records = []
+      @aliases = {}
       @include_index_records = include_index_records
       @dns_query_encoder = dns_query_encoder
     end
@@ -41,6 +42,11 @@ module Bosh::Director
       ]
     end
 
+    def add_alias(source, target)
+      @aliases[source] ||= []
+      @aliases[source] << target
+    end
+
     def shasum
       ::Digest::SHA1.hexdigest(to_json)
     end
@@ -51,6 +57,7 @@ module Bosh::Director
         version: @version,
         record_keys: @record_keys,
         record_infos: @record_infos,
+        aliases: @aliases,
       )
     end
 
