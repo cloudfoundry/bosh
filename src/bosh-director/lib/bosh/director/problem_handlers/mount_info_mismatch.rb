@@ -65,13 +65,11 @@ module Bosh::Director
         MetadataUpdater.build.update_disk_metadata(cloud_for_update_metadata, @disk, @disk.instance.deployment.tags)
         send_disk_hint_to_agent(disk_hint) if disk_hint
 
-        if reboot
-          reboot_vm(@instance)
-        else
-          agent_timeout_guard(@instance.vm_cid, @instance.agent_id, @instance.name) do |agent|
-            agent.mount_disk(@disk_cid)
-          end
+        agent_timeout_guard(@instance.vm_cid, @instance.agent_id, @instance.name) do |agent|
+          agent.mount_disk(@disk_cid)
         end
+
+        reboot_vm(@instance) if reboot
       end
 
       private

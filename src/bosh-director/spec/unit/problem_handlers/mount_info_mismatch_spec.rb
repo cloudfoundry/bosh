@@ -93,7 +93,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
             expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
             expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
             expect(@agent).to receive(:wait_until_ready)
-            expect(@agent).not_to receive(:mount_disk)
+            expect(@agent).to receive(:mount_disk)
             @handler.apply_resolution(:reattach_disk_and_reboot)
           end
 
@@ -104,6 +104,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
             expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
             expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
             expect(@agent).to receive(:wait_until_ready)
+            expect(@agent).to receive(:mount_disk)
             expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata)
               .with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
             @handler.apply_resolution(:reattach_disk_and_reboot)
@@ -141,7 +142,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
             expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
             expect(@agent).to receive(:wait_until_ready)
             expect(@agent).to receive(:add_persistent_disk).with(@disk.disk_cid, disk_hint)
-            expect(@agent).not_to receive(:mount_disk)
+            expect(@agent).to receive(:mount_disk)
 
             @handler.apply_resolution(:reattach_disk_and_reboot)
           end
