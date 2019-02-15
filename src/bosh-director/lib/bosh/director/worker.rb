@@ -32,7 +32,8 @@ module Bosh
 
         # stop accepting new jobs when USR1 is sent
         trap('USR1') do
-          @delayed_job_worker.queues = ['non_existent_queue']
+          Delayed::Worker.queues = ['non_existent_queue']
+          @delayed_job_worker.logger.info('No longer accepting new jobs (received signal USR1)')
         end
       end
 

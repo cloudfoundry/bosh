@@ -1,30 +1,52 @@
 #!/bin/bash
 
+<%
+
+  dedicated_workers = 0
+  if p('director.enable_dedicated_status_worker') && (p('director.workers') > 1)
+    dedicated_workers = 1
+  end
+
+%>
+
 source /var/vcap/jobs/director/env
 
 RUN_DIR=/var/vcap/sys/run/director
 LOG_DIR=/var/vcap/sys/log/director
 mkdir -p $LOG_DIR
 
-default_wait_time=15
+export BOSH_DIRECTOR_LOG_FILE=$LOG_DIR/drain.workers.stdout.log
 
-stop_workers() {
-  for pid_file in /var/vcap/sys/run/director/worker_*.pid; do
-    if [ -f "$pid_file" ] ; then
-      worker_pid=`cat ${pid_file}`
-      # Stop DJ workers from accepting any new jobs
-      kill -s USR1 ${worker_pid}
-    fi
-  done
+stop_worker() {
+  pidfile=/var/vcap/sys/run/director/worker_$1.pid
+
+  if [ -f "$pidfile" ] ; then
+    pid="$( cat "$pidfile" )"
+
+    # Stop DJ workers from accepting any new jobs
+    kill -s USR1 "$pid"
+  fi
 }
 
-stop_workers
+# this alias is only for readability + testability
+stop_dedicated_worker () { stop_worker "$@"; }
 
-export BOSH_DIRECTOR_LOG_FILE=$LOG_DIR/drain.workers.stdout.log
-num_workers=`/var/vcap/packages/director/bin/bosh-director-drain-workers -r -c /var/vcap/jobs/director/config/director.yml 2>>$LOG_DIR/drain.stderr.log`
+<% (1..p('director.workers')).each do |index| %>
+  <% if index > dedicated_workers %>
+    stop_worker <%= index %>
+  <% end %>
+<% end %>
 
-if ([ $? != 0 ] || [ $num_workers -eq 0 ]); then
-  echo 0
-else
-  echo -$default_wait_time
-fi
+<% if dedicated_workers > 0 %>
+  /var/vcap/packages/director/bin/bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml --queue normal \
+    2>>$LOG_DIR/drain.stderr.log
+
+  <% (1..dedicated_workers).each do |index| %>
+    stop_dedicated_worker <%= index %>
+  <% end %>
+<% end %>
+
+/var/vcap/packages/director/bin/bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml \
+  2>>$LOG_DIR/drain.stderr.log
+
+echo 0

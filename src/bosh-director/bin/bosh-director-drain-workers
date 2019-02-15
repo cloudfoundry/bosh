@@ -4,6 +4,7 @@ require 'bosh/director'
 
 config_file = nil
 report = false
+queue = nil
 active_worker = 1
 
 opts = OptionParser.new do |op|
@@ -12,6 +13,9 @@ opts = OptionParser.new do |op|
   end
   op.on('-r', '--report', 'Report 1 if any active worker, 0 otherwise') do
     report = true
+  end
+  op.on('-q', '--queue [ARG]', 'Filter by a named job queue') do |opt|
+    queue = opt
   end
 end
 
@@ -31,6 +35,9 @@ loop do
   logger.info('Checking for any workers that are still processing..')
 
   locked_jobs = Delayed::Job.exclude(:locked_by => nil)
+  unless queue.nil?
+    locked_jobs = locked_jobs.where(queue: queue)
+  end
 
   if locked_jobs.count == 0
     active_worker = 0
@@ -42,8 +49,8 @@ loop do
 
   break if report
 
-  logger.info("Found worker: #{worker}, sleeping for 60 seconds.")
-  sleep 60
+  logger.info("`Found worker: #{worker}, sleeping for 5 seconds.")
+  sleep 5
 end
 
 puts "#{active_worker}" if report

@@ -6,6 +6,36 @@ require 'openssl'
 require_relative './template_example_group'
 
 describe 'director templates' do
+  let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
+  let(:job) { release.job('director') }
+  let(:properties) { default_properties }
+  let(:default_properties) do
+    {
+      'blobstore' => {
+        'address' => '127.0.0.1',
+        'director' => {
+          'user' => 'fake-director',
+          'password' => 'fake-director-password',
+        },
+        'tls' => {
+          'cert' => {
+            'ca' => 'fake-ca',
+          },
+        },
+      },
+      'director' => {
+        'cpi_job' => 'fake-cpi',
+        'db' => {
+          'password' => 'fake-password',
+        },
+        'name' => 'test',
+      },
+      'nats' => {
+        'address' => '127.0.0.1',
+      },
+    }
+  end
+
   describe 'director' do
     describe 'nats related templates' do
       describe 'nats_client_certificate.pem.erb' do
@@ -211,36 +241,7 @@ describe 'director templates' do
     end
 
     describe 'scheduled jobs' do
-      let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
-      let(:job) { release.job('director') }
       let(:template) { job.template('config/director.yml') }
-      let(:properties) { default_properties }
-      let(:default_properties) do
-        {
-          'blobstore' => {
-            'address' => '127.0.0.1',
-            'director' => {
-              'user' => 'fake-director',
-              'password' => 'fake-director-password',
-            },
-            'tls' => {
-              'cert' => {
-                'ca' => 'fake-ca',
-              },
-            },
-          },
-          'director' => {
-            'cpi_job' => 'fake-cpi',
-            'db' => {
-              'password' => 'fake-password',
-            },
-            'name' => 'test',
-          },
-          'nats' => {
-            'address' => '127.0.0.1',
-          },
-        }
-      end
       let(:rendered) { YAML.safe_load(template.render(properties)) }
 
       context 'scheduled orphan VM job' do
@@ -266,6 +267,34 @@ describe 'director templates' do
               'schedule' => '*/15 * * * *',
             )
           end
+        end
+      end
+    end
+
+    describe 'bin/drain' do
+      let(:template) { job.template('bin/drain') }
+      let(:rendered_template) { template.render(properties) }
+
+      let(:enable_dedicated_status_worker) { false }
+      let(:properties) do
+        properties = default_properties.dup
+        properties['director']['enable_dedicated_status_worker'] = enable_dedicated_status_worker
+        properties
+      end
+
+      it 'renders' do
+        expect(rendered_template).to match(/.+stop_worker 1.+stop_worker 2.+stop_worker 3/m)
+        expect(rendered_template).to include('bosh-director-drain-workers')
+      end
+
+      context 'dedicated status workers' do
+        let(:enable_dedicated_status_worker) { true }
+
+        it 'renders' do
+          expect(rendered_template).to match(/.+stop_worker 2.+stop_worker 3.+stop_dedicated_worker 1/m)
+
+          expect(rendered_template).to include('--queue normal')
+          expect(rendered_template).to include('bosh-director-drain-workers')
         end
       end
     end
