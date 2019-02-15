@@ -59,16 +59,26 @@ module Bosh::Director
       def reattach_disk(reboot = false)
         az_cloud_factory = AZCloudFactory.create_with_latest_configs(@instance.deployment)
         cloud_for_attach_disk = az_cloud_factory.get_for_az(@instance.availability_zone, @vm_stemcell_api_version)
-        cloud_for_attach_disk.attach_disk(@vm_cid, @disk_cid)
+        disk_hint = cloud_for_attach_disk.attach_disk(@vm_cid, @disk_cid)
 
         cloud_for_update_metadata = az_cloud_factory.get_for_az(@instance.availability_zone)
         MetadataUpdater.build.update_disk_metadata(cloud_for_update_metadata, @disk, @disk.instance.deployment.tags)
+        send_disk_hint_to_agent(disk_hint) if disk_hint
+
         if reboot
           reboot_vm(@instance)
         else
           agent_timeout_guard(@instance.vm_cid, @instance.agent_id, @instance.name) do |agent|
             agent.mount_disk(@disk_cid)
           end
+        end
+      end
+
+      private
+
+      def send_disk_hint_to_agent(disk_hint)
+        agent_timeout_guard(@instance.vm_cid, @instance.agent_id, @instance.name) do |agent|
+          agent.add_persistent_disk(@disk_cid, disk_hint)
         end
       end
     end

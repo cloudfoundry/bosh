@@ -68,42 +68,83 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     describe 'reattach_disk' do
       let(:cloud_for_update_metadata) { instance_double(Bosh::Clouds::ExternalCpi) }
 
-      it 'attaches disk' do
-        expect(az_cloud_factory).to receive(:get_for_az).with('az1', 25).and_return(cloud)
-        expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
-        expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
-        expect(cloud_for_update_metadata).to_not receive(:attach_disk)
-        expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
-        expect(cloud).not_to receive(:reboot_vm)
-        expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
-        @handler.apply_resolution(:reattach_disk)
+      context 'cloud API V1' do
+        it 'attaches disk' do
+          expect(az_cloud_factory).to receive(:get_for_az).with('az1', 25).and_return(cloud)
+          expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
+          expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+          expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+          expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata)
+            .with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
+          expect(cloud).not_to receive(:reboot_vm)
+          expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
+          @handler.apply_resolution(:reattach_disk)
+        end
+
+        context 'rebooting the vm' do
+          before do
+            allow(base_cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+          end
+
+          it 'attaches disk and reboots the vm' do
+            expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+            expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+            expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+            expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
+            expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
+            expect(@agent).to receive(:wait_until_ready)
+            expect(@agent).not_to receive(:mount_disk)
+            @handler.apply_resolution(:reattach_disk_and_reboot)
+          end
+
+          it 'sets disk metadata with deployment information' do
+            expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
+            expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+            expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+            expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
+            expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
+            expect(@agent).to receive(:wait_until_ready)
+            expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata)
+              .with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
+            @handler.apply_resolution(:reattach_disk_and_reboot)
+          end
+        end
       end
 
-      context 'rebooting the vm' do
-        before do
-          allow(base_cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+      context 'cloud API V2' do
+        let(:disk_hint) { 'foo' }
+
+        it 'attaches disk' do
+          expect(az_cloud_factory).to receive(:get_for_az).with('az1', 25).and_return(cloud)
+          expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
+          expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid).and_return(disk_hint)
+          expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+          expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata)
+            .with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
+          expect(cloud).not_to receive(:reboot_vm)
+          expect(@agent).to receive(:add_persistent_disk).with(@disk.disk_cid, disk_hint)
+          expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
+
+          @handler.apply_resolution(:reattach_disk)
         end
 
-        it 'attaches disk and reboots the vm' do
-          expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
-          expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
-          expect(cloud_for_update_metadata).to_not receive(:attach_disk)
-          expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
-          expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
-          expect(@agent).to receive(:wait_until_ready)
-          expect(@agent).not_to receive(:mount_disk)
-          @handler.apply_resolution(:reattach_disk_and_reboot)
-        end
+        context 'rebooting the vm' do
+          before do
+            allow(base_cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
+          end
 
-        it 'sets disk metadata with deployment information' do
-          expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
-          expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
-          expect(cloud_for_update_metadata).to_not receive(:attach_disk)
-          expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
-          expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
-          expect(@agent).to receive(:wait_until_ready)
-          expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud_for_update_metadata, @disk, hash_including(manifest['tags']))
-          @handler.apply_resolution(:reattach_disk_and_reboot)
+          it 'attaches disk and reboots the vm' do
+            expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid).and_return(disk_hint)
+            expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
+            expect(cloud_for_update_metadata).to_not receive(:attach_disk)
+            expect(az_cloud_factory).to receive(:get_for_az).with(@instance.availability_zone, 25).and_return(cloud)
+            expect(az_cloud_factory).to receive(:get_for_az).with('az1').and_return(cloud_for_update_metadata)
+            expect(@agent).to receive(:wait_until_ready)
+            expect(@agent).to receive(:add_persistent_disk).with(@disk.disk_cid, disk_hint)
+            expect(@agent).not_to receive(:mount_disk)
+
+            @handler.apply_resolution(:reattach_disk_and_reboot)
+          end
         end
       end
     end
