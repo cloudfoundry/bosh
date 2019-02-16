@@ -252,7 +252,6 @@ module Bosh::Director
         # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
         # For @stemcell_b:
         # [p_nginx, p_common, p_router, p_ruby, p_warden] = 5
-        expect(compiler.compile_tasks_count).to eq(6 + 5)
         # But they are already compiled!
         expect(compiler.compilations_performed).to eq(0)
 
@@ -357,7 +356,6 @@ module Bosh::Director
           compiler.perform
           # For @stemcell_b we need to compile:
           # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
-          expect(compiler.compile_tasks_count).to eq(6)
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(6)
 
@@ -386,7 +384,6 @@ module Bosh::Director
           compiler.perform
           # For @stemcell_b we need to compile:
           # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
-          expect(compiler.compile_tasks_count).to eq(6)
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(0)
 

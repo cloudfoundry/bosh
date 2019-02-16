@@ -28,7 +28,6 @@ module Bosh::Director
           @counter_mutex = Mutex.new
 
           @compilation_instance_pool = compilation_instance_pool
-          @compile_tasks = {}
           @ready_tasks = []
           @compilations_performed = 0
           @instance_groups_to_compile = instance_groups_to_compile
@@ -40,9 +39,9 @@ module Bosh::Director
           validate_packages(@instance_groups_to_compile)
 
           @logger.info('Generating a list of compile tasks')
-          prepare_tasks(@instance_groups_to_compile, @compile_tasks)
+          compile_tasks = prepare_tasks(@instance_groups_to_compile)
 
-          @compile_tasks.each_value do |task|
+          compile_tasks.each_value do |task|
             if task.ready_to_compile?
               @logger.info("Package '#{task.package.desc}' is ready to be compiled for stemcell '#{task.stemcell.desc}'")
               @ready_tasks << task
@@ -51,13 +50,10 @@ module Bosh::Director
 
           if @ready_tasks.empty?
             @logger.info('All packages are already compiled')
-          else
-            compile_packages
+            return
           end
-        end
 
-        def compile_tasks_count
-          @compile_tasks.size
+          compile_packages(compile_tasks)
         end
 
         def ready_tasks_count
@@ -141,7 +137,8 @@ module Bosh::Director
           validator.handle_faults
         end
 
-        def prepare_tasks(instance_groups_to_compile, compile_tasks)
+        def prepare_tasks(instance_groups_to_compile)
+          compile_tasks = {}
           event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
 
           event_log_stage.advance_and_track('Finding packages to compile') do
@@ -167,6 +164,7 @@ module Bosh::Director
               end
             end
           end
+          compile_tasks
         end
 
         def cancelled?
@@ -176,7 +174,8 @@ module Bosh::Director
           true
         end
 
-        def compile_packages
+        def compile_packages(compile_tasks)
+          compilation_count = compile_tasks.values.count(&:compiled?)
           @event_log_stage = Config.event_log.begin_stage('Compiling packages', compilation_count)
           return if cancelled?
 
@@ -233,14 +232,6 @@ module Bosh::Director
               enqueue_unblocked_tasks(task)
             end
           end
-        end
-
-        def compilation_count
-          counter = 0
-          @compile_tasks.each_value do |task|
-            counter += 1 unless task.compiled?
-          end
-          counter
         end
       end
     end
