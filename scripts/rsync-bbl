@@ -1,0 +1,64 @@
+#!/bin/bash
+
+do-rsync() {
+  rsync -PrlptDv -e "ssh -i ${director_key_path} -o ProxyCommand='ssh -i ${jumpbox_key_path} -W %h:%p jumpbox@${jumpbox_ip}'" \
+    --rsync-path="sudo rsync" \
+    "${bosh_dir}/src/$1/$2" \
+    "jumpbox@${director_ip}:/var/vcap/packages/director/gem_home/ruby/*/gems/${1}-0.0.0/"
+}
+
+version() {
+  pushd ${bosh_dir} > /dev/null
+    sha="$(git rev-parse --short HEAD)"
+    if ! git diff --quiet; then
+      sha="${sha}+dev"
+    fi
+
+    echo -n "${sha}"
+  popd > /dev/null
+}
+
+main() {
+  bosh_dir="$(dirname "${BASH_SOURCE[0]}")/.."
+
+  #get jumpbox and director ips
+  local director_ip=$(bbl director-address | sed "s/https:\/\//""/g" | sed "s/:25555/""/g")
+  local jumpbox_ip=$(bbl jumpbox-address)
+
+  #prepare ssh keys
+  local key_dir
+  key_dir=$(mktemp -d)
+  local director_key_path="${key_dir}/director_private_key"
+  local jumpbox_key_path="${key_dir}/jumpbox_private_key"
+  bbl director-ssh-key > "${director_key_path}"
+  bbl ssh-key > "${jumpbox_key_path}"
+  chmod 700 "${key_dir}"
+  chmod 600 "${director_key_path}" "${jumpbox_key_path}"
+
+  do-rsync bosh-director bin
+  do-rsync bosh-director db
+  do-rsync bosh-director lib
+  do-rsync bosh-core lib
+  do-rsync bosh-director-core lib
+  do-rsync bosh-template bin
+  do-rsync bosh-template lib
+
+  echo "Replacing Director Version to $(version)"
+
+  #laod director environment
+  eval "$(bbl print-env)"
+
+  #restart director
+  monit_cmd="/var/vcap/bosh/bin/monit"
+  ssh -i "${director_key_path}" jumpbox@${director_ip} \
+    -o ProxyCommand="ssh -i ${jumpbox_key_path} -W %h:%p jumpbox@${jumpbox_ip}" \
+    "sudo bash -c '${monit_cmd} restart director; ${monit_cmd} restart director_scheduler; ${monit_cmd} restart director_sync_dns'"
+
+  #wait until director is back
+  echo -n "Restarting director..."
+  sleep 5
+  while ! bosh curl /info >/dev/null 2>&1 ; do sleep 2 ; echo -n . ; done
+  echo done
+}
+
+main
