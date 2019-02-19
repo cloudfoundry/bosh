@@ -42,6 +42,7 @@ bosh int bosh.yml \
   -v docker_tls="${DOCKER_CERTS}" \
   -o "/usr/local/bosh-deployment/misc/source-releases/bosh.yml" \
   -o "/usr/local/bosh-deployment/local-bosh-release-tarball.yml" \
+  -o "/usr/local/bosh-deployment/experimental/postgres-9-4.yml" \
   -v local_bosh_release="${bosh_release_path}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
