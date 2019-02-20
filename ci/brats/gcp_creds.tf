@@ -3,3 +3,9 @@ provider "google" {
   project     = "cf-bosh-core"
   region      = "us-central1"
 }
+
+provider "google-beta" {
+  version     = "~> 1.20"
+
+  alias = "workaround"
+}
