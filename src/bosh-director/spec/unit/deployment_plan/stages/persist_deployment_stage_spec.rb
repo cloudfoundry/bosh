@@ -137,7 +137,7 @@ module Bosh::Director
           it 'saves runtime config' do
             subject.perform
             reloaded_model = deployment_model.reload
-            expect(reloaded_model.runtime_configs).to eq(runtime_configs)
+            expect(reloaded_model.runtime_configs).to match_array(runtime_configs)
           end
         end
       end
