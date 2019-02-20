@@ -651,6 +651,7 @@ jobs:
             gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
             gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            gcp_private_network_name: brats-ubuntu-xenial-((branch_name))
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
       - task: create-ssl-certificates
@@ -679,6 +680,7 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
           GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
+          GCP_PRIVATE_NETWORK_NAME: brats-ubuntu-xenial-((branch_name))
           STEMCELL_OS: ubuntu-xenial
       ensure:
         do:
@@ -708,6 +710,7 @@ jobs:
               gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
               gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+              gcp_private_network_name: brats-ubuntu-xenial-((branch_name))
             env:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
@@ -751,6 +754,7 @@ jobs:
             gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
             gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            gcp_private_network_name: bbr-ubuntu-xenial-((branch_name))
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
       - task: create-ssl-certificates
@@ -779,6 +783,7 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
           GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
+          GCP_PRIVATE_NETWORK_NAME: bbr-ubuntu-xenial-((branch_name))
           STEMCELL_OS: ubuntu-xenial
       ensure:
         do:
@@ -808,6 +813,7 @@ jobs:
               gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
               gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+              gcp_private_network_name: bbr-ubuntu-xenial-((branch_name))
             env:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
