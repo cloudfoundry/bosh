@@ -5,10 +5,10 @@ resource "google_compute_network" "private_network" {
 }
 
 resource "google_compute_global_address" "private_ip_address" {
-  provider      = "google-beta.workaround"
+	provider      = "google-beta.workaround"
 
-  project       = "cf-bosh-core"
-  name          = "db-private-ip"
+	project       = "cf-bosh-core"
+	name          = "${google_compute_network.private_network.name}-db-private-ip"
 	purpose       = "VPC_PEERING"
 	address_type  = "INTERNAL"
 	prefix_length = 16
