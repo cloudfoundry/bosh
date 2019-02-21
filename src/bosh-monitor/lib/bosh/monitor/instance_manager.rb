@@ -1,5 +1,4 @@
 module Bosh::Monitor
-
   class InstanceManager
     attr_reader :heartbeats_received
     attr_reader :alerts_received
@@ -29,7 +28,7 @@ module Bosh::Monitor
 
     def get_deleted_agents_for_deployment(deployment_name)
       deployment = @deployment_name_to_deployments[deployment_name]
-      deployment ? deployment.instance_id_to_agent: {}
+      deployment ? deployment.instance_id_to_agent : {}
     end
 
     def setup_events
@@ -39,15 +38,15 @@ module Bosh::Monitor
       end
 
       EM.schedule do
-        Bhm.nats.subscribe('hm.agent.heartbeat.*') do |message, reply, subject|
+        Bhm.nats.subscribe('hm.agent.heartbeat.*') do |message, _reply, subject|
           process_event(:heartbeat, subject, message)
         end
 
-        Bhm.nats.subscribe('hm.agent.alert.*') do |message, reply, subject|
+        Bhm.nats.subscribe('hm.agent.alert.*') do |message, _reply, subject|
           process_event(:alert, subject, message)
         end
 
-        Bhm.nats.subscribe('hm.agent.shutdown.*') do |message, reply, subject|
+        Bhm.nats.subscribe('hm.agent.shutdown.*') do |message, _reply, subject|
           process_event(:shutdown, subject, message)
         end
       end
@@ -99,7 +98,7 @@ module Bosh::Monitor
       @logger.info('Analyzing agents...')
       started = Time.now
       count = analyze_deployment_agents + analyze_rogue_agents
-      @logger.info('Analyzed %s, took %s seconds' % [pluralize(count, 'agent'), Time.now - started])
+      @logger.info(format('Analyzed %s, took %s seconds', pluralize(count, 'agent'), Time.now - started))
       count
     end
 
@@ -128,10 +127,10 @@ module Bosh::Monitor
 
       if agent.rogue?
         @processor.process(:alert,
-                           :severity => 2,
-                           :source => agent.name,
-                           :title => "#{agent.id} is not a part of any deployment",
-                           :created_at => ts)
+                           severity: 2,
+                           source: agent.name,
+                           title: "#{agent.id} is not a part of any deployment",
+                           created_at: ts)
       end
 
       true
@@ -149,7 +148,7 @@ module Bosh::Monitor
         end
       end
 
-      @logger.info('Analyzed %s, took %s seconds' % [pluralize(count, 'instance'), Time.now - started])
+      @logger.info(format('Analyzed %s, took %s seconds', pluralize(count, 'instance'), Time.now - started))
       count
     end
 
@@ -191,24 +190,23 @@ module Bosh::Monitor
       end
 
       case payload
-        when String
-          message = JSON.parse(payload)
-        when Hash
-          message = payload
+      when String
+        message = JSON.parse(payload)
+      when Hash
+        message = payload
       end
 
       deployment = @deployment_name_to_deployments[agent.deployment]
       case kind.to_s
-        when 'alert'
-          on_alert(agent, message)
-        when 'heartbeat'
-          on_heartbeat(agent, deployment, message)
-        when 'shutdown'
-          on_shutdown(agent)
-        else
-          @logger.warn("No handler found for '#{kind}' event")
+      when 'alert'
+        on_alert(agent, message)
+      when 'heartbeat'
+        on_heartbeat(agent, deployment, message)
+      when 'shutdown'
+        on_shutdown(agent)
+      else
+        @logger.warn("No handler found for '#{kind}' event")
       end
-
     rescue JSON::ParserError => e
       @logger.error("Cannot parse incoming event: #{e}")
     rescue Bhm::InvalidEvent => e
@@ -246,7 +244,7 @@ module Bosh::Monitor
     end
 
     def on_alert(agent, message)
-      if message.is_a?(Hash) && !message.has_key?('source')
+      if message.is_a?(Hash) && !message.key?('source')
         message['source'] = agent.name
         message['deployment'] = agent.deployment
         message['job'] = agent.job
@@ -273,9 +271,7 @@ module Bosh::Monitor
         message['instance_id'] = agent.instance_id
         message['teams'] = deployment ? deployment.teams : []
 
-        if message['instance_id'].nil? || message['job'].nil? || message['deployment'].nil?
-          return
-        end
+        return if message['instance_id'].nil? || message['job'].nil? || message['deployment'].nil?
       end
 
       @processor.process(:heartbeat, message)
@@ -338,9 +334,7 @@ module Bosh::Monitor
       active_deployment_names = Set.new
       deployments.each do |deployment_data|
         deployment = Deployment.create(deployment_data)
-        unless @deployment_name_to_deployments[deployment.name]
-          @deployment_name_to_deployments[deployment.name] = deployment
-        end
+        @deployment_name_to_deployments[deployment.name] = deployment unless @deployment_name_to_deployments[deployment.name]
         active_deployment_names << deployment.name
       end
       active_deployment_names
@@ -356,9 +350,7 @@ module Bosh::Monitor
       active_instances_ids = Set.new
       instances_data.each do |instance_data|
         instance = Bhm::Instance.create(instance_data)
-        if deployment.add_instance(instance)
-          active_instances_ids << instance.id
-        end
+        active_instances_ids << instance.id if deployment.add_instance(instance)
       end
       active_instances_ids
     end
@@ -372,9 +364,7 @@ module Bosh::Monitor
     def sync_active_agents(deployment, instances)
       active_agent_ids = Set.new
       instances.each do |instance|
-        if deployment.upsert_agent(instance)
-          active_agent_ids << instance.agent_id
-        end
+        active_agent_ids << instance.agent_id if deployment.upsert_agent(instance)
       end
       active_agent_ids
     end
