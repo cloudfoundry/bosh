@@ -142,30 +142,39 @@ module Bosh::Monitor
       count = 0
 
       @deployment_name_to_deployments.values.each do |deployment|
+        jobs_to_instances = Hash.new { |hash, job| hash[job] = [] }
         deployment.instances.each do |instance|
-          analyze_instance(instance)
+          if alert_needed?(instance)
+            alert_single_instance(instance)
+            jobs_to_instances[instance.job] << instance.id
+          end
           count += 1
         end
+        alert_aggregated_instances_if_needed(
+          deployment.name,
+          jobs_to_instances,
+          "#{deployment.name} has instances which do not have VMs",
+        )
       end
 
       @logger.info(format('Analyzed %s, took %s seconds', pluralize(count, 'instance'), Time.now - started))
       count
     end
 
-    def analyze_instance(instance)
-      if instance.expects_vm? && !instance.has_vm?
-        @processor.process(:alert,
-                           severity: 2,
-                           category: Events::Alert::CATEGORY_VM_HEALTH,
-                           source: instance.name,
-                           title: "#{instance.id} has no VM",
-                           created_at: Time.now.to_i,
-                           deployment: instance.deployment,
-                           job: instance.job,
-                           instance_id: instance.id)
-      end
+    def alert_single_instance(instance)
+      @processor.process(:alert,
+                         severity: 2,
+                         category: Events::Alert::CATEGORY_VM_HEALTH,
+                         source: instance.name,
+                         title: "#{instance.id} has no VM",
+                         created_at: Time.now.to_i,
+                         deployment: instance.deployment,
+                         job: instance.job,
+                         instance_id: instance.id)
+    end
 
-      true
+    def alert_needed?(instance)
+      instance.expects_vm? && !instance.has_vm?
     end
 
     def process_event(kind, subject, payload = {})
@@ -218,6 +227,19 @@ module Bosh::Monitor
     end
 
     private
+
+    def alert_aggregated_instances_if_needed(deployment_name, jobs_to_instances, title)
+      return if jobs_to_instances.empty?
+
+      @processor.process(:alert,
+                         severity: 2,
+                         category: Events::Alert::CATEGORY_DEPLOYMENT_HEALTH,
+                         source: deployment_name,
+                         title: title,
+                         created_at: Time.now.to_i,
+                         deployment: deployment_name,
+                         jobs_to_instance_ids: jobs_to_instances)
+    end
 
     def lookup_plugin(name, options = {})
       plugin_class = nil
@@ -291,10 +313,17 @@ module Bosh::Monitor
     def analyze_deployment_agents
       count = 0
       @deployment_name_to_deployments.values.each do |deployment|
+        jobs_to_instances = Hash.new { |hash, job| hash[job] = [] }
         deployment.agents.each do |agent|
           analyze_agent(agent)
+          jobs_to_instances[agent.job] << agent.instance_id if agent.timed_out? && !agent.rogue?
           count += 1
         end
+        alert_aggregated_instances_if_needed(
+          deployment.name,
+          jobs_to_instances,
+          "#{deployment.name} has instances with timed out agents",
+        )
       end
       count
     end
