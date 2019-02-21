@@ -1,7 +1,13 @@
 variable "gcp_private_network_name" {}
 
 resource "google_compute_network" "private_network" {
-	name       = "${var.gcp_private_network_name}"
+	name       = "${replace(var.gcp_private_network_name,".", "-")}"
+	auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "network-with-private-secondary-ip-ranges" {
+  name          = "${google_compute_network.private_network.name}-subnet"
+  network       = "${google_compute_network.private_network.self_link}"
 }
 
 resource "google_compute_global_address" "private_ip_address" {
