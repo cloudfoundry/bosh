@@ -5,8 +5,9 @@ resource "google_compute_network" "private_network" {
 	auto_create_subnetworks = false
 }
 
-resource "google_compute_subnetwork" "network-with-private-secondary-ip-ranges" {
+resource "google_compute_subnetwork" "network-with-private-ip-ranges" {
   name          = "${google_compute_network.private_network.name}-subnet"
+  ip_cidr_range = "10.0.0.0/16"
   network       = "${google_compute_network.private_network.self_link}"
 }
 
