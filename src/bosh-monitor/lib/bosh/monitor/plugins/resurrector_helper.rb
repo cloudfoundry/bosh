@@ -51,7 +51,7 @@ module Bosh::Monitor::Plugins
       end
 
       def record(agent_key, alert)
-        if alert.category == Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH && UNHEALTHY.include?(alert.severity)
+        if UNHEALTHY.include?(alert.severity)
           @unhealthy_agents[agent_key] = alert.created_at
         end
       end

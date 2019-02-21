@@ -28,76 +28,92 @@ module Bosh::Monitor
       end
 
       def process(alert)
+        category = alert.attributes['category']
         deployment = alert.attributes['deployment']
-        job = alert.attributes['job']
-        id = alert.attributes['instance_id']
+        jobs_to_instances = alert.attributes['jobs_to_instance_ids']
 
-        # deployment, job, and id are only present for 'agent timed out' and 'vm missing for instance'
-        # on the alert so this won't trigger a recreate for other types of alerts
-        if deployment && job && id
-          agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
-          @alert_tracker.record(agent_key, alert)
+        unless category == Bosh::Monitor::Events::Alert::CATEGORY_DEPLOYMENT_HEALTH
+          logger.debug("(Resurrector) ignoring event of category '#{category}': #{alert}")
+          return
+        end
 
-          payload = {'jobs' => {job => [id]}}
+        unless deployment && jobs_to_instances
+          logger.warn("(Resurrector) event did not have deployment and jobs_to_instance_ids: #{alert}")
+          return
+        end
 
-          unless director_info
-            logger.error("(Resurrector) director is not responding with the status")
-            return
+        jobs_to_instances.each do |job, instances|
+          instances.each do |id|
+            agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
+            @alert_tracker.record(agent_key, alert)
           end
+        end
 
-          request = {
+        unless director_info
+          logger.error("(Resurrector) director is not responding with the status")
+          return
+        end
+
+        state = @alert_tracker.state_for(deployment)
+
+        if state.meltdown?
+          summary = "Skipping resurrection for instances: #{pretty_str(jobs_to_instances)}; #{state.summary}"
+          @processor.process(
+            :alert,
+            severity: 1,
+            title: 'We are in meltdown',
+            summary: summary,
+            source: 'HM plugin resurrector',
+            deployment: deployment,
+            created_at: Time.now.to_i,
+          )
+
+        elsif state.managed?
+          jobs_to_instances_resurrection_enabled, jobs_to_instances_resurrection_disabled = jobs_to_instances.partition do |job, _|
+            @resurrection_manager.resurrection_enabled?(deployment, job)
+          end
+          jobs_to_instances_resurrection_enabled = jobs_to_instances_resurrection_enabled.to_h
+          jobs_to_instances_resurrection_disabled = jobs_to_instances_resurrection_disabled.to_h
+
+          unless jobs_to_instances_resurrection_enabled.empty?
+            payload = {'jobs' => jobs_to_instances_resurrection_enabled}
+            request = {
               head: {
-                  'Content-Type' => 'application/json',
-                  'authorization' => auth_provider(director_info).auth_header
+                'Content-Type' => 'application/json',
+                'authorization' => auth_provider(director_info).auth_header
               },
               body: JSON.dump(payload)
-          }
-
-          state = @alert_tracker.state_for(deployment)
-
-          if state.meltdown?
-            summary = "Skipping resurrection for instance: '#{job}/#{id}'; #{state.summary}"
+            }
+            url = @uri.dup
+            url.path = "/deployments/#{deployment}/scan_and_fix"
+            summary = "Notifying Director to recreate instances: #{pretty_str(jobs_to_instances_resurrection_enabled)}; #{state.summary}"
             @processor.process(
               :alert,
-              severity: 1,
-              title: 'We are in meltdown',
+              severity: 4,
+              title: 'Recreating unresponsive VMs',
               summary: summary,
               source: 'HM plugin resurrector',
               deployment: deployment,
               created_at: Time.now.to_i,
             )
-          elsif state.managed?
-            if @resurrection_manager.resurrection_enabled?(deployment, job)
-              url = @uri.dup
-              url.path = "/deployments/#{deployment}/scan_and_fix"
-              summary = "Notifying Director to recreate instance: '#{job}/#{id}'; #{state.summary}"
-              @processor.process(
-                :alert,
-                severity: 4,
-                title: 'Recreating unresponsive VM',
-                summary: summary,
-                source: 'HM plugin resurrector',
-                deployment: deployment,
-                created_at: Time.now.to_i,
-              )
-              send_http_put_request(url.to_s, request)
-            else
-              summary = "Skipping resurrection for instance: '#{job}/#{id}'; #{state.summary} because of resurrection config"
-              @processor.process(
-                :alert,
-                severity: 1,
-                title: 'Resurrection is disabled by resurrection config',
-                summary: summary,
-                source: 'HM plugin resurrector',
-                deployment: deployment,
-                created_at: Time.now.to_i,
-              )
-            end
-          else
-            logger.info('(Resurrector) state is normal')
+
+            send_http_put_request(url.to_s, request)
+          end
+
+          unless jobs_to_instances_resurrection_disabled.empty?
+            summary = "Skipping resurrection for instances: #{pretty_str(jobs_to_instances_resurrection_disabled)}; #{state.summary} because of resurrection config"
+            @processor.process(
+              :alert,
+              severity: 1,
+              title: 'Resurrection is disabled by resurrection config',
+              summary: summary,
+              source: 'HM plugin resurrector',
+              deployment: deployment,
+              created_at: Time.now.to_i,
+            )
           end
         else
-          logger.warn("(Resurrector) event did not have deployment, job and id: #{alert}")
+          logger.info('(Resurrector) state is normal')
         end
       end
 
@@ -117,6 +133,17 @@ module Bosh::Monitor
 
         @director_info = JSON.parse(response.body)
       end
+
+      def pretty_str(jobs_to_instances)
+        pretty_str = ''
+        jobs_to_instances.each do |job, instances|
+          instances.each do |id|
+            pretty_str += "#{job}/#{id}, "
+          end
+        end
+        pretty_str.chomp(', ')
+      end
+
     end
   end
 end
