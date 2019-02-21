@@ -6,7 +6,7 @@ module Bosh::Monitor
     class Resurrector < Base
       include Bosh::Monitor::Plugins::HttpRequestHelper
 
-      def initialize(options={})
+      def initialize(options = {})
         super(options)
         director = @options['director']
         raise ArgumentError 'director options not set' unless director
@@ -20,11 +20,11 @@ module Bosh::Monitor
 
       def run
         unless EM.reactor_running?
-          logger.error("Resurrector plugin can only be started when event loop is running")
+          logger.error('Resurrector plugin can only be started when event loop is running')
           return false
         end
 
-        logger.info("Resurrector is running...")
+        logger.info('Resurrector is running...')
       end
 
       def process(alert)
@@ -50,7 +50,7 @@ module Bosh::Monitor
         end
 
         unless director_info
-          logger.error("(Resurrector) director is not responding with the status")
+          logger.error('(Resurrector) director is not responding with the status')
           return
         end
 
@@ -76,13 +76,13 @@ module Bosh::Monitor
           jobs_to_instances_resurrection_disabled = jobs_to_instances_resurrection_disabled.to_h
 
           unless jobs_to_instances_resurrection_enabled.empty?
-            payload = {'jobs' => jobs_to_instances_resurrection_enabled}
+            payload = { 'jobs' => jobs_to_instances_resurrection_enabled }
             request = {
               head: {
                 'Content-Type' => 'application/json',
-                'authorization' => auth_provider(director_info).auth_header
+                'authorization' => auth_provider(director_info).auth_header,
               },
-              body: JSON.dump(payload)
+              body: JSON.dump(payload),
             }
             url = @uri.dup
             url.path = "/deployments/#{deployment}/scan_and_fix"
@@ -143,7 +143,6 @@ module Bosh::Monitor
         end
         pretty_str.chomp(', ')
       end
-
     end
   end
 end
