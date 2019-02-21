@@ -20,7 +20,7 @@ module Bosh::Director
     describe '#clean' do
       before do
         Timecop.travel(Date.new(2011, 9, 1)) { log_bundles_cleaner.register_blobstore_id('fake-very-old-blob-id') }
-        Timecop.travel(Date.new(2011, 10, 9)) { log_bundles_cleaner.register_blobstore_id('fake-old-blob-id') }
+        Timecop.travel(Date.new(2011, 10, 8)) { log_bundles_cleaner.register_blobstore_id('fake-old-blob-id') }
         Timecop.travel(Date.new(2011, 10, 10)) { log_bundles_cleaner.register_blobstore_id('fake-recent-blob-id') }
         Timecop.travel(Date.new(2011, 10, 11)) { log_bundles_cleaner.register_blobstore_id('fake-future-blob-id') }
       end
