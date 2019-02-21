@@ -59,7 +59,7 @@ module Bosh::Director
 
         return if dry_run?
 
-        compilation_step.perform
+        DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan).perform
 
         update_stage.perform
 
@@ -76,13 +76,13 @@ module Bosh::Director
 
       def prepare_deployment
         event_log_stage.advance_and_track('Preparing deployment') do
-          create_network_stage.perform unless dry_run?
+          DeploymentPlan::Stages::CreateNetworkStage.new(Config.logger, deployment_plan).perform unless dry_run?
 
           # This is a _temporary_ bandaid to fix integration test failures that depend on
           # the DNS encoder having an updated index before bind_models is called
           dns_encoder # TODO(ja): unit test that new_encoder_with_updated_index is called before bind_models
 
-          deployment_assembler.bind_models(
+          DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator).bind_models(
             is_deploy_action: deploy_action?,
             should_bind_new_variable_set: deploy_action?,
           )
@@ -162,14 +162,6 @@ module Bosh::Director
 
       def link_provider_intents
         deployment_plan.link_provider_intents
-      end
-
-      def compilation_step
-        DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan)
-      end
-
-      def create_network_stage
-        DeploymentPlan::Stages::CreateNetworkStage.new(Config.logger, deployment_plan)
       end
 
       def update_stage
@@ -375,28 +367,26 @@ module Bosh::Director
         @manifest_text
       end
 
-      def deployment_manifest_object
-        @deployment_manifest_object ||= Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
-      end
-
       def notifier
         @notifier ||= DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
       end
 
-      def planner_factory
-        @planner_factory ||= DeploymentPlan::PlannerFactory.create(logger)
-      end
-
       def deployment_plan
-        @deployment_plan ||= planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
+        return @deployment_plan if @deployment_plan
+
+        deployment_manifest = Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
+        planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+
+        @deployment_plan = planner_factory.create_from_manifest(
+          deployment_manifest,
+          cloud_config_models,
+          runtime_config_models,
+          @options,
+        )
       end
 
       def links_manager
         @links_manager ||= Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
-      end
-
-      def deployment_assembler
-        @deployment_assembler ||= DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator)
       end
 
       def dns_encoder
