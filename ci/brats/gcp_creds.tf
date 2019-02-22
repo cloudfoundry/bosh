@@ -7,5 +7,8 @@ provider "google" {
 provider "google-beta" {
   version     = "~> 1.20"
 
+  project     = "cf-bosh-core"
+  region      = "us-central1"
+
   alias = "workaround"
 }
