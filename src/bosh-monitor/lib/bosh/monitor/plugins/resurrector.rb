@@ -4,7 +4,8 @@
 module Bosh::Monitor
   module Plugins
     class Resurrector < Base
-      include Bosh::Monitor::Plugins::HttpRequestHelper
+      include HttpRequestHelper
+      include Bosh::Monitor::Events
 
       def initialize(options = {})
         super(options)
@@ -32,7 +33,7 @@ module Bosh::Monitor
         deployment = alert.attributes['deployment']
         jobs_to_instances = alert.attributes['jobs_to_instance_ids']
 
-        unless category == Bosh::Monitor::Events::Alert::CATEGORY_DEPLOYMENT_HEALTH
+        unless category == Alert::CATEGORY_DEPLOYMENT_HEALTH
           logger.debug("(Resurrector) ignoring event of category '#{category}': #{alert}")
           return
         end
@@ -42,11 +43,9 @@ module Bosh::Monitor
           return
         end
 
-        jobs_to_instances.each do |job, instances|
-          instances.each do |id|
-            agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
-            @alert_tracker.record(agent_key, alert)
-          end
+        each_job_instance(jobs_to_instances) do |job, id|
+          agent_key = ResurrectorHelper::JobInstanceKey.new(deployment, job, id)
+          @alert_tracker.record(agent_key, alert)
         end
 
         unless director_info
@@ -57,23 +56,14 @@ module Bosh::Monitor
         state = @alert_tracker.state_for(deployment)
 
         if state.meltdown?
-          summary = "Skipping resurrection for instances: #{pretty_str(jobs_to_instances)}; #{state.summary}"
-          @processor.process(
-            :alert,
-            severity: 1,
-            title: 'We are in meltdown',
-            summary: summary,
-            source: 'HM plugin resurrector',
-            deployment: deployment,
-            created_at: Time.now.to_i,
-          )
+          alert(deployment,
+                severity: 1,
+                title: 'We are in meltdown',
+                summary: "Skipping resurrection for instances: #{pretty_str(jobs_to_instances)}; #{state.summary}")
 
         elsif state.managed?
-          jobs_to_instances_resurrection_enabled, jobs_to_instances_resurrection_disabled = jobs_to_instances.partition do |job, _|
-            @resurrection_manager.resurrection_enabled?(deployment, job)
-          end
-          jobs_to_instances_resurrection_enabled = jobs_to_instances_resurrection_enabled.to_h
-          jobs_to_instances_resurrection_disabled = jobs_to_instances_resurrection_disabled.to_h
+          jobs_to_instances_resurrection_enabled, jobs_to_instances_resurrection_disabled =
+            split_by_resurrection_enabled(deployment, jobs_to_instances)
 
           unless jobs_to_instances_resurrection_enabled.empty?
             payload = { 'jobs' => jobs_to_instances_resurrection_enabled }
@@ -86,31 +76,20 @@ module Bosh::Monitor
             }
             url = @uri.dup
             url.path = "/deployments/#{deployment}/scan_and_fix"
-            summary = "Notifying Director to recreate instances: #{pretty_str(jobs_to_instances_resurrection_enabled)}; #{state.summary}"
-            @processor.process(
-              :alert,
-              severity: 4,
-              title: 'Recreating unresponsive VMs',
-              summary: summary,
-              source: 'HM plugin resurrector',
-              deployment: deployment,
-              created_at: Time.now.to_i,
-            )
-
+            alert(deployment,
+                  severity: 4,
+                  title: 'Recreating unresponsive VMs',
+                  summary: 'Notifying Director to recreate instances: '\
+                  "#{pretty_str(jobs_to_instances_resurrection_enabled)}; #{state.summary}")
             send_http_put_request(url.to_s, request)
           end
 
           unless jobs_to_instances_resurrection_disabled.empty?
-            summary = "Skipping resurrection for instances: #{pretty_str(jobs_to_instances_resurrection_disabled)}; #{state.summary} because of resurrection config"
-            @processor.process(
-              :alert,
-              severity: 1,
-              title: 'Resurrection is disabled by resurrection config',
-              summary: summary,
-              source: 'HM plugin resurrector',
-              deployment: deployment,
-              created_at: Time.now.to_i,
-            )
+            alert(deployment,
+                  severity: 1,
+                  title: 'Resurrection is disabled by resurrection config',
+                  summary: "Skipping resurrection for instances: #{pretty_str(jobs_to_instances_resurrection_disabled)};"\
+                  " #{state.summary} because of resurrection config")
           end
         else
           logger.info('(Resurrector) state is normal')
@@ -136,12 +115,37 @@ module Bosh::Monitor
 
       def pretty_str(jobs_to_instances)
         pretty_str = ''
-        jobs_to_instances.each do |job, instances|
-          instances.each do |id|
-            pretty_str += "#{job}/#{id}, "
-          end
+        each_job_instance(jobs_to_instances) do |job, id|
+          pretty_str += "#{job}/#{id}, "
         end
         pretty_str.chomp(', ')
+      end
+
+      def each_job_instance(jobs_to_instances)
+        jobs_to_instances.each do |job, instances|
+          instances.each do |id|
+            yield(job, id)
+          end
+        end
+      end
+
+      def split_by_resurrection_enabled(deployment, jobs_to_instances)
+        resurrection_enabled, resurrection_disabled = jobs_to_instances.partition do |job, _|
+          @resurrection_manager.resurrection_enabled?(deployment, job)
+        end
+        [resurrection_enabled.to_h, resurrection_disabled.to_h]
+      end
+
+      def alert(deployment, severity:, title:, summary:)
+        @processor.process(
+          :alert,
+          severity: severity,
+          title: title,
+          summary: summary,
+          source: 'HM plugin resurrector',
+          deployment: deployment,
+          created_at: Time.now.to_i,
+        )
       end
     end
   end
