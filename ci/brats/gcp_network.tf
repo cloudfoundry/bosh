@@ -1,7 +1,7 @@
 variable "gcp_private_network_name" {}
 
 resource "google_compute_network" "private_network" {
-	name       = "${replace(var.gcp_private_network_name,".", "-")}"
+	name       = "${replace(var.gcp_private_network_name,".", "-")}-${replace(lower(timestamp()), ":", "-")}"
 	auto_create_subnetworks = false
 }
 
