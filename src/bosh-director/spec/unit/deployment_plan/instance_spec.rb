@@ -350,13 +350,6 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when interpolated values are different' do
-          let(:interpolated_merged_cloud_properties) do
-            { 'vm_cloud_prop' => 'p1-new', 'vm_ext_cloud_prop' => 'p2', 'az_cloud_prop' => 'p3' }
-          end
-          let(:interpolated_existing_cloud_properties) do
-            { 'vm_ext_cloud_prop' => 'p2-old', 'az_cloud_prop' => 'p3', 'vm_cloud_prop' => 'p1' }
-          end
-
           it 'return true' do
             expect(variables_interpolator).to receive(:interpolated_versioned_variables_changed?)
               .with(instance_model.cloud_properties_hash, merged_cloud_properties,

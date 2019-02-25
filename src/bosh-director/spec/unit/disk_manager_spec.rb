@@ -591,6 +591,8 @@ module Bosh::Director
 
           # 1 call to interpolate before we send to CPI
           expect(variables_interpolator).to receive(:interpolate_with_versioning).exactly(1).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
+          # 1 call to interpolate before we send to CPI
+          expect(config_server_client).to receive(:interpolate_with_versioning).exactly(1).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
 
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
