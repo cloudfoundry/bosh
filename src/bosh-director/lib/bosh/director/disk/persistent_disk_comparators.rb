@@ -2,7 +2,7 @@ module Bosh::Director::Disk
   class PersistentDiskComparator
 
     def initialize
-      @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(Bosh::Director::Config.logger).create_client
+      @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
     end
 
     def is_equal?(first_pair, second_pair)
@@ -36,7 +36,7 @@ module Bosh::Director::Disk
     end
 
     def is_cloud_properties_equal?(first_pair, second_pair)
-      first_interpolated_disk_cloud_properties = @config_server_client.interpolate_with_versioning(
+      first_interpolated_disk_cloud_properties = @variables_interpolator.interpolate_with_versioning(
         first_pair.disk.cloud_properties, first_pair.variable_set)
 
       second_interpolated_disk_cloud_properties = @config_server_client.interpolate_with_versioning(

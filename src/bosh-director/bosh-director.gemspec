@@ -59,4 +59,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
   spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.3'
   spec.add_dependency 'unix-crypt',       '~>1.3.0'
+  spec.add_dependency 'ruby-prof',        '0.17.0'
 end

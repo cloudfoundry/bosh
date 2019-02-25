@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager, variables_interpolator) }
     let(:deployment_plan) do
       instance_double(
         Bosh::Director::DeploymentPlan::Planner,
@@ -26,16 +26,11 @@ module Bosh::Director
         allow(double).to receive(:resolve_deployment_links)
       end
     end
-    let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
-    let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     before do
       allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
       allow(links_manager).to receive(:update_provider_intents_contents)
-
-      allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-      allow(client_factory).to receive(:create_client).and_return(config_server_client)
-      allow(config_server_client).to receive(:generate_values)
     end
 
     describe '#bind_models' do
@@ -129,6 +124,7 @@ module Bosh::Director
             anything,
             anything,
             anything,
+            anything,
             expected_options,
           ).and_call_original
           assembler.bind_models(tags: { 'key1' => 'value1' })
@@ -152,6 +148,7 @@ module Bosh::Director
               'use_short_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+              anything,
               anything,
               anything,
               anything,
@@ -182,6 +179,7 @@ module Bosh::Director
                 anything,
                 anything,
                 anything,
+                anything,
                 expected_options,
               ).and_call_original
               assembler.bind_models
@@ -205,6 +203,7 @@ module Bosh::Director
               'use_short_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+              anything,
               anything,
               anything,
               anything,
@@ -288,6 +287,7 @@ module Bosh::Director
 
           before do
             allow(deployment_model).to receive(:link_providers).and_return(link_providers)
+            allow(variables_interpolator).to receive(:generate_values)
           end
 
           it 'should bind links by default' do
@@ -339,7 +339,7 @@ module Bosh::Director
             end
 
             it 'generates the values through config server' do
-              expect(config_server_client).to receive(:generate_values).with(variables, 'simple', false)
+              expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false)
               assembler.bind_models(is_deploy_action: true)
             end
 
@@ -349,7 +349,7 @@ module Bosh::Director
               end
 
               it 'should generate the values through config server' do
-                expect(config_server_client).to receive(:generate_values).with(variables, 'simple', true)
+                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', true)
                 assembler.bind_models(is_deploy_action: true)
               end
             end
@@ -357,7 +357,7 @@ module Bosh::Director
 
           context 'when it is a NOT a deploy action' do
             it 'should NOT generate the variables' do
-              expect(config_server_client).to_not receive(:generate_values)
+              expect(variables_interpolator).to_not receive(:generate_values)
               assembler.bind_models(is_deploy_action: false)
             end
           end
@@ -448,10 +448,10 @@ module Bosh::Director
           end
           let(:network) { instance_double(DeploymentPlan::Network, name: 'network') }
           let(:create_swap_delete_instance_plan) do
-            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: create_swap_delete_instance)
+            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: create_swap_delete_instance, variables_interpolator: variables_interpolator)
           end
           let(:not_create_swap_delete_instance_plan) do
-            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: not_create_swap_delete_instance)
+            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: not_create_swap_delete_instance, variables_interpolator: variables_interpolator)
           end
 
           before do
@@ -571,9 +571,10 @@ module Bosh::Director
           deployment_plan,
           an_instance_of(Api::StemcellManager),
           an_instance_of(PowerDnsManager),
+          variables_interpolator,
         ).and_call_original
 
-        DeploymentPlan::Assembler.create(deployment_plan)
+        DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator)
       end
     end
   end

@@ -8,6 +8,7 @@ module Bosh::Director::ConfigServer
       @deep_hash_replacer = DeepHashReplacement.new
       @deployment_lookup = Bosh::Director::Api::DeploymentLookup.new
       @logger = logger
+      @cache_by_id = {}
     end
 
     # @param [Hash] raw_hash Hash to be interpolated. This method only supports Absolute Names.
@@ -299,25 +300,9 @@ module Bosh::Director::ConfigServer
 
     def get_variable_value_by_id(name, id)
       name_root = get_name_root(name)
-      response = @config_server_http_client.get_by_id(id)
+      fetched_variable = get_by_id(id, name_root)
 
-      begin
-        parsed_response = JSON.parse(response.body)
-      rescue JSON::ParserError
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: Invalid JSON response"
-      end
-
-      if response.kind_of? Net::HTTPNotFound
-        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' with id '#{id}' from config server: HTTP Code '404', Error: '#{parsed_response['error']}'"
-      elsif !response.kind_of? Net::HTTPOK
-        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: HTTP Code '#{response.code}', Error: '#{parsed_response['error']}'"
-      end
-
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to be a hash, got '#{parsed_response.class}'" unless parsed_response.is_a?(Hash)
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'id'" unless parsed_response.has_key?('id')
-      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'value'" unless parsed_response.has_key?('value')
-
-      extract_variable_value(name, parsed_response['value'])
+      extract_variable_value(name, fetched_variable['value'])
     end
 
     def extract_variable_value(name, raw_value)
@@ -464,6 +449,31 @@ module Bosh::Director::ConfigServer
         )
         raise e
       end
+    end
+
+    def get_by_id(id, name_root)
+      return @cache_by_id[id] if @cache_by_id.has_key?(id)
+
+      response = @config_server_http_client.get_by_id(id)
+
+      begin
+        parsed_response = JSON.parse(response.body)
+      rescue JSON::ParserError
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: Invalid JSON response"
+      end
+
+      if response.kind_of? Net::HTTPNotFound
+        raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' with id '#{id}' from config server: HTTP Code '404', Error: '#{parsed_response['error']}'"
+      elsif !response.kind_of? Net::HTTPOK
+        raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' with id '#{id}' from config server: HTTP Code '#{response.code}', Error: '#{parsed_response['error']}'"
+      end
+
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to be a hash, got '#{parsed_response.class}'" unless parsed_response.is_a?(Hash)
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'id'" unless parsed_response.has_key?('id')
+      raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected response to have key 'value'" unless parsed_response.has_key?('value')
+
+      @cache_by_id[parsed_response['id']] = parsed_response
+      parsed_response
     end
   end
 end

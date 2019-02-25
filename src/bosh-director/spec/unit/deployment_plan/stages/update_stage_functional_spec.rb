@@ -31,15 +31,17 @@ module Bosh::Director::DeploymentPlan::Stages
     let(:update_step) { UpdateStage.new(base_job, deployment_plan, multi_instance_group_updater, dns_encoder) }
 
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
-    let(:assembler) { Assembler.new(deployment_plan, nil, nil) }
+    let(:assembler) { Assembler.new(deployment_plan, nil, nil, variables_interpolator) }
     let(:cloud_config) { nil }
     let(:runtime_configs) { [] }
+
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:deployment_plan) do
       planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
       manifest = Bosh::Director::Manifest.new(deployment_manifest, YAML.dump(deployment_manifest), nil, nil)
       deployment_plan = planner_factory.create_from_manifest(manifest, cloud_config, runtime_configs, {})
-      Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan).bind_models
+      Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator).bind_models
       deployment_plan
     end
     let(:deployment_manifest) do
@@ -130,6 +132,8 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(cloud).to receive(:info)
       allow(cloud).to receive(:request_cpi_api_version=)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'meow-uuid', stemcell_api_version: nil).and_return(cloud)
+      allow(variables_interpolator).to receive(:interpolate_template_spec_properties).and_return({})
+      allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).and_return(false)
     end
 
     before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
