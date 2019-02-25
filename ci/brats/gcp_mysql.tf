@@ -3,7 +3,7 @@ variable "gcp_mysql_password" {}
 variable "gcp_mysql_databasename" {}
 
 resource "google_sql_database_instance" "mysql-master" {
-  depends_on = ["google_service_networking_connection.private_vpc_connection"]
+  #depends_on = ["google_service_networking_connection.private_vpc_connection"]
   database_version = "MYSQL_5_7"
   region           = "us-central1"
 
@@ -12,7 +12,7 @@ resource "google_sql_database_instance" "mysql-master" {
     # type. See argument reference below.
     tier = "db-f1-micro"
     ip_configuration {
-      private_network = "${google_compute_network.private_network.self_link}"
+      #private_network = "${google_compute_network.private_network.self_link}"
       authorized_networks = [
         {
           name = "concourse"

@@ -2,6 +2,7 @@ provider "google" {
   # export GOOGLE_CREDENTIALS as env var
   project     = "cf-bosh-core"
   region      = "us-central1"
+  version     = "~> 1.20"
 }
 
 provider "google-beta" {
@@ -9,6 +10,4 @@ provider "google-beta" {
 
   project     = "cf-bosh-core"
   region      = "us-central1"
-
-  alias = "workaround"
 }
