@@ -53,6 +53,7 @@ shared:
       BOSH_VSPHERE_VCENTER_DISK_PATH:       {{vcenter-disk-path}}
       BOSH_VSPHERE_VCENTER_RP:              {{vcenter-rp}}
       DEPLOY_ARGS: |
+        -o bosh-deployment/experimental/postgres-9-4.yml \
         -o bosh-deployment/vsphere/resource-pool.yml
 
   - &prepare-bats-config
