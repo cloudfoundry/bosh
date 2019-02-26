@@ -36,13 +36,11 @@ module Bosh::Director::Disk
     end
 
     def is_cloud_properties_equal?(first_pair, second_pair)
-      first_interpolated_disk_cloud_properties = @variables_interpolator.interpolate_with_versioning(
-        first_pair.disk.cloud_properties, first_pair.variable_set)
-
-      second_interpolated_disk_cloud_properties = @config_server_client.interpolate_with_versioning(
-        second_pair.disk.cloud_properties, second_pair.variable_set)
-
-      return first_interpolated_disk_cloud_properties == second_interpolated_disk_cloud_properties
+      different = @variables_interpolator.interpolated_versioned_variables_changed?(first_pair.disk.cloud_properties,
+                                                                                    second_pair.disk.cloud_properties,
+                                                                                    first_pair.variable_set,
+                                                                                    second_pair.variable_set)
+      !different
     end
   end
 
