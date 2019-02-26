@@ -31,16 +31,19 @@ module Bosh::Director
 
       begin_stage('Applying problem resolutions', problems.count)
 
-      problems.each do |problem|
-        if problem.state != 'open'
-          reason = "state is '#{problem.state}'"
-          track_and_log("Ignoring problem #{problem.id} (#{reason})")
-        elsif problem.deployment_id != @deployment.id
-          reason = 'not a part of this deployment'
-          track_and_log("Ignoring problem #{problem.id} (#{reason})")
-
-        else
-          apply_resolution(problem)
+      ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
+        problems.each do |problem|
+          pool.process do
+            if problem.state != 'open'
+              reason = "state is '#{problem.state}'"
+              track_and_log("Ignoring problem #{problem.id} (#{reason})")
+            elsif problem.deployment_id != @deployment.id
+              reason = 'not a part of this deployment'
+              track_and_log("Ignoring problem #{problem.id} (#{reason})")
+            else
+              apply_resolution(problem)
+            end
+          end
         end
       end
 

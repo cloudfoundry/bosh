@@ -51,6 +51,7 @@ module Bosh::Director
 
           resolver = make_resolver(@deployment)
 
+          expect(Bosh::Director::Config).to receive(:max_threads).and_return(5)
           expect(resolver).to receive(:track_and_log).with(/Disk 'disk-cid-\d+' \(0M\) for instance 'job-\d+\/uuid-\d+ \(\d+\)' is inactive \(.*\): .*/).twice.and_call_original
           expect(resolver.apply_resolutions({ problems[0].id.to_s => 'delete_disk', problems[1].id.to_s => 'ignore' })).to eq([2, nil])
 
