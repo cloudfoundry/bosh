@@ -3,6 +3,7 @@ module Bosh::Director
 
     def self.run_post_deploys_after_resurrection(deployment)
       return unless Config.enable_post_deploy
+
       instances = Models::Instance.filter(deployment: deployment).reject { |i| i.active_vm.nil? }
       agent_options = {
           timeout: 10,
@@ -25,6 +26,7 @@ module Bosh::Director
 
     def self.run_post_deploys_after_deployment(deployment_plan)
       return unless Config.enable_post_deploy
+
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         deployment_plan.instance_groups.each do |instance_group|
           # No ignored instances will ever come to this point as they were filtered out earlier

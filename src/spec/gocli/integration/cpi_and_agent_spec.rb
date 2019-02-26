@@ -75,6 +75,7 @@ describe 'CPI and Agent:', type: :integration do
       { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['pre-start', {}]) },
       { target: 'agent', method: 'start', agent_id: agent_id },
       { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['post-start', {}]) },
+      { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['post-deploy', {}]) },
     ]
   end
 

@@ -96,12 +96,13 @@ describe 'Agent', type: :integration do
 
           hash_key1 = sent_messages.keys[0]
           hash_key2 = sent_messages.keys[1]
-          first_is_first = sent_messages[hash_key1].length == 1 ? true : false
+          first_is_first = sent_messages[hash_key1].length == 2
           agent1 = sent_messages[first_is_first ? hash_key1 : hash_key2]
           agent2 = sent_messages[first_is_first ? hash_key2 : hash_key1]
 
+          expect(agent1.length).to eq(2)
           expect(agent1[0]['method']).to eq('get_state')
-          expect(agent1.length).to eq(1)
+          expect(agent1[1]['method']).to eq('run_script')
 
           expect(agent2[0]['method']).to eq('ping')
           agent2.shift
@@ -110,6 +111,8 @@ describe 'Agent', type: :integration do
           while agent2[0]['method'] == 'ping'
             agent2.shift
           end
+
+          expect(agent2.length).to eq(14)
 
           expect(agent2[0]['method']).to eq('update_settings')
           expect(agent2[1]['method']).to eq('apply')
@@ -127,7 +130,8 @@ describe 'Agent', type: :integration do
           expect(agent2[11]['method']).to eq('get_state')
           expect(agent2[12]['method']).to eq('run_script')
           expect(agent2[12]['arguments'][0]).to eq('post-start')
-          expect(agent2.length).to eq(13)
+          expect(agent2[13]['method']).to eq('run_script')
+          expect(agent2[13]['arguments'][0]).to eq('post-deploy')
         end
 
         context 'when enable_nats_delivered_templates flag is set to TRUE' do
@@ -145,12 +149,13 @@ describe 'Agent', type: :integration do
 
             hash_key1 = sent_messages.keys[0]
             hash_key2 = sent_messages.keys[1]
-            first_is_first = sent_messages[hash_key1].length == 1 ? true : false
+            first_is_first = sent_messages[hash_key1].length == 2
             agent1 = sent_messages[first_is_first ? hash_key1 : hash_key2]
             agent2 = sent_messages[first_is_first ? hash_key2 : hash_key1]
 
+            expect(agent1.length).to eq(2)
             expect(agent1[0]['method']).to eq('get_state')
-            expect(agent1.length).to eq(1)
+            expect(agent1[1]['method']).to eq('run_script')
 
             expect(agent2[0]['method']).to eq('ping')
             agent2.shift
@@ -159,6 +164,8 @@ describe 'Agent', type: :integration do
             while agent2[0]['method'] == 'ping'
               agent2.shift
             end
+
+            expect(agent2.length).to eq(16)
 
             expect(agent2[0]['method']).to eq('update_settings')
             expect(agent2[1]['method']).to eq('apply')
@@ -178,7 +185,8 @@ describe 'Agent', type: :integration do
             expect(agent2[13]['method']).to eq('get_state')
             expect(agent2[14]['method']).to eq('run_script')
             expect(agent2[14]['arguments']).to eq(['post-start', {}])
-            expect(agent2.length).to eq(15)
+            expect(agent2[15]['method']).to eq('run_script')
+            expect(agent2[15]['arguments'][0]).to eq('post-deploy')
           end
         end
       end
@@ -190,6 +198,8 @@ describe 'Agent', type: :integration do
           sent_messages = get_messages_sent_to_agent(output)
 
           agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(9)
+
           expect(agent_messages[0]['method']).to eq('get_state')
           expect(agent_messages[1]['method']).to eq('prepare')
           expect(agent_messages[2]['method']).to eq('update_settings')
@@ -200,7 +210,8 @@ describe 'Agent', type: :integration do
           expect(agent_messages[6]['method']).to eq('get_state')
           expect(agent_messages[7]['method']).to eq('run_script')
           expect(agent_messages[7]['arguments']).to eq(['post-start', {}])
-          expect(agent_messages.length).to eq(8)
+          expect(agent_messages[8]['method']).to eq('run_script')
+          expect(agent_messages[8]['arguments'][0]).to eq('post-deploy')
         end
 
         context 'when enable_nats_delivered_templates flag is set to TRUE' do
@@ -217,6 +228,8 @@ describe 'Agent', type: :integration do
             sent_messages = get_messages_sent_to_agent(output)
 
             agent_messages = sent_messages.values[0]
+            expect(agent_messages.length).to eq(11)
+
             expect(agent_messages[0]['method']).to eq('get_state')
             expect(agent_messages[1]['method']).to eq('upload_blob')
             expect(agent_messages[2]['method']).to eq('prepare')
@@ -229,7 +242,8 @@ describe 'Agent', type: :integration do
             expect(agent_messages[8]['method']).to eq('get_state')
             expect(agent_messages[9]['method']).to eq('run_script')
             expect(agent_messages[9]['arguments']).to eq(['post-start', {}])
-            expect(agent_messages.length).to eq(10)
+            expect(agent_messages[10]['method']).to eq('run_script')
+            expect(agent_messages[10]['arguments'][0]).to eq('post-deploy')
           end
         end
       end
@@ -262,6 +276,8 @@ describe 'Agent', type: :integration do
           sent_messages = get_messages_sent_to_agent(output)
 
           agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(12)
+
           expect(agent_messages[0]['method']).to eq('get_state')
           expect(agent_messages[1]['method']).to eq('prepare')
           expect(agent_messages[2]['method']).to eq('drain')
@@ -276,7 +292,8 @@ describe 'Agent', type: :integration do
           expect(agent_messages[9]['method']).to eq('get_state')
           expect(agent_messages[10]['method']).to eq('run_script')
           expect(agent_messages[10]['arguments']).to eq(['post-start', {}])
-          expect(agent_messages.length).to eq(11)
+          expect(agent_messages[11]['method']).to eq('run_script')
+          expect(agent_messages[11]['arguments'][0]).to eq('post-deploy')
         end
       end
 
@@ -287,6 +304,8 @@ describe 'Agent', type: :integration do
         sent_messages = get_messages_sent_to_agent(output)
 
         agent_messages = sent_messages.values[0]
+        expect(agent_messages.length).to eq(12)
+
         expect(agent_messages[0]['method']).to eq('get_state')
         expect(agent_messages[1]['method']).to eq('prepare')
         expect(agent_messages[2]['method']).to eq('drain')
@@ -301,7 +320,8 @@ describe 'Agent', type: :integration do
         expect(agent_messages[9]['method']).to eq('get_state')
         expect(agent_messages[10]['method']).to eq('run_script')
         expect(agent_messages[10]['arguments']).to eq(['post-start', {}])
-        expect(agent_messages.length).to eq(11)
+        expect(agent_messages[11]['method']).to eq('run_script')
+        expect(agent_messages[11]['arguments'][0]).to eq('post-deploy')
       end
 
       context 'when enable_nats_delivered_templates is set to TRUE' do
@@ -317,6 +337,8 @@ describe 'Agent', type: :integration do
           sent_messages = get_messages_sent_to_agent(output)
 
           agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(14)
+
           expect(agent_messages[0]['method']).to eq('get_state')
           expect(agent_messages[1]['method']).to eq('upload_blob')
           expect(agent_messages[2]['method']).to eq('prepare')
@@ -333,14 +355,15 @@ describe 'Agent', type: :integration do
           expect(agent_messages[11]['method']).to eq('get_state')
           expect(agent_messages[12]['method']).to eq('run_script')
           expect(agent_messages[12]['arguments']).to eq(['post-start', {}])
-          expect(agent_messages.length).to eq(13)
+          expect(agent_messages[13]['method']).to eq('run_script')
+          expect(agent_messages[13]['arguments'][0]).to eq('post-deploy')
         end
       end
 
     end
 
     context 'when post-deploy is enabled' do
-      with_reset_sandbox_before_each(enable_post_deploy: true)
+      with_reset_sandbox_before_each
 
       it 'calls post-deploy' do
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
@@ -350,6 +373,7 @@ describe 'Agent', type: :integration do
         sent_messages = get_messages_sent_to_agent(output)
 
         agent_messages = sent_messages.values[0]
+        expect(agent_messages.length).to eq(12)
 
         expect(agent_messages[0]['method']).to eq('get_state')
         expect(agent_messages[1]['method']).to eq('prepare')
@@ -367,11 +391,10 @@ describe 'Agent', type: :integration do
         expect(agent_messages[10]['arguments']).to eq(['post-start', {}])
         expect(agent_messages[11]['method']).to eq('run_script')
         expect(agent_messages[11]['arguments']).to eq(['post-deploy', {}])
-        expect(agent_messages.length).to eq(12)
       end
 
       context 'and enable_nats_delivered_templates is set to TRUE' do
-        with_reset_sandbox_before_each(enable_post_deploy: true, enable_nats_delivered_templates: true)
+        with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
         before do
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
@@ -383,6 +406,7 @@ describe 'Agent', type: :integration do
           sent_messages = get_messages_sent_to_agent(output)
 
           agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(14)
 
           expect(agent_messages[0]['method']).to eq('get_state')
           expect(agent_messages[1]['method']).to eq('upload_blob')
@@ -402,8 +426,38 @@ describe 'Agent', type: :integration do
           expect(agent_messages[12]['arguments'][0]).to eq('post-start')
           expect(agent_messages[13]['method']).to eq('run_script')
           expect(agent_messages[13]['arguments'][0]).to eq('post-deploy')
-          expect(agent_messages.length).to eq(14)
         end
+      end
+    end
+
+    context 'when post-deploy is disabled' do
+      with_reset_sandbox_before_each(enable_post_deploy: false)
+
+      it 'does not call post-deploy' do
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+
+        manifest_hash['properties']['test_property'] = 7
+        output = deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        sent_messages = get_messages_sent_to_agent(output)
+        agent_messages = sent_messages.values[0]
+
+        expect(agent_messages.length).to eq(11)
+
+        expect(agent_messages[0]['method']).to eq('get_state')
+        expect(agent_messages[1]['method']).to eq('prepare')
+        expect(agent_messages[2]['method']).to eq('drain')
+        expect(agent_messages[3]['method']).to eq('stop')
+        expect(agent_messages[4]['method']).to eq('run_script')
+        expect(agent_messages[4]['arguments']).to eq(['post-stop', {}])
+        expect(agent_messages[5]['method']).to eq('update_settings')
+        expect(agent_messages[6]['method']).to eq('apply')
+        expect(agent_messages[7]['method']).to eq('run_script')
+        expect(agent_messages[7]['arguments']).to eq(['pre-start', {}])
+        expect(agent_messages[8]['method']).to eq('start')
+        expect(agent_messages[9]['method']).to eq('get_state')
+        expect(agent_messages[10]['method']).to eq('run_script')
+        expect(agent_messages[10]['arguments']).to eq(['post-start', {}])
       end
     end
   end

@@ -4,7 +4,7 @@ describe 'deploying with ignored instances', type: :integration do
   with_reset_sandbox_before_each
 
   context 'when there are pre-start, post-start, and post deploy scripts' do
-    with_reset_sandbox_before_each(enable_post_deploy: true)
+    with_reset_sandbox_before_each
 
     it 'does not run them on the ignored vms' do
       manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
