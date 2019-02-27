@@ -25,6 +25,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -o "$script_dir/latest-bosh-release.yml" \
     -o "$script_dir/deployment-name.yml" \
     -v deployment_name="bosh-$node_number" \
+    -o experimental/postgres-9-4.yml \
     ${@:2} > "${inner_bosh_dir}/bosh-director.yml"
 
   bosh -n deploy -d "bosh-$node_number" "${inner_bosh_dir}/bosh-director.yml" --vars-store="${inner_bosh_dir}/creds.yml"

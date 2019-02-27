@@ -42,6 +42,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/local-bosh-release-tarball.yml" \
     -v local_bosh_release="${bosh_release_path}" \
+    -o experimental/postgres-9-4.yml \
     ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
   bosh upload-stemcell ${stemcell}
