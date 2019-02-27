@@ -10,7 +10,6 @@ module Bosh::Director
     def update_persistent_disk(instance_plan)
       @logger.info('Updating persistent disk')
 
-      reattach_disks_if_needed(instance_plan)
       check_persistent_disk(instance_plan) unless has_multiple_persistent_disks?(instance_plan)
 
       return unless instance_plan.persistent_disk_changed?
@@ -45,17 +44,6 @@ module Bosh::Director
         detach_disk(disk)
         @orphan_disk_manager.orphan_disk(disk)
       end
-    end
-
-    def reattach_disks_if_needed(instance_plan)
-      instance = instance_plan.instance
-      return if instance.model.persistent_disks.empty?
-
-      agent_disk_cid = agent_mounted_disks(instance.model).first
-      return unless agent_disk_cid.nil? && agent_disk_cid != instance.model.managed_persistent_disk_cid
-
-      @logger.info("Re-attaching existing persistent disk #{instance.model.managed_persistent_disk_cid}")
-      attach_disks_if_needed(instance_plan)
     end
 
     def attach_disks_if_needed(instance_plan)
@@ -126,10 +114,17 @@ module Bosh::Director
       if agent_disk_cid.nil? && !instance_plan.needs_disk?
         @logger.debug('Disk is already detached')
       elsif agent_disk_cid != instance.model.managed_persistent_disk_cid
-        raise AgentDiskOutOfSync,
-              "'#{instance}' has invalid disks: agent reports " \
-              "'#{agent_disk_cid}' while director record shows " \
-              "'#{instance.model.managed_persistent_disk_cid}'"
+        if agent_disk_cid.nil?
+          @logger.warn("Agent of '#{instance}' reports no disk while director record shows " \
+                       "'#{instance.model.managed_persistent_disk_cid}'. " \
+                       'Re-attaching existing persistent disk...')
+          attach_disks_if_needed(instance_plan)
+        else
+          raise AgentDiskOutOfSync,
+                "'#{instance}' has invalid disks: agent reports " \
+                "'#{agent_disk_cid}' while director record shows " \
+                "'#{instance.model.managed_persistent_disk_cid}'"
+        end
       end
 
       instance.model.persistent_disks.each do |disk|
