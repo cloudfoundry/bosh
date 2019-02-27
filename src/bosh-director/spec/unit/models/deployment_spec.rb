@@ -81,8 +81,6 @@ module Bosh::Director::Models
 
             let(:options) { {} }
 
-            let(:options) { {} }
-
             before do
               allow(mock_client).to receive(:interpolate_with_versioning)
                 .with(tags, anything)
