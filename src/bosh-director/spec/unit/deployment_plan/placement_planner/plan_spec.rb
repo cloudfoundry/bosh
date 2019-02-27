@@ -5,9 +5,10 @@ module Bosh::Director::DeploymentPlan
     subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, network_planner, logger) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(deployment, logger) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository) }
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository, variables_interpolator) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
     let(:instance_plans) do
       plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
     end

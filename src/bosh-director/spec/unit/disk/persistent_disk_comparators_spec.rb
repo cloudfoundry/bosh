@@ -20,7 +20,7 @@ module Bosh::Director::Disk
 
           it 'return false' do
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -31,7 +31,7 @@ module Bosh::Director::Disk
 
           it 'return false' do
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -48,11 +48,12 @@ module Bosh::Director::Disk
           let(:persistent_disk_variableset_pair_2) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_2, variable_set_2) }
 
           it 'returns false' do
-            expect(config_server_client).to receive(:interpolate_with_versioning).with({'a' => {'b' => 'c'}}, variable_set_1).and_return({'a' => {'b' => 'c'}})
-            expect(config_server_client).to receive(:interpolate_with_versioning).with({'k' => {'l' => 'm'}}, variable_set_2).and_return({'k' => {'l' => 'm'}})
+            expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                                              .with(anything, anything, anything, anything)
+                                              .and_return(true)
 
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -63,11 +64,12 @@ module Bosh::Director::Disk
           let(:persistent_disk_variableset_pair_2) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_2, variable_set_2) }
 
           it 'returns true' do
-            expect(config_server_client).to receive(:interpolate_with_versioning).with({'a' => {'b' => 'c'}}, variable_set_1).and_return({'a' => {'b' => 'c'}})
-            expect(config_server_client).to receive(:interpolate_with_versioning).with({'a' => {'b' => 'c'}}, variable_set_2).and_return({'a' => {'b' => 'c'}})
+            expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                                              .with(anything, anything, anything, anything)
+                                              .and_return(false)
 
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_truthy
           end
         end
@@ -80,7 +82,8 @@ module Bosh::Director::Disk
         let(:cloud_properties) { {'a' => {'b' => 'c'}} }
 
         before do
-          allow(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(cloud_properties)
+          allow(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                                             .with(anything, anything, anything, anything)
         end
 
         context 'when different' do
@@ -89,7 +92,7 @@ module Bosh::Director::Disk
 
           it 'returns false' do
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -100,7 +103,7 @@ module Bosh::Director::Disk
 
           it 'returns true' do
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_truthy
           end
         end
@@ -114,7 +117,7 @@ module Bosh::Director::Disk
         let(:size) { 10 }
 
         before do
-          allow(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(cloud_properties)
+          allow(config_server_client).to receive(:interpolated_versioned_variables_changed?).with(anything, anything, anything, anything)
         end
 
         context 'when different' do
@@ -123,7 +126,7 @@ module Bosh::Director::Disk
 
           it 'returns false' do
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -134,7 +137,7 @@ module Bosh::Director::Disk
 
           it 'returns true' do
             expect(
-              PersistentDiskComparator.new().is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.is_equal?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_truthy
           end
         end
@@ -157,7 +160,7 @@ module Bosh::Director::Disk
           let(:persistent_disk_variableset_pair_2) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk, nil) }
           it 'return false' do
             expect(
-              PersistentDiskComparator.new().size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -167,7 +170,7 @@ module Bosh::Director::Disk
           let(:persistent_disk_variableset_pair_2) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new('not_a_disk', nil) }
           it 'return false' do
             expect(
-              PersistentDiskComparator.new().size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -179,11 +182,12 @@ module Bosh::Director::Disk
         let(:persistent_disk_variableset_pair_2) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_2, variable_set_2) }
 
         it 'returns false' do
-          expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, variable_set_1).and_return(cloud_properties)
-          expect(config_server_client).to receive(:interpolate_with_versioning).with(other_cloud_properties, variable_set_2).and_return(other_cloud_properties)
+          expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                                            .with(anything, anything, anything, anything)
+                                            .and_return(true)
 
           expect(
-            PersistentDiskComparator.new().size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+            PersistentDiskComparator.new.size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
           ).to be_falsey
         end
       end
@@ -193,12 +197,14 @@ module Bosh::Director::Disk
         let(:persistent_disk_variableset_pair_2) { Bosh::Director::Disk::PersistentDiskVariableSetPair.new(disk_2, variable_set_2) }
 
         before do
-          allow(config_server_client).to receive(:interpolate_with_versioning).exactly(2).times.with(cloud_properties, anything).and_return(cloud_properties)
+          allow(config_server_client).to receive(:interpolated_versioned_variables_changed?).exactly(2).times
+                                            .with(anything, anything, anything, anything)
+                                            .and_return(true)
         end
 
         it 'returns false' do
           expect(
-            PersistentDiskComparator.new().size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+            PersistentDiskComparator.new.size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
           ).to be_falsey
         end
       end
@@ -210,11 +216,12 @@ module Bosh::Director::Disk
           let(:disk_2) { Bosh::Director::DeploymentPlan::PersistentDiskCollection::PersistentDisk.new('smurf', cloud_properties, 10) }
 
           it 'returns false' do
-            expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, variable_set_1).and_return(cloud_properties)
-            expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, variable_set_2).and_return(cloud_properties)
+            expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                                              .with(anything, anything, anything, anything)
+                                              .and_return(false)
 
             expect(
-              PersistentDiskComparator.new().size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_falsey
           end
         end
@@ -223,11 +230,12 @@ module Bosh::Director::Disk
           let(:disk_2) { Bosh::Director::DeploymentPlan::PersistentDiskCollection::PersistentDisk.new('smurf', cloud_properties, 20) }
 
           it 'returns true' do
-            expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, variable_set_1).and_return(cloud_properties)
-            expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, variable_set_2).and_return(cloud_properties)
+            expect(config_server_client).to receive(:interpolated_versioned_variables_changed?)
+                                              .with(anything, anything, anything, anything)
+                                              .and_return(false)
 
             expect(
-              PersistentDiskComparator.new().size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
+              PersistentDiskComparator.new.size_diff_only?(persistent_disk_variableset_pair_1, persistent_disk_variableset_pair_2)
             ).to be_truthy
           end
         end

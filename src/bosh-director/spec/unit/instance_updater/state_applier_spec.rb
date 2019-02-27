@@ -8,12 +8,14 @@ module Bosh::Director
       InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
     end
 
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:options) { {} }
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(
         existing_instance: instance_model,
         desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
         instance: instance,
+        variables_interpolator: variables_interpolator,
       )
     end
 
@@ -62,7 +64,7 @@ module Bosh::Director
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
     let(:instance) do
-      DeploymentPlan::Instance.create_from_instance_group(instance_group, 0, instance_state, plan, {}, availability_zone, logger)
+      DeploymentPlan::Instance.create_from_instance_group(instance_group, 0, instance_state, plan, {}, availability_zone, logger, variables_interpolator)
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }

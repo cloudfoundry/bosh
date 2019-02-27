@@ -147,7 +147,8 @@ module Bosh::Director
       }
 
       deployment_planner = planner_factory.create_from_model(deployment_model, options)
-      DeploymentPlan::Assembler.create(deployment_planner).bind_models(instances: instances, is_deploy_action: is_deploy_action)
+      variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+      DeploymentPlan::Assembler.create(deployment_planner, variables_interpolator).bind_models(instances: instances, is_deploy_action: is_deploy_action)
       deployment_planner
     end
   end

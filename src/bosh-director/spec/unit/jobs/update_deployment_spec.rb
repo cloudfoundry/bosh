@@ -3,7 +3,11 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs
     describe UpdateDeployment do
-      subject(:job) {UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options)}
+      subject(:job) do
+        UpdateDeployment.new(manifest_content, cloud_config_id, runtime_config_ids, options).tap do |obj|
+          allow(obj).to receive(:task_id).and_return(task.id)
+        end
+      end
 
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
@@ -34,7 +38,6 @@ module Bosh::Director
       before do
         App.new(config)
         allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
-        allow(job).to receive(:task_id).and_return(task.id)
         allow(Time).to receive_messages(now: Time.parse('2016-02-15T09:55:40Z'))
       end
 
@@ -72,7 +75,6 @@ module Bosh::Director
 
         before do
           allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
-          allow(job).to receive(:with_deployment_lock).and_yield.ordered
           allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).with(planner).and_return(compile_stage)
           allow(DeploymentPlan::Stages::UpdateStage).to receive(:new).and_return(update_stage)
           allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
@@ -92,6 +94,7 @@ module Bosh::Director
             dns_encoder,
             anything
           )
+          allow(job).to receive(:with_deployment_lock).and_yield.ordered
         end
 
         context 'when variables need to be interpolated from config server' do
@@ -597,13 +600,10 @@ Unable to render instance groups for deployment. Errors are:
               EXPECTED
             end
 
-            let(:variable_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-
             before do
-              allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variable_interpolator)
               allow(links_manager).to receive(:get_links_for_instance_group).and_return({'job_1' => {'link_1' =>{}}})
-              allow(variable_interpolator).to receive(:interpolate_template_spec_properties).and_raise(errand_properties_error)
-              allow(variable_interpolator).to receive(:interpolate_link_spec_properties).and_raise(errand_link_error)
+              allow(variables_interpolator).to receive(:interpolate_template_spec_properties).and_raise(errand_properties_error)
+              allow(variables_interpolator).to receive(:interpolate_link_spec_properties).and_raise(errand_link_error)
             end
 
             it 'formats the error messages for service & errand instance groups' do

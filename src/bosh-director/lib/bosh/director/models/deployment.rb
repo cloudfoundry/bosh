@@ -91,10 +91,10 @@ module Bosh::Director::Models
 
       manifest_tags ||= {}
 
-      client = Bosh::Director::ConfigServer::ClientFactory.create(Bosh::Director::Config.logger).create_client
-      return {} unless current_variable_set
+      variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
 
-      manifest_tags = client.interpolate_with_versioning(manifest_tags, current_variable_set)
+      return {} unless current_variable_set
+      manifest_tags = variables_interpolator.interpolate_with_versioning(manifest_tags, current_variable_set)
       consolidated_runtime_config.tags(name).merge(manifest_tags)
     end
 

@@ -6,16 +6,17 @@ module Bosh::Director
     include IpUtil
     include LegacyDeploymentHelper
 
-    def self.create(deployment_plan)
-      new(deployment_plan, Api::StemcellManager.new, PowerDnsManagerProvider.create)
+    def self.create(deployment_plan, variables_interpolator)
+      new(deployment_plan, Api::StemcellManager.new, PowerDnsManagerProvider.create, variables_interpolator)
     end
 
-    def initialize(deployment_plan, stemcell_manager, powerdns_manager)
+    def initialize(deployment_plan, stemcell_manager, powerdns_manager, variables_interpolator)
       @deployment_plan = deployment_plan
       @logger = Config.logger
       @stemcell_manager = stemcell_manager
       @powerdns_manager = powerdns_manager
       @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
+      @variables_interpolator = variables_interpolator
     end
 
     def bind_models(options = {})
@@ -40,7 +41,7 @@ module Bosh::Director
 
       migrate_existing_instances_to_global_networking(network_reservation_repository, states_by_existing_instance)
 
-      instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger)
+      instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger, @variables_interpolator)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
       instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(
         instance_repo,
@@ -48,6 +49,7 @@ module Bosh::Director
         @deployment_plan.skip_drain,
         index_assigner,
         network_reservation_repository,
+        @variables_interpolator,
         'recreate' => @deployment_plan.recreate,
         'use_dns_addresses' => @deployment_plan.use_dns_addresses?,
         'use_short_dns_addresses' => @deployment_plan.use_short_dns_addresses?,
@@ -160,6 +162,10 @@ module Bosh::Director
          @deployment_plan.model.has_stale_errand_links = false
          @deployment_plan.model.save
       end
+    end
+
+    def generate_variables
+      @variables_interpolator.generate_values(@deployment_plan.variables, @deployment_plan.name, @deployment_plan.features.converge_variables)
     end
 
     # Binds template models for each release spec in the deployment plan

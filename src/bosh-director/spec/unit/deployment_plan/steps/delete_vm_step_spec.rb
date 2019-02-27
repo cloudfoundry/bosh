@@ -58,6 +58,7 @@ module Bosh
               )
               instance_group
             end
+            let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
             let(:instance) do
               instance = DeploymentPlan::Instance.create_from_instance_group(
                 instance_group,
@@ -67,6 +68,7 @@ module Bosh
                 {},
                 nil,
                 logger,
+                variables_interpolator,
               )
               instance.bind_existing_instance_model(instance_model)
               instance

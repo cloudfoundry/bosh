@@ -79,6 +79,8 @@ module Bosh::Director::Models
               }
             end
 
+            let(:options) { {} }
+
             before do
               allow(mock_client).to receive(:interpolate_with_versioning)
                 .with(tags, anything)
@@ -87,7 +89,7 @@ module Bosh::Director::Models
 
             it 'substitutes the variables in the tags section' do
               expect(mock_client).to receive(:interpolate_with_versioning)
-                .with(tags, deployment.current_variable_set)
+                .with(tags, deployment.current_variable_set, options)
                 .and_return(interpolated_tags)
               expect(deployment.tags).to eq(interpolated_tags)
             end

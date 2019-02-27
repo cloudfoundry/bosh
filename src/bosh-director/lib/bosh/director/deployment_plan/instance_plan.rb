@@ -7,6 +7,7 @@ module Bosh
         # existing_instance: Model::Instance
         # desired_instance: DeploymentPlan::DesiredInstance
         # instance: DeploymentPlan::Instance
+
         def initialize(existing_instance:,
                        desired_instance:,
                        instance:,
@@ -16,7 +17,8 @@ module Bosh
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
                        logger: Config.logger,
-                       tags: {})
+                       tags: {},
+                       variables_interpolator:)
           @existing_instance = existing_instance
           @desired_instance = desired_instance
           @instance = instance
@@ -28,12 +30,14 @@ module Bosh
           @logger = logger
           @tags = tags
           @powerdns_manager = PowerDnsManagerProvider.create
-          @config_server_client = Bosh::Director::ConfigServer::ClientFactory.create(@logger).create_client
+          @variables_interpolator = variables_interpolator
         end
 
         attr_reader :desired_instance, :existing_instance, :instance, :skip_drain, :recreate_deployment, :tags
 
         attr_accessor :network_plans
+
+        attr_reader :variables_interpolator
 
         # An instance of Bosh::Director::Core::Templates::RenderedJobInstance
         attr_accessor :rendered_templates
@@ -143,26 +147,24 @@ module Bosh
         end
 
         def network_settings_changed?
-          changed = false
           old_network_settings = new? ? {} : @existing_instance.spec_p('networks')
+          return false if old_network_settings == {}
+
           new_network_settings = network_settings_hash
 
-          interpolated_old_network_settings = @config_server_client.interpolate_with_versioning(
-            old_network_settings,
-            @instance.previous_variable_set,
-          )
-          interpolated_new_network_settings = @config_server_client.interpolate_with_versioning(
-            new_network_settings,
-            @instance.desired_variable_set,
-          )
+          old_network_settings = remove_dns_record_name_from_network_settings(old_network_settings)
+          new_network_settings = remove_dns_record_name_from_network_settings(new_network_settings)
 
-          if interpolated_old_network_settings != {} &&
-             remove_dns_record_name_from_network_settings(interpolated_old_network_settings) != interpolated_new_network_settings
+          changed = @variables_interpolator.interpolated_versioned_variables_changed?(old_network_settings, new_network_settings,
+                                                                                      @instance.previous_variable_set,
+                                                                                      @instance.desired_variable_set)
+
+
+          if changed
             @logger.debug(
               "#{__method__} network settings changed FROM: #{old_network_settings} " \
               "TO: #{new_network_settings} on instance #{@existing_instance}",
             )
-            changed = true
           end
 
           changed
@@ -280,6 +282,25 @@ module Bosh
 
         def needs_shutting_down?
           obsolete? || recreate_for_non_network_reasons? || networks_changed? || network_settings_changed?
+        end
+
+        def vm_matches_plan?(vm)
+          return false if vm.cloud_properties_json.nil?
+
+          desired_instance_group = @desired_instance.instance_group
+          desired_cloud_properties = @variables_interpolator.interpolate_with_versioning(
+            @instance.cloud_properties,
+            @instance.desired_variable_set,
+          )
+          vm_cloud_properties = @variables_interpolator.interpolate_with_versioning(
+            JSON.parse(vm.cloud_properties_json),
+            @instance.previous_variable_set,
+          )
+
+          vm.stemcell_name == @instance.stemcell.name &&
+            vm.stemcell_version == @instance.stemcell.version &&
+            JSON.parse(vm.env_json || '{}') == desired_instance_group.env.spec &&
+            vm_cloud_properties == desired_cloud_properties
         end
 
         def needs_duplicate_vm?
@@ -407,7 +428,7 @@ module Bosh
         end
 
         def spec
-          InstanceSpec.create_from_database(@existing_instance.spec, @instance)
+          InstanceSpec.create_from_database(@existing_instance.spec, @instance, @variables_interpolator)
         end
 
         def needs_disk?

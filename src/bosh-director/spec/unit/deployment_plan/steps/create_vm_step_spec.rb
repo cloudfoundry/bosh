@@ -59,7 +59,8 @@ module Bosh
               deployment,
               {},
               nil,
-              logger
+              logger,
+              nil
             )
             instance.bind_existing_instance_model(instance_model)
             instance
@@ -74,7 +75,7 @@ module Bosh
           let(:instance_plan) do
             desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)
             network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-            BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan])
+            BD::DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: desired_instance, instance: instance, network_plans: [network_plan], variables_interpolator: nil)
           end
 
           let(:instance_group) do
@@ -521,8 +522,7 @@ module Bosh
           end
 
           context 'cloud_properties, networks_settings, env interpolation' do
-            let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
-            let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
+            let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
             let(:instance_spec) { instance_double('Bosh::Director::DeploymentPlan::InstanceSpec') }
 
@@ -664,17 +664,16 @@ module Bosh
               allow(instance_spec).to receive(:full_spec).and_return({})
               allow(instance_spec).to receive(:as_template_spec).and_return({})
               allow(instance_plan).to receive(:spec).and_return(instance_spec)
-              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
-              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+              allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
               allow(Config).to receive(:agent_env).and_return(agent_env_bosh_hash)
             end
 
             it 'should interpolate them correctly, and merge agent env properties with the user provided ones' do
               instance_plan.instance.desired_variable_set = desired_variable_set
 
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(user_provided_env_hash, desired_variable_set).and_return(resolved_user_provided_env_hash)
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(cloud_properties, desired_variable_set).and_return(resolved_cloud_properties)
-              expect(config_server_client).to receive(:interpolate_with_versioning).with(unresolved_networks_settings, desired_variable_set).and_return(resolved_networks_settings)
+              expect(variables_interpolator).to receive(:interpolate_with_versioning).with(user_provided_env_hash, desired_variable_set).and_return(resolved_user_provided_env_hash)
+              expect(variables_interpolator).to receive(:interpolate_with_versioning).with(cloud_properties, desired_variable_set).and_return(resolved_cloud_properties)
+              expect(variables_interpolator).to receive(:interpolate_with_versioning).with(unresolved_networks_settings, desired_variable_set).and_return(resolved_networks_settings)
 
               expect(cloud).to receive(:create_vm) do |_, _, cloud_properties_param, network_settings_param, _, env_param|
                 expect(cloud_properties_param).to eq(resolved_cloud_properties)
