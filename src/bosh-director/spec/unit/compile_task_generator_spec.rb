@@ -6,7 +6,7 @@ module Bosh::Director
     include Support::StemcellHelpers
 
     describe '#generate!' do
-      subject(:generator) { described_class.new(logger, event_log) }
+      subject(:generator) { described_class.new(logger, event_log, compiled_package_finder) }
 
       let(:release_version_model) { Models::ReleaseVersion.make }
       let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model) }
@@ -20,6 +20,7 @@ module Bosh::Director
 
       let(:stemcell) { make_stemcell({operating_system: 'chrome-os', version: 'latest'}) }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+      let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(logger) }
 
       let(:compile_tasks) do
         {}
@@ -128,8 +129,6 @@ module Bosh::Director
             expect(task_b.dependencies).to eq([task_c])
             expect(task_c.dependencies).to eq([])
 
-            expect(task_c.compiled_package).to eq(compiled_package_c)
-
             expect(task_a.cache_key).to eq('package-cache-key-a')
             expect(task_b.cache_key).to eq('package-cache-key-b')
             expect(task_c.cache_key).to eq('package-cache-key-c')
@@ -171,8 +170,6 @@ module Bosh::Director
             expect(task_b.dependencies).to eq([task_d])
             expect(task_c.dependencies).to eq([task_d])
             expect(task_d.dependencies).to eq([])
-
-            expect(task_c.compiled_package).to eq(compiled_package_c)
 
             expect(task_a.cache_key).to eq('package-cache-key-a')
             expect(task_b.cache_key).to eq('package-cache-key-b')

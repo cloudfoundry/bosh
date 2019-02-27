@@ -10,17 +10,29 @@ module Bosh::Director
         attr_reader :compilations_performed
 
         def self.create(deployment_plan)
-          compilation_pool = CompilationInstancePool.create(deployment_plan)
+          # compiled_package_finder = DeploymentPlan::CompiledPackageFinder.new(Config.logger)
           new(
             deployment_plan.name,
             deployment_plan.instance_groups,
             deployment_plan.compilation,
-            compilation_pool,
+            CompilationInstancePool.create(deployment_plan),
+            Bosh::Director::Api::ReleaseManager.new,
+            DeploymentPlan::PackageValidator.new(Config.logger),
+            DeploymentPlan::CompiledPackageFinder.new(Config.logger),
             Config.logger,
           )
         end
 
-        def initialize(deployment_name, instance_groups_to_compile, compilation_config, compilation_instance_pool, logger)
+        def initialize(
+          deployment_name,
+          instance_groups_to_compile,
+          compilation_config,
+          compilation_instance_pool,
+          release_manager,
+          package_validator,
+          compiled_package_finder,
+          logger
+        )
           @event_log_stage = nil
           @logger = logger
 
@@ -33,6 +45,10 @@ module Bosh::Director
           @instance_groups_to_compile = instance_groups_to_compile
           @compilation_config = compilation_config
           @deployment_name = deployment_name
+
+          @release_manager = release_manager
+          @package_validator = package_validator
+          @compiled_package_finder = compiled_package_finder
         end
 
         def perform
@@ -66,7 +82,14 @@ module Bosh::Director
 
           with_compile_lock(package.id, "#{stemcell.os}/#{stemcell.version}", @deployment_name) do
             # Check if the package was compiled in a parallel deployment
-            compiled_package = task.find_compiled_package(@logger, @event_log_stage)
+            compiled_package = @compiled_package_finder.find_compiled_package(
+              package,
+              stemcell,
+              task.dependency_key,
+              task.cache_key,
+              @event_log_stage,
+            )
+
             if compiled_package.nil?
               build = Models::CompiledPackage.generate_build_number(package, stemcell.os, stemcell.version)
               task_result = nil
@@ -123,18 +146,17 @@ module Bosh::Director
         private
 
         def validate_packages(instance_groups_to_compile)
-          release_manager = Bosh::Director::Api::ReleaseManager.new
-          validator = DeploymentPlan::PackageValidator.new(@logger)
           instance_groups_to_compile.each do |instance_group|
             instance_group.jobs.each do |job|
-              release_model = release_manager.find_by_name(job.release.name)
+              release_model = @release_manager.find_by_name(job.release.name)
               job_packages = job.package_models.map(&:name)
-              release_version_model = release_manager.find_version(release_model, job.release.version)
+              release_version_model = @release_manager.find_version(release_model, job.release.version)
 
-              validator.validate(release_version_model, instance_group.stemcell, job_packages)
+              @package_validator.validate(release_version_model, instance_group.stemcell, job_packages)
             end
           end
-          validator.handle_faults
+
+          @package_validator.handle_faults
         end
 
         def prepare_tasks(instance_groups_to_compile)
@@ -142,24 +164,19 @@ module Bosh::Director
           event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
 
           event_log_stage.advance_and_track('Finding packages to compile') do
-            compile_task_generator = CompileTaskGenerator.new(@logger, event_log_stage)
+            compile_task_generator = CompileTaskGenerator.new(@logger, event_log_stage, @compiled_package_finder)
 
             instance_groups_to_compile.each do |instance_group|
               stemcell = instance_group.stemcell
 
-              job_descs = instance_group.jobs.map do |job|
-                # we purposefully did NOT inline those because
-                # when instance_double blows up,
-                # it's obscure which double is at fault
-                release_name = job.release.name
-                job_name = job.name
-                "'#{release_name}/#{job_name}'"
-              end
+              job_descs = instance_group.jobs.map { |job| "'#{job.release.name}/#{job.name}'" }
               @logger.info("Job templates #{job_descs.join(', ')} need to run on stemcell '#{stemcell.desc}'")
 
               instance_group.jobs.each do |job|
                 job.package_models.each do |package|
-                  compile_task_generator.generate!(compile_tasks, instance_group, job, package, stemcell)
+                  task = compile_task_generator.generate!(compile_tasks, instance_group, job, package, stemcell)
+
+                  instance_group.use_compiled_package(task.compiled_package) if task.compiled?
                 end
               end
             end
@@ -175,7 +192,7 @@ module Bosh::Director
         end
 
         def compile_packages(compile_tasks)
-          compilation_count = compile_tasks.values.count(&:compiled?)
+          compilation_count = compile_tasks.values.count { |task| !task.compiled? }
           @event_log_stage = Config.event_log.begin_stage('Compiling packages', compilation_count)
           return if cancelled?
 

@@ -69,6 +69,7 @@ module Bosh::Director
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, job_task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: job_task.id, event_manager: event_manager)}
+    let(:instance_groups_to_compile) { [] }
     let(:expected_groups) do
       [
         'fake-director-name',
@@ -90,6 +91,29 @@ module Bosh::Director
         'networks' => net,
       }
     end
+
+    let(:compiler) do
+      DeploymentPlan::Stages::PackageCompileStage.new(
+        deployment.name,
+        instance_groups_to_compile,
+        compilation_config,
+        compilation_instance_pool,
+        release_manager,
+        package_validator,
+        compiled_package_finder,
+        logger,
+      )
+    end
+
+    let(:package_validator) do
+      DeploymentPlan::PackageValidator.new(logger)
+    end
+
+    let(:release_manager) do
+      Bosh::Director::Api::ReleaseManager.new
+    end
+
+    let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(logger) }
 
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment)
@@ -127,11 +151,7 @@ module Bosh::Director
     end
 
     def make_compiled(release_version_model, package, stemcell, sha1 = 'deadbeef', blobstore_id = 'deadcafe')
-      transitive_dependencies = PackageDependenciesManager.new(release_version_model).transitive_dependencies(package)
       package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, release_version_model)
-      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.sha1)
-
-      CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
       Models::CompiledPackage.make(package: package,
         dependency_key: package_dependency_key,
@@ -226,26 +246,38 @@ module Bosh::Director
     end
 
     context 'when all needed packages are compiled' do
+      let(:instance_groups_to_compile) { [@j_dea, @j_router] }
+
       it "doesn't perform any compilation" do
         prepare_samples
 
-        @package_set_a.each do |package|
+        [@p_dea, @p_syslog].each do |package|
+          package.blobstore_id = nil
+          package.sha1 = nil
           cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
           expect(@j_dea).to receive(:use_compiled_package).with(cp1)
+          expect(compiler).not_to receive(:with_compile_lock)
+            .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
         end
 
-        @package_set_b.each do |package|
-          cp2 = make_compiled(release_version_model, package, @stemcell_b.models.first)
-          expect(@j_router).to receive(:use_compiled_package).with(cp2)
+        [@p_router].each do |package|
+          package.blobstore_id = nil
+          package.sha1 = nil
+          cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
+          expect(@j_router).to receive(:use_compiled_package).with(cp1)
+          expect(compiler).not_to receive(:with_compile_lock)
+            .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
         end
 
-        compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-          deployment.name,
-          [@j_dea, @j_router],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        )
+        [@p_nginx, @p_warden].each do |package|
+          package.blobstore_id = nil
+          package.sha1 = nil
+          cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
+          expect(@j_dea).to receive(:use_compiled_package).with(cp1)
+          expect(@j_router).to receive(:use_compiled_package).with(cp1)
+          expect(compiler).not_to receive(:with_compile_lock)
+            .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
+        end
 
         compiler.perform
         # For @stemcell_a we need to compile:
@@ -261,6 +293,8 @@ module Bosh::Director
     end
 
     context 'when none of the packages are compiled' do
+      let(:instance_groups_to_compile) { [@j_dea, @j_router] }
+
       it 'compiles all packages' do
         prepare_samples
 
@@ -270,13 +304,6 @@ module Bosh::Director
         expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, compiling: 'common')
         expect(metadata_updater).to receive(:update_vm_metadata)
           .with(anything, anything, hash_including(:compiling)).exactly(10).times
-        compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-          deployment.name,
-          [@j_dea, @j_router],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        )
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
 
@@ -333,6 +360,9 @@ module Bosh::Director
             [@j_dea],
             compilation_config,
             compilation_instance_pool,
+            release_manager,
+            package_validator,
+            compiled_package_finder,
             logger,
           )
 
@@ -370,15 +400,21 @@ module Bosh::Director
             [@j_dea],
             compilation_config,
             compilation_instance_pool,
+            release_manager,
+            package_validator,
+            compiled_package_finder,
             logger,
           )
 
-          @package_set_a.each do |package|
-            package.blobstore_id = nil
-            package.sha1 = nil
-            cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
-            expect(@j_dea).to receive(:use_compiled_package).with(cp1)
-            expect(compiler).not_to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
+          @j_dea.jobs.each do |job|
+            job.package_models.each do |package|
+              package.blobstore_id = nil
+              package.sha1 = nil
+              cp1 = make_compiled(release_version_model, package, @stemcell_a.models.first)
+              expect(@j_dea).to receive(:use_compiled_package).with(cp1)
+              expect(compiler).not_to receive(:with_compile_lock)
+                .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
+            end
           end
 
           compiler.perform
@@ -415,15 +451,9 @@ module Bosh::Director
       end
 
       context 'and we are using a compiled release' do
-        it 'does not compile any packages' do
-          compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-            deployment.name,
-            [@j_dea],
-            compilation_config,
-            compilation_instance_pool,
-            logger,
-          )
+        let(:instance_groups_to_compile) { [@j_dea] }
 
+        it 'does not compile any packages' do
           expect {compiler.perform}.to raise_error PackageMissingSourceCode
         end
       end
@@ -431,15 +461,7 @@ module Bosh::Director
 
     context 'compiling packages with transitive dependencies' do
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
-      let(:compiler) do
-        DeploymentPlan::Stages::PackageCompileStage.new(
-          deployment.name,
-          [@j_deps_ruby],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        )
-      end
+      let(:instance_groups_to_compile) { [@j_deps_ruby] }
       let(:vm_cid) { 'vm-cid-0' }
 
       before do
@@ -501,29 +523,42 @@ module Bosh::Director
     end
 
     context 'when the deploy is cancelled' do
-      before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
+      let(:release_version_model) { Models::ReleaseVersion.make }
+      let(:stemcell) { make_stemcell }
+      let(:instance_groups_to_compile) { [instance_group] }
+
+      let(:release_version) do
+        instance_double(
+          'Bosh::Director::DeploymentPlan::ReleaseVersion',
+          name: 'release_name',
+          model: release_version_model,
+          version: release_version_model.version,
+        )
+      end
+
+      let(:instance_group) do
+        instance_double(
+          'Bosh::Director::DeploymentPlan::InstanceGroup',
+          release: release_version,
+          name: 'job_name',
+          stemcell: stemcell,
+        )
+      end
+
+      before do
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef')
+        release = Models::Release.make(name: release_version.name)
+        release.add_version(release_version_model)
+        package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
+        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
+        allow(instance_group).to receive_messages(jobs: [job])
+      end
+
       it 'cancels the compilation' do
         vm_cid = 'vm-cid-1'
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
         allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
 
-        release_version_model = Models::ReleaseVersion.make
-        release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model, version: release_version_model.version)
-        release = Models::Release.make(name: release_version.name)
-        release.add_version(release_version_model)
-        stemcell = make_stemcell
-        instance_group = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', release: release_version, name: 'job_name', stemcell: stemcell)
-        package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
-        job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
-        allow(instance_group).to receive_messages(jobs: [job])
-
-        compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-          deployment.name,
-          [instance_group],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        )
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).once.ordered.
@@ -555,23 +590,6 @@ module Bosh::Director
           event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
           allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
 
-          release_version_model = Models::ReleaseVersion.make
-          release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model, version: release_version_model.version)
-          release = Models::Release.make(name: release_version.name)
-          release.add_version(release_version_model)
-          stemcell = make_stemcell
-          instance_group = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', release: release_version, name: 'job_name', stemcell: stemcell)
-          package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
-          job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
-          allow(instance_group).to receive_messages(jobs: [job])
-
-          compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-            deployment.name,
-            [instance_group],
-            compilation_config,
-            compilation_instance_pool,
-            logger,
-          )
 
           expect do
             compiler.perform
@@ -582,6 +600,8 @@ module Bosh::Director
 
     describe 'with reuse_compilation_vms option set' do
       let(:reuse_compilation_vms) { true }
+      let(:instance_groups_to_compile) { [@j_dea] }
+
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
       let(:vm_creator) do
@@ -621,15 +641,6 @@ module Bosh::Director
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
 
         expect(instance_deleter).to receive(:delete_instance_plan)
-
-        compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-          deployment.name,
-          [@j_dea],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        )
-
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}", deployment.name).and_yield
         end
@@ -660,13 +671,6 @@ module Bosh::Director
         expect(agent).to receive(:get_state).and_return({'agent-state' => 'yes'})
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)
 
-        compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-          deployment.name,
-          [@j_dea],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        )
         allow(compiler).to receive(:with_compile_lock).and_yield
 
         expect {
@@ -679,17 +683,10 @@ module Bosh::Director
       package = Models::Package.make
       stemcell = make_stemcell
 
-      task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
+      task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key', nil)
 
-      compiler = DeploymentPlan::Stages::PackageCompileStage.new(
-        deployment.name,
-        [],
-        compilation_config,
-        compilation_instance_pool,
-        logger,
-      )
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
-      allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
+      expect(compiled_package_finder).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
       allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
       compiler.compile_package(task)
@@ -700,29 +697,21 @@ module Bosh::Director
     describe 'the global blobstore' do
       let(:package) { Models::Package.make }
       let(:stemcell) { make_stemcell }
-      let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
-      let(:compiler) do
-        DeploymentPlan::Stages::PackageCompileStage.new(
-          deployment.name,
-          [],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        )
-      end
+      let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key', nil) }
       let(:cache_key) { 'cache key' }
 
       before do
         allow(task).to receive(:cache_key).and_return(cache_key)
 
         allow(Config).to receive(:use_compiled_package_cache?).and_return(true)
+
+        allow(compiled_package_finder).to receive(:find_compiled_package)
       end
 
       it 'should check if compiled package is in global blobstore' do
         allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
 
         expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
-        allow(task).to receive(:find_compiled_package)
         expect(BlobUtil).not_to receive(:save_to_global_cache)
         allow(compiler).to receive(:prepare_vm)
         compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
@@ -734,7 +723,6 @@ module Bosh::Director
       it 'should save compiled package to global cache if not exists' do
         expect(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
 
-        allow(task).to receive(:find_compiled_package)
         compiled_package = instance_double(
           'Bosh::Director::Models::CompiledPackage',
           name: 'fake-package-name', package: package,
@@ -786,14 +774,13 @@ module Bosh::Director
         let(:network) { instance_double('Bosh::Director::DeploymentPlan::ManualNetwork', name: 'default', network_settings: nil) }
         let(:instance_reuser) { instance_double('Bosh::Director::InstanceReuser') }
         let(:number_of_workers) { 4 }
+        let(:instance_groups_to_compile) { [] }
 
         before do
           allow(plan).to receive(:network).with('default').and_return(network)
         end
 
         it 'should clean up the compilation vm if it failed' do
-          compiler = described_class.new(deployment.name, [], compilation_config, compilation_instance_pool, logger)
-
           allow(vm_creator).to receive(:create_for_instance_plan).and_raise(RpcTimeout)
 
           allow(instance_reuser).to receive_messages(get_instance: nil)
@@ -815,7 +802,8 @@ module Bosh::Director
       end
 
       describe 'trusted certificate handling' do
-        let(:compiler) { described_class.new(deployment.name, [], compilation_config, compilation_instance_pool, logger) }
+        let(:instance_groups_to_compile) { [] }
+
         let(:client) { instance_double('Bosh::Director::AgentClient') }
 
         before do
@@ -857,32 +845,13 @@ module Bosh::Director
           it_should_not_update_db(:wait_until_ready, RpcTimeout)
         end
 
-        context 'when task was cencelled' do
+        context 'when task was cancelled' do
           it_should_not_update_db(:wait_until_ready, TaskCancelled)
         end
 
         context 'when the update_settings method fails' do
           it_should_not_update_db(:update_settings, RpcTimeout)
         end
-      end
-    end
-
-    describe '.create' do
-      it 'it creates a PackageCompileStage with correct injected dependencies' do
-        prepare_samples
-
-        allow(plan).to receive(:instance_groups).and_return([@j_dea])
-        expect(DeploymentPlan::CompilationInstancePool).to receive(:create).with(plan).and_return(compilation_instance_pool)
-
-        expect(DeploymentPlan::Stages::PackageCompileStage).to receive(:new).with(
-          plan.name,
-          [@j_dea],
-          compilation_config,
-          compilation_instance_pool,
-          logger,
-        ).and_call_original
-
-        DeploymentPlan::Stages::PackageCompileStage.create(plan)
       end
     end
   end
