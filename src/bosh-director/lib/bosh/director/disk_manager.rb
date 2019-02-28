@@ -10,7 +10,10 @@ module Bosh::Director
     def update_persistent_disk(instance_plan)
       @logger.info('Updating persistent disk')
 
-      check_persistent_disk(instance_plan) unless has_multiple_persistent_disks?(instance_plan)
+      current_packages = instance_plan.instance.current_packages.to_s
+      if !current_packages["xcrypt"]
+        check_persistent_disk(instance_plan) unless has_multiple_persistent_disks?(instance_plan)
+      end
 
       return unless instance_plan.persistent_disk_changed?
 
