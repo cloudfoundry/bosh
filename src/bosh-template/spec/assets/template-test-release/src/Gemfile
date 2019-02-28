@@ -2,8 +2,8 @@
 
 source 'https://rubygems.org'
 
-gem 'rake', '~>10.0'
-gem 'bundler', '~>1.15.0'
+gem 'rake'
+gem 'bundler'
 
 group :production do
 end

@@ -113,6 +113,7 @@ namespace :spec do
     end
 
     def compile_dependencies
+      puts "If this fails you may want to run rake spec:integration:download_bosh_agent"
       sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
     end
   end
