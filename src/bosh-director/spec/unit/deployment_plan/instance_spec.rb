@@ -5,13 +5,12 @@ module Bosh::Director::DeploymentPlan
     include Support::StemcellHelpers
 
     subject(:instance) do
-      Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger, variables_interpolator)
+      Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger)
     end
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
     let(:ip_provider) { IpProvider.new(in_memory_ip_repo, {}, logger) }
-    let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
 
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -145,7 +144,7 @@ module Bosh::Director::DeploymentPlan
             'persistent_disk' => 0,
           }
         end
-        let(:instance_spec) { InstanceSpec.new(full_spec, instance, variables_interpolator) }
+        let(:instance_spec) { InstanceSpec.new(full_spec, instance) }
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
           expect(agent_client).to receive(:apply).with(apply_spec).ordered
@@ -234,17 +233,21 @@ module Bosh::Director::DeploymentPlan
             end
             let(:interpolated_merged_cloud_properties) { { 'abcd' => 'p1', 'baz' => 'p2', 'a' => 'p3' } }
 
-            let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
             let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
             let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
             before do
               instance.desired_variable_set = desired_variable_set
-
-              expect(variables_interpolator).to receive(:interpolated_versioned_variables_changed?)
-                .with(instance_model.cloud_properties_hash, merged_cloud_properties,
-                      instance.model.variable_set, desired_variable_set)
-                .and_return(true)
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+              expect(config_server_client).to receive(:interpolate_with_versioning)
+                .with(merged_cloud_properties, desired_variable_set)
+                .and_return(interpolated_merged_cloud_properties)
+              expect(config_server_client).to receive(:interpolate_with_versioning)
+                .with(instance_model.cloud_properties_hash, instance.model.variable_set)
+                .and_return(instance_model.cloud_properties_hash)
             end
 
             it 'should NOT log the interpolated values' do
@@ -316,6 +319,8 @@ module Bosh::Director::DeploymentPlan
             'az_cloud_prop' => '((/placeholder3))',
           )
         end
+        let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+        let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
         let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
         let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
         let(:merged_cloud_properties) do
@@ -334,23 +339,36 @@ module Bosh::Director::DeploymentPlan
 
         before do
           instance.desired_variable_set = desired_variable_set
+          allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+          allow(client_factory).to receive(:create_client).and_return(config_server_client)
         end
 
         it 'interpolates previous and desired cloud properties with the correct variable set' do
-          expect(variables_interpolator).to receive(:interpolated_versioned_variables_changed?)
-            .with(instance_model.cloud_properties_hash, merged_cloud_properties,
-                  instance.model.variable_set, desired_variable_set)
-            .and_return(false)
+          expect(config_server_client).to receive(:interpolate_with_versioning)
+            .with(merged_cloud_properties, desired_variable_set)
+            .and_return(interpolated_merged_cloud_properties)
+          expect(config_server_client).to receive(:interpolate_with_versioning)
+            .with(instance_model.cloud_properties_hash, instance.model.variable_set)
+            .and_return(interpolated_existing_cloud_properties)
 
           expect(instance.cloud_properties_changed?).to be_falsey
         end
 
         context 'when interpolated values are different' do
+          let(:interpolated_merged_cloud_properties) do
+            { 'vm_cloud_prop' => 'p1-new', 'vm_ext_cloud_prop' => 'p2', 'az_cloud_prop' => 'p3' }
+          end
+          let(:interpolated_existing_cloud_properties) do
+            { 'vm_ext_cloud_prop' => 'p2-old', 'az_cloud_prop' => 'p3', 'vm_cloud_prop' => 'p1' }
+          end
+
           it 'return true' do
-            expect(variables_interpolator).to receive(:interpolated_versioned_variables_changed?)
-              .with(instance_model.cloud_properties_hash, merged_cloud_properties,
-                    instance.model.variable_set, desired_variable_set)
-              .and_return(true)
+            expect(config_server_client).to receive(:interpolate_with_versioning)
+              .with(merged_cloud_properties, desired_variable_set)
+              .and_return(interpolated_merged_cloud_properties)
+            expect(config_server_client).to receive(:interpolate_with_versioning)
+              .with(instance_model.cloud_properties_hash, instance.model.variable_set)
+              .and_return(interpolated_existing_cloud_properties)
 
             expect(instance.cloud_properties_changed?).to be_truthy
           end
@@ -412,7 +430,7 @@ module Bosh::Director::DeploymentPlan
         allow(az).to receive(:cloud_properties).and_return('foo' => 'az-foo', 'zone' => 'the-right-one')
         allow(vm_type).to receive(:cloud_properties).and_return('foo' => 'rp-foo', 'resources' => 'the-good-stuff')
 
-        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger, variables_interpolator)
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!
@@ -431,7 +449,7 @@ module Bosh::Director::DeploymentPlan
         selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
         Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
 
-        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger, variables_interpolator)
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger)
         instance.bind_existing_instance_model(instance_model)
 
         instance.desired_variable_set = selected_variable_set

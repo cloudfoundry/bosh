@@ -7,7 +7,6 @@ module Bosh::Director::DeploymentPlan
       let(:network_planner) { NetworkPlanner::ReservationReconciler.new(instance_plan, logger) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(availability_zone: initial_az) }
       let(:instance) { instance_double(Instance, model: instance_model) }
-      let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:network) { ManualNetwork.new('my-network', subnets, logger) }
       let(:subnets) do
         [
@@ -32,7 +31,6 @@ module Bosh::Director::DeploymentPlan
           network_plans: network_plans,
           existing_instance: nil,
           instance: instance,
-          variables_interpolator: variables_interpolator,
         )
       end
       let(:initial_az) { nil }

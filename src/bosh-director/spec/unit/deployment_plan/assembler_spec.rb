@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager, variables_interpolator) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager) }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner',
       name: 'simple',
       using_global_networking?: false,
@@ -21,7 +21,6 @@ module Bosh::Director
         allow(double).to receive(:resolve_deployment_links)
       end
     end
-    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     before do
       allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
@@ -104,23 +103,9 @@ module Bosh::Director
         end
 
         it 'passes tags to instance plan factory' do
-          expected_options = {
-            'recreate' => false,
-
-            'tags' => { 'key1' => 'value1' },
-            'use_dns_addresses' => false,
-            'use_short_dns_addresses' => false,
-            'randomize_az_placement' => false}
-
-          expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
-            anything,
-            anything,
-            anything,
-            anything,
-            anything,
-           anything, expected_options
-          ).and_call_original
-          assembler.bind_models({tags: { 'key1' => 'value1' }})
+          expected_options = {'recreate' => false, 'tags' => {'key1' => 'value1'}, 'use_dns_addresses' => false, 'use_short_dns_addresses' => false,'randomize_az_placement' => false}
+          expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
+          assembler.bind_models({tags: {'key1' => 'value1'}})
         end
       end
 
@@ -132,22 +117,8 @@ module Bosh::Director
           end
 
           it 'passes use_dns_addresses, use_short_dns_addresses and randomize_az_placement feature flags to instance plan factory' do
-            expected_options = {
-              'recreate' => false,
-
-              'tags' => {},
-              'use_dns_addresses' => true,
-              'randomize_az_placement' => true,
-              'use_short_dns_addresses' => false}
-
-            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
-              anything,
-              anything,
-              anything,
-              anything,
-              anything,
-             anything, expected_options
-            ).and_call_original
+            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true, 'randomize_az_placement' => true, 'use_short_dns_addresses' => false}
+            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
             assembler.bind_models
           end
 
@@ -157,22 +128,8 @@ module Bosh::Director
             end
 
             it 'passes use_short_dns_addresses to instance plan factory' do
-              expected_options = {
-                'recreate' => false,
-
-                'tags' => {},
-                'use_dns_addresses' => true,
-                'randomize_az_placement' => true,
-                'use_short_dns_addresses' => true}
-
-              expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
-                anything,
-                anything,
-                anything,
-                anything,
-                anything,
-               anything, expected_options
-              ).and_call_original
+              expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => true, 'randomize_az_placement' => true, 'use_short_dns_addresses' => true}
+              expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
               assembler.bind_models
             end
           end
@@ -185,22 +142,8 @@ module Bosh::Director
           end
 
           it 'passes use_dns_addresses, use_short_dns_addresses and randomize_az_placement to instance plan factory' do
-            expected_options = {
-              'recreate' => false,
-
-              'tags' => {},
-              'use_dns_addresses' => false,
-              'randomize_az_placement' => false,
-              'use_short_dns_addresses' => false}
-
-            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
-              anything,
-              anything,
-              anything,
-              anything,
-              anything,
-             anything, expected_options
-            ).and_call_original
+            expected_options = {'recreate' => false, 'tags' => {}, 'use_dns_addresses' => false, 'randomize_az_placement' => false, 'use_short_dns_addresses' => false}
+            expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(anything, anything, anything, anything, anything, expected_options).and_call_original
             assembler.bind_models
           end
         end
@@ -277,7 +220,6 @@ module Bosh::Director
 
           before do
             allow(deployment_model).to receive(:link_providers).and_return(link_providers)
-            allow(variables_interpolator).to receive(:generate_values)
           end
 
           it 'should bind links by default' do
@@ -303,52 +245,6 @@ module Bosh::Director
               assembler.bind_models(is_deploy_action: true)
 
               expect(deployment_model.has_stale_errand_links).to be_falsey
-            end
-          end
-        end
-
-        context 'variables are defined for the deployment' do
-          let(:variables) do
-            Bosh::Director::DeploymentPlan::Variables.new(
-              [
-                {
-                  'name' => 'placeholder_a',
-                  'type' => 'password',
-                },
-              ],
-            )
-          end
-
-          context 'when it is a deploy action' do
-            let(:converge_variables) do
-              false
-            end
-
-            before do
-              allow(deployment_plan).to receive_message_chain(:features, :converge_variables).and_return(converge_variables)
-            end
-
-            it 'generates the values through config server' do
-              expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false)
-              assembler.bind_models(is_deploy_action: true)
-            end
-
-            context 'when the deployment wants to converge variables' do
-              let(:converge_variables) do
-                true
-              end
-
-              it 'should generate the values through config server' do
-                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', true)
-                assembler.bind_models(is_deploy_action: true)
-              end
-            end
-          end
-
-          context 'when it is a NOT a deploy action' do
-            it 'should NOT generate the variables' do
-              expect(variables_interpolator).to_not receive(:generate_values)
-              assembler.bind_models(is_deploy_action: false)
             end
           end
         end
@@ -438,10 +334,10 @@ module Bosh::Director
           end
           let(:network) { instance_double(DeploymentPlan::Network, name: 'network') }
           let(:create_swap_delete_instance_plan) do
-            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: create_swap_delete_instance, variables_interpolator: variables_interpolator)
+            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: create_swap_delete_instance)
           end
           let(:not_create_swap_delete_instance_plan) do
-            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: not_create_swap_delete_instance, variables_interpolator: variables_interpolator)
+            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: not_create_swap_delete_instance)
           end
 
           before do
@@ -559,10 +455,9 @@ module Bosh::Director
           deployment_plan,
           an_instance_of(Api::StemcellManager),
           an_instance_of(PowerDnsManager),
-          variables_interpolator,
         ).and_call_original
 
-        DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator)
+        DeploymentPlan::Assembler.create(deployment_plan)
       end
     end
   end

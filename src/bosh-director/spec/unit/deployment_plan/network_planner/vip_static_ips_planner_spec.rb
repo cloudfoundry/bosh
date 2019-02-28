@@ -16,14 +16,13 @@ module Bosh::Director
 
     def make_instance_plan
       instance_model = Models::Instance.make
-      instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, instance_model.index, 'started', deployment, {}, nil, logger, variables_interpolator)
+      instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, instance_model.index, 'started', deployment, {}, nil, logger)
       instance.bind_existing_instance_model(instance_model)
       DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,
         desired_instance: DeploymentPlan::DesiredInstance.new,
         instance: instance,
         network_plans: [],
-        variables_interpolator: variables_interpolator,
       })
     end
     let(:deployment) { instance_double(DeploymentPlan::Planner) }
@@ -32,7 +31,6 @@ module Bosh::Director
       instance_group.name = 'fake-job'
       instance_group
     end
-    let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     context 'when there are vip networks' do
       let(:vip_networks) { [vip_network_1, vip_network_2] }

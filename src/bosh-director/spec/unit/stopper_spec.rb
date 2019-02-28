@@ -28,11 +28,10 @@ module Bosh::Director
       deployment_model: deployment_model
     ) }
     let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment, name: 'fake-deployment') }
-    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:current_job_state) {'running'}
     let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
     let(:instance_plan) do
-      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain, variables_interpolator: variables_interpolator)
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain)
     end
     let(:spec) do
       {
@@ -58,7 +57,7 @@ module Bosh::Director
     before do
       fake_app
       allow(instance).to receive(:current_networks)
-      instance_spec = DeploymentPlan::InstanceSpec.new(spec, instance, variables_interpolator)
+      instance_spec = DeploymentPlan::InstanceSpec.new(spec, instance)
       allow(instance_plan).to receive(:spec).and_return(instance_spec)
 
       instance_model.active_vm = vm_model

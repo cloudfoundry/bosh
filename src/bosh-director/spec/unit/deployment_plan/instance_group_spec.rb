@@ -17,7 +17,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new('name' => 'dea') }
   let(:stemcell) { instance_double('Bosh::Director::DeploymentPlan::Stemcell') }
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
-  let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
   let(:network) do
     instance_double(
@@ -482,22 +481,20 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance_plan0 = BD::DeploymentPlan::InstancePlan.new(
         desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
         existing_instance: nil,
         instance: instance0,
-        variables_interpolator: variables_interpolator,
       )
       instance_plan1 = BD::DeploymentPlan::InstancePlan.new(
         desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
         existing_instance: nil,
         instance: instance1,
-        variables_interpolator: variables_interpolator,
       )
-      obsolete_plan = BD::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1, variables_interpolator: variables_interpolator)
+      obsolete_plan = BD::DeploymentPlan::InstancePlan.new(desired_instance: nil, existing_instance: nil, instance: instance1)
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
     end
@@ -508,9 +505,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger)
       instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)
@@ -519,13 +516,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         desired_instance: BD::DeploymentPlan::DesiredInstance.new,
         existing_instance: nil,
         instance: instance0,
-        variables_interpolator: variables_interpolator,
       )
       instance_plan1 = Bosh::Director::DeploymentPlan::InstancePlan.new(
         desired_instance: BD::DeploymentPlan::DesiredInstance.new,
         existing_instance: nil,
         instance: instance1,
-        variables_interpolator: variables_interpolator,
       )
       instance_plan0.network_plans = [
         BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance0_reservation),
@@ -540,7 +535,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         desired_instance: nil,
         existing_instance: nil,
         instance: instance1,
-        variables_interpolator: variables_interpolator,
       )
 
       instance_group.add_instance_plans([instance_plan0, instance_plan1, obsolete_plan])
@@ -656,7 +650,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
-        variables_interpolator,
       )
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
@@ -668,7 +661,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
-        variables_interpolator,
       )
       instance2.bind_new_instance_model
       instance3 = BD::DeploymentPlan::Instance.create_from_instance_group(
@@ -679,7 +671,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
-        variables_interpolator,
       )
       instance3.bind_new_instance_model
 
@@ -688,19 +679,16 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         instance: instance1,
         existing_instance: nil,
         desired_instance: desired_instance,
-        variables_interpolator: variables_interpolator,
       )
       instance_plan2 = BD::DeploymentPlan::InstancePlan.new(
         instance: instance2,
         existing_instance: nil,
         desired_instance: desired_instance,
-        variables_interpolator: variables_interpolator,
       )
       instance_plan3 = BD::DeploymentPlan::InstancePlan.new(
         instance: instance3,
         existing_instance: nil,
         desired_instance: nil,
-        variables_interpolator: variables_interpolator,
       )
 
       unsorted_plans = [instance_plan3, instance_plan1, instance_plan2]
@@ -740,7 +728,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
-        variables_interpolator,
       )
       instance1.bind_new_instance_model
       instance1.mark_as_bootstrap
@@ -752,7 +739,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         {},
         nil,
         logger,
-        variables_interpolator,
       )
       instance2.bind_new_instance_model
 
@@ -763,13 +749,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         instance: instance1,
         existing_instance: nil,
         desired_instance: desired_instance,
-        variables_interpolator: variables_interpolator,
       )
       instance_plan2 = BD::DeploymentPlan::InstancePlan.new(
         instance: instance2,
         existing_instance: nil,
         desired_instance: desired_instance,
-        variables_interpolator: variables_interpolator,
       )
       instance_group.add_instance_plans([instance_plan1, instance_plan2])
 

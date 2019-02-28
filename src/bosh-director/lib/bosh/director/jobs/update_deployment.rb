@@ -17,7 +17,6 @@ module Bosh::Director
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
-        @variables_interpolator = ConfigServer::VariablesInterpolator.new
       end
 
       def dry_run?
@@ -84,7 +83,7 @@ module Bosh::Director
             deployment_plan = planner_factory.create_from_manifest(deployment_manifest_object, cloud_config_models, runtime_config_models, @options)
             @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
 
-            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator)
+            deployment_assembler = DeploymentPlan::Assembler.create(deployment_plan)
             dns_encoder = LocalDnsEncoderManager.new_encoder_with_updated_index(deployment_plan)
             generate_variables_values(deployment_plan.variables, @deployment_name) if is_deploy_action
 
@@ -142,7 +141,13 @@ module Bosh::Director
           raise e
         end
       ensure
-        current_deployment&.current_variable_set&.update(writable: false) if @options['deploy']
+        if @options['deploy']
+          deployment = current_deployment
+          variable_set = deployment == nil ? nil : deployment.current_variable_set
+          if variable_set
+            variable_set.update(:writable => false)
+          end
+        end
       end
 
       private
@@ -238,14 +243,16 @@ module Bosh::Director
 
       def snapshot_errands_variables_versions(errands_instance_groups, current_variable_set)
         errors = []
+        variables_interpolator = ConfigServer::VariablesInterpolator.new
+        config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
 
         errands_instance_groups.each do |instance_group|
           instance_group_errors = []
 
           begin
-            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
+            variables_interpolator.interpolate_template_spec_properties(instance_group.properties, @deployment_name, current_variable_set)
             unless instance_group&.env&.spec.nil?
-              @variables_interpolator.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
+              config_server_client.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
             end
           rescue Exception => e
             instance_group_errors.push e
@@ -255,7 +262,7 @@ module Bosh::Director
           instance_group_links = @links_manager.get_links_for_instance_group(deployment, instance_group.name) || {}
           instance_group_links.each do |job_name, links|
             begin
-              @variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
+              variables_interpolator.interpolate_link_spec_properties(links || {}, current_variable_set)
             rescue Exception => e
               instance_group_errors.push e
             end

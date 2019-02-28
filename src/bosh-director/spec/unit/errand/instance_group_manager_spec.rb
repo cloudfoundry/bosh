@@ -34,9 +34,8 @@ module Bosh::Director
     let(:task_writer) { TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { EventLog::Log.new(task_writer) }
 
-    let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-    let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil, variables_interpolator: variables_interpolator) }
-    let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil, variables_interpolator: variables_interpolator) }
+    let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
+    let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil) }
 
     let(:dns_encoder) { instance_double(DnsEncoder) }
 
@@ -99,8 +98,8 @@ module Bosh::Director
         Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true, state: 'detached')
       end
 
-      let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1, variables_interpolator: variables_interpolator) }
-      let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2, variables_interpolator: variables_interpolator) }
+      let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1) }
+      let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2) }
 
       let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }

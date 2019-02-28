@@ -12,7 +12,6 @@ module Bosh::Director
           @tags = tags
           @logger = Config.logger
           @vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
-          @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
         end
 
         def perform(report)
@@ -86,9 +85,10 @@ module Bosh::Director
           parent_id = add_event(deployment_name, instance_model.name, 'create')
           agent_id = SecureRandom.uuid
 
-          env = @variables_interpolator.interpolate_with_versioning(env, instance.desired_variable_set)
-          cloud_properties = @variables_interpolator.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
-          network_settings = @variables_interpolator.interpolate_with_versioning(network_settings, instance.desired_variable_set)
+          config_server_client = ConfigServer::ClientFactory.create(@logger).create_client
+          env = config_server_client.interpolate_with_versioning(env, instance.desired_variable_set)
+          cloud_properties = config_server_client.interpolate_with_versioning(cloud_properties, instance.desired_variable_set)
+          network_settings = config_server_client.interpolate_with_versioning(network_settings, instance.desired_variable_set)
 
           cpi = cloud_factory.get_name_for_az(instance_model.availability_zone)
 

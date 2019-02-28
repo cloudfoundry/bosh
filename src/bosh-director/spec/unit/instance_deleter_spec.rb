@@ -9,7 +9,6 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:delete_job) { Jobs::DeleteDeployment.new('test_deployment', {}) }
     let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
-    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     before do
       allow(delete_job).to receive(:task_id).and_return(task.id)
@@ -45,7 +44,6 @@ module Bosh::Director
           network_plans: [network_plan],
           desired_instance: nil,
           skip_drain: true,
-          variables_interpolator: variables_interpolator,
         )
       end
 
@@ -72,7 +70,7 @@ module Bosh::Director
         let(:network) { instance_double(DeploymentPlan::ManualNetwork, name: 'manual-network') }
         let(:reservation) do
           az = DeploymentPlan::AvailabilityZone.new('az', {})
-          instance = DeploymentPlan::Instance.create_from_instance_group(job, 5, {}, deployment_plan, 'started', az, logger, variables_interpolator)
+          instance = DeploymentPlan::Instance.create_from_instance_group(job, 5, {}, deployment_plan, 'started', az, logger)
           reservation = DesiredNetworkReservation.new(instance.model, network, '192.168.1.2', :dynamic)
           reservation.mark_reserved
 

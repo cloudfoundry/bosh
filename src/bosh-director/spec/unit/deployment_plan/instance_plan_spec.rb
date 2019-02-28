@@ -11,12 +11,9 @@ module Bosh::Director::DeploymentPlan
         use_dns_addresses: use_dns_addresses,
         use_short_dns_addresses: use_short_dns_addresses,
         logger: logger,
-        tags: tags,
-        variables_interpolator: variables_interpolator,
-      )
+        tags: tags)
     end
 
-    let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
     let(:instance_group) { InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger) }
 
     let!(:variable_set_model) { BD::Models::VariableSet.make(deployment: deployment_model) }
@@ -52,8 +49,8 @@ module Bosh::Director::DeploymentPlan
 
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment_plan, availability_zone) }
     let(:current_state) { {'current' => 'state', 'job' => instance_group_spec, 'job_state' => job_state} }
-    let(:availability_zone) { AvailabilityZone.new('foo-az', 'a' => 'b') }
-    let(:instance) { Instance.create_from_instance_group(instance_group, 1, instance_state, deployment_plan.model, current_state, availability_zone, logger, variables_interpolator) }
+    let(:availability_zone) { AvailabilityZone.new('foo-az', {'a' => 'b'}) }
+    let(:instance) { Instance.create_from_instance_group(instance_group, 1, instance_state, deployment_plan.model, current_state, availability_zone, logger) }
     let(:instance_state) { 'started' }
     let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan, [], logger) }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
@@ -92,7 +89,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_plan) do
       planner_factory = PlannerFactory.create(logger)
       plan = planner_factory.create_from_model(deployment_model)
-      Assembler.create(plan, variables_interpolator).bind_models
+      Assembler.create(plan).bind_models
       plan
     end
     let(:network_settings) { { 'a' => { 'type' => 'dynamic', 'cloud_properties' => {}, 'dns' => ['10.0.0.1'], 'default' => ['dns', 'gateway'] } } }
@@ -329,18 +326,22 @@ module Bosh::Director::DeploymentPlan
             let(:desired_networks_hash) { {'a' => {'b' => '((a_var))'}} }
             let(:interpolated_desired_networks_hash) { {'a' => {'b' => 'gargamel'}} }
 
-            let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+            let(:client_factory) { instance_double(Bosh::Director::ConfigServer::ClientFactory) }
+            let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
             let(:mock_network_settings) { instance_double(Bosh::Director::DeploymentPlan::NetworkSettings) }
             let(:mock_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance) }
             let(:mock_desired_instance) { instance_double(Bosh::Director::DeploymentPlan::DesiredInstance) }
             let(:mock_existing_instance) { instance_double(Bosh::Director::Models::Instance) }
-            let(:simple_instance_plan) { InstancePlan.new(existing_instance: mock_existing_instance, desired_instance: mock_desired_instance, instance: mock_instance, variables_interpolator: variables_interpolator) }
+            let(:simple_instance_plan) { InstancePlan.new(existing_instance: mock_existing_instance, desired_instance: mock_desired_instance, instance: mock_instance) }
 
             let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
             let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
             before do
+              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
+              allow(client_factory).to receive(:create_client).and_return(config_server_client)
+
               allow(mock_instance).to receive_message_chain(:model, :deployment, :name)
               allow(mock_instance).to receive(:instance_group_name)
               allow(mock_instance).to receive(:current_networks)
@@ -359,21 +360,15 @@ module Bosh::Director::DeploymentPlan
             end
 
             it 'compares the interpolated cloud_properties' do
-              expect(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).with(current_networks_hash,
-                                                                                                       desired_networks_hash,
-                                                                                                       previous_variable_set,
-                                                                                                       desired_variable_set)
-                                                                                                 .and_return(true)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              expect(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
 
               expect(simple_instance_plan.network_settings_changed?).to be_truthy
             end
 
             it 'does not log the interpolated cloud property changes' do
-              allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).with(current_networks_hash,
-                                                                                                      desired_networks_hash,
-                                                                                                      previous_variable_set,
-                                                                                                      desired_variable_set)
-                                                                                                .and_return(true)
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(current_networks_hash, previous_variable_set).and_return(interpolated_current_networks_hash)
+              allow(config_server_client).to receive(:interpolate_with_versioning).with(desired_networks_hash, desired_variable_set).and_return(interpolated_desired_networks_hash)
 
               expect(logger).to receive(:debug).with(
                 "network_settings_changed? network settings changed FROM: #{current_networks_hash} TO: #{desired_networks_hash} on instance #{mock_existing_instance}"
@@ -387,7 +382,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#needs_shutting_down?' do
       context 'when instance_plan is obsolete' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: network_plans, variables_interpolator: variables_interpolator) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: network_plans) }
         it 'shuts down the instance' do
           expect(instance_plan.needs_shutting_down?).to be_truthy
         end
@@ -566,193 +561,9 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#vm_matches_plan?' do
-      let(:instance_group) do
-        instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-        instance_group.name = 'foo-instance_group'
-        instance_group.availability_zones << availability_zone
-        instance_group.env = BD::DeploymentPlan::Env.new('env' => 'env-val')
-        instance_group.vm_type = BD::DeploymentPlan::VmType.new(
-          'name' => 'a',
-          'cloud_properties' => uninterpolated_cloud_properties_hash,
-        )
-        instance_group
-      end
-
-      let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-
-      let(:uninterpolated_cloud_properties_hash) do
-        { 'cloud' => '((interpolated_prop))' }
-      end
-
-      let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-
-      let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
-
-      let(:desired_cloud_properties_hash) do
-        { 'cloud' => 'prop' }
-      end
-
-      let(:previous_cloud_properties_hash) do
-        { 'cloud' => 'prop' }
-      end
-
-      let(:simple_instance_plan) do
-        InstancePlan.new(
-          existing_instance: mock_existing_instance,
-          desired_instance: mock_desired_instance,
-          instance: mock_instance,
-          variables_interpolator: variables_interpolator,
-        )
-      end
-
-      let(:mock_desired_instance) do
-        instance_double(
-          Bosh::Director::DeploymentPlan::DesiredInstance,
-          instance_group: instance_group,
-          availability_zone: availability_zone,
-        )
-      end
-
-      let(:mock_existing_instance) do
-        instance_double(
-          Bosh::Director::Models::Instance,
-        )
-      end
-
-      let(:mock_instance) do
-        instance_double(
-          Bosh::Director::DeploymentPlan::Instance,
-          previous_variable_set: previous_variable_set,
-          desired_variable_set: desired_variable_set,
-          stemcell: instance_double(Bosh::Director::Models::Stemcell, name: 'ubuntu-stemcell', version: '1'),
-          cloud_properties: uninterpolated_cloud_properties_hash,
-        )
-      end
-
-      before do
-        allow(instance_group.vm_type).to receive(:cloud_properties).and_return(uninterpolated_cloud_properties_hash)
-        allow(variables_interpolator).to receive(:interpolate_with_versioning).with(
-          uninterpolated_cloud_properties_hash,
-          desired_variable_set,
-        ).and_return(desired_cloud_properties_hash)
-        allow(variables_interpolator).to receive(:interpolate_with_versioning).with(
-          uninterpolated_cloud_properties_hash,
-          previous_variable_set,
-        ).and_return(previous_cloud_properties_hash)
-      end
-
-      it 'should match if all properties are the same' do
-        expect(
-          simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
-              instance: existing_instance,
-              stemcell_name: 'ubuntu-stemcell',
-              stemcell_version: '1',
-              env_json: { 'env' => 'env-val' }.to_json,
-              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
-              active: true,
-            ),
-          ),
-        ).to eq(true)
-      end
-
-      it 'should not match if cloud_properties are nil' do
-        expect(
-          simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
-              instance: existing_instance,
-              stemcell_name: 'ubuntu-stemcell',
-              stemcell_version: '1',
-              env_json: { 'env' => 'env-val' }.to_json,
-              cloud_properties_json: nil,
-              active: true,
-            ),
-          ),
-        ).to eq(false)
-      end
-
-      it 'should not match if stemcell differs' do
-        expect(
-          simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
-              instance: existing_instance,
-              stemcell_name: 'other-stemcell',
-              stemcell_version: '1',
-              env_json: { 'env' => 'env-val' }.to_json,
-              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
-              active: true,
-            ),
-          ),
-        ).to eq(false)
-
-        expect(
-          simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
-              instance: existing_instance,
-              stemcell_name: 'ubuntu-stemcell',
-              stemcell_version: '5',
-              env_json: { 'env' => 'env-val' }.to_json,
-              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
-              active: true,
-            ),
-          ),
-        ).to eq(false)
-      end
-
-      it 'should not match if env properties differ' do
-        expect(
-          simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
-              instance: existing_instance,
-              stemcell_name: 'ubuntu-stemcell',
-              stemcell_version: '1',
-              env_json: { 'other-env' => 'other-env-val' }.to_json,
-              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
-              active: true,
-            ),
-          ),
-        ).to eq(false)
-
-        expect(
-          simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
-              instance: existing_instance,
-              stemcell_name: 'ubuntu-stemcell',
-              stemcell_version: '1',
-              env_json: {}.to_json,
-              cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
-              active: true,
-            ),
-          ),
-        ).to eq(false)
-      end
-
-      context 'when cloud properties differ' do
-        let(:desired_cloud_properties_hash) do
-          { 'cloud' => 'new-prop' }
-        end
-
-        it 'should not match' do
-          expect(
-            simple_instance_plan.vm_matches_plan?(
-              BD::Models::Vm.make(
-                instance: existing_instance,
-                stemcell_name: 'ubuntu-stemcell',
-                stemcell_version: '1',
-                env_json: { 'env' => 'env-val' }.to_json,
-                cloud_properties_json: { 'cloud' => '((interpolated_prop))' }.to_json,
-                active: true,
-              ),
-            ),
-          ).to eq(false)
-        end
-      end
-    end
-
     describe '#needs_duplicate_vm?' do
       context 'when instance_plan is obsolete' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: network_plans, variables_interpolator: variables_interpolator) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, network_plans: network_plans) }
         it 'shuts down the instance' do
           expect(instance_plan.needs_duplicate_vm?).to be_truthy
         end
@@ -1096,7 +907,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'when deployment is being recreated' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true, variables_interpolator: variables_interpolator) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return changed' do
           expect(instance_plan.recreation_requested?).to be_truthy
@@ -1133,34 +944,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#recreate_persistent_disks_requested?' do
-      describe 'when persistent disks in deployment are being recreated' do
-        let(:instance_plan) do
-          InstancePlan.new(
-            existing_instance: existing_instance,
-            desired_instance: desired_instance,
-            instance: instance,
-            network_plans: network_plans,
-            recreate_persistent_disks: true,
-            variables_interpolator: variables_interpolator,
-          )
-        end
-
-        it 'should return changed' do
-          expect(instance_plan.recreate_persistent_disks_requested?).to be_truthy
-        end
-
-        it 'should log the change reason' do
-          allow(logger).to receive(:debug) do |log_line|
-            expect(log_line).to eq(
-              'recreate_persistent_disks_requested? job deployment is configured with "recreate_persistent_disks" state',
-            )
-          end
-
-          instance_plan.recreate_persistent_disks_requested?
-        end
-      end
-    end
     describe '#unresponsive_agent?' do
       context 'when instance has unresponsive agent' do
         let(:job_state) { 'unresponsive' }
@@ -1171,7 +954,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is ok' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true, variables_interpolator: variables_interpolator) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: instance, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return false' do
           expect(instance_plan.unresponsive_agent?).to be_falsey
@@ -1179,7 +962,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is nil' do
-        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: nil, network_plans: network_plans, recreate_deployment: true, variables_interpolator: variables_interpolator) }
+        let(:instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: desired_instance, instance: nil, network_plans: network_plans, recreate_deployment: true) }
 
         it 'should return false' do
           expect(instance_plan.unresponsive_agent?).to be_falsey
@@ -1200,29 +983,13 @@ module Bosh::Director::DeploymentPlan
         cloud_config
       end
 
-      context 'when recreate_persistent_disks_requested' do
-        let(:instance_plan) do
-          InstancePlan.new(
-            existing_instance: existing_instance,
-            desired_instance: desired_instance,
-            instance: instance,
-            network_plans: network_plans,
-            recreate_persistent_disks: true,
-            variables_interpolator: variables_interpolator,
-          )
-        end
-
-        it 'should return true' do
-          expect(instance_plan.persistent_disk_changed?).to be(true)
-        end
+      let(:instance_group_spec) do
+        instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
+        instance_group_spec['persistent_disk_pool'] = 'disk_a'
+        instance_group_spec
       end
 
       context 'when there is a change' do
-        let(:instance_group_spec) do
-          instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
-          instance_group_spec['persistent_disk_pool'] = 'disk_a'
-          instance_group_spec
-        end
         before do
           persistent_disk = BD::Models::PersistentDisk.make(size: 42, cloud_properties: {'new' => 'properties'})
           instance_plan.instance.model.add_persistent_disk(persistent_disk)
@@ -1261,7 +1028,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is obsolete' do
-        let(:obsolete_instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil, variables_interpolator: variables_interpolator) }
+        let(:obsolete_instance_plan) { InstancePlan.new(existing_instance: existing_instance, desired_instance: nil, instance: nil) }
 
         it 'should return true if instance had a persistent disk' do
           persistent_disk = BD::Models::PersistentDisk.make(active: true, size: 2)

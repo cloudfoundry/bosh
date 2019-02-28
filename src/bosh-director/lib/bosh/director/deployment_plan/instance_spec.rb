@@ -5,8 +5,8 @@ module Bosh::Director
         EmptyInstanceSpec.new
       end
 
-      def self.create_from_database(spec, instance, variables_interpolator)
-        new(spec, instance, variables_interpolator)
+      def self.create_from_database(spec, instance)
+        new(spec, instance)
       end
 
       def self.create_from_instance_plan(instance_plan)
@@ -37,18 +37,17 @@ module Bosh::Director
           'update' => instance_group.update_spec
         }
 
-
         disk_spec = instance_group.persistent_disk_collection.generate_spec
 
         spec.merge!(disk_spec)
 
-        new(spec, instance, instance_plan.variables_interpolator)
+        new(spec, instance)
       end
 
-      def initialize(full_spec, instance, variables_interpolator)
+      def initialize(full_spec, instance)
         @full_spec = full_spec
         @instance = instance
-        @variables_interpolator = variables_interpolator
+        @variables_interpolator = ConfigServer::VariablesInterpolator.new
       end
 
       def as_template_spec

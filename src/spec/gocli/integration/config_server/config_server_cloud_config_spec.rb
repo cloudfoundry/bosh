@@ -24,7 +24,7 @@ describe 'using director with config server', type: :integration do
                 }
             }],
             'instances' => 1,
-            'networks' => networks,
+            'networks' => [{'name' => 'private'}],
             'properties' => {},
             'vm_type' => 'medium',
             'persistent_disk_type' => 'large',
@@ -33,10 +33,6 @@ describe 'using director with config server', type: :integration do
         }],
         'stemcells' => [{'alias' => 'default', 'os' => 'toronto-os', 'version' => '1'}]
     }
-  end
-
-  let(:networks) do
-    [{'name' => 'private'}]
   end
 
   let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
@@ -70,7 +66,6 @@ describe 'using director with config server', type: :integration do
       before do
         config_server_helper.put_value('/z1_cloud_properties', {'availability_zone' => 'us-east-1a'})
         config_server_helper.put_value('/z2_cloud_properties', {'availability_zone' => 'us-east-1b'})
-        config_server_helper.put_value('/z3_variable_name', 'my_name')
         config_server_helper.put_value('/ephemeral_disk_placeholder', {'size' => '3000', 'type' => 'gp2'})
         config_server_helper.put_value('/disk_types_placeholder', [
             {
@@ -91,8 +86,7 @@ describe 'using director with config server', type: :integration do
                 'static' => ['10.10.0.62'],
                 'dns' => ['10.10.0.2'],
                 'cloud_properties' => {'subnet' => 'subnet-f2744a86'}
-            },
-            {
+            }, {
                 'range' => '10.10.64.0/24',
                 'gateway' => '10.10.64.1',
                 'az' => 'z2',
@@ -190,23 +184,6 @@ describe 'using director with config server', type: :integration do
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
             expect(create_vm_invocation.inputs['cloud_properties']).to eq({'availability_zone'=>'us-east-1a', 'ephemeral_disk'=>{'size'=>'2000','type'=>'gp1'}, 'instance_type'=>'m3.medium'})
-          end
-        end
-
-        context 'cloud property variable is deleted and recreated' do
-          let(:networks) do
-            [{ 'name' => 'private', 'default' => %w(gateway dns) }, { 'name' => 'other' }]
-          end
-
-          before do
-            config_server_helper.delete_variable('/z3_variable_name')
-            config_server_helper.put_value('/z3_variable_name', 'my_name')
-          end
-
-          it "can redeploy" do
-            expect {
-              deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, return_exit_code: true, include_credentials: false, env: client_env)
-            }.to_not raise_error
           end
         end
       end

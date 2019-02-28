@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceRepository do
-  subject(:instance_repository) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
-  let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+  subject(:instance_repository) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
   let(:plan) do
     network = BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
     ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)

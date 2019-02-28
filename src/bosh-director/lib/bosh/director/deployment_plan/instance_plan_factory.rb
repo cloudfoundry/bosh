@@ -2,7 +2,7 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlanFactory
-        def initialize(instance_repo, states_by_existing_instance, skip_drain_decider, index_assigner, network_reservation_repository, variables_interpolator, options = {})
+        def initialize(instance_repo, states_by_existing_instance, skip_drain_decider, index_assigner, network_reservation_repository, options = {})
           @instance_repo = instance_repo
           @skip_drain_decider = skip_drain_decider
           @recreate_deployment = options.fetch('recreate', false)
@@ -13,7 +13,6 @@ module Bosh
           @use_short_dns_addresses = options.fetch('use_short_dns_addresses', false)
           @randomize_az_placement = options.fetch('randomize_az_placement', false)
           @tags = options.fetch('tags', {})
-          @variables_interpolator = variables_interpolator
         end
 
         def obsolete_instance_plan(existing_instance_model)
@@ -26,8 +25,7 @@ module Bosh
             skip_drain: @skip_drain_decider.for_job(existing_instance_model.job),
             recreate_deployment: @recreate_deployment,
             use_dns_addresses: @use_dns_addresses,
-            use_short_dns_addresses: @use_short_dns_addresses,
-            variables_interpolator: @variables_interpolator,
+            use_short_dns_addresses: @use_short_dns_addresses
           )
         end
 
@@ -46,7 +44,6 @@ module Bosh
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             tags: @tags,
-            variables_interpolator: @variables_interpolator,
           )
         end
 
@@ -63,7 +60,6 @@ module Bosh
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             tags: @tags,
-            variables_interpolator: @variables_interpolator,
           )
         end
 

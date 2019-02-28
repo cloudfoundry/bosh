@@ -26,8 +26,7 @@ module Bosh::Director
         deployment_plan
       end
 
-      let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-      let(:deployment_assembler) { DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator) }
+      let (:deployment_assembler) { DeploymentPlan::Assembler.create(deployment_plan) }
 
       let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: '1') }
       let!(:cloud_config) {

@@ -41,7 +41,6 @@ module Bosh::Director::DeploymentPlan
       }
     end
     let(:smurf_job_links) { links['smurf-job'] }
-    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:lifecycle) { InstanceGroup::DEFAULT_LIFECYCLE_PROFILE }
     let(:network_spec) do
@@ -83,7 +82,6 @@ module Bosh::Director::DeploymentPlan
         instance_state,
         availability_zone,
         logger,
-        variables_interpolator,
       )
       instance.desired_variable_set = desired_variable_set
       instance
@@ -96,7 +94,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) do
-      InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(instance_group), instance: instance, variables_interpolator: variables_interpolator)
+      InstancePlan.new(existing_instance: nil, desired_instance: DesiredInstance.new(instance_group), instance: instance)
     end
     let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
 

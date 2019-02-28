@@ -1892,69 +1892,6 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    describe '#interpolated_versioned_variables_changed?' do
-      let(:previous_variable_set) do
-        Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
-      end
-
-      let(:next_variable_set) do
-        Bosh::Director::Models::VariableSet.make(deployment: deployment_model, writable: true)
-      end
-
-      let(:tasty_response) do
-        { 'name' => prepend_namespace('taste').to_s, 'value' => 'i am a string', 'id' => '1' }
-      end
-
-      let(:tasty_response2) do
-        { 'data' => [{ 'name' => prepend_namespace('taste').to_s, 'value' => 'i am a string meow', 'id' => '2' }] }
-      end
-
-      let(:settings_hash) do
-        { 'cookies' => '((taste))' }
-      end
-
-      before do
-        previous_variable_set.add_variable(variable_name: '/smurf_director_name/deployment_name/taste',
-                                           variable_id: '1',
-                                           is_local: true,
-                                           provider_deployment: deployment_model.name,
-                                          )
-      end
-
-      it 'returns true when the previous and next hashes differ' do
-        allow(http_client).to receive(:get_by_id).with('1')
-                                .and_return(generate_success_response(tasty_response.to_json))
-
-        allow(http_client).to receive(:get).with('/smurf_director_name/deployment_name/taste')
-              .and_return(generate_success_response(tasty_response2.to_json))
-
-        expect(client.interpolated_versioned_variables_changed?(settings_hash, settings_hash,
-                                                                previous_variable_set, next_variable_set)).to be_truthy
-      end
-
-      it 'returns false when the previous and next hashes match' do
-        allow(http_client).to receive(:get_by_id).with('1')
-                                .and_return(generate_success_response(tasty_response.to_json))
-
-        tasty_response2['data'][0] = tasty_response
-        allow(http_client).to receive(:get).with('/smurf_director_name/deployment_name/taste')
-                                .and_return(generate_success_response(tasty_response2.to_json))
-
-
-        expect(client.interpolated_versioned_variables_changed?(settings_hash, settings_hash,
-                                                                previous_variable_set, next_variable_set)).to be_falsey
-      end
-
-      it 'returns true when one or more variables are unable to be obtained' do
-        allow(logger).to receive(:debug)
-        allow(http_client).to receive(:get_by_id).with('1')
-                                .and_return(SampleNotFoundResponse.new)
-
-        expect(client.interpolated_versioned_variables_changed?(settings_hash, settings_hash,
-                                                                previous_variable_set, next_variable_set)).to be_truthy
-      end
-    end
-
     def generate_success_response(body)
       result = SampleSuccessResponse.new
       result.body = body

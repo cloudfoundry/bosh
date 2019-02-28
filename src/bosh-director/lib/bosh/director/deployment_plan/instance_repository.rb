@@ -1,9 +1,8 @@
 module Bosh::Director::DeploymentPlan
   class InstanceRepository
-    def initialize(network_reservation_repository, logger, variables_interpolator)
+    def initialize(network_reservation_repository, logger)
       @network_reservation_repository = network_reservation_repository
       @logger = logger
-      @variables_interpolator = variables_interpolator
     end
 
     def fetch_existing(existing_instance_model, existing_instance_state, instance_group, index, deployment)
@@ -24,7 +23,6 @@ module Bosh::Director::DeploymentPlan
         existing_instance_state,
         availability_zone,
         @logger,
-        @variables_interpolator,
       )
       instance.bind_existing_instance_model(existing_instance_model)
 
@@ -64,7 +62,6 @@ module Bosh::Director::DeploymentPlan
         existing_instance_state,
         availability_zone,
         @logger,
-        @variables_interpolator,
       )
       instance.bind_existing_instance_model(existing_instance_model)
 
@@ -86,7 +83,6 @@ module Bosh::Director::DeploymentPlan
         nil,
         desired_instance.az,
         @logger,
-        @variables_interpolator,
       )
       instance.bind_new_instance_model
       instance

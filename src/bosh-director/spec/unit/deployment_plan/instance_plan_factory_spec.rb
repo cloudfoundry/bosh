@@ -5,8 +5,7 @@ module Bosh::Director
     describe InstancePlanFactory do
       include Bosh::Director::IpUtil
 
-      let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
-      let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+      let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
       let(:skip_drain) { SkipDrain.new(true) }
       let(:index_assigner) { instance_double('Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner') }
       let(:network_reservation_repository) { NetworkReservationRepository.new(deployment_plan, logger) }
@@ -90,7 +89,6 @@ module Bosh::Director
           skip_drain,
           index_assigner,
           network_reservation_repository,
-          variables_interpolator,
           options,
         )
       end
@@ -150,7 +148,6 @@ module Bosh::Director
                 recreate_deployment: anything,
                 use_dns_addresses: true,
                 use_short_dns_addresses: false,
-                variables_interpolator: variables_interpolator,
               )
               instance_plan_factory.obsolete_instance_plan(existing_instance_model)
             end
@@ -166,7 +163,6 @@ module Bosh::Director
                   recreate_deployment: anything,
                   use_dns_addresses: true,
                   use_short_dns_addresses: true,
-                  variables_interpolator: variables_interpolator,
                 )
                 instance_plan_factory.obsolete_instance_plan(existing_instance_model)
               end
@@ -186,7 +182,6 @@ module Bosh::Director
                 recreate_deployment: anything,
                 use_short_dns_addresses: false,
                 use_dns_addresses: false,
-                variables_interpolator: variables_interpolator,
               )
               instance_plan_factory.obsolete_instance_plan(existing_instance_model)
             end
@@ -240,30 +235,9 @@ module Bosh::Director
             use_dns_addresses: anything,
             use_short_dns_addresses: anything,
             tags: tags,
-            variables_interpolator: variables_interpolator,
           )
 
           instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
-        end
-
-        context 'recreate_persistent_disks' do
-          let(:options) { { 'recreate_persistent_disks' => true } }
-
-          it 'provides the instance_plan with the correct recreate_persistent_disks' do
-            expect(InstancePlan).to receive(:new).with(
-              desired_instance: anything,
-              existing_instance: anything,
-              instance: anything,
-              skip_drain: anything,
-              recreate_deployment: anything,
-              recreate_persistent_disks: true,
-              tags: anything,
-              use_dns_addresses: anything,
-              use_short_dns_addresses: anything,
-              variables_interpolator: anything,
-            )
-            instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
-          end
         end
 
         context 'use_dns_addresses' do
@@ -293,7 +267,6 @@ module Bosh::Director
                 tags: anything,
                 use_dns_addresses: true,
                 use_short_dns_addresses: false,
-                variables_interpolator: variables_interpolator,
               )
               instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
             end
@@ -309,7 +282,6 @@ module Bosh::Director
                   recreate_deployment: anything,
                   use_dns_addresses: true,
                   use_short_dns_addresses: true,
-                  variables_interpolator: anything,
                 )
                 instance_plan_factory.obsolete_instance_plan(existing_instance_model)
               end
@@ -330,7 +302,6 @@ module Bosh::Director
                 tags: anything,
                 use_short_dns_addresses: false,
                 use_dns_addresses: false,
-                variables_interpolator: anything,
               )
               instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
             end
@@ -352,7 +323,6 @@ module Bosh::Director
             use_short_dns_addresses: anything,
             use_dns_addresses: anything,
             tags: tags,
-            variables_interpolator: anything,
           )
 
           instance_plan_factory.desired_new_instance_plan(desired_instance)
@@ -385,7 +355,6 @@ module Bosh::Director
                 tags: anything,
                 use_short_dns_addresses: false,
                 use_dns_addresses: true,
-                variables_interpolator: anything,
               )
               instance_plan_factory.desired_new_instance_plan(desired_instance)
             end
@@ -401,7 +370,6 @@ module Bosh::Director
                   recreate_deployment: anything,
                   use_dns_addresses: true,
                   use_short_dns_addresses: true,
-                  variables_interpolator: anything,
                 )
                 instance_plan_factory.obsolete_instance_plan(existing_instance_model)
               end
@@ -422,7 +390,6 @@ module Bosh::Director
                 tags: anything,
                 use_short_dns_addresses: false,
                 use_dns_addresses: false,
-                variables_interpolator: anything,
               )
               instance_plan_factory.desired_new_instance_plan(desired_instance)
             end

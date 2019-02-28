@@ -15,9 +15,9 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance_count) { 3 }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger) }
     let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository, variables_interpolator) }
+    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
     let(:planner) { planner_factory.create_from_manifest(manifest, cloud_configs, [], {}) }
@@ -31,7 +31,6 @@ module Bosh::Director::DeploymentPlan
     let(:new_instance_plans) { instance_plans.select(&:new?) }
     let(:existing_instance_plans) { instance_plans.reject(&:new?).reject(&:obsolete?) }
     let(:obsolete_instance_plans) { instance_plans.select(&:obsolete?) }
-    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {

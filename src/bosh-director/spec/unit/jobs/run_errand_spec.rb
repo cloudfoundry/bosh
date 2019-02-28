@@ -82,8 +82,6 @@ module Bosh::Director
           instance_double('Bosh::Director::DeploymentPlan::PlannerFactory', create_from_model: planner)
         end
 
-        let(:variable_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-
         before do
           allow(DeploymentPlan::PlannerFactory).to receive(:new)
             .and_return(deployment_planner_factory)
@@ -91,8 +89,7 @@ module Bosh::Director
           allow(job).to receive(:task_id).and_return(task.id)
           allow(Errand::Runner).to receive(:new).and_return(runner)
 
-          allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variable_interpolator)
-          allow(DeploymentPlan::Assembler).to receive(:create).with(planner, variable_interpolator).and_return(assembler)
+          allow(DeploymentPlan::Assembler).to receive(:create).with(planner).and_return(assembler)
         end
 
         let(:planner) do

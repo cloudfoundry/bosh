@@ -38,7 +38,7 @@ module Bosh::Director
 
       attr_reader :deployment_model
 
-      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, az, logger, variables_interpolator)
+      def self.create_from_instance_group(instance_group, index, virtual_state, deployment_model, instance_state, az, logger)
         new(
           instance_group.name,
           index,
@@ -51,7 +51,6 @@ module Bosh::Director
           instance_state,
           az,
           logger,
-          variables_interpolator,
         )
       end
 
@@ -65,8 +64,7 @@ module Bosh::Director
                      deployment_model,
                      instance_state,
                      availability_zone,
-                     logger,
-                     variables_interpolator)
+                     logger)
         @index = index
         @availability_zone = availability_zone
         @logger = logger
@@ -91,7 +89,6 @@ module Bosh::Director
         @existing_network_reservations = InstanceNetworkReservations.new(logger)
 
         @virtual_state = virtual_state
-        @variables_interpolator = variables_interpolator
       end
 
       def bootstrap?
@@ -191,15 +188,16 @@ module Bosh::Director
       end
 
       def cloud_properties_changed?
-        changed = @variables_interpolator.interpolated_versioned_variables_changed?(
-          @model.cloud_properties_hash,
-          cloud_properties,
-          @previous_variable_set,
-          @desired_variable_set
-        )
+        config_server_client_factory = Bosh::Director::ConfigServer::ClientFactory.create(@logger)
+        config_server_client = config_server_client_factory.create_client
 
-        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if changed
-        changed
+        proposed = config_server_client.interpolate_with_versioning(cloud_properties, @desired_variable_set)
+        existing = config_server_client.interpolate_with_versioning(@model.cloud_properties_hash, @previous_variable_set)
+
+        @cloud_properties_changed = existing != proposed
+        log_changes(__method__, @model.cloud_properties_hash, cloud_properties) if @cloud_properties_changed
+
+        @cloud_properties_changed
       end
 
       def current_job_spec
